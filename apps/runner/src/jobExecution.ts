@@ -4,8 +4,10 @@ import {
 	type FeedFetchDeps,
 	type Hasher,
 	ingestSources,
+	MAX_JOB_ATTEMPTS,
 	type PipelineOutcome,
 	type PipelineReporter,
+	PROMPT_VERSION,
 	runResearchPipeline,
 } from "@research/application";
 import {
@@ -18,7 +20,7 @@ import {
 	type RunnerEvent,
 } from "@research/contracts";
 import { EMPTY_USAGE, type ResourceUsage } from "@research/domain";
-import type { EventLogger } from "@research/effects";
+import type { EventLogger, LogFields } from "@research/effects";
 import type { RunnerApi, RunnerApiResult } from "./apiClient.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
@@ -55,6 +57,70 @@ const NOTE_FLUSH_THRESHOLD = 10;
 const MAX_QUEUED_EVENTS = 400;
 const INGEST_STATES = ["planning", "collecting", "analyzing", "verifying", "publishing"] as const;
 
+/** Counts of progress entries reported for one job, by kind. */
+export interface ProgressCounts {
+	state: number;
+	note: number;
+	tool: number;
+}
+
+/**
+ * What the compact run card no longer shows — identifiers, codes and counts
+ * only, never prompts, question text, progress text or error messages
+ * (SEC-010) — logged once per terminal submission on `job_finished`, so the
+ * facts stay observable in `runner.log`. Budget ceilings apply to research
+ * jobs only; news-ingest jobs carry no budget and omit those fields.
+ * `promptVersion` is the short template version (e.g. `research-v4`), never
+ * prompt text; `null` when the job publishes no research result.
+ */
+export function runFinishedFields(
+	job: ClaimedJob,
+	completion: CompleteJobRequest,
+	state: string,
+	progress: ProgressCounts,
+): LogFields {
+	const bundle =
+		completion.outcome === "completed" || completion.outcome === "partial"
+			? completion.bundle
+			: null;
+	const fields: Record<string, string | number | boolean | null> = {
+		runId: job.runId,
+		state,
+		attempt: job.attempt,
+		maxAttempts: MAX_JOB_ATTEMPTS,
+		agentId: job.kind === "research" ? job.request.agentId : null,
+		providerModel: bundle?.provenance.providerModel ?? null,
+		promptVersion:
+			job.kind === "research" ? (bundle?.provenance.promptVersion ?? PROMPT_VERSION) : null,
+		agentSteps: completion.usage.agentSteps,
+		toolCalls: completion.usage.toolCalls,
+		inputBytes: completion.usage.inputBytes,
+		knownCostUsd: completion.usage.knownCostUsd,
+		hasUnmeteredUsage: completion.usage.hasUnmeteredUsage,
+		// An unknown cost is never reported as zero (AGT-008): `costKnown`
+		// says whether the total is known, `costUsd` is the known portion.
+		costKnown: !completion.usage.hasUnmeteredUsage,
+		costUsd: completion.usage.knownCostUsd,
+		failureCode:
+			completion.outcome === "failed" || completion.outcome === "partial"
+				? completion.failureCode
+				: null,
+		verificationStatus: bundle?.verificationStatus ?? null,
+		progressCount: progress.state + progress.note + progress.tool,
+		progressStateCount: progress.state,
+		progressNoteCount: progress.note,
+		progressToolCount: progress.tool,
+	};
+	if (job.kind === "research") {
+		fields.maxAgentSteps = job.request.budget.maxAgentSteps;
+		fields.maxToolCalls = job.request.budget.maxToolCalls;
+		fields.maxWallClockMs = job.request.budget.maxWallClockMs;
+		fields.maxInputBytes = job.request.budget.maxInputBytes;
+		fields.maxSpendUsd = job.request.budget.maxSpendUsd;
+	}
+	return fields;
+}
+
 /**
  * Runs one claimed job to completion under its lease.
  *
@@ -88,6 +154,7 @@ export async function executeJob(
 	/* ----- Progress reporting: ordered, sequence-numbered, idempotent on the server ----- */
 	let seq = 0;
 	const queue: RunnerEvent[] = [];
+	const progress: ProgressCounts = { state: 0, note: 0, tool: 0 };
 	const enqueue = (event: RunnerEvent["event"]) => {
 		if (queue.length >= MAX_QUEUED_EVENTS) return;
 		queue.push({ seq, at: deps.clock.nowIso(), event });
@@ -112,14 +179,17 @@ export async function executeJob(
 	};
 	const reporter: PipelineReporter = {
 		async state(state) {
+			progress.state += 1;
 			enqueue({ type: "state", state: leasedState(state) });
 			await flush();
 		},
 		async note(text) {
+			progress.note += 1;
 			enqueue({ type: "note", text: text.slice(0, 500) });
 			if (queue.length >= NOTE_FLUSH_THRESHOLD) await flush();
 		},
 		async tool(toolId, outcome, detail) {
+			progress.tool += 1;
 			enqueue({ type: "tool", toolId, outcome, detail: detail.slice(0, 300) });
 			if (queue.length >= NOTE_FLUSH_THRESHOLD) await flush();
 		},
@@ -241,7 +311,10 @@ export async function executeJob(
 		}
 		const submitted = await api.complete(job.runId, completion);
 		if (submitted.ok) {
-			logger.info("job_finished", { runId: job.runId, state: submitted.value.state });
+			logger.info(
+				"job_finished",
+				runFinishedFields(job, completion, submitted.value.state, progress),
+			);
 			return;
 		}
 		logger.warn("completion_rejected", { runId: job.runId, code: submitted.error.code });
@@ -259,13 +332,22 @@ export async function executeJob(
 		// Unexpected fault inside the runner. Report it so the job can be retried; never swallow it.
 		const name = error instanceof Error ? error.name : "unknown";
 		logger.error("job_crashed", { runId: job.runId, error: name });
-		await api.complete(job.runId, {
+		const completion: CompleteJobRequest = {
 			outcome: "failed",
 			leaseGeneration: job.leaseGeneration,
 			usage,
 			failureCode: `RUNNER_ERROR_${name}`.slice(0, 80),
 			retryable: true,
-		});
+		};
+		const submitted = await api.complete(job.runId, completion);
+		if (submitted.ok) {
+			logger.info(
+				"job_finished",
+				runFinishedFields(job, completion, submitted.value.state, progress),
+			);
+		} else {
+			logger.warn("completion_rejected", { runId: job.runId, code: submitted.error.code });
+		}
 	} finally {
 		stopHeartbeat();
 		shutdown.removeEventListener("abort", onShutdown);

@@ -231,13 +231,20 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 
 	const thread = page.getByRole("list", { name: "Messages" });
 	await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({ timeout: 60_000 });
-	await expect(thread.locator('[data-field="cost"]').first()).toContainText(/unknown/i);
+	// The compact run card shows state only: no Run details disclosure, cost, limits or provenance.
+	await expect(thread.getByText("Run details")).toHaveCount(0);
 
 	// The answer arrives in the conversation with its claims.
 	const conversation = page.getByRole("region", { name: "Conversation" });
 	await expect(conversation.getByRole("article", { name: "Assistant message" })).toContainText(
 		"1 of 2 claim(s) are supported",
 	);
+	// A citation chip opens its source card with an Open source link.
+	await conversation
+		.getByRole("button", { name: /^Source 1:/ })
+		.first()
+		.click();
+	await expect(conversation.getByRole("link", { name: "Open source" }).first()).toBeVisible();
 
 	await page.getByRole("link", { name: "Open canvas" }).click();
 	const canvas = page.getByRole("region", { name: "Canvas" });
@@ -459,8 +466,7 @@ test("a 260-character unbroken word stays inside the thread column", async () =>
 			timeout: 30_000,
 		});
 		await expect(thread.locator("[data-run-state]")).toHaveCount(2, { timeout: 30_000 });
-		// Open the new run's details so its question line is rendered too.
-		await thread.locator('article[aria-label^="Run "]').last().getByText("Run details").click();
+		// The compact run card has no details to open: the question lives in the owner bubble.
 
 		const geometry = await page.evaluate(() => {
 			const list = document.querySelector('ol[aria-label="Messages"]');

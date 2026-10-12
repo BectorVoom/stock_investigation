@@ -55,12 +55,12 @@ describe("disclosure summaries", () => {
 	it("renders an explicit chevron that keeps the 24 px minimum height", () => {
 		render(() => (
 			<details class="group">
-				<DisclosureSummary class="text-slate-700">Run details</DisclosureSummary>
+				<DisclosureSummary class="text-slate-700">2 sources</DisclosureSummary>
 			</details>
 		));
 		const summary = document.querySelector("summary");
 		expect(summary?.className).toContain("min-h-6");
-		expect(summary?.textContent).toContain("Run details");
+		expect(summary?.textContent).toContain("2 sources");
 		const chevron = summary?.querySelector('svg[aria-hidden="true"]');
 		expect(chevron).not.toBeNull();
 		expect(chevron?.getAttribute("class") ?? "").toContain("group-open:rotate-90");
@@ -299,7 +299,7 @@ describe("chat history disclosure (narrow layout)", () => {
 });
 
 describe("chat thread", () => {
-	it("shows the conversation with claim badges and source links from the conversation response", async () => {
+	it("shows the conversation with claim badges, numbered citation chips and a sources row", async () => {
 		mountApp(backend);
 		const conversation = await threadReady();
 		expect(
@@ -314,10 +314,19 @@ describe("chat thread", () => {
 				.querySelector('[data-claim-id="claim_2"] [data-claim-status]')
 				?.getAttribute("data-claim-status"),
 		).toBe("unsupported");
-		const link = within(claims).getByRole("link", { name: "Grid storage outlook 2026" });
-		expect(link.getAttribute("href")).toBe("https://example.com/reports/grid-storage");
-		expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+		// One numbered chip for the single evidence of claim_1, named like NotebookLM.
+		const chip = within(claims).getByRole("button", {
+			name: "Source 1: Grid storage outlook 2026",
+		});
+		expect(chip.textContent).toBe("1");
 		expect(claims.textContent).toContain("No evidence linked to this claim.");
+		// The compact sources row lists the same source with its host.
+		const sources = within(conversation).getByRole("list", { name: "Sources" });
+		expect(sources.textContent).toContain("Grid storage outlook 2026");
+		expect(sources.textContent).toContain("example.com");
+		const sourceLink = within(sources).getByRole("link", { name: "Grid storage outlook 2026" });
+		expect(sourceLink.getAttribute("href")).toBe("https://example.com/reports/grid-storage");
+		expect(sourceLink.getAttribute("rel")).toBe("noopener noreferrer");
 	});
 
 	it("loads earlier messages and merges without duplicates", async () => {
@@ -523,36 +532,27 @@ describe("chat reload (FR-010)", () => {
 });
 
 describe("chat run controls", () => {
-	it("shows run state, attempt, limits, usage and an honest cost", async () => {
+	it("shows a compact run card: state, latest progress and actions, never a Run details disclosure", async () => {
 		mountApp(backend);
 		const run = await screen.findByRole("article", { name: "Run run_1" });
 		expect(run.querySelector('[data-field="state"]')?.textContent).toBe("completed");
-		expect(run.querySelector('[data-field="attempt"]')?.textContent).toBe("Attempt 1 of 3");
-		expect(run.querySelector('[data-field="cost"]')?.textContent).toBe(
-			"Cost: unknown / plan-limited",
-		);
-		expect(run.textContent).not.toMatch(/\$\s?0(\.00)?\b/);
-		expect(run.textContent).toContain("Max agent steps: 6");
-		expect(run.textContent).toContain("Max wall-clock time: 10 min");
-		expect(run.textContent).toContain("Max spend: none authorized");
-		expect(run.textContent).toContain("Tool calls: 7");
-		// AGT-010: what produced the published result is visible on the run.
-		expect(run.querySelector('[data-field="provenance"]')?.textContent).toBe(
-			"Produced by: claude-code (example-model-1) · prompt version research-v3 · tools: finance.metrics 0.9.1, news.search 1.2.0 · data cut-off 2026-10-04 00:05 UTC",
-		);
+		// The latest progress line stays visible.
+		expect(run.textContent).toContain("planning");
+		// The removed facts live in the runner log (`job_finished`), not in the thread.
+		expect(within(run).queryByText("Run details")).toBeNull();
+		expect(run.querySelector("details")).toBeNull();
+		expect(run.querySelector('[data-field="attempt"]')).toBeNull();
+		expect(run.querySelector('[data-field="cost"]')).toBeNull();
+		expect(run.querySelector('[data-field="provenance"]')).toBeNull();
+		expect(run.textContent).not.toContain("Limits in force");
+		expect(run.textContent).not.toContain("Usage so far");
+		expect(run.textContent).not.toContain("Progress log");
 		// A finished run offers no stop; a completed one no retry.
 		expect(within(run).queryByRole("button", { name: "Stop" })).toBeNull();
 		expect(within(run).queryByRole("button", { name: "Retry run" })).toBeNull();
 		// The run card opens the same drawer as the answer action, under the same name.
 		expect(run.textContent).toContain("Evidence");
 		expect(run.textContent).not.toContain("Evidence & records");
-		// Every summary carries an explicit chevron: the native marker is gone
-		// under flex layout, so disclosure affordance comes from the icon.
-		const summary = run.querySelector("summary");
-		expect(summary?.className).toContain("min-h-6");
-		const chevron = summary?.querySelector('svg[aria-hidden="true"]');
-		expect(chevron).not.toBeNull();
-		expect(chevron?.getAttribute("class") ?? "").toContain("group-open:rotate-90");
 	});
 
 	it("cancels an unfinished run and retries a failed one with an idempotency key", async () => {
@@ -761,7 +761,7 @@ describe("chat thread layout (CopilotChat)", () => {
 		expect(messages.querySelector('article[aria-label="Run run_orphan"]')).toBeNull();
 	});
 
-	it("expands runs waiting for approval by default", async () => {
+	it("shows the approval request inline with no Run details disclosure", async () => {
 		server.runs = [
 			makeRun({
 				runId: "run_5",
@@ -771,8 +771,7 @@ describe("chat thread layout (CopilotChat)", () => {
 		];
 		mountApp(backend);
 		const run = await screen.findByRole("article", { name: "Run run_5" });
-		const details = run.querySelector("details");
-		expect(details?.hasAttribute("open")).toBe(true);
+		expect(within(run).queryByText("Run details")).toBeNull();
 		expect(await within(run).findByRole("form", { name: "Approve run run_5" })).toBeDefined();
 	});
 
@@ -890,7 +889,7 @@ describe("conversation local state across polls (finding 3)", () => {
 		};
 	}
 
-	it("an opened details element stays open across a poll that changes the run", async () => {
+	it("a poll that changes the run updates the live card in place without recreating it", async () => {
 		cleanup();
 		const first = makeRun({
 			state: "collecting",
@@ -904,11 +903,8 @@ describe("conversation local state across polls (finding 3)", () => {
 		));
 
 		const run = await screen.findByRole("article", { name: "Run run_1" });
-		const details = run.querySelector("details");
-		if (!(details instanceof HTMLDetailsElement)) throw new Error("expected run details");
-		expect(details.hasAttribute("open")).toBe(false);
-		fireEvent.click(within(run).getByText("Run details"));
-		expect(details.hasAttribute("open")).toBe(true);
+		expect(run.textContent).toContain("planning");
+		expect(run.querySelector("details")).toBeNull();
 
 		// A poll replaces the snapshot (new progress): the live card keeps its
 		// DOM instead of recreating it. The queries below re-read the live
@@ -921,16 +917,13 @@ describe("conversation local state across polls (finding 3)", () => {
 				provenance: null,
 				progress: [
 					{ at: "2026-10-04T00:01:00Z", kind: "state", text: "planning" },
-					{ at: "2026-10-04T00:02:00Z", kind: "state", text: "collecting" },
+					{ at: "2026-10-04T00:02:00Z", kind: "note", text: "fetching feeds" },
 				],
 			}),
 		]);
-		await waitFor(() => expect(screen.getByText("Progress log (2)")).toBeDefined());
+		await waitFor(() => expect(screen.getByText("fetching feeds")).toBeDefined());
 		const live = screen.getByRole("article", { name: "Run run_1" });
 		expect(live).toBe(run);
-		const liveDetails = live.querySelector("details");
-		if (!(liveDetails instanceof HTMLDetailsElement)) throw new Error("expected run details");
-		expect(liveDetails.hasAttribute("open")).toBe(true);
 	});
 
 	it("text typed in an approval form survives a poll that changes another run", async () => {
@@ -1074,7 +1067,7 @@ describe("retry placement in the thread (finding 4)", () => {
 			/>
 		));
 		await screen.findByRole("article", { name: "Run run_4" });
-		// Cost, provenance and final status stay reachable in reading order.
+		// The retry stays after the run it retries, in reading order.
 		expect(runOrder()).toEqual(["Run run_3", "Run run_4"]);
 		expect(screen.queryByRole("region", { name: "Earlier runs" })).toBeNull();
 		const retry = screen.getByRole("article", { name: "Run run_4" });

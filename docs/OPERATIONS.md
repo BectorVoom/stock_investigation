@@ -349,6 +349,12 @@ Persistence sits behind two seams, so the database can be switched without touch
   Unhandled errors are logged as `{event, name, method, route}` without messages or payloads.
 - Runner: JSON lines in `data/logs/runner.log` (or `data-dev/logs/runner.log`)
   (`agent_probe`, `job_claimed`, `job_finished`, `completion_rejected`, …) carrying ids and codes only.
+  `job_finished` is logged once per terminal submission and carries what the
+  compact run card no longer shows: run id, state, attempt and max attempts,
+  agent id and provider model, prompt version, the limits in force (research
+  jobs only), usage counts, whether cost is known and its known portion
+  (never $0 for unknown), failure code, verification status, and the number
+  and kinds of progress entries.
 - Audit: `audit_log` (owner actions) and `job_transitions` (every state change with lease generation and actor).
 
 ## Deploying to Cloudflare (optional, postponed)

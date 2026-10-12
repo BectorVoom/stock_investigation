@@ -1,7 +1,8 @@
-import type { EventLogger } from "@research/effects";
+import type { CompleteJobRequest } from "@research/contracts";
+import type { EventLogger, LogFields } from "@research/effects";
 import { silentEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
-import { executeJob, toCompletion } from "../src/jobExecution.ts";
+import { executeJob, runFinishedFields, toCompletion } from "../src/jobExecution.ts";
 import {
 	apiFailure,
 	createDeps,
@@ -312,6 +313,122 @@ describe("usage accounting survives runner faults and retries (AGT-008)", () => 
 		// This attempt added three turns and one tool call on top of the earlier attempt.
 		expect(completion?.usage).toMatchObject({ agentSteps: 5, toolCalls: 4 });
 		expect(completion?.usage.inputBytes).toBeGreaterThan(5_000);
+	});
+});
+
+describe("job_finished carries the removed run-card facts (identifiers/codes/counts only)", () => {
+	function recordingLogger(into: { event: string; fields?: LogFields }[]): EventLogger {
+		return {
+			info: (event, fields) => {
+				into.push({ event, fields });
+			},
+			warn: (event, fields) => {
+				into.push({ event, fields });
+			},
+			error: (event, fields) => {
+				into.push({ event, fields });
+			},
+			logFailures: () => 0,
+		};
+	}
+
+	it("logs attempt, budget, usage, cost-known, verification and progress counts for a completed run", async () => {
+		const { api } = createFakeApi();
+		const harness = createDeps(api);
+		const records: { event: string; fields?: LogFields }[] = [];
+		await executeJob(RESEARCH_JOB, { ...harness.deps, logger: recordingLogger(records) }, never);
+		const finished = records.find((entry) => entry.event === "job_finished");
+		expect(finished).toBeDefined();
+		expect(finished?.fields).toMatchObject({
+			runId: RUN_ID,
+			state: "completed",
+			attempt: 1,
+			maxAttempts: 3,
+			agentId: "scripted",
+			promptVersion: "research-v4",
+			maxAgentSteps: 6,
+			maxToolCalls: 10,
+			maxWallClockMs: 600_000,
+			maxInputBytes: 400_000,
+			maxSpendUsd: null,
+			failureCode: null,
+			verificationStatus: "verified",
+		});
+		const fields = finished?.fields ?? {};
+		expect(fields.agentSteps).toBeGreaterThan(0);
+		expect(fields.toolCalls).toBeGreaterThan(0);
+		expect(fields.costKnown).toBe(false);
+		// Progress kinds add up: every reported state/note/tool entry is counted.
+		expect(fields.progressCount).toBe(
+			(fields.progressStateCount as number) +
+				(fields.progressNoteCount as number) +
+				(fields.progressToolCount as number),
+		);
+		expect(fields.progressStateCount).toBeGreaterThan(0);
+	});
+
+	it("logs the failure code with no verification for a failed run", () => {
+		const completion: CompleteJobRequest = {
+			outcome: "failed",
+			leaseGeneration: 3,
+			usage: RESEARCH_JOB.priorUsage,
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			retryable: false,
+		};
+		expect(
+			runFinishedFields(RESEARCH_JOB, completion, "failed", { state: 2, note: 1, tool: 0 }),
+		).toMatchObject({
+			runId: RUN_ID,
+			state: "failed",
+			attempt: 1,
+			maxAttempts: 3,
+			agentId: "scripted",
+			providerModel: null,
+			promptVersion: "research-v4",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			verificationStatus: null,
+			progressCount: 3,
+			progressStateCount: 2,
+			progressNoteCount: 1,
+			progressToolCount: 0,
+		});
+	});
+
+	it("omits budget fields and nulls research-only facts for a news-ingest job", () => {
+		const completion: CompleteJobRequest = {
+			outcome: "ingested",
+			leaseGeneration: 1,
+			usage: RESEARCH_JOB.priorUsage,
+			articles: [],
+			sourceReports: [],
+		};
+		const fields = runFinishedFields(INGEST_JOB, completion, "completed", {
+			state: 5,
+			note: 0,
+			tool: 0,
+		});
+		expect(fields).toMatchObject({
+			runId: "run_ingest",
+			agentId: null,
+			providerModel: null,
+			promptVersion: null,
+			failureCode: null,
+			verificationStatus: null,
+			progressCount: 5,
+		});
+		expect("maxAgentSteps" in fields).toBe(false);
+		expect("maxSpendUsd" in fields).toBe(false);
+	});
+
+	it("never carries prompts, question text, progress text or error messages", async () => {
+		const { api } = createFakeApi();
+		const harness = createDeps(api);
+		const records: { event: string; fields?: LogFields }[] = [];
+		await executeJob(RESEARCH_JOB, { ...harness.deps, logger: recordingLogger(records) }, never);
+		const finished = records.find((entry) => entry.event === "job_finished");
+		const line = JSON.stringify(finished?.fields ?? {});
+		expect(line).not.toContain("Which storage products");
+		expect(line).not.toContain("planning");
 	});
 });
 

@@ -392,14 +392,29 @@ test("UI review of the Chat page", async ({ browser }) => {
 			detail: `last thread item ends at ${Math.round(lastBox.y + lastBox.height)}, input starts at ${Math.round(composerBox.y)}`,
 		});
 
-	// Run details expanded.
-	const runDetails = page.locator("details", { hasText: "Run details" }).first();
-	await runDetails.locator("summary").first().click();
+	// Sources row expanded, then a citation chip pins its source card.
+	const sourcesRow = page
+		.getByRole("region", { name: "Conversation" })
+		.locator("details", { hasText: "source" })
+		.first();
+	await sourcesRow.locator("summary").first().click();
 	await page.waitForTimeout(300);
-	await runDetails.scrollIntoViewIfNeeded();
-	await shot(page, "A2-run-details");
-	await audit(page, "A run details open");
-	await runDetails.locator("summary").first().click();
+	await sourcesRow.scrollIntoViewIfNeeded();
+	await shot(page, "A2-sources-open");
+	await audit(page, "A sources row open");
+	await sourcesRow.locator("summary").first().click();
+	const sourceChip = page
+		.getByRole("region", { name: "Conversation" })
+		.getByRole("button", { name: /^Source \d+:/ })
+		.first();
+	if ((await sourceChip.count()) > 0) {
+		await sourceChip.click();
+		await page.waitForTimeout(300);
+		await shot(page, "A2b-source-card");
+		await audit(page, "A source card open");
+		await page.keyboard.press("Escape");
+		await page.waitForTimeout(300);
+	}
 
 	// Composer disclosure (Options only; "Limits and cost" was removed).
 	await page.locator("summary", { hasText: /^Options:/ }).click();

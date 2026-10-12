@@ -6,17 +6,16 @@ import type {
 	ResearchRun,
 } from "@research/contracts";
 import { isTerminalJobState } from "@research/contracts";
-import { ClaimStatusBadge, ClaimTypeBadge, SourceCitation } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
+import { AnswerClaims } from "./Citations.tsx";
 import { RunCard } from "./RunCard.tsx";
 import { SUGGESTIONS } from "./suggestions.ts";
 
 type Message = ConversationData["messages"][number];
-type EvidenceLink = Claim["links"][number];
 /** Minimal clipboard surface, injectable so tests can replace it. */
 type ClipboardLike = Pick<Clipboard, "writeText">;
 
@@ -32,55 +31,6 @@ function defaultClipboard(): ClipboardLike | null {
 }
 
 const MAX_LISTED_RUNS = 5;
-
-const RELATION_TEXT: { readonly [R in EvidenceLink["relation"]]: string } = {
-	supports: "Supports",
-	contradicts: "Contradicts",
-	context: "Context",
-};
-
-function ClaimItem(props: {
-	readonly claimId: string;
-	readonly claims: ReadonlyMap<string, Claim>;
-	readonly evidence: ReadonlyMap<string, Evidence>;
-}): JSX.Element {
-	const claim = createMemo(() => props.claims.get(props.claimId));
-	return (
-		<li data-claim-id={props.claimId} class="border-l-2 border-slate-300 pl-2">
-			<Show
-				when={claim()}
-				fallback={<span class="italic text-amber-900">Claim unavailable (id {props.claimId})</span>}
-			>
-				{(current) => (
-					<>
-						<p class="text-sm text-slate-900">{current().text}</p>
-						<p class="mt-0.5 flex flex-wrap gap-1">
-							<ClaimTypeBadge claimType={current().claimType} />
-							<ClaimStatusBadge status={current().status} />
-						</p>
-						<Show
-							when={current().links.length > 0}
-							fallback={
-								<p class="text-xs italic text-amber-900">No evidence linked to this claim.</p>
-							}
-						>
-							<ul aria-label="Claim evidence" class="mt-0.5 space-y-0.5 text-xs">
-								<For each={current().links}>
-									{(link) => (
-										<li data-relation={link.relation}>
-											<span class="font-semibold">{RELATION_TEXT[link.relation]}: </span>
-											<SourceCitation sourceId={link.evidenceId} sources={props.evidence} />
-										</li>
-									)}
-								</For>
-							</ul>
-						</Show>
-					</>
-				)}
-			</Show>
-		</li>
-	);
-}
 
 function CopyButton(props: {
 	readonly text: string;
@@ -162,14 +112,11 @@ function AssistantMessage(props: {
 				{props.message.text}
 			</p>
 			<Show when={props.message.claimIds.length > 0}>
-				<h4 class="mt-2 text-xs font-semibold text-slate-700">Claims in this answer</h4>
-				<ul aria-label="Claims" class="mt-0.5 space-y-1.5">
-					<For each={props.message.claimIds}>
-						{(claimId) => (
-							<ClaimItem claimId={claimId} claims={props.claims} evidence={props.evidence} />
-						)}
-					</For>
-				</ul>
+				<AnswerClaims
+					claimIds={props.message.claimIds}
+					claims={props.claims}
+					evidence={props.evidence}
+				/>
 			</Show>
 			<p class="mt-1 flex flex-wrap gap-2">
 				<CopyButton text={props.message.text} clipboard={props.clipboard} />
