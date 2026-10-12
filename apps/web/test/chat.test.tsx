@@ -767,7 +767,9 @@ describe("chat run controls", () => {
 	it("shows a compact run card: state, latest progress and actions, never a Run details disclosure", async () => {
 		mountApp(backend);
 		const run = await screen.findByRole("article", { name: "Run run_1" });
-		expect(run.querySelector('[data-field="state"]')?.textContent).toBe("completed");
+		// A completed run carries its state as data, not as a visible badge.
+		expect(run.getAttribute("data-run-state")).toBe("completed");
+		expect(run.querySelector('[data-field="state"]')).toBeNull();
 		// The latest progress line stays visible.
 		expect(run.textContent).toContain("planning");
 		// The removed facts live in the runner log (`job_finished`), not in the thread.
@@ -1303,7 +1305,12 @@ describe("retry placement in the thread (finding 4)", () => {
 		expect(runOrder()).toEqual(["Run run_3", "Run run_4"]);
 		expect(screen.queryByRole("region", { name: "Earlier runs" })).toBeNull();
 		const retry = screen.getByRole("article", { name: "Run run_4" });
-		expect(retry.querySelector('[data-field="state"]')?.textContent).toBe("completed");
+		expect(retry.getAttribute("data-run-state")).toBe("completed");
+		// Neither ordinary ending shows a state badge; the failure keeps its alert line.
+		expect(retry.querySelector('[data-field="state"]')).toBeNull();
+		const failed = screen.getByRole("article", { name: "Run run_3" });
+		expect(failed.querySelector('[data-field="state"]')).toBeNull();
+		expect(failed.querySelector('[role="alert"]')?.textContent).toContain("BUDGET_MAX_TOOL_CALLS");
 	});
 
 	it("an assistant message alone never earns a run an inline place", async () => {

@@ -21,8 +21,6 @@ import {
 const RETRYABLE_STATES: readonly ResearchRun["state"][] = ["failed", "cancelled", "partial"];
 
 const STATE_CLASSES: { readonly [S in ResearchRun["state"]]?: string } = {
-	completed: "border-emerald-700 bg-emerald-50 text-emerald-900",
-	failed: "border-red-700 bg-red-50 text-red-900",
 	cancelled: "border-slate-500 bg-slate-100 text-slate-800",
 	partial: "border-amber-700 bg-amber-50 text-amber-900",
 	waiting_approval: "border-amber-700 bg-amber-50 text-amber-900",
@@ -138,6 +136,11 @@ export function RunCard(props: {
 	// code span itself stays present only when a code exists, so tests and
 	// logs can key on it.
 	const showFailure = () => props.run.state === "failed" || props.run.state === "partial";
+	// No badge for the two ordinary endings (owner's decision of 2026-10-12):
+	// a completed run is followed by its answer and a failed one by the alert
+	// line below, so the word would only repeat them. Every other state keeps
+	// its badge. The state stays on `data-run-state` and in the status region.
+	const showStateBadge = () => props.run.state !== "completed" && props.run.state !== "failed";
 
 	return (
 		<article
@@ -146,12 +149,14 @@ export function RunCard(props: {
 			class="rounded border border-slate-200 bg-white p-2 wrap-anywhere"
 		>
 			<p class="flex flex-wrap items-center gap-2 text-xs">
-				<span
-					data-field="state"
-					class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
-				>
-					{props.run.state}
-				</span>
+				<Show when={showStateBadge()}>
+					<span
+						data-field="state"
+						class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
+					>
+						{props.run.state}
+					</span>
+				</Show>
 				<Show when={latestProgress()}>
 					{(entry) => <span class="min-w-0 flex-1 text-slate-700">{entry().text}</span>}
 				</Show>
