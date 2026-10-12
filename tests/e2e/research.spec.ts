@@ -6,7 +6,6 @@ import { E2E_ORIGIN, FEED_URL, HEADLINE } from "./fixtures.ts";
  * chat -> research -> sourced table/chart -> workspace reload, plus the UI
  * safety properties that only a real browser can show.
  */
-const WORKSPACE_TITLE = `E2E ${Date.now()}`;
 
 async function xssFlag(page: Page): Promise<unknown> {
 	return page.evaluate(() => Reflect.get(window, "__xss"));
@@ -39,9 +38,10 @@ test("a fresh installation guides the owner from chat to a sent message", async 
 	// a visible notice names Settings → AI agent with a link.
 	await page.goto("/");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
-	const freshTitle = `Fresh ${Date.now()}`;
-	await page.getByLabel("New conversation title").fill(freshTitle);
-	await page.getByRole("button", { name: "Start conversation" }).click();
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 
 	const composer = page.getByRole("form", { name: "Research composer" });
@@ -163,14 +163,14 @@ test("an upgrade keeps the last question's backend so sending works without visi
 	}
 });
 
-test("the owner is signed in and creates a conversation", async () => {
+test("the owner is signed in and creates a chat", async () => {
 	await page.goto("/");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
-	await page.getByLabel("New conversation title").fill(WORKSPACE_TITLE);
-	await page.getByRole("button", { name: "Start conversation" }).click();
-	await expect(page.getByRole("navigation", { name: "Conversations" })).toContainText(
-		WORKSPACE_TITLE,
-	);
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
+	await expect(page.getByRole("navigation", { name: "Chats" })).toContainText("New chat");
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 });
 
@@ -239,7 +239,6 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 		"1 of 2 claim(s) are supported",
 	);
 
-	await page.getByRole("link", { name: "Open canvas" }).click();
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	for (const type of ["research-report", "source-list", "data-table", "bar-chart"]) {
 		await expect(canvas.locator(`[data-component-type="${type}"]`).first()).toBeVisible();
@@ -323,12 +322,12 @@ test("the chat page stays usable on narrow screens and keeps its desktop layout 
 		});
 		expect(noOverlap).toBe(true);
 
-		// 4. At lg the history sits beside the thread and the page itself does not scroll.
+		// 4. At lg the chats list sits beside the thread and the page itself does not scroll.
 		await page.setViewportSize({ width: 1440, height: 900 });
-		const nav = page.getByRole("navigation", { name: "Conversations" });
+		const nav = page.getByRole("navigation", { name: "Chats" });
 		await expect(nav).toBeVisible();
 		const sideBySide = await page.evaluate(() => {
-			const navElement = document.querySelector('nav[aria-label="Conversations"]');
+			const navElement = document.querySelector('nav[aria-label="Chats"]');
 			const listElement = document.querySelector('ol[aria-label="Messages"]');
 			if (!(navElement instanceof HTMLElement) || !(listElement instanceof HTMLElement)) {
 				return false;
@@ -343,7 +342,6 @@ test("the chat page stays usable on narrow screens and keeps its desktop layout 
 		);
 		expect(pageScrolls).toBe(true);
 
-		await page.getByRole("link", { name: "Canvas", exact: true }).click();
 		await expect(page.getByRole("region", { name: "Canvas" })).toBeVisible();
 	} finally {
 		await page.setViewportSize({ width: 1280, height: 720 });
@@ -362,7 +360,6 @@ test("hostile model text is rendered as inert text, never as markup (SEC-003, UI
 });
 
 test("the conversation, canvas and run survive a reload without re-running research (FR-010)", async () => {
-	await page.getByRole("link", { name: "Canvas", exact: true }).click();
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	const before = await canvas
 		.locator("[data-component-id]")
@@ -390,7 +387,6 @@ test("the conversation, canvas and run survive a reload without re-running resea
 		page.getByRole("list", { name: "Messages" }).locator("[data-run-state]"),
 	).toHaveCount(1);
 
-	await page.getByRole("link", { name: "Canvas", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Canvas" })).toBeVisible();
 });
 
@@ -493,8 +489,10 @@ test("on a tall narrow screen the input rests at the bottom of the viewport", as
 	try {
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
 		await page.locator('details[data-conversations-disclosure="true"] > summary').click();
-		await page.getByLabel("New conversation title").fill(`Empty ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(
 			page.getByRole("heading", { level: 3, name: "What would you like to research?" }),
 		).toBeVisible();
@@ -580,4 +578,36 @@ test("the page ran under its Content-Security-Policy without errors", async () =
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);
+});
+
+test("a chat can be renamed and deleted", async () => {
+	// The server routes for rename/delete arrive from another agent; against a
+	// backend without them this test fails with 404 (reported in the summary).
+	// It runs last so the failure cannot skip the serial suite behind it.
+	await page.goto("/");
+	const nav = page.getByRole("navigation", { name: "Chats" });
+	await expect(nav).toBeVisible();
+	const chatName = `E2E rename ${Date.now()}`;
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
+	await expect(page).toHaveURL(/#\/chat\/ws_/);
+	const more = nav.getByRole("button", { name: "More actions for New chat" }).first();
+	await more.click();
+	await page.getByRole("menuitem", { name: "Rename" }).click();
+	await page.getByLabel("Chat title").fill(chatName);
+	// Keyboard press (not locator press): a 404 failure exits edit mode and
+	// unmounts the input, which locator.press would chase until timeout.
+	await page.keyboard.press("Enter");
+	// Without the other agent's PATCH route this fails fast with NOT_FOUND.
+	await expect(nav).toContainText(chatName, { timeout: 10_000 });
+	const moreAfter = nav.getByRole("button", { name: `More actions for ${chatName}` }).first();
+	await moreAfter.click();
+	await page.getByRole("menuitem", { name: "Delete" }).click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toContainText(chatName);
+	await expect(dialog).toContainText("cannot be undone");
+	await dialog.getByRole("button", { name: "Delete" }).click();
+	await expect(nav).not.toContainText(chatName);
 });

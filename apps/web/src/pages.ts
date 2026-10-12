@@ -10,11 +10,6 @@ export const PAGES = [
 		purpose: "Ask research questions and read the answers, with their sources and run progress.",
 	},
 	{
-		view: "canvas",
-		title: "Canvas",
-		purpose: "Inspect and arrange the tables, charts and reports that research produced.",
-	},
-	{
 		view: "sources",
 		title: "Sources",
 		purpose: "Choose which news sources research may read.",
@@ -22,8 +17,7 @@ export const PAGES = [
 	{
 		view: "settings",
 		title: "Settings",
-		purpose:
-			"Configure how the workspace runs: the AI agent, the runner, approved images and data export.",
+		purpose: "Configure how the workspace runs: the AI agent, the runner and data export.",
 	},
 ] as const;
 

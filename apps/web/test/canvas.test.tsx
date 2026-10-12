@@ -23,7 +23,7 @@ beforeEach(() => {
 	backend = createFakeBackend();
 	server = initialServerState();
 	installWorkspaceRoutes(backend, server);
-	window.location.hash = `#/canvas/${WORKSPACE_ID}`;
+	window.location.hash = `#/chat/${WORKSPACE_ID}`;
 });
 
 afterEach(() => {
@@ -43,8 +43,8 @@ async function canvasReady(): Promise<HTMLElement> {
 	return screen.getByRole("region", { name: "Canvas" });
 }
 
-describe("canvas view", () => {
-	it("renders the canvas from layout.order through the registry", async () => {
+describe("canvas panel", () => {
+	it("renders the canvas from layout.order through the registry, beside the thread", async () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
@@ -60,39 +60,42 @@ describe("canvas view", () => {
 		).toBeDefined();
 		// The unavailable cell is explicit, with its reason.
 		expect(canvas.textContent).toContain("N/A — not yet published");
+		// The thread shares the page: one session backs both.
+		expect(screen.getByRole("region", { name: "Conversation" })).toBeDefined();
+		expect(screen.getByRole("form", { name: "Research composer" })).toBeDefined();
 	});
 
-	it("opens the conversation with the newest activity when the URL names none", async () => {
-		window.location.hash = "#/canvas";
+	it("shows the count in the panel header and an empty state when there are none", async () => {
 		mountApp(backend);
-		await waitFor(() => expect(window.location.hash).toBe("#/canvas/ws_2"));
+		const canvas = await canvasReady();
+		expect(canvas.textContent).toContain("(3 components)");
+		server.secondView = {
+			...server.secondView,
+			state: {
+				...server.secondView.state,
+				version: 0,
+				components: [],
+				layout: { order: [], columns: 1 },
+			},
+		};
+		window.location.hash = "#/chat/ws_2";
+		window.dispatchEvent(new Event("hashchange"));
+		const empty = await screen.findByRole("region", { name: "Canvas" });
+		await within(empty).findByText(/No canvas content yet/);
+		expect(empty.textContent).toContain("(0 components)");
 	});
 
-	it("offers the conversation picker and a back-to-chat link", async () => {
-		mountApp(backend);
-		await canvasReady();
-		const picker = await screen.findByRole("combobox", { name: "Conversation" });
-		expect(within(picker).getByRole("option", { name: "Grid storage research" })).toBeDefined();
-		const back = screen.getByRole("link", { name: "Back to chat" });
-		expect(back.getAttribute("href")).toBe(`#/chat/${WORKSPACE_ID}`);
-	});
-
-	it("opens the canvas from the legacy workspace URL", async () => {
-		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
+	it("opens the chat page for old canvas and workspace bookmarks", async () => {
+		window.location.hash = `#/canvas/${WORKSPACE_ID}`;
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
 		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
-	});
-
-	it("shows an empty state that links to Chat when there are no conversations", async () => {
-		server.conversations = [];
-		window.location.hash = "#/canvas";
+		cleanup();
+		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
 		mountApp(backend);
-		await screen.findByText(/Start one on the Chat page/);
-		expect(
-			screen.getByRole("link", { name: /Start one on the Chat page/ }).getAttribute("href"),
-		).toBe("#/chat");
+		await canvasReady();
+		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
 	});
 
 	it("shows an API error with its code instead of a blank screen, and can retry", async () => {
@@ -102,21 +105,11 @@ describe("canvas view", () => {
 		mountApp(backend);
 		const alert = await screen.findByText(/database unavailable/);
 		expect(alert.closest('[role="alert"]')?.textContent).toContain("INTERNAL");
-		expect(screen.queryByRole("region", { name: "Canvas" })).toBeNull();
 
 		backend.on("GET", /^\/api\/v1\/workspaces\/ws_1$/, () => jsonResponse(server.view));
-		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+		fireEvent.click(screen.getAllByRole("button", { name: "Try again" })[0] as HTMLElement);
 		await canvasReady();
 		expect(screen.queryByText(/database unavailable/)).toBeNull();
-	});
-
-	it("has no composer, message list or run status: the split is exclusive", async () => {
-		mountApp(backend);
-		await canvasReady();
-		expect(screen.queryByRole("form", { name: "Research composer" })).toBeNull();
-		expect(screen.queryByRole("list", { name: "Messages" })).toBeNull();
-		expect(screen.queryByRole("region", { name: "Run status" })).toBeNull();
-		expect(screen.queryByRole("region", { name: "Conversation" })).toBeNull();
 	});
 });
 
@@ -151,12 +144,10 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		});
 		// No optimistic guess: until the server answers, the component is still shown.
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(canvas.getAttribute("aria-busy")).toBe("true");
 
 		gate.resolve();
 		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "sources_1"]));
 		expect(within(canvas).getByText("Workspace version 5")).toBeDefined();
-		expect(canvas.getAttribute("aria-busy")).toBe("false");
 	});
 
 	it("uses the version the server returned for the next command, with a new command id", async () => {
@@ -325,7 +316,7 @@ describe("canvas reload (FR-010)", () => {
 			within(reloaded).getByRole("table", { name: "Grid storage demand by year" }).textContent,
 		).toBe(before.table);
 		expect(within(reloaded).getByText("Workspace version 5")).toBeDefined();
-		expect(window.location.hash).toBe(`#/canvas/${WORKSPACE_ID}`);
+		expect(window.location.hash).toBe(`#/chat/${WORKSPACE_ID}`);
 		// Reopening a canvas reads stored state only.
 		expect(backend.requestsTo("POST", /research-runs/)).toHaveLength(0);
 	});

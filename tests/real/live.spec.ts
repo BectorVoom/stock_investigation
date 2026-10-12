@@ -252,8 +252,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await waitForRunnerWithModel();
 		await page.goto(VITE_ORIGIN);
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
-		await page.getByLabel("New conversation title").fill(`Live positive path ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		// Fresh state: no backend saved, so the composer says where to fix it.
 		const composer = page.getByRole("form", { name: "Research composer" });
@@ -429,8 +431,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// Without visiting Settings, the composer offers to send.
 		await page.goto(VITE_ORIGIN);
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
-		await page.getByLabel("New conversation title").fill(`Upgraded state ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		const composer = page.getByRole("form", { name: "Research composer" });
 		await expect(composer).not.toContainText("Choose a default agent backend");

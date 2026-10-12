@@ -111,9 +111,14 @@ function applyCommand(state: WorkspaceState, command: CommandBody): WorkspaceSta
 }
 
 function conversationsEtag(
-	conversations: readonly { workspaceId: string; messageCount: number; lastActivityAt: string }[],
+	conversations: readonly {
+		workspaceId: string;
+		title: string;
+		messageCount: number;
+		lastActivityAt: string;
+	}[],
 ): string {
-	return `"c-${conversations.map((entry) => `${entry.workspaceId}:${entry.messageCount}:${entry.lastActivityAt}`).join(",")}"`;
+	return `"c-${conversations.map((entry) => `${entry.workspaceId}:${entry.title}:${entry.messageCount}:${entry.lastActivityAt}`).join(",")}"`;
 }
 
 /** Slice messages like the server: newest `limit` below `before`, oldest dropped when overflowing. */
@@ -136,6 +141,7 @@ function pageConversation(
 
 /** Registers the routes the chat and canvas views need, backed by the mutable `server` state. */
 export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState): void {
+	const deletedWorkspaces = new Set<string>();
 	const workspaceEtag = () => `"v${server.view.state.version}"`;
 	backend.on("GET", /^\/api\/v1\/session$/, () =>
 		jsonResponse({ ownerId: "owner-1", authMode: "local-dev", environment: "production" }),
@@ -144,9 +150,12 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 		jsonResponse({ workspaces: [{ ...WORKSPACE_SUMMARY, version: server.view.state.version }] }),
 	);
 	backend.on("POST", /^\/api\/v1\/workspaces$/, (request) => {
-		const body = request.body as { title?: unknown };
-		const title = typeof body?.title === "string" ? body.title.trim() : "";
+		const body = request.body as { title?: unknown } | undefined;
+		const raw = body !== undefined && typeof body.title === "string" ? body.title.trim() : null;
+		const title = raw === null ? "New chat" : raw;
 		if (title === "") return errorResponse(400, "VALIDATION_FAILED", "title is required");
+		if (title.length > 300) return errorResponse(400, "VALIDATION_FAILED", "title is too long");
+		deletedWorkspaces.delete("ws_new");
 		const created = {
 			...WORKSPACE_SUMMARY_2,
 			workspaceId: "ws_new",
@@ -164,9 +173,77 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 				lastMessagePreview: null,
 				lastActivityAt: created.createdAt,
 			},
-			...server.conversations,
+			...server.conversations.filter((entry) => entry.workspaceId !== "ws_new"),
 		];
 		return jsonResponse(created, { status: 201 });
+	});
+	const runsFor = (id: string): ResearchRun[] => {
+		if (id === "ws_1") return server.runs;
+		if (id === "ws_2") return server.secondRuns;
+		return [];
+	};
+	const isRunning = (state: string): boolean =>
+		state === "pending" ||
+		state === "claimed" ||
+		state === "planning" ||
+		state === "collecting" ||
+		state === "analyzing" ||
+		state === "verifying" ||
+		state === "publishing" ||
+		state === "waiting_approval";
+	backend.on("PATCH", /^\/api\/v1\/workspaces\/([^/?]+)$/, (request, match) => {
+		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		const body = request.body as { title?: unknown } | undefined;
+		const raw = typeof body?.title === "string" ? body.title.trim() : "";
+		if (raw === "" || raw.length > 300)
+			return errorResponse(400, "VALIDATION_FAILED", "title is required");
+		const index = server.conversations.findIndex((entry) => entry.workspaceId === id);
+		if (index < 0) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		const existing = server.conversations[index];
+		if (existing === undefined) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		const updated = { ...existing, title: raw };
+		server.conversations = [
+			...server.conversations.slice(0, index),
+			updated,
+			...server.conversations.slice(index + 1),
+		];
+		if (id === "ws_1") {
+			server.view = {
+				...server.view,
+				workspace: { ...server.view.workspace, title: raw, updatedAt: "2026-10-07T00:00:00Z" },
+			};
+		}
+		if (id === "ws_2") {
+			server.secondView = {
+				...server.secondView,
+				workspace: {
+					...server.secondView.workspace,
+					title: raw,
+					updatedAt: "2026-10-07T00:00:00Z",
+				},
+			};
+		}
+		const summary = {
+			workspaceId: id,
+			title: raw,
+			version: id === "ws_1" ? server.view.state.version : 1,
+			createdAt: existing.lastActivityAt,
+			updatedAt: "2026-10-07T00:00:00Z",
+		};
+		return jsonResponse(summary);
+	});
+	backend.on("DELETE", /^\/api\/v1\/workspaces\/([^/?]+)$/, (_request, match) => {
+		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		const exists = server.conversations.some((entry) => entry.workspaceId === id);
+		if (!exists) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		if (runsFor(id).some((run) => isRunning(run.state))) {
+			return errorResponse(409, "CONFLICT", "A question is still running in this chat.");
+		}
+		deletedWorkspaces.add(id);
+		server.conversations = server.conversations.filter((entry) => entry.workspaceId !== id);
+		return new Response(null, { status: 204 });
 	});
 	backend.on("GET", /^\/api\/v1\/conversations$/, (request) => {
 		const etag = conversationsEtag(server.conversations);
@@ -174,6 +251,7 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 		return jsonResponse({ conversations: server.conversations }, { headers: { ETag: etag } });
 	});
 	const workspaceViewFor = (id: string): WorkspaceView | null => {
+		if (deletedWorkspaces.has(id)) return null;
 		if (id === "ws_1") return server.view;
 		if (id === "ws_2") return server.secondView;
 		if (id === "ws_new") {
@@ -195,6 +273,7 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 	};
 	backend.on("GET", /^\/api\/v1\/workspaces\/([^/?]+)$/, (request, match) => {
 		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
 		if (id === "ws_1") {
 			return request.headers["if-none-match"] === workspaceEtag()
 				? new Response(null, { status: 304 })
@@ -205,6 +284,7 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 		return jsonResponse(found);
 	});
 	const conversationFor = (id: string): Conversation | null => {
+		if (deletedWorkspaces.has(id)) return null;
 		if (id === "ws_1") return CONVERSATION;
 		if (id === "ws_2") return server.secondConversation;
 		if (id === "ws_new")

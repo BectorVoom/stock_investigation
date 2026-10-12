@@ -5,12 +5,6 @@ describe("router", () => {
 	it("parses every route", () => {
 		expect(parseHash("#/chat")).toEqual({ view: "chat", workspaceId: null, section: null });
 		expect(parseHash("#/chat/ws_1")).toEqual({ view: "chat", workspaceId: "ws_1", section: null });
-		expect(parseHash("#/canvas/ws_1")).toEqual({
-			view: "canvas",
-			workspaceId: "ws_1",
-			section: null,
-		});
-		expect(parseHash("#/canvas")).toEqual({ view: "canvas", workspaceId: null, section: null });
 		expect(parseHash("#/sources")).toEqual({ view: "sources", workspaceId: null, section: null });
 		expect(parseHash("#/settings")).toEqual({
 			view: "settings",
@@ -33,14 +27,20 @@ describe("router", () => {
 		});
 	});
 
-	it("parses the legacy workspace alias as the canvas view", () => {
+	it("parses the old canvas and workspace hashes as the chat view", () => {
+		expect(parseHash("#/canvas/ws_1")).toEqual({
+			view: "chat",
+			workspaceId: "ws_1",
+			section: null,
+		});
+		expect(parseHash("#/canvas")).toEqual({ view: "chat", workspaceId: null, section: null });
 		expect(parseHash("#/workspace/ws_1")).toEqual({
-			view: "canvas",
+			view: "chat",
 			workspaceId: "ws_1",
 			section: null,
 		});
 		expect(parseHash("#/workspace")).toEqual({
-			view: "canvas",
+			view: "chat",
 			workspaceId: null,
 			section: null,
 		});
@@ -57,12 +57,12 @@ describe("router", () => {
 		expect(parseHash("#/chat/..")).toEqual({ view: "chat", workspaceId: null, section: null });
 		expect(parseHash("#/chat/")).toEqual({ view: "chat", workspaceId: null, section: null });
 		expect(parseHash("#/canvas/not valid!")).toEqual({
-			view: "canvas",
+			view: "chat",
 			workspaceId: null,
 			section: null,
 		});
 		expect(parseHash("#/canvas/ws_1/extra")).toEqual({
-			view: "canvas",
+			view: "chat",
 			workspaceId: "ws_1",
 			section: null,
 		});
@@ -72,8 +72,6 @@ describe("router", () => {
 		const routes = [
 			{ view: "chat" as const, workspaceId: null, section: null },
 			{ view: "chat" as const, workspaceId: "ws_1", section: null },
-			{ view: "canvas" as const, workspaceId: null, section: null },
-			{ view: "canvas" as const, workspaceId: "ws_1", section: null },
 			{ view: "sources" as const, workspaceId: null, section: null },
 			{ view: "settings" as const, workspaceId: null, section: null },
 			{ view: "settings" as const, workspaceId: null, section: "agent" },
@@ -86,10 +84,6 @@ describe("router", () => {
 	it("formats the routes in the page map", () => {
 		expect(formatHash({ view: "chat", workspaceId: null, section: null })).toBe("#/chat");
 		expect(formatHash({ view: "chat", workspaceId: "ws_1", section: null })).toBe("#/chat/ws_1");
-		expect(formatHash({ view: "canvas", workspaceId: "ws_1", section: null })).toBe(
-			"#/canvas/ws_1",
-		);
-		expect(formatHash({ view: "canvas", workspaceId: null, section: null })).toBe("#/canvas");
 		expect(formatHash({ view: "sources", workspaceId: null, section: null })).toBe("#/sources");
 		expect(formatHash({ view: "settings", workspaceId: null, section: null })).toBe("#/settings");
 		expect(formatHash({ view: "settings", workspaceId: null, section: "agent" })).toBe(
