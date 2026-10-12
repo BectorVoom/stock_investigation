@@ -37,11 +37,3 @@ export function moveOperation(
 	order[target] = componentId;
 	return { operation: "layout.update", order, columns: layout.columns };
 }
-
-export function toggleColumnsOperation(layout: WorkspaceLayout): UiOperation {
-	return {
-		operation: "layout.update",
-		order: [...layout.order],
-		columns: layout.columns === 1 ? 2 : 1,
-	};
-}

@@ -48,7 +48,15 @@ describe("canvas panel", () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
+		// One narrow column always: no version line, no column switch, no column marker.
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
+		expect(canvas.textContent).not.toContain("Workspace version");
+		expect(within(canvas).queryByRole("button", { name: "Use 2 columns" })).toBeNull();
+		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
+		const list = within(canvas).getByRole("list", { name: "Workspace components" });
+		expect(list.getAttribute("data-columns")).toBeNull();
+		expect(list.className).toContain("grid-cols-1");
+		expect(list.className).not.toContain("xl:grid-cols-2");
 		expect(
 			within(canvas).getByRole("heading", {
 				level: 3,
@@ -90,7 +98,7 @@ describe("canvas panel", () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
 		cleanup();
 		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
 		mountApp(backend);
@@ -147,7 +155,10 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 
 		gate.resolve();
 		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "sources_1"]));
-		expect(within(canvas).getByText("Workspace version 5")).toBeDefined();
+		// The command carried the rendered version; the canvas now shows the
+		// server's accepted order with no version text.
+		expect(commandRequests(backend)[0]?.body).toMatchObject({ expectedWorkspaceVersion: 4 });
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
 	});
 
 	it("uses the version the server returned for the next command, with a new command id", async () => {
@@ -177,7 +188,9 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 				: null,
 		);
 		expect(new Set(ids).size).toBe(2);
-		expect(within(canvas).getByText("Workspace version 6")).toBeDefined();
+		// Moves send the stored column value back unchanged.
+		expect(first).toMatchObject({ columns: 1 });
+		expect(second).toMatchObject({ columns: 1 });
 	});
 
 	it("renders the state the server returned even when it differs from what was asked", async () => {
@@ -193,7 +206,14 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		const canvas = await canvasReady();
 
 		fireEvent.click(within(canvas).getByRole("button", { name: "Focus news_1" }));
-		await within(canvas).findByText("Workspace version 99");
+		// The server's accepted state wins: another component focused.
+		await waitFor(() =>
+			expect(
+				[...canvas.querySelectorAll('li[data-focused="true"] article')].map((article) =>
+					article.getAttribute("data-component-id"),
+				),
+			).toEqual(["table_1"]),
+		);
 		const focused = [...canvas.querySelectorAll('li[data-focused="true"] article')].map((article) =>
 			article.getAttribute("data-component-id"),
 		);
@@ -206,19 +226,31 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		).toBe("false");
 	});
 
-	it("toggles between one and two columns through a layout command", async () => {
+	it("keeps one column for a stored two-column layout and preserves its columns value on move", async () => {
+		// A canvas saved earlier with two columns must not be stuck in a grid
+		// the owner can no longer switch: it renders in one column here.
+		server.view = {
+			...server.view,
+			state: {
+				...server.view.state,
+				layout: { order: ["news_1", "table_1", "sources_1"], columns: 2 },
+			},
+		};
 		mountApp(backend);
 		const canvas = await canvasReady();
-		fireEvent.click(within(canvas).getByRole("button", { name: "Use 2 columns" }));
-		await within(canvas).findByRole("button", { name: "Use 1 column" });
+		const list = within(canvas).getByRole("list", { name: "Workspace components" });
+		expect(list.className).toContain("grid-cols-1");
+		expect(list.className).not.toContain("xl:grid-cols-2");
+		expect(list.getAttribute("data-columns")).toBeNull();
+		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
+		fireEvent.click(within(canvas).getByRole("button", { name: "Move sources_1 up" }));
+		await waitFor(() => expect(componentOrder()).toEqual(["news_1", "sources_1", "table_1"]));
+		// The stored layout is not silently rewritten: the move keeps columns 2.
 		expect(commandRequests(backend)[0]?.body).toMatchObject({
 			operation: "layout.update",
-			order: ["news_1", "table_1", "sources_1"],
+			order: ["news_1", "sources_1", "table_1"],
 			columns: 2,
 		});
-		expect(
-			screen.getByRole("list", { name: "Workspace components" }).getAttribute("data-columns"),
-		).toBe("2");
 	});
 
 	it("selects a table row through a component.select command", async () => {
@@ -258,9 +290,9 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		expect(alert.textContent).toContain("version conflict");
 		expect(alert.textContent).toContain("please repeat the action");
 
-		// The stale command changed nothing; the canvas now shows the server's version 7.
+		// The stale command changed nothing; the canvas now shows the server's
+		// accepted order after the refetch.
 		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "news_1"]));
-		expect(within(canvas).getByText("Workspace version 7")).toBeDefined();
 		expect(commandRequests(backend)[0]?.body).toMatchObject({ expectedWorkspaceVersion: 4 });
 		const lastRequests = backend.requests.slice(
 			backend.requests.findIndex((request) => request.method === "POST"),
@@ -289,7 +321,6 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		expect(alert.textContent).toContain("UI_COMMAND_REJECTED");
 		expect(alert.textContent).toContain("COMPONENT_NOT_FOUND");
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
 	});
 });
 
@@ -315,7 +346,6 @@ describe("canvas reload (FR-010)", () => {
 		expect(
 			within(reloaded).getByRole("table", { name: "Grid storage demand by year" }).textContent,
 		).toBe(before.table);
-		expect(within(reloaded).getByText("Workspace version 5")).toBeDefined();
 		expect(window.location.hash).toBe(`#/chat/${WORKSPACE_ID}`);
 		// Reopening a canvas reads stored state only.
 		expect(backend.requestsTo("POST", /research-runs/)).toHaveLength(0);

@@ -3,9 +3,9 @@ import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, type JSX, onCleanup, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
-import { BUTTON, ErrorNotice, Loading, PANEL } from "../components/ui.tsx";
+import { ErrorNotice, Loading, PANEL } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { ChatsPanel, DeleteChatDialog } from "./ChatsPanel.tsx";
+import { ChatsPanel, DeleteChatDialog, NewChatButton } from "./ChatsPanel.tsx";
 import { byNewestActivity, createConversationList } from "./conversationList.ts";
 import { OpenWorkspace } from "./OpenWorkspace.tsx";
 
@@ -211,22 +211,26 @@ export function ChatView(props: {
 	};
 
 	const welcome = () => (
-		<section aria-label="Chat" data-panel="chat" class={`${PANEL} flex min-w-0 flex-1 flex-col`}>
+		<section
+			aria-label="Chat"
+			data-panel="chat"
+			class={`${PANEL} flex min-w-0 flex-1 flex-col items-center justify-center text-center`}
+		>
 			<h3 class="text-base font-semibold text-slate-900">Welcome to Chat</h3>
-			<p class="mt-1 text-sm text-slate-600">
+			<p class="mt-1 max-w-md text-sm text-slate-600">
 				Start a new chat to ask a research question. Prior findings stay available here even when
 				the local runner is offline.
 			</p>
-			<div class="mt-2">
-				<button
-					type="button"
-					class={`${BUTTON} inline-flex items-center gap-1`}
+			<div class="mt-2 w-full max-w-xs">
+				<NewChatButton
+					variant="pill"
 					disabled={newChatPending()}
 					onClick={() => void handleNewChat()}
-				>
-					New chat
-				</button>
+				/>
 			</div>
+			<Show when={newChatPending()}>
+				<Loading label="new chat" />
+			</Show>
 			<Show when={newChatError()}>
 				{(error) => (
 					<div class="mt-1">

@@ -2,14 +2,17 @@ import type { WorkspaceView } from "@research/contracts";
 import { type RenderContext, type UiRegistry, WorkspaceComponentView } from "@research/ui-registry";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { BUTTON, BUTTON_DANGER, Empty } from "../components/ui.tsx";
-import { moveOperation, toggleColumnsOperation, type UiOperation } from "./commands.ts";
+import { moveOperation, type UiOperation } from "./commands.ts";
 
 /**
  * The component canvas, rendered from `state.layout.order` through the
  * registry. Owner controls only emit typed UI operations; the canvas re-renders
  * from whatever state the server returns (UI-001 / UI-009). The surrounding
  * panel (title, count, collapse) lives in the Chat page so the Canvas panel
- * and the panel header stay one shared part.
+ * and the panel header stay one shared part. The panel is one narrow column,
+ * so components always lay out in one column; the stored `layout.columns`
+ * value is preserved untouched (moves send it back unchanged) but never
+ * switches the grid.
  */
 export function Canvas(props: {
 	readonly view: WorkspaceView;
@@ -40,17 +43,6 @@ export function Canvas(props: {
 
 	return (
 		<div aria-busy={props.busy}>
-			<p class="flex flex-wrap items-center gap-2 text-xs text-slate-700">
-				<span data-field="workspace-version">Workspace version {state().version}</span>
-				<button
-					type="button"
-					class={BUTTON}
-					disabled={props.busy}
-					onClick={() => props.onOperation(toggleColumnsOperation(state().layout))}
-				>
-					{state().layout.columns === 1 ? "Use 2 columns" : "Use 1 column"}
-				</button>
-			</p>
 			<Show
 				when={state().layout.order.length > 0}
 				fallback={
@@ -62,12 +54,7 @@ export function Canvas(props: {
 					</div>
 				}
 			>
-				<ul
-					aria-label="Workspace components"
-					data-columns={state().layout.columns}
-					class="mt-2 grid grid-cols-1 gap-3"
-					classList={{ "xl:grid-cols-2": state().layout.columns === 2 }}
-				>
+				<ul aria-label="Workspace components" class="mt-2 grid grid-cols-1 gap-3">
 					<For each={state().layout.order}>
 						{(componentId, index) => (
 							<Show when={componentsById().get(componentId)}>

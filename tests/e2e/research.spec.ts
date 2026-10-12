@@ -372,7 +372,8 @@ test("the conversation, canvas and run survive a reload without re-running resea
 		.locator("[data-component-id]")
 		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-component-id")));
 	expect(before.length).toBeGreaterThanOrEqual(5);
-	const versionBefore = await canvas.getByText(/Workspace version \d+/).textContent();
+	const countBefore = await canvas.locator("[data-component-id]").count();
+	expect(countBefore).toBeGreaterThanOrEqual(5);
 
 	await page.reload();
 
@@ -381,7 +382,7 @@ test("the conversation, canvas and run survive a reload without re-running resea
 		.locator("[data-component-id]")
 		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-component-id")));
 	expect(after).toEqual(before);
-	await expect(canvas.getByText(/Workspace version \d+/)).toHaveText(versionBefore ?? "");
+	expect(after).toHaveLength(countBefore);
 
 	await page.getByRole("link", { name: "Chat", exact: true }).click();
 	await expect(
@@ -413,9 +414,12 @@ test("an invalid UI command is rejected by the server and changes nothing (hard 
 	const workspaceId = /#\/(?:chat|canvas|workspace)\/([^/?]+)/.exec(page.url())?.[1] ?? "";
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	const count = await canvas.locator("[data-component-id]").count();
-	const version = Number(
-		/\d+/.exec((await canvas.getByText(/Workspace version \d+/).textContent()) ?? "")?.[0],
-	);
+	// The command below must carry the version the server currently holds:
+	// read it through the API (the canvas no longer shows a version line).
+	const viewResponse = await page.request.get(`/api/v1/workspaces/${workspaceId}`);
+	expect(viewResponse.status()).toBe(200);
+	const version = (await viewResponse.json()).state.version as number;
+	expect(Number.isInteger(version)).toBe(true);
 
 	const response = await page.request.post(`/api/v1/workspaces/${workspaceId}/commands`, {
 		headers: { "X-Research-Csrf": "1", Origin: new URL(page.url()).origin },

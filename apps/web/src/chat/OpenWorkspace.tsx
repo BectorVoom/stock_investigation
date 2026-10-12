@@ -196,24 +196,24 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 						suggestionNonce += 1;
 						setSuggestion({ text, nonce: suggestionNonce });
 					}}
+					composer={
+						<Composer
+							workspaceId={props.workspaceId}
+							agents={agents.state()}
+							settings={agentSettings.state()}
+							onReloadAgents={() => void agents.reload()}
+							onReloadSettings={() => void agentSettings.reload()}
+							newIdempotencyKey={props.api.newIdempotencyKey}
+							onSubmit={async (request, key) => {
+								const result = await session.submitRun(request, key);
+								if (result.ok) props.onActivity();
+								return result;
+							}}
+							suggestion={suggestion}
+							runs={session.runs()}
+						/>
+					}
 				/>
-				<div class="sticky bottom-0 z-10 mx-auto w-full max-w-3xl shrink-0 bg-white px-1 pb-2 pt-1 lg:static">
-					<Composer
-						workspaceId={props.workspaceId}
-						agents={agents.state()}
-						settings={agentSettings.state()}
-						onReloadAgents={() => void agents.reload()}
-						onReloadSettings={() => void agentSettings.reload()}
-						newIdempotencyKey={props.api.newIdempotencyKey}
-						onSubmit={async (request, key) => {
-							const result = await session.submitRun(request, key);
-							if (result.ok) props.onActivity();
-							return result;
-						}}
-						suggestion={suggestion}
-						runs={session.runs()}
-					/>
-				</div>
 			</div>
 			<Show when={recordsRunId()} keyed>
 				{(runId) => (

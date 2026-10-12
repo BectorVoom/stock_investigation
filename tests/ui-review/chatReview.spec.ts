@@ -662,7 +662,10 @@ test("UI review of the Chat page", async ({ browser }) => {
 	await page.waitForTimeout(1000);
 	await shot(page, "D1-empty");
 	await audit(page, "D empty conversation");
-	const chip = page.getByRole("list", { name: "Suggestions" }).getByRole("button").first();
+	// Two suggestion copies exist (one above the composer for narrow screens,
+	// one centred below it at this viewport): use the visible one.
+	const visibleSuggestions = page.locator('ul[aria-label="Suggestions"]:visible');
+	const chip = visibleSuggestions.getByRole("button").first();
 	if ((await chip.count()) > 0) {
 		const chipText = (await chip.textContent()) ?? "";
 		await chip.click();
