@@ -230,7 +230,7 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 	await composer.getByRole("button", { name: "Send question" }).click();
 
 	const thread = page.getByRole("list", { name: "Messages" });
-	await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({ timeout: 60_000 });
+	await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({ timeout: 60_000 });
 	// The compact run card shows state only: no Run details disclosure, cost, limits or provenance.
 	await expect(thread.getByText("Run details")).toHaveCount(0);
 

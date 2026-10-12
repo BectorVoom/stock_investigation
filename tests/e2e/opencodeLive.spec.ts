@@ -135,7 +135,7 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 		await composer.getByRole("button", { name: "Send question" }).click();
 
 		const thread = page.getByRole("list", { name: "Messages" });
-		await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({
+		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
 			timeout: 900_000,
 		});
 

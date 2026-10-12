@@ -743,7 +743,8 @@ describe("borderless chat surfaces (background tone, not outlines)", () => {
 		mountApp(backend);
 		await threadReady();
 		const canvas = await canvasReady();
-		const run = await screen.findByRole("article", { name: "Run run_1" });
+		// run_1 is completed, so its card is hidden; the classes are still its own.
+		const run = await screen.findByRole("article", { name: "Run run_1", hidden: true });
 		expect(borderTokens(run.getAttribute("class") ?? "")).toEqual([]);
 		expect(run.className).toContain("bg-slate-100");
 		for (const card of canvas.querySelectorAll("ul[aria-label='Workspace components'] > li")) {
@@ -1012,14 +1013,15 @@ describe("chat reload (FR-010)", () => {
 });
 
 describe("chat run controls", () => {
-	it("shows a compact run card: state, latest progress and actions, never a Run details disclosure", async () => {
+	it("hides a completed run's card and never offers a Run details disclosure", async () => {
 		mountApp(backend);
-		const run = await screen.findByRole("article", { name: "Run run_1" });
-		// A completed run carries its state as data, not as a visible badge.
+		const run = await screen.findByRole("article", { name: "Run run_1", hidden: true });
+		// A completed run carries its state as data only: no badge, and the
+		// card itself is hidden (its answer follows), not left as an empty box.
 		expect(run.getAttribute("data-run-state")).toBe("completed");
 		expect(run.querySelector('[data-field="state"]')).toBeNull();
-		// The latest progress line stays visible.
-		expect(run.textContent).toContain("planning");
+		expect(run.closest("li")?.hidden).toBe(true);
+		expect(screen.queryByRole("article", { name: "Run run_1" })).toBeNull();
 		// The removed facts live in the runner log (`job_finished`), not in the thread.
 		expect(within(run).queryByText("Run details")).toBeNull();
 		expect(run.querySelector("details")).toBeNull();
@@ -1232,7 +1234,12 @@ describe("chat thread layout (CopilotChat)", () => {
 
 	it("lists runs with no loaded message under Earlier runs", async () => {
 		server.runs = [
-			makeRun({ runId: "run_orphan", state: "completed", createdAt: "2026-10-05T00:00:00Z" }),
+			makeRun({
+				runId: "run_orphan",
+				state: "failed",
+				failureCode: "BUDGET_MAX_TOOL_CALLS",
+				createdAt: "2026-10-05T00:00:00Z",
+			}),
 		];
 		mountApp(backend);
 		await threadReady();
@@ -1241,6 +1248,17 @@ describe("chat thread layout (CopilotChat)", () => {
 		// The orphan is not inside the messages list.
 		const messages = screen.getByRole("list", { name: "Messages" });
 		expect(messages.querySelector('article[aria-label="Run run_orphan"]')).toBeNull();
+	});
+
+	it("shows no Earlier runs section for completed runs with no loaded message", async () => {
+		server.runs = [
+			makeRun({ runId: "run_orphan", state: "completed", createdAt: "2026-10-05T00:00:00Z" }),
+		];
+		mountApp(backend);
+		await threadReady();
+		// A completed run has nothing to show, so it earns no section of its own.
+		expect(screen.queryByRole("region", { name: "Earlier runs" })).toBeNull();
+		expect(document.querySelector('article[aria-label="Run run_orphan"]')).toBeNull();
 	});
 
 	it("shows the approval request inline with no Run details disclosure", async () => {
@@ -1551,12 +1569,14 @@ describe("retry placement in the thread (finding 4)", () => {
 				onOpenRecords={() => {}}
 			/>
 		));
-		await screen.findByRole("article", { name: "Run run_4" });
+		// The completed retry's card is hidden, but it keeps its place in the DOM.
+		await screen.findByRole("article", { name: "Run run_4", hidden: true });
 		// The retry stays after the run it retries, in reading order.
 		expect(runOrder()).toEqual(["Run run_3", "Run run_4"]);
 		expect(screen.queryByRole("region", { name: "Earlier runs" })).toBeNull();
-		const retry = screen.getByRole("article", { name: "Run run_4" });
+		const retry = screen.getByRole("article", { name: "Run run_4", hidden: true });
 		expect(retry.getAttribute("data-run-state")).toBe("completed");
+		expect(retry.closest("li")?.hidden).toBe(true);
 		// Neither ordinary ending shows a state badge; the failure keeps its alert line.
 		expect(retry.querySelector('[data-field="state"]')).toBeNull();
 		const failed = screen.getByRole("article", { name: "Run run_3" });
@@ -1574,7 +1594,7 @@ describe("retry placement in the thread (finding 4)", () => {
 		render(() => (
 			<Conversation
 				conversation={conversation}
-				runs={[makeRun({ runId: "run_x", state: "completed" })]}
+				runs={[makeRun({ runId: "run_x", state: "partial", failureCode: "BUDGET_MAX_TOOL_CALLS" })]}
 				onOpenRecords={() => {}}
 			/>
 		));

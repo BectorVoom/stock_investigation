@@ -341,7 +341,7 @@ async function ensurePrepared(page: Page): Promise<void> {
 		.fill("Which storage products will see demand growth?");
 	await composer.getByRole("button", { name: "Send question" }).click();
 	const thread = page.getByRole("list", { name: "Messages" });
-	await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({ timeout: 90_000 });
+	await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({ timeout: 90_000 });
 }
 
 test("UI review of the Chat page", async ({ browser }) => {
@@ -639,7 +639,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 				'[data-run-state="completed"], [data-run-state="partial"], [data-run-state="failed"]',
 			)
 			.last(),
-	).toBeVisible({ timeout: 90_000 });
+	).toBeAttached({ timeout: 90_000 });
 	await page.waitForTimeout(2500);
 	await shot(page, "B3-after-answer");
 	await audit(page, "B after answer");

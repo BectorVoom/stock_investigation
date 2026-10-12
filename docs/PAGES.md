@@ -61,8 +61,8 @@ Ask research questions and read the answers, with their sources and run progress
   except completed and failed, latest progress, `Stop`, a failure reason,
   `Retry`, the approval form; no "Run details" and no "Evidence" button on
   the card — the records drawer opens from the "Evidence" action under an
-  answer), and unmatched runs grouped under
-  "Earlier runs".
+  answer; a completed run's card is hidden, since its answer follows), and
+  unmatched unfinished or failed runs grouped under "Earlier runs".
 - An empty conversation greets ("What would you like to research?") with starter
   suggestions that fill the question input without sending. At `lg` and up the
   greeting, the question form and the suggestions form one vertically centred

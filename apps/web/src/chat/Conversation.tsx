@@ -310,10 +310,12 @@ export function Conversation(props: {
 		}
 		return ids;
 	});
+	// Completed runs are left out: their cards are hidden, and a heading
+	// over nothing but hidden cards would be an empty section.
 	const earlierRunIds = createMemo(() =>
 		listedRuns()
-			.map((run) => run.runId)
-			.filter((runId) => !placedInlineIds().has(runId)),
+			.filter((run) => run.state !== "completed" && !placedInlineIds().has(run.runId))
+			.map((run) => run.runId),
 	);
 	/**
 	 * A truly empty conversation: loaded, no messages, no runs, nothing
@@ -393,7 +395,11 @@ export function Conversation(props: {
 		return (
 			<Show when={run()} fallback={null}>
 				{(current) => (
-					<li aria-label="Run status">
+					// A completed run has nothing left to show (no badge, no
+					// action; its answer follows), so its card is hidden rather
+					// than left as an empty box. It stays in the DOM: the state
+					// is still readable on `data-run-state`.
+					<li aria-label="Run status" hidden={current().state === "completed"}>
 						<RunCard
 							run={current()}
 							agents={props.agents ?? null}

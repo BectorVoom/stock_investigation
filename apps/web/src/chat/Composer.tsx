@@ -287,7 +287,7 @@ export function Composer(props: {
 						questionBox = element;
 					}}
 					id={questionId}
-					class="max-h-48 w-full resize-none border-0 bg-white px-1 py-1 text-sm text-slate-900 field-sizing-content focus:outline-none"
+					class="max-h-48 w-full resize-none border-0 bg-transparent px-1 py-1 text-sm text-slate-900 field-sizing-content focus:outline-none"
 					rows="1"
 					maxLength={2000}
 					placeholder="Ask a research question…"

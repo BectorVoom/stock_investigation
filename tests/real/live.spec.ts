@@ -326,7 +326,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_1);
 		await composer.getByRole("button", { name: "Send question" }).click();
 		const thread = page.getByRole("list", { name: "Messages" });
-		await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({
+		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
 			timeout: 720_000,
 		});
 		const conversation = page.getByRole("region", { name: "Conversation" });
