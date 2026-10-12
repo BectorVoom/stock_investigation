@@ -4,6 +4,7 @@ import type { ApiFailure } from "../api/http.ts";
 import {
 	ActionMenu,
 	BUTTON,
+	BUTTON_PILL,
 	ConfirmDialog,
 	DisclosureSummary,
 	Empty,
@@ -14,7 +15,6 @@ import {
 	PanelHeader,
 	RemoteView,
 } from "../components/ui.tsx";
-import { formatInstant } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { byNewestActivity, type ConversationList } from "./conversationList.ts";
 
@@ -66,6 +66,45 @@ export function RenameInput(props: {
 			}}
 			onBlur={() => save(draft())}
 		/>
+	);
+}
+
+/**
+ * The one "New chat" button (guideline section 6). The expanded Chats panel
+ * shows the full-width pill; the collapsed rail (icon only) and the
+ * narrow-screen disclosure (compact) keep their small forms through this same
+ * part, so the create-at-once behaviour, the pending state and the focus
+ * cannot drift between copies.
+ */
+export function NewChatButton(props: {
+	readonly variant: "pill" | "compact" | "icon";
+	readonly disabled: boolean;
+	readonly onClick: () => void;
+}): JSX.Element {
+	if (props.variant === "icon") {
+		// 24 px square: the collapsed rail holds 24 px of content width.
+		return (
+			<button
+				type="button"
+				class="flex h-6 w-6 items-center justify-center rounded-full border border-slate-400 bg-white text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+				aria-label="New chat"
+				title="New chat"
+				disabled={props.disabled}
+				onClick={() => props.onClick()}
+			>
+				<PlusIcon />
+			</button>
+		);
+	}
+	return (
+		<button
+			type="button"
+			class={props.variant === "pill" ? BUTTON_PILL : `${BUTTON} inline-flex items-center gap-1`}
+			disabled={props.disabled}
+			onClick={() => props.onClick()}
+		>
+			<PlusIcon /> New chat
+		</button>
 	);
 }
 
@@ -126,15 +165,20 @@ export function ChatsPanel(props: {
 		</RemoteView>
 	);
 
-	const newChatButton = () => (
-		<button
-			type="button"
-			class={`${BUTTON} inline-flex items-center gap-1`}
+	const newChatPill = () => (
+		<NewChatButton
+			variant="pill"
 			disabled={props.newChatPending()}
 			onClick={() => props.onNewChat()}
-		>
-			<PlusIcon /> New chat
-		</button>
+		/>
+	);
+
+	const newChatCompact = () => (
+		<NewChatButton
+			variant="compact"
+			disabled={props.newChatPending()}
+			onClick={() => props.onNewChat()}
+		/>
 	);
 
 	return (
@@ -151,7 +195,7 @@ export function ChatsPanel(props: {
 						Chats ({props.ordered().length})
 					</DisclosureSummary>
 					<nav aria-label="Chats" class="mt-2 space-y-2">
-						{newChatButton()}
+						{newChatCompact()}
 						<Show when={props.newChatPending()}>
 							<Loading label="new chat" />
 						</Show>
@@ -171,6 +215,11 @@ export function ChatsPanel(props: {
 				when={!props.collapsed()}
 				fallback={
 					<div class={`${PANEL} hidden flex-col items-center gap-2 lg:flex`}>
+						<NewChatButton
+							variant="icon"
+							disabled={props.newChatPending()}
+							onClick={() => props.onNewChat()}
+						/>
 						<button
 							type="button"
 							class={BUTTON}
@@ -193,7 +242,7 @@ export function ChatsPanel(props: {
 						onToggle={props.onToggleCollapsed}
 					/>
 					<nav aria-label="Chats" class="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
-						{newChatButton()}
+						{newChatPill()}
 						<Show when={props.newChatPending()}>
 							<Loading label="new chat" />
 						</Show>
@@ -252,21 +301,6 @@ function ChatRowWrapper(props: {
 								title={props.entry.title}
 							>
 								{props.entry.title}
-							</span>
-							<span
-								class="block truncate text-xs text-slate-700"
-								title={props.entry.lastMessagePreview ?? "No messages yet"}
-							>
-								{props.entry.lastMessagePreview ?? "No messages yet"}
-							</span>
-							<span class="block text-2xs text-slate-600">
-								<time datetime={props.entry.lastActivityAt}>
-									{formatInstant(props.entry.lastActivityAt)}
-								</time>
-								{" · "}
-								{props.entry.messageCount === 1
-									? "1 message"
-									: `${props.entry.messageCount} messages`}
 							</span>
 						</a>
 					</Show>

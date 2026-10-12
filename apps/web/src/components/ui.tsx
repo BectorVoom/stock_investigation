@@ -22,6 +22,14 @@ export const BUTTON_PRIMARY =
 	"rounded border border-blue-800 bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-300 disabled:text-slate-600";
 export const BUTTON_DANGER =
 	"rounded border border-red-700 bg-white px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50";
+/**
+ * Full-width pill variant of `BUTTON` for the one primary creation action
+ * per panel (the "New chat" button, guideline section 6). Same border, tones
+ * and 24 px floor as `BUTTON`, with centred content; the plus icon arrives
+ * from the caller.
+ */
+export const BUTTON_PILL =
+	"flex min-h-6 w-full items-center justify-center gap-1 rounded-full border border-slate-400 bg-white px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50";
 export const INPUT =
 	"min-h-6 w-full rounded border border-slate-400 bg-white px-2 py-1 text-sm text-slate-900 disabled:bg-slate-100";
 export const LABEL = "block text-xs font-medium text-slate-700";

@@ -73,7 +73,7 @@ describe("disclosure summaries", () => {
 });
 
 describe("chat history", () => {
-	it("lists chats newest first with preview, time, count and the current marker", async () => {
+	it("lists chats newest first with title-only rows and the current marker", async () => {
 		mountApp(backend);
 		const nav = await historyReady();
 		await threadReady();
@@ -87,15 +87,20 @@ describe("chat history", () => {
 		expect(nav.querySelector('[data-conversation-id="ws_2"] a')?.getAttribute("aria-current")).toBe(
 			null,
 		);
-		expect(nav.textContent).toContain("Grid storage research");
-		expect(nav.textContent).toContain("Second research");
-		expect(nav.textContent).toContain("Utility tenders are rising.");
-		expect(nav.textContent).toContain("Second question?");
-		expect(nav.textContent).toContain("2 messages");
-		expect(nav.textContent).toContain("1 message");
+		expect(within(nav).getByRole("link", { name: "Grid storage research" })).toBeDefined();
+		expect(within(nav).getByRole("link", { name: "Second research" })).toBeDefined();
+		// Title only: one span in the link; no last-message preview, no time, no count.
+		for (const item of items) {
+			expect(item.querySelectorAll("a span")).toHaveLength(1);
+			expect(item.querySelector("time")).toBeNull();
+		}
+		expect(nav.textContent).not.toContain("Utility tenders are rising.");
+		expect(nav.textContent).not.toContain("Second question?");
+		expect(nav.textContent).not.toContain("2 messages");
+		expect(nav.textContent).not.toContain("1 message");
 	});
 
-	it("truncates long history titles and previews with the full text in a tooltip", async () => {
+	it("truncates long history titles with the full title in a tooltip", async () => {
 		mountApp(backend);
 		const nav = await historyReady();
 		await threadReady();
@@ -103,9 +108,6 @@ describe("chat history", () => {
 		const title = current?.querySelector("span.truncate");
 		expect(title?.textContent).toBe("Grid storage research");
 		expect(title?.getAttribute("title")).toBe("Grid storage research");
-		const preview = current?.querySelectorAll("span.truncate")[1];
-		expect(preview?.textContent).toBe("Utility tenders are rising.");
-		expect(preview?.getAttribute("title")).toBe("Utility tenders are rising.");
 		// The open thread header still shows the full title.
 		expect(
 			await screen.findByRole("heading", { level: 3, name: "Grid storage research" }),
@@ -158,8 +160,12 @@ describe("chat history", () => {
 		mountApp(backend);
 		await threadReady();
 		const canvas = await canvasReady();
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
 		expect(within(canvas).getByRole("list", { name: "Workspace components" })).toBeDefined();
+		// No workspace version line and no column switch on the canvas.
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
+		expect(canvas.textContent).not.toContain("Workspace version");
+		expect(within(canvas).queryByRole("button", { name: "Use 2 columns" })).toBeNull();
+		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
 		// One session: a single workspace read backs both panels.
 		await waitFor(() =>
 			expect(backend.requestsTo("GET", /^\/api\/v1\/workspaces\/ws_1$/)).toHaveLength(1),
@@ -341,6 +347,134 @@ describe("new chat", () => {
 		);
 		const nav = await historyReady();
 		expect(nav.textContent).toContain("Storage demand");
+	});
+});
+
+describe("new chat button", () => {
+	it("is a full-width pill in the expanded panel", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		const pill = within(nav).getByRole("button", { name: "New chat" });
+		expect(pill.className).toContain("rounded-full");
+		expect(pill.className).toContain("w-full");
+		expect(pill.className).toContain("justify-center");
+	});
+
+	it("uses the same pill part in the welcome when there are no chats", async () => {
+		server.conversations = [];
+		window.location.hash = "#/chat";
+		mountApp(backend);
+		const welcome = await screen.findByRole("region", { name: "Chat" });
+		await within(welcome).findByRole("heading", { level: 3, name: "Welcome to Chat" });
+		const pill = within(welcome).getByRole("button", { name: "New chat" });
+		expect(pill.className).toContain("rounded-full");
+		fireEvent.click(pill);
+		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
+		expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(1);
+	});
+
+	it("collapses to an icon-only button in the rail through the same part", async () => {
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Chats panel" }));
+		const icon = await screen.findByRole("button", { name: "New chat" });
+		expect(icon.className).toContain("rounded-full");
+		expect(icon.textContent?.trim()).toBe("");
+		fireEvent.click(icon);
+		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
+		expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(1);
+	});
+
+	it("keeps its compact form in the narrow-screen disclosure", async () => {
+		const original = window.matchMedia;
+		window.matchMedia = (() => ({
+			matches: false,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		})) as unknown as typeof window.matchMedia;
+		try {
+			mountApp(backend);
+			const nav = await historyReady();
+			await threadReady();
+			const compact = within(nav).getByRole("button", { name: "New chat" });
+			expect(compact.className).not.toContain("rounded-full");
+			fireEvent.click(compact);
+			await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
+			expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(1);
+		} finally {
+			window.matchMedia = original;
+		}
+	});
+});
+
+describe("empty conversation grouping", () => {
+	it("centres the greeting, composer and suggestions as one group", async () => {
+		window.location.hash = "#/chat/ws_new";
+		mountApp(backend);
+		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
+		const conversation = await screen.findByRole("region", { name: "Conversation" });
+		expect(conversation.getAttribute("data-layout")).toBe("empty-centered");
+		expect(conversation.className).toContain("lg:justify-center");
+		const composer = await screen.findByRole("form", { name: "Research composer" });
+		expect(composer).toBeDefined();
+		const greeting = conversation.querySelector('[data-greeting="true"]');
+		const wrap = conversation.querySelector('[data-composer-wrap="true"]');
+		const below = conversation.querySelector('[data-suggestions="below-composer"]');
+		const above = conversation.querySelector('[data-suggestions="above-composer"]');
+		expect(greeting).not.toBeNull();
+		expect(wrap).not.toBeNull();
+		expect(below).not.toBeNull();
+		expect(above).not.toBeNull();
+		// Structural order: greeting, then the composer directly under it, then the chips.
+		expect(
+			(greeting as Element).compareDocumentPosition(wrap as Element) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		expect(
+			(wrap as Element).compareDocumentPosition(below as Element) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+		// The narrow copy hides at `lg`; the wrapper keeps its sticky pinning for narrow screens.
+		expect((above as HTMLElement).className).toContain("lg:hidden");
+		expect((wrap as HTMLElement).className).toContain("sticky");
+		expect((wrap as HTMLElement).className).toContain("bottom-0");
+	});
+
+	it("keeps the same composer node when the first question turns the empty state into a thread", async () => {
+		window.location.hash = "#/chat/ws_new";
+		const created: ResearchRun[] = [];
+		backend.on("POST", /^\/api\/v1\/research-runs$/, () => {
+			const run = makeRun({
+				runId: "run_new",
+				workspaceId: "ws_new",
+				state: "pending",
+				provenance: null,
+				createdAt: "2026-10-07T00:00:00Z",
+				updatedAt: "2026-10-07T00:00:00Z",
+			});
+			created.push(run);
+			return jsonResponse({ run }, { status: 202 });
+		});
+		backend.on("GET", /^\/api\/v1\/research-runs\?workspaceId=ws_new$/, () =>
+			jsonResponse({ runs: created }),
+		);
+		mountApp(backend);
+		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
+		const box = (await screen.findByRole("textbox", { name: "Question" })) as HTMLTextAreaElement;
+		expect(screen.getByRole("region", { name: "Conversation" }).getAttribute("data-layout")).toBe(
+			"empty-centered",
+		);
+		fireEvent.input(box, { target: { value: "Which storage products will grow?" } });
+		fireEvent.click(screen.getByRole("button", { name: "Send question" }));
+		// The run arrives with no messages yet: the thread layout, not the centred group.
+		await screen.findByRole("article", { name: "Run run_new" });
+		expect(screen.getByRole("region", { name: "Conversation" }).getAttribute("data-layout")).toBe(
+			"thread",
+		);
+		// The composer is the same DOM node, so a draft for the next question survives.
+		expect(screen.getByRole("textbox", { name: "Question" })).toBe(box);
 	});
 });
 
@@ -1013,8 +1147,11 @@ describe("chat thread layout (CopilotChat)", () => {
 		window.location.hash = "#/chat/ws_new";
 		mountApp(backend);
 		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
-		const suggestions = await screen.findByRole("list", { name: "Suggestions" });
-		const chips = within(suggestions).getAllByRole("button");
+		// Two copies (one above the composer for narrow screens, one below it
+		// for `lg`); only one is ever visible.
+		const suggestionLists = await screen.findAllByRole("list", { name: "Suggestions" });
+		expect(suggestionLists).toHaveLength(2);
+		const chips = within(suggestionLists[0] as HTMLElement).getAllByRole("button");
 		expect(chips.length).toBeGreaterThanOrEqual(3);
 		const first = chips[0]?.textContent ?? "";
 		fireEvent.click(chips[0] as HTMLElement);

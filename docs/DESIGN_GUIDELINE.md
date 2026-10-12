@@ -95,9 +95,11 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 - Gaps in rows and toolbars: `gap-1` for badge groups and button rows,
   `gap-2` for form rows and headers.
 - One corner radius: bare `rounded` on every box, button, input and badge;
-  `rounded-full` is additionally permitted for pill badges (currently unused).
-  The chat surface (section 12) additionally uses `rounded-2xl` and
-  `rounded-full` exactly as stated there. No other `rounded-*` step.
+  `rounded-full` is additionally permitted for the full-width "New chat" pill
+  button, citation chips and round icon-only buttons (send, copy, activity
+  dots, collapsed-rail actions). The chat surface (section 12) additionally
+  uses `rounded-2xl` and `rounded-full` exactly as stated there. No other
+  `rounded-*` step.
 - Borders, not shadows: separation is a `border-slate-200/300` hairline
   (dashed for empty states and unstated-basis markers). No `shadow-*` and no
   `style=` attribute anywhere in UI source.
@@ -117,8 +119,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   `lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_minmax(18rem,26rem)]`
   (Chats, Chat, Canvas); a collapsed side panel shrinks its column to a
   narrow rail (`3rem`), and a collapsed panel mounts none of its heavy
-  content. The canvas component grid uses `xl:grid-cols-2` when the layout
-  says two columns.
+  content. The canvas component grid is always one column (`grid-cols-1`);
+  the stored `layout.columns` value is preserved but never switches it.
 - Chat layout: chats navigation on the left, the open conversation (thread,
   question form, run status) in the centre, the canvas on the right; the
   evidence drawer and the delete-chat confirmation overlay with focus trapped
@@ -147,8 +149,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Links | External links open in a new tab and state where they go | safe (https) / unavailable-with-note | `SafeLink` / `SourceCitation` (records drawer) / `SourceList` (the shared `N sources` disclosure) in `@research/ui-registry`; the only way a URL from data becomes an anchor |
 | Dialogs / drawers | The evidence drawer; approval and creation forms; the delete-chat confirmation | — | `RecordsDrawer` (modal `dialog`, labelled by its heading, `Close records` button, focus trapped while open and returned on close); `ApprovalForm`; `ConfirmDialog` in `components/ui.tsx` (native `dialog`, labelled by its heading, `Cancel` focused on open, Escape/Cancel closes and returns focus to the explicit opener, failures stay in the dialog via `ErrorNotice`); dialog state stays local (UI-003). The drawer opens over a semi-transparent slate backdrop (`bg-slate-900/50`) that closes it on click, as does Escape. |
 | Panel header | The small header of each Chat page panel: `h3` title plus count and collapse/expand | expanded / collapsed rail | `PanelHeader` in `components/ui.tsx` (`aria-expanded`, accessible collapse/expand names; collapsed panels render only the rail) |
-| Chats panel | Past chats and the "New chat" button | panel / rail; disclosure below `lg` | `ChatsPanel` in `chat/ChatsPanel.tsx` (`nav[aria-label="Chats"]`, `Chats (<n>)` disclosure, plus-icon `New chat` button) |
-| Canvas panel | The stored tables, charts and reports of the open conversation | panel / rail; tab below `lg` | `Canvas` in `canvas/Canvas.tsx` inside a panel section (`section[aria-label="Canvas"]`, count in the header, short empty state; not mounted when collapsed) |
+| Chats panel | Past chats (title-only rows) and the full-width pill "New chat" button | panel / rail (icon-only new-chat action); disclosure below `lg` (compact button) | `ChatsPanel` in `chat/ChatsPanel.tsx` (`nav[aria-label="Chats"]`, `Chats (<n>)` disclosure, `NewChatButton` pill/compact/icon variants) |
+| Canvas panel | The stored tables, charts and reports of the open conversation, always in one column | panel / rail; tab below `lg` | `Canvas` in `canvas/Canvas.tsx` inside a panel section (`section[aria-label="Canvas"]`, count in the header, short empty state; not mounted when collapsed) |
 | Chat / Canvas tabs | The narrow-screen switch showing one of the two at a time | Chat / Canvas | `role="tablist"` with `role="tab"` (`aria-selected`, `aria-controls`) and `role="tabpanel"`; arrows move between tabs |
 | Action menu | Row actions for one chat ("More actions for <title>") | closed / open | `ActionMenu` in `components/ui.tsx` (button with `aria-haspopup="menu"` and `aria-expanded`; menu-button keyboard pattern: Enter/Space/ArrowDown opens, arrows/Home/End move, Escape closes and returns focus, click outside closes; `role="menu"` / `role="menuitem"`) |
 | Rename input | The in-place chat title editor | — | `RenameInput` in `chat/ChatsPanel.tsx` (text input holding the current title, `maxLength={300}`; Enter/blur saves, Escape cancels, empty/unchanged sends nothing; failures via `ErrorNotice` with the old title kept) |
@@ -158,8 +160,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Run card | Inline agent activity after its question | always visible and compact, no disclosure | `RunCard` in `chat/RunCard.tsx` (`data-run-state`; a state badge for every state except completed and failed, latest progress line, `Stop`, `role="alert"` failure line, `Retry run`, approval form; no `Evidence` button — the records drawer opens from the answer) |
 | Citation chip | Numbered evidence reference after a claim sentence or a canvas finding | `button` named `Source N: title` (`rounded-full`, blue tones; inverse when its card is open) | `CitationChip` in `@research/ui-registry` (`parts/citations.tsx`, per-scope numbering in `citationModel.ts`): one shared part used by chat answers and every canvas component |
 | Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
-| Suggestion chips | Starter questions on an empty conversation | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`) |
-| Research composer | The one rounded question input pinned to the bottom | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` container, `rounded-full` send button) |
+| Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`) |
+| Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` container, `rounded-full` send button) |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
 
 ## 7. Heading structure
@@ -277,7 +279,9 @@ The Chat page reproduces the look and interaction of CopilotKit's
 `CopilotChat` without the library (this app is SolidJS): a centred message
 column that fills the height of the page, right-aligned owner bubbles,
 left-aligned assistant text, inline agent activity, starter suggestions and
-one rounded input pinned to the bottom.
+one rounded input pinned to the bottom — except on an empty conversation at
+`lg` and up, where the greeting, the input and the suggestions form one
+vertically centred group in the middle of the panel.
 
 - Message bubbles, the input container and suggestion chips use the large
   radius (`rounded-2xl`); icon-only buttons (send, copy) and activity dots are

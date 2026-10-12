@@ -23,7 +23,7 @@ Ask research questions and read the answers, with their sources and run progress
 
 **User actions**
 
-- Start a new chat with the "New chat" button (no title is asked; the server
+- Start a new chat with the full-width "New chat" pill button (no title is asked; the server
   names it "New chat" and renames it from its first question).
 - Open a past chat from the Chats list.
 - Rename a chat (list row or open conversation header) or delete it with
@@ -36,7 +36,7 @@ Ask research questions and read the answers, with their sources and run progress
 - Cancel, retry or approve a run.
 - Copy an answer.
 - Open the evidence records of a run.
-- Focus, select, reorder (move up/down, one/two columns) or remove a canvas component.
+- Focus, select, reorder (move up/down) or remove a canvas component.
 
 **Shows**
 
@@ -46,10 +46,9 @@ Ask research questions and read the answers, with their sources and run progress
   `lg` (the Chats history stays a disclosure, and Chat/Canvas tabs show one at
   a time). Chat and Canvas of the open conversation share one session: no
   duplicated polling, and a poll that changes nothing re-renders neither.
-- The Chats list (newest activity first): title, last-message preview
-  (or "No messages yet"), last-activity time and message count; the open
+- The Chats list (newest activity first): one title-only row per chat; the open
   chat is marked with `aria-current="page"`; every row has a "More actions"
-  menu (Rename, Delete); the "New chat" button sits at the top.
+  menu (Rename, Delete); the full-width "New chat" pill button sits at the top.
 - The open chat's title with a "Rename" button; a welcome with the same "New
   chat" action when there are no chats.
 - The message thread with numbered citation chips and a source popover, newest
@@ -61,16 +60,19 @@ Ask research questions and read the answers, with their sources and run progress
   those details live in the runner logs), and unmatched runs grouped under
   "Earlier runs".
 - An empty conversation greets ("What would you like to research?") with starter
-  suggestions that fill the question input without sending.
+  suggestions that fill the question input without sending. At `lg` and up the
+  greeting, the question form and the suggestions form one vertically centred
+  group; below `lg` the form stays pinned to the viewport bottom.
 - The question form (question, horizon, markets and the one-time spend consent,
   with a read-only agent summary and no "Limits and cost" disclosure) and the
   evidence records drawer for one run, session notices and load errors.
 - The Canvas panel: the stored tables, charts and reports of the open
-  conversation in `layout.order` through the registry, with workspace version,
-  component count in the header and per-component controls; cited sources
-  appear as numbered chips opening a source card, with one compact `N sources`
-  disclosure per component; a short empty
-  state when there are none. A collapsed Canvas panel mounts none of it.
+  conversation in `layout.order` through the registry, always in one column
+  (the stored `layout.columns` value is preserved but never switches the
+  grid), with the component count in the header and per-component controls;
+  cited sources appear as numbered chips opening a source card, with one
+  compact `N sources` disclosure per component; a short empty state when
+  there are none. A collapsed Canvas panel mounts none of it.
 
 **Not here**
 
