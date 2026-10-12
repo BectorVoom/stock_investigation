@@ -587,9 +587,6 @@ test("the page ran under its Content-Security-Policy without errors", async () =
 });
 
 test("a chat can be renamed and deleted", async () => {
-	// The server routes for rename/delete arrive from another agent; against a
-	// backend without them this test fails with 404 (reported in the summary).
-	// It runs last so the failure cannot skip the serial suite behind it.
 	await page.goto("/");
 	const nav = page.getByRole("navigation", { name: "Chats" });
 	await expect(nav).toBeVisible();
@@ -603,10 +600,9 @@ test("a chat can be renamed and deleted", async () => {
 	await more.click();
 	await page.getByRole("menuitem", { name: "Rename" }).click();
 	await page.getByLabel("Chat title").fill(chatName);
-	// Keyboard press (not locator press): a 404 failure exits edit mode and
+	// Keyboard press (not locator press): a failed rename exits edit mode and
 	// unmounts the input, which locator.press would chase until timeout.
 	await page.keyboard.press("Enter");
-	// Without the other agent's PATCH route this fails fast with NOT_FOUND.
 	await expect(nav).toContainText(chatName, { timeout: 10_000 });
 	const moreAfter = nav.getByRole("button", { name: `More actions for ${chatName}` }).first();
 	await moreAfter.click();
