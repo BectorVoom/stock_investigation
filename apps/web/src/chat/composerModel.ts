@@ -5,18 +5,15 @@ import {
 	type ResearchRequest,
 } from "@research/contracts";
 import type { ResearchBudget } from "../api/client.ts";
-import {
-	type AgentOption,
-	agentOptions,
-	type CostModelView,
-	costStatement,
-} from "../settings/agentSettingsModel.ts";
+import { type AgentOption, agentOptions } from "../settings/agentSettingsModel.ts";
 
 /**
  * Pure composer rules (FR-012 / FR-016 / AGT-012): the draft holds only what
- * belongs to one question, while backend, model, effort, limits and web
- * access are read from the saved agent settings. No Solid, no network —
- * unit-tested directly.
+ * belongs to one question, while backend, model, effort, budget and web
+ * access are read from the saved agent settings. The composer shows the
+ * backend/model/effort/web-access summary and the consent amount; limits and
+ * the cost statement live in Settings → AI agent (owner decision
+ * 2026-10-12). No Solid, no network — unit-tested directly.
  */
 
 /** Form draft: only what belongs to ONE question. Consent is one-time per submission. */
@@ -38,8 +35,6 @@ export function defaultComposerDraft(): ComposerDraft {
 
 export interface ComposerEvaluation {
 	readonly selectedAgent: AgentOption | null;
-	readonly costModel: CostModelView;
-	readonly costStatement: string;
 	/** The model that will run, or null for the backend's own default. */
 	readonly model: string | null;
 	/** The limits that will run, with a plan-limited backend forced to no spend allowance. */
@@ -61,7 +56,7 @@ export function evaluateComposer(
 		settings?.defaultAgentId == null
 			? null
 			: (options.find((option) => option.agentId === settings.defaultAgentId) ?? null);
-	const costModel: CostModelView = selectedAgent?.costModel ?? "unknown";
+	const costModel = selectedAgent?.costModel ?? "unknown";
 	const model =
 		settings?.defaultAgentId == null ? null : (settings.models[settings.defaultAgentId] ?? null);
 	const problems: string[] = [];
@@ -144,8 +139,6 @@ export function evaluateComposer(
 
 	return {
 		selectedAgent,
-		costModel,
-		costStatement: costStatement(costModel),
 		model,
 		budget,
 		spendConsentRequired,

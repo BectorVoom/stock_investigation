@@ -16,7 +16,7 @@ import {
 } from "solid-js";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { DisclosureSummary, ErrorNotice, Loading, Notice, Select } from "../components/ui.tsx";
-import { formatInteger, formatMinutes, formatUsd } from "../lib/format.ts";
+import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { runnerNotice } from "../settings/agentSettingsModel.ts";
 import { fitTextarea, supportsFieldSizing } from "./autogrow.ts";
@@ -31,8 +31,10 @@ function isConfigurationProblem(problem: string): boolean {
 
 /**
  * Question form. The draft holds only what belongs to one question (UI-003);
- * backend, model, effort, limits and web access are read from the saved agent
- * settings and shown read-only. Submitting creates a research run, and the
+ * backend, model, effort, budget and web access are read from the saved agent
+ * settings. The form shows a read-only backend/model/effort/web-access
+ * summary; limits and the cost statement live in Settings → AI agent (owner
+ * decision 2026-10-12). Submitting creates a research run, and the
  * stored question then arrives back through the conversation like any other
  * server state.
  */
@@ -188,16 +190,10 @@ export function Composer(props: {
 		const selected = evaluation().selectedAgent;
 		const stored = settings();
 		if (selected === null || stored === null) return null;
-		const budget = evaluation().budget;
-		const limits =
-			budget === null
-				? "limits not set"
-				: `${formatInteger(budget.maxAgentSteps)} steps, ${formatInteger(budget.maxToolCalls)} tool calls, ${formatMinutes(budget.maxWallClockMs)}, ${formatInteger(budget.maxInputBytes)} input bytes, ${budget.maxSpendUsd === null ? "no metered spend authorized" : `${formatUsd(budget.maxSpendUsd)} maximum spend`}`;
 		return {
 			backend: `${selected.displayName} (${selected.status})`,
 			model: evaluation().model ?? "backend default",
 			effort: stored.effort,
-			limits,
 			webAccess: stored.webAccess === "public-web" ? "on" : "off",
 		};
 	};
@@ -205,6 +201,14 @@ export function Composer(props: {
 		const current = summary();
 		if (current === null) return null;
 		return `${current.backend} · ${current.model} · ${current.effort} · web access ${current.webAccess}`;
+	};
+	const consentLabel = () => {
+		// Spend consent is required only when the settings carry a positive
+		// metered allowance, so the amount below is always set in practice;
+		// the fallback keeps the label honest if the budget is missing.
+		const max = evaluation().budget?.maxSpendUsd ?? null;
+		if (max === null) return "I consent to metered spend for this question";
+		return `I consent to metered spend up to ${formatUsd(max)} for this question`;
 	};
 	const optionsSummary = () => {
 		const markets = (["JP", "US"] as const).filter((market) => draft().markets[market]);
@@ -400,21 +404,6 @@ export function Composer(props: {
 					</p>
 				</Show>
 
-				<Show when={summary()}>
-					{(current) => (
-						<details class="group break-words text-xs text-slate-700">
-							<DisclosureSummary>Limits and cost</DisclosureSummary>
-							<div class="max-h-32 overflow-y-auto">
-								<p class="mt-0.5">Limits: {current().limits}</p>
-								<p data-cost-statement={evaluation().costModel} class="mt-0.5 text-slate-800">
-									<span class="font-semibold">Cost: </span>
-									{evaluation().costStatement}
-								</p>
-							</div>
-						</details>
-					)}
-				</Show>
-
 				<details class="group break-words text-xs text-slate-700">
 					<DisclosureSummary>Options: {optionsSummary()}</DisclosureSummary>
 					<div class="max-h-32 overflow-y-auto">
@@ -478,7 +467,7 @@ export function Composer(props: {
 								checked={draft().spendConsent}
 								onChange={(event) => patch({ spendConsent: event.currentTarget.checked })}
 							/>
-							<span>I consent to metered spend up to the maximum above for this question</span>
+							<span>{consentLabel()}</span>
 						</label>
 					</div>
 				</Show>

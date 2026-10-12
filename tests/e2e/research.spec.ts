@@ -222,9 +222,9 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 		.getByRole("textbox", { name: "Question" })
 		.fill("Which storage products will see demand growth?");
 
-	// A plan-limited backend is never shown as free.
-	await composer.getByText("Limits and cost").click();
-	await expect(composer.locator('[data-cost-statement="plan-limited"]')).toBeVisible();
+	// Limits and the cost statement live in Settings → AI agent; the composer
+	// shows only the backend/model/effort/web-access summary and is never $0.
+	await expect(composer).toContainText("Scripted example agent");
 	await expect(composer).not.toContainText("$0");
 
 	await composer.getByRole("button", { name: "Send question" }).click();
