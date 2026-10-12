@@ -3,16 +3,12 @@ import {
 	type AgentSettingsResponse,
 	type AgentsResponse,
 	API_PREFIX,
-	type ApprovedAsset,
 	type Article,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
 	agentsResponseSchema,
-	approveAssetRequestSchema,
-	approvedAssetSchema,
 	approveRunRequestSchema,
 	articleListResponseSchema,
-	assetListResponseSchema,
 	type Conversation,
 	type ConversationSummary,
 	conversationListResponseSchema,
@@ -75,7 +71,6 @@ export type UiCommand = Parsed<typeof uiCommandSchema>;
 export type SubmitCommandResponse = Parsed<typeof submitCommandResponseSchema>;
 export type WorkspaceEvents = Parsed<typeof workspaceEventsResponseSchema>;
 export type ResearchBudget = Parsed<typeof approveRunRequestSchema>["budget"];
-export type ApproveAssetRequest = Parsed<typeof approveAssetRequestSchema>;
 export type IssueRunnerCredentialRequest = Parsed<typeof issueRunnerCredentialRequestSchema>;
 export type IssuedRunnerCredential = Parsed<typeof issuedRunnerCredentialSchema>;
 export type ArticlePage = {
@@ -165,7 +160,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const runs = `${API_PREFIX}/research-runs`;
 	const sources = `${API_PREFIX}/sources`;
 	const workspaces = `${API_PREFIX}/workspaces`;
-	const assets = `${API_PREFIX}/assets`;
 	const credentials = `${API_PREFIX}/runner-credentials`;
 
 	return {
@@ -439,21 +433,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				payload,
 				workspaceSummarySchema,
 			),
-
-		/* ----- approved assets ----- */
-		listAssets: async (): Promise<ApiResult<readonly ApprovedAsset[]>> => {
-			const result = await requestJson({ method: "GET", path: assets }, assetListResponseSchema);
-			return result.ok ? ok(result.value.assets) : result;
-		},
-		approveAsset: (request: ApproveAssetRequest): Promise<ApiResult<ApprovedAsset>> =>
-			write(
-				{ method: "POST", path: assets },
-				approveAssetRequestSchema,
-				request,
-				approvedAssetSchema,
-			),
-		deleteAsset: (assetId: string): Promise<ApiResult<null>> =>
-			requestEmpty({ method: "DELETE", path: `${assets}/${segment(assetId)}` }),
 
 		/* ----- runner credentials ----- */
 		listRunnerCredentials: async (): Promise<ApiResult<readonly RunnerCredential[]>> => {

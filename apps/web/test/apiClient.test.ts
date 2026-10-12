@@ -319,12 +319,12 @@ describe("write protection headers", () => {
 		const { backend, api } = setup();
 		backend.on("POST", /workspaces$/, () => jsonResponse(WORKSPACE_SUMMARY, { status: 201 }));
 		backend.on("PATCH", /sources\/src_1$/, () => errorResponse(404, "NOT_FOUND", "no such source"));
-		backend.on("DELETE", /assets\/asset_1$/, () => new Response(null, { status: 204 }));
+		backend.on("DELETE", /sources\/src_1$/, () => new Response(null, { status: 204 }));
 		backend.on("POST", /cancel$/, () => jsonResponse({ run: makeRun({ state: "cancelled" }) }));
 
 		await api.createWorkspace("New workspace");
 		await api.updateSource("src_1", { feedStatus: "paused" });
-		const deleted = await api.deleteAsset("asset_1");
+		const deleted = await api.deleteSource("src_1");
 		await api.cancelResearchRun("run_1");
 
 		expect(deleted).toEqual({ ok: true, value: null });

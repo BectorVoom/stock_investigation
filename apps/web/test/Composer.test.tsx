@@ -98,10 +98,6 @@ function typeQuestion(text = "Where will storage demand grow?") {
 	fireEvent.input(screen.getByLabelText("Question"), { target: { value: text } });
 }
 
-function costStatement(): string {
-	return document.querySelector("[data-cost-statement]")?.textContent ?? "";
-}
-
 function questionValue(): string {
 	const element = screen.getByLabelText("Question");
 	if (!(element instanceof HTMLTextAreaElement)) throw new Error("question is not a textarea");
@@ -149,11 +145,12 @@ describe("Composer: fields", () => {
 		expect(form).toContain("backend default");
 		expect(form).toContain("medium");
 		expect(form).toContain("web access off");
-		expect(form).toContain("6 steps");
-		expect(form).toContain("20 tool calls");
-		expect(form).toContain("10 min");
-		expect(form).toContain("400,000 input bytes");
-		expect(form).toContain("no metered spend authorized");
+		// Limits and the cost statement live in Settings → AI agent, not here
+		// (owner decision 2026-10-12).
+		expect(form).not.toContain("Limits and cost");
+		expect(form).not.toContain("6 steps");
+		expect(form).not.toContain("20 tool calls");
+		expect(form).not.toContain("no metered spend authorized");
 		const link = screen.getByRole("link", { name: "Change in Settings → AI agent" });
 		expect(link.getAttribute("href")).toBe("#/settings/agent");
 	});
@@ -163,8 +160,12 @@ describe("Composer: fields", () => {
 		expect(composerText()).toContain("OpenRouter (available)");
 		expect(composerText()).toContain("provider/model");
 		expect(composerText()).toContain("high");
-		expect(composerText()).toContain("$3.00 maximum spend");
 		expect(composerText()).toContain("web access on");
+		// The metered allowance is stated in the consent label itself.
+		expect(
+			screen.getByRole("checkbox", { name: /consent to metered spend up to \$3\.00/ }),
+		).toBeDefined();
+		expect(composerText()).not.toContain("Limits and cost");
 	});
 
 	it("shows the current options choice in the disclosure summary", () => {
@@ -272,11 +273,15 @@ describe("Composer: agent settings loading", () => {
 });
 
 describe("Composer: cost honesty and consent (FR-016)", () => {
-	it("shows unknown cost for a plan-limited backend, never $0, and sends no spend allowance", async () => {
+	it("shows no limits or cost statement for a plan-limited backend, never $0, and sends no spend allowance", async () => {
 		const { submit } = mount();
 		typeQuestion();
 
-		expect(costStatement()).toContain("Cost unknown — limited by your plan");
+		// Limits and the cost statement live in Settings → AI agent (owner
+		// decision 2026-10-12): the composer shows only the backend summary.
+		expect(document.querySelector("[data-cost-statement]")).toBeNull();
+		expect(screen.queryByText("Limits and cost")).toBeNull();
+		expect(composerText()).toContain("Claude Code (available)");
 		expect(screen.getByRole("form", { name: "Research composer" }).textContent).not.toMatch(
 			/\$\s?0/,
 		);
@@ -299,7 +304,11 @@ describe("Composer: cost honesty and consent (FR-016)", () => {
 		const { submit } = mount(undefined, { status: "ready", value: METERED_RESPONSE });
 		typeQuestion();
 
-		expect(costStatement()).toContain("no paid fallback without consent");
+		// The consent label states the metered allowance itself (no "above").
+		expect(
+			screen.getByRole("checkbox", { name: /consent to metered spend up to \$3\.00/ }),
+		).toBeDefined();
+		expect(document.querySelector("[data-cost-statement]")).toBeNull();
 		expect(submitButton().disabled).toBe(true);
 		expect(screen.getByRole("list", { name: "Before you can submit" }).textContent).toContain(
 			"Confirm consent to metered spend on the form itself.",

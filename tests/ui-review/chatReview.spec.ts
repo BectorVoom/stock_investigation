@@ -401,8 +401,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 	await audit(page, "A run details open");
 	await runDetails.locator("summary").first().click();
 
-	// Composer disclosures.
-	await page.locator("summary", { hasText: "Limits and cost" }).click();
+	// Composer disclosure (Options only; "Limits and cost" was removed).
 	await page.locator("summary", { hasText: /^Options:/ }).click();
 	await page.waitForTimeout(300);
 	await shot(page, "A3-composer-disclosures");
@@ -414,7 +413,6 @@ test("UI review of the Chat page", async ({ browser }) => {
 			rule: "composer-below-fold",
 			detail: `composer bottom at ${Math.round(afterDisclosures.y + afterDisclosures.height)} in a 900px viewport`,
 		});
-	await page.locator("summary", { hasText: "Limits and cost" }).click();
 	await page.locator("summary", { hasText: /^Options:/ }).click();
 
 	// Records drawer: opens, takes focus, closes with Escape, returns focus.
