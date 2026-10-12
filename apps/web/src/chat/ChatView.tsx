@@ -21,7 +21,8 @@ export function ChatView(props: {
 	readonly registry: UiRegistry;
 	readonly visibility: VisibilitySource;
 	readonly workspaceId: string | null;
-	readonly onSelectConversation: (workspaceId: string) => void;
+	/** Null opens the page with no conversation selected (the welcome). */
+	readonly onSelectConversation: (workspaceId: string | null) => void;
 }): JSX.Element {
 	const conversations = createConversationList(props.api, props.visibility);
 	const ordered = createMemo(() => [...(conversations.value() ?? [])].sort(byNewestActivity));
@@ -177,14 +178,8 @@ export function ChatView(props: {
 		if (disposed) return;
 		if (wasOpen) {
 			const remaining = [...(conversations.value() ?? [])].sort(byNewestActivity);
-			if (remaining.length === 0) {
-				// No chats remain: show the empty welcome (null selection).
-				// The parent owns the URL; navigate by clearing the hash.
-				window.location.hash = "#/chat";
-			} else {
-				const newest = remaining[0];
-				if (newest !== undefined) props.onSelectConversation(newest.workspaceId);
-			}
+			// No chats remain: a null selection shows the welcome.
+			props.onSelectConversation(remaining[0]?.workspaceId ?? null);
 		}
 		// Return focus to the opener (the More actions button).
 		deleteOpener()?.focus();
@@ -358,5 +353,3 @@ export function ChatView(props: {
 		</div>
 	);
 }
-
-export type { JSX };

@@ -261,7 +261,7 @@ export function Composer(props: {
 				form = element;
 			}}
 			aria-label="Research composer"
-			class="space-y-1 bg-slate-100"
+			class="space-y-1 bg-white"
 			noValidate
 			onSubmit={submit}
 		>

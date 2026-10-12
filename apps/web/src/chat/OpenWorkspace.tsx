@@ -197,7 +197,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 						setSuggestion({ text, nonce: suggestionNonce });
 					}}
 				/>
-				<div class="sticky bottom-0 z-10 mx-auto w-full max-w-3xl shrink-0 bg-slate-100 px-1 pb-2 pt-1 lg:static lg:bg-white">
+				<div class="sticky bottom-0 z-10 mx-auto w-full max-w-3xl shrink-0 bg-white px-1 pb-2 pt-1 lg:static">
 					<Composer
 						workspaceId={props.workspaceId}
 						agents={agents.state()}
@@ -318,5 +318,3 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		</Show>
 	);
 }
-
-export type { WorkspaceSession };
