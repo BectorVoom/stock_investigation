@@ -67,7 +67,9 @@ Ask research questions and read the answers, with their sources and run progress
   evidence records drawer for one run, session notices and load errors.
 - The Canvas panel: the stored tables, charts and reports of the open
   conversation in `layout.order` through the registry, with workspace version,
-  component count in the header and per-component controls; a short empty
+  component count in the header and per-component controls; cited sources
+  appear as numbered chips opening a source card, with one compact `N sources`
+  disclosure per component; a short empty
   state when there are none. A collapsed Canvas panel mounts none of it.
 
 **Not here**

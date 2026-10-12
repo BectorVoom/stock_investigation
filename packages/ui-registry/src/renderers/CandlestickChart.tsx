@@ -134,6 +134,7 @@ export function CandlestickChart(props: RendererProps<CandlestickChartProps>): J
 			data={data()}
 			sourceIds={props.props.sourceIds}
 			sources={props.context.sources}
+			citationScopeKey={props.componentId}
 			plottedCount={model()?.marks.length ?? 0}
 			unavailableCount={model()?.unavailableCount ?? 0}
 			missingColumns={model()?.missingColumns ?? []}

@@ -1,4 +1,4 @@
-import { cleanup, render } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
 import { cellBasis, type RenderContext, type WorkspaceComponent } from "../src/index.ts";
 import { ResearchReport } from "../src/renderers/ResearchReport.tsx";
@@ -20,6 +20,11 @@ interface Case {
 	readonly props: Props;
 	readonly context?: Partial<RenderContext>;
 	readonly expectText: string;
+	/**
+	 * When the missing-source state shows behind a chip's card, the
+	 * aria-label fragment of the chip to open before asserting.
+	 */
+	readonly chipLabel?: string;
 }
 
 interface Scenario {
@@ -102,6 +107,7 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 		missing: {
 			props: { ...VALID_PROPS["news-card"], sourceId: "ev_gone" },
 			expectText: "Source unavailable (id ev_gone)",
+			chipLabel: "unavailable",
 		},
 		unavailable: {
 			props: { ...VALID_PROPS["news-card"], summary: null },
@@ -111,13 +117,13 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 		links: [SOURCE_A],
 	},
 	"source-list": {
-		validText: ["Key sources", "Grid storage outlook 2026", "Example Filing Agency"],
+		validText: ["Key sources", "Grid storage outlook 2026", "filings.example.org"],
 		missing: {
 			props: { title: "Key sources", sourceIds: ["ev_gone"] },
 			expectText: "Source unavailable (id ev_gone)",
 		},
-		// EVIDENCE_B has no publication date: said explicitly, not left blank.
-		unavailable: { props: VALID_PROPS["source-list"], expectText: "published date not stated" },
+		// The disclosure rows carry title and host only; dates live on the card.
+		unavailable: { props: VALID_PROPS["source-list"], expectText: "2 sources" },
 		invalidProps: { title: "Key sources", sourceIds: [] },
 		links: [SOURCE_A, SOURCE_B],
 	},
@@ -145,6 +151,7 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 			props: VALID_PROPS["image-gallery"],
 			context: { sources: new Map() },
 			expectText: "Source unavailable (id ev_a)",
+			chipLabel: "unavailable",
 		},
 		invalidProps: { title: "Plant photos", images: [] },
 		links: [SOURCE_A],
@@ -159,6 +166,7 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 		missing: {
 			props: VALID_PROPS["research-report"],
 			expectText: "Source unavailable (id ev_unknown)",
+			chipLabel: "unavailable",
 		},
 		unavailable: {
 			props: VALID_PROPS["research-report"],
@@ -171,6 +179,16 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 
 describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 	const scenario = SCENARIOS[componentType];
+
+	/** A chip's card opens on click; open the one naming the missing source. */
+	function openChipByLabel(container: HTMLElement, wanted: string | undefined): void {
+		if (wanted === undefined) return;
+		const chip = [...container.querySelectorAll("[data-citation-chip]")].find((entry) =>
+			entry.getAttribute("aria-label")?.includes(wanted),
+		);
+		if (!(chip instanceof HTMLElement)) throw new Error(`no chip labelled ${wanted}`);
+		fireEvent.click(chip);
+	}
 
 	it("renders the valid fixture without a fallback", () => {
 		const container = renderComponent(component(componentType, VALID_PROPS[componentType]));
@@ -186,6 +204,7 @@ describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 			component(componentType, scenario.missing.props),
 			scenario.missing.context,
 		);
+		openChipByLabel(container, scenario.missing.chipLabel);
 		expect(container.querySelector("[data-fallback]")).toBeNull();
 		expect(container.textContent).toContain(scenario.missing.expectText);
 	});
@@ -195,6 +214,7 @@ describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 			component(componentType, scenario.unavailable.props),
 			scenario.unavailable.context,
 		);
+		openChipByLabel(container, scenario.unavailable.chipLabel);
 		expect(container.textContent).toContain(scenario.unavailable.expectText);
 	});
 
@@ -208,7 +228,22 @@ describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 
 	it("renders its sources as safe https links", () => {
 		const container = renderComponent(component(componentType, VALID_PROPS[componentType]));
-		const hrefs = expectOnlySafeLinks(container).map((anchor) => anchor.getAttribute("href"));
+		// Chips open their cards one at a time; collect every link shown, then
+		// every link already in the document. All must be safe https links.
+		const hrefs = new Set<string>();
+		for (const chip of container.querySelectorAll("[data-citation-chip]")) {
+			if (chip instanceof HTMLElement) {
+				fireEvent.click(chip);
+				for (const anchor of container.querySelectorAll("[data-citation-card] a")) {
+					const href = anchor.getAttribute("href");
+					if (href !== null) hrefs.add(href);
+				}
+			}
+		}
+		for (const anchor of expectOnlySafeLinks(container)) {
+			const href = anchor.getAttribute("href");
+			if (href !== null) hrefs.add(href);
+		}
 		for (const link of scenario.links) {
 			expect(hrefs).toContain(link);
 		}
@@ -216,39 +251,85 @@ describe.each(BASELINE_TYPES)("%s renderer", (componentType) => {
 });
 
 describe("provenance details", () => {
-	it("shows title, publisher, published, retrieved and as-of dates for a source", () => {
+	it("shows the N sources disclosure with numbered rows matching the chips", () => {
 		const container = renderComponent(component("source-list", VALID_PROPS["source-list"]));
-		const [first] = texts(container, "[data-source-id='ev_a']");
-		expect(first).toContain("Grid storage outlook 2026");
-		expect(first).toContain("Example Energy Review");
-		expect(first).toContain("published 2026-09-01");
-		expect(first).toContain("retrieved 2026-10-01");
-		expect(first).toContain("data as of 2026-06-30");
+		expect(container.textContent).toContain("2 sources");
+		const rows = [...container.querySelectorAll('ol[aria-label="Sources"] > li')];
+		expect(rows.map((row) => row.textContent)).toEqual([
+			expect.stringContaining("1."),
+			expect.stringContaining("2."),
+		]);
+		expect(rows[0]?.textContent).toContain("Grid storage outlook 2026");
+		expect(rows[0]?.textContent).toContain("example.com");
+		expect(rows[0]?.querySelector("a")?.getAttribute("href")).toBe(SOURCE_A);
+		expect(rows[1]?.textContent).toContain("Annual securities report FY2025");
+		expect(rows[1]?.querySelector("a")?.getAttribute("href")).toBe(SOURCE_B);
 	});
 
-	it("shows an as-of date and source link on sourced numeric cells", () => {
+	it("shows title, publisher and all three dates on a source card", () => {
+		const container = renderComponent(component("news-card", VALID_PROPS["news-card"]));
+		const chip = container.querySelector("[data-citation-chip]");
+		if (!(chip instanceof HTMLElement)) throw new Error("expected a citation chip");
+		fireEvent.click(chip);
+		const card = container.querySelector("[data-citation-card]");
+		expect(card?.textContent).toContain("Grid storage outlook 2026");
+		expect(card?.textContent).toContain("Example Energy Review");
+		expect(card?.textContent).toContain("example.com");
+		expect(card?.textContent).toContain("published");
+		expect(card?.textContent).toContain("2026-09-01");
+		expect(card?.textContent).toContain("retrieved");
+		expect(card?.textContent).toContain("2026-10-01");
+		expect(card?.textContent).toContain("data as of");
+		expect(card?.textContent).toContain("2026-06-30");
+		expect(card?.querySelector("a")?.getAttribute("href")).toBe(SOURCE_A);
+	});
+
+	it("says date not stated on the card when a date is missing, and omits data as of", () => {
+		const container = renderComponent(component("financial-table", VALID_PROPS["financial-table"]));
+		// EVIDENCE_B has no publication date and no as-of date: said
+		// explicitly, not left blank.
+		const chip = container.querySelector(
+			'[data-citation-chip][aria-label="Source 1: Annual securities report FY2025"]',
+		);
+		if (!(chip instanceof HTMLElement)) throw new Error("expected a citation chip");
+		fireEvent.click(chip);
+		const card = container.querySelector("[data-citation-card]");
+		expect(card?.textContent).toContain("date not stated");
+		expect(card?.textContent).toContain("retrieved");
+		expect(card?.textContent).not.toContain("data as of");
+	});
+
+	it("shows an as-of date and a citation chip on sourced numeric cells", () => {
 		const container = renderComponent(component("financial-table", VALID_PROPS["financial-table"]));
 		const perCell = [...container.querySelectorAll("td")].find((cell) =>
 			cell.textContent?.includes("18.25"),
 		);
 		expect(perCell?.textContent).toContain("as of 2026-09-30");
-		const link = perCell?.querySelector("a");
-		expect(link?.getAttribute("href")).toBe(SOURCE_B);
-		expect(link?.getAttribute("aria-label")).toBe("Source: Annual securities report FY2025");
+		const chip = perCell?.querySelector("[data-citation-chip]");
+		expect(chip?.tagName).toBe("BUTTON");
+		expect(chip?.textContent).toBe("1");
+		expect(chip?.getAttribute("aria-label")).toBe("Source 1: Annual securities report FY2025");
 	});
 
-	it("marks a cell whose source id does not resolve as source unavailable, with no link", () => {
+	it("marks a cell whose source id does not resolve as a chip opening an unavailable card", () => {
 		const container = renderComponent(component("financial-table", VALID_PROPS["financial-table"]));
 		const marginCell = [...container.querySelectorAll("td")].find((cell) =>
 			cell.textContent?.includes("7.4"),
 		);
-		expect(marginCell?.textContent).toContain("Source unavailable (id ev_missing)");
+		const chip = marginCell?.querySelector("[data-citation-chip]");
+		expect(chip?.tagName).toBe("BUTTON");
+		expect(chip?.getAttribute("aria-label")).toBe("Source 2: unavailable");
 		expect(marginCell?.querySelector("a")).toBeNull();
+		if (!(chip instanceof HTMLElement)) throw new Error("expected a citation chip");
+		fireEvent.click(chip);
+		expect(container.querySelector("[data-citation-card]")?.textContent).toContain(
+			"Source unavailable (id ev_missing)",
+		);
 	});
 
 	it("says so when a component cites no sources at all", () => {
 		const container = renderComponent(
-			component("data-table", { ...VALID_PROPS["data-table"], sourceIds: [] }),
+			component("data-table", { title: "Empty", datasetRef: "ds_empty", sourceIds: [] }),
 		);
 		expect(container.textContent).toContain("No sources cited for this component.");
 	});
@@ -425,7 +506,11 @@ describe("basis of displayed numbers (hard gate 6)", () => {
 		const row = [...container.querySelectorAll("tbody tr")].find(
 			(candidate) => candidate.querySelector("th")?.textContent === rowLabel,
 		);
-		const cell = row?.querySelectorAll("td:not(:has(button))")[columnIndex];
+		// Data cells only: the Select cell holds a row button, while sourced
+		// cells now hold citation chips (also buttons).
+		const cell = row?.querySelectorAll('td:not(:has(button[aria-label^="Select row"]))')[
+			columnIndex
+		];
 		if (cell === undefined) throw new Error(`no cell ${columnIndex} in row ${rowLabel}`);
 		return cell;
 	}
@@ -450,15 +535,16 @@ describe("basis of displayed numbers (hard gate 6)", () => {
 		expect(marker?.textContent).toBe("derived");
 	});
 
-	it("shows a sourced number with its source and as-of date and no basis marker", () => {
+	it("shows a sourced number with its chip and as-of date and no basis marker", () => {
 		const container = renderComponent(component("data-table", VALID_PROPS["data-table"]));
 		const base2026 = cellOf(container, "2026", 0);
 		expect(base2026.textContent).toContain("120");
 		expect(base2026.querySelector("time")?.textContent).toBe("2026-06-30");
 		expect(base2026.textContent).toContain("as of 2026-06-30");
-		const link = base2026.querySelector("a");
-		expect(link?.getAttribute("href")).toBe(SOURCE_A);
-		expect(link?.getAttribute("aria-label")).toBe("Source: Grid storage outlook 2026");
+		const chip = base2026.querySelector("[data-citation-chip]");
+		expect(chip?.tagName).toBe("BUTTON");
+		expect(chip?.textContent).toBe("1");
+		expect(chip?.getAttribute("aria-label")).toBe("Source 1: Grid storage outlook 2026");
 		expect(base2026.querySelector("[data-cell-basis]")).toBeNull();
 	});
 
@@ -483,7 +569,9 @@ describe("basis of displayed numbers (hard gate 6)", () => {
 		expect(texts(table ?? container, '[data-cell-basis="assumption"]')).toHaveLength(4);
 		expect(texts(table ?? container, '[data-cell-basis="derived"]')).toEqual(["derived"]);
 		expect(
-			table?.querySelector('a[aria-label="Source: Grid storage outlook 2026"]'),
+			table?.querySelector(
+				'[data-citation-chip][aria-label="Source 1: Grid storage outlook 2026"]',
+			),
 		).not.toBeNull();
 		expect(container.querySelector("[data-chart-basis-note]")?.textContent).toBe(
 			"Not sourced measurements: 4 assumptions, 1 derived value. Each is marked in the data table.",
@@ -567,7 +655,12 @@ describe("stale data: a number column holding text", () => {
 		expect(cell?.querySelector("[data-as-of-missing]")?.textContent?.trim()).toBe(
 			"as-of date not stated",
 		);
-		expect(cell?.querySelector("a")?.getAttribute("href")).toBe(SOURCE_A);
+		const chip = cell?.querySelector("[data-citation-chip]");
+		expect(chip?.tagName).toBe("BUTTON");
+		expect(chip?.getAttribute("aria-label")).toBe("Source 1: Grid storage outlook 2026");
+		if (!(chip instanceof HTMLElement)) throw new Error("expected a citation chip");
+		fireEvent.click(chip);
+		expect(container.querySelector("[data-citation-card] a")?.getAttribute("href")).toBe(SOURCE_A);
 		expect(cell?.querySelector("[data-cell-basis]")).toBeNull();
 	});
 
@@ -632,8 +725,11 @@ describe("research-report", () => {
 		);
 		expect(note?.querySelector("[data-claim-type], [data-claim-status]")).toBeNull();
 		expect(note?.hasAttribute("data-claim-id")).toBe(false);
-		// Its cited source is still listed (and honestly reported as unresolvable).
-		expect(note?.textContent).toContain("Source unavailable (id ev_unknown)");
+		// Its cited source is still listed as a chip (and honestly reported as
+		// unresolvable once its card opens).
+		expect(
+			note?.querySelector('[data-citation-chip][aria-label="Source 3: unavailable"]'),
+		).not.toBeNull();
 	});
 
 	it("rejects props that give a free-form statement a status or type", () => {

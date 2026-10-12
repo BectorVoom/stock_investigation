@@ -1,8 +1,9 @@
-import { For, type JSX, Show } from "solid-js";
+import { createMemo, For, type JSX, Show } from "solid-js";
 import { countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
 import { formatAxisTick } from "../format.ts";
-import { DatasetTable } from "../parts/DatasetTable.tsx";
-import { SourceList, type SourceMap } from "../parts/SourceLinks.tsx";
+import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
+import { CitationScope, SourceList } from "../parts/citations.tsx";
+import type { SourceMap } from "../parts/SourceLinks.tsx";
 import { DataUnavailable, EmptyState } from "../parts/states.tsx";
 import {
 	CHART_INK,
@@ -212,6 +213,8 @@ export function ChartShell(props: {
 	readonly data: GuardedDataset | undefined;
 	readonly sourceIds: readonly string[];
 	readonly sources: SourceMap;
+	/** Identifies the component owning this chart, for citation numbering. */
+	readonly citationScopeKey: string;
 	readonly plottedCount: number;
 	readonly unavailableCount: number;
 	/** Keys the chart was asked to plot that the dataset does not declare. */
@@ -225,70 +228,79 @@ export function ChartShell(props: {
 	readonly readout: string | null;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	// The data-table twin's cells cite too, so their ids number before the
+	// component's own sources.
+	const sourceIdsInOrder = createMemo(() => [
+		...cellSourceIdsInOrder(props.data),
+		...props.sourceIds,
+	]);
 	return (
-		<figure class="m-0">
-			<h3 class="text-sm font-semibold text-slate-900">{props.title}</h3>
-			<Show when={props.data} fallback={<DataUnavailable datasetRef={props.datasetRef} />}>
-				{(data) => (
-					<>
-						<For each={props.withheldSeries}>
-							{(series) => (
-								<p data-withheld-series={series.label} class="text-xs text-amber-900">
-									Series "{series.label}" — {series.reason}.
-								</p>
-							)}
-						</For>
-						<Show when={props.missingColumns.length > 0}>
-							<output data-state="missing-columns" class="block text-xs text-amber-900">
-								Not in the dataset, so not plotted: {props.missingColumns.join(", ")}.
-							</output>
-						</Show>
-						<Show
-							when={props.plottedCount > 0}
-							fallback={
-								<EmptyState>
-									{data().dataset.rows.length === 0
-										? "No data — this dataset has no rows."
-										: "No plottable data — every requested value is unavailable."}
-								</EmptyState>
-							}
-						>
-							{props.children}
-							{props.legend}
-							<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-								{props.readout ??
-									"Point at the chart to read values; the data table below lists every value."}
-							</p>
-						</Show>
-						<Show when={props.unavailableCount > 0}>
-							<p
-								data-unavailable-count={props.unavailableCount}
-								class="mt-1 text-xs text-amber-900"
+		<CitationScope sourceIdsInOrder={sourceIdsInOrder()}>
+			<figure class="m-0">
+				<h3 class="text-sm font-semibold text-slate-900">{props.title}</h3>
+				<Show when={props.data} fallback={<DataUnavailable datasetRef={props.datasetRef} />}>
+					{(data) => (
+						<>
+							<For each={props.withheldSeries}>
+								{(series) => (
+									<p data-withheld-series={series.label} class="text-xs text-amber-900">
+										Series "{series.label}" — {series.reason}.
+									</p>
+								)}
+							</For>
+							<Show when={props.missingColumns.length > 0}>
+								<output data-state="missing-columns" class="block text-xs text-amber-900">
+									Not in the dataset, so not plotted: {props.missingColumns.join(", ")}.
+								</output>
+							</Show>
+							<Show
+								when={props.plottedCount > 0}
+								fallback={
+									<EmptyState>
+										{data().dataset.rows.length === 0
+											? "No data — this dataset has no rows."
+											: "No plottable data — every requested value is unavailable."}
+									</EmptyState>
+								}
 							>
-								{props.unavailableCount} {props.unavailableCount === 1 ? "point" : "points"}{" "}
-								unavailable — not plotted (never drawn as 0). See the data table for the reasons.
-							</p>
-						</Show>
-						<Show when={basisNote(data(), props.valueColumnKeys)}>
-							{(note) => (
-								<p data-chart-basis-note="true" class="mt-1 text-xs text-slate-800">
-									{note()}
+								{props.children}
+								{props.legend}
+								<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
+									{props.readout ??
+										"Point at the chart to read values; the data table below lists every value."}
 								</p>
-							)}
-						</Show>
-						<details class="mt-1 text-xs">
-							<summary class="cursor-pointer text-slate-700">Data table: {props.title}</summary>
-							<DatasetTable
-								data={data()}
-								caption={`Values plotted in "${props.title}"`}
-								sources={props.sources}
-								columnKeys={props.tableColumnKeys}
-							/>
-						</details>
-					</>
-				)}
-			</Show>
-			<SourceList sourceIds={props.sourceIds} sources={props.sources} />
-		</figure>
+							</Show>
+							<Show when={props.unavailableCount > 0}>
+								<p
+									data-unavailable-count={props.unavailableCount}
+									class="mt-1 text-xs text-amber-900"
+								>
+									{props.unavailableCount} {props.unavailableCount === 1 ? "point" : "points"}{" "}
+									unavailable — not plotted (never drawn as 0). See the data table for the reasons.
+								</p>
+							</Show>
+							<Show when={basisNote(data(), props.valueColumnKeys)}>
+								{(note) => (
+									<p data-chart-basis-note="true" class="mt-1 text-xs text-slate-800">
+										{note()}
+									</p>
+								)}
+							</Show>
+							<details class="mt-1 text-xs">
+								<summary class="cursor-pointer text-slate-700">Data table: {props.title}</summary>
+								<DatasetTable
+									data={data()}
+									caption={`Values plotted in "${props.title}"`}
+									sources={props.sources}
+									columnKeys={props.tableColumnKeys}
+									citationGroupKey={`${props.citationScopeKey}::table`}
+								/>
+							</details>
+						</>
+					)}
+				</Show>
+				<SourceList sourceIds={props.sourceIds} sources={props.sources} />
+			</figure>
+		</CitationScope>
 	);
 }

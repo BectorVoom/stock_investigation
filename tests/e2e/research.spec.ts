@@ -272,14 +272,31 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 	await expect(page.locator("body")).not.toContainText("999%");
 
 	// Every source is a real link to the retrieved article, with tracking parameters stripped.
-	const sourceLink = canvas
-		.locator('[data-component-type="source-list"]')
-		.getByRole("link", { name: new RegExp(HEADLINE) });
+	// The sources block is the compact "N sources" disclosure: open it first.
+	const sourceList = canvas.locator('[data-component-type="source-list"]');
+	await sourceList.locator("summary").click();
+	const sourceLink = sourceList.getByRole("link", { name: new RegExp(HEADLINE) });
 	await expect(sourceLink).toHaveAttribute(
 		"href",
 		"https://news.example.org/articles/grid-storage-orders",
 	);
 	await expect(sourceLink).toHaveAttribute("rel", /noopener/);
+
+	// A chip in a canvas component opens its source card, inside the panel.
+	const canvasChip = report.locator("[data-citation-chip]").first();
+	await canvasChip.click();
+	const canvasCard = report.locator("[data-citation-card]");
+	await expect(canvasCard.getByRole("link", { name: "Open source" })).toBeVisible();
+	const cardBox = await canvasCard.boundingBox();
+	const canvasBox = await canvas.boundingBox();
+	expect(cardBox).not.toBeNull();
+	expect(canvasBox).not.toBeNull();
+	if (cardBox !== null && canvasBox !== null) {
+		expect(cardBox.x).toBeGreaterThanOrEqual(canvasBox.x - 1);
+		expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(canvasBox.x + canvasBox.width + 1);
+	}
+	await page.keyboard.press("Escape");
+	await expect(canvasCard).toHaveCount(0);
 
 	// The chart is derived (20% a year for the base case) and has an accessible name.
 	await expect(
