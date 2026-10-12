@@ -1,9 +1,10 @@
 /**
- * Numbering for NotebookLM-style citation chips in an answer.
+ * Numbering for NotebookLM-style citation chips in one scope (one chat answer
+ * or one canvas component).
  *
- * Numbers are per answer: the distinct evidence ids of that answer's claims in
- * order of first appearance, starting at 1; the same evidence always gets the
- * same number within the answer. Pure over ids, so unit-testable without Solid.
+ * Numbers are per scope: the distinct evidence ids in order of first
+ * appearance, starting at 1; the same evidence always gets the same number
+ * within the scope. Pure over ids, so unit-testable without Solid.
  */
 
 export interface ClaimLinksInput {
@@ -14,11 +15,11 @@ export interface ClaimLinksInput {
 export interface CitationNumbering {
 	/** Evidence id -> 1-based number, in order of first appearance. */
 	readonly numberByEvidenceId: ReadonlyMap<string, number>;
-	/** Evidence ids of the answer in number order (index 0 is source 1). */
+	/** Evidence ids of the scope in number order (index 0 is source 1). */
 	readonly evidenceIdsInOrder: readonly string[];
 }
 
-/** Assigns per-answer citation numbers over the claims in display order. */
+/** Assigns per-scope citation numbers over the claims in display order. */
 export function numberEvidence(claims: readonly ClaimLinksInput[]): CitationNumbering {
 	const numberByEvidenceId = new Map<string, number>();
 	const evidenceIdsInOrder: string[] = [];

@@ -7,6 +7,7 @@ import {
 	type DatasetColumn,
 	type GuardedDataset,
 } from "../datasetGuard.ts";
+import { citationGroupFocusOut, ComponentCitation, useCitationScope } from "./citations.tsx";
 import { DateText, SafeLink, type SourceMap, SourceUnavailable } from "./SourceLinks.tsx";
 import { EmptyState, Unavailable } from "./states.tsx";
 
@@ -24,14 +25,38 @@ function columnHeading(column: DatasetColumn): string {
 }
 
 /**
- * Everything that qualifies a value (hard gate 6): the as-of date and source
- * link of a sourced figure, or a visible marker saying the number is an
- * assumption, a derived value, or (stale data only) of no stated basis.
+ * A component's cell-cited sources in row-major order, for its citation
+ * scope: cells render before the sources block, so their ids number first and
+ * the same source keeps one number in cells and in the disclosure.
+ */
+export function cellSourceIdsInOrder(data: GuardedDataset | undefined): string[] {
+	if (data === undefined) return [];
+	const ids: string[] = [];
+	const seen = new Set<string>();
+	for (const row of data.dataset.rows) {
+		for (const column of data.dataset.columns) {
+			const sourceId = row[column.key]?.sourceId;
+			if (sourceId !== undefined && !seen.has(sourceId)) {
+				seen.add(sourceId);
+				ids.push(sourceId);
+			}
+		}
+	}
+	return ids;
+}
+
+/**
+ * Everything that qualifies a value (hard gate 6): the as-of date and a
+ * numbered citation chip for a sourced figure, or a visible marker saying the
+ * number is an assumption, a derived value, or (stale data only) of no stated
+ * basis.
  */
 function CellProvenance(props: {
 	readonly cell: DatasetCell;
 	readonly sources: SourceMap;
+	readonly chipKey: string;
 }): JSX.Element {
+	const scope = useCitationScope();
 	const source = createMemo(() =>
 		props.cell.sourceId === undefined ? undefined : props.sources.get(props.cell.sourceId),
 	);
@@ -81,12 +106,23 @@ function CellProvenance(props: {
 					{(sourceId) => (
 						<span>
 							{" "}
-							<Show when={source()} fallback={<SourceUnavailable sourceId={sourceId()} />}>
-								{(evidence) => (
-									<SafeLink url={evidence().sourceUrl} label={`Source: ${evidence().title}`}>
-										source
-									</SafeLink>
-								)}
+							<Show
+								when={scope !== null}
+								fallback={
+									<Show when={source()} fallback={<SourceUnavailable sourceId={sourceId()} />}>
+										{(evidence) => (
+											<SafeLink url={evidence().sourceUrl} label={`Source: ${evidence().title}`}>
+												source
+											</SafeLink>
+										)}
+									</Show>
+								}
+							>
+								<ComponentCitation
+									sourceId={sourceId()}
+									chipKey={`${props.chipKey}::${sourceId()}`}
+									sources={props.sources}
+								/>
 							</Show>
 						</span>
 					)}
@@ -100,6 +136,7 @@ function CellContent(props: {
 	readonly cell: DatasetCell | undefined;
 	readonly column: DatasetColumn;
 	readonly sources: SourceMap;
+	readonly chipKey: string;
 }): JSX.Element {
 	const display = createMemo(() => cellDisplay(props.cell, props.column));
 	const text = () => {
@@ -116,7 +153,7 @@ function CellContent(props: {
 				<span>{text()}</span>
 			</Show>
 			<Show when={props.cell}>
-				{(cell) => <CellProvenance cell={cell()} sources={props.sources} />}
+				{(cell) => <CellProvenance cell={cell()} sources={props.sources} chipKey={props.chipKey} />}
 			</Show>
 		</>
 	);
@@ -135,8 +172,16 @@ export function DatasetTable(props: {
 	/** Restricts and orders the columns; unknown keys are ignored. */
 	readonly columnKeys?: readonly string[];
 	readonly selection?: RowSelection;
+	/**
+	 * Citation group for this table's cell chips: `${componentId}::table`.
+	 * The outer box is the chips' group and their cards' anchor, so cards
+	 * float below the table at the table's width, inside the panel.
+	 */
+	readonly citationGroupKey: string;
 }): JSX.Element {
 	const dataset = () => props.data.dataset;
+	const scope = useCitationScope();
+	const hoverEnd = () => scope?.hoverEnd();
 	const columns = createMemo((): readonly DatasetColumn[] => {
 		const keys = props.columnKeys;
 		if (keys === undefined) return dataset().columns;
@@ -148,90 +193,104 @@ export function DatasetTable(props: {
 	});
 
 	return (
-		<div class="overflow-x-auto">
-			<table class="w-full border-collapse text-left text-sm">
-				<caption class="caption-top pb-1 text-left text-xs text-slate-600">{props.caption}</caption>
-				<thead>
-					<tr class="border-b border-slate-300 text-xs text-slate-700">
-						<Show when={props.selection}>
-							<th scope="col" class="py-1 pr-2 font-semibold">
-								Select
-							</th>
-						</Show>
-						<For each={columns()}>
-							{(column) => (
-								<th
-									scope="col"
-									class="py-1 pr-3 font-semibold"
-									classList={{ "text-right": column.kind === "number" }}
-								>
-									{columnHeading(column)}
+		// A figure: the table is self-contained content, and the figure box is
+		// the cell chips' citation group and their cards' anchor, so cards
+		// float below the table at the table's width, inside the panel.
+		<figure
+			class="relative m-0 min-w-0"
+			data-citation-group={props.citationGroupKey}
+			onMouseLeave={hoverEnd}
+			onFocusOut={(event) => citationGroupFocusOut(event, hoverEnd)}
+		>
+			<div class="overflow-x-auto">
+				<table class="w-full border-collapse text-left text-sm">
+					<caption class="caption-top pb-1 text-left text-xs text-slate-600">
+						{props.caption}
+					</caption>
+					<thead>
+						<tr class="border-b border-slate-300 text-xs text-slate-700">
+							<Show when={props.selection}>
+								<th scope="col" class="py-1 pr-2 font-semibold">
+									Select
 								</th>
-							)}
-						</For>
-					</tr>
-				</thead>
-				<tbody>
-					<For each={dataset().rows}>
-						{(row, rowIndex) => {
-							const itemKey = () => rowItemKey(rowIndex());
-							const isSelected = () => props.selection?.selectedKey === itemKey();
-							return (
-								<tr
-									class="border-b border-slate-200 align-top"
-									classList={{ "bg-blue-50": isSelected() }}
-								>
-									<Show when={props.selection}>
-										{(selection) => (
-											<td class="py-1 pr-2">
-												<button
-													type="button"
-													aria-pressed={isSelected()}
-													aria-label={`Select row ${rowIndex() + 1}`}
-													class="rounded border border-slate-300 px-1.5 text-xs hover:bg-slate-100"
-													onClick={() => selection().onSelect(isSelected() ? null : itemKey())}
-												>
-													{isSelected() ? "Selected" : "Select"}
-												</button>
-											</td>
-										)}
-									</Show>
-									<For each={columns()}>
-										{(column, columnIndex) => (
-											<Show
-												when={columnIndex() === 0}
-												fallback={
-													<td
-														class="py-1 pr-3"
-														classList={{ "text-right tabular-nums": column.kind === "number" }}
+							</Show>
+							<For each={columns()}>
+								{(column) => (
+									<th
+										scope="col"
+										class="py-1 pr-3 font-semibold"
+										classList={{ "text-right": column.kind === "number" }}
+									>
+										{columnHeading(column)}
+									</th>
+								)}
+							</For>
+						</tr>
+					</thead>
+					<tbody>
+						<For each={dataset().rows}>
+							{(row, rowIndex) => {
+								const itemKey = () => rowItemKey(rowIndex());
+								const isSelected = () => props.selection?.selectedKey === itemKey();
+								return (
+									<tr
+										class="border-b border-slate-200 align-top"
+										classList={{ "bg-blue-50": isSelected() }}
+									>
+										<Show when={props.selection}>
+											{(selection) => (
+												<td class="py-1 pr-2">
+													<button
+														type="button"
+														aria-pressed={isSelected()}
+														aria-label={`Select row ${rowIndex() + 1}`}
+														class="rounded border border-slate-300 px-1.5 text-xs hover:bg-slate-100"
+														onClick={() => selection().onSelect(isSelected() ? null : itemKey())}
 													>
+														{isSelected() ? "Selected" : "Select"}
+													</button>
+												</td>
+											)}
+										</Show>
+										<For each={columns()}>
+											{(column, columnIndex) => (
+												<Show
+													when={columnIndex() === 0}
+													fallback={
+														<td
+															class="py-1 pr-3"
+															classList={{ "text-right tabular-nums": column.kind === "number" }}
+														>
+															<CellContent
+																cell={row[column.key]}
+																column={column}
+																sources={props.sources}
+																chipKey={`${props.citationGroupKey}::r${rowIndex()}::${column.key}`}
+															/>
+														</td>
+													}
+												>
+													<th scope="row" class="py-1 pr-3 font-medium">
 														<CellContent
 															cell={row[column.key]}
 															column={column}
 															sources={props.sources}
+															chipKey={`${props.citationGroupKey}::r${rowIndex()}::${column.key}`}
 														/>
-													</td>
-												}
-											>
-												<th scope="row" class="py-1 pr-3 font-medium">
-													<CellContent
-														cell={row[column.key]}
-														column={column}
-														sources={props.sources}
-													/>
-												</th>
-											</Show>
-										)}
-									</For>
-								</tr>
-							);
-						}}
-					</For>
-				</tbody>
-			</table>
-			<Show when={dataset().rows.length === 0}>
-				<EmptyState>No rows — this dataset is empty.</EmptyState>
-			</Show>
-		</div>
+													</th>
+												</Show>
+											)}
+										</For>
+									</tr>
+								);
+							}}
+						</For>
+					</tbody>
+				</table>
+				<Show when={dataset().rows.length === 0}>
+					<EmptyState>No rows — this dataset is empty.</EmptyState>
+				</Show>
+			</div>
+		</figure>
 	);
 }

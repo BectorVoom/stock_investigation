@@ -76,11 +76,12 @@ describe("accessibility: structure", () => {
 		).toBeDefined();
 	});
 
-	it("labels the sources region and each report section", () => {
+	it("labels the sources disclosure and each report section", () => {
 		renderComponent(component("research-report", VALID_PROPS["research-report"]));
 		expect(screen.getByRole("heading", { level: 3, name: "Storage demand report" })).toBeDefined();
 		expect(screen.getByRole("heading", { level: 4, name: "Demand drivers" })).toBeDefined();
-		expect(screen.getAllByRole("list", { name: "Statement sources" }).length).toBeGreaterThan(0);
+		// Cited sources are numbered chips, not a list of citation lines.
+		expect(screen.getAllByRole("button", { name: /^Source \d+:/ }).length).toBeGreaterThan(0);
 		expect(screen.getByRole("note").textContent).toBe("Research aid only; not investment advice.");
 	});
 
@@ -109,10 +110,19 @@ describe("accessibility: structure", () => {
 });
 
 describe("accessibility: links", () => {
-	it("gives in-cell source links a descriptive accessible name", () => {
+	it("gives in-cell source chips a descriptive accessible name", () => {
 		renderComponent(component("financial-table", VALID_PROPS["financial-table"]));
 		expect(
-			screen.getAllByRole("link", { name: "Source: Annual securities report FY2025" }).length,
+			screen.getAllByRole("button", { name: "Source 1: Annual securities report FY2025" }).length,
 		).toBeGreaterThan(0);
+	});
+
+	it("numbers disclosure rows to match the chips", () => {
+		renderComponent(component("source-list", VALID_PROPS["source-list"]));
+		const rows = screen.getAllByRole("listitem");
+		expect(rows.map((row) => row.textContent?.slice(0, 2))).toEqual(["1.", "2."]);
+		expect(
+			screen.getByRole("link", { name: "Grid storage outlook 2026" }).getAttribute("href"),
+		).toBe("https://example.com/reports/grid-storage");
 	});
 });

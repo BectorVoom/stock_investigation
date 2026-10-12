@@ -2,13 +2,6 @@ import type { Claim, Evidence } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
 import { AnswerClaims } from "../src/chat/Citations.tsx";
-import {
-	chipLabel,
-	numberEvidence,
-	numbersForClaim,
-	sourceHost,
-	titleOrHost,
-} from "../src/chat/citationModel.ts";
 
 afterEach(cleanup);
 
@@ -39,63 +32,6 @@ function claim(claimId: string, overrides: Partial<Claim> = {}): Claim {
 		...overrides,
 	};
 }
-
-describe("citation numbering (per answer, first appearance wins)", () => {
-	it("numbers distinct evidence in order of first appearance starting at 1", () => {
-		const numbering = numberEvidence([
-			{
-				claimId: "claim_1",
-				links: [{ evidenceId: "ev_b" }, { evidenceId: "ev_a" }],
-			},
-			{ claimId: "claim_2", links: [{ evidenceId: "ev_a" }, { evidenceId: "ev_c" }] },
-		]);
-		expect([...numbering.numberByEvidenceId]).toEqual([
-			["ev_b", 1],
-			["ev_a", 2],
-			["ev_c", 3],
-		]);
-		expect(numbering.evidenceIdsInOrder).toEqual(["ev_b", "ev_a", "ev_c"]);
-	});
-
-	it("gives shared evidence the same number in every claim", () => {
-		const numbering = numberEvidence([
-			{ claimId: "claim_1", links: [{ evidenceId: "ev_a" }] },
-			{ claimId: "claim_2", links: [{ evidenceId: "ev_a" }] },
-		]);
-		expect(numbering.numberByEvidenceId.get("ev_a")).toBe(1);
-		expect(
-			numbersForClaim({ claimId: "claim_1", links: [{ evidenceId: "ev_a" }] }, numbering),
-		).toEqual([1]);
-		expect(
-			numbersForClaim({ claimId: "claim_2", links: [{ evidenceId: "ev_a" }] }, numbering),
-		).toEqual([1]);
-	});
-
-	it("keeps link order within a claim and skips unknown ids", () => {
-		const numbering = numberEvidence([
-			{ claimId: "claim_1", links: [{ evidenceId: "ev_a" }, { evidenceId: "ev_b" }] },
-		]);
-		expect(
-			numbersForClaim(
-				{ claimId: "claim_1", links: [{ evidenceId: "ev_b" }, { evidenceId: "ev_a" }] },
-				numbering,
-			),
-		).toEqual([2, 1]);
-		expect(
-			numbersForClaim({ claimId: "claim_1", links: [{ evidenceId: "ev_missing" }] }, numbering),
-		).toEqual([]);
-	});
-
-	it("names hosts, titles and chip labels", () => {
-		expect(sourceHost("https://news.example.org/a/1?utm=x")).toBe("news.example.org");
-		expect(sourceHost("not a url")).toBeNull();
-		expect(titleOrHost("  ", "https://news.example.org/a")).toBe("news.example.org");
-		expect(titleOrHost("Grid outlook", "https://news.example.org/a")).toBe("Grid outlook");
-		expect(chipLabel(2, "Grid outlook", "https://news.example.org/a")).toBe(
-			"Source 2: Grid outlook",
-		);
-	});
-});
 
 function renderAnswer(options: {
 	readonly claimIds?: readonly string[];
@@ -142,14 +78,20 @@ describe("citation chips and source cards", () => {
 		expect(sources.textContent).toContain("example.com");
 	});
 
-	it("opens the card on focus with title, publisher, date, excerpt and an Open source link", async () => {
+	it("opens the card on focus with title, publisher, dates, excerpt and an Open source link", async () => {
 		renderAnswer({
 			claims: [
 				claim("claim_1", {
 					links: [{ evidenceId: "ev_a", relation: "supports", quote: "Orders rose." }],
 				}),
 			],
-			evidence: [evidence("ev_a", { title: "Alpha", excerpt: "Stored excerpt." })],
+			evidence: [
+				evidence("ev_a", {
+					title: "Alpha",
+					excerpt: "Stored excerpt.",
+					effectiveAt: "2026-06-30T00:00:00Z",
+				}),
+			],
 		});
 		const chip = await screen.findByRole("button", { name: "Source 1: Alpha" });
 		expect(screen.queryByText("Orders rose.")).toBeNull();
@@ -160,12 +102,35 @@ describe("citation chips and source cards", () => {
 		const inCard = within(card as HTMLElement);
 		expect(inCard.getByText("Alpha")).toBeDefined();
 		expect(inCard.getByText("Example Publisher")).toBeDefined();
+		// Published, retrieved and data-as-of dates are each labelled (DATA-002).
+		const cardText = card?.textContent ?? "";
+		expect(cardText).toContain("published");
+		expect(cardText).toContain("2026-09-01");
+		expect(cardText).toContain("retrieved");
+		expect(cardText).toContain("2026-10-01");
+		expect(cardText).toContain("data as of");
+		expect(cardText).toContain("2026-06-30");
 		const open = inCard.getByRole("link", { name: "Open source" });
 		expect(open.getAttribute("href")).toBe("https://example.com/reports/ev_a");
 		expect(open.getAttribute("target")).toBe("_blank");
 		// Plain support needs no extra word.
 		expect(inCard.queryByText("Contradicts")).toBeNull();
 		expect(inCard.queryByText("Context")).toBeNull();
+	});
+
+	it("says date not stated for a missing published date", async () => {
+		renderAnswer({
+			claims: [
+				claim("claim_1", {
+					links: [{ evidenceId: "ev_a", relation: "supports", quote: null }],
+				}),
+			],
+			evidence: [evidence("ev_a", { publishedAt: null })],
+		});
+		fireEvent.focus(await screen.findByRole("button", { name: "Source 1: Report ev_a" }));
+		const open = await screen.findByRole("link", { name: "Open source" });
+		const card = open.closest("[data-citation-card]");
+		expect(card?.textContent).toContain("date not stated");
 	});
 
 	it("shows the relation word when the link is not plain support", async () => {

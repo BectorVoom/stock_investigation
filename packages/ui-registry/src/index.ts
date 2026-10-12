@@ -10,12 +10,34 @@ export {
 } from "./datasetGuard.ts";
 export { formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
 export { ClaimStatusBadge, ClaimTypeBadge } from "./parts/Badges.tsx";
+export {
+	type CitationInteraction,
+	type CitationRelation,
+	type CitationScopeValue,
+	citationChipEscape,
+	citationGroupFocusOut,
+	CitationChip,
+	CitationScope,
+	ComponentCitation,
+	createCitationInteraction,
+	SourceCard,
+	SourceList,
+	useCitationScope,
+} from "./parts/citations.tsx";
+export {
+	chipLabel,
+	type CitationNumbering,
+	type ClaimLinksInput,
+	numberEvidence,
+	numbersForClaim,
+	sourceHost,
+	titleOrHost,
+} from "./citationModel.ts";
 export { DatasetTable } from "./parts/DatasetTable.tsx";
 export {
 	DateText,
 	SafeLink,
 	SourceCitation,
-	SourceList,
 	type SourceMap,
 	SourceUnavailable,
 } from "./parts/SourceLinks.tsx";

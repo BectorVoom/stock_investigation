@@ -65,6 +65,32 @@ describe("canvas panel", () => {
 		expect(screen.getByRole("form", { name: "Research composer" })).toBeDefined();
 	});
 
+	it("shows numbered citation chips with a sources disclosure, and a chip opens its card", async () => {
+		mountApp(backend);
+		const canvas = await canvasReady();
+		// The news card cites its source as a numbered chip, not a citation line.
+		const news = within(canvas).getByRole("article", { name: "Component news_1" });
+		const chip = within(news).getByRole("button", {
+			name: "Source 1: Grid storage outlook 2026",
+		});
+		expect(chip.textContent).toBe("1");
+		// The sources component is the compact disclosure, not citation lines.
+		const sources = within(canvas).getByRole("article", { name: "Component sources_1" });
+		expect(within(sources).getByText("1 source")).toBeDefined();
+		expect(sources.textContent).not.toContain("published");
+		// The chip opens its source card with the labelled dates.
+		fireEvent.click(chip);
+		const card = within(news).getByText("Example Energy Review").closest("[data-citation-card]");
+		expect(card).not.toBeNull();
+		expect(card?.textContent).toContain("published");
+		expect(card?.textContent).toContain("retrieved");
+		expect(
+			within(card as HTMLElement)
+				.getByRole("link", { name: "Open source" })
+				.getAttribute("href"),
+		).toBe("https://example.com/reports/grid-storage");
+	});
+
 	it("shows the count in the panel header and an empty state when there are none", async () => {
 		mountApp(backend);
 		const canvas = await canvasReady();

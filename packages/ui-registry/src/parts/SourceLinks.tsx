@@ -1,7 +1,6 @@
 import type { Evidence } from "@research/contracts";
-import { createMemo, For, type JSX, Show } from "solid-js";
+import { createMemo, type JSX, Show } from "solid-js";
 import { formatIsoDate, safeHttpsUrl } from "../format.ts";
-import { EmptyState } from "./states.tsx";
 
 export type SourceMap = ReadonlyMap<string, Evidence>;
 
@@ -59,7 +58,11 @@ export function SourceUnavailable(props: { readonly sourceId: string }): JSX.Ele
 	);
 }
 
-/** One citation: linked title, publisher, and the three dates kept distinct (DATA-002). */
+/**
+ * One full citation line: linked title, publisher, and the three dates kept
+ * distinct (DATA-002). A records view, not the canvas: the evidence records
+ * drawer keeps these lines while canvas components use numbered chips.
+ */
 export function SourceCitation(props: {
 	readonly sourceId: string;
 	readonly sources: SourceMap;
@@ -86,33 +89,5 @@ export function SourceCitation(props: {
 				</span>
 			)}
 		</Show>
-	);
-}
-
-/** Provenance block every component ends with. */
-export function SourceList(props: {
-	readonly sourceIds: readonly string[];
-	readonly sources: SourceMap;
-	readonly heading?: string;
-}): JSX.Element {
-	const uniqueIds = createMemo(() => [...new Set(props.sourceIds)]);
-	return (
-		<section aria-label={props.heading ?? "Sources"} class="mt-2 text-xs">
-			<h4 class="font-semibold text-slate-700">{props.heading ?? "Sources"}</h4>
-			<Show
-				when={uniqueIds().length > 0}
-				fallback={<EmptyState>No sources cited for this component.</EmptyState>}
-			>
-				<ul class="mt-1 list-disc space-y-0.5 pl-5">
-					<For each={uniqueIds()}>
-						{(sourceId) => (
-							<li>
-								<SourceCitation sourceId={sourceId} sources={props.sources} />
-							</li>
-						)}
-					</For>
-				</ul>
-			</Show>
-		</section>
 	);
 }
