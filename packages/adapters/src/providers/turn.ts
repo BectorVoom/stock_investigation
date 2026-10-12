@@ -46,6 +46,14 @@ export const PROVIDER_FAILURES = {
 	PROVIDER_OUTPUT_TRUNCATED: { code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false },
 	/** The backend exposed or used a tool of its own although the adapter forbids all of them. */
 	PROVIDER_TOOL_ISOLATION_VIOLATED: { code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
+	/**
+	 * The model tried a tool call that the CLI rejected before it ran
+	 * (OpenCode free-tier ask-and-reject path): nothing executed, so this is
+	 * not an isolation violation. Non-retryable like the other model-output
+	 * failures (e.g. PROVIDER_OUTPUT_INVALID): the same prompt would likely
+	 * try a tool again, and every retry spends quota.
+	 */
+	PROVIDER_TOOL_CALL_REJECTED: { code: "PROVIDER_TOOL_CALL_REJECTED", retryable: false },
 	/** The backend did not report the tool list the adapter needs to confirm isolation. */
 	PROVIDER_TOOL_ISOLATION_UNVERIFIED: {
 		code: "PROVIDER_TOOL_ISOLATION_UNVERIFIED",

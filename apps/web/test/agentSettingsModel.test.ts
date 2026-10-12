@@ -446,7 +446,7 @@ describe("model selector options", () => {
 		expect(isFreeTierModelId("provider/model-free")).toBe(true);
 		expect(isFreeTierModelId("provider/model")).toBe(false);
 		expect(isFreeTierModelId("")).toBe(false);
-		expect(FREE_TIER_CAUTION).toContain("choose a plan model if a question fails");
+		expect(FREE_TIER_CAUTION).toContain("every tool call rejected");
 	});
 });
 
