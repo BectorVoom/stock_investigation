@@ -538,7 +538,7 @@ describe("Agent settings: model selector", () => {
 		chooseOther();
 		typeModelId("provider/model-free");
 		const caution = await screen.findByText(
-			"Free-tier models may be refused when used from this app; choose a plan model if a question fails.",
+			"OpenCode serves free-tier models only to sessions that list its tools, so this app runs them with every tool call rejected; an answer fails if the model tries a tool, and a plan model avoids that.",
 		);
 		expect(caution.getAttribute("id")).not.toBeNull();
 		const describedBy = modelSelect().getAttribute("aria-describedby") ?? "";
@@ -547,7 +547,7 @@ describe("Agent settings: model selector", () => {
 		chooseModel("provider/alpha");
 		expect(
 			screen.queryByText(
-				"Free-tier models may be refused when used from this app; choose a plan model if a question fails.",
+				"OpenCode serves free-tier models only to sessions that list its tools, so this app runs them with every tool call rejected; an answer fails if the model tries a tool, and a plan model avoids that.",
 			),
 		).toBeNull();
 	});

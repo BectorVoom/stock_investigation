@@ -183,8 +183,9 @@ export function AgentSettingsSection(props: {
 	const [otherModes, setOtherModes] = createSignal<Readonly<Record<string, boolean>>>({});
 	const otherMode = createMemo(() => otherModes()[selectedBackendId()] ?? false);
 	const selectValue = createMemo(() => modelSelectValue(modelText(), otherMode()));
-	// A free-tier id is a caution, never a blocker: the refusal is provider
-	// policy and may change, so the models stay listed.
+	// A free-tier id is a caution, never a blocker: the app runs those models
+	// with every tool call rejected, so an answer fails only if the model
+	// tries a tool — a plan model avoids that. The models stay listed.
 	const showFreeCaution = createMemo(
 		() =>
 			selectedBackendId() === "opencode" &&

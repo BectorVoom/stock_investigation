@@ -9,6 +9,15 @@ import { jsonValueSchema } from "./primitives.ts";
 export const agentIdSchema = z.string().regex(/^[a-z][a-z0-9-]{1,31}$/, "invalid agent id");
 export type AgentId = z.infer<typeof agentIdSchema>;
 
+/**
+ * Single source of truth for "is this an OpenCode free-tier model id".
+ * The provider marks free-tier ids with a `-free` suffix; the OpenCode
+ * adapter and the web settings form both branch on this rule.
+ */
+export function isFreeTierModelId(modelId: string): boolean {
+	return modelId.endsWith("-free");
+}
+
 export const BASELINE_AGENT_IDS = ["opencode", "codex", "claude-code", "openrouter"] as const;
 
 export const capabilitySchema = z.enum([
