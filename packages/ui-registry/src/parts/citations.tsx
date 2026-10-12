@@ -4,21 +4,21 @@ import {
 	createMemo,
 	createSignal,
 	For,
+	type JSX,
 	onCleanup,
 	onMount,
 	Show,
 	useContext,
-	type JSX,
 } from "solid-js";
 import {
+	type CitationNumbering,
 	chipLabel,
 	numberEvidence,
 	sourceHost,
 	titleOrHost,
-	type CitationNumbering,
 } from "../citationModel.ts";
 import { formatIsoDate, safeHttpsUrl } from "../format.ts";
-import { SafeLink, SourceUnavailable, type SourceMap } from "./SourceLinks.tsx";
+import { SafeLink, type SourceMap, SourceUnavailable } from "./SourceLinks.tsx";
 import { EmptyState } from "./states.tsx";
 
 /** A claim link's relation to its evidence; null on the canvas, which has no claim link. */

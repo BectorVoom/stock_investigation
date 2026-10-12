@@ -1,6 +1,6 @@
 import { cleanup, fireEvent } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
-import { EVIDENCE_A, component, makeContext, VALID_PROPS } from "./fixtures.ts";
+import { component, EVIDENCE_A, makeContext, VALID_PROPS } from "./fixtures.ts";
 import { renderComponent } from "./helpers.tsx";
 
 afterEach(cleanup);

@@ -7,7 +7,7 @@ import {
 	type DatasetColumn,
 	type GuardedDataset,
 } from "../datasetGuard.ts";
-import { citationGroupFocusOut, ComponentCitation, useCitationScope } from "./citations.tsx";
+import { ComponentCitation, citationGroupFocusOut, useCitationScope } from "./citations.tsx";
 import { DateText, SafeLink, type SourceMap, SourceUnavailable } from "./SourceLinks.tsx";
 import { EmptyState, Unavailable } from "./states.tsx";
 

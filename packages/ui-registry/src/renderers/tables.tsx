@@ -1,8 +1,8 @@
 import type { DataTableProps, FinancialTableProps } from "@research/contracts";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { resolveDataset } from "../datasetGuard.ts";
-import { cellSourceIdsInOrder, DatasetTable, type RowSelection } from "../parts/DatasetTable.tsx";
 import { CitationScope, SourceList } from "../parts/citations.tsx";
+import { cellSourceIdsInOrder, DatasetTable, type RowSelection } from "../parts/DatasetTable.tsx";
 import { DataUnavailable } from "../parts/states.tsx";
 import { positionLabels, positionMetricsMentioned } from "../positionLabels.ts";
 import type { RenderContext, RendererProps } from "../registry.tsx";

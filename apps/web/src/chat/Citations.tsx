@@ -1,19 +1,19 @@
 import type { Claim, Evidence } from "@research/contracts";
 import {
-	ClaimStatusBadge,
-	ClaimTypeBadge,
-	citationGroupFocusOut,
 	CitationChip,
-	createCitationInteraction,
 	type CitationInteraction,
 	type CitationNumbering,
+	ClaimStatusBadge,
+	ClaimTypeBadge,
+	chipLabel,
+	citationGroupFocusOut,
+	createCitationInteraction,
 	numberEvidence,
 	numbersForClaim,
-	chipLabel,
 	SourceCard,
+	safeHttpsUrl,
 	sourceHost,
 	titleOrHost,
-	safeHttpsUrl,
 } from "@research/ui-registry";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { DisclosureSummary } from "../components/ui.tsx";

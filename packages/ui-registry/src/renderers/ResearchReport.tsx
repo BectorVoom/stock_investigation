@@ -2,9 +2,9 @@ import type { ResearchReportProps } from "@research/contracts";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { ClaimStatusBadge, ClaimTypeBadge } from "../parts/Badges.tsx";
 import {
-	citationGroupFocusOut,
 	CitationScope,
 	ComponentCitation,
+	citationGroupFocusOut,
 	useCitationScope,
 } from "../parts/citations.tsx";
 import { DateText } from "../parts/SourceLinks.tsx";

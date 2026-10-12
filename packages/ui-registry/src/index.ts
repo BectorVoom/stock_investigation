@@ -1,5 +1,14 @@
 export { BASELINE_REGISTRY_ENTRIES, createBaselineUiRegistry } from "./baseline.ts";
 export {
+	type CitationNumbering,
+	type ClaimLinksInput,
+	chipLabel,
+	numberEvidence,
+	numbersForClaim,
+	sourceHost,
+	titleOrHost,
+} from "./citationModel.ts";
+export {
 	type CellBasis,
 	type CellDisplay,
 	cellBasis,
@@ -11,28 +20,19 @@ export {
 export { formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
 export { ClaimStatusBadge, ClaimTypeBadge } from "./parts/Badges.tsx";
 export {
+	CitationChip,
 	type CitationInteraction,
 	type CitationRelation,
+	CitationScope,
 	type CitationScopeValue,
+	ComponentCitation,
 	citationChipEscape,
 	citationGroupFocusOut,
-	CitationChip,
-	CitationScope,
-	ComponentCitation,
 	createCitationInteraction,
 	SourceCard,
 	SourceList,
 	useCitationScope,
 } from "./parts/citations.tsx";
-export {
-	chipLabel,
-	type CitationNumbering,
-	type ClaimLinksInput,
-	numberEvidence,
-	numbersForClaim,
-	sourceHost,
-	titleOrHost,
-} from "./citationModel.ts";
 export { DatasetTable } from "./parts/DatasetTable.tsx";
 export {
 	DateText,

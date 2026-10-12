@@ -7,14 +7,14 @@ import type {
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { resolveDataset } from "../datasetGuard.ts";
 import { safeHttpsUrl } from "../format.ts";
-import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
 import {
-	citationGroupFocusOut,
 	CitationScope,
 	ComponentCitation,
+	citationGroupFocusOut,
 	SourceList,
 	useCitationScope,
 } from "../parts/citations.tsx";
+import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
 import { DataUnavailable, EmptyState, Unavailable } from "../parts/states.tsx";
 import type { RendererProps } from "../registry.tsx";
 

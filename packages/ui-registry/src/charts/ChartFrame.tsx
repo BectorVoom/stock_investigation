@@ -1,8 +1,8 @@
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
 import { formatAxisTick } from "../format.ts";
-import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
 import { CitationScope, SourceList } from "../parts/citations.tsx";
+import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
 import type { SourceMap } from "../parts/SourceLinks.tsx";
 import { DataUnavailable, EmptyState } from "../parts/states.tsx";
 import {
