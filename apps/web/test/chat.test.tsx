@@ -784,9 +784,9 @@ describe("chat run controls", () => {
 		// A finished run offers no stop; a completed one no retry.
 		expect(within(run).queryByRole("button", { name: "Stop" })).toBeNull();
 		expect(within(run).queryByRole("button", { name: "Retry run" })).toBeNull();
-		// The run card opens the same drawer as the answer action, under the same name.
-		expect(run.textContent).toContain("Evidence");
-		expect(run.textContent).not.toContain("Evidence & records");
+		// The records drawer opens from the answer only (owner's decision of
+		// 2026-10-12): a run card has no Evidence button.
+		expect(within(run).queryByRole("button", { name: "Evidence" })).toBeNull();
 	});
 
 	it("cancels an unfinished run and retries a failed one with an idempotency key", async () => {

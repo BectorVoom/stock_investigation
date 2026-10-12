@@ -95,9 +95,9 @@ export function ApprovalForm(props: {
 
 /**
  * One research run rendered inline in the thread (CopilotKit-style agent
- * activity): always visible and compact — state badge, latest progress line,
- * working indicator, Stop, state note, failure line, retry/evidence actions
- * and the approval form. WHY no disclosure: run kind, attempt, timings,
+ * activity): always visible and compact — a state badge (not for completed
+ * or failed), latest progress line, working indicator, Stop, state note,
+ * failure line, retry and the approval form. WHY no disclosure: run kind, attempt, timings,
  * limits, usage, cost, provenance, verification and the progress log now live
  * in the runner/server logs (`job_finished`), not in the thread.
  */
@@ -107,7 +107,6 @@ export function RunCard(props: {
 	readonly onCancel: (runId: string) => Promise<void>;
 	readonly onRetry: (runId: string) => Promise<void>;
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
-	readonly onOpenRecords: (runId: string, opener: HTMLElement | null) => void;
 }): JSX.Element {
 	const [busy, setBusy] = createSignal(false);
 	const costModel = createMemo((): CostModelView => {
@@ -206,27 +205,16 @@ export function RunCard(props: {
 					</Show>
 				</p>
 			</Show>
-			<Show when={RETRYABLE_STATES.includes(props.run.state) || props.run.kind === "research"}>
+			<Show when={RETRYABLE_STATES.includes(props.run.state)}>
 				<div class="mt-2 flex flex-wrap gap-2">
-					<Show when={RETRYABLE_STATES.includes(props.run.state)}>
-						<button
-							type="button"
-							class={BUTTON}
-							disabled={busy()}
-							onClick={() => void act(props.onRetry)}
-						>
-							Retry run
-						</button>
-					</Show>
-					<Show when={props.run.kind === "research"}>
-						<button
-							type="button"
-							class={BUTTON}
-							onClick={(event) => props.onOpenRecords(props.run.runId, event.currentTarget)}
-						>
-							Evidence
-						</button>
-					</Show>
+					<button
+						type="button"
+						class={BUTTON}
+						disabled={busy()}
+						onClick={() => void act(props.onRetry)}
+					>
+						Retry run
+					</button>
 				</div>
 			</Show>
 			<Show when={props.run.state === "waiting_approval"}>

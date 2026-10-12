@@ -341,7 +341,6 @@ export function Conversation(props: {
 							onCancel={props.onCancel ?? noopCancel}
 							onRetry={props.onRetry ?? noopRetry}
 							onApprove={props.onApprove ?? noopApprove}
-							onOpenRecords={openRecords}
 						/>
 					</li>
 				)}
