@@ -19,6 +19,7 @@ import {
 	previewSourceRequestSchema,
 	type RunnerCredentialCheck,
 	registerSourceRequestSchema,
+	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
 	uiCommandSchema,
 	updateSourceRequestSchema,
@@ -588,6 +589,33 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
+	api.patch("/workspaces/:id", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				const body = yield* readJson(c, renameWorkspaceRequestSchema);
+				const renamed = yield* useCase("workspaces.rename", () =>
+					c.var.services.workspaces.rename(owner(c), workspaceId, body.title),
+				);
+				return c.json(renamed);
+			}),
+		),
+	);
+	api.delete("/workspaces/:id", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				yield* useCase("workspaces.remove", () =>
+					c.var.services.workspaces.remove(owner(c), workspaceId),
+				);
+				return c.body(null, 204);
+			}),
+		),
+	);
 	api.get("/workspaces/:id", (c) =>
 		respond(
 			c,
@@ -597,9 +625,12 @@ export function createApp(options: AppOptions = {}) {
 				const workspace = yield* useCase("workspaces.view", () =>
 					c.var.services.workspaces.view(owner(c), workspaceId),
 				);
+				// The title is part of the validator (otherwise a rename answers
+				// 304 with the old title), fingerprinted so any owner text stays
+				// a valid ASCII header value.
 				return conditionalJson(
 					c,
-					`${workspaceId}.${workspace.state.version}.${workspace.assets.length}`,
+					`${workspaceId}.${fingerprint(workspace.workspace.title)}.${workspace.workspace.updatedAt}.${workspace.state.version}.${workspace.assets.length}`,
 					workspace,
 				);
 			}),
@@ -704,8 +735,13 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.workspaces.listConversations(owner(c)),
 				);
 				// Polled by clients: the validator changes whenever any summary changes.
+				// The title is part of it: without it a rename would keep
+				// answering 304 and the list would show the old title.
 				const print = conversations
-					.map((entry) => `${entry.workspaceId}:${entry.messageCount}:${entry.lastActivityAt}`)
+					.map(
+						(entry) =>
+							`${entry.workspaceId}:${entry.title}:${entry.messageCount}:${entry.lastActivityAt}`,
+					)
 					.join(",");
 				return conditionalJson(c, `conversations.${conversations.length}.${fingerprint(print)}`, {
 					conversations,

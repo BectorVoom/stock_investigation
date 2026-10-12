@@ -15,15 +15,19 @@ import {
 import { fail, type UseCaseResult } from "./errors.ts";
 import type {
 	AppliedCommand,
+	AuditLog,
 	ChatRepository,
 	Clock,
 	IdGenerator,
 	ResearchRecordRepository,
+	ResearchUnitOfWork,
 	WorkspaceRepository,
 } from "./ports.ts";
 import { commandContext, knownIds, toLookup, workspaceReferences } from "./workspaceCommands.ts";
 
 const MAX_WORKSPACES = 50;
+/** A first-question title carries at most this many characters, ellipsis included. */
+export const CONVERSATION_TITLE_LIMIT = 60;
 /** Default and maximum page size for one conversation; the list endpoint shares the cap. */
 export const MESSAGE_LIMIT = 200;
 export const CONVERSATION_LIST_LIMIT = 200;
@@ -41,11 +45,32 @@ export interface WorkspaceServiceDeps {
 	readonly catalog: ComponentCatalog;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
+	readonly audit: AuditLog;
+	readonly unitOfWork: ResearchUnitOfWork;
 }
 
 export interface SubmittedCommand {
 	readonly state: WorkspaceState;
 	readonly replayed: boolean;
+}
+
+/**
+ * Names a still-untitled conversation from its first question: the question's
+ * first line, whitespace-collapsed, cut to CONVERSATION_TITLE_LIMIT characters
+ * with a trailing "…" when cut. Slicing runs over code points, so a cut never
+ * splits a surrogate pair. Null when the question has no usable first line, in
+ * which case the conversation keeps its current title.
+ */
+export function deriveConversationTitle(question: string): string | null {
+	const firstLine = question.split(/\r?\n/, 1)[0] ?? "";
+	const collapsed = firstLine.replace(/\s+/g, " ").trim();
+	if (collapsed === "") return null;
+	const points = Array.from(collapsed);
+	if (points.length <= CONVERSATION_TITLE_LIMIT) return collapsed;
+	return `${points
+		.slice(0, CONVERSATION_TITLE_LIMIT - 1)
+		.join("")
+		.trimEnd()}…`;
 }
 
 export function createWorkspaceService(deps: WorkspaceServiceDeps) {
@@ -212,6 +237,74 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 		/** One summary per workspace of this owner, newest activity first (FR-010). */
 		listConversations: (ownerId: string) =>
 			deps.chat.listConversations(ownerId, CONVERSATION_LIST_LIMIT),
+
+		/**
+		 * Renames a conversation. Renaming to the current title succeeds; the
+		 * canvas version never moves, so a rename cannot conflict with a
+		 * command write racing it.
+		 */
+		async rename(
+			ownerId: string,
+			workspaceId: string,
+			title: string,
+		): Promise<UseCaseResult<WorkspaceSummary>> {
+			const now = deps.clock.nowIso();
+			const renamed = await deps.workspaces.rename(ownerId, workspaceId, title, now);
+			if (renamed === null) return fail("NOT_FOUND", "Workspace not found.");
+			await deps.audit.record({
+				ownerId,
+				actor: "owner",
+				action: "workspace.rename",
+				resource: workspaceId,
+				detail: "",
+				at: now,
+			});
+			return ok(renamed);
+		},
+
+		/**
+		 * Deletes a conversation and everything it solely owns (ownership rule
+		 * in `DeleteWorkspaceInput`). Ids still referenced by a surviving
+		 * conversation's canvas are collected first and passed as keep lists,
+		 * so borrowed datasets, evidence and claims survive. A concurrent
+		 * borrow that commits after this scan may still dangle; reads tolerate
+		 * it (unknown ids resolve as absent) and the next write re-validates.
+		 */
+		async remove(ownerId: string, workspaceId: string): Promise<UseCaseResult<void>> {
+			const states = await deps.workspaces.listRecords(ownerId);
+			const referenced = states
+				.filter((record) => record.summary.workspaceId !== workspaceId)
+				.map((record) => workspaceReferences(record.state, deps.catalog.validateProps));
+			const lookup = toLookup({
+				datasetRefs: referenced.flatMap((refs) => refs.datasetRefs),
+				sourceIds: referenced.flatMap((refs) => refs.sourceIds),
+				assetRefs: [],
+				claims: referenced.flatMap((refs) => refs.claims ?? []),
+			});
+			const outcome = await deps.unitOfWork.deleteWorkspace({
+				ownerId,
+				workspaceId,
+				keepEvidenceIds: [...lookup.evidenceIds],
+				keepDatasetIds: [...lookup.datasetIds],
+				keepClaimIds: [...lookup.claimIds],
+			});
+			if (outcome === "not-found") return fail("NOT_FOUND", "Workspace not found.");
+			if (outcome === "has-unfinished") {
+				return fail(
+					"CONFLICT",
+					"This conversation still has a running question. Stop the running question first, then delete the conversation.",
+				);
+			}
+			await deps.audit.record({
+				ownerId,
+				actor: "owner",
+				action: "workspace.remove",
+				resource: workspaceId,
+				detail: "",
+				at: deps.clock.nowIso(),
+			});
+			return ok(undefined);
+		},
 	};
 }
 
