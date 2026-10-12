@@ -283,13 +283,17 @@ export function Empty(props: { readonly children: JSX.Element }): JSX.Element {
 /**
  * The one page header every page starts with: the title as the page's `<h2>`
  * and the purpose sentence from `PAGES` beneath it (ARCH-010: no copies).
+ * The Chat page shows the title only (owner's decision of 2026-10-12): its
+ * three panels say what the page is for, and the line cost thread height.
  */
 export function PageHeader(props: { readonly view: ViewName }): JSX.Element {
 	const page = () => PAGES.find((entry) => entry.view === props.view) ?? PAGES[0];
 	return (
 		<div class="mb-3">
 			<h2 class="text-lg font-semibold text-slate-900">{page()?.title}</h2>
-			<p class="text-sm text-slate-600">{page()?.purpose}</p>
+			<Show when={props.view !== "chat"}>
+				<p class="text-sm text-slate-600">{page()?.purpose}</p>
+			</Show>
 		</div>
 	);
 }

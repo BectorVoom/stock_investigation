@@ -345,7 +345,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			timeout: 30_000,
 		});
 		await expect(
-			page.getByRole("region", { name: "Chat" }).getByRole("heading").first(),
+			page.getByRole("region", { name: "Chat", exact: true }).getByRole("heading").first(),
 		).toContainText("What did EIA Today in Energy report");
 		// A citation chip opens its source card with a link to the source.
 		const chip = assistant.locator("[data-citation-chip]").first();
@@ -426,7 +426,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await page.keyboard.press("Enter");
 		await expect(nav).toContainText(renamed, { timeout: 15_000 });
 		await expect(
-			page.getByRole("region", { name: "Chat" }).getByRole("heading").first(),
+			page.getByRole("region", { name: "Chat", exact: true }).getByRole("heading").first(),
 		).toContainText(renamed);
 
 		// Both runs are finished, so the delete is accepted; the open chat

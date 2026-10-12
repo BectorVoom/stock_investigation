@@ -106,7 +106,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 
 - Page frame: the `App` header (app name `h1`, view navigation, session
   summary, instrument disclaimer) then `PageHeader` (page title `h2` plus the
-  purpose sentence from `PAGES`), then content at most `110rem` wide
+  purpose sentence from `PAGES`; the Chat page shows the title only), then content at most `110rem` wide
   (`max-w-[110rem]`, `px-4`).
 - The panel (`PANEL`: white, bordered, `p-3`) is the unit of a page; related
   controls live in one panel, unrelated ones in separate panels. On the Chat
@@ -133,7 +133,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 
 | Part | Use | Variants | Implemented by |
 |---|---|---|---|
-| Page header | Every page starts with it: title `h2` + purpose | — | `PageHeader` in `components/ui.tsx` |
+| Page header | Every page starts with it: title `h2` + purpose (Chat: title only) | — | `PageHeader` in `components/ui.tsx` |
 | Panel section | A labelled `<section>` in a panel with its `h3` heading; optional header actions (reload, version line) | — | `Section` in `components/ui.tsx` |
 | Headings | Page sections `h3`, nested headings `h4`/`h5` (section 7) | — | `HEADING` class in `components/ui.tsx` |
 | Buttons | Default action; the one primary action per form; destructive actions | default / primary / danger | `BUTTON` / `BUTTON_PRIMARY` / `BUTTON_DANGER` in `components/ui.tsx`; one `BUTTON_PRIMARY` per form |

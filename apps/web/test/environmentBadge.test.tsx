@@ -1,5 +1,6 @@
 import { cleanup, screen } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { PAGES } from "../src/pages.ts";
 import {
 	initialServerState,
 	installWorkspaceRoutes,
@@ -39,5 +40,23 @@ describe("environment badge", () => {
 		mountApp(backend);
 		await screen.findByText(/Signed in as/);
 		expect(document.querySelector('[data-field="environment-badge"]')).toBeNull();
+	});
+});
+
+describe("page header", () => {
+	const purposeOf = (view: string) => PAGES.find((page) => page.view === view)?.purpose ?? "";
+
+	it("shows the Chat page's title without its purpose sentence", async () => {
+		mountApp(backend);
+		expect(await screen.findByRole("heading", { level: 2, name: "Chat" })).toBeDefined();
+		expect(purposeOf("chat")).not.toBe("");
+		expect(screen.queryByText(purposeOf("chat"))).toBeNull();
+	});
+
+	it("keeps the purpose sentence on the other pages", async () => {
+		window.location.hash = "#/sources";
+		mountApp(backend);
+		expect(await screen.findByRole("heading", { level: 2, name: "Sources" })).toBeDefined();
+		expect(screen.getByText(purposeOf("sources"))).toBeDefined();
 	});
 });
