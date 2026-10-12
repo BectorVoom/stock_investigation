@@ -117,7 +117,7 @@ describe("canvas panel", () => {
 		);
 	});
 
-	it("marks the focused component by ring, aria-current and a visible Focused cue", async () => {
+	it("marks the focused component by its ring and aria-current, with no text label", async () => {
 		server.view = {
 			...server.view,
 			state: { ...server.view.state, focusedComponentId: "table_1" },
@@ -128,10 +128,11 @@ describe("canvas panel", () => {
 		expect(focused).not.toBeNull();
 		expect(focused?.getAttribute("aria-current")).toBe("true");
 		expect(focused?.className).toContain("ring-2");
-		// Never by colour alone: the focused card carries a visible text cue.
-		expect(focused?.textContent).toContain("Focused");
+		// The ring is an outline (a shape, not only a colour); there is no label.
+		expect(focused?.textContent).not.toContain("Focused");
 		const unfocused = canvas.querySelector('li[data-focused="false"]');
-		expect(unfocused?.textContent).not.toContain("Focused");
+		expect(unfocused?.className).not.toContain("ring-2");
+		expect(unfocused?.getAttribute("aria-current")).toBeNull();
 	});
 
 	it("shows no component count in the panel header, and an empty state when there are none", async () => {
@@ -292,9 +293,8 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 			article.getAttribute("data-component-id"),
 		);
 		expect(focused).toEqual(["table_1"]);
-		// Never colour (or the ring) alone: the focused card carries a text cue.
 		const focusedCard = canvas.querySelector('li[data-focused="true"]');
-		expect(focusedCard?.textContent).toContain("Focused");
+		expect(focusedCard?.getAttribute("aria-current")).toBe("true");
 	});
 
 	it("keeps one column for a stored two-column layout", async () => {

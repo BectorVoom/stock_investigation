@@ -10,9 +10,10 @@ import type { UiOperation } from "./commands.ts";
  * focus, reorder or remove components here (owner's decision of 2026-10-13) —
  * the agent arranges the canvas through commands, and item selection inside
  * a component (e.g. a table row, `component.select`) still dispatches a
- * command. A component the agent focused is marked by its ring together with
- * `aria-current`/`data-focused` and the visible "Focused by the agent" line,
- * never by colour alone. The surrounding panel (title, count, collapse)
+ * command. A component the agent focused is marked by its ring (an outline,
+ * so a shape as well as a colour) together with `aria-current`/`data-focused`;
+ * it carries no text label (owner's decision of 2026-10-13). The surrounding
+ * panel (title, collapse)
  * lives in the Chat page so the Canvas panel and the panel header stay one
  * shared part. The panel is one narrow column, so components always lay out
  * in one column; the stored `layout.columns` value is preserved untouched
@@ -69,14 +70,6 @@ export function Canvas(props: {
 												"ring-2 ring-blue-700": focused(),
 											}}
 										>
-											<Show when={focused()}>
-												<p
-													data-focused-label="true"
-													class="mb-1 inline-block rounded bg-blue-700 px-1.5 py-px text-2xs font-semibold text-white"
-												>
-													Focused by the agent
-												</p>
-											</Show>
 											<WorkspaceComponentView
 												component={item()}
 												context={context()}

@@ -75,8 +75,8 @@ Ask research questions and read the answers, with their sources and run progress
   (the stored `layout.columns` value is preserved but never switches the
   grid); each component is just its rendered content — no toolbar, id, type
   label or count, and no owner-side move/focus/remove controls (the agent
-  arranges the canvas; a component it focuses is marked "Focused by the
-  agent"); cited sources appear as numbered chips opening a source card, with one
+  arranges the canvas; a component it focuses is marked by a ring);
+  cited sources appear as numbered chips opening a source card, with one
   compact `N sources` disclosure per component; a short empty state when
   there are none. A collapsed Canvas panel mounts none of it.
 
