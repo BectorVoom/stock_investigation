@@ -66,6 +66,32 @@ The frontend was also reviewed by Codex (read-only). It found eleven more defect
 | Safari engine (Playwright WebKit) | Reviewed; browser suite passes. This is Safari's engine, not Safari.app itself |
 | Firefox | **Not reviewed.** Firefox could not be started from the automated environment on the development machine (headless and headed both fail before any test runs). Run `REVIEW_BROWSER=firefox bun run review:ui` and `bun run test:e2e:firefox` from an ordinary terminal |
 
+## 2026-10-12 — Chat and Canvas merged into one page
+
+Chat and Canvas are one NotebookLM-style page: Chats / Chat / Canvas panels
+side by side at `lg` (collapsible side rails), a `Chats` disclosure plus
+Chat/Canvas tabs below it; one shared workspace session; "New chat" button
+(no title field); per-chat Rename/Delete (menu + native dialog). Reviewed
+with `E2E_PORT=9310 REVIEW_BROWSER=chrome bun run review:ui` after updating
+`tests/ui-review/chatReview.spec.ts` (New-chat creation, `Chats` nav names);
+screenshots read in `test-results/ui-review/chrome/`.
+
+- 1440/1280/820/390 px: three panels, long titles truncate with full-text
+  tooltips, the 260-char unbroken word stays inside the thread column, the
+  pinned composer rests at the viewport bottom, empty chat shows suggestions
+  and the Canvas panel shows its "(0 components)" empty state. No horizontal
+  overflow or overlap in any shot; at 1024 px the columns bottom out at
+  224 + 1fr + 288 px plus gaps inside the 992 px content width, so nothing
+  overflows (reasoned, not screenshotted).
+- The scripted review's real defect this round: the row "More actions" kebab
+  measured 23 px wide, under the 24 px target floor — fixed with `min-w-6`
+  on the shared `ActionMenu` button; re-review shows zero `small-target`
+  findings (17 findings remain, all expected kinds: content behind the pinned
+  composer, drawer-backdrop occlusion, the known drawer-heading advisory, one
+  newest-answer timing lead).
+- Rename/delete were exercised in DOM tests, not in this review (the server
+  PATCH/DELETE routes arrive from another agent).
+
 ## Checked and found clean
 
 Text contrast on every state · focus visibility on every tab stop · heading order (one advisory: the drawer's first heading) · accessible names · horizontal overflow at all four sizes · input growth and its cap · Enter sends, Shift+Enter does not · newest message stays in view · model and page text is rendered as inert text (the hostile test string shows as characters).

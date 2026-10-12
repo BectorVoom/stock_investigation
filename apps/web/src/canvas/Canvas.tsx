@@ -1,13 +1,15 @@
 import type { WorkspaceView } from "@research/contracts";
 import { type RenderContext, type UiRegistry, WorkspaceComponentView } from "@research/ui-registry";
 import { createMemo, For, type JSX, Show } from "solid-js";
-import { BUTTON, BUTTON_DANGER, Empty, Section } from "../components/ui.tsx";
+import { BUTTON, BUTTON_DANGER, Empty } from "../components/ui.tsx";
 import { moveOperation, toggleColumnsOperation, type UiOperation } from "./commands.ts";
 
 /**
  * The component canvas, rendered from `state.layout.order` through the
  * registry. Owner controls only emit typed UI operations; the canvas re-renders
- * from whatever state the server returns (UI-001 / UI-009).
+ * from whatever state the server returns (UI-001 / UI-009). The surrounding
+ * panel (title, count, collapse) lives in the Chat page so the Canvas panel
+ * and the panel header stay one shared part.
  */
 export function Canvas(props: {
 	readonly view: WorkspaceView;
@@ -37,34 +39,27 @@ export function Canvas(props: {
 	};
 
 	return (
-		<Section
-			title="Canvas"
-			busy={props.busy}
-			actions={
-				<p class="flex items-center gap-2 text-xs text-slate-700">
-					<span data-field="workspace-version">Workspace version {state().version}</span>
-					<span>
-						{state().components.length}{" "}
-						{state().components.length === 1 ? "component" : "components"}
-					</span>
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={props.busy}
-						onClick={() => props.onOperation(toggleColumnsOperation(state().layout))}
-					>
-						{state().layout.columns === 1 ? "Use 2 columns" : "Use 1 column"}
-					</button>
-				</p>
-			}
-		>
+		<div aria-busy={props.busy}>
+			<p class="flex flex-wrap items-center gap-2 text-xs text-slate-700">
+				<span data-field="workspace-version">Workspace version {state().version}</span>
+				<button
+					type="button"
+					class={BUTTON}
+					disabled={props.busy}
+					onClick={() => props.onOperation(toggleColumnsOperation(state().layout))}
+				>
+					{state().layout.columns === 1 ? "Use 2 columns" : "Use 1 column"}
+				</button>
+			</p>
 			<Show
 				when={state().layout.order.length > 0}
 				fallback={
-					<Empty>
-						No components yet. Ask a research question and the agent will add tables, charts and
-						sources here.
-					</Empty>
+					<div class="mt-2">
+						<Empty>
+							No canvas content yet. Ask a research question and the agent will add tables, charts
+							and reports here.
+						</Empty>
+					</div>
 				}
 			>
 				<ul
@@ -149,6 +144,6 @@ export function Canvas(props: {
 					</For>
 				</ul>
 			</Show>
-		</Section>
+		</div>
 	);
 }

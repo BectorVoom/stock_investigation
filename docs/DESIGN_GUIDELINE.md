@@ -109,18 +109,25 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   purpose sentence from `PAGES`), then content at most `110rem` wide
   (`max-w-[110rem]`, `px-4`).
 - The panel (`PANEL`: white, bordered, `p-3`) is the unit of a page; related
-  controls live in one panel, unrelated ones in separate panels.
-- One column by default; two columns from the large breakpoint: Chat uses
-  `lg:grid-cols-[minmax(16rem,20rem)_1fr]` (history plus open conversation),
-  the canvas component grid uses `xl:grid-cols-2` when the layout says two
-  columns.
-- Chat layout: conversation history navigation on the left, the open
-  conversation (thread, question form, run status) on the right; the evidence
-  drawer overlays from the right (`fixed inset-y-0 right-0`, `max-w-3xl`).
-  Below the large breakpoint the page scrolls as a normal document, the
-  history is a collapsed `Conversations (<n>)` disclosure (open when empty),
-  and the composer stays `sticky` at the bottom over its own opaque
-  `bg-slate-100` background.
+  controls live in one panel, unrelated ones in separate panels. On the Chat
+  page the three panels are rounded cards on the grey page background, each
+  with a small header holding its title and a collapse/expand button
+  (`PanelHeader` in `components/ui.tsx`).
+- One column by default; three columns from the large breakpoint: Chat uses
+  `lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_minmax(18rem,26rem)]`
+  (Chats, Chat, Canvas); a collapsed side panel shrinks its column to a
+  narrow rail (`3rem`), and a collapsed panel mounts none of its heavy
+  content. The canvas component grid uses `xl:grid-cols-2` when the layout
+  says two columns.
+- Chat layout: chats navigation on the left, the open conversation (thread,
+  question form, run status) in the centre, the canvas on the right; the
+  evidence drawer and the delete-chat confirmation overlay with focus trapped
+  and returned on close. Below the large breakpoint the page scrolls as a
+  normal document, the chats history is a collapsed `Chats (<n>)` disclosure
+  (open when empty), a two-tab switch (`Chat` / `Canvas` with tab semantics)
+  shows one of the two at a time, and the composer stays `sticky` at the
+  bottom over its own opaque background (`bg-slate-100` on the page,
+  `bg-white` inside the centre panel).
 
 ## 6. Components
 
@@ -138,7 +145,13 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Status badges | Claim type and verification status; run state chips — always symbol plus word | type (slate) / supported (emerald) / unsupported (red) / conflicting (amber) | `ClaimTypeBadge` / `ClaimStatusBadge` in `@research/ui-registry`; run chips in `RunStatusPanel` reuse the same tones |
 | Tables | Semantic tables with `<caption>`, scope attributes and right-aligned numerals; dataset tables double as every chart's data-table twin | — | `DatasetTable` in `@research/ui-registry` |
 | Links | External links open in a new tab and state where they go | safe (https) / unavailable-with-note | `SafeLink` / `SourceCitation` / `SourceList` in `@research/ui-registry`; the only way a URL from data becomes an anchor |
-| Dialogs / drawers | The evidence drawer; approval and creation forms | — | `RecordsDrawer` (modal `dialog`, labelled by its heading, `Close records` button, focus trapped while open and returned on close); `ApprovalForm`; dialog state stays local (UI-003). The drawer opens over a semi-transparent slate backdrop (`bg-slate-900/50`) that closes it on click, as does Escape. |
+| Dialogs / drawers | The evidence drawer; approval and creation forms; the delete-chat confirmation | — | `RecordsDrawer` (modal `dialog`, labelled by its heading, `Close records` button, focus trapped while open and returned on close); `ApprovalForm`; `ConfirmDialog` in `components/ui.tsx` (native `dialog`, labelled by its heading, `Cancel` focused on open, Escape/Cancel closes and returns focus to the explicit opener, failures stay in the dialog via `ErrorNotice`); dialog state stays local (UI-003). The drawer opens over a semi-transparent slate backdrop (`bg-slate-900/50`) that closes it on click, as does Escape. |
+| Panel header | The small header of each Chat page panel: `h3` title plus count and collapse/expand | expanded / collapsed rail | `PanelHeader` in `components/ui.tsx` (`aria-expanded`, accessible collapse/expand names; collapsed panels render only the rail) |
+| Chats panel | Past chats and the "New chat" button | panel / rail; disclosure below `lg` | `ChatsPanel` in `chat/ChatsPanel.tsx` (`nav[aria-label="Chats"]`, `Chats (<n>)` disclosure, plus-icon `New chat` button) |
+| Canvas panel | The stored tables, charts and reports of the open conversation | panel / rail; tab below `lg` | `Canvas` in `canvas/Canvas.tsx` inside a panel section (`section[aria-label="Canvas"]`, count in the header, short empty state; not mounted when collapsed) |
+| Chat / Canvas tabs | The narrow-screen switch showing one of the two at a time | Chat / Canvas | `role="tablist"` with `role="tab"` (`aria-selected`, `aria-controls`) and `role="tabpanel"`; arrows move between tabs |
+| Action menu | Row actions for one chat ("More actions for <title>") | closed / open | `ActionMenu` in `components/ui.tsx` (button with `aria-haspopup="menu"` and `aria-expanded`; menu-button keyboard pattern: Enter/Space/ArrowDown opens, arrows/Home/End move, Escape closes and returns focus, click outside closes; `role="menu"` / `role="menuitem"`) |
+| Rename input | The in-place chat title editor | — | `RenameInput` in `chat/ChatsPanel.tsx` (text input holding the current title, `maxLength={300}`; Enter/blur saves, Escape cancels, empty/unchanged sends nothing; failures via `ErrorNotice` with the old title kept) |
 | Message thread | The centred conversation column on the Chat page | — | `Conversation` in `chat/Conversation.tsx` (`ol[aria-label="Messages"]`, `max-w-3xl`) |
 | Owner bubble | Right-aligned owner message | — | `OwnerMessage` in `chat/Conversation.tsx` (`rounded-2xl`, `bg-blue-700`, `text-white`) |
 | Assistant message | Left-aligned answer with claims, copy and evidence actions | — | `AssistantMessage` in `chat/Conversation.tsx` (no box; claims with numbered citation chips plus an `N sources` row; `Copy answer` / `Evidence`) |

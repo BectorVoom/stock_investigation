@@ -1,7 +1,6 @@
 import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, For, type JSX, Match, Show, Switch } from "solid-js";
 import type { ApiClient } from "./api/client.ts";
-import { CanvasView } from "./canvas/CanvasView.tsx";
 import { ChatView } from "./chat/ChatView.tsx";
 import { PageHeader } from "./components/ui.tsx";
 import type { VisibilitySource } from "./lib/polling.ts";
@@ -61,10 +60,7 @@ export function App(props: AppProps): JSX.Element {
 										<a
 											href={formatHash({
 												view: page.view,
-												workspaceId:
-													page.view === "chat" || page.view === "canvas"
-														? router.route().workspaceId
-														: null,
+												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
 												section: null,
 											})}
 											aria-current={view() === page.view ? "page" : undefined}
@@ -106,21 +102,11 @@ export function App(props: AppProps): JSX.Element {
 					<Match when={view() === "chat"}>
 						<ChatView
 							api={props.api}
-							visibility={props.visibility}
-							workspaceId={router.route().workspaceId}
-							onSelectConversation={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null })
-							}
-						/>
-					</Match>
-					<Match when={view() === "canvas"}>
-						<CanvasView
-							api={props.api}
 							registry={props.registry}
 							visibility={props.visibility}
 							workspaceId={router.route().workspaceId}
 							onSelectConversation={(workspaceId) =>
-								router.navigate({ view: "canvas", workspaceId, section: null })
+								router.navigate({ view: "chat", workspaceId, section: null })
 							}
 						/>
 					</Match>

@@ -30,6 +30,7 @@ import {
 	type RunRecords,
 	recommendedSourcesResponseSchema,
 	registerSourceRequestSchema,
+	renameWorkspaceRequestSchema,
 	researchExportSchema,
 	researchRunListResponseSchema,
 	researchRunResponseSchema,
@@ -333,13 +334,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 			return result.ok ? ok(result.value.workspaces) : result;
 		},
-		createWorkspace: (title: string): Promise<ApiResult<WorkspaceSummary>> =>
+		createWorkspace: (title?: string): Promise<ApiResult<WorkspaceSummary>> =>
 			write(
 				{ method: "POST", path: workspaces },
 				createWorkspaceRequestSchema,
+				title === undefined ? {} : { title },
+				workspaceSummarySchema,
+			),
+		renameWorkspace: (workspaceId: string, title: string): Promise<ApiResult<WorkspaceSummary>> =>
+			write(
+				{ method: "PATCH", path: `${workspaces}/${segment(workspaceId)}` },
+				renameWorkspaceRequestSchema,
 				{ title },
 				workspaceSummarySchema,
 			),
+		deleteWorkspace: (workspaceId: string): Promise<ApiResult<null>> =>
+			requestEmpty({ method: "DELETE", path: `${workspaces}/${segment(workspaceId)}` }),
 		getWorkspace: (
 			workspaceId: string,
 			etag: string | null = null,

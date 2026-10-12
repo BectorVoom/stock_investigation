@@ -48,7 +48,11 @@ async function threadReady(): Promise<HTMLElement> {
 }
 
 async function historyReady(): Promise<HTMLElement> {
-	return screen.findByRole("navigation", { name: "Conversations" });
+	return screen.findByRole("navigation", { name: "Chats" });
+}
+
+async function canvasReady(): Promise<HTMLElement> {
+	return screen.findByRole("region", { name: "Canvas" });
 }
 
 describe("disclosure summaries", () => {
@@ -69,7 +73,7 @@ describe("disclosure summaries", () => {
 });
 
 describe("chat history", () => {
-	it("lists conversations newest first with preview, time, count and the current marker", async () => {
+	it("lists chats newest first with preview, time, count and the current marker", async () => {
 		mountApp(backend);
 		const nav = await historyReady();
 		await threadReady();
@@ -131,31 +135,15 @@ describe("chat history", () => {
 		expect(within(conversation).queryByText("Where will storage demand grow?")).toBeNull();
 	});
 
-	it("starts a new conversation and navigates to it", async () => {
-		mountApp(backend);
-		await historyReady();
-		await threadReady();
-
-		fireEvent.input(screen.getByLabelText("New conversation title"), {
-			target: { value: "Fresh inquiry" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Start conversation" }));
-		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
-		expect(await screen.findByRole("heading", { level: 3, name: "Fresh inquiry" })).toBeDefined();
-		expect(backend.requestsTo("POST", /\/workspaces$/)[0]?.body).toEqual({
-			title: "Fresh inquiry",
-		});
-	});
-
-	it("shows empty states when there are no conversations", async () => {
+	it("shows empty states when there are no chats", async () => {
 		server.conversations = [];
 		window.location.hash = "#/chat";
 		mountApp(backend);
-		await screen.findByText("No conversations yet. Start one above.");
-		await screen.findByText(/Start one to ask a research question/);
+		await screen.findByText("No chats yet. Start one above.");
+		await screen.findByText("Welcome to Chat");
 	});
 
-	it("shows a conversations error with its code and can retry", async () => {
+	it("shows a chats error with its code and can retry", async () => {
 		backend.on("GET", /^\/api\/v1\/conversations$/, () =>
 			errorResponse(500, "INTERNAL", "database unavailable"),
 		);
@@ -166,135 +154,379 @@ describe("chat history", () => {
 		).toContain("INTERNAL");
 	});
 
-	it("a late list response never overwrites a newer one", async () => {
+	it("shows the canvas panel alongside the thread, from one shared session", async () => {
 		mountApp(backend);
-		const nav = await historyReady();
 		await threadReady();
-		expect(nav.textContent).toContain("Second research");
-
-		// Two list reads race: the first (a slow poll) against the second (a
-		// reload after creating a conversation). The slow response carries the
-		// older list; it must not replace the newer one.
-		const slowA = deferred<Response>();
-		const fastB = deferred<Response>();
-		let calls = 0;
-		backend.on("GET", /^\/api\/v1\/conversations$/, () => {
-			calls += 1;
-			return calls === 1 ? slowA.promise : fastB.promise;
-		});
-
-		fireEvent.input(screen.getByLabelText("New conversation title"), {
-			target: { value: "First new" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Start conversation" }));
-		await waitFor(() => expect(calls).toBe(1));
-		const stale = [...server.conversations];
-		expect(stale.some((entry) => entry.title === "First new")).toBe(true);
-
-		fireEvent.input(screen.getByLabelText("New conversation title"), {
-			target: { value: "Second new" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Start conversation" }));
-		await waitFor(() => expect(calls).toBe(2));
-		const fresh = [...server.conversations];
-
-		// The newer read answers first and is adopted…
-		fastB.resolve(jsonResponse({ conversations: fresh }, { headers: { ETag: '"c-new"' } }));
-		await waitFor(() => expect(nav.textContent).toContain("Second new"));
-
-		// …then the older read answers with the older list. It must be
-		// discarded: the delay flushes every microtask from it first, so a
-		// mere reordering cannot hide the overwrite.
-		slowA.resolve(jsonResponse({ conversations: stale }, { headers: { ETag: '"c-stale"' } }));
-		await new Promise((resolve) => setTimeout(resolve, 150));
-		expect(nav.textContent).toContain("Second new");
-		expect(nav.textContent).toContain("First new");
-		expect(nav.textContent).toContain("Second research");
+		const canvas = await canvasReady();
+		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
+		expect(within(canvas).getByRole("list", { name: "Workspace components" })).toBeDefined();
+		// One session: a single workspace read backs both panels.
+		await waitFor(() =>
+			expect(backend.requestsTo("GET", /^\/api\/v1\/workspaces\/ws_1$/)).toHaveLength(1),
+		);
 	});
 
-	it("a late conversation-created response does not pull the owner back to Chat", async () => {
-		mountApp(backend);
-		await historyReady();
+	it("old canvas and workspace hashes open the chat page for that conversation", async () => {
+		window.location.hash = `#/canvas/${WORKSPACE_ID}`;
+		const first = mountApp(backend);
 		await threadReady();
-
-		const release = deferred<null>();
-		backend.on("POST", /^\/api\/v1\/workspaces$/, (request) => {
-			const body = request.body as { title?: unknown };
-			const title = typeof body?.title === "string" ? body.title.trim() : "";
-			if (title === "") return errorResponse(400, "VALIDATION_FAILED", "title is required");
-			const created = {
-				...WORKSPACE_SUMMARY_2,
-				workspaceId: "ws_new",
-				title,
-				createdAt: "2026-10-07T00:00:00Z",
-				updatedAt: "2026-10-07T00:00:00Z",
-			};
-			server.conversations = [
-				{
-					workspaceId: created.workspaceId,
-					title: created.title,
-					messageCount: 0,
-					lastMessageAt: null,
-					lastMessageRole: null,
-					lastMessagePreview: null,
-					lastActivityAt: created.createdAt,
-				},
-				...server.conversations,
-			];
-			return release.promise.then(() => jsonResponse(created, { status: 201 }));
-		});
-
-		fireEvent.input(screen.getByLabelText("New conversation title"), {
-			target: { value: "Late arrival" },
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Start conversation" }));
-		await waitFor(() => expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(1));
-
-		// The owner leaves for Sources while the create is still pending.
-		fireEvent.click(screen.getByRole("link", { name: "Sources" }));
-		window.dispatchEvent(new Event("hashchange"));
-		await screen.findByRole("region", { name: "Subscribed sources" });
-		expect(window.location.hash).toBe("#/sources");
-
-		release.resolve(null);
-		// The late response flushes through every microtask before this
-		// assertion runs: without the disposal guard it navigates back to Chat.
-		await new Promise((resolve) => setTimeout(resolve, 150));
-		// No navigation after the form was disposed: still on Sources.
-		expect(window.location.hash).toBe("#/sources");
-
-		// The created conversation appears in the list next time Chat loads.
-		fireEvent.click(screen.getByRole("link", { name: "Chat" }));
-		window.dispatchEvent(new Event("hashchange"));
-		const nav = await historyReady();
-		await waitFor(() => expect(nav.textContent).toContain("Late arrival"));
-	});
-
-	it("links each conversation to its canvas", async () => {
+		await canvasReady();
+		expect(window.location.hash).toBe(`#/canvas/${WORKSPACE_ID}`);
+		first.unmount();
+		cleanup();
+		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
 		mountApp(backend);
 		await threadReady();
-		const openCanvas = await screen.findByRole("link", { name: "Open canvas" });
-		expect(openCanvas.getAttribute("href")).toBe(`#/canvas/${WORKSPACE_ID}`);
+		await canvasReady();
 	});
 });
 
 describe("chat history disclosure (narrow layout)", () => {
-	it("summarises the conversation count in its summary", async () => {
+	it("summarises the chat count in its summary", async () => {
+		const original = window.matchMedia;
+		window.matchMedia = (() => ({
+			matches: false,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		})) as unknown as typeof window.matchMedia;
+		try {
+			mountApp(backend);
+			const nav = await historyReady();
+			await threadReady();
+			const summary = document.querySelector('[data-conversations-disclosure="true"] > summary');
+			expect(summary?.textContent).toContain("Chats (2)");
+			expect(nav.textContent).toContain("Grid storage research");
+		} finally {
+			window.matchMedia = original;
+		}
+	});
+
+	it("is open when there are no chats", async () => {
+		const original = window.matchMedia;
+		window.matchMedia = (() => ({
+			matches: false,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		})) as unknown as typeof window.matchMedia;
+		try {
+			server.conversations = [];
+			window.location.hash = "#/chat";
+			mountApp(backend);
+			await screen.findByText("No chats yet. Start one above.");
+			const disclosure = document.querySelector('[data-conversations-disclosure="true"]');
+			expect(disclosure?.hasAttribute("open")).toBe(true);
+			expect(disclosure?.textContent).toContain("Chats (0)");
+		} finally {
+			window.matchMedia = original;
+		}
+	});
+
+	it("offers Chat and Canvas tabs that show one panel at a time", async () => {
+		const original = window.matchMedia;
+		window.matchMedia = (() => ({
+			matches: false,
+			addEventListener: () => {},
+			removeEventListener: () => {},
+		})) as unknown as typeof window.matchMedia;
+		try {
+			mountApp(backend);
+			await threadReady();
+			const tablist = await screen.findByRole("tablist", { name: "Chat or Canvas" });
+			const chatTab = within(tablist).getByRole("tab", { name: "Chat" });
+			const canvasTab = within(tablist).getByRole("tab", { name: "Canvas" });
+			expect(chatTab.getAttribute("aria-selected")).toBe("true");
+			expect(canvasTab.getAttribute("aria-selected")).toBe("false");
+			expect(screen.getByRole("region", { name: "Conversation" })).toBeDefined();
+			fireEvent.click(canvasTab);
+			await waitFor(() => expect(canvasTab.getAttribute("aria-selected")).toBe("true"));
+			await screen.findByRole("region", { name: "Canvas" });
+			expect(screen.queryByRole("region", { name: "Conversation" })).toBeNull();
+		} finally {
+			window.matchMedia = original;
+		}
+	});
+});
+
+describe("new chat", () => {
+	it("creates an untitled chat, opens it and focuses the question input", async () => {
 		mountApp(backend);
 		await historyReady();
 		await threadReady();
-		const summary = document.querySelector('[data-conversations-disclosure="true"] > summary');
-		expect(summary?.textContent).toContain("Conversations (2)");
+		fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
+		const posts = backend.requestsTo("POST", /\/workspaces$/);
+		expect(posts).toHaveLength(1);
+		expect(posts[0]?.body).toEqual({});
+		await screen.findByRole("heading", { level: 3, name: "New chat" });
+		const box = await screen.findByRole("textbox", { name: "Question" });
+		await waitFor(() => expect(document.activeElement).toBe(box));
 	});
 
-	it("is open when there are no conversations", async () => {
-		server.conversations = [];
-		window.location.hash = "#/chat";
+	it("reuses an empty New chat instead of creating another", async () => {
+		server.conversations = [
+			{
+				workspaceId: "ws_empty",
+				title: "New chat",
+				messageCount: 0,
+				lastMessageAt: null,
+				lastMessageRole: null,
+				lastMessagePreview: null,
+				lastActivityAt: "2026-10-07T00:00:00Z",
+			},
+			...server.conversations,
+		];
 		mountApp(backend);
-		await screen.findByText("No conversations yet. Start one above.");
-		const disclosure = document.querySelector('[data-conversations-disclosure="true"]');
-		expect(disclosure?.hasAttribute("open")).toBe(true);
-		expect(disclosure?.textContent).toContain("Conversations (0)");
+		await historyReady();
+		await threadReady();
+		fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_empty"));
+		expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(0);
+	});
+
+	it("a late create response does not pull the owner back after they navigated away", async () => {
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		const release = deferred<null>();
+		backend.on("POST", /^\/api\/v1\/workspaces$/, () =>
+			release.promise.then(() =>
+				jsonResponse(
+					{
+						...WORKSPACE_SUMMARY_2,
+						workspaceId: "ws_new",
+						title: "New chat",
+						createdAt: "2026-10-07T00:00:00Z",
+						updatedAt: "2026-10-07T00:00:00Z",
+					},
+					{ status: 201 },
+				),
+			),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+		await waitFor(() => expect(backend.requestsTo("POST", /\/workspaces$/)).toHaveLength(1));
+		fireEvent.click(screen.getByRole("link", { name: "Sources" }));
+		window.dispatchEvent(new Event("hashchange"));
+		await screen.findByRole("region", { name: "Subscribed sources" });
+		expect(window.location.hash).toBe("#/sources");
+		release.resolve(null);
+		await new Promise((resolve) => setTimeout(resolve, 150));
+		expect(window.location.hash).toBe("#/sources");
+	});
+
+	it("shows the renamed title in the list and the header after the first question", async () => {
+		backend.on("POST", /^\/api\/v1\/research-runs$/, () =>
+			jsonResponse(
+				{ run: makeRun({ runId: "run_new", state: "pending", provenance: null }) },
+				{ status: 202 },
+			),
+		);
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+		await waitFor(() => expect(window.location.hash).toBe("#/chat/ws_new"));
+		// The server renames the chat from its first question: simulate the
+		// rename arriving with the next list poll.
+		server.conversations = server.conversations.map((entry) =>
+			entry.workspaceId === "ws_new" ? { ...entry, title: "Storage demand" } : entry,
+		);
+		const composer = await screen.findByRole("form", { name: "Research composer" });
+		await within(composer).findByText(/Claude Code \(available\)/);
+		fireEvent.input(within(composer).getByLabelText("Question"), {
+			target: { value: "Which storage products will grow?" },
+		});
+		fireEvent.click(within(composer).getByRole("button", { name: "Send question" }));
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { level: 3, name: "Storage demand" })).toBeDefined(),
+		);
+		const nav = await historyReady();
+		expect(nav.textContent).toContain("Storage demand");
+	});
+});
+
+describe("rename chats", () => {
+	it("renames a chat from the list", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+		const box = screen.getByLabelText("Chat title") as HTMLInputElement;
+		expect(box.value).toBe("Second research");
+		fireEvent.input(box, { target: { value: "Renamed research" } });
+		fireEvent.keyDown(box, { key: "Enter" });
+		await waitFor(() => expect(nav.textContent).toContain("Renamed research"));
+		const patch = backend.requestsTo("PATCH", /\/workspaces\/ws_2$/)[0];
+		expect(patch?.body).toEqual({ title: "Renamed research" });
+	});
+
+	it("renames the open conversation from the centre header", async () => {
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		fireEvent.click(screen.getByRole("button", { name: "Rename Grid storage research" }));
+		const box = screen.getByLabelText("Chat title") as HTMLInputElement;
+		fireEvent.input(box, { target: { value: "Grid storage v2" } });
+		fireEvent.blur(box);
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { level: 3, name: "Grid storage v2" })).toBeDefined(),
+		);
+		expect(backend.requestsTo("PATCH", /\/workspaces\/ws_1$/)[0]?.body).toEqual({
+			title: "Grid storage v2",
+		});
+	});
+
+	it("cancels a rename on Escape and sends nothing for an empty or unchanged title", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+		const box = screen.getByLabelText("Chat title") as HTMLInputElement;
+		fireEvent.keyDown(box, { key: "Escape" });
+		expect(screen.queryByLabelText("Chat title")).toBeNull();
+		expect(backend.requestsTo("PATCH", /workspaces/)).toHaveLength(0);
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+		const same = screen.getByLabelText("Chat title") as HTMLInputElement;
+		fireEvent.blur(same);
+		await waitFor(() => expect(screen.queryByLabelText("Chat title")).toBeNull());
+		expect(backend.requestsTo("PATCH", /workspaces/)).toHaveLength(0);
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+		const empty = screen.getByLabelText("Chat title") as HTMLInputElement;
+		fireEvent.input(empty, { target: { value: "   " } });
+		fireEvent.blur(empty);
+		expect(backend.requestsTo("PATCH", /workspaces/)).toHaveLength(0);
+	});
+
+	it("shows a rename failure and keeps the old title", async () => {
+		backend.on("PATCH", /^\/api\/v1\/workspaces\/ws_2$/, () =>
+			errorResponse(500, "INTERNAL", "database unavailable"),
+		);
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+		const box = screen.getByLabelText("Chat title") as HTMLInputElement;
+		fireEvent.input(box, { target: { value: "Will fail" } });
+		fireEvent.blur(box);
+		await screen.findByText(/database unavailable/);
+		expect(nav.textContent).toContain("Second research");
+		expect(nav.textContent).not.toContain("Will fail");
+	});
+});
+
+describe("delete chats", () => {
+	it("confirms and deletes a chat that is not open", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("dialog");
+		expect(dialog.textContent).toContain("Second research");
+		expect(dialog.textContent).toContain("messages, canvas and research records");
+		expect(dialog.textContent).toContain("cannot be undone");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+		await waitFor(() => expect(nav.textContent).not.toContain("Second research"));
+		expect(backend.requestsTo("DELETE", /\/workspaces\/ws_2$/)).toHaveLength(1);
+		expect(window.location.hash).toBe(`#/chat/${WORKSPACE_ID}`);
+	});
+
+	it("cancel closes the dialog and deletes nothing", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		const opener = within(nav).getByRole("button", {
+			name: "More actions for Second research",
+		}) as HTMLElement;
+		fireEvent.click(opener);
+		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(backend.requestsTo("DELETE", /workspaces/)).toHaveLength(0);
+		expect(nav.textContent).toContain("Second research");
+		expect(document.activeElement).toBe(opener);
+	});
+
+	it("deleting the open chat opens the newest remaining chat", async () => {
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(
+			within(nav).getByRole("button", { name: "More actions for Grid storage research" }),
+		);
+		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+		await waitFor(() => expect(window.location.hash).toBe(`#/chat/${WORKSPACE_ID_2}`));
+		await screen.findByText("Second question?");
+	});
+
+	it("deleting the last chat shows the empty welcome", async () => {
+		server.conversations = server.conversations.filter(
+			(entry) => entry.workspaceId === WORKSPACE_ID,
+		);
+		window.location.hash = `#/chat/${WORKSPACE_ID}`;
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		const nav = await historyReady();
+		fireEvent.click(
+			within(nav).getByRole("button", { name: "More actions for Grid storage research" }),
+		);
+		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+		await screen.findByText("Welcome to Chat");
+		expect(window.location.hash).toBe("#/chat");
+	});
+
+	it("a 409 shows the server message in the dialog and deletes nothing", async () => {
+		server.runs = [makeRun({ state: "pending", provenance: null })];
+		mountApp(backend);
+		const nav = await historyReady();
+		await threadReady();
+		fireEvent.click(
+			within(nav).getByRole("button", { name: "More actions for Grid storage research" }),
+		);
+		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+		await within(dialog).findByText(/still running/);
+		expect(nav.textContent).toContain("Grid storage research");
+		expect(screen.getByRole("dialog")).toBeDefined();
+	});
+});
+
+describe("panels", () => {
+	it("collapses the Chats panel to a rail with an expand button", async () => {
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		const collapse = screen.getByRole("button", { name: "Collapse Chats panel" });
+		expect(collapse.getAttribute("aria-expanded")).toBe("true");
+		fireEvent.click(collapse);
+		const expand = await screen.findByRole("button", { name: "Expand Chats panel" });
+		expect(expand.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByRole("navigation", { name: "Chats" })).toBeNull();
+		fireEvent.click(expand);
+		await historyReady();
+	});
+
+	it("collapses the Canvas panel without mounting its components", async () => {
+		mountApp(backend);
+		await threadReady();
+		await canvasReady();
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
+		const expand = await screen.findByRole("button", { name: "Expand Canvas panel" });
+		expect(expand.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByRole("list", { name: "Workspace components" })).toBeNull();
+		fireEvent.click(expand);
+		await canvasReady();
 	});
 });
 
@@ -502,11 +734,11 @@ describe("chat thread", () => {
 		await within(conversation).findByText("Where will storage demand grow?");
 	});
 
-	it("has no canvas region: the split is exclusive", async () => {
+	it("shows the canvas panel alongside the thread", async () => {
 		mountApp(backend);
 		await threadReady();
-		expect(screen.queryByRole("region", { name: "Canvas" })).toBeNull();
-		expect(screen.queryByRole("list", { name: "Workspace components" })).toBeNull();
+		const canvas = await screen.findByRole("region", { name: "Canvas" });
+		expect(within(canvas).getByRole("list", { name: "Workspace components" })).toBeDefined();
 	});
 });
 
@@ -737,11 +969,11 @@ describe("chat thread layout (CopilotChat)", () => {
 	it("shows the header, thread and input in that order", async () => {
 		mountApp(backend);
 		await threadReady();
-		const openCanvas = await screen.findByRole("link", { name: "Open canvas" });
+		const header = await screen.findByRole("heading", { level: 3, name: "Grid storage research" });
 		const messages = await screen.findByRole("list", { name: "Messages" });
 		const composer = await screen.findByRole("form", { name: "Research composer" });
 		const order =
-			openCanvas.compareDocumentPosition(messages) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
+			header.compareDocumentPosition(messages) & Node.DOCUMENT_POSITION_FOLLOWING ? 1 : -1;
 		expect(order).toBe(1);
 		expect(messages.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
 			Node.DOCUMENT_POSITION_FOLLOWING,

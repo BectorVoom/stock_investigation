@@ -234,7 +234,7 @@ async function audit(page: Page, state: string): Promise<void> {
 
 		// 5b. Content wider than its box inside the chat thread (long unbroken words, URLs).
 		for (const el of Array.from(
-			document.querySelectorAll('[aria-label="Messages"] *, [aria-label="Conversations"] *'),
+			document.querySelectorAll('[aria-label="Messages"] *, [aria-label="Chats"] *'),
 		)) {
 			if (!visible(el)) continue;
 			const style = getComputedStyle(el);
@@ -330,8 +330,10 @@ async function ensurePrepared(page: Page): Promise<void> {
 	}
 
 	await page.getByRole("link", { name: "Chat", exact: true }).click();
-	await page.getByLabel("New conversation title").fill(`UI review ${Date.now()}`);
-	await page.getByRole("button", { name: "Start conversation" }).click();
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 	const composer = page.getByRole("form", { name: "Research composer" });
 	await composer
@@ -638,7 +640,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 		});
 	}
 	await page.reload();
-	await expect(page.getByRole("navigation", { name: "Conversations" })).toBeVisible({
+	await expect(page.getByRole("navigation", { name: "Chats" })).toBeVisible({
 		timeout: 20_000,
 	});
 	await page.waitForTimeout(1200);
@@ -655,10 +657,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 		});
 
 	/* ---------- D. Empty conversation ---------- */
-	const emptyLink = page
-		.getByRole("navigation", { name: "Conversations" })
-		.getByRole("link")
-		.first();
+	const emptyLink = page.getByRole("navigation", { name: "Chats" }).getByRole("link").first();
 	await emptyLink.click();
 	await page.waitForTimeout(1000);
 	await shot(page, "D1-empty");
