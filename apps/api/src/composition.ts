@@ -118,6 +118,8 @@ export function createServices(
 			catalog,
 			clock,
 			ids,
+			audit: persistence.audit,
+			unitOfWork: persistence.unitOfWork,
 		}),
 		credentials: createRunnerCredentialService({
 			credentials: persistence.runnerCredentials,
