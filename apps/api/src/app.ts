@@ -11,6 +11,7 @@ import {
 	completeJobRequestSchema,
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
+	DEFAULT_CONVERSATION_TITLE,
 	heartbeatRequestSchema,
 	idSchema,
 	issueRunnerCredentialRequestSchema,
@@ -581,7 +582,7 @@ export function createApp(options: AppOptions = {}) {
 			Effect.gen(function* () {
 				const body = yield* readJson(c, createWorkspaceRequestSchema);
 				const workspace = yield* useCase("workspaces.create", () =>
-					c.var.services.workspaces.create(owner(c), body.title),
+					c.var.services.workspaces.create(owner(c), body.title ?? DEFAULT_CONVERSATION_TITLE),
 				);
 				return c.json(workspace, 201);
 			}),
