@@ -1,13 +1,19 @@
 import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import type { ApiFailure } from "../api/http.ts";
 import { Canvas } from "../canvas/Canvas.tsx";
-import { BUTTON, ErrorNotice, Loading, Notice, PANEL, PanelHeader } from "../components/ui.tsx";
+import {
+	BUTTON,
+	CHAT_PANEL,
+	ErrorNotice,
+	Loading,
+	Notice,
+	PanelCollapseButton,
+	PanelHeader,
+} from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { createWorkspaceSession, type WorkspaceSession } from "../lib/session.ts";
-import { RenameInput } from "./ChatsPanel.tsx";
 import { Composer } from "./Composer.tsx";
 import { Conversation } from "./Conversation.tsx";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
@@ -20,11 +26,6 @@ export interface OpenWorkspaceProps {
 	readonly listTitle: string | null;
 	readonly onActivity: () => void;
 	readonly focusNonce: number;
-	readonly headerRenaming: boolean;
-	readonly onStartHeaderRename: () => void;
-	readonly onRenameHeader: (nextTitle: string) => void;
-	readonly onCancelHeaderRename: () => void;
-	readonly headerRenameError: () => ApiFailure | null;
 	readonly canvasCollapsed: () => boolean;
 	readonly onToggleCanvas: () => void;
 	readonly mobileTab: () => "chat" | "canvas";
@@ -130,55 +131,24 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	);
 
 	const chatPanel = () => (
-		// WHY `px-3 pb-0 pt-3 lg:p-3` instead of `PANEL` (p-3): on narrow
+		// WHY `px-3 pb-0 pt-3 lg:p-3` instead of `CHAT_PANEL` (p-3): on narrow
 		// screens the composer is pinned to the viewport bottom and the E2E
 		// tall-narrow test budgets 24 px below it. The stacked bottom
 		// paddings (composer wrapper, panel, page) already reach 33 px; the
-		// panel keeps its card look through the border and side/top padding
+		// panel keeps its card look through the fill and side/top padding
 		// while the composer rests at the bottom. At `lg` the composer is
 		// static inside the panel, so the full p-3 returns.
 		<section
 			aria-label="Chat"
 			data-panel="chat"
-			class="flex min-h-0 min-w-0 flex-1 flex-col rounded border border-slate-300 bg-white px-3 pb-0 pt-3 lg:p-3"
+			class="flex min-h-0 min-w-0 flex-1 flex-col rounded bg-white px-3 pb-0 pt-3 lg:p-3"
 		>
 			{notices()}
 			<div class="flex min-w-0 flex-wrap items-baseline gap-2">
-				<Show
-					when={!props.headerRenaming}
-					fallback={
-						<div class="min-w-0 flex-1">
-							<RenameInput
-								initial={title()}
-								onSave={(next) => props.onRenameHeader(next)}
-								onCancel={props.onCancelHeaderRename}
-							/>
-						</div>
-					}
-				>
-					<h3
-						class="min-w-0 flex-1 truncate text-base font-semibold text-slate-900"
-						title={title()}
-					>
-						{title()}
-					</h3>
-					<button
-						type="button"
-						class={BUTTON}
-						aria-label={`Rename ${title()}`}
-						onClick={() => props.onStartHeaderRename()}
-					>
-						Rename
-					</button>
-				</Show>
+				<h3 class="min-w-0 flex-1 truncate text-base font-semibold text-slate-900" title={title()}>
+					{title()}
+				</h3>
 			</div>
-			<Show when={props.headerRenameError()}>
-				{(error) => (
-					<div class="mt-1">
-						<ErrorNotice failure={error()} title="The chat was not renamed." />
-					</div>
-				)}
-			</Show>
 			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 				<Conversation
 					conversation={session.conversation()}
@@ -246,16 +216,16 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		<Show
 			when={!props.canvasCollapsed()}
 			fallback={
-				<div class={`${PANEL} hidden flex-col items-center gap-2 lg:flex`} data-panel="canvas-rail">
-					<button
-						type="button"
-						class={BUTTON}
-						aria-expanded={false}
-						aria-label="Expand Canvas panel"
-						onClick={() => props.onToggleCanvas()}
-					>
-						Expand
-					</button>
+				<div
+					class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`}
+					data-panel="canvas-rail"
+				>
+					<PanelCollapseButton
+						label="Expand Canvas panel"
+						expanded={false}
+						onToggle={props.onToggleCanvas}
+						side="right"
+					/>
 				</div>
 			}
 		>
@@ -263,7 +233,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				aria-label="Canvas"
 				data-panel="canvas"
 				aria-busy={session.commandPending()}
-				class={`${PANEL} hidden min-h-0 min-w-0 flex-col lg:flex`}
+				class={`${CHAT_PANEL} hidden min-h-0 min-w-0 flex-col lg:flex`}
 			>
 				<PanelHeader
 					title="Canvas"
@@ -272,6 +242,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 					collapseLabel="Collapse Canvas panel"
 					expandLabel="Expand Canvas panel"
 					onToggle={props.onToggleCanvas}
+					side="right"
 				/>
 				<div class="mt-2 min-h-0 flex-1 overflow-y-auto">{canvasBody()}</div>
 			</section>
@@ -299,7 +270,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							<section
 								aria-label="Canvas"
 								data-panel="canvas"
-								class={`${PANEL} flex min-h-0 flex-col`}
+								class={`${CHAT_PANEL} flex min-h-0 flex-col`}
 							>
 								<h3 class="text-sm font-semibold text-slate-900">
 									Canvas <span class="font-normal text-slate-600">{countText()}</span>

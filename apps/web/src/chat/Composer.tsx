@@ -278,7 +278,7 @@ export function Composer(props: {
 					</a>
 				</Notice>
 			</Show>
-			<div class="flex items-end gap-2 rounded-2xl border border-slate-300 bg-white p-2 focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-700">
+			<div class="flex items-end gap-2 rounded-2xl bg-slate-100 p-2 focus-within:ring-2 focus-within:ring-blue-700">
 				<label for={questionId} class="sr-only">
 					Question
 				</label>

@@ -5,13 +5,14 @@ import {
 	ActionMenu,
 	BUTTON,
 	BUTTON_PILL,
+	CHAT_PANEL,
 	ConfirmDialog,
 	DisclosureSummary,
 	Empty,
 	ErrorNotice,
 	INPUT,
 	Loading,
-	PANEL,
+	PanelCollapseButton,
 	PanelHeader,
 	RemoteView,
 } from "../components/ui.tsx";
@@ -86,7 +87,7 @@ export function NewChatButton(props: {
 		return (
 			<button
 				type="button"
-				class="flex h-6 w-6 items-center justify-center rounded-full border border-slate-400 bg-white text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+				class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
 				aria-label="New chat"
 				title="New chat"
 				disabled={props.disabled}
@@ -214,25 +215,22 @@ export function ChatsPanel(props: {
 			<Show
 				when={!props.collapsed()}
 				fallback={
-					<div class={`${PANEL} hidden flex-col items-center gap-2 lg:flex`}>
+					<div class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`}>
 						<NewChatButton
 							variant="icon"
 							disabled={props.newChatPending()}
 							onClick={() => props.onNewChat()}
 						/>
-						<button
-							type="button"
-							class={BUTTON}
-							aria-expanded={false}
-							aria-label="Expand Chats panel"
-							onClick={() => props.onToggleCollapsed()}
-						>
-							Expand
-						</button>
+						<PanelCollapseButton
+							label="Expand Chats panel"
+							expanded={false}
+							onToggle={props.onToggleCollapsed}
+							side="left"
+						/>
 					</div>
 				}
 			>
-				<section aria-label="Chats" class={`${PANEL} hidden min-h-0 flex-col lg:flex`}>
+				<section aria-label="Chats" class={`${CHAT_PANEL} hidden min-h-0 flex-col lg:flex`}>
 					<PanelHeader
 						title="Chats"
 						count={`(${props.ordered().length})`}
@@ -240,6 +238,7 @@ export function ChatsPanel(props: {
 						collapseLabel="Collapse Chats panel"
 						expandLabel="Expand Chats panel"
 						onToggle={props.onToggleCollapsed}
+						side="left"
 					/>
 					<nav aria-label="Chats" class="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
 						{newChatPill()}

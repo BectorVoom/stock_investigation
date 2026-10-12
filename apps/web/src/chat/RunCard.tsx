@@ -53,7 +53,7 @@ export function ApprovalForm(props: {
 	return (
 		<form
 			aria-label={`Approve run ${props.run.runId}`}
-			class="mt-2 space-y-2 rounded border border-amber-300 bg-amber-50 p-2"
+			class="mt-2 space-y-2 rounded bg-slate-200 p-2"
 			noValidate
 			onSubmit={submit}
 		>
@@ -145,7 +145,7 @@ export function RunCard(props: {
 		<article
 			aria-label={`Run ${props.run.runId}`}
 			data-run-state={props.run.state}
-			class="rounded border border-slate-200 bg-white p-2 wrap-anywhere"
+			class="rounded bg-slate-100 p-2 wrap-anywhere"
 		>
 			<p class="flex flex-wrap items-center gap-2 text-xs">
 				<Show when={showStateBadge()}>

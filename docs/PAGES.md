@@ -26,10 +26,10 @@ Ask research questions and read the answers, with their sources and run progress
 - Start a new chat with the full-width "New chat" pill button (no title is asked; the server
   names it "New chat" and renames it from its first question).
 - Open a past chat from the Chats list.
-- Rename a chat (list row or open conversation header) or delete it with
+- Rename a chat from its list row ("More actions" menu) or delete it with
   confirmation.
-- Collapse or expand the Chats and Canvas panels; switch Chat/Canvas tabs on
-  narrow screens.
+- Collapse or expand the Chats and Canvas panels with their icon-only
+  side-panel buttons; switch Chat/Canvas tabs on narrow screens.
 - Load earlier messages.
 - Write and submit a question (agent choices are not made here — they are chosen once in Settings → AI agent).
 - Watch a run's progress.
@@ -40,8 +40,9 @@ Ask research questions and read the answers, with their sources and run progress
 
 **Shows**
 
-- Three panels side by side at `lg` and up (Chats, Chat, Canvas as rounded
-  panel cards with small headers holding the title and a collapse/expand
+- Three panels side by side at `lg` and up (Chats, Chat, Canvas as plain
+  white rounded blocks on the grey page background with no outlines, each
+  with a small header holding the title and an icon-only collapse/expand
   button; Chats and Canvas collapse to narrow rails); a single column below
   `lg` (the Chats history stays a disclosure, and Chat/Canvas tabs show one at
   a time). Chat and Canvas of the open conversation share one session: no
@@ -49,15 +50,18 @@ Ask research questions and read the answers, with their sources and run progress
 - The Chats list (newest activity first): one title-only row per chat; the open
   chat is marked with `aria-current="page"`; every row has a "More actions"
   menu (Rename, Delete); the full-width "New chat" pill button sits at the top.
-- The open chat's title with a "Rename" button; a welcome with the same "New
-  chat" action when there are no chats.
+- The open chat's title (renaming lives in each Chats row's "More actions"
+  menu, not in this header); a welcome with the same "New chat" action when
+  there are no chats.
 - The message thread with numbered citation chips and a source popover, newest
   first paging through "Load earlier messages": owner messages as
   right-aligned bubbles, assistant answers as plain text with "Copy answer"
   and "Evidence" actions, each research run as an inline card directly after
-  the owner message whose `runId` matches it (state, latest progress, `Stop`,
-  a failure reason, `Retry` and the approval form but no "Run details" —
-  those details live in the runner logs), and unmatched runs grouped under
+  the owner message whose `runId` matches it (a state badge for every state
+  except completed and failed, latest progress, `Stop`, a failure reason,
+  `Retry`, the approval form; no "Run details" and no "Evidence" button on
+  the card — the records drawer opens from the "Evidence" action under an
+  answer), and unmatched runs grouped under
   "Earlier runs".
 - An empty conversation greets ("What would you like to research?") with starter
   suggestions that fill the question input without sending. At `lg` and up the
@@ -69,7 +73,9 @@ Ask research questions and read the answers, with their sources and run progress
 - The Canvas panel: the stored tables, charts and reports of the open
   conversation in `layout.order` through the registry, always in one column
   (the stored `layout.columns` value is preserved but never switches the
-  grid), with the component count in the header and per-component controls;
+  grid), with the component count in the header and per-component controls
+  (each component header shows its type only; move/focus/remove buttons are
+  named by the component title, else type plus position);
   cited sources appear as numbered chips opening a source card, with one
   compact `N sources` disclosure per component; a short empty state when
   there are none. A collapsed Canvas panel mounts none of it.
