@@ -199,7 +199,7 @@ function SuggestionList(props: {
 					<li>
 						<button
 							type="button"
-							class="rounded-2xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-800 hover:bg-slate-50"
+							class="min-h-6 rounded-2xl bg-slate-200 px-3 py-1.5 text-xs text-slate-900 hover:bg-slate-300"
 							onClick={() => props.onSelect?.(suggestion)}
 						>
 							{suggestion}

@@ -244,7 +244,7 @@ export function DatasetTable(props: {
 														type="button"
 														aria-pressed={isSelected()}
 														aria-label={`Select row ${rowIndex() + 1}`}
-														class="rounded border border-slate-300 px-1.5 text-xs hover:bg-slate-100"
+														class="min-h-6 rounded bg-slate-200 px-1.5 text-xs text-slate-900 hover:bg-slate-300"
 														onClick={() => selection().onSelect(isSelected() ? null : itemKey())}
 													>
 														{isSelected() ? "Selected" : "Select"}

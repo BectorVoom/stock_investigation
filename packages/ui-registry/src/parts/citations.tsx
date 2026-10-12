@@ -31,9 +31,9 @@ const RELATION_TEXT: { readonly [R in CitationRelation]: string } = {
 };
 
 const CHIP =
-	"min-h-6 min-w-6 rounded-full border border-blue-700 bg-blue-50 px-1.5 text-2xs font-semibold text-blue-900 tabular-nums hover:bg-blue-100";
+	"min-h-6 min-w-6 rounded-full bg-blue-100 px-1.5 text-2xs font-semibold text-blue-900 tabular-nums hover:bg-blue-200";
 const CHIP_OPEN =
-	"min-h-6 min-w-6 rounded-full border border-blue-700 bg-blue-700 px-1.5 text-2xs font-semibold text-white tabular-nums";
+	"min-h-6 min-w-6 rounded-full bg-blue-700 px-1.5 text-2xs font-semibold text-white tabular-nums";
 
 /**
  * The open/pinned state behind citation chips: hover or keyboard focus shows
@@ -228,7 +228,7 @@ export function SourceCard(props: {
 					card = element;
 				}}
 				data-citation-card={props.cardId}
-				class="rounded border border-slate-400 bg-white p-2 wrap-anywhere"
+				class="rounded bg-blue-100 p-2 wrap-anywhere"
 			>
 				<p class="flex flex-wrap items-baseline gap-1 text-xs">
 					<span

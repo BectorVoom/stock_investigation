@@ -494,20 +494,18 @@ describe("rename chats", () => {
 		expect(patch?.body).toEqual({ title: "Renamed research" });
 	});
 
-	it("renames the open conversation from the centre header", async () => {
+	it("has no Rename button in the open conversation header (renaming lives in the list)", async () => {
 		mountApp(backend);
 		await historyReady();
 		await threadReady();
-		fireEvent.click(screen.getByRole("button", { name: "Rename Grid storage research" }));
-		const box = screen.getByLabelText("Chat title") as HTMLInputElement;
-		fireEvent.input(box, { target: { value: "Grid storage v2" } });
-		fireEvent.blur(box);
-		await waitFor(() =>
-			expect(screen.getByRole("heading", { level: 3, name: "Grid storage v2" })).toBeDefined(),
-		);
-		expect(backend.requestsTo("PATCH", /\/workspaces\/ws_1$/)[0]?.body).toEqual({
-			title: "Grid storage v2",
-		});
+		const header = await screen.findByRole("heading", { level: 3, name: "Grid storage research" });
+		expect(header).toBeDefined();
+		// The header holds the title only; renaming stays in each row's "More actions" menu.
+		expect(screen.queryByRole("button", { name: "Rename Grid storage research" })).toBeNull();
+		expect(screen.queryByLabelText("Chat title")).toBeNull();
+		const nav = await historyReady();
+		fireEvent.click(within(nav).getByRole("button", { name: "More actions for Second research" }));
+		expect(screen.getByRole("menuitem", { name: "Rename" })).toBeDefined();
 	});
 
 	it("cancels a rename on Escape and sends nothing for an empty or unchanged title", async () => {
@@ -661,6 +659,122 @@ describe("panels", () => {
 		expect(screen.queryByRole("list", { name: "Workspace components" })).toBeNull();
 		fireEvent.click(expand);
 		await canvasReady();
+	});
+
+	it("uses icon-only collapse buttons with accessible names and no visible text", async () => {
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		await canvasReady();
+		for (const name of ["Collapse Chats panel", "Collapse Canvas panel"]) {
+			const button = screen.getByRole("button", { name }) as HTMLElement;
+			expect(button.textContent?.trim()).toBe("");
+			expect(button.getAttribute("aria-expanded")).toBe("true");
+			expect(button.getAttribute("title")).toBe(name);
+			expect(button.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+		}
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Chats panel" }));
+		const expandChats = await screen.findByRole("button", { name: "Expand Chats panel" });
+		expect((expandChats as HTMLElement).textContent?.trim()).toBe("");
+		expect(expandChats.getAttribute("aria-expanded")).toBe("false");
+		expect(expandChats.getAttribute("title")).toBe("Expand Chats panel");
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
+		const expandCanvas = await screen.findByRole("button", { name: "Expand Canvas panel" });
+		expect((expandCanvas as HTMLElement).textContent?.trim()).toBe("");
+		expect(expandCanvas.getAttribute("aria-expanded")).toBe("false");
+	});
+});
+
+describe("borderless chat surfaces (background tone, not outlines)", () => {
+	function borderTokens(className: string): string[] {
+		return className
+			.split(/\s+/)
+			.filter(
+				(token) => token === "border" || (token.startsWith("border-") && token !== "border-0"),
+			);
+	}
+
+	it("shares one borderless button definition with a 24 px floor", async () => {
+		const { BUTTON, BUTTON_DANGER, BUTTON_PILL, BUTTON_PRIMARY } = await import(
+			"../src/components/ui.tsx"
+		);
+		for (const shared of [BUTTON, BUTTON_PRIMARY, BUTTON_DANGER, BUTTON_PILL]) {
+			expect(borderTokens(shared)).toEqual([]);
+			expect(shared).toContain("min-h-6");
+		}
+	});
+
+	it("keeps PANEL bordered for Sources and Settings while the chat panels lose their outline", async () => {
+		const { CHAT_PANEL, PANEL, Section } = await import("../src/components/ui.tsx");
+		expect(borderTokens(PANEL)).not.toEqual([]);
+		expect(borderTokens(CHAT_PANEL)).toEqual([]);
+		// Sources and Settings build on `Section`, which renders `PANEL`: still bordered.
+		cleanup();
+		render(() => (
+			<Section title="Example section">
+				<p>content</p>
+			</Section>
+		));
+		const section = document.querySelector("section[aria-label='Example section']");
+		expect(section?.className).toContain("border");
+
+		mountApp(backend);
+		await historyReady();
+		await threadReady();
+		await canvasReady();
+		for (const panel of document.querySelectorAll(
+			'section[data-panel="chat"], section[data-panel="canvas"], nav[aria-label="Chats"]',
+		)) {
+			expect(borderTokens(panel.getAttribute("class") ?? "")).toEqual([]);
+		}
+		// The collapsed rails are borderless too.
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Chats panel" }));
+		await screen.findByRole("button", { name: "Expand Chats panel" });
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
+		await screen.findByRole("button", { name: "Expand Canvas panel" });
+		for (const rail of document.querySelectorAll(
+			'[data-panel="canvas-rail"], div[class*="lg:flex"]',
+		)) {
+			expect(borderTokens(rail.getAttribute("class") ?? "")).toEqual([]);
+		}
+	});
+
+	it("renders run cards, canvas cards and the composer box as fills with their focus cues", async () => {
+		mountApp(backend);
+		await threadReady();
+		const canvas = await canvasReady();
+		const run = await screen.findByRole("article", { name: "Run run_1" });
+		expect(borderTokens(run.getAttribute("class") ?? "")).toEqual([]);
+		expect(run.className).toContain("bg-slate-100");
+		for (const card of canvas.querySelectorAll("ul[aria-label='Workspace components'] > li")) {
+			expect(borderTokens(card.getAttribute("class") ?? "")).toEqual([]);
+			expect(card.getAttribute("class") ?? "").toContain("bg-slate-100");
+		}
+		const composer = screen.getByRole("form", { name: "Research composer" });
+		const box = composer.querySelector("div.rounded-2xl") as HTMLElement;
+		expect(box).not.toBeNull();
+		expect(borderTokens(box.getAttribute("class") ?? "")).toEqual([]);
+		// The question box keeps its visible focus ring.
+		expect(box.className).toContain("focus-within:ring-2");
+	});
+
+	it("renders suggestion chips as borderless fills", async () => {
+		cleanup();
+		window.location.hash = "#/chat/ws_new";
+		mountApp(backend);
+		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
+		const lists = await screen.findAllByRole("list", { name: "Suggestions" });
+		expect(lists.length).toBeGreaterThan(0);
+		const chips = (lists[0] as HTMLElement).querySelectorAll("button");
+		expect(chips.length).toBeGreaterThan(0);
+		for (const chip of chips) {
+			const className = chip.getAttribute("class") ?? "";
+			expect(
+				className.split(/\s+/).filter((token) => token === "border" || token.startsWith("border-")),
+			).toEqual([]);
+			expect(className).toContain("bg-slate-200");
+		}
+		window.location.hash = "";
 	});
 });
 

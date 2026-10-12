@@ -415,16 +415,28 @@ test("the conversation, canvas and run survive a reload without re-running resea
 	await expect(page.getByRole("region", { name: "Canvas" })).toBeVisible();
 });
 
-test("the owner can remove a component and the change persists (journey 6)", async () => {
+test("the owner can select a component row and the change persists (journey 6)", async () => {
+	// The canvas cards carry no owner arrange controls (no Up/Down/Focus/
+	// Remove buttons, no component id text — owner's decision of
+	// 2026-10-13): the remaining canvas manipulation is item selection
+	// inside a component, which persists across a reload.
 	const canvas = page.getByRole("region", { name: "Canvas" });
-	const sources = canvas.locator('[data-component-type="source-list"]');
-	const componentId = await sources.getAttribute("data-component-id");
-	expect(componentId).not.toBeNull();
-	await canvas.getByRole("button", { name: `Remove ${componentId}` }).click();
-	await expect(sources).toHaveCount(0);
+	for (const name of ["Remove", "Move", "Focus"]) {
+		await expect(canvas.getByRole("button", { name: new RegExp(`^${name} `) })).toHaveCount(0);
+	}
+	const table = canvas.locator('[data-component-type="data-table"]').first();
+	await table.getByRole("button", { name: "Select row 1" }).click();
+	await expect(table.getByRole("button", { name: "Select row 1" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
 	await page.reload();
 	await expect(canvas.locator("[data-component-id]").first()).toBeVisible();
-	await expect(canvas.locator('[data-component-type="source-list"]')).toHaveCount(0);
+	const reloadedTable = canvas.locator('[data-component-type="data-table"]').first();
+	await expect(reloadedTable.getByRole("button", { name: "Select row 1" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
 });
 
 test("an invalid UI command is rejected by the server and changes nothing (hard gate 4)", async () => {

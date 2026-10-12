@@ -129,4 +129,59 @@ describe("canvas citation chips (per component numbering)", () => {
 		expect(rows[0]?.textContent).toContain("1.");
 		expect(rows[1]?.textContent).toContain("2.");
 	});
+
+	it("renders chips borderless, with the open chip visibly different from a closed one", () => {
+		const container = renderComponent(component("news-card", VALID_PROPS["news-card"]));
+		const chip = chips(container).find(
+			(entry) => entry.getAttribute("aria-label") === "Source 1: Grid storage outlook 2026",
+		);
+		if (chip === undefined) throw new Error("expected the numbered chip");
+		const closedClass = chip.getAttribute("class") ?? "";
+		expect(
+			closedClass.split(/\s+/).filter((token) => token === "border" || token.startsWith("border-")),
+		).toEqual([]);
+		fireEvent.click(chip);
+		const openClass = chip.getAttribute("class") ?? "";
+		expect(
+			openClass.split(/\s+/).filter((token) => token === "border" || token.startsWith("border-")),
+		).toEqual([]);
+		// The open/pinned chip stays visibly different from a closed one.
+		expect(openClass).not.toBe(closedClass);
+		expect(openClass).toContain("bg-blue-700");
+		expect(closedClass).toContain("bg-blue-100");
+	});
+
+	it("renders the floating source card as a tinted fill with no border", () => {
+		const container = renderComponent(component("news-card", VALID_PROPS["news-card"]));
+		openChip(container, "Source 1: Grid storage outlook 2026");
+		const card = container.querySelector("[data-citation-card]");
+		if (!(card instanceof HTMLElement)) throw new Error("expected the open source card");
+		const className = card.getAttribute("class") ?? "";
+		expect(
+			className.split(/\s+/).filter((token) => token === "border" || token.startsWith("border-")),
+		).toEqual([]);
+		// Tinted so it stands out from both the white thread and grey canvas cards.
+		expect(className).toContain("bg-blue-100");
+	});
+
+	it("separates chips and the source card by fill, never by outline", () => {
+		const container = renderComponent(component("news-card", VALID_PROPS["news-card"]));
+		const chip = chips(container)[0];
+		if (chip === undefined) throw new Error("expected a citation chip");
+		// No `border` class on the closed chip; the tinted fill carries it.
+		expect(chip.getAttribute("class")).not.toMatch(/(?:^|\s)border(?:\s|$)/);
+		expect(chip.getAttribute("class")).toContain("bg-blue-100");
+		expect(chip.getAttribute("class")).toContain("min-h-6");
+		openChip(container, "Source 1: Grid storage outlook 2026");
+		const card = container.querySelector("[data-citation-card]");
+		if (!(card instanceof HTMLElement)) throw new Error("expected the open source card");
+		// The floating card stands out from the white thread and the grey
+		// canvas cards through its blue-tinted fill, with neither border nor shadow.
+		expect(card.getAttribute("class")).not.toMatch(/(?:^|\s)border(?:\s|$)/);
+		expect(card.getAttribute("class") ?? "").not.toContain("shadow");
+		expect(card.getAttribute("class")).toContain("bg-blue-100");
+		// The open chip stays visibly different from a closed one.
+		expect(chip.getAttribute("class")).toContain("bg-blue-700");
+		expect(chip.getAttribute("class")).not.toContain("bg-blue-100");
+	});
 });

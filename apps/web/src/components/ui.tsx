@@ -17,23 +17,30 @@ import type { Remote } from "../lib/remote.ts";
 import { PAGES, type ViewName } from "../pages.ts";
 
 export const BUTTON =
-	"rounded border border-slate-400 bg-white px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50";
+	"min-h-6 rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
 export const BUTTON_PRIMARY =
-	"rounded border border-blue-800 bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-300 disabled:text-slate-600";
+	"min-h-6 rounded bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600";
 export const BUTTON_DANGER =
-	"rounded border border-red-700 bg-white px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50";
+	"min-h-6 rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-900 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 /**
  * Full-width pill variant of `BUTTON` for the one primary creation action
- * per panel (the "New chat" button, guideline section 6). Same border, tones
+ * per panel (the "New chat" button, guideline section 6). Same fill, tones
  * and 24 px floor as `BUTTON`, with centred content; the plus icon arrives
  * from the caller.
  */
 export const BUTTON_PILL =
-	"flex min-h-6 w-full items-center justify-center gap-1 rounded-full border border-slate-400 bg-white px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50";
+	"flex min-h-6 w-full items-center justify-center gap-1 rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
 export const INPUT =
 	"min-h-6 w-full rounded border border-slate-400 bg-white px-2 py-1 text-sm text-slate-900 disabled:bg-slate-100";
 export const LABEL = "block text-xs font-medium text-slate-700";
 export const PANEL = "rounded border border-slate-300 bg-white p-3";
+/**
+ * The Chat page's own panel surface (guideline section 5): plain white
+ * rounded blocks on the grey page background, with no outline — separation
+ * is by background tone. `PANEL` above stays bordered for Sources and
+ * Settings, which keep every border they have.
+ */
+export const CHAT_PANEL = "rounded bg-white p-3";
 export const HEADING = "text-sm font-semibold text-slate-900";
 
 /**
@@ -307,6 +314,52 @@ export function PageHeader(props: { readonly view: ViewName }): JSX.Element {
 }
 
 /**
+ * Icon-only collapse/expand button for the Chat page side panels, in
+ * NotebookLM's manner: one small side-panel glyph (an outlined rounded
+ * rectangle with a vertical divider near one side; inline SVG using
+ * `currentColor`), sitting in the top corner of the panel header, and the
+ * same glyph at the top of the collapsed rail to expand. No visible text:
+ * the accessible name, `aria-expanded` and the `title` tooltip carry the
+ * words instead. The divider side mirrors for the left (Chats) and right
+ * (Canvas) panels. The filled borderless tone matches `BUTTON`.
+ */
+export function PanelCollapseButton(props: {
+	readonly label: string;
+	readonly expanded: boolean;
+	readonly onToggle: () => void;
+	readonly side: "left" | "right";
+}): JSX.Element {
+	return (
+		<button
+			type="button"
+			class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+			aria-expanded={props.expanded}
+			aria-label={props.label}
+			title={props.label}
+			onClick={() => props.onToggle()}
+		>
+			<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+				<rect
+					x="1.5"
+					y="2"
+					width="11"
+					height="10"
+					rx="2"
+					stroke="currentColor"
+					stroke-width="1.5"
+				/>
+				<path
+					d={props.side === "left" ? "M5 2v10" : "M9 2v10"}
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+				/>
+			</svg>
+		</button>
+	);
+}
+
+/**
  * Small header for one panel of the Chat page (guideline section 5): the
  * panel title as an `h3` plus header actions (collapse/expand, count). WHY a
  * shared part: the three panels repeat the same title-plus-button row, and
@@ -320,6 +373,7 @@ export function PanelHeader(props: {
 	readonly expandLabel: string;
 	readonly onToggle: () => void;
 	readonly actions?: JSX.Element;
+	readonly side: "left" | "right";
 }): JSX.Element {
 	return (
 		<div class="flex items-center gap-2">
@@ -330,15 +384,12 @@ export function PanelHeader(props: {
 				</Show>
 			</h3>
 			<Show when={props.actions}>{(actions) => actions()}</Show>
-			<button
-				type="button"
-				class={BUTTON}
-				aria-expanded={props.expanded}
-				aria-label={props.expanded ? props.collapseLabel : props.expandLabel}
-				onClick={() => props.onToggle()}
-			>
-				{props.expanded ? "Collapse" : "Expand"}
-			</button>
+			<PanelCollapseButton
+				label={props.expanded ? props.collapseLabel : props.expandLabel}
+				expanded={props.expanded}
+				onToggle={props.onToggle}
+				side={props.side}
+			/>
 		</div>
 	);
 }
@@ -458,7 +509,7 @@ export function ActionMenu(props: {
 					}}
 					role="menu"
 					aria-label={props.menuLabel}
-					class="absolute right-0 z-20 min-w-32 rounded border border-slate-300 bg-white p-1"
+					class="absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
 					onKeyDown={onMenuKeyDown}
 				>
 					<For each={props.items}>
@@ -469,7 +520,7 @@ export function ActionMenu(props: {
 								}}
 								type="button"
 								role="menuitem"
-								class="block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-100"
+								class="block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200"
 								onClick={() => {
 									setOpen(false);
 									button?.focus();
@@ -524,7 +575,7 @@ export function ConfirmDialog(props: {
 				dialog = element;
 			}}
 			aria-labelledby={headingId}
-			class="rounded border border-slate-300 bg-white p-4"
+			class="rounded bg-slate-100 p-4"
 			onCancel={(event) => {
 				event.preventDefault();
 				props.onCancel();
