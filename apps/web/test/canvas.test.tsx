@@ -134,10 +134,12 @@ describe("canvas panel", () => {
 		expect(unfocused?.textContent).not.toContain("Focused");
 	});
 
-	it("shows the count in the panel header and an empty state when there are none", async () => {
+	it("shows no component count in the panel header, and an empty state when there are none", async () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
-		expect(canvas.textContent).toContain("(3 components)");
+		// The panel header (the region's first heading) is the title alone.
+		expect(canvas.querySelector("h3")?.textContent?.trim()).toBe("Canvas");
+		expect(canvas.textContent).not.toMatch(/\(\d+ components?\)/);
 		server.secondView = {
 			...server.secondView,
 			state: {
@@ -151,7 +153,7 @@ describe("canvas panel", () => {
 		window.dispatchEvent(new Event("hashchange"));
 		const empty = await screen.findByRole("region", { name: "Canvas" });
 		await within(empty).findByText(/No canvas content yet/);
-		expect(empty.textContent).toContain("(0 components)");
+		expect(empty.textContent).not.toMatch(/\(\d+ components?\)/);
 	});
 
 	it("opens the chat page for old canvas and workspace bookmarks", async () => {

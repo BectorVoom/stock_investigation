@@ -36,7 +36,7 @@ Ask research questions and read the answers, with their sources and run progress
 - Cancel, retry or approve a run.
 - Copy an answer.
 - Open the evidence records of a run.
-- Focus, select, reorder (move up/down) or remove a canvas component.
+- Select an item inside a canvas component (e.g. a table row).
 
 **Shows**
 
@@ -73,10 +73,10 @@ Ask research questions and read the answers, with their sources and run progress
 - The Canvas panel: the stored tables, charts and reports of the open
   conversation in `layout.order` through the registry, always in one column
   (the stored `layout.columns` value is preserved but never switches the
-  grid), with the component count in the header and per-component controls
-  (each component header shows its type only; move/focus/remove buttons are
-  named by the component title, else type plus position);
-  cited sources appear as numbered chips opening a source card, with one
+  grid); each component is just its rendered content — no toolbar, id, type
+  label or count, and no owner-side move/focus/remove controls (the agent
+  arranges the canvas; a component it focuses is marked "Focused by the
+  agent"); cited sources appear as numbered chips opening a source card, with one
   compact `N sources` disclosure per component; a short empty state when
   there are none. A collapsed Canvas panel mounts none of it.
 
@@ -143,7 +143,7 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 | 3. Inspect evidence | Chat (evidence records drawer) |
 | 4. Map suppliers | Chat (records and report/table components) |
 | 5. Inspect positions and investors | Chat (records and financial components) |
-| 6. Manipulate research UI | Chat (Canvas panel arrange/remove) |
+| 6. Manipulate research UI | Chat (Canvas panel: select items; arranging and removing are agent-driven since 2026-10-13) |
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 
 ## How the split was checked

@@ -358,7 +358,9 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// The canvas of this conversation sits beside the thread, on the same page.
 		const canvas = page.getByRole("region", { name: "Canvas" });
 		await expect(canvas).toBeVisible();
-		await expect(canvas).not.toContainText("(0 components)");
+		await expect(
+			canvas.locator('ul[aria-label="Workspace components"] > li').first(),
+		).toBeVisible();
 	});
 
 	test("a question naming a public page archives it as Markdown starting with its heading", async () => {

@@ -87,12 +87,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		}
 	});
 
-	const componentCount = createMemo(() => session.view()?.state.components.length ?? 0);
-	const countText = createMemo(() => {
-		const count = componentCount();
-		return `(${count} ${count === 1 ? "component" : "components"})`;
-	});
-
 	const notices = () => (
 		<>
 			<Show when={session.notice()}>
@@ -237,7 +231,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			>
 				<PanelHeader
 					title="Canvas"
-					count={countText()}
 					expanded={true}
 					collapseLabel="Collapse Canvas panel"
 					expandLabel="Expand Canvas panel"
@@ -272,9 +265,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 								data-panel="canvas"
 								class={`${CHAT_PANEL} flex min-h-0 flex-col`}
 							>
-								<h3 class="text-sm font-semibold text-slate-900">
-									Canvas <span class="font-normal text-slate-600">{countText()}</span>
-								</h3>
+								<h3 class="text-sm font-semibold text-slate-900">Canvas</h3>
 								<div class="mt-2">{canvasBody()}</div>
 							</section>
 						}
