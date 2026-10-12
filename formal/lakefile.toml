@@ -1,0 +1,9 @@
+name = "research_formal"
+defaultTargets = ["ResearchFormal", "export-vectors"]
+
+[[lean_lib]]
+name = "ResearchFormal"
+
+[[lean_exe]]
+name = "export-vectors"
+root = "Export"

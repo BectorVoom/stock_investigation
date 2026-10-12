@@ -1,0 +1,18 @@
+{
+  "_fixture": "SYNTHETIC. Hand-written in the documented shape of https://data.sec.gov/submissions/CIK##########.json. The manager and its filings are invented; this is not SEC data.",
+  "cik": "9999993",
+  "entityType": "other",
+  "name": "Synthetic Capital Management LP",
+  "tickers": [],
+  "exchanges": [],
+  "filings": {
+    "recent": {
+      "accessionNumber": ["0009999993-26-000004", "0009999993-26-000003", "0009999993-26-000002", "0009999993-26-000001", "0009999993-26-000000"],
+      "filingDate": ["2026-08-14", "2026-06-01", "2026-05-20", "2026-05-15", "2026-02-13"],
+      "reportDate": ["2026-06-30", "2026-03-31", "", "2026-03-31", "2025-12-31"],
+      "form": ["13F-HR", "13F-HR/A", "SC 13G", "13F-HR", "13F-HR"],
+      "primaryDocument": ["xslForm13F_X02/primary_doc.xml", "xslForm13F_X02/primary_doc.xml", "sc13g.htm", "xslForm13F_X02/primary_doc.xml", "xslForm13F_X02/primary_doc.xml"]
+    },
+    "files": []
+  }
+}

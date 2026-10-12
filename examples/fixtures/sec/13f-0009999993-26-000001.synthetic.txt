@@ -1,0 +1,87 @@
+<SEC-DOCUMENT>0009999993-26-000001.txt : 20260515
+<SEC-HEADER>0009999993-26-000001.hdr.sgml : 20260515
+SYNTHETIC FIXTURE. Hand-written in the layout of an EDGAR complete submission text file. Not an SEC filing.
+CONFORMED SUBMISSION TYPE:	13F-HR
+CONFORMED PERIOD OF REPORT:	20260331
+FILED AS OF DATE:		20260515
+</SEC-HEADER>
+<DOCUMENT>
+<TYPE>13F-HR
+<SEQUENCE>1
+<FILENAME>primary_doc.xml
+<TEXT>
+<XML>
+<?xml version="1.0" encoding="UTF-8"?>
+<edgarSubmission xmlns="http://www.sec.gov/edgar/thirteenffiler"><formData><coverPage><reportCalendarOrQuarter>03-31-2026</reportCalendarOrQuarter></coverPage></formData></edgarSubmission>
+</XML>
+</TEXT>
+</DOCUMENT>
+<DOCUMENT>
+<TYPE>INFORMATION TABLE
+<SEQUENCE>2
+<FILENAME>infotable.xml
+<TEXT>
+<XML>
+<?xml version="1.0" encoding="UTF-8"?>
+<informationTable xmlns="http://www.sec.gov/edgar/document/thirteenf/informationtable">
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC ALPHA CORP</nameOfIssuer>
+    <titleOfClass>COM</titleOfClass>
+    <cusip>111111AA1</cusip>
+    <value>50000</value>
+    <shrsOrPrnAmt><sshPrnamt>1000</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>1000</Sole><Shared>0</Shared><None>0</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>
+    <titleOfClass>COM</titleOfClass>
+    <cusip>222222BB2</cusip>
+    <value>30000</value>
+    <shrsOrPrnAmt><sshPrnamt>1500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>1500</Sole><Shared>0</Shared><None>0</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC BETA INC</nameOfIssuer>
+    <titleOfClass>COM</titleOfClass>
+    <cusip>222222BB2</cusip>
+    <value>10000</value>
+    <shrsOrPrnAmt><sshPrnamt>500</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <investmentDiscretion>DFND</investmentDiscretion>
+    <otherManager>1</otherManager>
+    <votingAuthority><Sole>0</Sole><Shared>500</Shared><None>0</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC GAMMA LTD</nameOfIssuer>
+    <titleOfClass>SHS</titleOfClass>
+    <cusip>333333CC3</cusip>
+    <value>7000</value>
+    <shrsOrPrnAmt><sshPrnamt>700</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>700</Sole><Shared>0</Shared><None>0</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC DELTA CO</nameOfIssuer>
+    <titleOfClass>COM</titleOfClass>
+    <cusip>444444DD4</cusip>
+    <value>3000</value>
+    <shrsOrPrnAmt><sshPrnamt>300</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>300</Sole><Shared>0</Shared><None>0</None></votingAuthority>
+  </infoTable>
+  <infoTable>
+    <nameOfIssuer>SYNTHETIC EPSILON PLC</nameOfIssuer>
+    <titleOfClass>COM</titleOfClass>
+    <cusip>555555EE5</cusip>
+    <value>100</value>
+    <shrsOrPrnAmt><sshPrnamt>100</sshPrnamt><sshPrnamtType>SH</sshPrnamtType></shrsOrPrnAmt>
+    <putCall>Call</putCall>
+    <investmentDiscretion>SOLE</investmentDiscretion>
+    <votingAuthority><Sole>0</Sole><Shared>0</Shared><None>100</None></votingAuthority>
+  </infoTable>
+</informationTable>
+</XML>
+</TEXT>
+</DOCUMENT>
+</SEC-DOCUMENT>

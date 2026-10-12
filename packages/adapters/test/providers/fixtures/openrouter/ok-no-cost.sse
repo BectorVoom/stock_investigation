@@ -1,0 +1,6 @@
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"role":"assistant","content":"OK"},"finish_reason":null}]}
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":1,"total_tokens":13}}
+
+data: [DONE]
+

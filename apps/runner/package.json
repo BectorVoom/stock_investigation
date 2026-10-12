@@ -1,0 +1,19 @@
+{
+	"name": "@app/runner",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@research/adapters": "workspace:*",
+		"@research/agent-core": "workspace:*",
+		"@research/application": "workspace:*",
+		"@research/contracts": "workspace:*",
+		"@research/domain": "workspace:*",
+		"@research/effects": "workspace:*",
+		"effect": "^4.0.3",
+		"zod": "^4.6.5"
+	}
+}

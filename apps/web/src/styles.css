@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/*
+ * Renderer classes live in the registry package, outside this app's directory.
+ * Tailwind only scans the Vite root by default, so without this line every
+ * class used solely by a renderer would be missing from the build.
+ */
+@source "../../../packages/ui-registry/src";
+
+@theme {
+	--font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+	/* Caption size (guideline section 3): the only sub-xs step, as `text-2xs`. */
+	--text-2xs: 0.6875rem;
+	--text-2xs--line-height: 1rem;
+}
+
+@layer base {
+	/* Keyboard focus must stay visible on every interactive control. */
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-blue-700;
+	}
+}

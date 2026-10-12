@@ -1,0 +1,23 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022"],
+		"types": ["node"]
+	},
+	"include": [
+		"src/runtime",
+		"src/feed",
+		"src/node",
+		"src/providers",
+		"src/finance",
+		"src/tools",
+		"src/sql",
+		"src/sqlite",
+		"test/feed",
+		"test/node",
+		"test/providers",
+		"test/finance",
+		"test/tools",
+		"test/sqlite"
+	]
+}

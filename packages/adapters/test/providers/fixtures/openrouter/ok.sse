@@ -1,0 +1,16 @@
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"role":"assistant","content":"Hello"},"finish_reason":null}]}
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"content":", wor"},"finish_reason":null}]}
+
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"content":"ld — 日本語"},"finish_reason":null}]}
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}]}
+
+data: {"id":"gen-doc-example","object":"chat.completion.chunk","model":"example/model","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":6,"total_tokens":18,"cost":0.00042,"cost_details":{"upstream_inference_cost":null},"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":0}}}
+
+data: [DONE]
+

@@ -1,0 +1,2 @@
+{"type":"step_start","timestamp":1791720471617,"sessionID":"<sessionID-1>","part":{"id":"<id-1>","sessionID":"<sessionID-1>","messageID":"<messageID-1>","type":"step-start"}}
+{"type":"text","timestamp":1791720471674,"sessionID":"<sessionID-1>","part":{"id":"<id-2>","sessionID":"<sessionID-1>","messageID":"<messageID-1>","type":"text","text":"OK","time":{"start":1791720470739,"end":1791720471674}}}

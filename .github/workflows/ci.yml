@@ -1,0 +1,57 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Format and lint
+        run: bun run check
+      - name: Strict typecheck (per runtime)
+        run: bun run typecheck
+      - name: Unit, property, contract, integration, security and architecture tests
+        run: bun run test
+      # Informational on shared runners, whose timing is too noisy to gate on;
+      # `bun run bench` enforces the budgets locally before a hot path is changed.
+      - name: Hot-path benchmarks
+        run: bun run bench
+        continue-on-error: true
+      - name: Production build
+        run: bun run build
+      - name: Dependency advisories
+        run: bun audit
+      - name: No secrets in built assets
+        run: |
+          ! grep -R -I -n -E "rk_[0-9a-f]{64}|sk-or-[A-Za-z0-9-]{20,}|BEGIN (RSA |EC )?PRIVATE KEY" dist
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: node_modules/.bin/playwright install --with-deps chrome firefox webkit
+      - run: bun run test:e2e
+
+  formal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lean toolchain
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o elan-init.sh
+          sh elan-init.sh -y --no-modify-path --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Proofs build, no sorry, vectors current
+        run: sh scripts/formal-check.sh

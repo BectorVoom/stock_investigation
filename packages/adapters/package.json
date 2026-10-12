@@ -1,0 +1,28 @@
+{
+	"name": "@research/adapters",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"exports": {
+		"./runtime": "./src/runtime/index.ts",
+		"./d1": "./src/d1/index.ts",
+		"./sql": "./src/sql/index.ts",
+		"./sqlite": "./src/sqlite/index.ts",
+		"./feed": "./src/feed/index.ts",
+		"./worker": "./src/worker/index.ts",
+		"./node": "./src/node/index.ts",
+		"./providers": "./src/providers/index.ts",
+		"./finance": "./src/finance/index.ts",
+		"./tools": "./src/tools/index.ts"
+	},
+	"dependencies": {
+		"@research/agent-core": "workspace:*",
+		"@research/application": "workspace:*",
+		"@research/contracts": "workspace:*",
+		"@research/domain": "workspace:*",
+		"fast-xml-parser": "^5.11.2",
+		"htmlparser2": "^12.0.0",
+		"jose": "^6.2.12",
+		"zod": "^4.6.5"
+	}
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SYNTHETIC FIXTURE. Hand-written for tests; not a recording of any real publisher's feed. -->
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel rdf:about="https://synthetic-keizai.org/rss">
+    <title>合成経済ニュース</title>
+    <link>https://synthetic-keizai.org/</link>
+    <description>テスト用の手書きフィード</description>
+    <items>
+      <rdf:Seq>
+        <rdf:li rdf:resource="https://synthetic-keizai.org/articles/1001"/>
+        <rdf:li rdf:resource="https://synthetic-keizai.org/articles/1002"/>
+      </rdf:Seq>
+    </items>
+  </channel>
+  <item rdf:about="https://synthetic-keizai.org/articles/1001">
+    <title>データセンター向け電力設備の受注が拡大</title>
+    <link>https://synthetic-keizai.org/articles/1001</link>
+    <description>変圧器の受注残は前年同期比で増加した。</description>
+    <dc:date>2026-10-05T09:00:00+09:00</dc:date>
+  </item>
+  <item rdf:about="https://synthetic-keizai.org/articles/1002">
+    <title>半導体製造装置の出荷見通し</title>
+    <link>https://synthetic-keizai.org/articles/1002</link>
+    <dc:date>2026-10-03T15:30:00+09:00</dc:date>
+  </item>
+</rdf:RDF>

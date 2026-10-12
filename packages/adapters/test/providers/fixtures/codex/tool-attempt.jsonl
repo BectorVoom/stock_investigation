@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"<thread_id-1>"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable `features.code_mode_host` and install `codex-code-mode-host`."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"I’ll check the available tools and try both requested operations.\n"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"TOOLS: functions.wait, functions.request_user_input, functions.request_user_input_async, functions.exec, collaboration.followup_task, collaboration.interrupt_agent, collaboration.list_agents, collaboration.send_message, collaboration.spawn_agent, collaboration.wait_agent"}}
+{"type":"turn.completed","usage":{"input_tokens":19480,"cached_input_tokens":16384,"cache_write_input_tokens":0,"output_tokens":191,"reasoning_output_tokens":0}}

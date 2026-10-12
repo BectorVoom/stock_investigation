@@ -1,0 +1,11 @@
+# Recorded `opencode models` (opencode v2.0.24, 2026-10-12): one
+# provider/model id per line, exit 0, nothing on stderr, no model quota spent.
+# The adapter keeps lines that pass its model-id validation and drops the rest
+# (blank lines, warnings, flag-like text).
+opencode/gpt-5.5
+opencode-go/muse-spark-1.3-contributor
+
+this line is not a model id
+--not-a-model
+opencode/gpt-5.5
+google/gemini-2.5-flash

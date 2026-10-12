@@ -1,0 +1,20 @@
+node_modules
+.DS_Store
+dist
+*.local
+.env
+.dev.vars
+.wrangler
+# Local operation: database, runner credential and logs (bun run prod / bun run dev)
+# data/ is production; data-dev/ is development (ADR-0011). Never swap them.
+/data
+/data-dev
+# Built releases (bun run prod:build) and the previous release kept for rollback.
+/release
+/release.previous
+# Throwaway hot-reload markers created by tests/e2e/devLocal.spec.ts (removed afterwards).
+apps/web/public/__e2e_hot_*
+.codegraph
+playwright-report
+test-results
+test-results-real

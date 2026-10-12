@@ -1,0 +1,66 @@
+{
+  "_fixture": "SYNTHETIC. Hand-written in the documented shape of https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json. All figures are invented; this is not SEC data.",
+  "cik": 9999991,
+  "entityName": "Synthetic Alpha Devices Inc.",
+  "facts": {
+    "dei": {
+      "EntityCommonStockSharesOutstanding": {
+        "label": "Entity Common Stock, Shares Outstanding",
+        "units": { "shares": [{ "end": "2025-07-31", "val": 100000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" }] }
+      }
+    },
+    "us-gaap": {
+      "Revenues": {
+        "label": "Revenues",
+        "description": "Synthetic.",
+        "units": {
+          "USD": [
+            { "start": "2022-07-01", "end": "2023-06-30", "val": 1400000000, "accn": "0009999991-24-000009", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-08-21" },
+            { "start": "2023-07-01", "end": "2024-06-30", "val": 1600000000, "accn": "0009999991-24-000009", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-08-21", "frame": "CY2023" },
+            { "start": "2023-07-01", "end": "2024-06-30", "val": 1600000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" },
+            { "start": "2024-07-01", "end": "2025-03-31", "val": 1450000000, "accn": "0009999991-25-000004", "fy": 2025, "fp": "Q3", "form": "10-Q", "filed": "2025-05-08" },
+            { "start": "2025-04-01", "end": "2025-06-30", "val": 550000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" },
+            { "start": "2024-07-01", "end": "2025-06-30", "val": 2000000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20", "frame": "CY2024" },
+            { "start": "2025-07-01", "end": "2025-09-30", "val": 610000000, "accn": "0009999991-25-000015", "fy": 2026, "fp": "Q1", "form": "10-Q", "filed": "2025-11-06" },
+            { "end": "2025-06-30", "val": "not-a-number", "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" }
+          ]
+        }
+      },
+      "RevenueFromContractWithCustomerExcludingAssessedTax": {
+        "label": "Revenue from Contract with Customer, Excluding Assessed Tax",
+        "units": {
+          "USD": [
+            { "start": "2024-07-01", "end": "2025-06-30", "val": 1900000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" }
+          ]
+        }
+      },
+      "SalesRevenueNet": {
+        "label": "Revenue, Net",
+        "units": {
+          "USD": [
+            { "start": "2016-07-01", "end": "2017-06-30", "val": 900000000, "accn": "0009999991-17-000003", "fy": 2017, "fp": "FY", "form": "10-K", "filed": "2017-08-22" }
+          ]
+        }
+      },
+      "NetIncomeLoss": {
+        "label": "Net Income (Loss) Attributable to Parent",
+        "units": {
+          "USD": [
+            { "start": "2023-07-01", "end": "2024-06-30", "val": 180000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" },
+            { "start": "2024-07-01", "end": "2025-06-30", "val": 250000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" },
+            { "start": "2025-04-01", "end": "2025-06-30", "val": 70000000, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" }
+          ]
+        }
+      },
+      "EarningsPerShareDiluted": {
+        "label": "Earnings Per Share, Diluted",
+        "units": {
+          "USD/shares": [
+            { "start": "2023-07-01", "end": "2024-06-30", "val": 1.8, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" },
+            { "start": "2024-07-01", "end": "2025-06-30", "val": 2.5, "accn": "0009999991-25-000010", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2025-08-20" }
+          ]
+        }
+      }
+    }
+  }
+}

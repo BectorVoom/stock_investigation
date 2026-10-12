@@ -1,0 +1,13 @@
+{
+	"name": "@research/effects",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@research/domain": "workspace:*",
+		"effect": "^4.0.3"
+	}
+}

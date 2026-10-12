@@ -1,0 +1,9 @@
+{
+	// Each app and package has its own tsconfig.json and is checked against only
+	// the globals of the runtime it ships to (see scripts/typecheck.ts). This root
+	// file exists so editors opened at the repository root load the shared options
+	// without treating the whole tree as one program.
+	"extends": "./tsconfig.base.json",
+	"files": [],
+	"include": []
+}

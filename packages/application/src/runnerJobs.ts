@@ -1,0 +1,604 @@
+import type {
+	Article,
+	ClaimedJob,
+	ClaimJobRequest,
+	ClaimJobResponse,
+	CompleteJobRequest,
+	CompleteJobResponse,
+	ComponentCatalog,
+	ConversationContextMessage,
+	HeartbeatResponse,
+	IngestedArticle,
+	RunnerEventsRequest,
+	SubscribedSourceRef,
+	WorkspaceComponentSummary,
+} from "@research/contracts";
+import { CONVERSATION_CONTEXT_LIMITS } from "@research/contracts";
+import {
+	checkLease,
+	decideClaim,
+	isTerminalJobState,
+	type JobLeaseView,
+	type JobState,
+	leaseExpiryIso,
+	ok,
+	type ResourceUsage,
+	transitionJob,
+} from "@research/domain";
+import { fail, type UseCaseResult } from "./errors.ts";
+import type {
+	ChatRepository,
+	Clock,
+	CompletionEffects,
+	IdGenerator,
+	JobPatch,
+	JobRecord,
+	JobRepository,
+	ResearchRecordRepository,
+	ResearchUnitOfWork,
+	RunnerStatusRepository,
+	SourceRepository,
+	TransitionAudit,
+	WorkspaceRepository,
+} from "./ports.ts";
+import { checkBundleIntegrity } from "./recordIntegrity.ts";
+import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
+import {
+	applyRunOperations,
+	commandContext,
+	externalReferences,
+	knownIds,
+} from "./workspaceCommands.ts";
+
+export const LEASE_DURATION_MS = 90_000;
+export const HEARTBEAT_INTERVAL_MS = 20_000;
+const CLAIM_SCAN_LIMIT = 5;
+const POLL_AFTER_CLAIM_MS = 2_000;
+const POLL_WHEN_BLOCKED_MS = 5_000;
+const POLL_WHEN_IDLE_MS = 15_000;
+const CAS_RETRIES = 4;
+/**
+ * A completion attempt costs up to ~20 D1 queries (reads, reference lookups and
+ * the guarded batch). Workers Free allows about 50 per request, so the batch is
+ * tried at most twice; on a second conflict the runner is told to resend.
+ */
+const COMPLETION_ATTEMPTS = 2;
+
+/**
+ * Usage only ever grows over the life of a run. Taking the larger of what is
+ * stored and what is reported means a runner (or a retry that lost its state)
+ * can never lower the run's recorded consumption (AGT-008).
+ */
+function cumulativeUsage(stored: ResourceUsage, reported: ResourceUsage): ResourceUsage {
+	return {
+		agentSteps: Math.max(stored.agentSteps, reported.agentSteps),
+		toolCalls: Math.max(stored.toolCalls, reported.toolCalls),
+		inputBytes: Math.max(stored.inputBytes, reported.inputBytes),
+		knownCostUsd: Math.max(stored.knownCostUsd, reported.knownCostUsd),
+		hasUnmeteredUsage: stored.hasUnmeteredUsage || reported.hasUnmeteredUsage,
+	};
+}
+
+/** The authenticated runner: its owner and the credential that identifies its leases. */
+export interface RunnerIdentity {
+	readonly ownerId: string;
+	readonly credentialId: string;
+}
+
+export interface RunnerJobServiceDeps {
+	readonly jobs: JobRepository;
+	readonly sources: SourceRepository;
+	readonly workspaces: WorkspaceRepository;
+	readonly records: ResearchRecordRepository;
+	readonly runnerStatus: RunnerStatusRepository;
+	readonly unitOfWork: ResearchUnitOfWork;
+	readonly chat: ChatRepository;
+	readonly catalog: ComponentCatalog;
+	readonly clock: Clock;
+	readonly ids: IdGenerator;
+}
+
+/**
+ * How many of the most recent chat rows one claim reads before the run's
+ * anchor. A single bounded query, never the whole history (data-volume
+ * budget). Messages written after the anchor cannot push the question out:
+ * the query itself is limited to `seq < anchorSeq`.
+ */
+const CONTEXT_LOAD_LIMIT = CONVERSATION_CONTEXT_LIMITS.maxMessages;
+
+function leaseView(job: JobRecord): JobLeaseView {
+	return {
+		state: job.state,
+		leaseGeneration: job.leaseGeneration,
+		leaseOwnerId: job.leaseOwnerId,
+		leaseExpiresAt: job.leaseExpiresAt,
+		attempt: job.attempt,
+		maxAttempts: job.maxAttempts,
+		cancelRequested: job.cancelRequested,
+	};
+}
+
+function staleLease(detail: string): UseCaseResult<never> {
+	return fail("STALE_LEASE", "This runner no longer holds the lease for the run.", detail);
+}
+
+/** Deterministic id, so re-submitting the same article is a no-op rather than a second row. */
+function toArticle(article: IngestedArticle): Article {
+	return { ...article, articleId: `art_${article.contentFingerprint.slice(0, 32)}` };
+}
+
+export function createRunnerJobService(deps: RunnerJobServiceDeps) {
+	async function activeSources(ownerId: string): Promise<readonly SubscribedSourceRef[]> {
+		const sources = await deps.sources.list(ownerId);
+		return sources
+			.filter((source) => source.feedStatus !== "paused")
+			.map((source) => ({
+				sourceId: source.sourceId,
+				canonicalUrl: source.canonicalUrl,
+				publisher: source.publisher,
+				title: source.title,
+				licensePolicy: source.licensePolicy,
+			}));
+	}
+
+	async function componentSummaries(
+		ownerId: string,
+		workspaceId: string | null,
+	): Promise<WorkspaceComponentSummary[]> {
+		const workspace = workspaceId === null ? null : await deps.workspaces.get(ownerId, workspaceId);
+		return (workspace?.state.components ?? []).map((component) => ({
+			componentId: component.componentId,
+			componentType: component.componentType,
+			title: typeof component.props.title === "string" ? component.props.title : null,
+		}));
+	}
+
+	/**
+	 * Articles and fetch reports are accepted only for sources this owner actually has,
+	 * and an excerpt only where that source's license permits one (DATA-010). The runner
+	 * is not trusted to have applied either rule.
+	 */
+	async function ownedArticles(
+		ownerId: string,
+		articles: readonly IngestedArticle[],
+		sourceReports: CompletionEffects["sourceReports"],
+	): Promise<Pick<CompletionEffects, "articles" | "sourceReports">> {
+		if (articles.length === 0 && sourceReports.length === 0) {
+			return { articles: [], sourceReports: [] };
+		}
+		const sources = new Map(
+			(await deps.sources.list(ownerId)).map((source) => [source.sourceId, source]),
+		);
+		return {
+			articles: articles.flatMap((article) => {
+				const source = sources.get(article.sourceId);
+				if (source === undefined) return [];
+				return [
+					toArticle(
+						source.licensePolicy === "short-excerpt-permitted"
+							? article
+							: { ...article, excerpt: null },
+					),
+				];
+			}),
+			sourceReports: sourceReports.filter((report) => sources.has(report.sourceId)),
+		};
+	}
+
+	async function conversationContext(
+		ownerId: string,
+		workspaceId: string | null,
+		anchorSeq: number | null,
+	): Promise<ConversationContextMessage[]> {
+		// No anchor (news-ingest, imported or pre-migration rows): fail closed
+		// with an empty context instead of guessing from the latest messages.
+		if (workspaceId === null || anchorSeq === null) return [];
+		const rows = await deps.chat.list(ownerId, workspaceId, {
+			beforeSeq: anchorSeq,
+			limit: CONTEXT_LOAD_LIMIT,
+		});
+		return buildConversationContextBeforeAnchor(rows, anchorSeq);
+	}
+
+	function auditFor(
+		runner: RunnerIdentity,
+		fromState: JobState,
+		toState: JobState,
+		reason: string,
+	) {
+		return { fromState, toState, actor: `runner:${runner.credentialId}`, reason } as const;
+	}
+
+	/** Effects of a bundle-bearing completion, or the reason it cannot be accepted. */
+	async function bundleEffects(
+		job: JobRecord,
+		request: Extract<CompleteJobRequest, { outcome: "completed" | "partial" }>,
+		now: string,
+	): Promise<UseCaseResult<CompletionEffects>> {
+		const issues = checkBundleIntegrity(job.runId, request.bundle);
+		if (issues.length > 0) {
+			const summary = issues
+				.slice(0, 5)
+				.map((issue) => `${issue.code}:${issue.recordId}`)
+				.join(",");
+			return fail("INTEGRITY_VIOLATION", "The research bundle failed integrity checks.", summary);
+		}
+		const base = {
+			bundle: request.bundle,
+			...(await ownedArticles(job.ownerId, request.articles, request.sourceReports)),
+		};
+		const workspace =
+			job.workspaceId === null ? null : await deps.workspaces.get(job.ownerId, job.workspaceId);
+		if (workspace === null) return ok({ ...base, workspace: null, assistantMessage: null });
+
+		const external = await deps.records.resolve(
+			job.ownerId,
+			externalReferences(workspace.state, job.runId, request.bundle, deps.catalog),
+		);
+		const known = knownIds(external);
+		const applied = applyRunOperations(
+			workspace.state,
+			job.runId,
+			request.bundle.uiOperations,
+			commandContext(deps.catalog, {
+				datasetIds: [...known.datasetIds, ...request.bundle.datasets.map((d) => d.datasetId)],
+				evidenceIds: [...known.evidenceIds, ...request.bundle.evidence.map((e) => e.evidenceId)],
+				assetIds: known.assetIds,
+				claims: [...known.claims, ...request.bundle.claims],
+			}),
+			now,
+		);
+		const rejectedNote =
+			applied.rejected.length === 0
+				? ""
+				: `\n\n(${applied.rejected.length} display instruction(s) were rejected by validation: ${applied.rejected
+						.map((rejection) => rejection.code)
+						.join(", ")}.)`;
+		return ok({
+			...base,
+			workspace:
+				applied.commands.length === 0
+					? null
+					: {
+							workspaceId: workspace.summary.workspaceId,
+							expectedVersion: workspace.state.version,
+							nextState: applied.nextState,
+							commands: applied.commands,
+							at: now,
+						},
+			assistantMessage: {
+				messageId: `${job.runId}_answer`,
+				workspaceId: workspace.summary.workspaceId,
+				text: `${request.bundle.answerText}${rejectedNote}`.slice(0, 6000),
+				claimIds: request.bundle.answerClaimIds,
+			},
+		});
+	}
+
+	return {
+		/**
+		 * Grants at most one lease per job (section 5.2). Eligibility is decided by
+		 * the pure `decideClaim`; the grant itself is a compare-and-set on the job
+		 * version, so two runners racing for one job cannot both win.
+		 */
+		async claim(
+			runner: RunnerIdentity,
+			request: ClaimJobRequest,
+		): Promise<UseCaseResult<ClaimJobResponse>> {
+			const nowMs = deps.clock.nowMs();
+			const now = deps.clock.nowIso();
+			await deps.runnerStatus.put(runner.ownerId, {
+				lastSeenAt: now,
+				runnerVersion: request.runnerVersion,
+				agents: request.agents,
+			});
+			const available = new Set(
+				request.agents
+					.filter((agent) => agent.availability.status === "available")
+					.map((agent) => agent.agentId),
+			);
+			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
+			for (const job of candidates) {
+				const write = (patch: JobPatch, audits: readonly TransitionAudit[]) =>
+					deps.jobs.write(runner.ownerId, {
+						runId: job.runId,
+						expectedVersion: job.version,
+						patch,
+						audits,
+						at: now,
+					});
+				if (job.cancelRequested) {
+					// The owner cancelled while a runner that has since vanished held the lease.
+					await write({ state: "cancelled", cancelRequested: false, leaseExpiresAt: null }, [
+						auditFor(runner, job.state, "cancelled", "cancel requested; lease expired"),
+					]);
+					continue;
+				}
+				const decision = decideClaim(leaseView(job), nowMs);
+				if (decision.kind === "exhausted") {
+					await write(
+						{
+							state: "failed",
+							failureCode: "RETRY_CEILING_REACHED",
+							failureDetail: null,
+							leaseExpiresAt: null,
+						},
+						[auditFor(runner, job.state, "failed", "retry ceiling reached")],
+					);
+					continue;
+				}
+				if (decision.kind === "not-eligible") continue;
+				if (job.request !== null && !available.has(job.request.agentId)) continue;
+
+				const audits =
+					decision.reason === "lease-expired"
+						? [
+								auditFor(runner, job.state, "pending", "lease expired"),
+								auditFor(runner, "pending", "claimed", "claimed"),
+							]
+						: [auditFor(runner, job.state, "claimed", "claimed")];
+				const leaseExpiresAt = leaseExpiryIso(nowMs, LEASE_DURATION_MS);
+				const granted = await write(
+					{
+						state: "claimed",
+						attempt: decision.nextAttempt,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseOwnerId: runner.credentialId,
+						leaseExpiresAt,
+						lastEventSeq: -1,
+						// Finding 11: a new attempt clears the previous attempt's
+						// failure metadata, or a later success would show the old code.
+						failureCode: null,
+						failureDetail: null,
+					},
+					audits,
+				);
+				if (!granted) continue;
+				const lease = {
+					runId: job.runId,
+					leaseGeneration: decision.nextLeaseGeneration,
+					leaseExpiresAt,
+					attempt: decision.nextAttempt,
+					heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+					sources: [...(await activeSources(runner.ownerId))],
+				};
+				const claimed: ClaimedJob =
+					job.request === null
+						? { kind: "news-ingest", ...lease }
+						: {
+								kind: "research",
+								...lease,
+								request: job.request,
+								priorUsage: job.usage,
+								workspaceComponents: await componentSummaries(runner.ownerId, job.workspaceId),
+								conversationContext: await conversationContext(
+									runner.ownerId,
+									job.workspaceId,
+									job.contextAnchorSeq,
+								),
+							};
+				return ok({ job: claimed, pollAfterMs: POLL_AFTER_CLAIM_MS });
+			}
+			return ok({
+				job: null,
+				pollAfterMs: candidates.length > 0 ? POLL_WHEN_BLOCKED_MS : POLL_WHEN_IDLE_MS,
+			});
+		},
+
+		async heartbeat(
+			runner: RunnerIdentity,
+			runId: string,
+			leaseGeneration: number,
+		): Promise<UseCaseResult<HeartbeatResponse>> {
+			for (let attempt = 0; attempt < CAS_RETRIES; attempt += 1) {
+				const job = await deps.jobs.get(runner.ownerId, runId);
+				if (job === null) return fail("NOT_FOUND", "Run not found.");
+				const lease = checkLease(leaseView(job), {
+					runnerId: runner.credentialId,
+					leaseGeneration,
+				});
+				if (!lease.ok) return staleLease(lease.error);
+				const leaseExpiresAt = leaseExpiryIso(deps.clock.nowMs(), LEASE_DURATION_MS);
+				const written = await deps.jobs.write(runner.ownerId, {
+					runId,
+					expectedVersion: job.version,
+					patch: { leaseExpiresAt },
+					audits: [],
+					at: deps.clock.nowIso(),
+				});
+				if (written) return ok({ leaseExpiresAt, cancelRequested: job.cancelRequested });
+			}
+			return fail("CONFLICT", "The run changed concurrently; retry the heartbeat.");
+		},
+
+		/**
+		 * Records progress. State changes are validated one by one against the
+		 * transition matrix; events at or below the stored sequence are ignored, so
+		 * a retried request never replays a transition.
+		 */
+		async appendEvents(
+			runner: RunnerIdentity,
+			runId: string,
+			request: RunnerEventsRequest,
+		): Promise<UseCaseResult<{ readonly cancelRequested: boolean }>> {
+			for (let attempt = 0; attempt < CAS_RETRIES; attempt += 1) {
+				const job = await deps.jobs.get(runner.ownerId, runId);
+				if (job === null) return fail("NOT_FOUND", "Run not found.");
+				const lease = checkLease(leaseView(job), {
+					runnerId: runner.credentialId,
+					leaseGeneration: request.leaseGeneration,
+				});
+				if (!lease.ok) return staleLease(lease.error);
+				const fresh = request.events
+					.filter((entry) => entry.seq > job.lastEventSeq)
+					.sort((a, b) => a.seq - b.seq);
+				const last = fresh.at(-1);
+				if (last === undefined) return ok({ cancelRequested: job.cancelRequested });
+
+				let state = job.state;
+				const audits: TransitionAudit[] = [];
+				const patch: {
+					-readonly [K in keyof JobPatch]: JobPatch[K];
+				} = { lastEventSeq: last.seq };
+				for (const { event } of fresh) {
+					if (event.type === "state" && event.state !== state) {
+						const next = transitionJob(state, event.state);
+						if (!next.ok) {
+							return fail(
+								"ILLEGAL_TRANSITION",
+								"The reported state change is not allowed.",
+								`${state}->${event.state}`,
+							);
+						}
+						audits.push(auditFor(runner, state, next.value, "runner progress"));
+						state = next.value;
+					} else if (event.type === "usage") {
+						patch.usage = cumulativeUsage(patch.usage ?? job.usage, event.usage);
+					} else if (event.type === "provider-session") {
+						patch.providerSessionRef = event.sessionRef;
+					}
+				}
+				patch.state = state;
+				const written = await deps.jobs.writeWithEvents(
+					runner.ownerId,
+					{ runId, expectedVersion: job.version, patch, audits, at: deps.clock.nowIso() },
+					request.leaseGeneration,
+					fresh,
+				);
+				if (written) return ok({ cancelRequested: job.cancelRequested });
+			}
+			return fail("CONFLICT", "The run changed concurrently; retry the request.");
+		},
+
+		/**
+		 * Finishes a lease. The job row, research records, workspace changes and
+		 * the assistant message commit atomically. A duplicate completion from the
+		 * same lease generation is answered without re-applying anything; one from
+		 * a superseded generation is rejected (hard gate 8).
+		 */
+		async complete(
+			runner: RunnerIdentity,
+			runId: string,
+			request: CompleteJobRequest,
+		): Promise<UseCaseResult<CompleteJobResponse>> {
+			for (let attempt = 0; attempt < COMPLETION_ATTEMPTS; attempt += 1) {
+				const job = await deps.jobs.get(runner.ownerId, runId);
+				if (job === null) return fail("NOT_FOUND", "Run not found.");
+				if (
+					job.completedGeneration === request.leaseGeneration &&
+					job.leaseOwnerId === runner.credentialId
+				) {
+					return ok({ state: job.state, replayed: true, newArticleCount: 0 });
+				}
+				const lease = checkLease(leaseView(job), {
+					runnerId: runner.credentialId,
+					leaseGeneration: request.leaseGeneration,
+				});
+				if (!lease.ok) return staleLease(lease.error);
+
+				const isIngest = job.kind === "news-ingest";
+				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
+				if ((isIngest && researchOnly) || (!isIngest && request.outcome === "ingested")) {
+					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
+				}
+
+				const now = deps.clock.nowIso();
+				let target: JobState;
+				let effects: CompletionEffects = {
+					bundle: null,
+					articles: [],
+					sourceReports: [],
+					workspace: null,
+					assistantMessage: null,
+				};
+				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
+					usage: cumulativeUsage(job.usage, request.usage),
+					completedGeneration: request.leaseGeneration,
+					leaseExpiresAt: null,
+					cancelRequested: false,
+				};
+				// The owner asked to stop: a result that arrives afterwards is discarded.
+				const outcome = job.cancelRequested ? "cancelled" : request.outcome;
+				if (outcome === "cancelled") {
+					target = "cancelled";
+					// Finding 11: every completion outcome sets failure metadata
+					// explicitly, so a previous attempt's detail never survives.
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+				} else if (request.outcome === "failed") {
+					const retry = request.retryable && job.attempt < job.maxAttempts;
+					target = retry ? "pending" : "failed";
+					patch.failureCode = request.failureCode;
+					patch.failureDetail = request.failureDetail ?? null;
+					patch.approvalRequest = null;
+				} else if (request.outcome === "waiting_approval") {
+					target = "waiting_approval";
+					patch.approvalRequest = request.approvalRequest;
+					patch.failureCode = null;
+					patch.failureDetail = null;
+				} else if (request.outcome === "ingested") {
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					effects = {
+						...effects,
+						...(await ownedArticles(runner.ownerId, request.articles, request.sourceReports)),
+					};
+				} else if (request.outcome === "completed" || request.outcome === "partial") {
+					target = request.outcome;
+					const built = await bundleEffects(job, request, now);
+					if (!built.ok) return built;
+					effects = built.value;
+					patch.verificationStatus = request.bundle.verificationStatus;
+					patch.providerModel = request.bundle.provenance.providerModel;
+					patch.provenance = request.bundle.provenance;
+					if (request.outcome === "partial") {
+						patch.failureCode = request.failureCode;
+						patch.failureDetail = null;
+					} else {
+						patch.failureCode = null;
+						patch.failureDetail = null;
+					}
+					patch.approvalRequest = null;
+				} else {
+					return fail("VALIDATION_FAILED", "Unknown completion outcome.");
+				}
+
+				const transition = transitionJob(job.state, target);
+				if (!transition.ok) {
+					return fail(
+						"ILLEGAL_TRANSITION",
+						"The run cannot finish this way from its current state.",
+						`${job.state}->${target}`,
+					);
+				}
+				patch.state = target;
+				const committed = await deps.unitOfWork.commitCompletion(
+					runner.ownerId,
+					{
+						runId,
+						expectedVersion: job.version,
+						patch,
+						audits: [auditFor(runner, job.state, target, `completion: ${outcome}`)],
+						at: now,
+					},
+					effects,
+				);
+				if (committed.kind === "committed") {
+					return ok({ state: target, replayed: false, newArticleCount: committed.newArticleCount });
+				}
+				// A concurrent heartbeat or an owner edit moved a version; recompute once.
+			}
+			// Still conflicting: stop here, inside the request's query budget. The request is
+			// idempotent, so the runner simply sends it again.
+			return fail("CONFLICT", "The run or its workspace changed concurrently; resend.");
+		},
+
+		/** Lets the runner tell a finished run from one it should keep working on. */
+		isFinished: (state: JobState): boolean => isTerminalJobState(state),
+	};
+}
+
+export type RunnerJobService = ReturnType<typeof createRunnerJobService>;

@@ -1,0 +1,26 @@
+[
+	{
+		"id": "<id-1>",
+		"name": "OpenCode Go",
+		"connections": [
+			{
+				"type": "credential",
+				"id": "<id-2>",
+				"label": "API key",
+				"method": "key"
+			}
+		]
+	},
+	{
+		"id": "<id-3>",
+		"name": "OpenCode Console",
+		"connections": [
+			{
+				"type": "credential",
+				"id": "<id-4>",
+				"label": "API key",
+				"method": "key"
+			}
+		]
+	}
+]

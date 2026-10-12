@@ -1,0 +1,21 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "research-workspace-e2e",
+	"main": "./worker.ts",
+	"compatibility_date": "2026-09-01",
+	"assets": {
+		"directory": "../../dist/web",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "research",
+			"database_id": "00000000-0000-0000-0000-00000000e2e0",
+			"migrations_dir": "../../infra/migrations"
+		}
+	],
+	"vars": { "AUTH_MODE": "local-dev", "OWNER_EMAIL": "owner@localhost" }
+}

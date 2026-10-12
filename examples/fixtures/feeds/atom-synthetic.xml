@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC FIXTURE. Hand-written for tests; not a recording of any real publisher's feed. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="text">Synthetic Semiconductor Notes</title>
+  <id>tag:synthetic-notes.org,2026:feed</id>
+  <updated>2026-10-06T00:00:00Z</updated>
+  <link rel="self" type="application/atom+xml" href="https://synthetic-notes.org/atom.xml"/>
+  <link rel="alternate" type="text/html" href="https://synthetic-notes.org/"/>
+  <entry>
+    <title type="html">Packaging capacity &amp;amp; lead times</title>
+    <id>tag:synthetic-notes.org,2026:1</id>
+    <link rel="enclosure" href="https://synthetic-notes.org/audio/1.mp3"/>
+    <link rel="self" href="https://synthetic-notes.org/api/entries/1"/>
+    <link rel="alternate" type="text/html" href="https://synthetic-notes.org/posts/packaging-capacity?a=1&amp;b=2"/>
+    <published>2026-10-05T06:00:00Z</published>
+    <updated>2026-10-05T07:30:00Z</updated>
+    <summary type="html">&lt;p&gt;Advanced packaging lead times lengthened to &lt;b&gt;40 weeks&lt;/b&gt;.&lt;/p&gt;</summary>
+  </entry>
+  <entry>
+    <title>Second entry with a bare link and XHTML content</title>
+    <id>tag:synthetic-notes.org,2026:2</id>
+    <link href="https://synthetic-notes.org/posts/second-entry"/>
+    <updated>2026-10-01T10:00:00+09:00</updated>
+    <content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><p>Substrate supply <b>tightened</b> in the quarter.</p></div></content>
+  </entry>
+  <entry>
+    <title>Entry with only a self link</title>
+    <id>tag:synthetic-notes.org,2026:3</id>
+    <link rel="self" href="https://synthetic-notes.org/api/entries/3"/>
+    <updated>2026-09-30T10:00:00Z</updated>
+  </entry>
+</feed>

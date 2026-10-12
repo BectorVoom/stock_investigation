@@ -1,0 +1,26 @@
+{
+  "_fixture": "SYNTHETIC. Hand-written in the documented shape of the SEC company-facts API. Revenue and net income deliberately describe DIFFERENT fiscal years. All figures are invented; this is not SEC data.",
+  "cik": 9999992,
+  "entityName": "Synthetic Beta Logistics Corp",
+  "facts": {
+    "us-gaap": {
+      "RevenueFromContractWithCustomerExcludingAssessedTax": {
+        "label": "Revenue from Contract with Customer, Excluding Assessed Tax",
+        "units": {
+          "USD": [
+            { "start": "2024-01-01", "end": "2024-12-31", "val": 450000000, "accn": "0009999992-25-000002", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-21" },
+            { "start": "2025-01-01", "end": "2025-12-31", "val": 500000000, "accn": "0009999992-26-000002", "fy": 2025, "fp": "FY", "form": "10-K", "filed": "2026-02-20" }
+          ]
+        }
+      },
+      "NetIncomeLoss": {
+        "label": "Net Income (Loss) Attributable to Parent",
+        "units": {
+          "USD": [
+            { "start": "2024-01-01", "end": "2024-12-31", "val": 40000000, "accn": "0009999992-25-000002", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-21" }
+          ]
+        }
+      }
+    }
+  }
+}

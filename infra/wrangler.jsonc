@@ -1,0 +1,61 @@
+{
+	"$schema": "../node_modules/wrangler/config-schema.json",
+	// The top level is the DEFAULT, LOCAL configuration: `bun run prod` and
+	// `bun run dev` run this Worker on this PC with a local SQLite-backed D1.
+	// Nothing here needs a Cloudflare account. Deploying is opt-in and uses
+	// `env.production` below (docs/adr/0006-local-first-operation.md).
+	"name": "research-workspace",
+	"main": "../apps/api/src/worker.ts",
+	"compatibility_date": "2026-09-01",
+	// The SPA is bundled with the Worker (section 5.1). Only /api/* reaches the
+	// Worker script; everything else is served by the static-asset layer, with
+	// unknown paths falling back to index.html.
+	"assets": {
+		"directory": "../dist/web",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "research",
+			// Local only: names the SQLite file under data/d1. Never a real database.
+			"database_id": "00000000-0000-0000-0000-0000000010ca",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vars": {
+		// No sign-in: the single owner is whoever can reach the loopback address.
+		// "local-dev" is honoured only for requests addressed to localhost
+		// (apps/api/src/auth.ts), so this configuration refuses every request if
+		// it is ever deployed by mistake.
+		"AUTH_MODE": "local-dev",
+		"OWNER_EMAIL": "owner@localhost"
+	},
+	"env": {
+		// Cloudflare deployment (postponed; `bun run deploy`). `vars` and
+		// `d1_databases` are not inherited by an environment, so both are restated.
+		"production": {
+			"name": "research-workspace",
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "research",
+					// Written by `bun run deploy` from `wrangler d1 create research`.
+					"database_id": "9ddeb9a1-1d41-4edb-aba2-616ff893601c",
+					"migrations_dir": "migrations"
+				}
+			],
+			"vars": {
+				"AUTH_MODE": "cloudflare-access",
+				// Still to set before the deployed app can be used: the address allowed
+				// by the Cloudflare Access policy.
+				"OWNER_EMAIL": "",
+				"ACCESS_TEAM_DOMAIN": "appservice27.cloudflareaccess.com",
+				"ACCESS_AUDIENCE": "912583ab3f55d5eb2b926166ba706da83b0c35af5913184d65c76365599460ba"
+			},
+			"observability": { "enabled": true }
+		}
+	}
+}

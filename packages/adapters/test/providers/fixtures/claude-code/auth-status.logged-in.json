@@ -1,0 +1,7 @@
+{
+	"loggedIn": true,
+	"authMethod": "claude.ai",
+	"apiProvider": "firstParty",
+	"analyticsDisabled": false,
+	"subscriptionType": "max"
+}

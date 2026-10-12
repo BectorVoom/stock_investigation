@@ -1,0 +1,12 @@
+{
+  "_fixture": "SYNTHETIC. Hand-written in the documented shape of https://www.sec.gov/files/company_tickers_exchange.json. Issuers, CIKs and tickers are invented; this is not SEC data.",
+  "fields": ["cik", "name", "ticker", "exchange"],
+  "data": [
+    [9999991, "Synthetic Alpha Devices Inc.", "XTESTA", "Nasdaq"],
+    [9999992, "Synthetic Beta Logistics Corp", "XTESTB", "NYSE"],
+    [9999994, "Synthetic Gamma Holdings", "XTESTC", "OTC"],
+    [9999995, "Synthetic Delta Trust", "XTESTD", null],
+    [9999996, "Synthetic Epsilon ETF Trust", "XTESTE", "CBOE"],
+    [9999997, "Synthetic Zeta Group", "XTST-B", "NYSE"]
+  ]
+}

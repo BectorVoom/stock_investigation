@@ -1,0 +1,3 @@
+{"type":"step_start","timestamp":1791720482860,"sessionID":"<sessionID-1>","part":{"id":"<id-1>","sessionID":"<sessionID-1>","messageID":"<messageID-1>","type":"step-start"}}
+{"type":"text","timestamp":1791720483481,"sessionID":"<sessionID-1>","part":{"id":"<id-2>","sessionID":"<sessionID-1>","messageID":"<messageID-1>","type":"text","text":"NO_TOOLS","time":{"start":1791720483448,"end":1791720483481}}}
+{"type":"step_finish","timestamp":1791720483482,"sessionID":"<sessionID-1>","part":{"id":"<id-3>","sessionID":"<sessionID-1>","messageID":"<messageID-1>","type":"step-finish","reason":"stop","cost":0.00012405,"tokens":{"input":397,"output":129,"reasoning":0,"cache":{"read":0,"write":0}}}}

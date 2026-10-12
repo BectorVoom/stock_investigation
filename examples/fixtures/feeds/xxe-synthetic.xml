@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!-- SYNTHETIC ATTACK FIXTURE: external entity (XXE) pointing at a local file and an internal URL. Must never be resolved. -->
+<!DOCTYPE rss [
+  <!ENTITY passwd SYSTEM "file:///etc/passwd">
+  <!ENTITY meta SYSTEM "http://169.254.169.254/latest/meta-data/">
+]>
+<rss version="2.0">
+  <channel>
+    <title>&passwd;</title>
+    <link>https://attack.synthetic-wire.org/</link>
+    <item>
+      <title>&meta;</title>
+      <link>https://attack.synthetic-wire.org/item</link>
+    </item>
+  </channel>
+</rss>

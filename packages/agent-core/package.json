@@ -1,0 +1,14 @@
+{
+	"name": "@research/agent-core",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@research/contracts": "workspace:*",
+		"@research/domain": "workspace:*",
+		"zod": "^4.6.5"
+	}
+}
