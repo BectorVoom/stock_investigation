@@ -78,11 +78,16 @@ function fieldSegments(name: string): string[] {
  * True when a field name denotes sensitive content. `credentialId` is spelled
  * out as the one exception: it names the stored credential row (an
  * identifier), it is not the credential itself, so it stays allowed.
+ * `promptVersion` is the second exception: it carries only the short prompt
+ * template version (e.g. `research-v4`, at most 40 chars per its contract),
+ * never prompt text — the runner logs it on `job_finished` so removed
+ * run-card facts stay observable in the logs without their content.
  */
 function isSensitiveFieldName(name: string): boolean {
 	const segments = fieldSegments(name);
 	if (segments.length === 0) return false;
 	if (segments.join("") === "credentialid") return false;
+	if (segments.join("") === "promptversion") return false;
 	return (
 		segments.some((segment) => SENSITIVE_FIELD_SEGMENTS.has(segment)) ||
 		SENSITIVE_FIELD_SEGMENTS.has(segments.join(""))
