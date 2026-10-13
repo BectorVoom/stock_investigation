@@ -6,7 +6,6 @@
  */
 import type {
 	ArticleRepository,
-	AssetRepository,
 	AuditLog,
 	ChatRepository,
 	JobRepository,
@@ -23,7 +22,6 @@ import type {
 import type { SqlDatabase } from "./database.ts";
 import {
 	createArticleRepository,
-	createAssetRepository,
 	createAuditLog,
 	createChatRepository,
 	createJobRepository,
@@ -48,7 +46,6 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const workspaces: WorkspaceRepository = createWorkspaceRepository(db);
 	const records: ResearchRecordRepository = createResearchRecordRepository(db);
 	const chat: ChatRepository = createChatRepository(db);
-	const assets: AssetRepository = createAssetRepository(db);
 	const runnerCredentials: RunnerCredentialRepository = createRunnerCredentialRepository(db);
 	const runnerStatus: RunnerStatusRepository = createRunnerStatusRepository(db);
 	const settings: SettingsRepository = createSettingsRepository(db);
@@ -62,7 +59,6 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		workspaces,
 		records,
 		chat,
-		assets,
 		runnerCredentials,
 		runnerStatus,
 		settings,

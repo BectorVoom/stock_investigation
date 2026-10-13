@@ -253,7 +253,6 @@ describe("Lean model conformance: workspace reducer", () => {
 		}),
 		knownDatasetRefs: new Set(),
 		knownSourceIds: new Set(),
-		knownAssetRefs: new Set(),
 		knownClaims: new Map(),
 		maxComponents: 100,
 	};

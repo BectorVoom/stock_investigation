@@ -38,7 +38,6 @@ export function workspaceReferences(
 	return {
 		datasetRefs: valid.flatMap((refs) => refs.datasetRefs),
 		sourceIds: valid.flatMap((refs) => refs.sourceIds),
-		assetRefs: valid.flatMap((refs) => refs.assetRefs),
 		claims: valid.flatMap((refs) => refs.claims ?? []),
 	};
 }
@@ -47,7 +46,6 @@ export function toLookup(references: ComponentReferences): ReferenceLookup {
 	return {
 		datasetIds: [...new Set(references.datasetRefs)],
 		evidenceIds: [...new Set(references.sourceIds)],
-		assetIds: [...new Set(references.assetRefs)],
 		claimIds: [...new Set((references.claims ?? []).map((claim) => claim.claimId))],
 	};
 }
@@ -57,7 +55,6 @@ export function commandContext(
 	known: {
 		readonly datasetIds: Iterable<string>;
 		readonly evidenceIds: Iterable<string>;
-		readonly assetIds: Iterable<string>;
 		readonly claims: Iterable<Pick<Claim, "claimId" | "status" | "claimType">>;
 	},
 ): CommandContext {
@@ -65,7 +62,6 @@ export function commandContext(
 		validateProps: catalog.validateProps,
 		knownDatasetRefs: new Set(known.datasetIds),
 		knownSourceIds: new Set(known.evidenceIds),
-		knownAssetRefs: new Set(known.assetIds),
 		knownClaims: new Map([...known.claims].map((claim) => [claim.claimId, claim])),
 		maxComponents: MAX_WORKSPACE_COMPONENTS,
 	};
@@ -75,7 +71,6 @@ export function knownIds(resolved: ResolvedReferences) {
 	return {
 		datasetIds: resolved.datasets.map((dataset) => dataset.datasetId),
 		evidenceIds: resolved.evidence.map((evidence) => evidence.evidenceId),
-		assetIds: resolved.assets.map((asset) => asset.assetId),
 		claims: resolved.claims,
 	};
 }
@@ -135,7 +130,6 @@ export function externalReferences(
 			validateProps: catalog.validateProps,
 			knownDatasetRefs: ALL_KNOWN,
 			knownSourceIds: ALL_KNOWN,
-			knownAssetRefs: ALL_KNOWN,
 			knownClaims: new Map(claims.map((claim) => [claim.claimId, claim])),
 			maxComponents: MAX_WORKSPACE_COMPONENTS,
 		});
@@ -149,13 +143,11 @@ export function externalReferences(
 	const lookup = toLookup({
 		datasetRefs: touched.flatMap((refs) => refs.datasetRefs),
 		sourceIds: touched.flatMap((refs) => refs.sourceIds),
-		assetRefs: touched.flatMap((refs) => refs.assetRefs),
 		claims: touched.flatMap((refs) => refs.claims ?? []),
 	});
 	return {
 		datasetIds: lookup.datasetIds.filter((id) => !own.datasets.has(id)),
 		evidenceIds: lookup.evidenceIds.filter((id) => !own.evidence.has(id)),
-		assetIds: lookup.assetIds,
 		claimIds: lookup.claimIds.filter((id) => !own.claims.has(id)),
 	};
 }

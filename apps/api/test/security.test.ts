@@ -221,7 +221,6 @@ describe("owner authentication (section 9.1)", () => {
 			["POST", "/workspaces/ws_x/commands"],
 			["GET", "/workspaces/ws_x/export"],
 			["POST", "/workspaces/import"],
-			["GET", "/assets"],
 			["GET", "/runner-credentials"],
 			["POST", "/runner-credentials"],
 			["DELETE", "/runner-credentials/rc_x"],

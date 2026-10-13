@@ -158,6 +158,21 @@ export function createApiClient(options: ApiClientOptions = {}) {
 		return validate(idempotencyKeySchema, key, { kind: "invalid-request", status: null });
 	}
 
+	/**
+	 * Drops the withdrawn top-level `assets` array from a pre-removal export when it is empty,
+	 * so files written before approved images were removed still validate. A non-empty array
+	 * is left intact so strict validation rejects it as unknown.
+	 */
+	function stripLegacyEmptyAssets(payload: unknown): unknown {
+		if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+			return payload;
+		}
+		const root = payload as Record<string, unknown>;
+		if (!Array.isArray(root.assets) || root.assets.length > 0) return payload;
+		const { assets: _dropped, ...rest } = root;
+		return rest;
+	}
+
 	const runs = `${API_PREFIX}/research-runs`;
 	const sources = `${API_PREFIX}/sources`;
 	const workspaces = `${API_PREFIX}/workspaces`;
@@ -435,12 +450,18 @@ export function createApiClient(options: ApiClientOptions = {}) {
 					return ok(await response.text());
 				},
 			),
-		/** `payload` is untrusted file content; it is validated here and again by the server. */
+		/**
+		 * `payload` is untrusted file content; it is validated here and again by the server.
+		 * Pre-removal files without images still carry an empty `assets` array the contract no
+		 * longer defines, so it is dropped before validation. A file that still contains images
+		 * is refused: an empty array never validates past the strict schema either, and anything
+		 * image-bearing fails here or at the server with the reason named.
+		 */
 		importWorkspace: (payload: unknown): Promise<ApiResult<WorkspaceSummary>> =>
 			write(
 				{ method: "POST", path: `${workspaces}/import` },
 				researchExportSchema,
-				payload,
+				stripLegacyEmptyAssets(payload),
 				workspaceSummarySchema,
 			),
 

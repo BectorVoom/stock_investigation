@@ -35,7 +35,6 @@ const EXPORT: ResearchExport = researchExportSchema.parse({
 	workspace: { title: WORKSPACE_SUMMARY.title, state: WORKSPACE_VIEW.state },
 	messages: CONVERSATION.messages,
 	datasets: WORKSPACE_VIEW.datasets,
-	assets: [],
 	records: {
 		evidence: WORKSPACE_VIEW.sources,
 		claims: CONVERSATION.claims,
@@ -234,8 +233,8 @@ describe("Settings: runner credentials", () => {
 	});
 });
 
-describe("Settings: approved images", () => {
-	it("offers no image-approval UI; the API and stored data remain (owner decision 2026-10-12)", async () => {
+describe("Settings: approved images are gone", () => {
+	it("offers no image-approval UI and makes no image API calls (owner decision 2026-10-13)", async () => {
 		mount();
 		// Wait for the remaining sections so the absence is observed on the
 		// settled page, not on a half-rendered one.

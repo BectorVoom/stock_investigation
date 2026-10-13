@@ -338,6 +338,17 @@ override with `RESEARCH_ALLOW_NEWER_DB=1` only after checking. For later
 migrations, write the inverse statements in the migration's header comment
 and rehearse them on a copy of `data/` first (API-009).
 
+Migration `0005_remove_approved_images.sql` (owner's decision of 2026-10-13)
+is destructive and one-way: it drops the `approved_assets` table, deleting the
+owner's stored image approvals for good — back up `data/` first. Rolling back
+to a previous release after this migration has run means running old code
+against a newer database: the launcher refuses with "the database is newer
+than this release" (override only with `RESEARCH_ALLOW_NEWER_DB=1` after
+checking), and even then the old approval endpoints find no table and no rows —
+the approvals are gone unless a pre-migration backup is restored. Stored
+`image-gallery` components in old workspaces need no restore: the new code
+strips them on read (see the migration's header comment).
+
 ## Switching the database
 
 Persistence sits behind two seams, so the database can be switched without touching the application code ([ADR-0008](adr/0008-switchable-persistence.md)): the `Persistence` ports bundle (what the app depends on) and the narrow `SqlDatabase` driver interface (what the SQL repositories run on). The same API suite passes on D1 and on `node:sqlite`; the latter is the portability proof, not a supported production store. To switch engines: implement `SqlDatabase` for another SQLite-dialect engine (or the `Persistence` ports for a non-SQLite one), add a vitest project like `api-sqlite`, and keep the suite green. Moving existing rows between engines is not covered — export each workspace as JSON and re-import it.

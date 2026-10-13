@@ -1,9 +1,15 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.1
-**Date:** 2026-10-12
+**Version:** 1.2
+**Date:** 2026-10-13
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.1 → 1.2):** approved images are withdrawn in full by the
+owner's decision of 2026-10-13 (ADR-0013): FR-011 no longer names images, the
+V1 component list drops `image-gallery` (nine types), the `/assets` endpoints
+and the `approved_assets` table are gone, and stored pre-removal galleries are
+stripped on read. No other requirement changed.
 
 **Change note (1.0 → 1.1):** the deployment section now describes the local-first
 default and the two local environments (ADR-0006, ADR-0011) instead of a
@@ -14,7 +20,7 @@ rule directories. No requirement changed.
 
 ## 1. Purpose, scope, and constraints
 
-Build a **single-user**, agent-driven research web application that discovers current news, develops evidence-based hypotheses about products and services likely to experience demand growth over a **three-to-five-year horizon**, and identifies Japanese and US listed companies capable of supplying them. An agent can compose and update tables, charts, source lists, and approved images in a persistent chat workspace. The application is a research instrument, **not an autonomous securities trading system or an investment-advice guarantee**.
+Build a **single-user**, agent-driven research web application that discovers current news, develops evidence-based hypotheses about products and services likely to experience demand growth over a **three-to-five-year horizon**, and identifies Japanese and US listed companies capable of supplying them. An agent can compose and update tables, charts and source lists in a persistent chat workspace. The application is a research instrument, **not an autonomous securities trading system or an investment-advice guarantee**.
 
 ### Non-negotiable constraints
 
@@ -36,7 +42,7 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 3. **Inspect evidence:** read supporting and contradictory sources, publication dates, data-as-of dates, URL links and methodological assumptions.
 4. **Map suppliers:** discover specific Japanese and US companies, their relevant goods/services, business exposure, pricing power and financial metrics.
 5. **Inspect positions and investors:** show Japanese margin buy/sell balances; show US short interest separately; surface investor filings with dates and properly qualified conclusions.
-6. **Manipulate research UI:** ask the agent to create/update/remove tables, graphs, timelines and permitted images. Reopen an existing workspace without rerunning research.
+6. **Manipulate research UI:** ask the agent to create/update/remove tables, graphs and timelines. Reopen an existing workspace without rerunning research.
 7. **Continue without local compute:** when the local runner is offline, browse prior findings and queue research; pending jobs resume when a valid runner reconnects.
 
 The page for each journey step is mapped in [PAGES.md](PAGES.md).
@@ -55,7 +61,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-008 | Show notable investor holdings/filings | Must | Filing links, reporting period, filing date; 13F not described as real-time purchase |
 | FR-009 | Analyze firms with successful pricing changes | Must | Price realization distinguished from margins, mix, volume, FX and input costs |
 | FR-010 | Conversational, persistent research and source hyperlinks | Must | Linked claims and stored chat survive reload |
-| FR-011 | Agent-driven tables/charts/approved images | Must | Only validated registry commands render; no executable generated code |
+| FR-011 | Agent-driven tables/charts (approved images withdrawn by the owner's decision of 2026-10-13, ADR-0013 — not silently rewritten: the image half of this requirement is struck, the rest stands) | Must | Only validated registry commands render; no executable generated code |
 | FR-012 | Choose OpenCode, Codex, Claude Code or OpenRouter | Must | Adapter capability negotiation; unavailable backend surfaced honestly |
 | FR-013 | Add components/tools/providers later | Must | Example extension passes contract tests without changing orchestrator core |
 | FR-014 | Cancel, retry and resume research jobs | Must | State machine and lease recovery tested |
@@ -101,7 +107,7 @@ implementation exists.
           restricted news/search/finance/evidence tools
 ```
 
-Cloudflare Workers must **never be expected to spawn local CLI binaries**. The runner initiates connections to the Worker; no inbound home-network port or direct browser-to-CLI connection is required. Do not expose an OpenCode server to the public Internet. R2 is optional for larger exported reports and licensed image assets. KV, Queues, Durable Objects and Workflows are **deferred** until a measured need arises. Persistence sits behind two seams (ADR-0008), so the same API suite passes on D1 and on `node:sqlite`.
+Cloudflare Workers must **never be expected to spawn local CLI binaries**. The runner initiates connections to the Worker; no inbound home-network port or direct browser-to-CLI connection is required. Do not expose an OpenCode server to the public Internet. R2 is optional for larger exported reports. KV, Queues, Durable Objects and Workflows are **deferred** until a measured need arises. Persistence sits behind two seams (ADR-0008), so the same API suite passes on D1 and on `node:sqlite`.
 
 ### Layer boundaries
 
@@ -195,7 +201,7 @@ Agent output is **data**, never executable JavaScript, arbitrary JSX or raw HTML
 
 Allowed baseline operations: `component.create`, `component.update`, `component.remove`, `component.focus`, `component.select`, `layout.update`, `dataset.bind`, `dataset.refresh` and allowlisted `navigation.open`. Persistent source registration, deletion and research execution are **separate authorized backend tools**, not hidden UI commands.
 
-Registry entries define `componentType`, `schemaVersion`, `propsSchema`, `renderer`, `capabilities`, permission requirements and migrations. V1 types: `data-table`, `financial-table`, `line-chart`, `bar-chart`, `candlestick-chart`, `news-card`, `source-list`, `company-profile`, `image-gallery` and `research-report`. Components must handle absent data, provenance badges, loading/error states and accessibility. Charts and images may only use validated dataset or allowed asset references.
+Registry entries define `componentType`, `schemaVersion`, `propsSchema`, `renderer`, `capabilities`, permission requirements and migrations. V1 types: `data-table`, `financial-table`, `line-chart`, `bar-chart`, `candlestick-chart`, `news-card`, `source-list`, `company-profile` and `research-report` (nine; `image-gallery` was withdrawn by the owner's decision of 2026-10-13, ADR-0013). Components must handle absent data, provenance badges, loading/error states and accessibility. Charts may only use validated dataset references.
 
 Store domain state, workspace layout, command IDs and monotonic versions on the server; keep hover/scroll/dialog state local. Apply validated changes atomically and idempotently. Persist command history or compact checkpoints sufficient for recovery; **full event sourcing is not mandatory**.
 
@@ -231,13 +237,13 @@ Unlicensed content must not be copied wholesale into D1/R2. Unknown/missing reco
 1. Authenticate the owner (no anonymous mutation); use HttpOnly/Secure/SameSite session cookies and CSRF protection for cookie-authenticated write operations.
 2. Never expose LLM API keys, CLI session tokens, Worker secrets or database credentials to the browser or language-model prompts.
 3. Enforce authorization on **every** API operation and resource ID, despite single-user assumptions. Bind runner identity to restricted capabilities.
-4. Treat news articles, images, search results, LLM output and URL submissions as untrusted. Prompt text is not authorization.
+4. Treat news articles, search results, LLM output and URL submissions as untrusted. Prompt text is not authorization.
 5. For URL fetching: allow `https`, forbid credentials/private or loopback destinations and sensitive ports; enforce redirects per hop, byte/time limits and **network-level egress protections** against DNS rebinding/TOCTOU. If connection-time restrictions are unavailable, use an egress proxy/approved-host allowlist rather than relying on string checks.
-6. Avoid `innerHTML` and executable generated snippets; sanitize any approved Markdown/HTML. Apply CSP and safe image URL policies.
+6. Avoid `innerHTML` and executable generated snippets; sanitize any approved Markdown/HTML. Apply CSP and safe URL policies.
 7. Constrain agent filesystem/network/process privileges; disable unsafe CLI auto-approval modes; use per-job scratch directories and discard them.
 8. Validate source citations against fetched source IDs; verify claim support independently and show unsupported/conflicting claims explicitly.
 9. Apply per-owner job and fetch rate limits, budget ceilings, output size limits and audit traces with sensitive content redaction.
-10. Retain content subject to copyright/terms, and prevent unsafe reuse of externally hosted images.
+10. Retain content subject to copyright/terms, and prevent unsafe reuse of externally hosted content.
 
 ## 10. API and persistence sketch
 
@@ -275,9 +281,6 @@ POST   /api/v1/workspaces/:id/commands
 GET    /api/v1/workspaces/:id/messages?before=...&limit=...
 GET    /api/v1/conversations
 GET    /api/v1/workspaces/:id/export
-GET    /api/v1/assets
-POST   /api/v1/assets
-DELETE /api/v1/assets/:id
 GET    /api/v1/runner-credentials
 POST   /api/v1/runner-credentials
 DELETE /api/v1/runner-credentials/:id
@@ -355,7 +358,7 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 
 - **Owner identity:** choose an established auth method before implementation; do not create bespoke password cryptography.
 - **Market data vendors:** pending cost/license research; use source-neutral ports and mark uncovered metrics unavailable.
-- **Images:** external link/display by permission first; add R2 for licensed retained assets later.
+- **Images:** withdrawn in full by the owner's decision of 2026-10-13 (ADR-0013); the earlier plan (external link/display by permission first, R2 for licensed retained assets later) no longer applies.
 - **Runner OS:** macOS/Windows/WSL supported by capability tests rather than assuming identical CLI interfaces.
 - **Backups:** define periodic D1 export and restore test before storing valuable production-only research.
 - **Provider terms:** check per-backend authentication and automation rules at implementation and after major updates. No bypassing provider usage controls.

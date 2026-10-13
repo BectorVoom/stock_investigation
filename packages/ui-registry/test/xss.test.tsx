@@ -1,4 +1,4 @@
-import type { ApprovedAsset, Dataset, Evidence } from "@research/contracts";
+import type { Dataset, Evidence } from "@research/contracts";
 import { cleanup } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RenderContext, WorkspaceComponent } from "../src/index.ts";
@@ -74,39 +74,11 @@ const hostileDataset: Dataset = {
 	],
 };
 
-const hostileAssets: readonly ApprovedAsset[] = [
-	{
-		assetId: "asset_js",
-		imageUrl: JS_URL,
-		altText: HOSTILE,
-		permissionBasis: HOSTILE,
-		sourceEvidenceId: "ev_x",
-		createdAt: "2026-10-01T00:00:00Z",
-	},
-	{
-		assetId: "asset_data",
-		imageUrl: "data:image/svg+xml,<svg onload=\"globalThis.__xss='svg'\"/>",
-		altText: IMG,
-		permissionBasis: "none",
-		sourceEvidenceId: null,
-		createdAt: "2026-10-01T00:00:00Z",
-	},
-	{
-		assetId: "asset_http",
-		imageUrl: "http://insecure.example.com/a.png",
-		altText: "plain http",
-		permissionBasis: "none",
-		sourceEvidenceId: null,
-		createdAt: "2026-10-01T00:00:00Z",
-	},
-];
-
 const hostileContext: Partial<RenderContext> = {
 	datasets: new Map([[hostileDataset.datasetId, hostileDataset]]),
 	sources: new Map(
 		[hostileEvidence, dataUrlEvidence, httpEvidence].map((e) => [e.evidenceId, e] as const),
 	),
-	assets: new Map(hostileAssets.map((asset) => [asset.assetId, asset] as const)),
 };
 
 const SOURCE_IDS = ["ev_x", "ev_data", "ev_http"];
@@ -169,15 +141,6 @@ const HOSTILE_PROPS: { readonly [T in BaselineType]: WorkspaceComponent["props"]
 		datasetRef: "ds_x",
 		sourceIds: SOURCE_IDS,
 	},
-	"image-gallery": {
-		title: HOSTILE,
-		images: [
-			{ assetRef: "asset_js", caption: HOSTILE },
-			{ assetRef: "asset_data", caption: IMG },
-			{ assetRef: "asset_http", caption: SCRIPT },
-			{ assetRef: "asset_unknown", caption: HOSTILE },
-		],
-	},
 	"research-report": {
 		title: HOSTILE,
 		generatedAt: "2026-10-05T12:00:00Z",
@@ -238,7 +201,7 @@ describe.each(
 	});
 });
 
-describe("XSS: links and images", () => {
+describe("XSS: links", () => {
 	it("shows a javascript:, data: or http: source as text marked link unavailable", () => {
 		const container = renderComponent(
 			component("source-list", HOSTILE_PROPS["source-list"]),
@@ -249,15 +212,6 @@ describe("XSS: links and images", () => {
 		expect(container.textContent).toContain("(link unavailable)");
 		// The hostile title is visible as literal text.
 		expect(container.textContent).toContain(SCRIPT);
-	});
-
-	it("replaces a non-https approved image with a placeholder", () => {
-		const container = renderComponent(
-			component("image-gallery", HOSTILE_PROPS["image-gallery"]),
-			hostileContext,
-		);
-		expect(container.querySelectorAll("img")).toHaveLength(0);
-		expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(4);
 	});
 
 	it("unknown component types never echo props into the DOM as markup", () => {

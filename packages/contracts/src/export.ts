@@ -2,7 +2,6 @@ import { z } from "zod";
 import { chatMessageSchema, runRecordsResponseSchema } from "./api.ts";
 import { boundedDatasets } from "./jobs.ts";
 import { isoDateTimeSchema, shortTextSchema } from "./primitives.ts";
-import { approvedAssetSchema } from "./records.ts";
 import { workspaceStateSchema } from "./ui.ts";
 
 export const EXPORT_FORMAT_VERSION = 1;
@@ -23,7 +22,6 @@ export const researchExportSchema = z.strictObject({
 	workspace: z.strictObject({ title: shortTextSchema, state: workspaceStateSchema }),
 	messages: z.array(chatMessageSchema).max(2000),
 	datasets: boundedDatasets(EXPORT_LIMITS.datasets, EXPORT_LIMITS.datasetCells),
-	assets: z.array(approvedAssetSchema).max(200),
 	records: runRecordsResponseSchema,
 });
 export type ResearchExport = z.infer<typeof researchExportSchema>;

@@ -1,5 +1,4 @@
 import {
-	type ApprovedAsset,
 	type ComponentCatalog,
 	type ComponentDefinition,
 	createComponentCatalog,
@@ -20,14 +19,13 @@ export type PropsRejection =
 	| "INVALID_PROPS";
 
 /**
- * Everything a renderer may read. Renderers resolve dataset, source and asset
+ * Everything a renderer may read. Renderers resolve dataset and source
  * ids against these maps only: an id that is absent is rendered as unavailable,
  * never guessed (DATA-011).
  */
 export interface RenderContext {
 	readonly datasets: ReadonlyMap<string, Dataset>;
 	readonly sources: ReadonlyMap<string, Evidence>;
-	readonly assets: ReadonlyMap<string, ApprovedAsset>;
 	readonly selection: WorkspaceState["selection"];
 	/** `itemKey` null clears the selection. */
 	readonly onSelect: (componentId: string, itemKey: string | null) => void;

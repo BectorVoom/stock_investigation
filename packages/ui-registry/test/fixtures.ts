@@ -1,11 +1,4 @@
-import {
-	type ApprovedAsset,
-	approvedAssetSchema,
-	type Dataset,
-	datasetSchema,
-	type Evidence,
-	evidenceSchema,
-} from "@research/contracts";
+import { type Dataset, datasetSchema, type Evidence, evidenceSchema } from "@research/contracts";
 import type { RenderContext, WorkspaceComponent } from "../src/index.ts";
 
 /** Fixtures are parsed with the contract schemas so the tests cannot drift from the API. */
@@ -191,15 +184,6 @@ export const PRICE_DATASET: Dataset = datasetSchema.parse({
 	],
 });
 
-export const ASSET_A: ApprovedAsset = approvedAssetSchema.parse({
-	assetId: "asset_a",
-	imageUrl: "https://images.example.com/plant.jpg",
-	altText: "Battery plant exterior",
-	permissionBasis: "Press kit, reuse permitted with credit",
-	sourceEvidenceId: "ev_a",
-	createdAt: "2026-10-03T00:00:00Z",
-});
-
 export function mapBy<T>(items: readonly T[], keyOf: (item: T) => string): Map<string, T> {
 	return new Map(items.map((item) => [keyOf(item), item] as const));
 }
@@ -218,7 +202,6 @@ export function makeContext(overrides: Partial<RenderContext> = {}): RenderConte
 			(dataset) => dataset.datasetId,
 		),
 		sources: mapBy([EVIDENCE_A, EVIDENCE_B], (evidence) => evidence.evidenceId),
-		assets: mapBy([ASSET_A], (asset) => asset.assetId),
 		selection: null,
 		onSelect: () => {},
 		...overrides,
@@ -248,7 +231,6 @@ export const BASELINE_TYPES = [
 	"news-card",
 	"source-list",
 	"company-profile",
-	"image-gallery",
 	"research-report",
 ] as const;
 export type BaselineType = (typeof BASELINE_TYPES)[number];
@@ -316,10 +298,6 @@ export const VALID_PROPS = {
 		businessExposure: "About a fifth of segment revenue comes from storage integration.",
 		datasetRef: "ds_fin",
 		sourceIds: ["ev_b"],
-	},
-	"image-gallery": {
-		title: "Plant photos",
-		images: [{ assetRef: "asset_a", caption: "Main assembly hall" }],
 	},
 	"research-report": {
 		title: "Storage demand report",

@@ -90,7 +90,7 @@ describe("fail-closed fallbacks", () => {
 				propsSchema: sourceListPropsSchema,
 				capabilities: ["sources"],
 				requiredPermission: "owner",
-				references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds, assetRefs: [] }),
+				references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds }),
 				migrations: {},
 			},
 			() => {
@@ -124,7 +124,7 @@ describe("registry extension", () => {
 			propsSchema: metricCalloutPropsSchema,
 			capabilities: ["sources"],
 			requiredPermission: "owner",
-			references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds, assetRefs: [] }),
+			references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds }),
 			// v1 had no `emphasis`; the tested migration supplies the default.
 			migrations: { 1: (props) => ({ ...props, emphasis: "medium" }) },
 		},

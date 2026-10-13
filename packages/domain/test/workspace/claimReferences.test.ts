@@ -25,7 +25,6 @@ function context(stored: readonly ClaimReference[]): CommandContext {
 			}),
 		knownDatasetRefs: new Set(),
 		knownSourceIds: new Set(),
-		knownAssetRefs: new Set(),
 		knownClaims: new Map(stored.map((claim) => [claim.claimId, claim])),
 		maxComponents: 10,
 	};

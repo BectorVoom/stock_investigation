@@ -1,7 +1,6 @@
 import type {
 	AgentDescriptor,
 	AgentSettings,
-	ApprovedAsset,
 	Article,
 	ChatMessage,
 	Claim,
@@ -323,14 +322,12 @@ export interface WorkspaceRepository {
 export interface ReferenceLookup {
 	readonly datasetIds: readonly string[];
 	readonly evidenceIds: readonly string[];
-	readonly assetIds: readonly string[];
 	readonly claimIds: readonly string[];
 }
 
 export interface ResolvedReferences {
 	readonly datasets: readonly Dataset[];
 	readonly evidence: readonly Evidence[];
-	readonly assets: readonly ApprovedAsset[];
 	readonly claims: readonly Claim[];
 }
 
@@ -357,12 +354,6 @@ export interface ChatRepository {
 	 * costs one round trip.
 	 */
 	listConversations(ownerId: string, limit: number): Promise<readonly ConversationSummary[]>;
-}
-
-export interface AssetRepository {
-	list(ownerId: string): Promise<readonly ApprovedAsset[]>;
-	insert(ownerId: string, asset: ApprovedAsset): Promise<void>;
-	delete(ownerId: string, assetId: string): Promise<boolean>;
 }
 
 /** What a finished job writes besides its own row; committed all-or-nothing with it. */
@@ -395,7 +386,7 @@ export type CompletionCommitResult =
  * `workspace_id` is the conversation or which its run links name (the latter
  * covers imported runs, which have records but no job row), and the evidence,
  * claims, claim edges, research records and datasets written under those run
- * ids. Owner-global rows — news sources, articles, approved assets, settings,
+ * ids. Owner-global rows — news sources, articles, settings,
  * credentials, rate limits, audit trail — are never touched. A run-scoped row
  * whose id the caller lists in `keep*` (still referenced by a surviving
  * conversation's canvas) survives: the delete removes only unreferenced rows.
@@ -438,7 +429,6 @@ export interface ResearchUnitOfWork {
 		readonly importRunId: string;
 		readonly records: RunRecords;
 		readonly datasets: readonly Dataset[];
-		readonly assets: readonly ApprovedAsset[];
 		readonly messages: readonly ChatMessage[];
 		readonly at: string;
 	}): Promise<void>;
@@ -533,7 +523,6 @@ export interface Persistence {
 	readonly workspaces: WorkspaceRepository;
 	readonly records: ResearchRecordRepository;
 	readonly chat: ChatRepository;
-	readonly assets: AssetRepository;
 	readonly runnerCredentials: RunnerCredentialRepository;
 	readonly runnerStatus: RunnerStatusRepository;
 	readonly settings: SettingsRepository;

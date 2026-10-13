@@ -289,7 +289,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 					claims: [claim("cl_doomed", "ev_doomed")],
 				},
 				datasets: [dataset("ds_doomed", null)],
-				assets: [],
 				messages: [message("msg_doomed", 0, "Hello?")],
 				at: AT,
 			});
@@ -349,7 +348,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 					claims: [claim("cl_shared", "ev_shared")],
 				},
 				datasets: [dataset("ds_shared", null)],
-				assets: [],
 				messages: [message("msg_lender", 0, "Hello?")],
 				at: AT,
 			});
@@ -360,7 +358,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 				importRunId: "imp_kept",
 				records: { ...EMPTY_RECORDS, evidence: [evidence("ev_kept")] },
 				datasets: [dataset("ds_kept", "ev_shared")],
-				assets: [],
 				messages: [message("msg_kept", 0, "Hi.")],
 				at: AT,
 			});
@@ -384,7 +381,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 			const kept = await ports.records.resolve(id, {
 				datasetIds: ["ds_shared"],
 				evidenceIds: ["ev_shared"],
-				assetIds: [],
 				claimIds: ["cl_shared"],
 			});
 			expect(kept.datasets.map((entry) => entry.datasetId)).toEqual(["ds_shared"]);
@@ -408,7 +404,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 					claims: [claim("cl_gone", "ev_gone")],
 				},
 				datasets: [],
-				assets: [],
 				messages: [],
 				at: AT,
 			});
@@ -418,7 +413,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 				importRunId: "imp_kept",
 				records: { ...EMPTY_RECORDS, evidence: [evidence("ev_kept")] },
 				datasets: [dataset("ds_kept", "ev_cited")],
-				assets: [],
 				messages: [],
 				at: AT,
 			});
@@ -433,7 +427,6 @@ export function defineConversationPersistenceSuite(hooks: () => PersistenceHooks
 			const remaining = await ports.records.resolve(id, {
 				datasetIds: [],
 				evidenceIds: ["ev_gone", "ev_cited", "ev_kept"],
-				assetIds: [],
 				claimIds: [],
 			});
 			// Cited by the surviving dataset: stays. Cited by nothing: goes.

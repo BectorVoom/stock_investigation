@@ -10,7 +10,6 @@ import { createWorkerSafeFetcher } from "@research/adapters/worker";
 import {
 	type Clock,
 	createAgentSettingsService,
-	createAssetService,
 	createExportImportService,
 	createResearchRunService,
 	createRunnerCredentialService,
@@ -129,12 +128,6 @@ export function createServices(
 			secrets: randomSecretGenerator,
 			audit: persistence.audit,
 		}),
-		assets: createAssetService({
-			assets: persistence.assets,
-			records: persistence.records,
-			clock,
-			ids,
-		}),
 		agentSettings: createAgentSettingsService({
 			settings: persistence.settings,
 			jobs: persistence.jobs,
@@ -145,7 +138,6 @@ export function createServices(
 			workspaces: persistence.workspaces,
 			records: persistence.records,
 			chat: persistence.chat,
-			assets: persistence.assets,
 			unitOfWork: persistence.unitOfWork,
 			catalog,
 			clock,

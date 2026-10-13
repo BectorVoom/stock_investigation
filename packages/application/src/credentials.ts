@@ -1,13 +1,11 @@
-import type { ApprovedAsset, RunnerCredential } from "@research/contracts";
-import { ok, validateFetchUrl } from "@research/domain";
+import type { RunnerCredential } from "@research/contracts";
+import { ok } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
 import type {
-	AssetRepository,
 	AuditLog,
 	Clock,
 	Hasher,
 	IdGenerator,
-	ResearchRecordRepository,
 	RunnerCredentialRepository,
 	SecretGenerator,
 } from "./ports.ts";
@@ -15,7 +13,6 @@ import type { RunnerIdentity } from "./runnerJobs.ts";
 
 const DAY_MS = 86_400_000;
 const MAX_LIVE_CREDENTIALS = 5;
-const MAX_ASSETS = 200;
 
 export interface IssuedCredential {
 	readonly credential: RunnerCredential;
@@ -122,63 +119,3 @@ export function createRunnerCredentialService(deps: RunnerCredentialServiceDeps)
 }
 
 export type RunnerCredentialService = ReturnType<typeof createRunnerCredentialService>;
-
-export interface AssetServiceDeps {
-	readonly assets: AssetRepository;
-	readonly records: ResearchRecordRepository;
-	readonly clock: Clock;
-	readonly ids: IdGenerator;
-}
-
-/**
- * Owner-approved images. Agents can only reference an approved asset id, so an
- * image URL never reaches the page straight from model or article text.
- */
-export function createAssetService(deps: AssetServiceDeps) {
-	return {
-		list: (ownerId: string): Promise<readonly ApprovedAsset[]> => deps.assets.list(ownerId),
-
-		async approve(
-			ownerId: string,
-			input: {
-				readonly imageUrl: string;
-				readonly altText: string;
-				readonly permissionBasis: string;
-				readonly sourceEvidenceId: string | null;
-			},
-		): Promise<UseCaseResult<ApprovedAsset>> {
-			const url = validateFetchUrl(input.imageUrl.trim());
-			if (!url.ok) return fail("UNSAFE_URL", "This image URL is not allowed.", url.error);
-			if ((await deps.assets.list(ownerId)).length >= MAX_ASSETS) {
-				return fail("CONFLICT", `At most ${MAX_ASSETS} approved images are allowed.`);
-			}
-			if (input.sourceEvidenceId !== null) {
-				const resolved = await deps.records.resolve(ownerId, {
-					datasetIds: [],
-					evidenceIds: [input.sourceEvidenceId],
-					assetIds: [],
-					claimIds: [],
-				});
-				if (resolved.evidence.length === 0) return fail("NOT_FOUND", "Source evidence not found.");
-			}
-			const asset: ApprovedAsset = {
-				assetId: deps.ids.newId("asset"),
-				imageUrl: url.value.href,
-				altText: input.altText,
-				permissionBasis: input.permissionBasis,
-				sourceEvidenceId: input.sourceEvidenceId,
-				createdAt: deps.clock.nowIso(),
-			};
-			await deps.assets.insert(ownerId, asset);
-			return ok(asset);
-		},
-
-		async remove(ownerId: string, assetId: string): Promise<UseCaseResult<void>> {
-			return (await deps.assets.delete(ownerId, assetId))
-				? ok(undefined)
-				: fail("NOT_FOUND", "Asset not found.");
-		},
-	};
-}
-
-export type AssetService = ReturnType<typeof createAssetService>;

@@ -73,7 +73,6 @@ const context: CommandContext = {
 	validateProps: catalog.validateProps,
 	knownDatasetRefs: { has: () => true },
 	knownSourceIds: { has: () => true },
-	knownAssetRefs: { has: () => true },
 	knownClaims: new Map(),
 	maxComponents: 40,
 };

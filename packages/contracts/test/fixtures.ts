@@ -5,7 +5,6 @@
  */
 import type {
 	AgentDescriptor,
-	ApprovedAsset,
 	Article,
 	ChatMessage,
 	Claim,
@@ -272,15 +271,6 @@ export const dataset: Dataset = {
 			asOf: { v: null, reason: "Not applicable." },
 		},
 	],
-	createdAt: T0,
-};
-
-export const approvedAsset: ApprovedAsset = {
-	assetId: "asset_1",
-	imageUrl: "https://images.example.com/plant.jpg",
-	altText: "Battery plant exterior",
-	permissionBasis: "Press kit, reuse permitted with credit.",
-	sourceEvidenceId: null,
 	createdAt: T0,
 };
 

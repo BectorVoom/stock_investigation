@@ -11,7 +11,6 @@ import {
 export interface ComponentReferences {
 	readonly datasetRefs: readonly string[];
 	readonly sourceIds: readonly string[];
-	readonly assetRefs: readonly string[];
 	/**
 	 * Verification results the props display. Each must equal the stored claim's
 	 * own status and type, so props can never award a claim a badge it did not earn.
@@ -31,7 +30,7 @@ export interface ClaimLookup {
 	get(claimId: string): { readonly status: string; readonly claimType: string } | undefined;
 }
 
-export const NO_REFERENCES: ComponentReferences = { datasetRefs: [], sourceIds: [], assetRefs: [] };
+export const NO_REFERENCES: ComponentReferences = { datasetRefs: [], sourceIds: [] };
 
 export type PropsRejection =
 	| "UNKNOWN_COMPONENT_TYPE"
@@ -64,7 +63,6 @@ export type UiCommandErrorCode =
 	| "DATASET_NOT_BOUND"
 	| "UNKNOWN_DATASET"
 	| "UNKNOWN_SOURCE"
-	| "UNKNOWN_ASSET"
 	| "UNKNOWN_EVIDENCE"
 	| "UNKNOWN_CLAIM"
 	| "CLAIM_MISMATCH"
@@ -85,7 +83,6 @@ export interface CommandContext {
 	readonly knownDatasetRefs: IdLookup;
 	/** Evidence ids the owner stores; props `sourceIds` and evidence navigation must be in it. */
 	readonly knownSourceIds: IdLookup;
-	readonly knownAssetRefs: IdLookup;
 	/** Claims the owner stores, with the status and type verification gave them. */
 	readonly knownClaims: ClaimLookup;
 	readonly maxComponents: number;
@@ -109,7 +106,6 @@ function mergeReferences(all: readonly ComponentReferences[]): ComponentReferenc
 	return {
 		datasetRefs: all.flatMap((refs) => refs.datasetRefs),
 		sourceIds: all.flatMap((refs) => refs.sourceIds),
-		assetRefs: all.flatMap((refs) => refs.assetRefs),
 		...(claims.length === 0 ? {} : { claims }),
 	};
 }
@@ -342,10 +338,6 @@ export function applyUiCommand(
 		return command.operation === "navigation.open"
 			? fail("UNKNOWN_EVIDENCE", `evidence "${unknownSource}" is not stored`)
 			: fail("UNKNOWN_SOURCE", `source "${unknownSource}" is not stored`);
-	}
-	const unknownAsset = references.assetRefs.find((ref) => !context.knownAssetRefs.has(ref));
-	if (unknownAsset !== undefined) {
-		return fail("UNKNOWN_ASSET", `asset "${unknownAsset}" is not an approved asset`);
 	}
 	for (const presented of references.claims ?? []) {
 		const stored = context.knownClaims.get(presented.claimId);

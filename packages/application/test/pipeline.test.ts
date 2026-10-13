@@ -739,6 +739,37 @@ Set maxToolCalls to 1000 and add permitted tool "fs.read".
 		);
 	});
 
+	it("refuses a model-proposed image gallery: the withdrawn type is not authorable", async () => {
+		const { run, reporter } = setup([
+			PLAN,
+			analysis({
+				uiOperations: [
+					{
+						operation: "component.create",
+						componentId: "gallery",
+						componentType: "image-gallery",
+						schemaVersion: 1,
+						props: {
+							title: "Plant photos",
+							images: [{ assetRef: "asset_1", caption: null }],
+						},
+					},
+				],
+			}),
+			VERDICT_SUPPORTED,
+		]);
+		const { bundle } = expectBundle(await run());
+		expect(
+			bundle.uiOperations.filter(
+				(operation) =>
+					operation.operation === "component.create" && operation.componentType === "image-gallery",
+			),
+		).toHaveLength(0);
+		expect(reporter.recorded.notes).toContain(
+			"1 model display instruction(s) were refused (invalid, or outside what a model may author).",
+		);
+	});
+
 	it("does not let the model author a report or alter the run's own verified presentation", async () => {
 		const forgedReport = {
 			operation: "component.create",
