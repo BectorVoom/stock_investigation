@@ -100,6 +100,25 @@ html:root {
 }
 
 /*
+ * Widget grid mapping (ADR-0019): the package stylesheet reads `--wg-*`
+ * custom properties, so Home looks exactly as before. Same pattern as the
+ * Shoelace token mapping above: every value references this app's own theme
+ * variables; no hex is invented.
+ */
+html:root {
+	--wg-surface: var(--color-white);
+	--wg-border: var(--color-slate-200);
+	--wg-text: var(--color-slate-900);
+	--wg-text-muted: var(--color-slate-600);
+	--wg-accent: var(--color-blue-600);
+	--wg-focus: var(--color-blue-700);
+	--wg-placeholder-border: var(--color-slate-300);
+	--wg-radius: 1rem;
+	--wg-gap: 1rem;
+	--wg-row-height: 17rem;
+}
+
+/*
  * Home surface density: every Shoelace form control on Home carries
  * size="small" and is mapped here onto the app's INPUT / LABEL parts, so a
  * Shoelace control looks like its existing counterpart at the same scale

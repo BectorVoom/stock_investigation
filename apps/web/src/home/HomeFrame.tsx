@@ -1,11 +1,12 @@
 import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
-import { type Accessor, createUniqueId, For, type JSX, Match, Show, Switch } from "solid-js";
+import { WidgetFrame } from "@research/widget-grid";
+import { type Accessor, For, type JSX, Match, Show, Switch } from "solid-js";
 import { ActionMenu } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
-import { HOME_SIZE_SPAN, widgetSeriesIds } from "./homeModel.ts";
+import { widgetSeriesIds } from "./homeModel.ts";
 
-export interface WidgetFrameProps {
+export interface HomeFrameProps {
 	readonly widget: HomeWidget;
 	readonly position: number;
 	readonly total: number;
@@ -18,45 +19,18 @@ export interface WidgetFrameProps {
 }
 
 /**
- * One widget on the grid: a native `article` frame (white on the grey page,
- * 1 px `slate-200` hairline, no shadow, `rounded-2xl`) that fills its grid
- * cell exactly. The header is a single clean strip holding only the grip
- * glyph, the title and the one icon-only actions button (the whole strip is
- * the drag handle); the body below it
- * scrolls INSIDE the frame when taller (`overflow-y-auto`, `min-h-0`) and is
- * keyboard-focusable (labelled by the widget title). Provenance is rendered
- * by each widget at the end of its own output (never as a frame prop: prop
- * elements snapshot once, while children stay live).
+ * The Home frame: the package `WidgetFrame` with this app's `ActionMenu`
+ * (same items, labels, icons, disabled rules and `data-widget-actions` as
+ * before) in its `actions` slot. Provenance stays in each widget's own
+ * output (never a frame prop: prop elements snapshot once, while children
+ * stay live).
  */
-export function WidgetFrame(props: WidgetFrameProps): JSX.Element {
-	const titleId = createUniqueId();
-	const span = () => HOME_SIZE_SPAN[props.widget.size];
-
+export function HomeFrame(props: HomeFrameProps): JSX.Element {
 	const actionsLabel = () => `${props.widget.title} actions`;
 	return (
-		<article
-			aria-labelledby={titleId}
-			data-widget-id={props.widget.widgetId}
-			data-widget-type={props.widget.type}
-			class={`flex h-full min-h-0 min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 ${span()}`}
-		>
-			<div
-				class="flex min-h-7 cursor-grab touch-none items-center gap-2 select-none"
-				data-widget-drag-handle={props.widget.widgetId}
-			>
-				<svg
-					aria-hidden="true"
-					width="16"
-					height="16"
-					viewBox="0 0 16 16"
-					fill="currentColor"
-					class="shrink-0 text-slate-600"
-				>
-					<path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
-				</svg>
-				<h3 id={titleId} class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
-					{props.widget.title}
-				</h3>
+		<WidgetFrame
+			widget={props.widget}
+			actions={
 				<ActionMenu
 					buttonLabel={actionsLabel()}
 					menuLabel={actionsLabel()}
@@ -96,17 +70,10 @@ export function WidgetFrame(props: WidgetFrameProps): JSX.Element {
 						},
 					]}
 				/>
-			</div>
-			{/* biome-ignore lint/a11y/useSemanticElements: the scrollable widget body is a named group (labelled by the widget title), not a form — fieldset does not apply. */}
-			<div
-				tabindex="0"
-				role="group"
-				aria-labelledby={titleId}
-				class="mt-2 min-h-0 flex-1 overflow-y-auto"
-			>
-				{props.children}
-			</div>
-		</article>
+			}
+		>
+			{props.children}
+		</WidgetFrame>
 	);
 }
 

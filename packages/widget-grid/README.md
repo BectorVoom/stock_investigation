@@ -35,28 +35,54 @@ interface NoteWidget extends WidgetBase {
 <!-- UI section: owned by the UI extraction task -->
 
 ```tsx
-import { WidgetFrame, WidgetGrid } from "@research/widget-grid";
+import {
+	MoveAnnouncerView,
+	WidgetFrame,
+	WidgetGrid,
+	createMoveAnnouncer,
+} from "@research/widget-grid";
 import "@research/widget-grid/styles.css";
 
-<WidgetGrid
-	widgets={widgets()}
-	canDrag={!saving()}
-	onReorder={(drop) => save(drop.widgetId, drop.toIndex)}
->
+const announcer = createMoveAnnouncer();
+const onSave = (widgetId: string, toIndex: number) =>
+	save(widgetId, toIndex).then((saved) => {
+		announcer.announceMove(saved.title, toIndex + 1, saved.total);
+	});
+
+<WidgetGrid widgets={widgets()} canDrag={!saving()} onReorder={(drop) => onSave(drop.widgetId, drop.toIndex)}>
 	{(widget) => (
 		<WidgetFrame widget={widget} actions={<MyMenu widget={widget} />}>
 			<MyWidgetBody widget={widget} />
 		</WidgetFrame>
 	)}
 </WidgetGrid>;
+<MoveAnnouncerView message={announcer.message()} />;
 ```
 
-- `onReorder` receives `{ widgetId, fromIndex, toIndex, preview }`. When it
-  returns a promise, the previewed order stays on screen and no new drag
-  starts until the promise settles.
-- A drag starts from the header strip after 4 px of movement; a press on a
-  button, link or form control never starts one. `Escape`, `pointercancel`
-  or the window losing focus cancels it.
+- `WidgetGrid<W extends WidgetBase>` props: `widgets` (server order),
+  `canDrag` (the host's own condition, for example `!busy()`), `onReorder`
+  receiving `{ widgetId, fromIndex, toIndex, preview }`, and `children` as a
+  render function for one widget. Props are read lazily; the list is keyed by
+  widget reference. When `onReorder` returns a promise, the previewed order
+  stays on screen and no new drag starts until it settles, then the preview
+  `order` values are cleared.
+- `WidgetFrame<W extends WidgetBase>` props: `widget`, an `actions` slot for
+  the host's menu, and `children` for the body. Both stay live. The frame is
+  an `article` with `data-widget-id`, `data-widget-type` and
+  `data-widget-size`; the header strip carries `data-widget-drag-handle`; the
+  body is a `tabindex="0"` `role="group"` labelled by the title.
+- `createWidgetDrag` owns the pointer/DOM engine. A drag starts from the
+  header strip after 4 px of movement; a press on a button, link or form
+  control never starts one (`button,a,input,select,textarea,summary`,
+  `[role="menu"]`, `[role="menuitem"]` plus the host's `extraIgnoreSelector`,
+  for example `sl-dialog,sl-select,sl-input,sl-option`). `Escape`,
+  `pointercancel` or the window losing focus cancels it. The lifted widget is
+  marked with `data-widget-dragging` and the slot with
+  `data-widget-placeholder` plus `data-widget-size`.
+- `createMoveAnnouncer()` returns `{ message, announceMove }`;
+  `MoveAnnouncerView` renders the polite live region. Every completed move
+  announces `Moved “<title>” to position <i> of <n>.`, clearing first so a
+  repeated sentence announces again.
 - Offer every move without a pointer as well (for example "Move earlier" /
   "Move later" in the `actions` menu) and announce completed moves with the
   move announcer.
@@ -70,18 +96,36 @@ import "@research/widget-grid/styles.css";
 | `large` | 2 × 2 | 4 × 2 |
 
 Rows are 17rem tall with a 1rem gap. The numbers live in `core/sizes.ts`
-(`WIDGET_GRID_METRICS`, `WIDGET_SIZE_SPANS`).
+(`WIDGET_GRID_METRICS`, `WIDGET_SIZE_SPANS`, `WIDGET_SIZE_SHAPES`) and are
+stated again in `src/solid/styles.css`; `test/solid/stylesMetrics.test.ts`
+fails when the two disagree.
 
 ### Theming
 
 The stylesheet reads `--wg-*` custom properties and falls back to neutral
-defaults. Set them on any ancestor of the grid.
+defaults. Set them on any ancestor of the grid (this app maps them in
+`apps/web/src/styles.css`).
+
+| Property | Default | Used for |
+|---|---|---|
+| `--wg-surface` | `#ffffff` | frame background |
+| `--wg-border` | `#e2e8f0` | frame hairline |
+| `--wg-text` | `#0f172a` | title text |
+| `--wg-text-muted` | `#475569` | grip glyph |
+| `--wg-accent` | `#2563eb` | lifted-widget 2 px ring |
+| `--wg-focus` | `#1d4ed8` | body `:focus-visible` outline |
+| `--wg-placeholder-border` | `#cbd5e1` | placeholder dashed border |
+| `--wg-radius` | `1rem` | frame and placeholder radius |
+| `--wg-gap` | `1rem` | grid gap |
+| `--wg-row-height` | `17rem` | one grid row |
 
 ### DOM contract
 
 `data-widget-grid` on the grid; `data-widget-id`, `data-widget-type` and
 `data-widget-size` on each widget `article`; `data-widget-drag-handle` on the
-header strip; `data-widget-placeholder` on the slot shown during a drag.
+header strip; `data-widget-dragging` on the lifted widget while dragged;
+`data-widget-placeholder` (plus `data-widget-size`) on the slot shown during
+a drag.
 
 ## Agents
 

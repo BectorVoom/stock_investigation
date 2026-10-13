@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const SCAN_ROOTS = ["apps/web/src", "packages/ui-registry/src"] as const;
+const SCAN_ROOTS = [
+	"apps/web/src",
+	"packages/ui-registry/src",
+	"packages/widget-grid/src",
+] as const;
 const SOURCE_FILE = /\.(ts|tsx)$/;
 
 /** Guideline section 2: the only colour families in UI source. */
@@ -23,12 +27,6 @@ const ALLOWED_RADII = ["rounded", "rounded-full"] as const;
  */
 const CHAT_EXTRA_RADII = ["rounded-2xl"] as const;
 const CHAT_PREFIX = "apps/web/src/chat/";
-/**
- * Guideline section 13: widget frames on Home are `rounded-2xl` native
- * articles — in `apps/web/src/home/` only, nowhere else.
- */
-const HOME_EXTRA_RADII = ["rounded-2xl"] as const;
-const HOME_PREFIX = "apps/web/src/home/";
 /**
  * Guideline section 2: secondary text is never lighter than slate-600.
  * (Measured: slate-400 on white is 2.6:1, slate-300 is 1.5:1; 50/100/200 are
@@ -154,7 +152,6 @@ function checkSourceFile(file: string, text: string): Violation[] {
 			const token = match[0] ?? "";
 			if (allows(ALLOWED_RADII, token)) continue;
 			if (file.startsWith(CHAT_PREFIX) && allows(CHAT_EXTRA_RADII, token)) continue;
-			if (file.startsWith(HOME_PREFIX) && allows(HOME_EXTRA_RADII, token)) continue;
 			violations.push(violation(file, lineNumber, "corner-radius", token));
 		}
 		for (const match of content.matchAll(LIGHT_SECONDARY_TEXT)) {
@@ -306,9 +303,9 @@ describe("self-test: the checker reports each rule", () => {
 		expect(rulesFor(chatFile, '<div class="rounded-lg">x</div>')).toEqual(["corner-radius"]);
 	});
 
-	it("allows the large widget radius only inside the home surface", () => {
-		const homeFile = "apps/web/src/home/WidgetFrame.tsx";
-		expect(rulesFor(homeFile, '<div class="rounded-2xl">x</div>')).toEqual([]);
+	it("flags the large radius outside the chat surface, including Home", () => {
+		const homeFile = "apps/web/src/home/HomeFrame.tsx";
+		expect(rulesFor(homeFile, '<div class="rounded-2xl">x</div>')).toEqual(["corner-radius"]);
 		expect(rulesFor(FAKE, '<div class="rounded-2xl">x</div>')).toEqual(["corner-radius"]);
 		expect(rulesFor(homeFile, '<div class="rounded-lg">x</div>')).toEqual(["corner-radius"]);
 	});

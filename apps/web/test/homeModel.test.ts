@@ -7,7 +7,6 @@ import {
 	formatPctValue,
 	formatSignedDelta,
 	formatValue,
-	HOME_SIZE_SPAN,
 	hasFredSeries,
 	isPercentUnit,
 	needsAutoRefresh,
@@ -291,10 +290,11 @@ describe("home view-model", () => {
 		expect(hasFredSeries([])).toBe(false);
 	});
 
-	it("maps sizes to static grid spans", () => {
-		expect(HOME_SIZE_SPAN.small).toBe("col-span-1 row-span-1");
-		expect(HOME_SIZE_SPAN.medium).toBe("col-span-2 row-span-2");
-		expect(HOME_SIZE_SPAN.large).toBe("col-span-2 row-span-2 lg:col-span-4");
+	it("sizes live in the package: the dialog reads the package shapes", async () => {
+		const { WIDGET_SIZE_SHAPES } = await import("@research/widget-grid/core");
+		expect(WIDGET_SIZE_SHAPES.small).toBe("1 × 1");
+		expect(WIDGET_SIZE_SHAPES.medium).toBe("2 × 2");
+		expect(WIDGET_SIZE_SHAPES.large).toBe("full width × 2");
 	});
 
 	it("uses the fixed unavailable wording, naming the key to set", () => {

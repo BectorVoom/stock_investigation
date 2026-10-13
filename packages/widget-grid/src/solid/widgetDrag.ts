@@ -1,13 +1,13 @@
-import type { HomeWidget } from "@research/contracts";
-import { nextDropTarget, type SlotRect } from "@research/widget-grid/core";
-import { HOME_SIZE_SPAN } from "./homeModel.ts";
+import { nextDropTarget, type SlotRect } from "../core/dragModel.ts";
+import type { WidgetBase, WidgetSize } from "../core/types.ts";
 
 /**
- * Pointer/DOM engine for Home widget dragging (HIG Drag and drop). Owns the
+ * Pointer/DOM engine for widget dragging (HIG Drag and drop). Owns the
  * active press/drag state, the window listeners, every CSSOM write (lifted
  * widget, placeholder, preview `order` values) and its cleanup. The owner
- * (`HomeView`) keeps only the wiring: what may start a drag (`canStart`),
- * what a drop saves (`onDrop`) and clearing the kept preview after the save.
+ * (for example `WidgetGrid`) keeps only the wiring: what may start a drag
+ * (`canStart`), what a drop saves (`onDrop`) and clearing the kept preview
+ * after the save.
  *
  * `dragModel.ts` stays pure: this module converts DOM measurements to its
  * input and applies its output to the DOM, nothing more.
@@ -36,6 +36,10 @@ const MAX_SCROLL_STEP_PX = 16;
 /** Pointer travel before a press becomes a drag (a press-and-release is a click). */
 const START_THRESHOLD_PX = 4;
 
+/** Interactive controls that never start a drag (native elements only). */
+const NATIVE_NO_DRAG_SELECTOR =
+	'button,a,input,select,textarea,summary,[role="menu"],[role="menuitem"]';
+
 export interface WidgetDragDrop {
 	readonly widgetId: string;
 	readonly fromIndex: number;
@@ -43,11 +47,11 @@ export interface WidgetDragDrop {
 	readonly preview: readonly string[];
 }
 
-export interface WidgetDragOptions {
+export interface WidgetDragOptions<W extends WidgetBase = WidgetBase> {
 	/** The grid element holding the widget articles. */
 	readonly getGrid: () => HTMLElement | undefined;
 	/** Current server-order widgets (preview order is derived from these). */
-	readonly getWidgets: () => readonly HomeWidget[];
+	readonly getWidgets: () => readonly W[];
 	/** False while a save is in flight, while loading, or otherwise busy. */
 	readonly canStart: () => boolean;
 	/**
@@ -56,6 +60,12 @@ export interface WidgetDragOptions {
 	 * once the save settles.
 	 */
 	readonly onDrop: (drop: WidgetDragDrop) => void;
+	/**
+	 * The host's extra selector for controls that never start a drag
+	 * (appended to the native list above). This app passes
+	 * `sl-dialog,sl-select,sl-input,sl-option`.
+	 */
+	readonly extraIgnoreSelector?: string;
 }
 
 export interface WidgetDragController {
@@ -81,7 +91,7 @@ interface ActiveDrag {
 	readonly fromIndex: number;
 	readonly article: HTMLElement;
 	readonly grid: HTMLElement;
-	readonly draggedSize: HomeWidget["size"];
+	readonly draggedSize: WidgetSize;
 	started: boolean;
 	preview: string[];
 	target: number;
@@ -187,12 +197,7 @@ const liftDragged = (article: HTMLElement, x: number, y: number, w: number, h: n
 	article.style.setProperty("opacity", "0.9");
 	article.style.setProperty("z-index", "30");
 	article.style.setProperty("pointer-events", "none");
-	article.classList.add("ring-2", "ring-blue-600", "cursor-grabbing");
-	const handle = article.querySelector("[data-widget-drag-handle]");
-	if (handle instanceof HTMLElement) {
-		handle.classList.remove("cursor-grab");
-		handle.classList.add("cursor-grabbing");
-	}
+	article.setAttribute("data-widget-dragging", "");
 };
 
 const moveLifted = (article: HTMLElement, x: number, y: number): void => {
@@ -213,12 +218,7 @@ const unliftDragged = (article: HTMLElement): void => {
 	]) {
 		article.style.removeProperty(property);
 	}
-	article.classList.remove("ring-2", "ring-blue-600", "cursor-grabbing");
-	const handle = article.querySelector("[data-widget-drag-handle]");
-	if (handle instanceof HTMLElement) {
-		handle.classList.remove("cursor-grabbing");
-		handle.classList.add("cursor-grab");
-	}
+	article.removeAttribute("data-widget-dragging");
 };
 
 /**
@@ -242,9 +242,16 @@ const edgeScrollStep = (clientY: number): number => {
 	return 0;
 };
 
-export function createWidgetDrag(options: WidgetDragOptions): WidgetDragController {
+export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
+	options: WidgetDragOptions<W>,
+): WidgetDragController {
 	let drag: ActiveDrag | null = null;
 	let disposed = false;
+
+	const noDragSelector =
+		options.extraIgnoreSelector === undefined || options.extraIgnoreSelector === ""
+			? NATIVE_NO_DRAG_SELECTOR
+			: `${NATIVE_NO_DRAG_SELECTOR},${options.extraIgnoreSelector}`;
 
 	const scheduleFrame = (): void => {
 		if (drag === null || drag.raf !== 0 || disposed) return;
@@ -325,8 +332,9 @@ export function createWidgetDrag(options: WidgetDragOptions): WidgetDragControll
 		state.started = true;
 		const placeholder = document.createElement("div");
 		placeholder.setAttribute("data-widget-placeholder", "");
+		placeholder.setAttribute("data-widget-size", state.draggedSize);
 		placeholder.setAttribute("aria-hidden", "true");
-		placeholder.className = `rounded-2xl border border-dashed border-slate-300 ${HOME_SIZE_SPAN[state.draggedSize]}`;
+		placeholder.className = "wg-placeholder";
 		state.grid.appendChild(placeholder);
 		state.placeholder = placeholder;
 		document.body.style.setProperty("user-select", "none");
@@ -446,11 +454,7 @@ export function createWidgetDrag(options: WidgetDragOptions): WidgetDragControll
 		if (!(target instanceof Element)) return;
 		// A press on the actions button (or any interactive control) never
 		// starts a drag; a click on it still opens the menu.
-		if (
-			target.closest(
-				'button,a,input,select,textarea,summary,[role="menu"],[role="menuitem"],sl-dialog,sl-select,sl-input,sl-option',
-			) !== null
-		) {
+		if (target.closest(noDragSelector) !== null) {
 			return;
 		}
 		const handle = target.closest("[data-widget-drag-handle]");

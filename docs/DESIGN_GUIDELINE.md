@@ -292,12 +292,17 @@ to the palette constants.
 ## 11. How this is enforced
 
 `tests/architecture/designGuideline.test.ts` scans every `.ts`/`.tsx` file
-under `apps/web/src` and `packages/ui-registry/src` and fails with file, line
+under `apps/web/src`, `packages/ui-registry/src` and `packages/widget-grid/src`
+and fails with file, line
 and offending token on: a non-guideline colour family; an arbitrary font size
 or colour; a hex literal outside `chartMath.ts`; an inline `style=`; a radius
 other than `rounded`/`rounded-full` (plus `rounded-2xl` in `apps/web/src/chat/`
-per section 12 and for widget frames in `apps/web/src/home/` per section 13); secondary text lighter than slate-600;
-an `h1` outside `App.tsx` or an `h2` outside `components/ui.tsx`. The test
+per section 12); secondary text lighter than slate-600;
+an `h1` outside `App.tsx` or an `h2` outside `components/ui.tsx`. The package
+stylesheet (`packages/widget-grid/src/solid/styles.css`, `wg-` classes themed
+by `--wg-*` custom properties mapped in `apps/web/src/styles.css`) carries the
+grid look, and `packages/widget-grid/test/solid/stylesMetrics.test.ts` fails
+when the stylesheet disagrees with `core/sizes.ts`. The test
 carries its own self-test (synthetic strings violating each rule) so a
 checker that can never fail cannot pass silently.
 
@@ -371,13 +376,18 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   200 as SVG and no `sl-icon` is left without an `<svg>`. The app's own
   icon-only buttons do not use `sl-icon`: their glyphs are inline SVGs
   (Bootstrap Icons paths) in the shared `IconButton` part.
-- Widget grid: equal cells with a fixed row height —
-  `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap
-  (the HIG standard margin), in normal row flow so visual order equals DOM
-  order. Three fixed sizes from one table (`HOME_SIZE_SPAN` in
-  `homeModel.ts`): Small 1 × 1 (17rem tall, 272 px), Medium 2 × 2 (35rem,
-  560 px), Large full width × 2 at `lg` (4 columns) and 2 × 2 below it
-  (35rem, 560 px).
+- Widget grid (`@research/widget-grid`): equal cells with a fixed row height —
+  2 columns, 4 from `min-width: 64rem`, `17rem` rows and a `1rem` gap (the HIG
+  standard margin), in normal row flow so visual order equals DOM order. Three
+  fixed sizes from one table (`WIDGET_SIZE_SPANS` in `core/sizes.ts`, stated
+  again in the package stylesheet `src/solid/styles.css` and tied by
+  `test/solid/stylesMetrics.test.ts`): Small 1 × 1 (17rem tall, 272 px),
+  Medium 2 × 2 (35rem, 560 px), Large full width × 2 at the wide breakpoint
+  (4 columns) and 2 × 2 below it (35rem, 560 px). The stylesheet (`wg-`
+  classes, themed by `--wg-*` custom properties mapped to the app theme in
+  `apps/web/src/styles.css`) carries the grid, the frame, the header strip,
+  the body and the placeholder; `HomeView` uses its grid class for the
+  loading skeletons too.
   Every widget of a size has exactly the same width and height as every
   other of that size on the same screen. The frame fills its cell (`h-full`)
   and never grows with content: the header strip stays fixed while the body
@@ -386,14 +396,14 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   scroll. Loading skeletons use the same grid and cell height so the page
   does not jump. No page-level
   horizontal overflow at 390 px; tables scroll inside their card.
-- Drag and drop (HIG Drag and drop): the whole header strip is the handle
-  (leading `grip-vertical` glyph, `text-slate-600`, as the visible affordance;
+- Drag and drop (HIG Drag and drop, `@research/widget-grid`): the whole header strip is the handle
+  (leading grip glyph in the muted text colour as the visible affordance;
   a press on the actions button never starts a drag). Pointer Events only
   (never the HTML5 API), primary button / one touch / pen, starting after
   4 px of movement so a press-and-release is a plain click. The lifted widget
   follows the pointer with its grab offset at about 90 % opacity above its
-  neighbours with the blue focus-colour ring (no shadow) and never changes
-  size; the target slot shows a same-size dashed `slate-300` placeholder with
+  neighbours with the accent-colour 2 px ring (no shadow) and never changes
+  size; the target slot shows a same-size dashed placeholder with
   no fill while the others reflow in their real grid positions. Reflow is
   order-based (the widget ends at an index, the rest keep their order —
   never free placement with gaps) with midpoint-plus-ban hysteresis so a
@@ -408,10 +418,9 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   re-evaluating the drop target as content passes under the pointer, until
   the pointer leaves the zone, the page reaches its end, or the drag ends or
   is cancelled. Slot rectangles are cached in page coordinates so scrolling
-  never stales the decision. The pointer/DOM engine lives in
-  `home/widgetDrag.ts` (`createWidgetDrag`, returning the grid pointerdown
-  handler plus dispose); `HomeView` keeps only the wiring. Reflow animates for at most 200 ms and only under `motion-safe:`
-  (instant with reduced motion). The menu's Move earlier/later is the
+  never stales the decision. The pointer/DOM engine lives in the package
+  (`src/solid/widgetDrag.ts`, `createWidgetDrag`, returning the grid pointerdown
+  handler plus dispose); `WidgetGrid` keeps only the wiring. The menu's Move earlier/later is the
   keyboard and assistive-technology path, and one visually hidden polite live
   region announces every completed move (`Moved “<title>” to position <i> of
   <n>.`, clearing first so a repeated sentence announces again).

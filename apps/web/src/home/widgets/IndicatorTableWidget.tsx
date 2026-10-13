@@ -1,6 +1,7 @@
 import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
+import { WidgetProvenance } from "../HomeFrame.tsx";
 import {
 	changeErrorText,
 	formatChange,
@@ -9,7 +10,6 @@ import {
 	summarizeSeries,
 	unavailableText,
 } from "../homeModel.ts";
-import { WidgetProvenance } from "../WidgetFrame.tsx";
 
 /**
  * One row per series (economic indicators): Indicator · Latest · Unit ·
