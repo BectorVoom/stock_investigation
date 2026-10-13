@@ -8,7 +8,7 @@ import {
 	parseMarketSeriesId,
 } from "@research/contracts";
 import { createMemo, createSignal, For, type JSX, onMount, Show } from "solid-js";
-import { DisclosureSummary } from "../components/ui.tsx";
+import { DisclosureSummary, IconButton } from "../components/ui.tsx";
 import { HOME_RANGE_LABELS, HOME_RANGES, widgetSeriesIds } from "./homeModel.ts";
 import "./shoelace.ts";
 import { HOME_WIDGET_TYPES, type HomeWidgetType, WIDGET_REGISTRY } from "./widgetRegistry.tsx";
@@ -145,15 +145,14 @@ function DialogBody(props: {
 				<p class="text-sm text-slate-800">
 					This replaces every widget with the default arrangement. This cannot be undone.
 				</p>
-				<div slot="footer" class="flex justify-end gap-2">
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-					<sl-button size="small" onClick={closeAndReturnFocus}>
-						Cancel
-					</sl-button>
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-					<sl-button size="small" variant="danger" onClick={() => props.onConfirmReset()}>
-						Reset widgets
-					</sl-button>
+				<div slot="footer" class="flex justify-end gap-1">
+					<IconButton label="Cancel" icon="x-lg" onClick={(event) => closeAndReturnFocus(event)} />
+					<IconButton
+						label="Reset widgets"
+						icon="arrow-counterclockwise"
+						variant="danger"
+						onClick={() => props.onConfirmReset()}
+					/>
 				</div>
 			</sl-dialog>
 		);
@@ -407,6 +406,7 @@ function WidgetForm(props: {
 					value={size()}
 					size="small"
 					hoist
+					attr:help-text="Small is 1 × 1, Medium is 2 × 2, Large is full width × 2."
 					on:sl-change={(event) => {
 						if (!isDirectShoelaceEvent(event)) return;
 						const next = event.currentTarget.value;
@@ -417,9 +417,9 @@ function WidgetForm(props: {
 						}
 					}}
 				>
-					<sl-option value="small">Small (one column)</sl-option>
-					<sl-option value="medium">Medium (two columns)</sl-option>
-					<sl-option value="large">Large (full width)</sl-option>
+					<sl-option value="small">Small</sl-option>
+					<sl-option value="medium">Medium</sl-option>
+					<sl-option value="large">Large</sl-option>
 				</sl-select>
 				<div>
 					<sl-select
@@ -511,10 +511,7 @@ function WidgetForm(props: {
 								setCustomSymbol(event.currentTarget.value);
 							}}
 						/>
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-						<sl-button size="small" onClick={addCustom}>
-							Add series
-						</sl-button>
+						<IconButton label="Add series" icon="plus-lg" onClick={addCustom} />
 					</div>
 					<Show when={customError()}>
 						{(error) => (
@@ -547,21 +544,16 @@ function WidgetForm(props: {
 					</sl-select>
 				</Show>
 			</div>
-			<div slot="footer" class="flex justify-end gap-2">
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-				<sl-button size="small" onClick={() => props.onClose()}>
-					Cancel
-				</sl-button>
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-				<sl-button
-					size="small"
+			<div slot="footer" class="flex justify-end gap-1">
+				<IconButton label="Cancel" icon="x-lg" onClick={() => props.onClose()} />
+				<IconButton
+					label={props.mode === "add" ? "Add widget" : "Save widget"}
+					icon="check-lg"
 					variant="primary"
 					disabled={problems().length > 0}
-					attr:aria-describedby={problems().length > 0 ? problemsId : undefined}
+					describedBy={problems().length > 0 ? problemsId : undefined}
 					onClick={save}
-				>
-					{props.mode === "add" ? "Add widget" : "Save widget"}
-				</sl-button>
+				/>
 			</div>
 		</sl-dialog>
 	);

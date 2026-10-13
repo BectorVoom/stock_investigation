@@ -167,7 +167,7 @@ test("an added widget survives a reload until it is removed", async () => {
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
 	await setSlValue('sl-dialog sl-select[label="Series"]', "twelve-data:XAU/USD");
-	await dialog.locator("sl-button", { hasText: "Add widget" }).click();
+	await dialog.getByRole("button", { name: "Add widget" }).click();
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
@@ -176,7 +176,10 @@ test("an added widget survives a reload until it is removed", async () => {
 	await page.reload();
 	await expect(page.getByRole("article", { name: title })).toContainText("4,168.44");
 
-	await page.getByRole("article", { name: title }).getByRole("button", { name: "Actions" }).click();
+	await page
+		.getByRole("article", { name: title })
+		.getByRole("button", { name: `${title} actions` })
+		.click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
 	await expect(page.getByRole("article", { name: title })).toHaveCount(0);
 
@@ -262,7 +265,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	await pickOption("Size", "small");
 	await pickOption("Series", "twelve-data:XAU/USD");
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
-	await page.locator("sl-dialog").locator("sl-button", { hasText: "Add widget" }).click();
+	await page.locator("sl-dialog").getByRole("button", { name: "Add widget" }).click();
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
@@ -313,7 +316,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	await expect(page.locator("sl-dialog")).toHaveCount(0);
 
 	// The H1 probe widget is removed so later runs start clean.
-	await added.getByRole("button", { name: "Actions" }).click();
+	await added.getByRole("button", { name: `${title} actions` }).click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
 	await expect(added).toHaveCount(0);
 });
@@ -383,10 +386,7 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		await waitSelectClosed(fresh, "dialog", "Widget type");
 		await fresh.keyboard.press("Escape");
 		await expect(fresh.locator("sl-dialog")).toHaveCount(0);
-		await fresh
-			.locator("article[data-widget-id] sl-button", { hasText: "Actions" })
-			.first()
-			.click();
+		await fresh.locator("article[data-widget-id] button[data-widget-actions]").first().click();
 		await expect(fresh.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
 
 		// Every sl-icon on the page — including the ones inside Shoelace
@@ -442,7 +442,10 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		const requested = new Set(
 			iconResponses.map((response) => new URL(response.url).pathname.split("/").pop()),
 		);
-		for (const name of ["caret", "chevron-down", "chevron-right", "x-lg"]) {
+		// Widget frames, menus and buttons are native now (ADR-0016), so the
+		// kit no longer reaches for `caret` (sl-button) or the menu-item
+		// submenu chevrons — only the select expand icon and dialog close.
+		for (const name of ["chevron-down", "x-lg"]) {
 			expect(requested.has(`${name}.svg`), `no request was made for ${name}.svg`).toBe(true);
 		}
 
@@ -472,4 +475,146 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);
+});
+
+test("widget sizes are fixed: identical boxes per size, 240 px small, 496 px medium and large", async () => {
+	test.setTimeout(120_000);
+	const groups = {
+		small: ["w-vix", "w-gold", "w-dgs10", "w-sp500"],
+		medium: ["w-vix-chart", "w-watchlist"],
+		// The default dashboard holds one large widget; a second large widget
+		// (an indicator table, whose default size is large) is added below so
+		// the Large equality is not vacuous, then removed again.
+		large: ["w-us-economy"],
+	} as const;
+	const expectedHeight = { small: 240, medium: 496, large: 496 } as const;
+
+	async function boxes(ids: readonly string[]): Promise<{ width: number; height: number }[]> {
+		return page.evaluate((list) => {
+			return list.map((id) => {
+				const element = document.querySelector(`article[data-widget-id="${id}"]`);
+				if (!(element instanceof HTMLElement)) throw new Error(`missing widget ${id}`);
+				const rect = element.getBoundingClientRect();
+				return { width: rect.width, height: rect.height };
+			});
+		}, ids);
+	}
+
+	// A second large widget for the Large equality, removed afterwards.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const sizeTitle = `E2E size ${Date.now()}`;
+	await page.getByRole("button", { name: "Add widget" }).click();
+	await expect(page.locator("sl-dialog", { hasText: "Add widget" })).toBeAttached();
+	await page.locator('sl-dialog sl-input[label="Title"] input').fill(sizeTitle);
+	await setSlValue('sl-dialog sl-select[label="Widget type"]', "indicator-table");
+	await setSlValue('sl-dialog sl-select[label="Series"]', ["fred:CPIAUCSL"]);
+	await page.locator("sl-dialog").getByRole("button", { name: "Add widget" }).click();
+	const secondLarge = page.getByRole("article", {
+		name: new RegExp(sizeTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	});
+	await expect(secondLarge).toBeVisible({ timeout: 30_000 });
+	const secondLargeId = (await secondLarge.getAttribute("data-widget-id")) ?? "missing-large-id";
+
+	for (const viewport of [
+		{ width: 1440, height: 900 },
+		{ width: 390, height: 844 },
+	] as const) {
+		await page.setViewportSize(viewport);
+		await page.goto("/#/home");
+		await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+		for (const size of ["small", "medium", "large"] as const) {
+			const ids = size === "large" ? [...groups.large, secondLargeId] : [...groups[size]];
+			const measured = await boxes(ids);
+			for (const box of measured) {
+				expect(Math.round(box.width)).toBe(Math.round(measured[0]?.width ?? 0));
+				expect(Math.round(box.height)).toBe(Math.round(measured[0]?.height ?? 0));
+				expect(Math.round(box.height)).toBe(expectedHeight[size]);
+			}
+		}
+		if (viewport.width === 390) {
+			const overflow = await page.evaluate(() => document.documentElement.scrollWidth);
+			expect(overflow).toBeLessThanOrEqual(viewport.width + 1);
+		}
+	}
+
+	// The size probe widget is removed so later runs start clean.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(secondLarge).toBeVisible();
+	await secondLarge.getByRole("button", { name: `${sizeTitle} actions` }).click();
+	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await expect(secondLarge).toHaveCount(0);
+	await page.setViewportSize({ width: 1280, height: 720 });
+});
+
+test("every button in Home main is icon-only with an accessible name, while header navigation keeps text", async () => {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const buttons = await page.evaluate(() => {
+		const main = document.querySelector("main");
+		if (!(main instanceof HTMLElement)) throw new Error("no main content");
+		return [...main.querySelectorAll("button")].map((button) => ({
+			text: (button.textContent ?? "").trim(),
+			name: button.getAttribute("aria-label") ?? "",
+		}));
+	});
+	expect(buttons.length).toBeGreaterThan(0);
+	for (const button of buttons) {
+		expect(button.text).toBe("");
+		expect(button.name).not.toBe("");
+	}
+	expect(buttons.map((button) => button.name)).toEqual(
+		expect.arrayContaining(["Add widget", "Refresh market data", "Reset to default arrangement"]),
+	);
+	const navText = await page.evaluate(() => {
+		const nav = document.querySelector('nav[aria-label="Views"]');
+		return nav !== null ? (nav.textContent ?? "").trim() : "";
+	});
+	expect(navText).toContain("Home");
+	expect(navText).toContain("Chat");
+});
+
+test("a tall widget body scrolls inside its frame and is keyboard-focusable", async () => {
+	test.setTimeout(180_000);
+	await page.goto("/#/home");
+	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
+	await expect(chart).toBeVisible();
+	// The chart needs data for its long data-table twin: refresh once if the
+	// page has never seen a successful refresh.
+	const status = page.locator('[data-field="home-status"]');
+	await expect(status).toBeVisible({ timeout: 20_000 });
+	if (!((await status.textContent()) ?? "").includes("Last successful refresh:")) {
+		const refresh = page.getByRole("button", { name: "Refresh market data" });
+		if (await refresh.isEnabled()) await refresh.click();
+		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+	}
+	// Open the 1-year data-table twin so the body overflows its frame.
+	const isOpen = await chart.locator("details").evaluate((el) => (el as HTMLDetailsElement).open);
+	if (!isOpen) await chart.locator("summary", { hasText: "Data table:" }).click();
+	const scroller = chart.locator('div[tabindex="0"]');
+	await expect(scroller).toBeAttached();
+	expect(await scroller.getAttribute("aria-labelledby")).toBe(
+		await chart.locator("h3").getAttribute("id"),
+	);
+	// Keyboard-focusable: programmatic focus (what Tab does) lands on it.
+	await scroller.focus();
+	expect(await page.evaluate(() => document.activeElement?.getAttribute("tabindex"))).toBe("0");
+	// The tall content scrolls inside the frame: the article box is unchanged
+	// while the body scrolls.
+	const before = await chart.boundingBox();
+	expect(before).not.toBeNull();
+	const scrolled = await chart.evaluate((article) => {
+		const body = article.querySelector('div[tabindex="0"]');
+		if (!(body instanceof HTMLElement)) throw new Error("no scroll container");
+		const overflows = body.scrollHeight > body.clientHeight + 1;
+		body.scrollTop = body.scrollHeight;
+		return { overflows, scrollTop: body.scrollTop };
+	});
+	expect(scrolled.overflows).toBe(true);
+	expect(scrolled.scrollTop).toBeGreaterThan(0);
+	const after = await chart.boundingBox();
+	expect(Math.round(after?.height ?? 0)).toBe(496);
+	expect(Math.round(after?.height ?? 0)).toBe(Math.round(before?.height ?? -1));
 });

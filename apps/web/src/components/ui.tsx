@@ -30,6 +30,157 @@ export const BUTTON_DANGER =
  */
 export const BUTTON_PILL =
 	"flex min-h-6 w-full items-center justify-center gap-1 rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
+
+/**
+ * Icon-only button glyphs on Home (guideline section 6): inline Bootstrap
+ * Icons paths (MIT), 16 px glyphs in the same pattern as
+ * `PanelCollapseButton`, so they work outside the lazy Home chunk too
+ * (`ErrorNotice` is app-wide). Menu leading icons reuse the same paths.
+ */
+export type IconButtonName =
+	| "plus-lg"
+	| "arrow-clockwise"
+	| "arrow-counterclockwise"
+	| "three-dots"
+	| "x-lg"
+	| "check-lg"
+	| "pencil"
+	| "trash"
+	| "arrow-left"
+	| "arrow-right";
+
+function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
+	switch (props.name) {
+		case "plus-lg":
+			return (
+				<path
+					fill-rule="evenodd"
+					d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"
+				/>
+			);
+		case "arrow-clockwise":
+			return (
+				<>
+					<path
+						fill-rule="evenodd"
+						d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"
+					/>
+					<path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
+				</>
+			);
+		case "arrow-counterclockwise":
+			return (
+				<>
+					<path
+						fill-rule="evenodd"
+						d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"
+					/>
+					<path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466" />
+				</>
+			);
+		case "three-dots":
+			return (
+				<path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
+			);
+		case "x-lg":
+			return (
+				<path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z" />
+			);
+		case "check-lg":
+			return (
+				<path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z" />
+			);
+		case "pencil":
+			return (
+				<path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+			);
+		case "trash":
+			return (
+				<>
+					<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+					<path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+				</>
+			);
+		case "arrow-left":
+			return (
+				<path
+					fill-rule="evenodd"
+					d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"
+				/>
+			);
+		case "arrow-right":
+			return (
+				<path
+					fill-rule="evenodd"
+					d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"
+				/>
+			);
+	}
+}
+
+/** A 16 px inline glyph for menu leading icons (aria-hidden, currentColor). */
+export function IconGlyph(props: { readonly name: IconButtonName }): JSX.Element {
+	return (
+		<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+			<IconGlyphPaths name={props.name} />
+		</svg>
+	);
+}
+
+export type IconButtonVariant = "plain" | "primary" | "danger";
+
+const ICON_BUTTON_TONE: { readonly [V in IconButtonVariant]: string } = {
+	plain: "text-slate-700 hover:bg-slate-200 active:bg-slate-300",
+	primary: "bg-blue-700 text-white hover:bg-blue-800 active:bg-blue-800",
+	danger: "bg-red-100 text-red-900 hover:bg-red-200 active:bg-red-200",
+};
+
+/**
+ * The ONE icon-only button part on Home (guideline section 6): a native
+ * round button with a 16 px inline glyph, no visible text — the accessible
+ * name (the former visible text, exactly) and the same words in the `title`
+ * tooltip carry the words instead. Round, borderless, 28 px hit area
+ * (44 px on coarse pointers), at least 4 px from neighbours via the parent's
+ * `gap-1`; the `:focus-visible` ring stays. Disabled reads through fill and
+ * cursor, never a border.
+ */
+export function IconButton(props: {
+	readonly label: string;
+	readonly icon: IconButtonName;
+	readonly variant?: IconButtonVariant;
+	readonly disabled?: boolean;
+	readonly describedBy?: string;
+	readonly expanded?: boolean;
+	readonly hasPopup?: "menu" | "dialog";
+	readonly widgetActions?: string;
+	readonly onClick?: (event: MouseEvent & { readonly currentTarget: HTMLButtonElement }) => void;
+	readonly onKeyDown?: (
+		event: KeyboardEvent & { readonly currentTarget: HTMLButtonElement },
+	) => void;
+	readonly ref?: (element: HTMLButtonElement) => void;
+}): JSX.Element {
+	const tone = () => ICON_BUTTON_TONE[props.variant ?? "plain"];
+	return (
+		<button
+			type="button"
+			ref={props.ref}
+			class={`inline-flex min-h-7 min-w-7 items-center justify-center rounded-full pointer-coarse:min-h-11 pointer-coarse:min-w-11 disabled:cursor-not-allowed disabled:opacity-50 ${tone()}`}
+			aria-label={props.label}
+			title={props.label}
+			aria-describedby={props.describedBy}
+			aria-expanded={props.expanded}
+			aria-haspopup={props.hasPopup}
+			data-widget-actions={props.widgetActions}
+			disabled={props.disabled}
+			onClick={props.onClick}
+			onKeyDown={props.onKeyDown}
+		>
+			<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+				<IconGlyphPaths name={props.icon} />
+			</svg>
+		</button>
+	);
+}
 export const INPUT =
 	"min-h-6 w-full rounded border border-slate-400 bg-white px-2 py-1 text-sm text-slate-900 disabled:bg-slate-100";
 export const LABEL = "block text-xs font-medium text-slate-700";
@@ -217,6 +368,8 @@ export function ErrorNotice(props: {
 	readonly failure: ApiFailure;
 	readonly title?: string;
 	readonly onRetry?: () => void;
+	/** Opt-in icon-only retry for Home (other pages keep the text button). */
+	readonly iconRetry?: boolean;
 }): JSX.Element {
 	return (
 		<div
@@ -241,9 +394,18 @@ export function ErrorNotice(props: {
 			</Show>
 			<Show when={props.onRetry}>
 				{(retry) => (
-					<button type="button" class={`${BUTTON} mt-1`} onClick={() => retry()()}>
-						Try again
-					</button>
+					<Show
+						when={props.iconRetry}
+						fallback={
+							<button type="button" class={`${BUTTON} mt-1`} onClick={() => retry()()}>
+								Try again
+							</button>
+						}
+					>
+						<span class="mt-1 inline-flex">
+							<IconButton label="Try again" icon="arrow-clockwise" onClick={() => retry()()} />
+						</span>
+					</Show>
 				)}
 			</Show>
 		</div>

@@ -20,7 +20,7 @@ import {
 import { Dynamic } from "solid-js/web";
 import type { ApiClient, HomeDataResponse } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
-import { BUTTON, BUTTON_PRIMARY, Empty, ErrorNotice, Notice, PANEL } from "../components/ui.tsx";
+import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
@@ -417,7 +417,9 @@ export function HomeView(props: {
 		>
 			<section class="space-y-2" aria-label="Loading market data">
 				<output class="block text-sm text-slate-600">Loading market data…</output>
-				<For each={[0, 1, 2]}>{() => <sl-skeleton effect="sheen" class="block h-24" />}</For>
+				<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
+					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
+				</div>
 			</section>
 		</Show>
 	);
@@ -432,6 +434,7 @@ export function HomeView(props: {
 						<ErrorNotice
 							failure={error()}
 							title="Could not load market data."
+							iconRetry={true}
 							onRetry={() => {
 								setDataError(null);
 								setDataLoading(true);
@@ -443,40 +446,38 @@ export function HomeView(props: {
 			</Show>
 			<Show when={notice()}>{(item) => <Notice tone={item().tone}>{item().text}</Notice>}</Show>
 
-			<section aria-label="Market widgets toolbar" class={PANEL}>
-				<div class="flex flex-wrap gap-2">
-					<button
-						type="button"
-						class={BUTTON_PRIMARY}
-						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "add" }, event)}
-					>
-						Add widget
-					</button>
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={busy() || data()?.refresh.activeRunId !== null}
-						onClick={() => void queueRefresh()}
-					>
-						Refresh market data
-					</button>
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "confirm-reset" }, event)}
-					>
-						Reset to default arrangement
-					</button>
-				</div>
+			<section aria-label="Market widgets toolbar" class="flex flex-wrap items-center gap-2">
 				<Show when={statusLine()}>
 					{(line) => (
-						<output class="mt-2 block text-xs text-slate-700" data-field="home-status">
+						<output
+							class="mr-auto block min-w-0 flex-1 text-xs text-slate-700"
+							data-field="home-status"
+						>
 							{line()}
 						</output>
 					)}
 				</Show>
+				<div class="ml-auto flex items-center gap-1">
+					<IconButton
+						label="Add widget"
+						icon="plus-lg"
+						variant="primary"
+						disabled={busy() || dashboard.value() === null}
+						onClick={(event) => openDialog({ mode: "add" }, event)}
+					/>
+					<IconButton
+						label="Refresh market data"
+						icon="arrow-clockwise"
+						disabled={busy() || data()?.refresh.activeRunId !== null}
+						onClick={() => void queueRefresh()}
+					/>
+					<IconButton
+						label="Reset to default arrangement"
+						icon="arrow-counterclockwise"
+						disabled={busy() || dashboard.value() === null}
+						onClick={(event) => openDialog({ mode: "confirm-reset" }, event)}
+					/>
+				</div>
 			</section>
 
 			{/* V2: the dashboard GET has its own error state (stable code, Try
@@ -486,7 +487,11 @@ export function HomeView(props: {
 				<Match when={dashboard.value() === null && dashboardError() === null}>
 					<section class="space-y-2" aria-label="Loading home">
 						<output class="block text-sm text-slate-600">Loading market widgets…</output>
-						<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-24" />}</For>
+						<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
+							<For each={[0, 1, 2, 3]}>
+								{() => <sl-skeleton effect="sheen" class="block h-full" />}
+							</For>
+						</div>
 					</section>
 				</Match>
 				<Match when={dashboard.value() === null && dashboardError() !== null}>
@@ -496,6 +501,7 @@ export function HomeView(props: {
 								<ErrorNotice
 									failure={error()}
 									title="Could not load the dashboard."
+									iconRetry={true}
 									onRetry={() => {
 										void dashboard.reload();
 									}}
@@ -503,14 +509,12 @@ export function HomeView(props: {
 							)}
 						</Show>
 						<div>
-							<button
-								type="button"
-								class={BUTTON}
+							<IconButton
+								label="Reset to default arrangement"
+								icon="arrow-counterclockwise"
 								disabled={busy()}
 								onClick={() => void resetToDefaults()}
-							>
-								Reset to default arrangement
-							</button>
+							/>
 						</div>
 					</section>
 				</Match>
@@ -518,11 +522,9 @@ export function HomeView(props: {
 					<Show when={data() !== null && !dataLoading()} fallback={<DataPending />}>
 						<Show
 							when={(dashboard.value()?.dashboard.widgets.length ?? 0) > 0}
-							fallback={
-								<Empty>No widgets yet. Choose “Add widget” to track prices and indicators.</Empty>
-							}
+							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
 						>
-							<div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+							<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
 								<For each={dashboard.value()?.dashboard.widgets ?? []}>
 									{(widget, index) => (
 										<WidgetFrame

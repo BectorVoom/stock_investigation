@@ -16,22 +16,19 @@
  *   `@shoelace-style/shoelace@2.20.1` package's own system icon library —
  *   `dist/chunks/chunk.3TFKS637.js`, MIT licence; Shoelace's icons are
  *   Bootstrap Icons, MIT). EVERY system icon is shipped (all 18), so every
- *   icon a used component can request resolves: `caret` (sl-button caret),
- *   `chevron-right`/`chevron-left` (every sl-menu-item renders its submenu
- *   indicator), `chevron-down` (sl-select expand icon), `x-lg` (sl-dialog
- *   close), and the rest for any other state the components can reach. Lit
- *   styles apply through adoptedStyleSheets and the popup positions itself
- *   through the CSSOM, both permitted by `style-src 'self'`; the E2E icon
- *   test proves it in all three engines.
+ *   icon a used component can request resolves: `chevron-down` (sl-select
+ *   expand icon), `x-lg` (sl-dialog close), and the rest for any other state
+ *   the components can reach. Lit styles apply through adoptedStyleSheets and
+ *   the popup positions itself through the CSSOM, both permitted by
+ *   `style-src 'self'`; the E2E icon test proves it in all three engines.
+ * - Widget frames, menus and buttons are native elements in the app style
+ *   (ADR-0016): `sl-card`, `sl-button`, `sl-dropdown`, `sl-menu` and
+ *   `sl-menu-item` are not imported. Only dialogs, form controls and
+ *   skeletons come from the kit.
  */
-import "@shoelace-style/shoelace/dist/components/button/button.js";
-import "@shoelace-style/shoelace/dist/components/card/card.js";
 import "@shoelace-style/shoelace/dist/components/dialog/dialog.js";
-import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
 import "@shoelace-style/shoelace/dist/components/icon/icon.js";
 import "@shoelace-style/shoelace/dist/components/input/input.js";
-import "@shoelace-style/shoelace/dist/components/menu/menu.js";
-import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
 import "@shoelace-style/shoelace/dist/components/option/option.js";
 import "@shoelace-style/shoelace/dist/components/select/select.js";
 import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";

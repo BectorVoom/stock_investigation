@@ -692,7 +692,7 @@ test("the page ran under its Content-Security-Policy without errors", async () =
 	await waitSelectClosed(page, "dialog", "Widget type");
 	await page.keyboard.press("Escape");
 	await expect(page.locator("sl-dialog")).toHaveCount(0);
-	await page.locator("article[data-widget-id] sl-button", { hasText: "Actions" }).first().click();
+	await page.locator("article[data-widget-id] button[data-widget-actions]").first().click();
 	await expect(page.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await page.keyboard.press("Escape");

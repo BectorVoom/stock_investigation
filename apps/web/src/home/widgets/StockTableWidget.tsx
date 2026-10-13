@@ -32,7 +32,7 @@ export function StockTableWidget(props: {
 						{props.widget.title}: last close per series
 					</caption>
 					<thead>
-						<tr class="whitespace-nowrap border-b border-slate-300 text-xs text-slate-700">
+						<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
 							<th scope="col" class="py-1 pr-3 font-semibold">
 								Series
 							</th>
