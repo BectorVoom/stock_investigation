@@ -167,7 +167,7 @@ test("an added widget survives a reload until it is removed", async () => {
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
 	await setSlValue('sl-dialog sl-select[label="Series"]', "twelve-data:XAU/USD");
-	await dialog.locator("sl-button", { hasText: "Add widget" }).click();
+	await dialog.getByRole("button", { name: "Add widget" }).click();
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
@@ -176,7 +176,10 @@ test("an added widget survives a reload until it is removed", async () => {
 	await page.reload();
 	await expect(page.getByRole("article", { name: title })).toContainText("4,168.44");
 
-	await page.getByRole("article", { name: title }).getByRole("button", { name: "Actions" }).click();
+	await page
+		.getByRole("article", { name: title })
+		.getByRole("button", { name: `${title} actions` })
+		.click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
 	await expect(page.getByRole("article", { name: title })).toHaveCount(0);
 
@@ -262,7 +265,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	await pickOption("Size", "small");
 	await pickOption("Series", "twelve-data:XAU/USD");
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
-	await page.locator("sl-dialog").locator("sl-button", { hasText: "Add widget" }).click();
+	await page.locator("sl-dialog").getByRole("button", { name: "Add widget" }).click();
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
@@ -313,7 +316,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	await expect(page.locator("sl-dialog")).toHaveCount(0);
 
 	// The H1 probe widget is removed so later runs start clean.
-	await added.getByRole("button", { name: "Actions" }).click();
+	await added.getByRole("button", { name: `${title} actions` }).click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
 	await expect(added).toHaveCount(0);
 });
@@ -383,10 +386,7 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		await waitSelectClosed(fresh, "dialog", "Widget type");
 		await fresh.keyboard.press("Escape");
 		await expect(fresh.locator("sl-dialog")).toHaveCount(0);
-		await fresh
-			.locator("article[data-widget-id] sl-button", { hasText: "Actions" })
-			.first()
-			.click();
+		await fresh.locator("article[data-widget-id] button[data-widget-actions]").first().click();
 		await expect(fresh.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
 
 		// Every sl-icon on the page — including the ones inside Shoelace
@@ -442,7 +442,10 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		const requested = new Set(
 			iconResponses.map((response) => new URL(response.url).pathname.split("/").pop()),
 		);
-		for (const name of ["caret", "chevron-down", "chevron-right", "x-lg"]) {
+		// Widget frames, menus and buttons are native now (ADR-0016), so the
+		// kit no longer reaches for `caret` (sl-button) or the menu-item
+		// submenu chevrons — only the select expand icon and dialog close.
+		for (const name of ["chevron-down", "x-lg"]) {
 			expect(requested.has(`${name}.svg`), `no request was made for ${name}.svg`).toBe(true);
 		}
 
@@ -472,4 +475,579 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);
+});
+
+test("widget sizes are fixed: identical boxes per size, 272 px small, 560 px medium and large", async () => {
+	test.setTimeout(120_000);
+	const groups = {
+		small: ["w-vix", "w-gold", "w-dgs10", "w-sp500"],
+		medium: ["w-vix-chart", "w-watchlist"],
+		// The default dashboard holds one large widget; a second large widget
+		// (an indicator table, whose default size is large) is added below so
+		// the Large equality is not vacuous, then removed again.
+		large: ["w-us-economy"],
+	} as const;
+	const expectedHeight = { small: 272, medium: 560, large: 560 } as const;
+
+	async function boxes(ids: readonly string[]): Promise<{ width: number; height: number }[]> {
+		return page.evaluate((list) => {
+			return list.map((id) => {
+				const element = document.querySelector(`article[data-widget-id="${id}"]`);
+				if (!(element instanceof HTMLElement)) throw new Error(`missing widget ${id}`);
+				const rect = element.getBoundingClientRect();
+				return { width: rect.width, height: rect.height };
+			});
+		}, ids);
+	}
+
+	// A second large widget for the Large equality, removed afterwards.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const sizeTitle = `E2E size ${Date.now()}`;
+	await page.getByRole("button", { name: "Add widget" }).click();
+	await expect(page.locator("sl-dialog", { hasText: "Add widget" })).toBeAttached();
+	await page.locator('sl-dialog sl-input[label="Title"] input').fill(sizeTitle);
+	await setSlValue('sl-dialog sl-select[label="Widget type"]', "indicator-table");
+	await setSlValue('sl-dialog sl-select[label="Series"]', ["fred:CPIAUCSL"]);
+	await page.locator("sl-dialog").getByRole("button", { name: "Add widget" }).click();
+	const secondLarge = page.getByRole("article", {
+		name: new RegExp(sizeTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	});
+	await expect(secondLarge).toBeVisible({ timeout: 30_000 });
+	const secondLargeId = (await secondLarge.getAttribute("data-widget-id")) ?? "missing-large-id";
+
+	for (const viewport of [
+		{ width: 1440, height: 900 },
+		{ width: 390, height: 844 },
+	] as const) {
+		await page.setViewportSize(viewport);
+		await page.goto("/#/home");
+		await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+		for (const size of ["small", "medium", "large"] as const) {
+			const ids = size === "large" ? [...groups.large, secondLargeId] : [...groups[size]];
+			const measured = await boxes(ids);
+			for (const box of measured) {
+				expect(Math.round(box.width)).toBe(Math.round(measured[0]?.width ?? 0));
+				expect(Math.round(box.height)).toBe(Math.round(measured[0]?.height ?? 0));
+				expect(Math.round(box.height)).toBe(expectedHeight[size]);
+			}
+		}
+		if (viewport.width === 390) {
+			const overflow = await page.evaluate(() => document.documentElement.scrollWidth);
+			expect(overflow).toBeLessThanOrEqual(viewport.width + 1);
+		}
+	}
+
+	// The size probe widget is removed so later runs start clean.
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(secondLarge).toBeVisible();
+	await secondLarge.getByRole("button", { name: `${sizeTitle} actions` }).click();
+	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await expect(secondLarge).toHaveCount(0);
+	await page.setViewportSize({ width: 1280, height: 720 });
+});
+
+test("every button in Home main is icon-only with an accessible name, while header navigation keeps text", async () => {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const buttons = await page.evaluate(() => {
+		const main = document.querySelector("main");
+		if (!(main instanceof HTMLElement)) throw new Error("no main content");
+		return [...main.querySelectorAll("button")].map((button) => ({
+			text: (button.textContent ?? "").trim(),
+			name: button.getAttribute("aria-label") ?? "",
+		}));
+	});
+	expect(buttons.length).toBeGreaterThan(0);
+	for (const button of buttons) {
+		expect(button.text).toBe("");
+		expect(button.name).not.toBe("");
+	}
+	expect(buttons.map((button) => button.name)).toEqual(
+		expect.arrayContaining(["Add widget", "Refresh market data", "Reset to default arrangement"]),
+	);
+	const navText = await page.evaluate(() => {
+		const nav = document.querySelector('nav[aria-label="Views"]');
+		return nav !== null ? (nav.textContent ?? "").trim() : "";
+	});
+	expect(navText).toContain("Home");
+	expect(navText).toContain("Chat");
+});
+
+test("a tall widget body scrolls inside its frame and is keyboard-focusable", async () => {
+	test.setTimeout(180_000);
+	await page.goto("/#/home");
+	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
+	await expect(chart).toBeVisible();
+	// The chart needs data for its long data-table twin: refresh once if the
+	// page has never seen a successful refresh.
+	const status = page.locator('[data-field="home-status"]');
+	await expect(status).toBeVisible({ timeout: 20_000 });
+	if (!((await status.textContent()) ?? "").includes("Last successful refresh:")) {
+		const refresh = page.getByRole("button", { name: "Refresh market data" });
+		if (await refresh.isEnabled()) await refresh.click();
+		await expect(status).toContainText("Last successful refresh:", { timeout: 120_000 });
+	}
+	// Open the 1-year data-table twin so the body overflows its frame.
+	const isOpen = await chart.locator("details").evaluate((el) => (el as HTMLDetailsElement).open);
+	if (!isOpen) await chart.locator("summary", { hasText: "Data table:" }).click();
+	const scroller = chart.locator('div[tabindex="0"]');
+	await expect(scroller).toBeAttached();
+	expect(await scroller.getAttribute("aria-labelledby")).toBe(
+		await chart.locator("h3").getAttribute("id"),
+	);
+	// Keyboard-focusable: programmatic focus (what Tab does) lands on it.
+	await scroller.focus();
+	expect(await page.evaluate(() => document.activeElement?.getAttribute("tabindex"))).toBe("0");
+	// The tall content scrolls inside the frame: the article box is unchanged
+	// while the body scrolls.
+	const before = await chart.boundingBox();
+	expect(before).not.toBeNull();
+	const scrolled = await chart.evaluate((article) => {
+		const body = article.querySelector('div[tabindex="0"]');
+		if (!(body instanceof HTMLElement)) throw new Error("no scroll container");
+		const overflows = body.scrollHeight > body.clientHeight + 1;
+		body.scrollTop = body.scrollHeight;
+		return { overflows, scrollTop: body.scrollTop };
+	});
+	expect(scrolled.overflows).toBe(true);
+	expect(scrolled.scrollTop).toBeGreaterThan(0);
+	const after = await chart.boundingBox();
+	expect(Math.round(after?.height ?? 0)).toBe(560);
+	expect(Math.round(after?.height ?? 0)).toBe(Math.round(before?.height ?? -1));
+});
+
+/**
+ * Drag and drop repositioning (HIG Drag and drop): every widget header is the
+ * handle, the others reflow around the dragged widget, and the drop saves
+ * exactly one reorder PUT. Real mouse via `page.mouse`.
+ */
+async function widgetIds(): Promise<string[]> {
+	return page.evaluate(() =>
+		[...document.querySelectorAll("article[data-widget-id]")].map(
+			(article) => article.getAttribute("data-widget-id") ?? "",
+		),
+	);
+}
+
+/** Visual order (top to bottom, left to right) plus the CSS `order` values. */
+async function visualSnapshot(): Promise<{ ids: string[]; orders: (string | null)[] }> {
+	return page.evaluate(() => {
+		const articles = [...document.querySelectorAll("article[data-widget-id]")].filter(
+			(node): node is HTMLElement => node instanceof HTMLElement,
+		);
+		const boxes = articles.map((article) => ({
+			id: article.getAttribute("data-widget-id") ?? "",
+			top: article.getBoundingClientRect().top,
+			left: article.getBoundingClientRect().left,
+			order: article.style.order === "" ? null : article.style.order,
+		}));
+		boxes.sort((a, b) => (a.top === b.top ? a.left - b.left : a.top - b.top));
+		return { ids: boxes.map((entry) => entry.id), orders: boxes.map((entry) => entry.order) };
+	});
+}
+
+async function headerCenter(widgetId: string): Promise<{ x: number; y: number }> {
+	const handle = page.locator(`article[data-widget-id="${widgetId}"] [data-widget-drag-handle]`);
+	await expect(handle).toBeVisible();
+	const box = await handle.boundingBox();
+	if (box === null) throw new Error(`no header box for ${widgetId}`);
+	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+async function articleCenter(widgetId: string): Promise<{ x: number; y: number }> {
+	const article = page.locator(`article[data-widget-id="${widgetId}"]`);
+	const box = await article.boundingBox();
+	if (box === null) throw new Error(`no article box for ${widgetId}`);
+	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Counts dashboard PUTs only while `work` runs (exactly-one assertions). */
+async function countPutsDuring(work: () => Promise<void>): Promise<number> {
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await work();
+		// The drop's save is one PUT; wait until it lands before asserting.
+		await expect.poll(() => puts, { timeout: 30_000 }).toBeGreaterThan(0);
+		// One more beat for a stray second PUT to show itself.
+		await page.waitForTimeout(500);
+		return puts;
+	} finally {
+		page.off("request", handler);
+	}
+}
+
+/** Starts every drag test at the top so header coordinates are in-viewport. */
+async function scrollHomeTop(): Promise<void> {
+	await page.evaluate(() => window.scrollTo(0, 0));
+}
+
+test("dragging the first widget onto the third reorders with exactly one PUT and survives a reload", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	expect(before.length).toBeGreaterThanOrEqual(3);
+	const dragged = before[0] ?? "";
+	const target = before[2] ?? "";
+	const from = await headerCenter(dragged);
+	const to = await articleCenter(target);
+	const puts = await countPutsDuring(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		// Past the target center (midpoint rule needs the far half).
+		await page.mouse.move(to.x + 20, to.y + 10, { steps: 12 });
+		await page.mouse.up();
+	});
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.filter((id) => id !== dragged)).toEqual(before.filter((id) => id !== dragged));
+	expect(after.indexOf(dragged)).toBe(2);
+	await page.reload();
+	await expect(page.locator(`article[data-widget-id="${dragged}"]`)).toBeVisible();
+	expect(await widgetIds()).toEqual(after);
+});
+
+test("a Medium widget drags before the first Small", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix-chart"]')).toBeVisible();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const medium = "w-vix-chart";
+	const firstSmall = before.find((id) => id !== medium) ?? "";
+	const from = await headerCenter(medium);
+	const to = await articleCenter(firstSmall);
+	const puts = await countPutsDuring(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(to.x - 20, to.y - 20, { steps: 12 });
+		await page.mouse.up();
+	});
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after[0]).toBe(medium);
+});
+
+test("Escape mid-drag cancels: original order, no PUT", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/home");
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	const target = before[2] ?? "";
+	const from = await headerCenter(dragged);
+	const to = await articleCenter(target);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(to.x + 20, to.y + 10, { steps: 8 });
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await page.waitForTimeout(500);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(0);
+	expect(await widgetIds()).toEqual(before);
+});
+
+test("press-and-release without movement saves nothing", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/home");
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const from = await headerCenter(before[0] ?? "");
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.up();
+		await page.waitForTimeout(500);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(0);
+	expect(await widgetIds()).toEqual(before);
+});
+
+test("a held pointer is stable: no flip-flopping between samples", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/home");
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await scrollHomeTop();
+	const ids = await widgetIds();
+	const dragged = ids[0] ?? "";
+	const target = ids[2] ?? "";
+	const from = await headerCenter(dragged);
+	const to = await articleCenter(target);
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
+	await page.mouse.move(to.x + 20, to.y + 10, { steps: 12 });
+	const first = await visualSnapshot();
+	await page.waitForTimeout(500);
+	const second = await visualSnapshot();
+	expect(second).toEqual(first);
+	await page.keyboard.press("Escape");
+	await page.mouse.up();
+	await page.waitForTimeout(300);
+	expect(await widgetIds()).toEqual(ids);
+});
+
+test("the actions button still opens its menu, and Move later works and is announced", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/home");
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	const before = await widgetIds();
+	const first = before[0] ?? "";
+	await expect(
+		page.locator(`article[data-widget-id="${first}"] button[data-widget-actions]`),
+	).toBeVisible();
+	await page.locator(`article[data-widget-id="${first}"] button[data-widget-actions]`).click();
+	await expect(page.getByRole("menuitem", { name: "Move later" })).toBeVisible();
+	const puts = await countPutsDuring(async () => {
+		await page.getByRole("menuitem", { name: "Move later" }).click();
+	});
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.indexOf(first)).toBe(1);
+	const live = page.locator("output.sr-only");
+	await expect(live).toContainText(/Moved “.+” to position 2 of /);
+});
+
+/** Restores the default dashboard so scrolled-drag tests start deterministic. */
+async function resetDashboardToDefaults(): Promise<void> {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const reset = page.getByRole("button", { name: "Reset to default arrangement" });
+	await expect(reset).toBeEnabled({ timeout: 30_000 });
+	await reset.click();
+	const dialog = page.locator("sl-dialog", { hasText: "cannot be undone" });
+	await expect(dialog).toBeAttached();
+	await dialog.getByRole("button", { name: "Reset widgets" }).click();
+	await expect
+		.poll(() => widgetIds(), { timeout: 30_000 })
+		.toEqual([
+			"w-vix",
+			"w-gold",
+			"w-dgs10",
+			"w-sp500",
+			"w-vix-chart",
+			"w-watchlist",
+			"w-us-economy",
+		]);
+}
+
+test("dragging the first widget to the last widget below the fold drops it last, after a reload too", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	expect(dragged).toBe("w-vix");
+	const from = await headerCenter(dragged);
+	const puts = await countPutsDuring(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 30, { steps: 4 });
+		// Ride the bottom edge: the edge auto-scroll carries the page down
+		// while the pointer rests in the zone, staling nothing.
+		await page.mouse.move(720, 880, { steps: 10 });
+		await page.waitForTimeout(1500);
+		// The last (Large, "US economy") widget is now on screen: drop on
+		// its lower half, past its center.
+		const box = await page.locator('article[data-widget-id="w-us-economy"]').boundingBox();
+		if (box === null) throw new Error("the US economy widget never scrolled into view");
+		await page.mouse.move(box.x + box.width / 2, box.y + (box.height * 3) / 4, { steps: 10 });
+		await page.waitForTimeout(300);
+		await page.mouse.up();
+	});
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.filter((id) => id !== dragged)).toEqual(before.filter((id) => id !== dragged));
+	expect(after[after.length - 1]).toBe(dragged);
+	await page.reload();
+	await expect(page.locator(`article[data-widget-id="${dragged}"]`)).toBeVisible();
+	expect(await widgetIds()).toEqual(after);
+});
+
+test("a wheel scroll in the middle of a drag still drops over the intended widget", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	// The last (Large, "US economy") widget: dropping on its lower half
+	// ends last no matter how the pointer approached, so the assertion is
+	// deterministic while still proving the scrolled decision was right.
+	const targetId = "w-us-economy";
+	const from = await headerCenter(dragged);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 40, { steps: 4 });
+		await page.waitForTimeout(300);
+		// Scroll the page under the held pointer without moving the mouse:
+		// the cached slots are page coordinates, so the decision stays right.
+		await page.mouse.wheel(0, 800);
+		await page.waitForTimeout(400);
+		let box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
+		if (box === null) {
+			await page.locator(`article[data-widget-id="${targetId}"]`).scrollIntoViewIfNeeded();
+			box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
+		}
+		if (box === null) throw new Error(`the ${targetId} widget has no box`);
+		await page.mouse.move(box.x + box.width / 2, box.y + (box.height * 3) / 4, { steps: 10 });
+		await page.waitForTimeout(300);
+		await page.mouse.up();
+		await expect.poll(() => puts, { timeout: 30_000 }).toBeGreaterThan(0);
+		await page.waitForTimeout(500);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.filter((id) => id !== dragged)).toEqual(before.filter((id) => id !== dragged));
+	expect(after[after.length - 1]).toBe(dragged);
+	await page.reload();
+	await expect(page.locator(`article[data-widget-id="${dragged}"]`)).toBeVisible();
+	expect(await widgetIds()).toEqual(after);
+});
+
+test("holding a drag near the bottom edge auto-scrolls, and Escape stops it", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	const from = await headerCenter(dragged);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 30, { steps: 4 });
+		await page.waitForTimeout(300);
+		const startY = await page.evaluate(() => window.scrollY);
+		expect(startY).toBe(0);
+		// Rest the pointer inside the 80 px bottom zone without moving it:
+		// the page keeps scrolling every frame, with no pointer movement.
+		await page.mouse.move(720, 885, { steps: 5 });
+		await page.waitForTimeout(600);
+		const midY = await page.evaluate(() => window.scrollY);
+		expect(midY).toBeGreaterThan(startY);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await page.waitForTimeout(300);
+		const endY = await page.evaluate(() => window.scrollY);
+		await page.waitForTimeout(400);
+		expect(await page.evaluate(() => window.scrollY)).toBe(endY);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(0);
+	expect(await widgetIds()).toEqual(before);
+});
+
+test("a touch pointer drag reorders (synthetic touch pointer events)", async () => {
+	test.setTimeout(120_000);
+	await page.goto("/#/home");
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await scrollHomeTop();
+	const supported = await page.evaluate(() => typeof PointerEvent !== "undefined");
+	test.skip(!supported, "this engine has no PointerEvent constructor");
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	const target = before[2] ?? "";
+	const from = await headerCenter(dragged);
+	const to = await articleCenter(target);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.evaluate(
+			([sx, sy, tx, ty]) => {
+				const start = document.elementFromPoint(sx, sy);
+				const handle = start instanceof Element ? start.closest("[data-widget-drag-handle]") : null;
+				if (!(handle instanceof HTMLElement)) throw new Error("no drag handle at press point");
+				const down = new PointerEvent("pointerdown", {
+					bubbles: true,
+					clientX: sx,
+					clientY: sy,
+					button: 0,
+					pointerId: 7,
+					isPrimary: true,
+					pointerType: "touch",
+				});
+				handle.dispatchEvent(down);
+				window.dispatchEvent(
+					new PointerEvent("pointermove", {
+						bubbles: true,
+						clientX: tx,
+						clientY: ty,
+						pointerId: 7,
+						isPrimary: true,
+						pointerType: "touch",
+					}),
+				);
+			},
+			[from.x, from.y, to.x + 20, to.y + 10] as [number, number, number, number],
+		);
+		await page.waitForTimeout(300);
+		await page.evaluate(
+			([tx, ty]) => {
+				window.dispatchEvent(
+					new PointerEvent("pointerup", {
+						bubbles: true,
+						clientX: tx,
+						clientY: ty,
+						pointerId: 7,
+						isPrimary: true,
+						pointerType: "touch",
+					}),
+				);
+			},
+			[to.x + 20, to.y + 10] as [number, number],
+		);
+		await expect.poll(() => puts, { timeout: 30_000 }).toBe(1);
+	} finally {
+		page.off("request", handler);
+	}
+	// The PUT is counted when it is SENT; the DOM order follows once the
+	// server copy renders (until then the new order is shown through CSS
+	// `order`), so the DOM order is polled rather than read once.
+	await expect.poll(async () => (await widgetIds()).indexOf(dragged), { timeout: 30_000 }).toBe(2);
 });

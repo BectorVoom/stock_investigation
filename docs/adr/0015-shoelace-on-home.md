@@ -20,18 +20,20 @@ Home page only.** Only the used component modules are imported, from one
 module (`apps/web/src/home/shoelace.ts`) that only the lazy Home code path
 reaches:
 
-`sl-card` (widget frame), `sl-button`, `sl-dropdown` + `sl-menu` +
-`sl-menu-item` (per-widget actions), `sl-dialog` (add/edit widget, reset
-confirmation), `sl-select` + `sl-option`, `sl-input`, `sl-skeleton`,
-`sl-icon` — plus the light theme stylesheet and the `icon-library` utility.
+`sl-dialog` (add/edit widget, reset confirmation), `sl-select` + `sl-option`,
+`sl-input`, `sl-skeleton`, `sl-icon` — plus the light theme stylesheet and
+the `icon-library` utility. Widget frames, menus and buttons are native
+elements in the app style since ADR-0016 (`sl-card`, `sl-button`,
+`sl-dropdown`, `sl-menu`, `sl-menu-item` were removed from the imported set).
 No other component is imported; adding one is an edit to that module.
 
 **Lazy loading, measured.** `App.tsx` loads the Home view through Solid's
 `lazy()`, so the other pages never download or parse the kit. Production
-build on 2026-10-13: the Home chunk `HomeView-*.js` is **230.35 kB
-(60.09 kB gzip)** plus `HomeView-*.css` **14.96 kB**, beside the main
-`index-*.js` 351.16 kB (102.20 kB gzip). The chunk is paid once, on the first
-visit to `#/home`; file hashes drift per build, sizes should be re-measured
+build on 2026-10-13: the Home chunk `HomeView-*.js` is **187.75 kB
+(52.17 kB gzip)** plus `HomeView-*.css` **14.96 kB**, beside the main
+`index-*.js` 369.62 kB (108.05 kB gzip). (Before ADR-0016 the chunk was
+230.35 kB / 60.09 kB gzip: dropping the card/button/menu modules saved
+~43 kB.) The chunk is paid once, on the first visit to `#/home`; file hashes drift per build, sizes should be re-measured
 if the kit version or the imported set changes.
 
 **Token mapping** (`apps/web/src/styles.css`, on `html:root` so it wins over
@@ -40,8 +42,8 @@ neutral → slate, success → emerald, warning → amber, danger → red (the
 app's own theme variables, no invented hex); one corner radius (`0.25rem`
 for every `--sl-border-radius-*`); no shadows (`--sl-shadow-*: none`,
 borders instead); the app font; `--sl-focus-ring-*` matching the existing
-`:focus-visible` rule. A Shoelace control looks like its existing
-counterpart (`BUTTON`, `INPUT`, `PANEL`); Home controls carry their own
+`:focus-visible` rule. A Shoelace form control looks like its existing
+counterpart (`INPUT`, `LABEL`); Home controls carry their own
 `label` prop instead of the app's `Field`.
 
 **CSP analysis (policy unchanged).** No CDN and no remote `setBasePath`.
@@ -55,9 +57,10 @@ system icons are shipped** (`caret`, `check`, `chevron-down`,
 `chevron-left`, `chevron-right`, `copy`, `eye`, `eye-slash`, `eyedropper`,
 `grip-vertical`, `indeterminate`, `person-fill`, `play-fill`, `pause-fill`,
 `radio`, `star-fill`, `x-lg`, `x-circle-fill`), so every icon a used
-component can request resolves (`caret` for the button caret, the chevrons
-for menu-item submenu indicators and the select expand icon, `x-lg` for the
-dialog close). Lit styles apply through adoptedStyleSheets and the popup
+component can request resolves (`chevron-down` for the select expand icon,
+`x-lg` for the dialog close; `caret` and the menu-item submenu chevrons
+belonged to the button/menu modules removed in ADR-0016, whose files still
+ship). Lit styles apply through adoptedStyleSheets and the popup
 positions itself through the CSSOM, both permitted by `style-src 'self'`.
 The E2E CSP test visits Home, opens the add-widget dialog, a select and a
 widget menu, and asserts no violation; the icon test asserts every
@@ -106,7 +109,8 @@ parsing in the browser; the SPA validates small payloads (dashboard JSON,
   borrowing.
 - **Importing the whole Shoelace library.** Rejected: every page would pay
   for components Home never uses. Cherry-picking keeps the lazy chunk to the
-  measured ~230 kB.
+  measured ~188 kB (was ~230 kB before ADR-0016 removed the card, button and
+  menu modules).
 - **CDN with `setBasePath`.** Rejected: a third-party origin in `script-src`
   / `style-src` / `connect-src` contradicts the threat model (T9) and makes
   offline-local operation depend on the network.

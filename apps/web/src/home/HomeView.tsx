@@ -20,11 +20,12 @@ import {
 import { Dynamic } from "solid-js/web";
 import type { ApiClient, HomeDataResponse } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
-import { BUTTON, BUTTON_PRIMARY, Empty, ErrorNotice, Notice, PANEL } from "../components/ui.tsx";
+import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
+import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 import "./shoelace.ts";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
 import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
@@ -74,10 +75,29 @@ export function HomeView(props: {
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
+	/** Polite announcement for every completed move (drag or menu). */
+	const [announcement, setAnnouncement] = createSignal("");
+	/**
+	 * Every completed move announces, even when the sentence repeats the
+	 * previous one (a live region sets nothing when the same text is set
+	 * twice): the text is cleared first and the message is set on a later
+	 * task, so assistive technology observes a change each time.
+	 */
+	const announceMove = (title: string, position: number, total: number): void => {
+		const message = `Moved “${title}” to position ${position} of ${total}.`;
+		setAnnouncement("");
+		window.setTimeout(() => {
+			if (!disposed) setAnnouncement(message);
+		}, 0);
+	};
 	let disposed = false;
 	let autoRefreshTried = false;
 	let followUpTried = false;
 	let refreshKey: string | null = null;
+	/** Grid element holding the widget articles (drag preview via CSS `order`). */
+	let gridEl: HTMLDivElement | undefined;
+	/** True while a dropped preview is being saved (blocks a new drag). */
+	let savingPreview = false;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
@@ -237,6 +257,7 @@ export function HomeView(props: {
 					readonly widgetId: string;
 					readonly direction: "earlier" | "later";
 			  }
+			| { readonly kind: "reorder"; readonly widgetId: string; readonly toIndex: number }
 			| { readonly kind: "replace"; readonly widget: HomeWidget }
 			| { readonly kind: "reset" },
 	): Promise<void> => {
@@ -288,6 +309,16 @@ export function HomeView(props: {
 		}
 		dashboard.set(saved.value);
 		setDialog(null);
+		if (edit.kind === "move" || edit.kind === "reorder") {
+			const movedId = edit.widgetId;
+			const position = saved.value.dashboard.widgets.findIndex(
+				(entry) => entry.widgetId === movedId,
+			);
+			const moved = saved.value.dashboard.widgets[position];
+			if (position >= 0 && moved !== undefined) {
+				announceMove(moved.title, position + 1, saved.value.dashboard.widgets.length);
+			}
+		}
 		// V4: data is reloaded after every successful save, so widgets never
 		// show "unavailable … source not stated" for observations the server
 		// already holds.
@@ -406,6 +437,36 @@ export function HomeView(props: {
 	};
 
 	/**
+	 * Drag and drop repositioning (HIG Drag and drop): the pointer/DOM engine
+	 * lives in `widgetDrag.ts` (`createWidgetDrag` owns the state, the
+	 * listeners, the CSSOM writes and the cleanup). This view keeps only the
+	 * wiring: a drag may start when no save is in flight and the view is not
+	 * busy, a drop saves exactly one `reorder` edit, and the previewed order
+	 * stays on screen (CSS `order`, real DOM order changes only on commit)
+	 * until the server copy renders.
+	 */
+	const onWidgetDrop = (drop: WidgetDragDrop): void => {
+		savingPreview = true;
+		void saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex })
+			.catch(() => undefined)
+			.finally(() => {
+				savingPreview = false;
+				dragController.clearPreview();
+			});
+	};
+	const dragController = createWidgetDrag({
+		getGrid: () => gridEl,
+		getWidgets: () => widgets(),
+		canStart: () => !savingPreview && !busy() && dashboard.value() !== null,
+		onDrop: onWidgetDrop,
+	});
+
+	onCleanup(() => {
+		dragController.dispose();
+		savingPreview = false;
+	});
+
+	/**
 	 * V2: the data loading skeleton — and nothing else — while data loads.
 	 * When the data GET failed, the error state above stands alone (no
 	 * skeleton beside the error).
@@ -417,7 +478,9 @@ export function HomeView(props: {
 		>
 			<section class="space-y-2" aria-label="Loading market data">
 				<output class="block text-sm text-slate-600">Loading market data…</output>
-				<For each={[0, 1, 2]}>{() => <sl-skeleton effect="sheen" class="block h-24" />}</For>
+				<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
+					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
+				</div>
 			</section>
 		</Show>
 	);
@@ -432,6 +495,7 @@ export function HomeView(props: {
 						<ErrorNotice
 							failure={error()}
 							title="Could not load market data."
+							iconRetry={true}
 							onRetry={() => {
 								setDataError(null);
 								setDataLoading(true);
@@ -443,41 +507,43 @@ export function HomeView(props: {
 			</Show>
 			<Show when={notice()}>{(item) => <Notice tone={item().tone}>{item().text}</Notice>}</Show>
 
-			<section aria-label="Market widgets toolbar" class={PANEL}>
-				<div class="flex flex-wrap gap-2">
-					<button
-						type="button"
-						class={BUTTON_PRIMARY}
-						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "add" }, event)}
-					>
-						Add widget
-					</button>
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={busy() || data()?.refresh.activeRunId !== null}
-						onClick={() => void queueRefresh()}
-					>
-						Refresh market data
-					</button>
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "confirm-reset" }, event)}
-					>
-						Reset to default arrangement
-					</button>
-				</div>
+			<section aria-label="Market widgets toolbar" class="flex flex-wrap items-center gap-2">
 				<Show when={statusLine()}>
 					{(line) => (
-						<output class="mt-2 block text-xs text-slate-700" data-field="home-status">
+						<output
+							class="mr-auto block min-w-0 flex-1 text-xs text-slate-700"
+							data-field="home-status"
+						>
 							{line()}
 						</output>
 					)}
 				</Show>
+				<div class="ml-auto flex items-center gap-1">
+					<IconButton
+						label="Add widget"
+						icon="plus-lg"
+						variant="primary"
+						disabled={busy() || dashboard.value() === null}
+						onClick={(event) => openDialog({ mode: "add" }, event)}
+					/>
+					<IconButton
+						label="Refresh market data"
+						icon="arrow-clockwise"
+						disabled={busy() || data()?.refresh.activeRunId !== null}
+						onClick={() => void queueRefresh()}
+					/>
+					<IconButton
+						label="Reset to default arrangement"
+						icon="arrow-counterclockwise"
+						disabled={busy() || dashboard.value() === null}
+						onClick={(event) => openDialog({ mode: "confirm-reset" }, event)}
+					/>
+				</div>
 			</section>
+
+			<output class="sr-only" aria-live="polite">
+				{announcement()}
+			</output>
 
 			{/* V2: the dashboard GET has its own error state (stable code, Try
 			    again) instead of an endless skeleton; when the stored document
@@ -486,7 +552,11 @@ export function HomeView(props: {
 				<Match when={dashboard.value() === null && dashboardError() === null}>
 					<section class="space-y-2" aria-label="Loading home">
 						<output class="block text-sm text-slate-600">Loading market widgets…</output>
-						<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-24" />}</For>
+						<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
+							<For each={[0, 1, 2, 3]}>
+								{() => <sl-skeleton effect="sheen" class="block h-full" />}
+							</For>
+						</div>
 					</section>
 				</Match>
 				<Match when={dashboard.value() === null && dashboardError() !== null}>
@@ -496,6 +566,7 @@ export function HomeView(props: {
 								<ErrorNotice
 									failure={error()}
 									title="Could not load the dashboard."
+									iconRetry={true}
 									onRetry={() => {
 										void dashboard.reload();
 									}}
@@ -503,14 +574,12 @@ export function HomeView(props: {
 							)}
 						</Show>
 						<div>
-							<button
-								type="button"
-								class={BUTTON}
+							<IconButton
+								label="Reset to default arrangement"
+								icon="arrow-counterclockwise"
 								disabled={busy()}
 								onClick={() => void resetToDefaults()}
-							>
-								Reset to default arrangement
-							</button>
+							/>
 						</div>
 					</section>
 				</Match>
@@ -518,11 +587,16 @@ export function HomeView(props: {
 					<Show when={data() !== null && !dataLoading()} fallback={<DataPending />}>
 						<Show
 							when={(dashboard.value()?.dashboard.widgets.length ?? 0) > 0}
-							fallback={
-								<Empty>No widgets yet. Choose “Add widget” to track prices and indicators.</Empty>
-							}
+							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
 						>
-							<div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+							<div
+								class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4"
+								data-widget-grid
+								ref={(element) => {
+									gridEl = element;
+								}}
+								onPointerDown={(event) => dragController.onPointerDown(event)}
+							>
 								<For each={dashboard.value()?.dashboard.widgets ?? []}>
 									{(widget, index) => (
 										<WidgetFrame

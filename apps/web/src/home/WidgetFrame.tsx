@@ -1,9 +1,9 @@
 import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createUniqueId, For, type JSX, Match, Show, Switch } from "solid-js";
+import { ActionMenu } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { HOME_SIZE_SPAN, widgetSeriesIds } from "./homeModel.ts";
-import "./shoelace.ts";
 
 export interface WidgetFrameProps {
 	readonly widget: HomeWidget;
@@ -18,73 +18,94 @@ export interface WidgetFrameProps {
 }
 
 /**
- * One widget on the grid: an `<article>` labelled by its `h3` title rendered
- * inside an `sl-card` (Shoelace has no table component; tables are semantic
- * `<table>`s in the card body). The header holds the title and a
- * size-independent actions menu. Provenance is rendered by each widget at the
- * end of its own output (never as a frame prop: prop elements snapshot once,
- * while children stay live).
+ * One widget on the grid: a native `article` frame (white on the grey page,
+ * 1 px `slate-200` hairline, no shadow, `rounded-2xl`) that fills its grid
+ * cell exactly. The header is a single clean strip holding only the grip
+ * glyph, the title and the one icon-only actions button (the whole strip is
+ * the drag handle); the body below it
+ * scrolls INSIDE the frame when taller (`overflow-y-auto`, `min-h-0`) and is
+ * keyboard-focusable (labelled by the widget title). Provenance is rendered
+ * by each widget at the end of its own output (never as a frame prop: prop
+ * elements snapshot once, while children stay live).
  */
 export function WidgetFrame(props: WidgetFrameProps): JSX.Element {
 	const titleId = createUniqueId();
 	const span = () => HOME_SIZE_SPAN[props.widget.size];
+
+	const actionsLabel = () => `${props.widget.title} actions`;
 	return (
 		<article
 			aria-labelledby={titleId}
 			data-widget-id={props.widget.widgetId}
 			data-widget-type={props.widget.type}
-			class={`min-w-0 ${span()}`}
+			class={`flex h-full min-h-0 min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 ${span()}`}
 		>
-			<sl-card class="h-full w-full">
-				<div slot="header" class="flex min-h-6 items-center justify-between gap-2">
-					<h3 id={titleId} class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
-						{props.widget.title}
-					</h3>
-					<sl-dropdown placement="bottom-end" hoist>
-						<sl-button
-							slot="trigger"
-							caret
-							size="small"
-							disabled={props.actionsDisabled}
-							data-widget-actions={props.widget.widgetId}
-						>
-							Actions
-						</sl-button>
-						<sl-menu
-							label={`${props.widget.title} actions`}
-							on:sl-select={(event) => {
-								// H1: only the menu's own selection, not a bubbled nested event.
-								if (event.target !== event.currentTarget) return;
-								const action = event.detail.item.value;
-								if (action === "edit") props.onEdit(props.widget);
-								else if (action === "earlier" || action === "later") {
-									props.onMove(props.widget, action);
-								} else if (action === "remove") props.onRemove(props.widget);
-							}}
-						>
-							<sl-menu-item value="edit" disabled={props.actionsDisabled}>
-								Edit widget
-							</sl-menu-item>
-							<sl-menu-item
-								value="earlier"
-								disabled={props.actionsDisabled || props.position === 0}
-							>
-								Move earlier
-							</sl-menu-item>
-							<sl-menu-item
-								value="later"
-								disabled={props.actionsDisabled || props.position === props.total - 1}
-							>
-								Move later
-							</sl-menu-item>
-							<sl-menu-item value="remove" disabled={props.actionsDisabled}>
-								Remove widget
-							</sl-menu-item>
-						</sl-menu>
-					</sl-dropdown>
-				</div>
+			<div
+				class="flex min-h-7 cursor-grab touch-none items-center gap-2 select-none"
+				data-widget-drag-handle={props.widget.widgetId}
+			>
+				<svg
+					aria-hidden="true"
+					width="16"
+					height="16"
+					viewBox="0 0 16 16"
+					fill="currentColor"
+					class="shrink-0 text-slate-600"
+				>
+					<path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+				</svg>
+				<h3 id={titleId} class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+					{props.widget.title}
+				</h3>
+				<ActionMenu
+					buttonLabel={actionsLabel()}
+					menuLabel={actionsLabel()}
+					iconTrigger={{
+						icon: "three-dots",
+						disabled: props.actionsDisabled,
+						widgetActions: props.widget.widgetId,
+					}}
+					items={[
+						{
+							value: "edit",
+							label: "Edit widget",
+							icon: "pencil",
+							disabled: props.actionsDisabled,
+							onSelect: () => props.onEdit(props.widget),
+						},
+						{
+							value: "earlier",
+							label: "Move earlier",
+							icon: "arrow-left",
+							disabled: props.actionsDisabled || props.position === 0,
+							onSelect: () => props.onMove(props.widget, "earlier"),
+						},
+						{
+							value: "later",
+							label: "Move later",
+							icon: "arrow-right",
+							disabled: props.actionsDisabled || props.position === props.total - 1,
+							onSelect: () => props.onMove(props.widget, "later"),
+						},
+						{
+							value: "remove",
+							label: "Remove widget",
+							icon: "trash",
+							disabled: props.actionsDisabled,
+							onSelect: () => props.onRemove(props.widget),
+						},
+					]}
+				/>
+			</div>
+			{/* biome-ignore lint/a11y/useSemanticElements: the scrollable widget body is a named group (labelled by the widget title), not a form — fieldset does not apply. */}
+			<div
+				tabindex="0"
+				role="group"
+				aria-labelledby={titleId}
+				class="mt-2 min-h-0 flex-1 overflow-y-auto"
+			>
 				{props.children}
-			</sl-card>
+			</div>
 		</article>
 	);
 }

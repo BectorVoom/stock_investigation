@@ -106,8 +106,9 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 - One corner radius: bare `rounded` on every box, button, input and badge;
   `rounded-full` is additionally permitted for the full-width "New chat" pill
   button, citation chips and round icon-only buttons (send, copy, activity
-  dots, collapsed-rail actions). The chat surface (section 12) additionally
-  uses `rounded-2xl` and `rounded-full` exactly as stated there. No other
+  dots, collapsed-rail actions, Home icon buttons). The chat surface (section 12) additionally
+  uses `rounded-2xl` and `rounded-full` exactly as stated there, and widget
+  frames on Home (section 13) use `rounded-2xl` exactly as stated there. No other
   `rounded-*` step.
 - Background tone, not shadows or outlines, separates the Chat page's panels,
   cards, buttons, chips, menus and dialog from their surfaces (section 5):
@@ -120,7 +121,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   `style=` attribute anywhere in UI source. Everything else keeps its hairline:
   table cell rules, text inputs/selects/checkboxes, badges, the header's
   bottom rule, notices and dashed empty states stay bordered, and Sources and
-  Settings keep every border they have.
+  Settings keep every border they have. Home widget frames, table rules and
+  provenance dividers are `slate-200` hairlines with no shadow (section 13).
 
 ## 5. Layout
 
@@ -159,6 +161,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Panel section | A labelled `<section>` in a panel with its `h3` heading; optional header actions (reload, version line) | — | `Section` in `components/ui.tsx` |
 | Headings | Page sections `h3`, nested headings `h4`/`h5` (section 7) | — | `HEADING` class in `components/ui.tsx` |
 | Buttons | Default action; the one primary action per form; destructive actions | default (grey fill `bg-slate-200`, darker `hover:bg-slate-300`, no border) / primary (solid `bg-blue-700`, no border) / danger (light red fill `bg-red-100` with red text, stronger `hover:bg-red-200`, no border) | `BUTTON` / `BUTTON_PRIMARY` / `BUTTON_DANGER` in `components/ui.tsx`; one `BUTTON_PRIMARY` per form; every button keeps its `:focus-visible` ring and 24 px floor (`min-h-6`); disabled states read through fill and cursor, never a border |
+| Icon button | The one icon-only button part on Home (toolbar, widget headers, dialog footers, Home `ErrorNotice` retries): round, borderless, 16 px inline glyph, no visible text | plain (transparent, `text-slate-700`, `hover:bg-slate-200`, pressed `active:bg-slate-300`) / primary (solid `bg-blue-700`, white glyph, `hover:bg-blue-800`) / danger (light red fill `bg-red-100` with red text, `hover:bg-red-200`) | `IconButton` in `components/ui.tsx` (glyph as inline `<svg aria-hidden="true">`, Bootstrap Icons paths, same pattern as `PanelCollapseButton`); the accessible name is the former visible text exactly, with the same words in the `title` tooltip; 28 px hit area (`min-h-7 min-w-7`), 44 px on coarse pointers (`pointer-coarse:`), at least 4 px between neighbours (`gap-1`); disabled reads through `opacity-50` and cursor, never a border |
 | Text input / select / textarea | With a `LABEL`, optional hint | — | `INPUT` / `LABEL` in `components/ui.tsx` |
 | Field | Label + control + help text, owning the `for`/`id` link | with / without hint | `Field` in `components/ui.tsx` (used by `TextField`, `NumberField`, the conversation form) |
 | Field help and problem lists | Hint under the control; blocking problems in a list the submit button points at via `aria-describedby` | — | `Field` hint; `ul[aria-label="Before you can …"]` |
@@ -182,10 +185,10 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey canvas cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
 | Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`, grey `bg-slate-200` fill with no outline, darker `hover:bg-slate-300`) |
 | Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` grey `bg-slate-100` container with no outline, white textarea inside, `rounded-full` send button; focus ring stays via `focus-within:ring-2`) |
-| Widget frame | One market widget: title `h3`, actions menu, body, provenance footer | — | `WidgetFrame` in `home/WidgetFrame.tsx`: an `article` labelled by its title inside an `sl-card` (header slot). Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
-| Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | `sl-dropdown` + `sl-menu` + `sl-menu-item` in `WidgetFrame` (one `sl-select` event, values `edit`/`earlier`/`later`/`remove`) |
-| Widget dialog | Add / edit a widget (type, title, size, series, range); reset confirmation | add / edit / confirm-reset | `WidgetDialog` in `home/WidgetDialog.tsx` (`sl-dialog`, labelled by its heading, focus in on open and returned to the explicit opener on close) |
-| Widget controls | Buttons, selects, inputs and loading blocks on Home | — | `sl-button` / `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL / BUTTON (0.875rem control text, 0.75rem medium slate-700 labels, card padding `p-3`); controls carry their own `label` prop instead of `Field` |
+| Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `home/WidgetFrame.tsx`: a native `article` labelled by its title (white, `slate-200` hairline, no shadow, `rounded-2xl`, `p-4`) holding a single header strip (leading grip glyph + title + one `IconButton`; the whole strip is the drag handle — `cursor-grab`, `touch-none`, `select-none`) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
+| Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | Shared `ActionMenu` in `components/ui.tsx` with an icon-button trigger (icon-only `IconButton` named "`<title>` actions" with `aria-haspopup="menu"` / `aria-expanded` and `data-widget-actions`; `role="menu"` / `role="menuitem"` with the menu-button keyboard pattern — Enter/Space/ArrowDown opens, arrows skip disabled items, Home/End jump, Escape closes and returns focus, click outside closes; `Tab` closes); text items with leading icons — pencil, left/right arrows, trash. The Chats rows use the same part with its default filled trigger and text-only items |
+| Widget dialog | Add / edit a widget (type, title, size, series, range); reset confirmation | add / edit / confirm-reset | `WidgetDialog` in `home/WidgetDialog.tsx` (`sl-dialog`, labelled by its heading, focus in on open and returned to the explicit opener on close; icon-only `IconButton` footer buttons whose names are the former labels; the heading still says in words what the buttons do; the Size control names Small / Medium / Large with the shapes — "1 × 1", "2 × 2", "full width × 2" — in its help text) |
+| Widget controls | Selects, inputs and loading blocks on Home (buttons are the native `IconButton`, menus are native) | — | `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL (0.875rem control text, 0.75rem medium slate-700 labels); controls carry their own `label` prop instead of `Field` |
 | Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
 
@@ -242,7 +245,9 @@ allowlist.
   24 px tall (`min-h-6`); links inside running text are exempt. Form controls
   meet the same floor through the shared `INPUT` class (`min-h-6`): engines
   render native controls (notably `<select>`) at different natural heights,
-  and WebKit's is below 24 px without the minimum.
+  and WebKit's is below 24 px without the minimum. On Home every icon-only
+  button is at least 28 × 28 px (`min-h-7 min-w-7`) and 44 × 44 px on coarse
+  pointers (`pointer-coarse:`), with at least 4 px between neighbours.
 
 ## 9a. Supported platforms
 
@@ -287,7 +292,7 @@ under `apps/web/src` and `packages/ui-registry/src` and fails with file, line
 and offending token on: a non-guideline colour family; an arbitrary font size
 or colour; a hex literal outside `chartMath.ts`; an inline `style=`; a radius
 other than `rounded`/`rounded-full` (plus `rounded-2xl` in `apps/web/src/chat/`
-per section 12); secondary text lighter than slate-600;
+per section 12 and for widget frames in `apps/web/src/home/` per section 13); secondary text lighter than slate-600;
 an `h1` outside `App.tsx` or an `h2` outside `components/ui.tsx`. The test
 carries its own self-test (synthetic strings violating each rule) so a
 checker that can never fail cannot pass silently.
@@ -323,15 +328,21 @@ vertically centred group in the middle of the panel.
 
 The Home page (`apps/web/src/home/`) is the one place a third-party UI kit
 appears: `@shoelace-style/shoelace` (npm, bundled — no CDN) supplies the
-widget chrome (card, buttons, actions menu, dialog, selects, input,
-skeletons). It is loaded lazily with the Home view so the other
+widget dialogs, selects, inputs and skeletons. It is loaded lazily with the Home view so the other
 pages do not pay for it, and only the used component modules are imported —
-never the whole library. If a Shoelace component cannot work under the
+never the whole library. Widget frames, menus and buttons are native
+elements in the app style (ADR-0016), not kit parts. If a Shoelace component cannot work under the
 Content-Security-Policy, that component is replaced by a native element styled
 the app's way; the policy itself is never relaxed (see ADR-0015).
 
-- What Shoelace is used for: widget frames, menus, dialogs and form controls
-  only. Tables stay semantic `<table>` elements inside the `sl-card` because
+- What Shoelace is used for: dialogs and form controls
+  only (`sl-dialog`, `sl-select` + `sl-option`, `sl-input`, `sl-skeleton`;
+  `sl-icon` serves their internal icons). Widget frames are native `article`
+  elements (white surface on the grey page, 1 px `slate-200` hairline, no
+  shadow, no header divider, `rounded-2xl`, inner padding `p-4`); per-widget
+  actions are a native menu behind one icon-only `IconButton`; every other
+  button on Home is the same shared `IconButton` part. Tables stay semantic
+  `<table>` elements in the frame body because
   Shoelace has no table component; charts stay the registry SVG primitives
   (`ChartFrame`, `ChartLegend`, palette, scales, ticks) with a native
   data-table twin.
@@ -350,15 +361,56 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   `chevron-left`, `chevron-right`, `copy`, `eye`, `eye-slash`, `eyedropper`,
   `grip-vertical`, `indeterminate`, `person-fill`, `play-fill`, `pause-fill`,
   `radio`, `star-fill`, `x-lg`, `x-circle-fill`), so every icon a used
-  component can request resolves — `caret` (sl-button caret), the chevrons
-  (every sl-menu-item renders its submenu indicator), `chevron-down`
+  component can request resolves — `chevron-down`
   (sl-select), `x-lg` (sl-dialog close). An E2E test opens the dialog, a
   select and a widget menu and asserts every `/icons/*.svg` request answers
-  200 as SVG and no `sl-icon` is left without an `<svg>`.
-- Widget grid: `grid-cols-1` → `md:grid-cols-2` → `xl:grid-cols-4`; small /
-  medium / large widgets span 1 / 2 / 4 columns at `xl` (1 / 2 / 2 at `md`,
-  full width below) through static column-span classes. No page-level
+  200 as SVG and no `sl-icon` is left without an `<svg>`. The app's own
+  icon-only buttons do not use `sl-icon`: their glyphs are inline SVGs
+  (Bootstrap Icons paths) in the shared `IconButton` part.
+- Widget grid: equal cells with a fixed row height —
+  `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap
+  (the HIG standard margin), in normal row flow so visual order equals DOM
+  order. Three fixed sizes from one table (`HOME_SIZE_SPAN` in
+  `homeModel.ts`): Small 1 × 1 (17rem tall, 272 px), Medium 2 × 2 (35rem,
+  560 px), Large full width × 2 at `lg` (4 columns) and 2 × 2 below it
+  (35rem, 560 px).
+  Every widget of a size has exactly the same width and height as every
+  other of that size on the same screen. The frame fills its cell (`h-full`)
+  and never grows with content: the header strip stays fixed while the body
+  below it scrolls inside the frame (`overflow-y-auto`, keyboard-focusable
+  and labelled by the widget title); tables keep their own horizontal
+  scroll. Loading skeletons use the same grid and cell height so the page
+  does not jump. No page-level
   horizontal overflow at 390 px; tables scroll inside their card.
+- Drag and drop (HIG Drag and drop): the whole header strip is the handle
+  (leading `grip-vertical` glyph, `text-slate-600`, as the visible affordance;
+  a press on the actions button never starts a drag). Pointer Events only
+  (never the HTML5 API), primary button / one touch / pen, starting after
+  4 px of movement so a press-and-release is a plain click. The lifted widget
+  follows the pointer with its grab offset at about 90 % opacity above its
+  neighbours with the blue focus-colour ring (no shadow) and never changes
+  size; the target slot shows a same-size dashed `slate-300` placeholder with
+  no fill while the others reflow in their real grid positions. Reflow is
+  order-based (the widget ends at an index, the rest keep their order —
+  never free placement with gaps) with midpoint-plus-ban hysteresis so a
+  resting pointer never flip-flops. The drop saves exactly one `reorder`
+  edit; an unchanged position saves nothing and the preview stays on screen
+  while the save is in flight. `Escape`, `pointercancel` or the window losing
+  focus cancels with nothing saved. No drag starts while a save is in flight,
+  while loading, or with one widget; while a drag is active and the pointer
+  rests within 80 px of the top or bottom edge of the viewport and the page
+  can still scroll that way, the page keeps scrolling every frame (faster the
+  deeper into the zone the pointer is, at most about 16 px per frame),
+  re-evaluating the drop target as content passes under the pointer, until
+  the pointer leaves the zone, the page reaches its end, or the drag ends or
+  is cancelled. Slot rectangles are cached in page coordinates so scrolling
+  never stales the decision. The pointer/DOM engine lives in
+  `home/widgetDrag.ts` (`createWidgetDrag`, returning the grid pointerdown
+  handler plus dispose); `HomeView` keeps only the wiring. Reflow animates for at most 200 ms and only under `motion-safe:`
+  (instant with reduced motion). The menu's Move earlier/later is the
+  keyboard and assistive-technology path, and one visually hidden polite live
+  region announces every completed move (`Moved “<title>” to position <i> of
+  <n>.`, clearing first so a repeated sentence announces again).
 - States follow principle 2 (`sl-skeleton` blocks plus "Loading" text,
   "unavailable (reason)", `ErrorNotice` with "Try again"); status is never
   colour alone (change marks carry ▲/▼/▬ plus a word); every number shows its
@@ -366,7 +418,7 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   slate notice ("To add this widget:" / "To save this widget:") while the
   form is pristine and turns red ("Fix before saving:") once any field has
   changed.
-- Lazy cost, measured: the Home chunk (`HomeView-*.js` 230.35 kB, 60.09 kB
+- Lazy cost, measured: the Home chunk (`HomeView-*.js` 187.75 kB, 52.17 kB
   gzip, plus `HomeView-*.css` 14.96 kB in the 2026-10-13 production build)
   downloads on the first visit to `#/home` only; re-measure if the kit
   version or the imported set changes (see ADR-0015).
