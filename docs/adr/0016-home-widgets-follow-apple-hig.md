@@ -16,11 +16,12 @@ a drag handle can use it.
 **Three fixed sizes on a grid of equal cells with a fixed row height**
 (HIG Widgets: system widgets come in fixed sizes on a grid; "Make each size
 distinct"). The grid is `grid-cols-2 lg:grid-cols-4` with
-`auto-rows-[15rem]` and a 16 px gap (the HIG standard margin), in normal row
+`auto-rows-[17rem]` and a 16 px gap (the HIG standard margin), in normal row
 flow so visual order equals DOM order (not `grid-flow-dense`). Sizes are
 defined in one table (`HOME_SIZE_SPAN` in `homeModel.ts`, static class
-strings so Tailwind sees them): Small 1 × 1 (15rem), Medium 2 × 2 (31rem),
-Large full width × 2 at `lg` (4 columns) and 2 × 2 below it (31rem).
+strings so Tailwind sees them): Small 1 × 1 (17rem, 272 px), Medium 2 × 2
+(35rem, 560 px),
+Large full width × 2 at `lg` (4 columns) and 2 × 2 below it (35rem, 560 px).
 Defaults per type fit the shapes: a metric is one number (small), a line
 chart needs plot area (medium), a stock table holds a few rows (medium), an
 indicator table holds eight columns (large) — the default dashboard already
@@ -79,11 +80,79 @@ names a removed label ("No widgets yet. Use the + button to add one.");
   `sl-input`, `sl-skeleton`, `sl-icon` (ADR-0015 updated); the Home chunk
   fell from 230.35 kB (60.09 kB gzip) to **187.75 kB (52.17 kB gzip)**.
 - E2E proves the sizes (identical boxes per size at 1440 × 900 and
-  390 × 844; 240 px small, 496 px medium/large; no horizontal overflow at
+  390 × 844; 272 px small, 560 px medium/large; no horizontal overflow at
   390 px), the icon-only buttons (no visible text on any `main` button
   while header navigation keeps text) and the in-frame scrolling
   (keyboard-focusable, labelled, article box unchanged while the body
   scrolls).
+
+## Addendum (2026-10-13): drag and drop to reposition widgets
+
+**Status:** Accepted · **Date:** 2026-10-13
+
+### Context
+
+The look task left the header a single clean strip so a drag handle could
+use it, and the domain already carries a pure `reorder` edit (the widget
+ends at `toIndex` of the result, the others keep their order). The remaining
+question was how a drop target is chosen and previewed on a grid of mixed
+sizes without flip-flopping, and how keyboard and assistive-technology users
+move widgets.
+
+### Decision
+
+**Order-based reflow with a placeholder, not free placement with gaps**
+(HIG Drag and drop). The whole header strip (grip glyph, title, actions
+button — nothing else) is the handle: `cursor-grab` (`cursor-grabbing`
+while dragging), `select-none`, `touch-action: none` on the header so a
+touch drag is not taken as a scroll while widget bodies keep scrolling. A
+press on the actions button never starts a drag. Pointer Events only (the
+HTML5 drag-and-drop API does not work for touch and is unreliable across
+shadow DOM in WebKit); primary button / one touch / pen; the drag starts
+after 4 px of movement so press-and-release is a plain click. The lifted
+widget follows the pointer with its grab offset at about 90 % opacity above
+its neighbours with the blue focus-colour ring instead of a shadow (the
+guideline forbids shadows) and never changes size. The slot it would take is
+a same-size dashed `slate-300` placeholder with no fill while the others move
+out of the way immediately in their real grid positions. The preview uses
+CSS `order` set through the CSSOM (real DOM order changes only on commit),
+so widget subtrees keep their state, and pointer moves coalesce on
+`requestAnimationFrame` with slot rectangles re-read only on reorder. The
+drop commits exactly one `reorder` edit through `saveEdit` (nothing is saved
+when the position did not change); the preview stays on screen while the
+save is in flight, and a failed or conflicting save restores the server
+order with the existing notice. `Escape`, `pointercancel` or the window
+losing focus cancels with the widget returning and nothing saved. No drag
+starts while a save is in flight, while loading, or with one widget; the
+page auto-scrolls near the viewport edges; reflow animates for at most
+200 ms under `motion-safe:` only.
+
+**Stability rule with hysteresis** (`apps/web/src/home/dragModel.ts`, pure,
+O(n) per move): the target changes only when the pointer crosses the
+midpoint of another slot in the direction of travel (dot of
+pointer-minus-hover-center with hover-minus-dragged-center greater than
+zero), and the slot just vacated stays banned until the pointer leaves it.
+
+**The menu is the alternative without dragging** (HIG Accessibility): Move
+earlier/later stay exactly as they are — the keyboard and
+assistive-technology path — and one visually hidden polite live region
+announces every completed move, dragged or from the menu (`Moved “<title>”
+to position <i> of <n>.`).
+
+**Undo is not offered: dragging back is the reversal.** A dropped reorder is
+one saved arrangement like any other menu move; moving the widget back (by
+drag or by menu) restores the earlier order, so no separate undo stack is
+kept.
+
+### Alternatives considered (deliberately not done)
+
+- **Free placement with gaps.** Rejected: visual order must equal DOM order
+  (as with the rejected `grid-flow-dense`), so every position is an index,
+  never a gap.
+- **HTML5 drag-and-drop API.** Rejected: no touch support and unreliable
+  across shadow DOM in WebKit.
+- **A separate undo for drags.** Rejected: dragging back is the reversal;
+  the arrangement is saved state, not an edit history.
 
 ## Alternatives considered (deliberately not done)
 

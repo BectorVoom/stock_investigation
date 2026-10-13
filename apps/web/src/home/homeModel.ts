@@ -68,8 +68,8 @@ export const HOME_RANGE_LABELS: { readonly [R in MarketRange]: string } = {
 /**
  * Fixed widget sizes on a grid of equal cells with a fixed row height
  * (HIG Widgets: fixed sizes, "make each size distinct"). The grid is
- * `grid-cols-2 lg:grid-cols-4` with `auto-rows-[15rem]` and a 16 px gap;
- * Small is 1 × 1 (15rem), Medium and Large are 2 rows (31rem); Large spans
+ * `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap;
+ * Small is 1 × 1 (17rem), Medium and Large are 2 rows (35rem); Large spans
  * the full width (4 columns at `lg`, 2 below it). Static class strings so
  * Tailwind sees them.
  */

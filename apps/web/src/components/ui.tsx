@@ -559,6 +559,9 @@ export function PanelHeader(props: {
 export interface ActionMenuItem {
 	readonly label: string;
 	readonly onSelect: () => void;
+	readonly icon?: IconButtonName;
+	readonly disabled?: boolean;
+	readonly value?: string;
 }
 
 /**
@@ -566,11 +569,22 @@ export interface ActionMenuItem {
  * ArrowDown on the button opens the menu, arrows move between items, Escape
  * closes and returns focus to the button, click outside closes. Status is
  * never colour alone: items are text verbs, not colour swatches.
+ *
+ * One implementation (guideline principle 5): the Chats rows use the default
+ * filled trigger with text items, while Home widget frames pass `iconTrigger`
+ * (an `IconButton` with `three-dots`) and items with leading icons plus
+ * per-item `disabled` (skipped by arrow keys). Items without icons render
+ * exactly as before, so existing uses are unchanged.
  */
 export function ActionMenu(props: {
 	readonly buttonLabel: string;
 	readonly menuLabel: string;
 	readonly items: readonly ActionMenuItem[];
+	readonly iconTrigger?: {
+		readonly icon: IconButtonName;
+		readonly disabled?: boolean;
+		readonly widgetActions?: string;
+	};
 }): JSX.Element {
 	const [open, setOpen] = createSignal(false);
 	let button: HTMLButtonElement | undefined;
@@ -582,21 +596,34 @@ export function ActionMenu(props: {
 		if (returnFocus) button?.focus();
 	};
 
+	const firstEnabled = (): number => {
+		const index = props.items.findIndex((item) => item.disabled !== true);
+		return index < 0 ? 0 : index;
+	};
+
+	const lastEnabled = (): number => {
+		for (let index = props.items.length - 1; index >= 0; index -= 1) {
+			if (props.items[index]?.disabled !== true) return index;
+		}
+		return props.items.length - 1;
+	};
+
 	const openAndFocus = (index: number) => {
+		if (props.iconTrigger?.disabled === true) return;
 		setOpen(true);
 		// Focus after Solid renders the menu.
 		queueMicrotask(() => {
-			itemElements[index]?.focus();
+			focusItem(index);
 		});
 	};
 
 	const onButtonKeyDown = (event: KeyboardEvent) => {
 		if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
 			event.preventDefault();
-			if (!open()) openAndFocus(0);
+			if (!open()) openAndFocus(firstEnabled());
 		} else if (event.key === "ArrowUp") {
 			event.preventDefault();
-			if (!open()) openAndFocus(props.items.length - 1);
+			if (!open()) openAndFocus(lastEnabled());
 		}
 	};
 
@@ -604,12 +631,21 @@ export function ActionMenu(props: {
 		const count = props.items.length;
 		if (count === 0) return;
 		const wrapped = (index + count) % count;
-		itemElements[wrapped]?.focus();
+		for (let step = 0; step < count; step += 1) {
+			const candidate = (wrapped + step) % count;
+			const entry = props.items[candidate];
+			const element = itemElements[candidate];
+			if (entry?.disabled !== true && element !== undefined) {
+				element.focus();
+				return;
+			}
+		}
 	};
 
 	const currentIndex = (): number => {
 		const active = document.activeElement;
-		return itemElements.indexOf(active as HTMLButtonElement | undefined);
+		if (!(active instanceof HTMLButtonElement)) return -1;
+		return itemElements.indexOf(active);
 	};
 
 	const onMenuKeyDown = (event: KeyboardEvent) => {
@@ -647,23 +683,47 @@ export function ActionMenu(props: {
 
 	return (
 		<div class="relative inline-flex">
-			<button
-				ref={(element) => {
-					button = element;
-				}}
-				type="button"
-				class={`${BUTTON} min-w-6`}
-				aria-label={props.buttonLabel}
-				aria-haspopup="menu"
-				aria-expanded={open()}
-				onClick={() => {
-					if (open()) close(false);
-					else openAndFocus(0);
-				}}
-				onKeyDown={onButtonKeyDown}
+			<Show
+				when={props.iconTrigger}
+				fallback={
+					<button
+						ref={(element) => {
+							button = element;
+						}}
+						type="button"
+						class={`${BUTTON} min-w-6`}
+						aria-label={props.buttonLabel}
+						aria-haspopup="menu"
+						aria-expanded={open()}
+						onClick={() => {
+							if (open()) close(false);
+							else openAndFocus(firstEnabled());
+						}}
+						onKeyDown={onButtonKeyDown}
+					>
+						<span aria-hidden="true">⋮</span>
+					</button>
+				}
 			>
-				<span aria-hidden="true">⋮</span>
-			</button>
+				{(trigger) => (
+					<IconButton
+						label={props.buttonLabel}
+						icon={trigger().icon}
+						disabled={trigger().disabled}
+						expanded={open()}
+						hasPopup="menu"
+						widgetActions={trigger().widgetActions}
+						ref={(element) => {
+							button = element;
+						}}
+						onKeyDown={(event) => onButtonKeyDown(event)}
+						onClick={() => {
+							if (open()) close(false);
+							else openAndFocus(firstEnabled());
+						}}
+					/>
+				)}
+			</Show>
 			<Show when={open()}>
 				<div
 					ref={(element) => {
@@ -671,7 +731,11 @@ export function ActionMenu(props: {
 					}}
 					role="menu"
 					aria-label={props.menuLabel}
-					class="absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
+					class={
+						props.items.some((item) => item.icon !== undefined)
+							? "absolute right-0 z-20 min-w-44 rounded border border-slate-200 bg-white p-1"
+							: "absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
+					}
 					onKeyDown={onMenuKeyDown}
 				>
 					<For each={props.items}>
@@ -682,14 +746,28 @@ export function ActionMenu(props: {
 								}}
 								type="button"
 								role="menuitem"
-								class="block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200"
+								data-menu-value={item.value}
+								disabled={item.disabled}
+								class={
+									item.icon === undefined
+										? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+										: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+								}
 								onClick={() => {
+									if (item.disabled === true) return;
 									setOpen(false);
 									button?.focus();
 									item.onSelect();
 								}}
 							>
-								{item.label}
+								<Show when={item.icon}>
+									{(glyph) => (
+										<span aria-hidden="true" class="inline-flex shrink-0">
+											<IconGlyph name={glyph()} />
+										</span>
+									)}
+								</Show>
+								<span>{item.label}</span>
 							</button>
 						)}
 					</For>

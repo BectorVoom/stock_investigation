@@ -252,6 +252,38 @@ test("UI review of the Home page", async ({ browser }) => {
 	await audit(page, "H widget menu");
 	await page.keyboard.press("Escape");
 
+	/* ---------- H3b. Mid-drag: lifted widget plus placeholder ---------- */
+	{
+		await page.evaluate(() => window.scrollTo(0, 0));
+		const ids = await page.evaluate(() =>
+			[...document.querySelectorAll("article[data-widget-id]")].map(
+				(article) => article.getAttribute("data-widget-id") ?? "",
+			),
+		);
+		const dragged = ids[0] ?? "";
+		const target = ids[2] ?? "";
+		const headerBox = await page
+			.locator(`article[data-widget-id="${dragged}"] [data-widget-drag-handle]`)
+			.boundingBox();
+		const targetBox = await page.locator(`article[data-widget-id="${target}"]`).boundingBox();
+		if (headerBox !== null && targetBox !== null) {
+			const from = { x: headerBox.x + headerBox.width / 2, y: headerBox.y + headerBox.height / 2 };
+			const to = {
+				x: targetBox.x + targetBox.width / 2 + 20,
+				y: targetBox.y + targetBox.height / 2 + 10,
+			};
+			await page.mouse.move(from.x, from.y);
+			await page.mouse.down();
+			await page.mouse.move(to.x, to.y, { steps: 12 });
+			await page.waitForTimeout(400);
+			await expect(page.locator("[data-widget-placeholder]")).toBeAttached();
+			await shot(page, "H-drag-mid");
+			await page.keyboard.press("Escape");
+			await page.mouse.up();
+			await page.waitForTimeout(300);
+		}
+	}
+
 	/* ---------- H4. Unavailable series ---------- */
 	const dashboardResponse = await page.request.get(`${E2E_ORIGIN}/api/v1/home/dashboard`);
 	const dashboardBody = (await dashboardResponse.json()) as {

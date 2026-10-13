@@ -1078,6 +1078,87 @@ describe("home view", () => {
 			"unavailable (The provider has no data for this symbol on the configured plan.)",
 		);
 	});
+
+	it("announces a completed menu move in the polite live region", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(() =>
+			expect(widgets().map((article) => article.getAttribute("data-widget-id"))[0]).toBe("w-gold"),
+		);
+		const live = document.querySelector("output.sr-only");
+		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
+		expect(live.textContent).toBe("Moved “Gold” to position 1 of 7.");
+	});
+
+	it("saves a drag reorder with exactly one PUT and announces it", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const serverIds = widgets().map((article) => article.getAttribute("data-widget-id"));
+		// Dynamic layout: each position stacks vertically (300×100 with a
+		// 20 px gap), reading the CSS `order` the drag preview writes, so the
+		// mocked boxes track reflows like a real grid.
+		const boxFor = (element: HTMLElement, fallback: number): DOMRect => {
+			const raw = element.style.order;
+			const parsed = raw === "" ? Number.NaN : Number.parseInt(raw, 10);
+			const position = Number.isInteger(parsed) ? parsed : fallback;
+			return new DOMRect(0, position * 120, 300, 100);
+		};
+		for (const [index, article] of widgets().entries()) {
+			article.getBoundingClientRect = () => boxFor(article, index);
+		}
+		const first = widgetById("w-vix");
+		const handle = first.querySelector("[data-widget-drag-handle]");
+		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
+		// Press on the header (150,50), drag past the midpoint of the third
+		// widget (center 150,290) to (150,320), then release.
+		handle.dispatchEvent(
+			new PointerEvent("pointerdown", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 50,
+				button: 0,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		window.dispatchEvent(
+			new PointerEvent("pointermove", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		const placeholder = document.querySelector("[data-widget-placeholder]");
+		if (!(placeholder instanceof HTMLElement)) throw new Error("no drag placeholder");
+		placeholder.getBoundingClientRect = () => boxFor(placeholder, 0);
+		await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		const body = homePuts()[0]?.body as {
+			dashboard: HomeDashboard;
+			expectedVersion: number;
+		};
+		expect(body.dashboard.widgets.map((entry) => entry.widgetId)).toEqual([
+			...serverIds.filter((id) => id !== "w-vix").slice(0, 2),
+			"w-vix",
+			...serverIds.filter((id) => id !== "w-vix").slice(2),
+		]);
+		const live = document.querySelector("output.sr-only");
+		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
+		await waitFor(() => expect(live.textContent).toBe("Moved “VIX” to position 3 of 7."));
+	});
 });
 
 describe("home api client", () => {
