@@ -49,6 +49,7 @@
 		"@research/contracts": "workspace:*",
 		"@research/domain": "workspace:*",
 		"@research/effects": "workspace:*",
+		"@research/widget-grid": "workspace:*",
 		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.1.18",
 		"@types/node": "^24.0.0",

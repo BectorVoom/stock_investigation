@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextDropTarget, type SlotRect } from "../src/home/dragModel.ts";
+import { nextDropTarget, type SlotRect } from "../../src/core/dragModel.ts";
 
 /**
  * Hand-worked 4-column grid with mixed sizes (100 px cells, 16 px gap):

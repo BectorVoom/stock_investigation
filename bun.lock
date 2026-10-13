@@ -15,6 +15,7 @@
         "@research/contracts": "workspace:*",
         "@research/domain": "workspace:*",
         "@research/effects": "workspace:*",
+        "@research/widget-grid": "workspace:*",
         "@solidjs/testing-library": "^0.8.10",
         "@tailwindcss/vite": "^4.1.18",
         "@types/node": "^24.0.0",
@@ -65,6 +66,7 @@
         "@research/contracts": "workspace:*",
         "@research/domain": "workspace:*",
         "@research/ui-registry": "workspace:*",
+        "@research/widget-grid": "workspace:*",
         "@shoelace-style/shoelace": "2.20.1",
         "solid-js": "^1.9.12",
         "zod": "^4.6.5",
@@ -141,6 +143,14 @@
       "dependencies": {
         "@research/contracts": "workspace:*",
         "@research/domain": "workspace:*",
+        "solid-js": "^1.9.12",
+        "zod": "^4.6.5",
+      },
+    },
+    "packages/widget-grid": {
+      "name": "@research/widget-grid",
+      "version": "0.1.0",
+      "dependencies": {
         "solid-js": "^1.9.12",
         "zod": "^4.6.5",
       },
@@ -388,6 +398,8 @@
     "@research/examples": ["@research/examples@workspace:examples"],
 
     "@research/ui-registry": ["@research/ui-registry@workspace:packages/ui-registry"],
+
+    "@research/widget-grid": ["@research/widget-grid@workspace:packages/widget-grid"],
 
     "@rolldown/binding-android-arm-eabi": ["@rolldown/binding-android-arm-eabi@1.2.13", "", { "os": "android", "cpu": "arm" }, "sha512-Vu/NICrgdRvUOeaJZIyB2FP63s6fO/4ud5l8dXmxDx9yDyn+mN0y+gsvsVviSli+T361Aqo0h46EuMoobrwawA=="],
 

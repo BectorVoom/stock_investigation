@@ -1,5 +1,5 @@
 import type { HomeWidget } from "@research/contracts";
-import { nextDropTarget, type SlotRect } from "./dragModel.ts";
+import { nextDropTarget, type SlotRect } from "@research/widget-grid/core";
 import { HOME_SIZE_SPAN } from "./homeModel.ts";
 
 /**

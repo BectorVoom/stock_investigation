@@ -23,6 +23,10 @@ const AGENT_CORE = exact("@research/agent-core");
 const APPLICATION = exact("@research/application");
 const UI_REGISTRY = exact("@research/ui-registry");
 const EFFECTS = exact("@research/effects");
+/** The reusable widget grid, by entry point: the Solid UI, the pure core, the agent layer. */
+const WIDGET_GRID = exact("@research/widget-grid");
+const WIDGET_GRID_CORE = exact("@research/widget-grid/core");
+const WIDGET_GRID_STYLES = exact("@research/widget-grid/styles.css");
 
 /** Adapter entry points by the runtime they can load in. */
 const WORKER_ONLY_ADAPTERS = ["d1", "worker"] as const;
@@ -62,6 +66,30 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 		allowed: [CONTRACTS, DOMAIN, pkg("solid-js"), pkg("zod")],
 		forbidden: [],
 		zones: [],
+	},
+	{
+		// Independent and reusable (ADR-0019): no other workspace package, so
+		// another application can take it as it is. `core` is pure TypeScript,
+		// `agent` adds zod only, `solid` is the only place the UI framework
+		// and the DOM appear.
+		root: "packages/widget-grid",
+		allowed: [pkg("solid-js"), pkg("zod")],
+		forbidden: [],
+		sourceDirectories: ["src/core", "src/agent", "src/solid"],
+		zones: [
+			{
+				name: "widget-grid pure core",
+				directories: ["src/core"],
+				forbidden: [anyExternal(), nodeBuiltin()],
+				forbiddenDirectories: ["src/agent", "src/solid"],
+			},
+			{
+				name: "widget-grid agent layer",
+				directories: ["src/agent"],
+				forbidden: [pkg("solid-js"), nodeBuiltin()],
+				forbiddenDirectories: ["src/solid"],
+			},
+		],
 	},
 	{
 		root: "packages/effects",
@@ -146,6 +174,9 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 			CONTRACTS,
 			UI_REGISTRY,
 			DOMAIN,
+			WIDGET_GRID,
+			WIDGET_GRID_CORE,
+			WIDGET_GRID_STYLES,
 			pkg("solid-js"),
 			pkg("zod"),
 			pkg("@shoelace-style/shoelace"),

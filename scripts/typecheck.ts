@@ -13,6 +13,8 @@ const PROJECTS = [
 	"packages/application",
 	"packages/effects",
 	"packages/ui-registry",
+	"packages/widget-grid",
+	"packages/widget-grid/tsconfig.neutral.json",
 	"packages/adapters",
 	"packages/adapters/tsconfig.worker.json",
 	"apps/api",
