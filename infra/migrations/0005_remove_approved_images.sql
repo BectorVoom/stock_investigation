@@ -1,0 +1,25 @@
+-- Remove owner-approved images, version 5.
+-- The owner decided on 2026-10-13 to remove images from this research
+-- application entirely. This deletes the owner's stored approvals for good:
+-- dropping the table destroys every approved asset row with no way back
+-- except restoring a backup of `data/` taken beforehand.
+--
+-- Stored canvas states (`workspaces.state_json`) and command history
+-- (`workspace_commands.command_json`) may still name `image-gallery`
+-- components written before this change. Those rows are NOT rewritten here:
+-- rewriting stored JSON in SQL would have to behave identically on both
+-- persistence backends (D1 and SQLite, ADR-0008) and would have to neutralise
+-- history entries without breaking the (owner_id, workspace_id, version)
+-- continuity that compare-and-set writes and event polling rely on. Instead a
+-- single legacy-read step (`dropWithdrawnImageComponents` in
+-- `packages/adapters/src/sql/rows.ts`, shared by both backends) drops withdrawn
+-- image components when a workspace is read, keeping the version sequence
+-- untouched. The next owner or agent write then persists the stripped state.
+--
+-- Rollback: restoring this table means restoring a pre-migration backup of
+-- `data/` (see docs/OPERATIONS.md "Migrations and rollback"). Rolling the code
+-- back to a previous release without restoring leaves a database newer than
+-- the release, which the launcher refuses unless overridden — and the old code
+-- cannot use approvals this migration deleted.
+
+DROP TABLE approved_assets;

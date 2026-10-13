@@ -445,7 +445,7 @@ export const pricingPowerRecordSchema = z.strictObject({
 });
 export type PricingPowerRecord = z.infer<typeof pricingPowerRecordSchema>;
 
-/* ---------- Datasets and assets ---------- */
+/* ---------- Datasets ---------- */
 
 /**
  * A table cell. A number either came from a source (`sourceId` + `asOf`) or
@@ -538,14 +538,3 @@ export const datasetSchema = z
 		{ message: "cell values must match their column kind", path: ["rows"] },
 	);
 export type Dataset = z.infer<typeof datasetSchema>;
-
-/** An image the owner explicitly approved for display, with its permission basis. */
-export const approvedAssetSchema = z.strictObject({
-	assetId: idSchema,
-	imageUrl: httpsUrlSchema,
-	altText: z.string().min(1).max(300),
-	permissionBasis: z.string().min(1).max(300),
-	sourceEvidenceId: idSchema.nullable(),
-	createdAt: isoDateTimeSchema,
-});
-export type ApprovedAsset = z.infer<typeof approvedAssetSchema>;

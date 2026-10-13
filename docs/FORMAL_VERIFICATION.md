@@ -28,7 +28,7 @@ So a change to the TypeScript that departs from the model fails step 2, and a ch
 - The correspondence is tested on finite grids, not proved for all inputs. The grids are exhaustive over the discrete structure (every state, every branch of every condition) but not over unbounded numbers or arbitrary strings.
 - Floating-point behaviour (NaN handling in budgets, CAGR, PER, margins) is covered by unit and property tests, not Lean: the models use natural numbers.
 - Time is abstracted to one bit (`leaseExpired`); clock skew is outside the model. Fencing does not depend on clocks, which is the point of the generation counter.
-- The reducer model abstracts component props and reference checks (datasets, sources, assets); those are covered by unit, property and integration tests.
+- The reducer model abstracts component props and reference checks (datasets, sources); those are covered by unit, property and integration tests.
 - SQL-level atomicity (the guarded D1 batches) is exercised by integration tests in the Workers runtime, not modelled.
 - Feed parsing, URL/IP classification and claim text matching are not modelled.
 - String truncation (`truncateText`, now in `packages/domain/src/text/truncate.ts`) and the context builder's text handling in `buildConversationContext` (trimming, the per-message cut, UTF-8 byte counting) are covered by unit and property tests, not by Lean; only the selection count (`recentCountWithinBudget`) is modelled.

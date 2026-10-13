@@ -6,7 +6,6 @@ import {
 	companyProfilePropsSchema,
 	dataTablePropsSchema,
 	financialTablePropsSchema,
-	imageGalleryPropsSchema,
 	lineChartPropsSchema,
 	newsCardPropsSchema,
 	researchReportPropsSchema,
@@ -22,7 +21,7 @@ import {
 } from "./registry.tsx";
 import { BarChart } from "./renderers/BarChart.tsx";
 import { CandlestickChart } from "./renderers/CandlestickChart.tsx";
-import { CompanyProfile, ImageGallery, NewsCard, SourceListComponent } from "./renderers/cards.tsx";
+import { CompanyProfile, NewsCard, SourceListComponent } from "./renderers/cards.tsx";
 import { LineChart } from "./renderers/LineChart.tsx";
 import { ResearchReport } from "./renderers/ResearchReport.tsx";
 import { DataTable, FinancialTable } from "./renderers/tables.tsx";
@@ -42,7 +41,7 @@ function baselineEntry<Props extends JsonObject>(
 }
 
 /**
- * The ten V1 component types, each contracts definition paired with its
+ * The nine V1 component types, each contracts definition paired with its
  * renderer. Extensions append their own entries at the composition root:
  * `createUiRegistry([...BASELINE_REGISTRY_ENTRIES, myEntry])`.
  */
@@ -55,7 +54,6 @@ export const BASELINE_REGISTRY_ENTRIES: readonly ComponentRegistryEntry[] = [
 	baselineEntry("news-card", newsCardPropsSchema, NewsCard),
 	baselineEntry("source-list", sourceListPropsSchema, SourceListComponent),
 	baselineEntry("company-profile", companyProfilePropsSchema, CompanyProfile),
-	baselineEntry("image-gallery", imageGalleryPropsSchema, ImageGallery),
 	baselineEntry("research-report", researchReportPropsSchema, ResearchReport),
 ];
 

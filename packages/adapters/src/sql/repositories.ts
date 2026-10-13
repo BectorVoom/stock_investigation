@@ -1,7 +1,6 @@
 import type {
 	ArticlePage,
 	ArticleRepository,
-	AssetRepository,
 	AuditLog,
 	ChatRepository,
 	EnqueueResult,
@@ -20,7 +19,6 @@ import type {
 import { toProgressRows } from "@research/application";
 import {
 	agentDescriptorSchema,
-	approvedAssetSchema,
 	claimSchema,
 	datasetSchema,
 	demandScenarioSchema,
@@ -43,7 +41,6 @@ import {
 	parseJsonColumn,
 	textColumn,
 	toAppliedCommand,
-	toApprovedAsset,
 	toArticle,
 	toChatMessage,
 	toConversationSummary,
@@ -701,11 +698,10 @@ export function createResearchRecordRepository(db: SqlDatabase): ResearchRecordR
 
 	return {
 		async resolve(ownerId, lookup: ReferenceLookup) {
-			// One batch for all three kinds; empty lookups are skipped to save queries.
+			// One batch for every kind; empty lookups are skipped to save queries.
 			const plan = [
 				{ ids: lookup.datasetIds, table: "datasets", column: "dataset_id" },
 				{ ids: lookup.evidenceIds, table: "evidence", column: "evidence_id" },
-				{ ids: lookup.assetIds, table: "approved_assets", column: "asset_id" },
 				{ ids: lookup.claimIds, table: "claims", column: "claim_id" },
 			] as const;
 			const active = plan.filter((entry) => entry.ids.length > 0);
@@ -722,7 +718,6 @@ export function createResearchRecordRepository(db: SqlDatabase): ResearchRecordR
 			return {
 				datasets: rowsFor("datasets").map((row) => bodyOf("datasets", datasetSchema, row)),
 				evidence: rowsFor("evidence").map((row) => bodyOf("evidence", evidenceSchema, row)),
-				assets: rowsFor("approved_assets").map(toApprovedAsset),
 				claims: rowsFor("claims").map((row) => bodyOf("claims", claimSchema, row)),
 			};
 		},
@@ -803,7 +798,7 @@ export function createResearchRecordRepository(db: SqlDatabase): ResearchRecordR
 	};
 }
 
-/* ---------- Chat, assets, credentials, runner status, rate limits, audit ---------- */
+/* ---------- Chat, credentials, runner status, rate limits, audit ---------- */
 
 export function createChatRepository(db: SqlDatabase): ChatRepository {
 	return {
@@ -845,40 +840,6 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 				.bind(ownerId, ownerId, ownerId, limit)
 				.all();
 			return results.map(toConversationSummary);
-		},
-	};
-}
-
-export function createAssetRepository(db: SqlDatabase): AssetRepository {
-	return {
-		async list(ownerId) {
-			const { results } = await db
-				.prepare(
-					"SELECT body_json FROM approved_assets WHERE owner_id = ? ORDER BY created_at, asset_id",
-				)
-				.bind(ownerId)
-				.all();
-			return results.map(toApprovedAsset);
-		},
-		async insert(ownerId, asset) {
-			await db
-				.prepare(
-					"INSERT INTO approved_assets (owner_id, asset_id, body_json, created_at) VALUES (?, ?, ?, ?)",
-				)
-				.bind(
-					ownerId,
-					asset.assetId,
-					JSON.stringify(approvedAssetSchema.parse(asset)),
-					asset.createdAt,
-				)
-				.run();
-		},
-		async delete(ownerId, assetId) {
-			const result = await db
-				.prepare("DELETE FROM approved_assets WHERE owner_id = ? AND asset_id = ?")
-				.bind(ownerId, assetId)
-				.run();
-			return result.meta.changes === 1;
 		},
 	};
 }

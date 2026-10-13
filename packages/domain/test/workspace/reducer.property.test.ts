@@ -240,7 +240,6 @@ describe("applyUiCommand properties", () => {
 					title: fc.constant("ok"),
 					datasetRef: fc.constantFrom("ds_1", "ds_stolen"),
 					sourceIds: fc.subarray(["src_1", "src_fabricated"]),
-					assetRefs: fc.subarray(["asset_1", "asset_unapproved"]),
 				}),
 			),
 		}),
@@ -318,12 +317,7 @@ describe("applyUiCommand properties", () => {
 						assertInvariants(result.value);
 						// Nothing the owner does not hold may ever be referenced by accepted state.
 						const serialized = JSON.stringify(result.value);
-						for (const forbidden of [
-							"ds_stolen",
-							"src_fabricated",
-							"asset_unapproved",
-							"ev_fabricated",
-						]) {
+						for (const forbidden of ["ds_stolen", "src_fabricated", "ev_fabricated"]) {
 							expect(serialized).not.toContain(forbidden);
 						}
 					} else {

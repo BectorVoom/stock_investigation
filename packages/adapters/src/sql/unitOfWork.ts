@@ -443,17 +443,6 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					ALWAYS,
 				),
 			];
-			if (input.assets.length > 0) {
-				statements.push(
-					db
-						.prepare(
-							`INSERT INTO approved_assets (owner_id, asset_id, body_json, created_at)
-							SELECT ?, json_extract(value, '$.assetId'), value, json_extract(value, '$.createdAt')
-							FROM json_each(?)`,
-						)
-						.bind(ownerId, JSON.stringify(input.assets)),
-				);
-			}
 			if (messages.length > 0) {
 				statements.push(
 					db

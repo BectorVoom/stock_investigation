@@ -1,10 +1,8 @@
 import type { AppliedCommand, JobRecord, WorkspaceRecord } from "@research/application";
 import {
 	type AgentSettings,
-	type ApprovedAsset,
 	type Article,
 	agentSettingsSchema,
-	approvedAssetSchema,
 	articleSchema,
 	bundleProvenanceSchema,
 	type ChatMessage,
@@ -23,7 +21,7 @@ import {
 	workspaceStateSchema,
 	workspaceSummarySchema,
 } from "@research/contracts";
-import { isJobState } from "@research/domain";
+import { isJobState, type WorkspaceState } from "@research/domain";
 import { z } from "zod";
 
 /**
@@ -235,9 +233,47 @@ export function toWorkspaceSummary(row: unknown): WorkspaceSummary {
 
 export function toWorkspaceRecord(row: unknown): WorkspaceRecord {
 	const state = decode("workspaces", z.object({ state_json: z.string() }), row);
+	const stored = parseJsonColumn("workspaces", workspaceStateSchema, state.state_json);
 	return {
 		summary: toWorkspaceSummary(row),
-		state: parseJsonColumn("workspaces", workspaceStateSchema, state.state_json),
+		// Stored rows may predate the withdrawal of approved images (owner's decision of
+		// 2026-10-13): drop `image-gallery` components here, at the single decode choke point
+		// every workspace read flows through, rather than rewriting stored JSON in a migration.
+		// Rewriting would need identical JSON surgery in SQL on both backends (D1 and SQLite,
+		// ADR-0008) and would have to neutralise history entries without breaking the
+		// (owner_id, workspace_id, version) continuity that compare-and-set writes and event
+		// polling rely on. Stripping on read keeps the version sequence untouched — the stored
+		// version column and the stripped state's version stay equal, so compare-and-set keeps
+		// working — while the command history is preserved verbatim for audit. The next owner
+		// or agent write persists the stripped state naturally.
+		state: dropWithdrawnImageComponents(stored),
+	};
+}
+
+/**
+ * Removes `image-gallery` components from a stored canvas state read from the
+ * database. Layout order, focus and selection are repaired so the result still
+ * satisfies the workspace invariants; the version is untouched.
+ */
+function dropWithdrawnImageComponents(state: WorkspaceState): WorkspaceState {
+	if (!state.components.some((component) => component.componentType === "image-gallery")) {
+		return state;
+	}
+	const kept = state.components.filter((component) => component.componentType !== "image-gallery");
+	const keptIds = new Set(kept.map((component) => component.componentId));
+	return {
+		...state,
+		components: kept,
+		layout: {
+			...state.layout,
+			order: state.layout.order.filter((id) => keptIds.has(id)),
+		},
+		focusedComponentId:
+			state.focusedComponentId !== null && keptIds.has(state.focusedComponentId)
+				? state.focusedComponentId
+				: null,
+		selection:
+			state.selection !== null && keptIds.has(state.selection.componentId) ? state.selection : null,
 	};
 }
 
@@ -326,11 +362,6 @@ export function toRunnerCredential(row: unknown): RunnerCredential & { readonly 
 		lastUsedAt: r.last_used_at,
 	});
 	return { ...credential, ownerId: r.owner_id };
-}
-
-export function toApprovedAsset(row: unknown): ApprovedAsset {
-	const r = decode("approved_assets", z.object({ body_json: z.string() }), row);
-	return parseJsonColumn("approved_assets", approvedAssetSchema, r.body_json);
 }
 
 const ownerSettingsRowSchema = z.object({

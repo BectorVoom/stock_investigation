@@ -9,7 +9,6 @@ import {
 	shortTextSchema,
 } from "./primitives.ts";
 import {
-	approvedAssetSchema,
 	articleSchema,
 	claimSchema,
 	datasetSchema,
@@ -195,7 +194,6 @@ export const workspaceViewSchema = z.strictObject({
 	state: workspaceStateSchema,
 	datasets: z.array(datasetSchema),
 	sources: z.array(evidenceSchema),
-	assets: z.array(approvedAssetSchema),
 });
 export type WorkspaceView = z.infer<typeof workspaceViewSchema>;
 
@@ -256,15 +254,7 @@ export const conversationListResponseSchema = z.strictObject({
 });
 export type ConversationListResponse = z.infer<typeof conversationListResponseSchema>;
 
-/* ---------- Assets and runner credentials ---------- */
-
-export const approveAssetRequestSchema = z.strictObject({
-	imageUrl: z.string().min(1).max(2048),
-	altText: z.string().trim().min(1).max(300),
-	permissionBasis: z.string().trim().min(1).max(300),
-	sourceEvidenceId: idSchema.nullable(),
-});
-export const assetListResponseSchema = z.strictObject({ assets: z.array(approvedAssetSchema) });
+/* ---------- Runner credentials ---------- */
 
 export const runnerCredentialSchema = z.strictObject({
 	credentialId: idSchema,

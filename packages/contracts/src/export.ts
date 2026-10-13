@@ -2,7 +2,6 @@ import { z } from "zod";
 import { chatMessageSchema, runRecordsResponseSchema } from "./api.ts";
 import { boundedDatasets } from "./jobs.ts";
 import { isoDateTimeSchema, shortTextSchema } from "./primitives.ts";
-import { approvedAssetSchema } from "./records.ts";
 import { workspaceStateSchema } from "./ui.ts";
 
 export const EXPORT_FORMAT_VERSION = 1;
@@ -23,7 +22,25 @@ export const researchExportSchema = z.strictObject({
 	workspace: z.strictObject({ title: shortTextSchema, state: workspaceStateSchema }),
 	messages: z.array(chatMessageSchema).max(2000),
 	datasets: boundedDatasets(EXPORT_LIMITS.datasets, EXPORT_LIMITS.datasetCells),
-	assets: z.array(approvedAssetSchema).max(200),
 	records: runRecordsResponseSchema,
 });
 export type ResearchExport = z.infer<typeof researchExportSchema>;
+
+const anyRecordSchema = z.record(z.string(), z.unknown());
+const anyArraySchema = z.array(z.unknown());
+
+/**
+ * Exports written before approved images were withdrawn (owner's decision of
+ * 2026-10-13) carry a top-level `assets` array this contract no longer
+ * defines. An EMPTY one is dropped so image-free older files still validate;
+ * a non-empty one is left in place, so the strict schema rejects the file and
+ * the server can name the reason. One rule for the web client and the server.
+ */
+export function dropLegacyEmptyAssets(payload: unknown): unknown {
+	const root = anyRecordSchema.safeParse(payload);
+	if (!root.success) return payload;
+	const assets = anyArraySchema.safeParse(root.data.assets);
+	if (!assets.success || assets.data.length > 0) return payload;
+	const { assets: _dropped, ...rest } = root.data;
+	return rest;
+}

@@ -15,6 +15,7 @@ import {
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
+	dropLegacyEmptyAssets,
 	idempotencyKeySchema,
 	issuedRunnerCredentialSchema,
 	issueRunnerCredentialRequestSchema,
@@ -435,12 +436,18 @@ export function createApiClient(options: ApiClientOptions = {}) {
 					return ok(await response.text());
 				},
 			),
-		/** `payload` is untrusted file content; it is validated here and again by the server. */
+		/**
+		 * `payload` is untrusted file content; it is validated here and again by the server.
+		 * Pre-removal files without images still carry an empty `assets` array the contract no
+		 * longer defines, so it is dropped before validation. A file that still contains images
+		 * is refused: an empty array never validates past the strict schema either, and anything
+		 * image-bearing fails here or at the server with the reason named.
+		 */
 		importWorkspace: (payload: unknown): Promise<ApiResult<WorkspaceSummary>> =>
 			write(
 				{ method: "POST", path: `${workspaces}/import` },
 				researchExportSchema,
-				payload,
+				dropLegacyEmptyAssets(payload),
 				workspaceSummarySchema,
 			),
 

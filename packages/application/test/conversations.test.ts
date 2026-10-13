@@ -125,7 +125,6 @@ function cannedCatalog(): ComponentCatalog {
 					references: {
 						datasetRefs: ["ds_keep"],
 						sourceIds: ["ev_keep"],
-						assetRefs: ["asset_keep"],
 						claims: [{ claimId: "cl_keep", status: "supported", claimType: "observation" }],
 					},
 				});
@@ -136,7 +135,6 @@ function cannedCatalog(): ComponentCatalog {
 				references: {
 					datasetRefs: ["ds_doomed"],
 					sourceIds: ["ev_doomed"],
-					assetRefs: [],
 					claims: [{ claimId: "cl_doomed", status: "supported", claimType: "observation" }],
 				},
 			});
@@ -303,7 +301,7 @@ describe("workspace remove (application)", () => {
 		const input = unitOfWork.seen[0];
 		expect(input?.ownerId).toBe(OWNER);
 		expect(input?.workspaceId).toBe("ws_doomed");
-		// Only the survivor's canvas contributes; asset approvals are never deleted.
+		// Only the survivor's canvas contributes.
 		expect(input?.keepDatasetIds).toEqual(["ds_keep"]);
 		expect(input?.keepEvidenceIds).toEqual(["ev_keep"]);
 		expect(input?.keepClaimIds).toEqual(["cl_keep"]);

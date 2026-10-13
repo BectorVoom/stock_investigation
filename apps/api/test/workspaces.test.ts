@@ -1,5 +1,5 @@
+import { env } from "cloudflare:test";
 import {
-	approvedAssetSchema,
 	type ComponentDefinition,
 	conversationResponseSchema,
 	defineComponent,
@@ -238,18 +238,6 @@ describe("workspace commands (section 7, UI-004/UI-006, hard gate 4)", () => {
 			"UNKNOWN_SOURCE",
 		],
 		[
-			"an image that is not an approved asset",
-			{
-				operation: "component.create",
-				componentId: "x1",
-				componentType: "image-gallery",
-				schemaVersion: 1,
-				props: { title: "t", images: [{ assetRef: "unapproved", caption: null }] },
-			},
-			422,
-			"UNKNOWN_ASSET",
-		],
-		[
 			"an existing component id",
 			{
 				operation: "component.create",
@@ -359,7 +347,7 @@ describe("extension components (FR-013, hard gate 9)", () => {
 		propsSchema: timelineProps,
 		capabilities: ["sources"],
 		requiredPermission: "owner",
-		references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds, assetRefs: [] }),
+		references: (props) => ({ datasetRefs: [], sourceIds: props.sourceIds }),
 		migrations: {},
 	});
 
@@ -404,42 +392,248 @@ describe("extension components (FR-013, hard gate 9)", () => {
 	});
 });
 
-describe("approved images (FR-011)", () => {
-	it("only lets a gallery reference images the owner approved", async () => {
-		const { harness, workspaceId } = await seeded();
-		const unsafe = await harness.call("POST", "/assets", {
-			imageUrl: "http://images.example.org/a.png",
-			altText: "A chart",
-			permissionBasis: "licensed",
-			sourceEvidenceId: null,
-		});
-		expect(unsafe.status).toBe(422);
+describe("withdrawn approved images (owner decision 2026-10-13)", () => {
+	/**
+	 * A workspace as stored before the removal: its canvas state and command
+	 * history name an `image-gallery` component. Written with plain SQL because
+	 * the API no longer accepts the withdrawn type.
+	 */
+	async function seedLegacyWorkspace(harness: Harness) {
+		const workspaceId = `ws_legacy_${crypto.randomUUID().slice(0, 8)}`;
+		const at = harness.time.clock.nowIso();
+		const galleryCreate = {
+			protocolVersion: 1,
+			commandId: "cmd_legacy_gallery",
+			workspaceId,
+			expectedWorkspaceVersion: 1,
+			operation: "component.create",
+			componentId: "gallery_1",
+			componentType: "image-gallery",
+			schemaVersion: 1,
+			props: { title: "Plant photos", images: [{ assetRef: "asset_1", caption: null }] },
+		};
+		const state = {
+			workspaceId,
+			version: 2,
+			components: [
+				{
+					componentId: "table_1",
+					componentType: "data-table",
+					schemaVersion: 1,
+					props: { title: "Demand", datasetRef: "ds_1", sourceIds: [] },
+				},
+				{
+					componentId: "gallery_1",
+					componentType: "image-gallery",
+					schemaVersion: 1,
+					props: { title: "Plant photos", images: [{ assetRef: "asset_1", caption: null }] },
+				},
+			],
+			layout: { order: ["table_1", "gallery_1"], columns: 1 },
+			focusedComponentId: "gallery_1",
+			selection: { componentId: "gallery_1", itemKey: "img_0" },
+			lastNavigation: null,
+		};
+		const tableCreate = {
+			protocolVersion: 1,
+			commandId: "cmd_legacy_table",
+			workspaceId,
+			expectedWorkspaceVersion: 0,
+			operation: "component.create",
+			componentId: "table_1",
+			componentType: "data-table",
+			schemaVersion: 1,
+			props: { title: "Demand", datasetRef: "ds_1", sourceIds: [] },
+		};
+		await env.DB.prepare(
+			`INSERT INTO workspaces (owner_id, workspace_id, title, version, state_json, last_mutation_id, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		)
+			.bind(
+				harness.ownerId,
+				workspaceId,
+				"Legacy research",
+				2,
+				JSON.stringify(state),
+				crypto.randomUUID(),
+				at,
+				at,
+			)
+			.run();
+		for (const [version, command] of [
+			[1, tableCreate],
+			[2, galleryCreate],
+		] as const) {
+			await env.DB.prepare(
+				`INSERT INTO workspace_commands (owner_id, workspace_id, command_id, version, command_json, origin, applied_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			)
+				.bind(
+					harness.ownerId,
+					workspaceId,
+					command.commandId,
+					version,
+					JSON.stringify(command),
+					"owner",
+					at,
+				)
+				.run();
+		}
+		return workspaceId;
+	}
 
-		const asset = await body(
-			await harness.call("POST", "/assets", {
-				imageUrl: "https://images.example.org/a.png",
-				altText: "A chart",
-				permissionBasis: "Publisher press kit, reuse permitted",
-				sourceEvidenceId: null,
-			}),
-			approvedAssetSchema,
+	it("has no approved_assets table left", async () => {
+		const harness = createHarness();
+		const gone = await env.DB.prepare(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'approved_assets'",
+		)
+			.bind()
+			.first();
+		expect(gone).toBeNull();
+		// The migration only drops that table.
+		const kept = await env.DB.prepare(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'workspaces'",
+		)
+			.bind()
+			.first<{ name: string }>();
+		expect(kept?.name).toBe("workspaces");
+		expect(harness.ownerId).toContain("owner-");
+	});
+
+	it("keeps a pre-removal conversation loading through view, events and export with a consistent version sequence", async () => {
+		const harness = createHarness();
+		const workspaceId = await seedLegacyWorkspace(harness);
+
+		const seen = await view(harness, workspaceId);
+		expect(seen.state.version).toBe(2);
+		expect(seen.state.components.map((component) => component.componentType)).toEqual([
+			"data-table",
+		]);
+		expect(seen.state.layout.order).toEqual(["table_1"]);
+		expect(seen.state.focusedComponentId).toBeNull();
+		expect(seen.state.selection).toBeNull();
+		expect(seen).not.toHaveProperty("assets");
+
+		// History is preserved verbatim, so a client polling after its last seen
+		// version sees the same sequence with no gaps.
+		const fromStart = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/events?after=0`),
+			workspaceEventsResponseSchema,
 		);
-		const created = await harness.call(
+		expect(fromStart.currentVersion).toBe(2);
+		expect(fromStart.events.map((event) => event.version)).toEqual([1, 2]);
+		const caughtUp = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/events?after=2`),
+			workspaceEventsResponseSchema,
+		);
+		expect(caughtUp.events).toEqual([]);
+		expect(caughtUp.currentVersion).toBe(2);
+
+		const exported = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/export`),
+			researchExportSchema,
+		);
+		expect(exported.workspace.state.components.map((component) => component.componentType)).toEqual(
+			["data-table"],
+		);
+		expect(exported).not.toHaveProperty("assets");
+
+		// The stripped state keeps compare-and-set working: the next command applies at version 2.
+		const focused = await body(
+			await harness.call(
+				"POST",
+				`/workspaces/${workspaceId}/commands`,
+				command(workspaceId, 2, { operation: "component.focus", componentId: "table_1" }),
+			),
+			submitCommandResponseSchema,
+		);
+		expect(focused.state.version).toBe(3);
+		expect(focused.state.focusedComponentId).toBe("table_1");
+	});
+
+	it("rejects a new image-gallery command as an unknown component type", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const response = await harness.call(
 			"POST",
 			`/workspaces/${workspaceId}/commands`,
-			command(workspaceId, 2, {
+			command(workspaceId, 0, {
 				operation: "component.create",
 				componentId: "gallery",
 				componentType: "image-gallery",
 				schemaVersion: 1,
-				props: { title: "Images", images: [{ assetRef: asset.assetId, caption: null }] },
+				props: { title: "Images", images: [{ assetRef: "asset_1", caption: null }] },
 			}),
 		);
-		expect(created.status).toBe(200);
-		expect((await view(harness, workspaceId)).assets.map((item) => item.assetId)).toEqual([
-			asset.assetId,
-		]);
-		expect((await harness.call("DELETE", `/assets/${asset.assetId}`)).status).toBe(204);
+		expect(response.status).toBe(422);
+		const error = await apiError(response);
+		expect(error.code).toBe("UI_COMMAND_REJECTED");
+		expect(error.detail).toBe("UNKNOWN_COMPONENT_TYPE");
+	});
+
+	it("refuses to import an older file with images, naming the reason", async () => {
+		const { harness, workspaceId } = await seeded();
+		const exported = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/export`),
+			researchExportSchema,
+		);
+		const galleryState = {
+			...exported.workspace.state,
+			components: [
+				...exported.workspace.state.components,
+				{
+					componentId: "gallery_1",
+					componentType: "image-gallery",
+					schemaVersion: 1,
+					props: { title: "Plant photos", images: [{ assetRef: "asset_1", caption: null }] },
+				},
+			],
+			layout: {
+				...exported.workspace.state.layout,
+				order: [...exported.workspace.state.layout.order, "gallery_1"],
+			},
+		};
+		const withGallery = await harness.call("POST", "/workspaces/import", {
+			...exported,
+			workspace: { ...exported.workspace, state: galleryState },
+		});
+		expect(withGallery.status).toBe(400);
+		const galleryError = await apiError(withGallery);
+		expect(galleryError.code).toBe("VALIDATION_FAILED");
+		expect(galleryError.message).toContain("approved images");
+
+		const withAssets = await harness.call("POST", "/workspaces/import", {
+			...exported,
+			assets: [
+				{
+					assetId: "asset_1",
+					imageUrl: "https://images.example.org/a.png",
+					altText: "A plant",
+					permissionBasis: "Press kit.",
+					sourceEvidenceId: null,
+					createdAt: "2026-10-11T00:00:00Z",
+				},
+			],
+		});
+		expect(withAssets.status).toBe(400);
+		const assetsError = await apiError(withAssets);
+		expect(assetsError.code).toBe("VALIDATION_FAILED");
+		expect(assetsError.message).toContain("approved images");
+	});
+
+	it("imports an older file without images that still carries an empty assets array", async () => {
+		const { harness, workspaceId } = await seeded();
+		const exported = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/export`),
+			researchExportSchema,
+		);
+		const legacy = { ...exported, assets: [] };
+		const imported = await harness.call("POST", "/workspaces/import", legacy);
+		expect(imported.status).toBe(201);
+		const summary = await body(imported, workspaceSummarySchema);
+		expect((await view(harness, summary.workspaceId)).state.version).toBe(
+			exported.workspace.state.version,
+		);
 	});
 });
 

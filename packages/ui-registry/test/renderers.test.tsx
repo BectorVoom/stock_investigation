@@ -140,22 +140,6 @@ const SCENARIOS: { readonly [T in BaselineType]: Scenario } = {
 		invalidProps: { ...VALID_PROPS["company-profile"], ticker: "lower case" },
 		links: [SOURCE_B],
 	},
-	"image-gallery": {
-		validText: ["Plant photos", "Main assembly hall", "Permission: Press kit"],
-		missing: {
-			props: { title: "Plant photos", images: [{ assetRef: "asset_gone", caption: null }] },
-			expectText: 'Image unavailable — asset "asset_gone" is not an approved image.',
-		},
-		// The approved asset cites evidence that is not in the context.
-		unavailable: {
-			props: VALID_PROPS["image-gallery"],
-			context: { sources: new Map() },
-			expectText: "Source unavailable (id ev_a)",
-			chipLabel: "unavailable",
-		},
-		invalidProps: { title: "Plant photos", images: [] },
-		links: [SOURCE_A],
-	},
 	"research-report": {
 		validText: [
 			"Storage demand report",
@@ -784,29 +768,5 @@ describe("research-report", () => {
 		expect(container.querySelector("[data-claim-type]")).toBeNull();
 		expect(container.textContent).not.toContain("Supported");
 		expect(container.querySelector("[data-unverified-note]")).not.toBeNull();
-	});
-});
-
-describe("image-gallery", () => {
-	it("renders only approved assets, lazily and without a referrer", () => {
-		const container = renderComponent(
-			component("image-gallery", {
-				title: "Plant photos",
-				images: [
-					{ assetRef: "asset_a", caption: "Main assembly hall" },
-					{ assetRef: "asset_unapproved", caption: "Not approved" },
-				],
-			}),
-		);
-		const images = [...container.querySelectorAll("img")];
-		expect(images).toHaveLength(1);
-		const [image] = images;
-		expect(image?.getAttribute("src")).toBe("https://images.example.com/plant.jpg");
-		expect(image?.getAttribute("alt")).toBe("Battery plant exterior");
-		expect(image?.getAttribute("loading")).toBe("lazy");
-		expect(image?.getAttribute("referrerpolicy")).toBe("no-referrer");
-		expect(
-			container.querySelector('[data-image-placeholder="asset_unapproved"]')?.textContent,
-		).toContain("is not an approved image");
 	});
 });

@@ -2,16 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
 	API_PREFIX,
 	agentsResponseSchema,
-	approveAssetRequestSchema,
 	approveRunRequestSchema,
 	articleListResponseSchema,
-	assetListResponseSchema,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
 	chatMessageSchema,
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
+	dropLegacyEmptyAssets,
 	EXPORT_FORMAT_VERSION,
 	IDEMPOTENCY_KEY_HEADER,
 	idempotencyKeySchema,
@@ -42,7 +41,6 @@ import {
 } from "../src/index.ts";
 import {
 	agentDescriptor,
-	approvedAsset,
 	article,
 	chatMessage,
 	claim,
@@ -308,7 +306,6 @@ describe("workspace endpoints", () => {
 		state: workspaceState,
 		datasets: [dataset],
 		sources: [evidence],
-		assets: [approvedAsset],
 	};
 	const event = { version: 5, command: SECTION_7_EXAMPLE_COMMAND, appliedAt: T1, origin: "agent" };
 
@@ -329,11 +326,7 @@ describe("workspace endpoints", () => {
 			{ ...view, state: { ...workspaceState, layout: { order: [], columns: 4 } } },
 			["state", "layout", "columns"],
 		);
-		expectRejected(
-			workspaceViewSchema,
-			{ ...view, assets: [{ ...approvedAsset, imageUrl: "javascript:alert(1)" }] },
-			["assets", 0, "imageUrl"],
-		);
+		expectRejected(workspaceViewSchema, { ...view, assets: [] });
 	});
 
 	it("accepts workspace events and validates the embedded command", () => {
@@ -403,13 +396,7 @@ describe("conversation", () => {
 	});
 });
 
-describe("assets and runner credentials", () => {
-	const approval = {
-		imageUrl: "https://images.example.com/plant.jpg",
-		altText: "Battery plant exterior",
-		permissionBasis: "Press kit, reuse permitted with credit.",
-		sourceEvidenceId: null,
-	};
+describe("runner credentials", () => {
 	const credential = {
 		credentialId: "cred_1",
 		label: "Home PC",
@@ -418,18 +405,6 @@ describe("assets and runner credentials", () => {
 		revokedAt: null,
 		lastUsedAt: null,
 	};
-
-	it("requires alt text and a permission basis to approve an image", () => {
-		expectAccepted(approveAssetRequestSchema, approval);
-		expectRejected(approveAssetRequestSchema, { ...approval, altText: "  " }, ["altText"]);
-		expectRejected(approveAssetRequestSchema, { ...approval, permissionBasis: "" }, [
-			"permissionBasis",
-		]);
-		expectRejected(approveAssetRequestSchema, without(approval, "permissionBasis"), [
-			"permissionBasis",
-		]);
-		expectAccepted(assetListResponseSchema, { assets: [approvedAsset] });
-	});
 
 	it("accepts a runner credential record that never contains the token", () => {
 		expectAccepted(runnerCredentialSchema, credential);
@@ -466,7 +441,6 @@ describe("researchExportSchema (FR-015)", () => {
 		workspace: { title: "Energy storage", state: workspaceState },
 		messages: [chatMessage],
 		datasets: [dataset],
-		assets: [approvedAsset],
 		records: runRecords,
 	};
 
@@ -523,15 +497,41 @@ describe("researchExportSchema (FR-015)", () => {
 		for (const value of [null, "{}", [], 1]) expectRejected(researchExportSchema, value);
 	});
 
-	it("bounds messages, datasets and assets", () => {
+	it("bounds messages and datasets", () => {
 		expectRejected(researchExportSchema, { ...exported, messages: repeat(chatMessage, 2001) }, [
 			"messages",
 		]);
 		expectRejected(researchExportSchema, { ...exported, datasets: repeat(dataset, 401) }, [
 			"datasets",
 		]);
-		expectRejected(researchExportSchema, { ...exported, assets: repeat(approvedAsset, 201) }, [
-			"assets",
-		]);
+	});
+
+	it("rejects the withdrawn `assets` array", () => {
+		// Pre-removal files carried owner-approved images here; the field no longer exists.
+		expectRejected(researchExportSchema, { ...exported, assets: [] });
+	});
+});
+
+describe("dropLegacyEmptyAssets (exports written before images were withdrawn)", () => {
+	it("drops an empty assets array and keeps everything else", () => {
+		expect(dropLegacyEmptyAssets({ format: "x", assets: [], messages: [1] })).toEqual({
+			format: "x",
+			messages: [1],
+		});
+	});
+
+	it("leaves a non-empty assets array in place so strict validation rejects the file", () => {
+		const payload = { format: "x", assets: [{ assetId: "asset_1" }] };
+		expect(dropLegacyEmptyAssets(payload)).toBe(payload);
+	});
+
+	it.each([
+		["a payload without the field", { format: "x" }],
+		["an assets value that is not an array", { assets: "none" }],
+		["an array", [1, 2]],
+		["null", null],
+		["a string", "text"],
+	])("returns %s unchanged", (_label, payload) => {
+		expect(dropLegacyEmptyAssets(payload)).toBe(payload);
 	});
 });

@@ -22,7 +22,7 @@ function strings(value: JsonValue | undefined): readonly string[] {
 
 /**
  * A stand-in component registry, deliberately independent of `@research/contracts`:
- * - "panel" needs a string `title`; may carry `datasetRef`, `sourceIds`, `assetRefs`.
+ * - "panel" needs a string `title`; may carry `datasetRef`, `sourceIds`.
  * - "note" needs a string `title` and rejects `datasetRef` (it cannot be bound to data).
  * Only schema version 1 exists.
  */
@@ -34,21 +34,18 @@ export const validateProps: PropsValidator = (componentType, schemaVersion, prop
 	const references: ComponentReferences = {
 		datasetRefs: strings(props.datasetRef),
 		sourceIds: strings(props.sourceIds),
-		assetRefs: strings(props.assetRefs),
 	};
 	return ok({ props, schemaVersion, references });
 };
 
 export const KNOWN_DATASETS = ["ds_1", "ds_2", "ds_3"] as const;
 export const KNOWN_SOURCES = ["src_1", "src_2", "ev_9"] as const;
-export const KNOWN_ASSETS = ["asset_1", "asset_2"] as const;
 
 export function context(overrides: Partial<CommandContext> = {}): CommandContext {
 	return {
 		validateProps,
 		knownDatasetRefs: new Set(KNOWN_DATASETS),
 		knownSourceIds: new Set(KNOWN_SOURCES),
-		knownAssetRefs: new Set(KNOWN_ASSETS),
 		knownClaims: new Map(),
 		maxComponents: 40,
 		...overrides,

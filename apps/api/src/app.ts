@@ -3,7 +3,6 @@ import {
 	type ApiErrorBody,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
-	approveAssetRequestSchema,
 	approveRunRequestSchema,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
@@ -630,7 +629,7 @@ export function createApp(options: AppOptions = {}) {
 				// a valid ASCII header value.
 				return conditionalJson(
 					c,
-					`${workspaceId}.${fingerprint(workspace.workspace.title)}.${workspace.workspace.updatedAt}.${workspace.state.version}.${workspace.assets.length}`,
+					`${workspaceId}.${fingerprint(workspace.workspace.title)}.${workspace.workspace.updatedAt}.${workspace.state.version}`,
 					workspace,
 				);
 			}),
@@ -765,42 +764,6 @@ export function createApp(options: AppOptions = {}) {
 					});
 				}
 				return c.json(document);
-			}),
-		),
-	);
-
-	/* Assets */
-	api.get("/assets", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const assets = yield* attempt("assets.list", () => c.var.services.assets.list(owner(c)));
-				return c.json({ assets });
-			}),
-		),
-	);
-	api.post("/assets", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const body = yield* readJson(c, approveAssetRequestSchema);
-				const asset = yield* useCase("assets.approve", () =>
-					c.var.services.assets.approve(owner(c), body),
-				);
-				return c.json(asset, 201);
-			}),
-		),
-	);
-	api.delete("/assets/:id", (c) =>
-		respond(
-			c,
-			logger,
-			Effect.gen(function* () {
-				const assetId = yield* pathId(c, "id");
-				yield* useCase("assets.remove", () => c.var.services.assets.remove(owner(c), assetId));
-				return c.body(null, 204);
 			}),
 		),
 	);

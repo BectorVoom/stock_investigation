@@ -159,7 +159,7 @@ export const workspaceStateSchema: z.ZodType<WorkspaceState> = z
 
 /* ---------- Component catalog (schema half of the registry) ---------- */
 
-export type ComponentCapability = "dataset" | "sources" | "assets" | "selection";
+export type ComponentCapability = "dataset" | "sources" | "selection";
 
 /**
  * Schema-side description of a component type. The Worker validates commands
@@ -337,14 +337,6 @@ export const companyProfilePropsSchema = z.strictObject({
 	sourceIds: sourceIdsSchema.min(1),
 });
 
-export const imageGalleryPropsSchema = z.strictObject({
-	title: titleSchema,
-	images: z
-		.array(z.strictObject({ assetRef: idSchema, caption: z.string().max(300).nullable() }))
-		.min(1)
-		.max(12),
-});
-
 export const researchReportPropsSchema = z.strictObject({
 	title: titleSchema,
 	generatedAt: isoDateTimeSchema,
@@ -391,12 +383,11 @@ const datasetAndSources = (props: {
 }): ComponentReferences => ({
 	datasetRefs: [props.datasetRef],
 	sourceIds: props.sourceIds,
-	assetRefs: [],
 });
 
 const chartCapabilities = ["dataset", "sources"] as const;
 
-/** The ten V1 component types. Extensions append their own definitions at the composition roots. */
+/** The nine V1 component types. Extensions append their own definitions at the composition roots. */
 export const BASELINE_COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = [
 	defineComponent({
 		componentType: "data-table",
@@ -470,19 +461,6 @@ export const BASELINE_COMPONENT_DEFINITIONS: readonly ComponentDefinition[] = [
 		references: (props) => ({
 			datasetRefs: props.datasetRef === undefined ? [] : [props.datasetRef],
 			sourceIds: props.sourceIds,
-			assetRefs: [],
-		}),
-		migrations: {},
-	}),
-	defineComponent({
-		componentType: "image-gallery",
-		schemaVersion: 1,
-		propsSchema: imageGalleryPropsSchema,
-		capabilities: ["assets"],
-		requiredPermission: "owner",
-		references: (props) => ({
-			...NO_REFERENCES,
-			assetRefs: props.images.map((image) => image.assetRef),
 		}),
 		migrations: {},
 	}),
@@ -522,5 +500,4 @@ export type CandlestickChartProps = z.infer<typeof candlestickChartPropsSchema>;
 export type NewsCardProps = z.infer<typeof newsCardPropsSchema>;
 export type SourceListProps = z.infer<typeof sourceListPropsSchema>;
 export type CompanyProfileProps = z.infer<typeof companyProfilePropsSchema>;
-export type ImageGalleryProps = z.infer<typeof imageGalleryPropsSchema>;
 export type ResearchReportProps = z.infer<typeof researchReportPropsSchema>;

@@ -6,6 +6,7 @@ import {
 	PLANNING_SOURCES_MAX_BYTES,
 	PROMPT_VERSION,
 	planningPrompt,
+	verificationPrompt,
 } from "../src/research/prompts.ts";
 import { newsTools, request, SOURCES } from "./support.ts";
 
@@ -185,5 +186,36 @@ describe("planning prompt byte budget (finding 5)", () => {
 
 	it("keeps the sources section within its own byte budget", () => {
 		expect(PLANNING_SOURCES_MAX_BYTES).toBe(8_000);
+	});
+});
+
+describe("withdrawn images are never offered to the model (owner decision 2026-10-13)", () => {
+	const analysis = () =>
+		analysisPrompt({
+			request: request(),
+			nowIso: "2026-10-11T00:00:00.000Z",
+			evidencePack: "pack",
+			recordSummary: "records",
+			datasetGuide: "guide",
+			existingComponents: [],
+			conversationContext: CONTEXT,
+			fenceToken: "fence-9",
+			repairNote: null,
+		});
+
+	it("mentions no image, gallery, asset, picture or photo in any agent-facing prompt", () => {
+		const planning = planPrompt({ tools: newsTools().registry.list() });
+		const verification = verificationPrompt({
+			claims: [{ index: 0, text: "Orders rose.", passages: "Orders rose." }],
+			fenceToken: "fence-v",
+		});
+		for (const prompt of [planning, analysis(), verification]) {
+			expect(prompt).not.toMatch(/image|galler|asset|picture|photo/i);
+		}
+	});
+
+	it("tells the model it may only add table, chart or source-list components", () => {
+		expect(analysis()).toContain("You may only add table, chart or source-list components");
+		expect(analysis()).not.toContain("image-gallery");
 	});
 });

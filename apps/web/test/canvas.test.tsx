@@ -395,6 +395,47 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 	});
 });
 
+describe("withdrawn images (owner decision 2026-10-13)", () => {
+	it("renders a pre-removal conversation without errors, with a fallback for the gallery", async () => {
+		// A workspace stored before the removal still names an image-gallery component.
+		// The client parses it (the stored schema accepts any well-formed type) and the
+		// registry answers with an explicit fallback; nothing throws and the rest renders.
+		server.view = {
+			...server.view,
+			state: {
+				...server.view.state,
+				components: [
+					...server.view.state.components,
+					{
+						componentId: "gallery_1",
+						componentType: "image-gallery",
+						schemaVersion: 1,
+						props: {
+							title: "Plant photos",
+							images: [{ assetRef: "asset_1", caption: null }],
+						},
+					},
+				],
+				layout: { order: ["news_1", "table_1", "sources_1", "gallery_1"], columns: 1 },
+			},
+		};
+		mountApp(backend);
+		const canvas = await canvasReady();
+		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1", "gallery_1"]);
+		const gallery = within(canvas).getByRole("article", { name: "Component gallery_1" });
+		expect(gallery.textContent).toContain("Cannot render: unknown component type");
+		expect(gallery.textContent).toContain("image-gallery");
+		expect([...document.querySelectorAll('[role="alert"]')]).toHaveLength(0);
+		// The surviving components render as before.
+		expect(
+			within(canvas).getByRole("heading", {
+				level: 3,
+				name: "Utilities accelerate storage tenders",
+			}),
+		).toBeDefined();
+	});
+});
+
 describe("canvas reload (FR-010)", () => {
 	it("renders the same components after a remount, from server state, without rerunning research", async () => {
 		const first = mountApp(backend);

@@ -243,7 +243,6 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			commandContext(deps.catalog, {
 				datasetIds: [...known.datasetIds, ...request.bundle.datasets.map((d) => d.datasetId)],
 				evidenceIds: [...known.evidenceIds, ...request.bundle.evidence.map((e) => e.evidenceId)],
-				assetIds: known.assetIds,
 				claims: [...known.claims, ...request.bundle.claims],
 			}),
 			now,

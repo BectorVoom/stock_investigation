@@ -85,22 +85,6 @@ describe("accessibility: structure", () => {
 		expect(screen.getByRole("note").textContent).toBe("Research aid only; not investment advice.");
 	});
 
-	it("gives approved images alt text and unapproved ones a named placeholder", () => {
-		renderComponent(
-			component("image-gallery", {
-				title: "Plant photos",
-				images: [
-					{ assetRef: "asset_a", caption: null },
-					{ assetRef: "asset_gone", caption: null },
-				],
-			}),
-		);
-		expect(screen.getByRole("img", { name: "Battery plant exterior" })).toBeDefined();
-		expect(
-			screen.getByRole("img", { name: "Image unavailable: asset asset_gone is not approved" }),
-		).toBeDefined();
-	});
-
 	it("names the fallback so assistive technology announces why nothing rendered", () => {
 		renderComponent(component("no-such-type", {}));
 		expect(screen.getByRole("status").textContent).toContain(

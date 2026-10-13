@@ -22,7 +22,6 @@ import {
 	defineComponent,
 	financialTablePropsSchema,
 	idSchema,
-	imageGalleryPropsSchema,
 	lineChartPropsSchema,
 	newsCardPropsSchema,
 	researchReportPropsSchema,
@@ -43,7 +42,6 @@ const BASELINE_TYPES = [
 	"news-card",
 	"source-list",
 	"company-profile",
-	"image-gallery",
 	"research-report",
 ] as const;
 
@@ -55,7 +53,6 @@ interface PropsFixture {
 	readonly references: {
 		readonly datasetRefs: readonly string[];
 		readonly sourceIds: readonly string[];
-		readonly assetRefs: readonly string[];
 		readonly claims?: readonly {
 			readonly claimId: string;
 			readonly status: string;
@@ -76,7 +73,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			sourceIds: ["ev_1", "ev_2"],
 			caption: "c",
 		},
-		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1", "ev_2"], assetRefs: [] },
+		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1", "ev_2"] },
 		invalid: [
 			["missing datasetRef", { title: "T", sourceIds: [] }],
 			["missing sourceIds", { title: "T", datasetRef: "ds_1" }],
@@ -93,7 +90,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			sourceIds: ["ev_1"],
 			methodologyNote: "Trailing PER = price / diluted EPS (FY2025, JGAAP).",
 		},
-		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1"], assetRefs: [] },
+		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1"] },
 		invalid: [
 			["missing methodology note", { title: "T", datasetRef: "ds_1", sourceIds: [] }],
 			[
@@ -117,7 +114,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			yUnit: "JPY bn",
 			sourceIds: ["ev_1"],
 		},
-		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1"], assetRefs: [] },
+		references: { datasetRefs: ["ds_1"], sourceIds: ["ev_1"] },
 		invalid: [
 			[
 				"missing y unit",
@@ -183,7 +180,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			yUnit: "%",
 			sourceIds: [],
 		},
-		references: { datasetRefs: ["ds_2"], sourceIds: [], assetRefs: [] },
+		references: { datasetRefs: ["ds_2"], sourceIds: [] },
 		invalid: [
 			[
 				"missing category key",
@@ -237,7 +234,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			priceUnit: "JPY",
 			sourceIds: ["ev_3"],
 		},
-		references: { datasetRefs: ["ds_3"], sourceIds: ["ev_3"], assetRefs: [] },
+		references: { datasetRefs: ["ds_3"], sourceIds: ["ev_3"] },
 		invalid: [
 			[
 				"missing price unit",
@@ -269,7 +266,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 	},
 	"news-card": {
 		valid: { headline: "Battery makers expand capacity", sourceId: "ev_1", summary: null },
-		references: { datasetRefs: [], sourceIds: ["ev_1"], assetRefs: [] },
+		references: { datasetRefs: [], sourceIds: ["ev_1"] },
 		invalid: [
 			["missing source id", { headline: "H", summary: null }],
 			[
@@ -283,7 +280,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 	},
 	"source-list": {
 		valid: { title: "Sources", sourceIds: ["ev_1", "ev_2"] },
-		references: { datasetRefs: [], sourceIds: ["ev_1", "ev_2"], assetRefs: [] },
+		references: { datasetRefs: [], sourceIds: ["ev_1", "ev_2"] },
 		invalid: [
 			["no sources", { title: "Sources", sourceIds: [] }],
 			["missing title", { sourceIds: ["ev_1"] }],
@@ -301,7 +298,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			datasetRef: "ds_4",
 			sourceIds: ["ev_1"],
 		},
-		references: { datasetRefs: ["ds_4"], sourceIds: ["ev_1"], assetRefs: [] },
+		references: { datasetRefs: ["ds_4"], sourceIds: ["ev_1"] },
 		invalid: [
 			[
 				"no sources",
@@ -352,37 +349,6 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 			],
 		],
 	},
-	"image-gallery": {
-		valid: {
-			title: "Plants",
-			images: [
-				{ assetRef: "asset_1", caption: "Exterior" },
-				{ assetRef: "asset_2", caption: null },
-			],
-		},
-		references: { datasetRefs: [], sourceIds: [], assetRefs: ["asset_1", "asset_2"] },
-		invalid: [
-			["no images", { title: "Plants", images: [] }],
-			[
-				"a raw image URL",
-				{ title: "Plants", images: [{ url: "https://x.example.org/a.png", caption: null }] },
-			],
-			[
-				"an extra src next to the asset reference",
-				{
-					title: "Plants",
-					images: [{ assetRef: "asset_1", caption: null, src: "https://x.example.org/a.png" }],
-				},
-			],
-			[
-				"too many images",
-				{
-					title: "Plants",
-					images: Array.from({ length: 13 }, () => ({ assetRef: "asset_1", caption: null })),
-				},
-			],
-		],
-	},
 	"research-report": {
 		valid: {
 			title: "Storage demand outlook",
@@ -421,7 +387,6 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 		references: {
 			datasetRefs: [],
 			sourceIds: ["ev_1", "ev_2", "ev_1"],
-			assetRefs: [],
 			claims: [
 				{ claimId: "cl_1", status: "supported", claimType: "observation" },
 				{ claimId: "cl_2", status: "conflicting", claimType: "hypothesis" },
@@ -542,7 +507,7 @@ const FIXTURES: { readonly [T in BaselineType]: PropsFixture } = {
 };
 
 describe("baseline component catalog", () => {
-	it("registers exactly the ten V1 component types, each at schema version 1", () => {
+	it("registers exactly the nine V1 component types, each at schema version 1", () => {
 		expect([...catalog.componentTypes()].sort()).toEqual([...BASELINE_TYPES].sort());
 		for (const componentType of BASELINE_TYPES) {
 			expect(catalog.currentSchemaVersion(componentType)).toBe(1);
@@ -577,7 +542,7 @@ describe("baseline component catalog", () => {
 
 	it.each(BASELINE_TYPES)("%s rejects empty props and another type's props", (type) => {
 		expect(catalog.validateProps(type, 1, {})).toEqual({ ok: false, error: "INVALID_PROPS" });
-		const other = type === "news-card" ? "image-gallery" : "news-card";
+		const other = type === "news-card" ? "source-list" : "news-card";
 		expect(catalog.validateProps(type, 1, FIXTURES[other].valid)).toEqual({
 			ok: false,
 			error: "INVALID_PROPS",
@@ -594,7 +559,7 @@ describe("baseline component catalog", () => {
 			value: {
 				props: { title: "Sources", sourceIds: ["ev_1"] },
 				schemaVersion: 1,
-				references: { datasetRefs: [], sourceIds: ["ev_1"], assetRefs: [] },
+				references: { datasetRefs: [], sourceIds: ["ev_1"] },
 			},
 		});
 	});
@@ -615,7 +580,7 @@ describe("baseline component catalog", () => {
 			value: {
 				props: command.props,
 				schemaVersion: 1,
-				references: { datasetRefs: ["dataset_20"], sourceIds: ["source_11"], assetRefs: [] },
+				references: { datasetRefs: ["dataset_20"], sourceIds: ["source_11"] },
 			},
 		});
 	});
@@ -631,7 +596,6 @@ describe("exported props schemas", () => {
 		"news-card": newsCardPropsSchema,
 		"source-list": sourceListPropsSchema,
 		"company-profile": companyProfilePropsSchema,
-		"image-gallery": imageGalleryPropsSchema,
 		"research-report": researchReportPropsSchema,
 	};
 
@@ -755,7 +719,7 @@ describe("schema migration", () => {
 			value: {
 				props: noteCardV2,
 				schemaVersion: 2,
-				references: { datasetRefs: [], sourceIds: ["ev_1"], assetRefs: [] },
+				references: { datasetRefs: [], sourceIds: ["ev_1"] },
 			},
 		});
 	});
@@ -766,7 +730,7 @@ describe("schema migration", () => {
 			value: {
 				props: noteCardV2,
 				schemaVersion: 2,
-				references: { datasetRefs: [], sourceIds: ["ev_1"], assetRefs: [] },
+				references: { datasetRefs: [], sourceIds: ["ev_1"] },
 			},
 		});
 	});
@@ -896,7 +860,6 @@ function commandContext(componentCatalog = catalog): CommandContext {
 		validateProps: componentCatalog.validateProps,
 		knownDatasetRefs: new Set(["dataset_20", "ds_1"]),
 		knownSourceIds: new Set(["source_11", "ev_1", "ev_2"]),
-		knownAssetRefs: new Set(["asset_1"]),
 		knownClaims: new Map(),
 		maxComponents: 40,
 	};
@@ -967,7 +930,14 @@ describe("catalog used as the reducer's props validator", () => {
 		expect(result).toMatchObject({ ok: false, error: { code: "INVALID_PROPS" } });
 	});
 
-	it("rejects a gallery image that is not an approved asset", () => {
+	it("rejects the withdrawn image-gallery type as unknown", () => {
+		// Approved images were removed by the owner's decision of 2026-10-13: the catalog no
+		// longer defines the type, so both validation and command application fail closed.
+		expect(catalog.validateProps("image-gallery", 1, { title: "Plants", images: [] })).toEqual({
+			ok: false,
+			error: "UNKNOWN_COMPONENT_TYPE",
+		});
+		expect(catalog.currentSchemaVersion("image-gallery")).toBeNull();
 		const result = applyAll(
 			[
 				{
@@ -975,12 +945,12 @@ describe("catalog used as the reducer's props validator", () => {
 					componentId: "gallery",
 					componentType: "image-gallery",
 					schemaVersion: 1,
-					props: { title: "Plants", images: [{ assetRef: "asset_unapproved", caption: null }] },
+					props: { title: "Plants", images: [{ assetRef: "asset_1", caption: null }] },
 				},
 			],
 			commandContext(),
 		);
-		expect(result).toMatchObject({ ok: false, error: { code: "UNKNOWN_ASSET" } });
+		expect(result).toMatchObject({ ok: false, error: { code: "UNKNOWN_COMPONENT_TYPE" } });
 	});
 
 	it("rejects a report statement citing a source that is not stored", () => {

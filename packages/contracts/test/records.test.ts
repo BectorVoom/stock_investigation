@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	approvedAssetSchema,
 	articleSchema,
 	claimIssueSchema,
 	claimSchema,
@@ -32,7 +31,6 @@ import {
 	trustClassificationSchema,
 } from "../src/index.ts";
 import {
-	approvedAsset,
 	article,
 	availableObservation,
 	claim,
@@ -887,33 +885,6 @@ describe("dataset schemas (UI-007 / hard gate 6)", () => {
 		expectRejected(datasetSchema, { ...dataset, columns: [], rows: [] }, ["columns"]);
 		expectAccepted(datasetSchema, { ...dataset, rows: repeat(dataset.rows[0], 300) });
 		expectRejected(datasetSchema, { ...dataset, rows: repeat(dataset.rows[0], 301) }, ["rows"]);
-	});
-});
-
-describe("approvedAssetSchema", () => {
-	it("accepts an approved image with its permission basis", () => {
-		expectAccepted(approvedAssetSchema, approvedAsset);
-	});
-
-	it("rejects an asset without alt text or permission basis", () => {
-		expectRejected(approvedAssetSchema, { ...approvedAsset, altText: "" }, ["altText"]);
-		expectRejected(approvedAssetSchema, { ...approvedAsset, permissionBasis: "" }, [
-			"permissionBasis",
-		]);
-		expectRejected(approvedAssetSchema, without(approvedAsset, "permissionBasis"), [
-			"permissionBasis",
-		]);
-	});
-
-	it("rejects unsafe image URLs", () => {
-		for (const imageUrl of [
-			"http://images.example.com/a.jpg",
-			"javascript:alert(1)",
-			"data:image/svg+xml,<svg onload=alert(1)>",
-			"/relative.png",
-		]) {
-			expectRejected(approvedAssetSchema, { ...approvedAsset, imageUrl }, ["imageUrl"]);
-		}
 	});
 });
 

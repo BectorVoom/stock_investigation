@@ -94,13 +94,13 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 			return ok(summary);
 		},
 
-		/** Workspace state plus every dataset, source and asset its components reference. */
+		/** Workspace state plus every dataset and source its components reference. */
 		async view(ownerId: string, workspaceId: string): Promise<UseCaseResult<WorkspaceView>> {
 			const record = await deps.workspaces.get(ownerId, workspaceId);
 			if (record === null) return fail("NOT_FOUND", "Workspace not found.");
 			const resolved = await deps.records.resolve(ownerId, {
 				...toLookup(workspaceReferences(record.state, deps.catalog.validateProps)),
-				// The view ships datasets, sources and assets; claim badges were checked when stored.
+				// The view ships datasets and sources; claim badges were checked when stored.
 				claimIds: [],
 			});
 			return ok({
@@ -108,7 +108,6 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 				state: record.state,
 				datasets: [...resolved.datasets],
 				sources: [...resolved.evidence],
-				assets: [...resolved.assets],
 			});
 		},
 
@@ -223,7 +222,6 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 			const resolved = await deps.records.resolve(ownerId, {
 				datasetIds: [],
 				evidenceIds,
-				assetIds: [],
 				claimIds: [],
 			});
 			return ok({
@@ -278,7 +276,6 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 			const lookup = toLookup({
 				datasetRefs: referenced.flatMap((refs) => refs.datasetRefs),
 				sourceIds: referenced.flatMap((refs) => refs.sourceIds),
-				assetRefs: [],
 				claims: referenced.flatMap((refs) => refs.claims ?? []),
 			});
 			const outcome = await deps.unitOfWork.deleteWorkspace({

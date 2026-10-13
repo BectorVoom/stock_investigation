@@ -1,5 +1,6 @@
 import {
 	type ComponentCatalog,
+	dropLegacyEmptyAssets,
 	EXPORT_FORMAT_VERSION,
 	MAX_REQUEST_BODY_BYTES,
 	type ResearchExport,
@@ -15,7 +16,6 @@ import {
 import { z } from "zod";
 import { fail, type UseCaseResult } from "./errors.ts";
 import type {
-	AssetRepository,
 	ChatRepository,
 	Clock,
 	IdGenerator,
@@ -32,7 +32,6 @@ export interface ExportImportServiceDeps {
 	readonly workspaces: WorkspaceRepository;
 	readonly records: ResearchRecordRepository;
 	readonly chat: ChatRepository;
-	readonly assets: AssetRepository;
 	readonly unitOfWork: ResearchUnitOfWork;
 	readonly catalog: ComponentCatalog;
 	readonly clock: Clock;
@@ -246,6 +245,37 @@ function remapIds(value: unknown, ids: ReadonlyMap<string, string>): unknown {
 
 const versionProbeSchema = z.looseObject({ formatVersion: z.unknown() });
 
+/**
+ * The two places a pre-removal export could carry images, read loosely: every
+ * other part of the file is left to the strict export schema.
+ */
+const legacyImageProbeSchema = z.looseObject({
+	assets: z.array(z.unknown()).optional(),
+	workspace: z
+		.looseObject({
+			state: z.looseObject({ components: z.array(z.unknown()).optional() }).optional(),
+		})
+		.optional(),
+});
+const componentTypeProbeSchema = z.looseObject({ componentType: z.string() });
+
+/**
+ * Names the image content a pre-removal export still carries, or null when the
+ * payload is free of it. Only two shapes ever carried images: the top-level
+ * `assets` array and `image-gallery` components in the stored canvas state.
+ */
+function findLegacyImageContent(payload: unknown): string | null {
+	const probe = legacyImageProbeSchema.safeParse(payload);
+	if (!probe.success) return null;
+	const assets = probe.data.assets ?? [];
+	if (assets.length > 0) return `${assets.length} approved asset(s)`;
+	const galleries = (probe.data.workspace?.state?.components ?? []).filter((component) => {
+		const typed = componentTypeProbeSchema.safeParse(component);
+		return typed.success && typed.data.componentType === "image-gallery";
+	});
+	return galleries.length > 0 ? `${galleries.length} image-gallery component(s)` : null;
+}
+
 export function createExportImportService(deps: ExportImportServiceDeps) {
 	return {
 		async export(ownerId: string, workspaceId: string): Promise<UseCaseResult<ResearchExport>> {
@@ -287,7 +317,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 				const more = await deps.records.resolve(ownerId, {
 					datasetIds: [],
 					evidenceIds: missing,
-					assetIds: [],
 					claimIds: [],
 				});
 				for (const item of more.evidence) evidence.set(item.evidenceId, item);
@@ -299,7 +328,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 				workspace: { title: record.summary.title, state: record.state },
 				messages: [...messages],
 				datasets: [...datasets.values()],
-				assets: [...referenced.assets],
 				records: { ...records, evidence: [...evidence.values()] },
 			};
 			// An export is only useful if it can be imported: it must satisfy the import
@@ -329,7 +357,19 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 					`Only export format version ${EXPORT_FORMAT_VERSION} can be imported.`,
 				);
 			}
-			const parsed = researchExportSchema.safeParse(payload);
+			// Approved images were withdrawn by the owner's decision of 2026-10-13: a file that
+			// still carries them is refused with the reason named, never silently trimmed.
+			const legacyImage = findLegacyImageContent(payload);
+			if (legacyImage !== null) {
+				return fail(
+					"VALIDATION_FAILED",
+					`The file contains approved images (${legacyImage}), which were removed by the owner's decision of 2026-10-13 and can no longer be imported.`,
+				);
+			}
+			// Pre-removal files without images still carry an empty `assets` array. The field no
+			// longer exists in the contract (the schema is strict), so it is dropped here — after
+			// the refusal above, which guarantees nothing image-related is discarded silently.
+			const parsed = researchExportSchema.safeParse(dropLegacyEmptyAssets(payload));
 			if (!parsed.success) {
 				return fail("VALIDATION_FAILED", "The file is not a valid research export.");
 			}
@@ -355,7 +395,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 			const fileDatasets = new Set(document.datasets.map((dataset) => dataset.datasetId));
 			const fileEvidence = new Set(document.records.evidence.map((item) => item.evidenceId));
 			const fileClaims = new Set(document.records.claims.map((claim) => claim.claimId));
-			const assetRefs = new Set<string>();
 			let dangling: string | null = null;
 			for (const component of document.workspace.state.components) {
 				const validated = deps.catalog.validateProps(
@@ -375,7 +414,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 					refs.datasetRefs.find((id) => !fileDatasets.has(id)) ??
 					refs.sourceIds.find((id) => !fileEvidence.has(id)) ??
 					null;
-				for (const assetRef of refs.assetRefs) assetRefs.add(assetRef);
 			}
 			dangling ??=
 				document.messages
@@ -404,9 +442,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 				...records.pricingPower.map((r) => r.pricingPowerId),
 				...document.datasets.map((r) => r.datasetId),
 				...document.messages.map((r) => r.messageId),
-				// Image approvals are not imported; re-keying their ids guarantees a gallery cannot
-				// end up bound to an unrelated asset the owner already approved.
-				...assetRefs,
 			];
 			const ids = new Map(oldIds.map((id, index) => [id, `${importRunId}_${index}`]));
 			// Imported records all hang off one synthetic run. The workspace id is mapped last
@@ -468,9 +503,6 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 				importRunId,
 				records: imported.records,
 				datasets: imported.datasets,
-				// Image approval is an explicit owner decision (FR-011) and a file cannot make it:
-				// imported galleries show "not approved" placeholders until the owner re-approves.
-				assets: [],
 				messages: imported.messages,
 				at: now,
 			});

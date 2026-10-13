@@ -54,7 +54,7 @@ const threePanels = (): WorkspaceState =>
 	build([
 		createPanel("a", { datasetRef: "ds_1", sourceIds: ["src_1"] }),
 		createPanel("b", { datasetRef: "ds_1" }),
-		createPanel("c", { datasetRef: "ds_2", assetRefs: ["asset_1"] }),
+		createPanel("c", { datasetRef: "ds_2" }),
 	]);
 
 describe("emptyWorkspaceState", () => {
@@ -217,14 +217,6 @@ describe("component.create", () => {
 		expect(error.detail).toContain("src_invented");
 	});
 
-	it("rejects an asset that was not approved", () => {
-		const error = expectRejected(
-			apply(build([]), createPanel("x", { assetRefs: ["asset_unapproved"] })),
-			"UNKNOWN_ASSET",
-		);
-		expect(error.detail).toContain("asset_unapproved");
-	});
-
 	it("stores the props returned by the validator, not the raw command props", () => {
 		const normalizing: CommandContext = context({
 			validateProps: (_type, version, props) => ({
@@ -286,7 +278,6 @@ describe("component.update", () => {
 			apply(state, { operation: "component.update", componentId: "a", props });
 		expectRejected(update({ datasetRef: "ds_foreign" }), "UNKNOWN_DATASET");
 		expectRejected(update({ sourceIds: ["src_invented"] }), "UNKNOWN_SOURCE");
-		expectRejected(update({ assetRefs: ["asset_unapproved"] }), "UNKNOWN_ASSET");
 	});
 
 	it("re-checks references the component already had", () => {
@@ -350,7 +341,6 @@ describe("component.remove", () => {
 		const ctx = context({
 			knownDatasetRefs: new Set(),
 			knownSourceIds: new Set(),
-			knownAssetRefs: new Set(),
 		});
 		expect(apply(threePanels(), { operation: "component.remove", componentId: "a" }, ctx).ok).toBe(
 			true,
@@ -662,11 +652,11 @@ describe("resolveCommandReferences", () => {
 		const state = build([]);
 		const command = commandFor(
 			state,
-			createPanel("x", { datasetRef: "ds_unknown", sourceIds: ["s1", "s2"], assetRefs: ["as1"] }),
+			createPanel("x", { datasetRef: "ds_unknown", sourceIds: ["s1", "s2"] }),
 		);
 		expect(resolveCommandReferences(state, command, validateProps)).toEqual({
 			ok: true,
-			value: { datasetRefs: ["ds_unknown"], sourceIds: ["s1", "s2"], assetRefs: ["as1"] },
+			value: { datasetRefs: ["ds_unknown"], sourceIds: ["s1", "s2"] },
 		});
 	});
 
@@ -675,11 +665,11 @@ describe("resolveCommandReferences", () => {
 		const command = commandFor(state, {
 			operation: "component.update",
 			componentId: "a",
-			props: { assetRefs: ["asset_2"] },
+			props: { sourceIds: ["src_2"] },
 		});
 		expect(resolveCommandReferences(state, command, validateProps)).toEqual({
 			ok: true,
-			value: { datasetRefs: ["ds_1"], sourceIds: ["src_1"], assetRefs: ["asset_2"] },
+			value: { datasetRefs: ["ds_1"], sourceIds: ["src_2"] },
 		});
 	});
 
@@ -692,7 +682,7 @@ describe("resolveCommandReferences", () => {
 		});
 		expect(resolveCommandReferences(state, command, validateProps)).toEqual({
 			ok: true,
-			value: { datasetRefs: ["ds_9", "ds_9"], sourceIds: ["src_1"], assetRefs: [] },
+			value: { datasetRefs: ["ds_9", "ds_9"], sourceIds: ["src_1"] },
 		});
 	});
 
@@ -704,7 +694,7 @@ describe("resolveCommandReferences", () => {
 		});
 		expect(resolveCommandReferences(state, command, validateProps)).toEqual({
 			ok: true,
-			value: { datasetRefs: [], sourceIds: ["ev_42"], assetRefs: [] },
+			value: { datasetRefs: [], sourceIds: ["ev_42"] },
 		});
 	});
 

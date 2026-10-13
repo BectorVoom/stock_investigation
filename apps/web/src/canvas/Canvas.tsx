@@ -35,7 +35,6 @@ export function Canvas(props: {
 				props.view.datasets.map((dataset) => [dataset.datasetId, dataset] as const),
 			),
 			sources: new Map(props.view.sources.map((source) => [source.evidenceId, source] as const)),
-			assets: new Map(props.view.assets.map((asset) => [asset.assetId, asset] as const)),
 			selection: state().selection,
 			onSelect: (componentId, itemKey) =>
 				props.onOperation({ operation: "component.select", componentId, itemKey }),

@@ -345,7 +345,7 @@ describe("workspaces: create, rename and delete", () => {
 		expect(backend.requests).toHaveLength(0);
 	});
 
-	it("deletes with DELETE and returns null on 204, like deleteAsset", async () => {
+	it("deletes with DELETE and returns null on 204", async () => {
 		const { backend, api } = setup();
 		backend.on("DELETE", /workspaces\/ws_1$/, () => new Response(null, { status: 204 }));
 		const result = await api.deleteWorkspace(WORKSPACE_ID);

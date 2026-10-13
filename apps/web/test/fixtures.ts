@@ -93,7 +93,6 @@ export const WORKSPACE_VIEW: WorkspaceView = workspaceViewSchema.parse({
 			sourceClass: "news",
 		},
 	],
-	assets: [],
 });
 
 export const CONVERSATION: Conversation = conversationResponseSchema.parse({
@@ -160,7 +159,6 @@ export const WORKSPACE_VIEW_2: WorkspaceView = workspaceViewSchema.parse({
 	},
 	datasets: [],
 	sources: [],
-	assets: [],
 });
 
 export const CONVERSATION_2: Conversation = conversationResponseSchema.parse({
