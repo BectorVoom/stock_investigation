@@ -145,3 +145,42 @@ Two E2E tests passed on Firefox and timed out on Chromium after that fix: they c
 
 - On a phone-width screen the two tables are wider than the card and scroll sideways inside it; the first columns (name, latest value) are visible without scrolling.
 - The review data is a small fixture (five observations per series); dense charts were only seen in the real-data screenshots.
+
+# UI review — Watchlist page and the Home earnings-calendar widget
+
+**Date:** 2026-10-13 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `REVIEW_BROWSER=firefox bun run review:ui` (`tests/ui-review/watchlistReview.spec.ts`)
+
+## How it was reviewed
+
+The Watchlist page and the Home "Earnings calendar" widget (FR-018) were driven in Firefox against the E2E server and runner with fixture earnings sources, and the Watchlist screenshots were read. They were also looked at with real data: the real-environment runs (`tests/real/watchlistReal.spec.ts`, `tests/real/watchlistUpgrade.spec.ts`) save full-page screenshots of the Watchlist page and of Home at 1440×900 and 390×844 after a real JPX refresh, and those were read too.
+
+**States:** loading · populated desktop · add-stock problems list · remove confirmation · subscription link just issued · a stock whose source is not configured ("unavailable (reason)") · tablet and phone, top and bottom.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Automated | No finding on the Watchlist states (overflow, covered controls, target size, names, contrast, heading order, focus) | — |
+| Code review (before the browser pass) | "Next announcement" could show a date already in the past when the stored dates were stale | Fixed: the first date on or after today is shown; when every stored date has passed the cell says so and offers no calendar link |
+| Code review | A failed first load started the refresh poller as if a run were active | Fixed: polling starts only when the watchlist is loaded and a run is active |
+| Code review | A calendar entry could state the day the stock was added as its "retrieved" date | Fixed: without a retrieved time there is no calendar link |
+| Browser suite | "a chat can be renamed and deleted" failed intermittently in the full Firefox suite: a 100 ms fallback that focuses the chat composer could take focus from the rename input, which saves on blur and closes | Fixed in application code (`apps/web/src/chat/composerFocus.ts`); the defect predates this feature |
+| Screenshots (real data) | After a refresh completes, the notice "Earnings-date refresh queued for the local runner." stays on the page beside the new "Last successful refresh" line | Fixed: the queued notice is cleared when the run ends |
+| Owner report (2026-10-13) | The Home calendar widget showed no dates: adding a stock fetched nothing until "Refresh earnings dates" was found and clicked, Home had no such control, and the widget said "No announcement in the next 90 days." for stocks never looked up | Fixed: an add, opening the Watchlist page, and opening Home with a calendar widget each queue the fetch when dates are missing or over a day old; the widget has its own "Refresh earnings dates" button and a fetching status, and says "Earnings dates have not been fetched yet." until every stock was looked up |
+| Automated (Home widget states added to the review, desktop and phone) | "Manage watchlist" link in the widget was 99×16 px | Fixed: 24 px minimum height. The two remaining findings are the small source links of other Home widgets, already recorded in the Home section |
+| Screenshots (real data) | Home's default stock table is titled "Watchlist" (Twelve Data prices) and is unrelated to the stocks registered on the Watchlist page | Open: a naming question for the owner |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Firefox | Reviewed (scripted review and real-data screenshots); browser suite passes (29 passed, 1 skipped) |
+| Chromium (Playwright's bundled build) | **Not run** for this change |
+| Chrome (Chrome channel) | **Not run.** Google Chrome is not installed on the development machine |
+| Safari engine (Playwright WebKit) | **Not run.** WebKit cannot start on the development machine. Watchlist on Safari is unverified |
+
+## Known limits
+
+- On a phone-width screen the registered-stocks table is wider than its panel and scrolls sideways inside it; symbol, market and the next announcement are visible without scrolling.
+- The confirmation dialogs are the shared `ConfirmDialog` and open where it opens everywhere (top left).
+- No calendar application was used: the `.ics` content and the subscription feed were checked by tests, not by importing them into Google Calendar, Apple Calendar or Outlook.

@@ -1,5 +1,5 @@
 import { env } from "cloudflare:test";
-import type { Clock, SafeFetcher, SafeFetchOptions } from "@research/application";
+import type { Clock, Persistence, SafeFetcher, SafeFetchOptions } from "@research/application";
 import {
 	type AgentDescriptor,
 	apiErrorBodySchema,
@@ -83,6 +83,7 @@ export function createHarness(
 		readonly extraComponents?: readonly ComponentDefinition[];
 		readonly ownerId?: string;
 		readonly time?: ReturnType<typeof createTestClock>;
+		readonly persistence?: Persistence;
 	} = {},
 ): Harness {
 	ownerCounter += 1;
@@ -100,6 +101,7 @@ export function createHarness(
 			...(options.extraComponents === undefined
 				? {}
 				: { extraComponents: options.extraComponents }),
+			...(options.persistence === undefined ? {} : { persistence: options.persistence }),
 		},
 	});
 	const send = async (

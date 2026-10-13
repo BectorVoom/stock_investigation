@@ -22,7 +22,7 @@ const browser = parseBrowser(process.env.REVIEW_BROWSER, "REVIEW_BROWSER");
 export default defineConfig({
 	...e2eConfig,
 	testDir: ".",
-	testMatch: ["chatReview.spec.ts", "homeReview.spec.ts"],
+	testMatch: ["chatReview.spec.ts", "homeReview.spec.ts", "watchlistReview.spec.ts"],
 	globalSetup: "../e2e/globalSetup.ts",
 	// Per-engine: Playwright wipes its output directory at the start of a
 	// run, so sharing one directory would delete the other engines' output.

@@ -72,9 +72,12 @@ describe("job states", () => {
 		expect(JOB_TRANSITIONS.completed).toEqual([]);
 	});
 
-	it("knows the two job kinds", () => {
+	it("knows the job kinds", () => {
 		expectAccepted(jobKindSchema, "research");
 		expectAccepted(jobKindSchema, "news-ingest");
+		expectAccepted(jobKindSchema, "market-refresh");
+		expectAccepted(jobKindSchema, "earnings-refresh");
+		expectAccepted(jobKindSchema, "google-calendar");
 		expectRejected(jobKindSchema, "shell");
 	});
 });
@@ -988,6 +991,155 @@ describe("runner protocol: completion", () => {
 			completeJobResponseSchema,
 			{ state: "completed", replayed: false, newArticleCount: -1 },
 			["newArticleCount"],
+		);
+	});
+});
+
+describe("runner protocol: earnings-refresh (FR-018)", () => {
+	const event = {
+		periodKey: "2026-q4",
+		announcementDate: "2026-10-29",
+		fiscalPeriodLabel: "Q4 2026",
+		fiscalPeriodEnd: null,
+		timing: "after-close",
+	};
+	const claimedEarnings = {
+		kind: "earnings-refresh",
+		runId: "run_earn",
+		leaseGeneration: 2,
+		leaseExpiresAt: T1,
+		attempt: 1,
+		heartbeatIntervalMs: 20_000,
+		sources: [],
+		fromDate: "2026-10-13",
+		toDate: "2027-04-16",
+		stocks: [
+			{ stockId: "us:AAPL", name: "Apple Inc" },
+			{ stockId: "jp:7203", name: null },
+		],
+	};
+	const refreshed = {
+		outcome: "earnings-refreshed",
+		leaseGeneration: 2,
+		usage: resourceUsage,
+		stocks: [
+			{
+				stockId: "us:AAPL",
+				fetchedAt: T1,
+				name: "Apple Inc",
+				events: [event],
+				errorCode: null,
+			},
+			{
+				stockId: "jp:7203",
+				fetchedAt: T1,
+				name: null,
+				events: [],
+				errorCode: "SOURCE_FAILED",
+			},
+		],
+	};
+
+	it("accepts a claimed earnings-refresh job with its window and stocks", () => {
+		expectAccepted(claimedJobSchema, claimedEarnings);
+		expectAccepted(claimJobResponseSchema, { job: claimedEarnings, pollAfterMs: 2000 });
+		expectAccepted(claimedJobSchema, { ...claimedEarnings, stocks: [] });
+	});
+
+	it("rejects a claimed earnings job with a bad id, window or stock cap", () => {
+		expectRejected(
+			claimedJobSchema,
+			{ ...claimedEarnings, stocks: [{ stockId: "nope", name: null }] },
+			["stocks"],
+		);
+		expectRejected(claimedJobSchema, without(claimedEarnings, "fromDate"), ["fromDate"]);
+		expectRejected(claimedJobSchema, without(claimedEarnings, "toDate"), ["toDate"]);
+		expectRejected(
+			claimedJobSchema,
+			{ ...claimedEarnings, stocks: repeat({ stockId: "us:AAPL", name: null }, 51) },
+			["stocks"],
+		);
+		// Publisher and source URL are never sent by the runner: the API derives them.
+		expectRejected(claimedJobSchema, { ...claimedEarnings, publisher: "Finnhub" });
+	});
+
+	it("accepts an earnings-refreshed completion with successes and failures", () => {
+		expectAccepted(completeJobRequestSchema, refreshed);
+		expectAccepted(completeJobRequestSchema, { ...refreshed, stocks: [] });
+	});
+
+	it("rejects an earnings completion with duplicate stock ids or period keys", () => {
+		// A duplicate success+failure pair for one stock would apply the
+		// events replace and then the failure path (or vice versa): the
+		// contract rejects duplicates instead of deleting a "failed" stock's
+		// events.
+		expectRejected(
+			completeJobRequestSchema,
+			{
+				...refreshed,
+				stocks: [
+					{ ...refreshed.stocks[1], errorCode: null, events: [event] },
+					{ ...refreshed.stocks[1], errorCode: "SOURCE_FAILED", events: [] },
+				],
+			},
+			["stocks"],
+		);
+		expectRejected(
+			completeJobRequestSchema,
+			{
+				...refreshed,
+				stocks: [{ ...refreshed.stocks[0], events: [event, event] }],
+			},
+			["stocks"],
+		);
+	});
+
+	it("rejects an earnings completion that mixes events with an error code", () => {
+		expectRejected(
+			completeJobRequestSchema,
+			{
+				...refreshed,
+				stocks: [{ ...refreshed.stocks[0], errorCode: "SOURCE_FAILED" }],
+			},
+			["stocks"],
+		);
+		expectRejected(
+			completeJobRequestSchema,
+			{
+				...refreshed,
+				stocks: [{ ...refreshed.stocks[1], errorCode: "NO_SCHEDULED_DATE", events: [event] }],
+			},
+			["stocks"],
+		);
+	});
+
+	it("bounds earnings events per stock and stocks per completion", () => {
+		const distinct = (count: number) =>
+			Array.from({ length: count }, (_, index) => ({
+				...event,
+				periodKey: `2026-q${(index % 4) + 1}-${index}`,
+			}));
+		expectAccepted(completeJobRequestSchema, {
+			...refreshed,
+			stocks: [{ ...refreshed.stocks[0], events: distinct(8) }],
+		});
+		expectRejected(
+			completeJobRequestSchema,
+			{ ...refreshed, stocks: [{ ...refreshed.stocks[0], events: distinct(9) }] },
+			["stocks"],
+		);
+		expectRejected(
+			completeJobRequestSchema,
+			{
+				...refreshed,
+				stocks: repeat({ ...refreshed.stocks[1] }, 51),
+			},
+			["stocks"],
+		);
+		expectRejected(
+			completeJobRequestSchema,
+			{ ...refreshed, stocks: [{ ...refreshed.stocks[1], errorCode: "BOGUS_CODE" }] },
+			["stocks"],
 		);
 	});
 });

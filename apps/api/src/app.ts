@@ -1,11 +1,18 @@
-import { homeDataDigestEtag, MESSAGE_LIMIT, renderExportMarkdown } from "@research/application";
+import {
+	homeDataDigestEtag,
+	MESSAGE_LIMIT,
+	renderExportMarkdown,
+	watchlistDigestEtag,
+} from "@research/application";
 import type { ApiErrorBody } from "@research/contracts";
 import {
+	addWatchlistStockRequestSchema,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
 	approveRunRequestSchema,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
+	calendarFeedIssuedSchema,
 	claimJobRequestSchema,
 	completeJobRequestSchema,
 	createResearchRunRequestSchema,
@@ -26,6 +33,7 @@ import {
 	runnerEventsRequestSchema,
 	uiCommandSchema,
 	updateSourceRequestSchema,
+	watchlistResponseSchema,
 } from "@research/contracts";
 import { attempt, createEventLogger, type EventLogger } from "@research/effects";
 import { Effect } from "effect";
@@ -927,6 +935,152 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
+
+	/* Watchlist and earnings-date calendar (FR-018) */
+	api.get("/watchlist", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// Like /home/data: the ETag covers a cheap digest (stock
+				// stamps, refresh state, feed stamp), so a 304 is answered
+				// BEFORE any event row is loaded.
+				const digest = yield* useCase("watchlist.get_digest", () =>
+					c.var.services.watchlist.getDigest(owner(c)),
+				);
+				const etag = watchlistDigestEtag(digest);
+				c.header("ETag", `"${etag}"`);
+				if (c.req.header("If-None-Match") === `"${etag}"`) return c.body(null, 304);
+				const watchlist = yield* useCase("watchlist.get", () =>
+					c.var.services.watchlist.getWatchlist(owner(c)),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.post("/watchlist/stocks", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const body = yield* readJson(c, addWatchlistStockRequestSchema);
+				const watchlist = yield* useCase("watchlist.add_stock", () =>
+					c.var.services.watchlist.addStock(owner(c), body),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.delete("/watchlist/stocks/:stockId", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// The id carries its own shape (`us:AAPL`); an unknown shape
+				// is NOT_FOUND, answered by the use case, never a 500.
+				const stockId = c.req.param("stockId");
+				const watchlist = yield* useCase("watchlist.remove_stock", () =>
+					c.var.services.watchlist.removeStock(owner(c), stockId),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.post("/watchlist/refresh", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const key = yield* idempotencyKey(c);
+				const created = yield* useCase("runs.create_earnings_refresh", () =>
+					c.var.services.watchlist.queueRefresh(owner(c), key),
+				);
+				return c.json({ run: created.run }, 202);
+			}),
+		),
+	);
+	api.get("/watchlist/calendar.ics", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const ics = yield* useCase("watchlist.get_calendar", () =>
+					c.var.services.watchlist.getCalendar(owner(c)),
+				);
+				return c.body(ics, 200, {
+					"Content-Type": "text/calendar; charset=utf-8",
+					"Content-Disposition": 'attachment; filename="earnings-calendar.ics"',
+				});
+			}),
+		),
+	);
+	api.post("/watchlist/feed", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// Issues (or rotates) the subscription token: it is returned
+				// exactly once here and never stored, logged or shown again.
+				const issued = yield* useCase("watchlist.issue_feed", () =>
+					c.var.services.watchlist.issueFeed(owner(c)),
+				);
+				return c.json(calendarFeedIssuedSchema.parse(issued), 201);
+			}),
+		),
+	);
+	api.delete("/watchlist/feed", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				yield* useCase("watchlist.revoke_feed", () =>
+					c.var.services.watchlist.revokeFeed(owner(c)),
+				);
+				return c.body(null, 204);
+			}),
+		),
+	);
+
+	/* Token-authenticated calendar subscription feed (FR-018).
+	 *
+	 * OUTSIDE the owner session on purpose: calendar apps cannot send the
+	 * session cookie or the CSRF header. Authentication is the token path
+	 * segment alone; the owner session is never consulted, and nothing but
+	 * the calendar document of the token's owner is ever served. Any failure
+	 * (bad shape, unknown or revoked token) answers the SAME 404 body.
+	 *
+	 * The token is a secret in a URL: it must never reach a log line, an
+	 * audit row or an error body (SEC-005, SEC-010). The application logs the
+	 * route pattern (`:token` unexpanded), never the path — but wrangler's
+	 * own per-request lines print the expanded path, so both launch plans
+	 * run it with `--log-level warn`, which drops those lines while the
+	 * Worker's own console.error event lines still reach the server log.
+	 */
+	const feed = new Hono<AppEnv>();
+	feed.get("/calendar-feed/:token/earnings.ics", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const token = c.req.param("token");
+				const found = yield* useCase("watchlist.feed_calendar", () =>
+					c.var.services.watchlist.getFeedCalendar(token),
+				);
+				const etag = `"${fingerprint(found.ics)}"`;
+				c.header("ETag", etag);
+				c.header("Cache-Control", "private, max-age=900");
+				if (c.req.header("If-None-Match") === etag) return c.body(null, 304);
+				return c.body(found.ics, 200, {
+					"Content-Type": "text/calendar; charset=utf-8",
+				});
+			}),
+		),
+	);
+	// Anything else under the feed prefix — another method, an empty token,
+	// a trailing slash, a wrong suffix — answers the same uniform 404 instead
+	// of falling through to the owner API (which would answer 401/403).
+	feed.all("/calendar-feed/*", (c) => reject(c, "NOT_FOUND", "Resource not found."));
+	app.route("/api/v1", feed);
 
 	app.route("/api/v1", api);
 	return app;

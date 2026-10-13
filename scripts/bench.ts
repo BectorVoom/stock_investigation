@@ -19,19 +19,28 @@ import {
 } from "@research/contracts";
 import {
 	applyUiCommand,
+	buildEarningsCalendar,
+	buildMonthGrid,
 	type CommandContext,
+	canonicalGoogleSyncDigestInput,
 	canonicalizeArticleUrl,
 	changeOverOneYear,
 	classifyIpAddress,
 	type DraftClaim,
 	emptyWorkspaceState,
+	type GoogleEventBody,
+	googleEventBody,
+	groupEventsByDate,
 	latestChange,
+	type ManagedGoogleEvent,
 	type MarketPoint,
 	normalizeFeed,
+	planGoogleSync,
 	type RawFeed,
 	verifyClaims,
 	type WorkspaceState,
 } from "@research/domain";
+import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 
@@ -278,6 +287,150 @@ const homeBenchObservationsBySeries = new Map(
 	}),
 );
 
+/* Worst case at the contract bounds: a full 50-stock watchlist with 8 events each. */
+const ICS_BENCH_EVENTS = Array.from({ length: 50 }, (_, stock) =>
+	Array.from({ length: 8 }, (_, event) => ({
+		stockId: stock % 2 === 0 ? `us:BENCH${stock}` : `jp:${String(1000 + stock)}`,
+		symbol: stock % 2 === 0 ? `BENCH${stock}` : String(1000 + stock),
+		name: `Bench Company ${stock} K.K. with a fairly long name, Inc.`,
+		periodKey: `2026-q${(event % 4) + 1}-${event}`,
+		announcementDate: `2026-${String((event % 9) + 1).padStart(2, "0")}-${String(10 + ((stock + event) % 18))}`,
+		fiscalPeriodLabel: `Q${(event % 4) + 1} 2026`,
+		fiscalPeriodEnd: null,
+		timing: "after-close" as const,
+		publisher: "Finnhub",
+		sourceUrl: "https://finnhub.io/",
+		retrievedAt: "2026-10-12T12:00:00.000Z",
+	})),
+).flat();
+
+/* Worst case at the contract bounds: 400 desired Google event bodies with
+ * deterministic ids plus 400 managed events (half identical, a quarter
+ * changed or cancelled, 50 confirmed-but-undesired). Built through the real
+ * `googleEventBody` path so the fixture exercises the shared text builder. */
+function googleBenchDigest(index: number): number[] {
+	const bytes: number[] = [(index & 255) ^ 0x9e, (index >> 8) & 255];
+	for (let b = 2; b < 20; b += 1) bytes.push((b * 7 + index * 13 + 3) % 256);
+	return bytes;
+}
+const GOOGLE_BENCH_DESIRED: GoogleEventBody[] = ICS_BENCH_EVENTS.map((event, index) => {
+	const body = googleEventBody(event, googleBenchDigest(index));
+	if (!body.ok) throw new Error(`benchmark fixture: googleEventBody failed (${body.error})`);
+	return body.value;
+});
+const GOOGLE_BENCH_EXISTING: ManagedGoogleEvent[] = [
+	...GOOGLE_BENCH_DESIRED.slice(0, 200).map((body) => ({
+		id: body.id,
+		status: "confirmed" as const,
+		startDate: body.startDate,
+		endDate: body.endDate,
+		summary: body.summary,
+		description: body.description,
+	})),
+	...GOOGLE_BENCH_DESIRED.slice(200, 300).map((body) => ({
+		id: body.id,
+		status: "confirmed" as const,
+		startDate: body.startDate,
+		endDate: body.endDate,
+		summary: `${body.summary} (stale)`,
+		description: body.description,
+	})),
+	...GOOGLE_BENCH_DESIRED.slice(300, 350).map((body) => ({
+		id: body.id,
+		status: "cancelled" as const,
+		startDate: body.startDate,
+		endDate: body.endDate,
+		summary: body.summary,
+		description: body.description,
+	})),
+	...Array.from({ length: 50 }, (_, extra) => ({
+		id: `f${extra.toString(32).padStart(31, "0")}`,
+		status: "confirmed" as const,
+		startDate: "2026-10-29",
+		endDate: "2026-10-30",
+		summary: "Removed event",
+		description: "No longer desired.",
+	})),
+];
+{
+	const planned = planGoogleSync(GOOGLE_BENCH_DESIRED, GOOGLE_BENCH_EXISTING);
+	if (!planned.ok) throw new Error("benchmark fixture: planGoogleSync failed");
+	if (
+		planned.value.inserts.length !== 50 ||
+		planned.value.updates.length !== 150 ||
+		planned.value.deletes.length !== 50 ||
+		planned.value.unchanged.length !== 200
+	) {
+		throw new Error("benchmark fixture: unexpected plan shape");
+	}
+}
+/* A JPX-sized synthetic workbook (~2,900 data rows, ~1 MB of sheet XML) with
+ * the observed layout (rows 1–4 titles, row 5 header, data from row 6;
+ * numeric/string codes, Undecided rows). The real file is never committed;
+ * the parser input is rebuilt per run, like the in-test builders. */
+const JPX_BENCH_STRINGS = [
+	"決算発表予定日\r\nScheduled Dates for Earnings Announcements",
+	"コード\r\nCode",
+	"会社名",
+	"Issue Name",
+	"決算期末\r\nFiscal Year-end",
+	"種別",
+	"Fiscal Year/Quarter",
+	"Market Segment",
+	"Toyota Motor Corp.",
+	"SoftBank Group Corp.  ",
+	"Second quarter",
+	"Third quarter",
+	"未定_Undecided",
+	"130A",
+];
+
+function buildJpxBenchWorkbook(): { sheet: string; shared: string } {
+	const shared =
+		`<?xml version="1.0" encoding="UTF-8"?><sst count="${JPX_BENCH_STRINGS.length}" uniqueCount="${JPX_BENCH_STRINGS.length}">` +
+		JPX_BENCH_STRINGS.map((text) => `<si><t>${text}</t></si>`).join("") +
+		`</sst>`;
+	const parts: string[] = [
+		`<?xml version="1.0" encoding="UTF-8"?><worksheet><sheetData>`,
+		`<row r="1"><c r="A1" s="1" t="s"><v>0</v></c></row>`,
+		`<row r="4"><c r="A4" s="1" t="s"><v>0</v></c></row>`,
+		`<row r="5"><c r="A5" s="7" t="s"><v>0</v></c><c r="B5" s="7" t="s"><v>1</v></c>` +
+			`<c r="C5" s="7" t="s"><v>2</v></c><c r="D5" s="7" t="s"><v>3</v></c>` +
+			`<c r="E5" s="7" t="s"><v>4</v></c><c r="H5" s="7" t="s"><v>5</v></c>` +
+			`<c r="I5" s="7" t="s"><v>6</v></c><c r="K5" s="7" t="s"><v>7</v></c></row>`,
+	];
+	for (let index = 0; index < 2900; index += 1) {
+		const number = 6 + index;
+		const date =
+			index % 17 === 0
+				? `<c r="A${number}" s="7" t="s"><v>12</v></c>`
+				: `<c r="A${number}" s="6"><v>${46331 + (index % 60)}</v></c>`;
+		const code =
+			index % 23 === 0
+				? `<c r="B${number}" s="7" t="s"><v>13</v></c>`
+				: `<c r="B${number}" s="6"><v>${1000 + (index % 8000)}</v></c>`;
+		parts.push(
+			`<row r="${number}">${date}${code}` +
+				`<c r="D${number}" s="7" t="s"><v>${8 + (index % 2)}</v></c>` +
+				`<c r="E${number}" s="6"><v>46477</v></c>` +
+				`<c r="H${number}" s="7" t="s"><v>5</v></c>` +
+				`<c r="I${number}" s="7" t="s"><v>${10 + (index % 2)}</v></c>` +
+				`<c r="K${number}" s="7" t="s"><v>7</v></c></row>`,
+		);
+	}
+	parts.push(`</sheetData></worksheet>`);
+	return { sheet: parts.join(""), shared };
+}
+
+const JPX_BENCH = buildJpxBenchWorkbook();
+{
+	const parsed = parseJpxWorkbook(JPX_BENCH.sheet, JPX_BENCH.shared);
+	if (!parsed.ok) throw new Error(`benchmark fixture: JPX parse failed (${parsed.error})`);
+	if (parsed.value.length < 2000) {
+		throw new Error(`benchmark fixture: expected ~2,900 JPX rows, got ${parsed.value.length}`);
+	}
+}
+
 const homeBenchService = createHomeService({
 	dashboard: {
 		get: async () => ({
@@ -421,6 +574,36 @@ const cases: Case[] = [
 			const parsed = homeDataResponseSchema.parse(assembled.value);
 			return `${etag}:${parsed.series.length}`;
 		},
+	},
+	{
+		name: "build earnings calendar ICS for a full watchlist (50 stocks x 8 events)",
+		budgetMs: 10,
+		run: () =>
+			buildEarningsCalendar({ calendarName: "Earnings calendar", events: ICS_BENCH_EVENTS }),
+	},
+	{
+		name: "build a month grid and group 400 earnings events by date",
+		budgetMs: 10,
+		run: () => {
+			const grid = buildMonthGrid(2026, 10, 0);
+			if (!grid.ok) throw new Error("benchmark: month grid failed");
+			return groupEventsByDate(ICS_BENCH_EVENTS);
+		},
+	},
+	{
+		name: "plan a Google sync for 400 desired x 400 existing events",
+		budgetMs: 10,
+		run: () => planGoogleSync(GOOGLE_BENCH_DESIRED, GOOGLE_BENCH_EXISTING),
+	},
+	{
+		name: "build the canonical Google sync digest input for 400 bodies",
+		budgetMs: 5,
+		run: () => canonicalGoogleSyncDigestInput(GOOGLE_BENCH_DESIRED),
+	},
+	{
+		name: `parse a JPX-sized synthetic workbook (2,900 rows, ${Math.round(JPX_BENCH.sheet.length / 1024)} KB sheet)`,
+		budgetMs: 50,
+		run: () => parseJpxWorkbook(JPX_BENCH.sheet, JPX_BENCH.shared),
 	},
 ];
 

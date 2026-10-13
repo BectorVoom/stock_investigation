@@ -17,10 +17,13 @@ import type {
 import {
 	CONVERSATION_CONTEXT_LIMITS,
 	DEFAULT_HOME_DASHBOARD,
+	EARNINGS_LIMITS,
 	MARKET_LIMITS,
 	parseMarketSeriesId,
+	parseStockId,
 } from "@research/contracts";
 import {
+	addDaysIso,
 	checkLease,
 	decideClaim,
 	distinctDashboardSeriesIds,
@@ -37,6 +40,7 @@ import type {
 	ChatRepository,
 	Clock,
 	CompletionEffects,
+	EarningsCompletionStock,
 	HomeDashboardRepository,
 	IdGenerator,
 	JobPatch,
@@ -49,6 +53,7 @@ import type {
 	RunnerStatusRepository,
 	SourceRepository,
 	TransitionAudit,
+	WatchlistRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
 import { checkBundleIntegrity } from "./recordIntegrity.ts";
@@ -108,6 +113,7 @@ export interface RunnerJobServiceDeps {
 	readonly ids: IdGenerator;
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
+	readonly watchlist: WatchlistRepository;
 }
 
 /**
@@ -265,6 +271,38 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			workspace: null,
 			assistantMessage: null,
 			marketSeries,
+			earnings: [],
+		});
+	}
+
+	/** Effects of an earnings-refreshed completion, or the reason it cannot be accepted. */
+	async function earningsEffects(
+		request: Extract<CompleteJobRequest, { outcome: "earnings-refreshed" }>,
+	): Promise<UseCaseResult<CompletionEffects>> {
+		const stocks: EarningsCompletionStock[] = [];
+		for (const entry of request.stocks) {
+			const parsed = parseStockId(entry.stockId);
+			if (parsed === null) {
+				return fail("VALIDATION_FAILED", "Unknown watchlist stock id.", entry.stockId.slice(0, 64));
+			}
+			stocks.push({
+				stockId: entry.stockId,
+				market: parsed.market,
+				symbol: parsed.symbol,
+				fetchedAt: entry.fetchedAt,
+				name: entry.name,
+				events: [...entry.events],
+				errorCode: entry.errorCode,
+			});
+		}
+		return ok({
+			bundle: null,
+			articles: [],
+			sourceReports: [],
+			workspace: null,
+			assistantMessage: null,
+			marketSeries: [],
+			earnings: stocks,
 		});
 	}
 
@@ -289,7 +327,13 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		const workspace =
 			job.workspaceId === null ? null : await deps.workspaces.get(job.ownerId, job.workspaceId);
 		if (workspace === null)
-			return ok({ ...base, workspace: null, assistantMessage: null, marketSeries: [] });
+			return ok({
+				...base,
+				workspace: null,
+				assistantMessage: null,
+				marketSeries: [],
+				earnings: [],
+			});
 
 		const external = await deps.records.resolve(
 			job.ownerId,
@@ -316,6 +360,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		return ok({
 			...base,
 			marketSeries: [],
+			earnings: [],
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -435,6 +480,29 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						})),
 					};
 					return ok({ job: claimedMarket, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (job.kind === "earnings-refresh") {
+					const stocks = await deps.watchlist.listStocks(runner.ownerId);
+					// The refresh window is [today, today + horizonDays], both
+					// UTC dates from the injected clock (SPEC section 1).
+					const fromDate = deps.clock.nowIso().slice(0, 10);
+					const toDate = addDaysIso(fromDate, EARNINGS_LIMITS.horizonDays);
+					if (!toDate.ok) return fail("INTERNAL", "Internal error.");
+					const claimedEarnings: ClaimedJob = {
+						kind: "earnings-refresh",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						fromDate,
+						toDate: toDate.value,
+						stocks: stocks
+							.slice(0, EARNINGS_LIMITS.maxStocks)
+							.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
+					};
+					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				const lease = {
 					runId: job.runId,
@@ -580,16 +648,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 
 				const isIngest = job.kind === "news-ingest";
 				const isMarket = job.kind === "market-refresh";
+				const isEarnings = job.kind === "earnings-refresh";
 				const isResearch = job.kind === "research";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
+				const earningsOnly = request.outcome === "earnings-refreshed";
 				if (
-					(isIngest && (researchOnly || marketOnly)) ||
+					(isIngest && (researchOnly || marketOnly || earningsOnly)) ||
 					(isMarket &&
 						!marketOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
-					(isResearch && (request.outcome === "ingested" || marketOnly))
+					(isEarnings &&
+						!earningsOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(isResearch && (request.outcome === "ingested" || marketOnly || earningsOnly))
 				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
 				}
@@ -598,6 +672,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				let target: JobState;
 				// S4a: completion series that left the dashboard since the claim.
 				let droppedMarketSeries = 0;
+				// FR-018: completion stocks that left the watchlist since the claim.
+				let droppedEarningsStocks = 0;
 				let effects: CompletionEffects = {
 					bundle: null,
 					articles: [],
@@ -605,6 +681,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					workspace: null,
 					assistantMessage: null,
 					marketSeries: [],
+					earnings: [],
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -657,6 +734,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					const kept = built.value.marketSeries.filter((entry) => current.has(entry.seriesId));
 					droppedMarketSeries = built.value.marketSeries.length - kept.length;
 					effects = { ...built.value, marketSeries: kept };
+				} else if (request.outcome === "earnings-refreshed") {
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					const built = await earningsEffects(request);
+					if (!built.ok) return built;
+					// FR-018: store only stocks still on the owner's CURRENT
+					// watchlist — it may have changed since the claim. Dropped
+					// stocks are counted in the audit detail, never stored.
+					const current = new Set(
+						(await deps.watchlist.listStocks(runner.ownerId)).map((stock) => stock.stockId),
+					);
+					const kept = built.value.earnings.filter((entry) => current.has(entry.stockId));
+					droppedEarningsStocks = built.value.earnings.length - kept.length;
+					effects = { ...built.value, earnings: kept };
 				} else if (request.outcome === "completed" || request.outcome === "partial") {
 					target = request.outcome;
 					const built = await bundleEffects(job, request, now);
@@ -697,9 +790,10 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								runner,
 								job.state,
 								target,
-								// S4a: the dropped off-dashboard count travels in the audit detail.
-								droppedMarketSeries > 0
-									? `completion: ${outcome}, dropped ${droppedMarketSeries} off-dashboard series`
+								// S4a / FR-018: dropped off-dashboard/off-watchlist
+								// counts travel in the audit detail.
+								droppedMarketSeries > 0 || droppedEarningsStocks > 0
+									? `completion: ${outcome}, dropped ${droppedMarketSeries} off-dashboard series, dropped ${droppedEarningsStocks} off-watchlist stocks`
 									: `completion: ${outcome}`,
 							),
 						],

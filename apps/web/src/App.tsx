@@ -19,6 +19,7 @@ import { PAGES } from "./pages.ts";
 import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
+import { WatchlistView } from "./watchlist/WatchlistView.tsx";
 
 /** Home is loaded lazily so the other pages never pay for Shoelace. */
 const HomeView = lazy(() =>
@@ -152,6 +153,9 @@ export function App(props: AppProps): JSX.Element {
 					</Match>
 					<Match when={view() === "sources"}>
 						<SourcesView api={props.api} />
+					</Match>
+					<Match when={view() === "watchlist"}>
+						<WatchlistView api={props.api} visibility={props.visibility} />
 					</Match>
 					<Match when={view() === "settings"}>
 						<SettingsView

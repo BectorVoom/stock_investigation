@@ -1,4 +1,5 @@
 import {
+	type EarningsCalendarDaysAhead,
 	type HomeDashboard,
 	type HomeWidget,
 	type MarketCatalogEntry,
@@ -36,6 +37,9 @@ const CATEGORY_LABELS: { readonly [C in MarketCatalogEntry["category"]]: string 
 	commodity: "Commodities",
 	equity: "Equities",
 };
+
+/** Days-ahead choices for the earnings calendar (contract `daysAhead` union). */
+const DAYS_AHEAD_OPTIONS: readonly EarningsCalendarDaysAhead[] = [30, 60, 90, 180];
 
 interface OptionGroup {
 	readonly key: string;
@@ -195,6 +199,11 @@ function WidgetForm(props: {
 	const [range, setRange] = createSignal<MarketRange>(
 		props.initial !== null && props.initial.type === "line-chart" ? props.initial.range : "1y",
 	);
+	const [daysAhead, setDaysAhead] = createSignal<EarningsCalendarDaysAhead>(
+		props.initial !== null && props.initial.type === "earnings-calendar"
+			? props.initial.daysAhead
+			: 90,
+	);
 	const [customProvider, setCustomProvider] = createSignal<MarketProviderId>("fred");
 	const [customSymbol, setCustomSymbol] = createSignal("");
 	const [customError, setCustomError] = createSignal<string | null>(null);
@@ -331,6 +340,8 @@ function WidgetForm(props: {
 			props.onSave({ ...base, type, seriesId });
 		} else if (type === "line-chart") {
 			props.onSave({ ...base, type, seriesIds: [...selected()], range: range() });
+		} else if (type === "earnings-calendar") {
+			props.onSave({ ...base, type, daysAhead: daysAhead() });
 		} else {
 			props.onSave({ ...base, type, seriesIds: [...selected()] });
 		}
@@ -421,109 +432,135 @@ function WidgetForm(props: {
 					<sl-option value="medium">Medium (two columns)</sl-option>
 					<sl-option value="large">Large (full width)</sl-option>
 				</sl-select>
-				<div>
+				<Show when={info().hasDaysAhead}>
 					<sl-select
-						label="Series"
-						value={info().seriesKind === "single" ? (selected()[0] ?? "") : [...selected()]}
+						label="Days ahead"
+						value={String(daysAhead())}
 						size="small"
-						multiple={info().seriesKind !== "single"}
 						hoist
-						attr:aria-describedby={problems().length > 0 ? problemsId : undefined}
 						on:sl-change={(event) => {
 							if (!isDirectShoelaceEvent(event)) return;
 							const next = event.currentTarget.value;
-							setDirty(true);
-							setSelected(
-								info().seriesKind === "single"
-									? Array.isArray(next)
-										? next.slice(0, 1)
-										: [next]
-									: Array.isArray(next)
-										? next
-										: [next],
-							);
+							const raw = Array.isArray(next) ? next[0] : next;
+							const found = DAYS_AHEAD_OPTIONS.find((entry) => entry === Number(raw));
+							if (found !== undefined) {
+								setDirty(true);
+								setDaysAhead(found);
+							}
 						}}
 					>
-						<Show
-							when={props.catalogState !== "error"}
-							fallback={
-								<sl-option value="" disabled={true}>
-									Catalog unavailable
-								</sl-option>
-							}
-						>
-							<For each={optionGroups()}>
-								{(group) => (
-									<>
-										<sl-option value={`__group-${group.key}`} disabled={true}>
-											{group.label}
-										</sl-option>
-										<For each={group.options}>
-											{(option) => (
-												<sl-option value={option.seriesId}>
-													{option.label} ({option.seriesId})
-												</sl-option>
-											)}
-										</For>
-									</>
-								)}
-							</For>
-						</Show>
+						<For each={DAYS_AHEAD_OPTIONS}>
+							{(entry) => <sl-option value={String(entry)}>Next {entry} days</sl-option>}
+						</For>
 					</sl-select>
-					<Show when={unitNote()}>
-						{(note) => <p class="mt-0.5 text-2xs text-amber-900">{note()}</p>}
-					</Show>
-				</div>
-				<details class="group text-xs">
-					<DisclosureSummary>Use a custom series id</DisclosureSummary>
-					<div class="mt-1 flex flex-wrap items-end gap-2">
+				</Show>
+				<Show when={info().seriesKind !== "none"}>
+					<div>
 						<sl-select
-							label="Provider"
-							value={customProvider()}
+							label="Series"
+							value={info().seriesKind === "single" ? (selected()[0] ?? "") : [...selected()]}
 							size="small"
+							multiple={info().seriesKind !== "single"}
 							hoist
+							attr:aria-describedby={problems().length > 0 ? problemsId : undefined}
 							on:sl-change={(event) => {
 								if (!isDirectShoelaceEvent(event)) return;
 								const next = event.currentTarget.value;
-								const value = Array.isArray(next) ? next[0] : next;
-								if (value === "fred" || value === "twelve-data") {
-									setDirty(true);
-									setCustomProvider(value);
-								}
+								setDirty(true);
+								setSelected(
+									info().seriesKind === "single"
+										? Array.isArray(next)
+											? next.slice(0, 1)
+											: [next]
+										: Array.isArray(next)
+											? next
+											: [next],
+								);
 							}}
 						>
-							<For each={PROVIDERS}>
-								{(provider) => (
-									<sl-option value={provider}>
-										{provider === "fred" ? "FRED" : "Twelve Data"}
+							<Show
+								when={props.catalogState !== "error"}
+								fallback={
+									<sl-option value="" disabled={true}>
+										Catalog unavailable
 									</sl-option>
-								)}
-							</For>
+								}
+							>
+								<For each={optionGroups()}>
+									{(group) => (
+										<>
+											<sl-option value={`__group-${group.key}`} disabled={true}>
+												{group.label}
+											</sl-option>
+											<For each={group.options}>
+												{(option) => (
+													<sl-option value={option.seriesId}>
+														{option.label} ({option.seriesId})
+													</sl-option>
+												)}
+											</For>
+										</>
+									)}
+								</For>
+							</Show>
 						</sl-select>
-						<sl-input
-							label="Symbol"
-							placeholder={PROVIDER_SYMBOLS[customProvider()]}
-							size="small"
-							value={customSymbol()}
-							on:sl-input={(event) => {
-								if (!isDirectShoelaceEvent(event)) return;
-								setDirty(true);
-								setCustomSymbol(event.currentTarget.value);
-							}}
-						/>
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
-						<sl-button size="small" onClick={addCustom}>
-							Add series
-						</sl-button>
+						<Show when={unitNote()}>
+							{(note) => <p class="mt-0.5 text-2xs text-amber-900">{note()}</p>}
+						</Show>
 					</div>
-					<Show when={customError()}>
-						{(error) => (
-							<p role="alert" class="mt-1 text-xs text-red-900">
-								{error()}
-							</p>
-						)}
-					</Show>
-				</details>
+				</Show>
+				<Show when={info().seriesKind !== "none"}>
+					<details class="group text-xs">
+						<DisclosureSummary>Use a custom series id</DisclosureSummary>
+						<div class="mt-1 flex flex-wrap items-end gap-2">
+							<sl-select
+								label="Provider"
+								value={customProvider()}
+								size="small"
+								hoist
+								on:sl-change={(event) => {
+									if (!isDirectShoelaceEvent(event)) return;
+									const next = event.currentTarget.value;
+									const value = Array.isArray(next) ? next[0] : next;
+									if (value === "fred" || value === "twelve-data") {
+										setDirty(true);
+										setCustomProvider(value);
+									}
+								}}
+							>
+								<For each={PROVIDERS}>
+									{(provider) => (
+										<sl-option value={provider}>
+											{provider === "fred" ? "FRED" : "Twelve Data"}
+										</sl-option>
+									)}
+								</For>
+							</sl-select>
+							<sl-input
+								label="Symbol"
+								placeholder={PROVIDER_SYMBOLS[customProvider()]}
+								size="small"
+								value={customSymbol()}
+								on:sl-input={(event) => {
+									if (!isDirectShoelaceEvent(event)) return;
+									setDirty(true);
+									setCustomSymbol(event.currentTarget.value);
+								}}
+							/>
+							{/* biome-ignore lint/a11y/noStaticElementInteractions: sl-button renders a native button; only its host is visible here. */}
+							<sl-button size="small" onClick={addCustom}>
+								Add series
+							</sl-button>
+						</div>
+						<Show when={customError()}>
+							{(error) => (
+								<p role="alert" class="mt-1 text-xs text-red-900">
+									{error()}
+								</p>
+							)}
+						</Show>
+					</details>
+				</Show>
 				<Show when={info().hasRange}>
 					<sl-select
 						label="Range"

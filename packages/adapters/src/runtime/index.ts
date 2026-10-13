@@ -32,3 +32,17 @@ export const randomSecretGenerator: SecretGenerator = {
 	// 32 random bytes = 256 bits; hex keeps the token header-safe.
 	newSecret: () => `rk_${randomHex(32)}`,
 };
+
+/**
+ * Feed-token generator with its own prefix (FR-018 item 14): calendar
+ * subscription tokens live in URL paths and are looked up by hash in
+ * `calendar_feeds`, while `rk_` secrets authenticate the runner — the prefix
+ * keeps the two shapes distinguishable in code, tests and log triage. Same
+ * narrow `SecretGenerator` port (no widening): 32 random bytes, hex body, so
+ * every token-shape check (`FEED_TOKEN_PATTERN`, the contract regexes) is
+ * unchanged. Wired into the watchlist service only; runner credentials keep
+ * `randomSecretGenerator`.
+ */
+export const randomFeedTokenGenerator: SecretGenerator = {
+	newSecret: () => `cal_${randomHex(32)}`,
+};

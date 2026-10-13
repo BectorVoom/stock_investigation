@@ -127,6 +127,10 @@ describe("planLaunch: production", () => {
 		expect(serverArgs).not.toContain("DEV_ALLOWED_ORIGIN");
 		expect(serverArgs).not.toMatch(/apps\/|packages\/|dist\//);
 		expect(server?.logFile).toBe("data/logs/server.log");
+		// The feed token travels in a URL path: wrangler must not print its
+		// per-request info lines into the server log (SEC-005).
+		expect(server?.args).toContain("--log-level");
+		expect(serverArgs).toContain("--log-level warn");
 
 		const runner = plan.processes[1];
 		expect(runner?.args.join(" ")).toContain("release/runner/main.mjs");
@@ -226,6 +230,10 @@ describe("planLaunch: development", () => {
 		expect(serverArgs).not.toContain("DEV_ALLOWED_ORIGIN");
 		expect(serverArgs).not.toContain("--no-bundle");
 
+		// The feed token travels in a URL path: wrangler must not print its
+		// per-request info lines into the server log (SEC-005).
+		expect(server?.args).toContain("--log-level");
+		expect(serverArgs).toContain("--log-level warn");
 		// The dev server and migrations run against a generated configuration
 		// that never reads dist/: the SPA comes from Vite.
 		expect(plan.migrations.config).toBe(`${DEFAULT_DEV_DATA_DIR}/dev.wrangler.jsonc`);

@@ -11,9 +11,9 @@
  *  - the caller's `authorizeRedirect` callback before each redirect hop is
  *    contacted (shared core, so both runtimes honour it; a refusal ends the
  *    fetch with `REDIRECT_NOT_AUTHORIZED`);
- *  - GET only, no cookies, byte and time limits. One caller-supplied
- *    `Authorization` header at most, sent on the first request only (the
- *    core strips it from every redirect hop).
+ *  - GET only, no cookies, byte and time limits. At most two caller-supplied
+ *    headers (`Authorization`, `X-Finnhub-Token`), each sent on the first
+ *    request only (the core strips them from every redirect hop).
  *
  * RESPONSE SIZE — what is and is not bounded here
  *  `fetch` decodes Content-Encoding inside the runtime and exposes only the
@@ -98,6 +98,9 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 					...(request.headers.authorization === null
 						? {}
 						: { authorization: request.headers.authorization }),
+					...(request.headers.finnhubToken === null
+						? {}
+						: { "x-finnhub-token": request.headers.finnhubToken }),
 				},
 				signal: request.signal,
 			});

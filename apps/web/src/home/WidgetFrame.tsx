@@ -163,13 +163,18 @@ export function WidgetProvenance(props: {
 	readonly widget: HomeWidget;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	// The earnings calendar carries its own provenance line in its body
+	// (publishers + retrieved dates from the watchlist, which the frame never
+	// sees), so the frame renders no second footer for it.
 	return (
-		<div
-			data-field="widget-footer"
-			class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600"
-		>
-			<WidgetProvenanceLines widget={props.widget} byId={props.byId} />
-		</div>
+		<Show when={props.widget.type !== "earnings-calendar"} fallback={null}>
+			<div
+				data-field="widget-footer"
+				class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600"
+			>
+				<WidgetProvenanceLines widget={props.widget} byId={props.byId} />
+			</div>
+		</Show>
 	);
 }
 
