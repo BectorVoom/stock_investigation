@@ -18,11 +18,13 @@ import {
 	researchBundleSchema,
 } from "@research/contracts";
 import {
+	applyDashboardEdit,
 	applyUiCommand,
 	type CommandContext,
 	canonicalizeArticleUrl,
 	changeOverOneYear,
 	classifyIpAddress,
+	type Dashboard,
 	type DraftClaim,
 	emptyWorkspaceState,
 	latestChange,
@@ -104,6 +106,18 @@ for (let index = 0; index < 40; index += 1) {
 }
 const fullWorkspace = workspace;
 const reversed = [...fullWorkspace.layout.order].reverse();
+
+/* A dashboard at the contract bound (`DASHBOARD_LIMITS.maxWidgets`). */
+const reorderBenchDashboard: Dashboard = {
+	schemaVersion: 1,
+	widgets: Array.from({ length: 24 }, (_, widget) => ({
+		type: "metric" as const,
+		widgetId: `w-bench-${widget}`,
+		title: `Bench widget ${widget}`,
+		size: "small" as const,
+		seriesId: "fred:VIXCLS",
+	})),
+};
 
 const bundle: ResearchBundle = {
 	evidence: Array.from({ length: 80 }, (_, index) => ({
@@ -353,6 +367,16 @@ const cases: Case[] = [
 				},
 				context,
 			),
+	},
+	{
+		name: "reorder a widget to the end of a 24-widget dashboard",
+		budgetMs: 0.5,
+		run: () =>
+			applyDashboardEdit(reorderBenchDashboard, {
+				kind: "reorder",
+				widgetId: "w-bench-0",
+				toIndex: 23,
+			}),
 	},
 	{
 		name: "extract JSON after 40 KB of brace-laden prose",
