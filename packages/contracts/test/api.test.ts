@@ -10,6 +10,7 @@ import {
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
+	dropLegacyEmptyAssets,
 	EXPORT_FORMAT_VERSION,
 	IDEMPOTENCY_KEY_HEADER,
 	idempotencyKeySchema,
@@ -508,5 +509,29 @@ describe("researchExportSchema (FR-015)", () => {
 	it("rejects the withdrawn `assets` array", () => {
 		// Pre-removal files carried owner-approved images here; the field no longer exists.
 		expectRejected(researchExportSchema, { ...exported, assets: [] });
+	});
+});
+
+describe("dropLegacyEmptyAssets (exports written before images were withdrawn)", () => {
+	it("drops an empty assets array and keeps everything else", () => {
+		expect(dropLegacyEmptyAssets({ format: "x", assets: [], messages: [1] })).toEqual({
+			format: "x",
+			messages: [1],
+		});
+	});
+
+	it("leaves a non-empty assets array in place so strict validation rejects the file", () => {
+		const payload = { format: "x", assets: [{ assetId: "asset_1" }] };
+		expect(dropLegacyEmptyAssets(payload)).toBe(payload);
+	});
+
+	it.each([
+		["a payload without the field", { format: "x" }],
+		["an assets value that is not an array", { assets: "none" }],
+		["an array", [1, 2]],
+		["null", null],
+		["a string", "text"],
+	])("returns %s unchanged", (_label, payload) => {
+		expect(dropLegacyEmptyAssets(payload)).toBe(payload);
 	});
 });

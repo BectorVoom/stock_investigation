@@ -15,6 +15,7 @@ import {
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
+	dropLegacyEmptyAssets,
 	idempotencyKeySchema,
 	issuedRunnerCredentialSchema,
 	issueRunnerCredentialRequestSchema,
@@ -156,21 +157,6 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
 	function checkedIdempotencyKey(key: string): ApiResult<string> {
 		return validate(idempotencyKeySchema, key, { kind: "invalid-request", status: null });
-	}
-
-	/**
-	 * Drops the withdrawn top-level `assets` array from a pre-removal export when it is empty,
-	 * so files written before approved images were removed still validate. A non-empty array
-	 * is left intact so strict validation rejects it as unknown.
-	 */
-	function stripLegacyEmptyAssets(payload: unknown): unknown {
-		if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
-			return payload;
-		}
-		const root = payload as Record<string, unknown>;
-		if (!Array.isArray(root.assets) || root.assets.length > 0) return payload;
-		const { assets: _dropped, ...rest } = root;
-		return rest;
 	}
 
 	const runs = `${API_PREFIX}/research-runs`;
@@ -461,7 +447,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			write(
 				{ method: "POST", path: `${workspaces}/import` },
 				researchExportSchema,
-				stripLegacyEmptyAssets(payload),
+				dropLegacyEmptyAssets(payload),
 				workspaceSummarySchema,
 			),
 

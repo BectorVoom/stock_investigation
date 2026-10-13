@@ -1,5 +1,6 @@
 import {
 	type ComponentCatalog,
+	dropLegacyEmptyAssets,
 	EXPORT_FORMAT_VERSION,
 	MAX_REQUEST_BODY_BYTES,
 	type ResearchExport,
@@ -245,39 +246,34 @@ function remapIds(value: unknown, ids: ReadonlyMap<string, string>): unknown {
 const versionProbeSchema = z.looseObject({ formatVersion: z.unknown() });
 
 /**
+ * The two places a pre-removal export could carry images, read loosely: every
+ * other part of the file is left to the strict export schema.
+ */
+const legacyImageProbeSchema = z.looseObject({
+	assets: z.array(z.unknown()).optional(),
+	workspace: z
+		.looseObject({
+			state: z.looseObject({ components: z.array(z.unknown()).optional() }).optional(),
+		})
+		.optional(),
+});
+const componentTypeProbeSchema = z.looseObject({ componentType: z.string() });
+
+/**
  * Names the image content a pre-removal export still carries, or null when the
  * payload is free of it. Only two shapes ever carried images: the top-level
  * `assets` array and `image-gallery` components in the stored canvas state.
  */
 function findLegacyImageContent(payload: unknown): string | null {
-	if (payload === null || typeof payload !== "object" || Array.isArray(payload)) return null;
-	const root = payload as Record<string, unknown>;
-	const assets = root.assets;
-	if (Array.isArray(assets) && assets.length > 0) return `${assets.length} approved asset(s)`;
-	const workspace = root.workspace;
-	if (workspace === null || typeof workspace !== "object" || Array.isArray(workspace)) return null;
-	const state = (workspace as Record<string, unknown>).state;
-	if (state === null || typeof state !== "object" || Array.isArray(state)) return null;
-	const components = (state as Record<string, unknown>).components;
-	if (!Array.isArray(components)) return null;
-	const galleries = components.filter(
-		(component) =>
-			component !== null &&
-			typeof component === "object" &&
-			(component as Record<string, unknown>).componentType === "image-gallery",
-	);
+	const probe = legacyImageProbeSchema.safeParse(payload);
+	if (!probe.success) return null;
+	const assets = probe.data.assets ?? [];
+	if (assets.length > 0) return `${assets.length} approved asset(s)`;
+	const galleries = (probe.data.workspace?.state?.components ?? []).filter((component) => {
+		const typed = componentTypeProbeSchema.safeParse(component);
+		return typed.success && typed.data.componentType === "image-gallery";
+	});
 	return galleries.length > 0 ? `${galleries.length} image-gallery component(s)` : null;
-}
-
-/**
- * Drops the withdrawn top-level `assets` array from a pre-removal export. The
- * caller refuses image-carrying files first, so by construction only an empty
- * (or absent) array ever reaches here.
- */
-function stripLegacyAssetsField(payload: unknown): unknown {
-	if (payload === null || typeof payload !== "object" || Array.isArray(payload)) return payload;
-	const { assets: _dropped, ...rest } = payload as Record<string, unknown>;
-	return rest;
 }
 
 export function createExportImportService(deps: ExportImportServiceDeps) {
@@ -373,7 +369,7 @@ export function createExportImportService(deps: ExportImportServiceDeps) {
 			// Pre-removal files without images still carry an empty `assets` array. The field no
 			// longer exists in the contract (the schema is strict), so it is dropped here — after
 			// the refusal above, which guarantees nothing image-related is discarded silently.
-			const parsed = researchExportSchema.safeParse(stripLegacyAssetsField(payload));
+			const parsed = researchExportSchema.safeParse(dropLegacyEmptyAssets(payload));
 			if (!parsed.success) {
 				return fail("VALIDATION_FAILED", "The file is not a valid research export.");
 			}
