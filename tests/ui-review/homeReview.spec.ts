@@ -243,7 +243,7 @@ test("UI review of the Home page", async ({ browser }) => {
 	}
 
 	/* ---------- H3. Widget menu ---------- */
-	const actions = page.locator("article[data-widget-id] sl-button", { hasText: "Actions" }).first();
+	const actions = page.locator("article[data-widget-id] button[data-widget-actions]").first();
 	await actions.scrollIntoViewIfNeeded();
 	await actions.click();
 	await expect(page.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();

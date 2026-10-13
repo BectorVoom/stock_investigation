@@ -31,11 +31,18 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - Reset to the default arrangement.
 - Queue a market-data refresh for the local runner.
 
+Every action is an icon-only button (accessible name and tooltip carry the
+former label); the per-widget actions open a text menu with leading icons.
+
 **Shows**
 
 - The arranged widgets (metric, line-chart, stock-table, indicator-table):
   latest values with unit, as-of date, change and source link, or
-  "unavailable (reason)" when a series has no usable data.
+  "unavailable (reason)" when a series has no usable data. Widgets come in
+  three fixed sizes on equal grid cells with a fixed row height — Small
+  1 × 1, Medium 2 × 2, Large full width × 2 — as white cards with a faint
+  hairline on the grey page; a body taller than its frame scrolls inside
+  the frame.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
