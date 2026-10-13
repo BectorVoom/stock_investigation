@@ -1,6 +1,7 @@
 import { createD1Adapters } from "@research/adapters/d1";
 import { createFeedParser } from "@research/adapters/feed";
 import {
+	randomFeedTokenGenerator,
 	randomIdGenerator,
 	randomSecretGenerator,
 	systemClock,
@@ -16,6 +17,7 @@ import {
 	createRunnerCredentialService,
 	createRunnerJobService,
 	createSourceService,
+	createWatchlistService,
 	createWorkspaceService,
 	type IdGenerator,
 	MARKET_CATALOG,
@@ -113,6 +115,7 @@ export function createServices(
 			ids,
 			homeDashboard: persistence.homeDashboard,
 			market: persistence.market,
+			watchlist: persistence.watchlist,
 		}),
 		workspaces: createWorkspaceService({
 			workspaces: persistence.workspaces,
@@ -143,6 +146,18 @@ export function createServices(
 			market: persistence.market,
 			jobs: persistence.jobs,
 			clock,
+			audit: persistence.audit,
+		}),
+		watchlist: createWatchlistService({
+			watchlist: persistence.watchlist,
+			earnings: persistence.earnings,
+			calendarFeed: persistence.calendarFeed,
+			jobs: persistence.jobs,
+			clock,
+			ids,
+			secrets: randomFeedTokenGenerator,
+			hasher,
+			rateLimiter: persistence.rateLimiter,
 			audit: persistence.audit,
 		}),
 		marketCatalog: MARKET_CATALOG,

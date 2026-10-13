@@ -43,6 +43,8 @@ export interface PinnedRequest {
 		readonly "user-agent": string;
 		/** Caller-supplied Authorization value, or null when the caller sent none. */
 		readonly authorization: string | null;
+		/** Caller-supplied Finnhub key value, or null when the caller sent none. */
+		readonly finnhubToken: string | null;
 	};
 	/** Ceiling on body bytes read from the socket before content decoding. */
 	readonly maxEncodedBytes: number;
@@ -110,6 +112,9 @@ export function buildPinnedRequestOptions(
 			...(request.headers.authorization === null
 				? {}
 				: { authorization: request.headers.authorization }),
+			...(request.headers.finnhubToken === null
+				? {}
+				: { "x-finnhub-token": request.headers.finnhubToken }),
 			"accept-encoding": "gzip",
 		},
 		// A fresh socket per request: a connection validated for one host is never reused for another.

@@ -1,3 +1,9 @@
+export * from "./calendar/civilDate.ts";
+export * from "./calendar/googleSync.ts";
+export * from "./calendar/ics.ts";
+export * from "./calendar/links.ts";
+export * from "./calendar/monthGrid.ts";
+export * from "./calendar/upcoming.ts";
 export * from "./evidence/verifyClaims.ts";
 export * from "./finance/cagr.ts";
 export * from "./finance/demandScenario.ts";
@@ -23,5 +29,7 @@ export * from "./result.ts";
 export * from "./text/recentWithinBudget.ts";
 export * from "./text/truncate.ts";
 export * from "./time.ts";
+export * from "./watchlist/limits.ts";
+export * from "./watchlist/stockId.ts";
 export * from "./workspace/reducer.ts";
 export * from "./workspace/types.ts";

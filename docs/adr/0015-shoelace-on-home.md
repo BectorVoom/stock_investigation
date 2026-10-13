@@ -23,7 +23,7 @@ reaches:
 `sl-dialog` (add/edit widget, reset confirmation), `sl-select` + `sl-option`,
 `sl-input`, `sl-skeleton`, `sl-icon` — plus the light theme stylesheet and
 the `icon-library` utility. Widget frames, menus and buttons are native
-elements in the app style since ADR-0016 (`sl-card`, `sl-button`,
+elements in the app style since ADR-0017 (`sl-card`, `sl-button`,
 `sl-dropdown`, `sl-menu`, `sl-menu-item` were removed from the imported set).
 No other component is imported; adding one is an edit to that module.
 
@@ -31,7 +31,7 @@ No other component is imported; adding one is an edit to that module.
 `lazy()`, so the other pages never download or parse the kit. Production
 build on 2026-10-13: the Home chunk `HomeView-*.js` is **187.75 kB
 (52.17 kB gzip)** plus `HomeView-*.css` **14.96 kB**, beside the main
-`index-*.js` 369.62 kB (108.05 kB gzip). (Before ADR-0016 the chunk was
+`index-*.js` 369.62 kB (108.05 kB gzip). (Before ADR-0017 the chunk was
 230.35 kB / 60.09 kB gzip: dropping the card/button/menu modules saved
 ~43 kB.) The chunk is paid once, on the first visit to `#/home`; file hashes drift per build, sizes should be re-measured
 if the kit version or the imported set changes.
@@ -59,7 +59,7 @@ system icons are shipped** (`caret`, `check`, `chevron-down`,
 `radio`, `star-fill`, `x-lg`, `x-circle-fill`), so every icon a used
 component can request resolves (`chevron-down` for the select expand icon,
 `x-lg` for the dialog close; `caret` and the menu-item submenu chevrons
-belonged to the button/menu modules removed in ADR-0016, whose files still
+belonged to the button/menu modules removed in ADR-0017, whose files still
 ship). Lit styles apply through adoptedStyleSheets and the popup
 positions itself through the CSSOM, both permitted by `style-src 'self'`.
 The E2E CSP test visits Home, opens the add-widget dialog, a select and a
@@ -109,7 +109,7 @@ parsing in the browser; the SPA validates small payloads (dashboard JSON,
   borrowing.
 - **Importing the whole Shoelace library.** Rejected: every page would pay
   for components Home never uses. Cherry-picking keeps the lazy chunk to the
-  measured ~188 kB (was ~230 kB before ADR-0016 removed the card, button and
+  measured ~188 kB (was ~230 kB before ADR-0017 removed the card, button and
   menu modules).
 - **CDN with `setBasePath`.** Rejected: a third-party origin in `script-src`
   / `style-src` / `connect-src` contradicts the threat model (T9) and makes

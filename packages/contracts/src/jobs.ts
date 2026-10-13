@@ -8,6 +8,15 @@ import {
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
 import {
+	GOOGLE_SYNC_MAX_EVENTS,
+	googleAuthUrlEventSchema,
+	googleCalendarActionSchema,
+	googleCalendarConnectedSchema,
+	googleCalendarDisconnectedSchema,
+	googleCalendarSyncedSchema,
+	googleEventBodySchema,
+} from "./googleCalendar.ts";
+import {
 	MARKET_LIMITS,
 	marketObservationSchema,
 	marketSeriesIdSchema,
@@ -30,6 +39,13 @@ import {
 	supplierLinkSchema,
 } from "./records.ts";
 import { uiOperationSchema } from "./ui.ts";
+import {
+	EARNINGS_COMPANY_NAME_MAX,
+	EARNINGS_LIMITS,
+	earningsEventSchema,
+	earningsUnavailableCodeSchema,
+	watchlistStockIdSchema,
+} from "./watchlist.ts";
 
 // The legal transition matrix is shared by Worker, runner and SPA through this package.
 export {
@@ -46,7 +62,13 @@ export {
 
 export const jobStateSchema = z.enum(JOB_STATES);
 export const leasedJobStateSchema = z.enum(LEASED_JOB_STATES);
-export const jobKindSchema = z.enum(["research", "news-ingest", "market-refresh"]);
+export const jobKindSchema = z.enum([
+	"research",
+	"news-ingest",
+	"market-refresh",
+	"earnings-refresh",
+	"google-calendar",
+]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
 /* ---------- Budget, usage, cost ---------- */
@@ -183,7 +205,7 @@ export const researchRunSchema = z
 		kind: jobKindSchema,
 		workspaceId: idSchema.nullable(),
 		state: jobStateSchema,
-		/** null for news-ingest and market-refresh jobs. */
+		/** null for news-ingest, market-refresh and earnings-refresh jobs. */
 		request: researchRequestSchema.nullable(),
 		usage: resourceUsageSchema,
 		cost: costSummarySchema,
@@ -398,6 +420,80 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			)
 			.max(MARKET_LIMITS.maxSeries),
 	}),
+	/**
+	 * One earnings-date refresh over the owner's current watchlist (FR-018).
+	 * `stocks` carries the stored company name (null when never retrieved) so
+	 * the runner only asks the provider for names it still needs; the window
+	 * is UTC dates from the server clock. Publisher and source URL are NOT
+	 * carried: the API derives them from the source id (fixed strings).
+	 */
+	z.strictObject({
+		kind: z.literal("earnings-refresh"),
+		...leaseShape,
+		fromDate: isoDateSchema,
+		toDate: isoDateSchema,
+		stocks: z
+			.array(
+				z.strictObject({
+					stockId: watchlistStockIdSchema,
+					name: z.string().trim().min(1).max(EARNINGS_COMPANY_NAME_MAX).nullable(),
+				}),
+			)
+			.max(EARNINGS_LIMITS.maxStocks),
+	}),
+	/**
+	 * One Google Calendar sync step (FR-019): the claim carries what the
+	 * runner needs at CLAIM time as flat fields (additive; the runner
+	 * fail-closes on this kind until phase G1). A single variant keeps the
+	 * outer `kind` discriminator unique — one member per `kind` — while the
+	 * refinement below enforces the per-action payload: connect and
+	 * disconnect carry only the action; sync carries the calendar id (null
+	 * when never connected), the digest of the desired set and the desired
+	 * bodies (at most every stored event of every watched stock).
+	 */
+	z
+		.strictObject({
+			kind: z.literal("google-calendar"),
+			...leaseShape,
+			action: googleCalendarActionSchema,
+			calendarId: z.string().min(1).max(256).nullable().optional(),
+			desiredDigest: z
+				.string()
+				.regex(/^[0-9a-f]{64}$/, "desired digest must be sha256 hex")
+				.optional(),
+			events: z.array(googleEventBodySchema).max(GOOGLE_SYNC_MAX_EVENTS).optional(),
+		})
+		.superRefine((job, ctx) => {
+			if (job.action === "sync") {
+				if (job.calendarId === undefined) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["calendarId"],
+						message: "sync requires calendarId",
+					});
+				}
+				if (job.desiredDigest === undefined) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["desiredDigest"],
+						message: "sync requires desiredDigest",
+					});
+				}
+				if (job.events === undefined) {
+					ctx.addIssue({ code: "custom", path: ["events"], message: "sync requires events" });
+				}
+				return;
+			}
+			for (const field of ["calendarId", "desiredDigest", "events"] as const) {
+				if (job[field] !== undefined) {
+					ctx.addIssue({
+						code: "custom",
+						path: [field],
+						message: `${job.action} carries no ${field}`,
+					});
+				}
+			}
+		}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -432,6 +528,7 @@ export const runnerEventSchema = z.strictObject({
 		}),
 		z.strictObject({ type: z.literal("usage"), usage: resourceUsageSchema }),
 		z.strictObject({ type: z.literal("provider-session"), sessionRef: z.string().max(200) }),
+		googleAuthUrlEventSchema,
 	]),
 });
 export type RunnerEvent = z.infer<typeof runnerEventSchema>;
@@ -537,6 +634,69 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 			detail: z.string().max(400),
 		}),
 	}),
+	/**
+	 * One earnings-date refresh result (FR-018): one entry per claimed stock.
+	 * An error carries no events; the API keeps the stored events for every
+	 * error EXCEPT `NO_SCHEDULED_DATE` — a successful retrieval with nothing
+	 * listed, which clears the stored events while recording the code (and
+	 * may carry the company `name`). A dated success carries its events and
+	 * clears the code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("earnings-refreshed"),
+			...completionBase,
+			stocks: z
+				.array(
+					z.strictObject({
+						stockId: watchlistStockIdSchema,
+						fetchedAt: isoDateTimeSchema,
+						name: z.string().trim().min(1).max(EARNINGS_COMPANY_NAME_MAX).nullable(),
+						events: z.array(earningsEventSchema).max(EARNINGS_LIMITS.maxEventsPerStock),
+						errorCode: earningsUnavailableCodeSchema.nullable(),
+					}),
+				)
+				.max(EARNINGS_LIMITS.maxStocks),
+		})
+		.refine(
+			(completion) =>
+				completion.stocks.every((entry) => entry.errorCode === null || entry.events.length === 0),
+			{
+				message: "errors carry no events",
+				path: ["stocks"],
+			},
+		)
+		// A duplicate success+failure pair for one stock would delete the
+		// events of a "failed" stock; duplicates are rejected instead.
+		.refine(
+			(completion) =>
+				new Set(completion.stocks.map((entry) => entry.stockId)).size === completion.stocks.length,
+			{
+				message: "stock ids must be distinct",
+				path: ["stocks"],
+			},
+		)
+		.refine(
+			(completion) =>
+				completion.stocks.every(
+					(entry) =>
+						new Set(entry.events.map((event) => event.periodKey)).size === entry.events.length,
+				),
+			{
+				message: "period keys must be distinct within a stock",
+				path: ["stocks"],
+			},
+		),
+	/**
+	 * Google Calendar outcomes (FR-019, additive): a connect completion
+	 * carries the calendar id; a sync completion carries the calendar id, the
+	 * desired digest it applied and the counts; a disconnect completion says
+	 * whether the refresh token was revoked. Failures use the existing
+	 * `failed` outcome with one of the stable `GOOGLE_*` codes.
+	 */
+	googleCalendarConnectedSchema,
+	googleCalendarSyncedSchema,
+	googleCalendarDisconnectedSchema,
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;
 

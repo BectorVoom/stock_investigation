@@ -9,6 +9,10 @@ import {
 	type ConversationSummary,
 	chatMessageSchema,
 	conversationSummarySchema,
+	type EarningsTiming,
+	type EarningsUnavailableCode,
+	earningsTimingSchema,
+	earningsUnavailableCodeSchema,
 	type HomeDashboard,
 	homeDashboardSchema,
 	type NewsSource,
@@ -19,7 +23,9 @@ import {
 	runnerCredentialSchema,
 	STABLE_FAILURE_CODE_PATTERN,
 	uiCommandSchema,
+	type WatchMarket,
 	type WorkspaceSummary,
+	watchMarketSchema,
 	workspaceStateSchema,
 	workspaceSummarySchema,
 } from "@research/contracts";
@@ -38,7 +44,7 @@ export class StoredDataError extends Error {
 	}
 }
 
-function decode<T>(table: string, schema: z.ZodType<T>, value: unknown): T {
+export function decode<T>(table: string, schema: z.ZodType<T>, value: unknown): T {
 	const parsed = schema.safeParse(value);
 	if (!parsed.success) {
 		const paths = parsed.error.issues
@@ -127,7 +133,7 @@ export function toArticle(row: unknown): Article {
 const jobRowSchema = z.object({
 	owner_id: z.string(),
 	run_id: z.string(),
-	kind: z.enum(["research", "news-ingest", "market-refresh"]),
+	kind: z.enum(["research", "news-ingest", "market-refresh", "earnings-refresh"]),
 	state: z.string(),
 	request_json: nullableText,
 	workspace_id: nullableText,
@@ -420,6 +426,84 @@ export function toHomeDashboardRecord(row: unknown): {
 		version: r.version,
 		updatedAt: r.updated_at,
 	};
+}
+
+const watchlistStockRowSchema = z.object({
+	stock_id: z.string(),
+	market: z.string(),
+	symbol: z.string(),
+	name: z.string().nullable(),
+	added_at: z.string(),
+	last_refreshed_at: z.string().nullable(),
+	retrieved_at: z.string().nullable(),
+	unavailable_code: z.string().nullable(),
+});
+
+export function toStoredWatchlistStock(row: unknown): {
+	readonly stockId: string;
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly name: string | null;
+	readonly addedAt: string;
+	readonly lastRefreshedAt: string | null;
+	readonly retrievedAt: string | null;
+	readonly unavailableCode: EarningsUnavailableCode | null;
+} {
+	const r = decode("watchlist_stocks", watchlistStockRowSchema, row);
+	return {
+		stockId: r.stock_id,
+		market: decode("watchlist_stocks", watchMarketSchema, r.market),
+		symbol: r.symbol,
+		name: r.name,
+		addedAt: r.added_at,
+		lastRefreshedAt: r.last_refreshed_at,
+		retrievedAt: r.retrieved_at,
+		unavailableCode:
+			r.unavailable_code === null
+				? null
+				: decode("watchlist_stocks", earningsUnavailableCodeSchema, r.unavailable_code),
+	};
+}
+
+const earningsEventRowSchema = z.object({
+	stock_id: z.string(),
+	period_key: z.string(),
+	announcement_date: z.string().nullable(),
+	fiscal_period_label: z.string(),
+	fiscal_period_end: z.string().nullable(),
+	timing: z.string(),
+});
+
+export function toStoredEarningsEvent(row: unknown): {
+	readonly stockId: string;
+	readonly periodKey: string;
+	readonly announcementDate: string | null;
+	readonly fiscalPeriodLabel: string;
+	readonly fiscalPeriodEnd: string | null;
+	readonly timing: EarningsTiming;
+} {
+	const r = decode("earnings_events", earningsEventRowSchema, row);
+	return {
+		stockId: r.stock_id,
+		periodKey: r.period_key,
+		announcementDate: r.announcement_date,
+		fiscalPeriodLabel: r.fiscal_period_label,
+		fiscalPeriodEnd: r.fiscal_period_end,
+		timing: decode("earnings_events", earningsTimingSchema, r.timing),
+	};
+}
+
+const calendarFeedRowSchema = z.object({
+	token_hash: z.string(),
+	created_at: z.string(),
+});
+
+export function toCalendarFeedRecord(row: unknown): {
+	readonly tokenHash: string;
+	readonly createdAt: string;
+} {
+	const r = decode("calendar_feeds", calendarFeedRowSchema, row);
+	return { tokenHash: r.token_hash, createdAt: r.created_at };
 }
 
 const marketSeriesRowSchema = z.object({

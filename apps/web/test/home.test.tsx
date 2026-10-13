@@ -7,9 +7,12 @@ import {
 	type HomeServerState,
 	initialHomeServerState,
 	initialServerState,
+	initialWatchlistServerState,
 	installHomeRoutes,
+	installWatchlistRoutes,
 	mountApp,
 	type ServerState,
+	type WatchlistServerState,
 } from "./appHarness.tsx";
 import {
 	createFakeBackend,
@@ -24,13 +27,54 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 let backend: FakeBackend;
 let server: ServerState;
 let home: HomeServerState;
+let watch: WatchlistServerState;
 
 function freshBackend(stale: boolean): void {
 	backend = createFakeBackend();
 	server = initialServerState();
 	home = initialHomeServerState(stale);
 	installHomeRoutes(backend, server, home);
+	watch = initialWatchlistServerState();
+	installWatchlistRoutes(backend, watch);
 	window.location.hash = "#/home";
+}
+
+/** One watchlist stock; fresh stamps unless overridden (fresh queues no auto-refresh). */
+function watchStock(
+	overrides: Partial<WatchlistServerState["stocks"][number]> = {},
+): WatchlistServerState["stocks"][number] {
+	return {
+		stockId: "us:AAPL",
+		market: "US",
+		symbol: "AAPL",
+		name: "Apple Inc",
+		addedAt: "2026-10-12T00:00:00Z",
+		source: "finnhub",
+		publisher: "Finnhub",
+		sourceUrl: "https://finnhub.io/",
+		lastRefreshedAt: "2026-10-12T11:50:00Z",
+		retrievedAt: "2026-10-12T11:50:00Z",
+		unavailable: null,
+		events: [],
+		...overrides,
+	};
+}
+
+/** The default dashboard plus one earnings-calendar widget. */
+function withCalendarWidget(): void {
+	home.dashboard = {
+		schemaVersion: 1,
+		widgets: [
+			...home.dashboard.widgets,
+			{
+				type: "earnings-calendar",
+				widgetId: "w-cal",
+				title: "Earnings",
+				size: "large",
+				daysAhead: 90,
+			},
+		],
+	};
 }
 
 beforeEach(() => {
@@ -1177,6 +1221,81 @@ describe("home view", () => {
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		await waitFor(() => expect(live.textContent).toBe("Moved “VIX” to position 3 of 7."));
 	});
+
+	it("queues one automatic earnings refresh for a calendar widget with never-fetched dates", async () => {
+		withCalendarWidget();
+		watch.stocks = [watchStock({ lastRefreshedAt: null, retrievedAt: null })];
+		mountApp(backend);
+		await waitFor(() => expect(watch.refreshCount).toBe(1), { timeout: 10_000 });
+		await waitFor(() =>
+			expect(document.body.textContent).toContain("Earnings dates had not been fetched yet"),
+		);
+		// The poller started, so the widget fills in with the fetching status.
+		await waitFor(() => expect(document.body.textContent).toContain("Fetching earnings dates…"));
+		// One visit, one refresh: later polls never queue another.
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(watch.refreshCount).toBe(1);
+	});
+
+	it("queues no earnings refresh when no calendar widget is shown", async () => {
+		watch.stocks = [watchStock({ lastRefreshedAt: null, retrievedAt: null })];
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(watch.refreshCount).toBe(0);
+		expect(backend.requestsTo("GET", /\/watchlist$/)).toHaveLength(0);
+	});
+
+	it("queues no earnings refresh for a calendar widget with fresh dates", async () => {
+		withCalendarWidget();
+		watch.stocks = [watchStock()];
+		mountApp(backend);
+		await waitFor(
+			() =>
+				expect(
+					within(widgetById("w-cal")).getByRole("button", {
+						name: "Download calendar file (.ics)",
+					}),
+				).toBeTruthy(),
+			{ timeout: 10_000 },
+		);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(watch.refreshCount).toBe(0);
+	});
+
+	it("the widget Refresh button queues a run, and a queue failure is reported", async () => {
+		withCalendarWidget();
+		watch.stocks = [watchStock()];
+		mountApp(backend);
+		await waitFor(
+			() =>
+				expect(
+					within(widgetById("w-cal")).getByRole("button", {
+						name: "Download calendar file (.ics)",
+					}),
+				).toBeTruthy(),
+			{ timeout: 10_000 },
+		);
+		const button = () =>
+			within(widgetById("w-cal")).getByRole("button", { name: "Refresh earnings dates" });
+		fireEvent.click(button());
+		await waitFor(() => expect(watch.refreshCount).toBe(1));
+		await waitFor(() => expect(document.body.textContent).toContain("Fetching earnings dates…"));
+		expect(button().hasAttribute("disabled")).toBe(true);
+		// The run ends; a failing queue is then reported through Home's notice.
+		watch.activeRunId = null;
+		watch.lastSucceededAt = "2026-10-12T12:05:00Z";
+		backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () =>
+			errorResponse(500, "INTERNAL", "boom"),
+		);
+		await waitFor(() => expect(button().hasAttribute("disabled")).toBe(false), {
+			timeout: 30_000,
+		});
+		fireEvent.click(button());
+		await waitFor(() =>
+			expect(document.body.textContent).toContain("The earnings-date refresh was not queued:"),
+		);
+	}, 60_000);
 });
 
 describe("home api client", () => {

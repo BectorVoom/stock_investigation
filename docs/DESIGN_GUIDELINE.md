@@ -191,6 +191,10 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Widget controls | Selects, inputs and loading blocks on Home (buttons are the native `IconButton`, menus are native) | — | `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL (0.875rem control text, 0.75rem medium slate-700 labels); controls carry their own `label` prop instead of `Field` |
 | Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
+| Earnings calendar widget | The Home widget over the watchlist's upcoming dated announcements within its days-ahead window | windowed table / no announcement in range / empty watchlist | `EarningsCalendarWidget` in `home/widgets/EarningsCalendarWidget.tsx` (semantic `<table>` with `<caption>` like `Market tables`: date, stock (symbol `font-mono` + name), fiscal period, timing, per-date calendar links; below it the count of stocks with no upcoming date with each reason in a disclosure; `.ics` download button, "Manage watchlist" link, publisher/retrieved provenance line; no series picker in the dialog — the registry marks the type `seriesKind: "none"`) |
+| Registered stocks table | The Watchlist page table: one row per registered stock with its next announcement | dated next announcement / undecided / unavailable / passed dates | `WatchlistView` in `watchlist/WatchlistView.tsx` (semantic `<table>` with `<caption>` and scopes: symbol `font-mono`, company name or "unavailable (not retrieved yet)", market, next date with fiscal period and timing, further dates in a disclosure, as-of date, source `SafeLink`, per-row "unavailable (reason)", `Remove` with `ConfirmDialog`; passed stored dates are stated as text with no date and no calendar links) |
+| Add-a-stock form | Market select + symbol input with guideline-way problem list | valid / problems listed | `WatchlistView` (shared `Select` + `INPUT` + `BUTTON_PRIMARY`; `ul[aria-label="Before you can add this stock"]` the submit points at via `aria-describedby`) |
+| Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | `WatchlistView` (read-only field with Copy button and "will not be shown again" text on issue; created date with "Replace link" and "Revoke link" confirmations when a feed exists; the secrecy + localhost/HTTPS reachability note always visible) |
 
 ## 7. Heading structure
 
@@ -331,7 +335,7 @@ appears: `@shoelace-style/shoelace` (npm, bundled — no CDN) supplies the
 widget dialogs, selects, inputs and skeletons. It is loaded lazily with the Home view so the other
 pages do not pay for it, and only the used component modules are imported —
 never the whole library. Widget frames, menus and buttons are native
-elements in the app style (ADR-0016), not kit parts. If a Shoelace component cannot work under the
+elements in the app style (ADR-0017), not kit parts. If a Shoelace component cannot work under the
 Content-Security-Policy, that component is replaced by a native element styled
 the app's way; the policy itself is never relaxed (see ADR-0015).
 

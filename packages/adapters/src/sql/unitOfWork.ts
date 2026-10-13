@@ -2,6 +2,7 @@ import type {
 	CompletionEffects,
 	DeleteWorkspaceInput,
 	DeleteWorkspaceOutcome,
+	EarningsCompletionStock,
 	JobWrite,
 	MarketCompletionSeries,
 	ResearchUnitOfWork,
@@ -386,6 +387,150 @@ function marketStatements(
 	return statements;
 }
 
+/**
+ * Statements storing one earnings-refresh completion (FR-018). Writes are
+ * set-based: one `json_each` statement for ALL succeeded stocks' rows, one
+ * for ALL failed stocks' status rows, one DELETE plus one `json_each`
+ * INSERT replacing the succeeded stocks' events — regardless of row count.
+ * A full 50-stock completion costs 2 (job + audit, counted by the caller) +
+ * at most 4 here, well under the ~50-query D1 budget. NO_SCHEDULED_DATE is a
+ * successful retrieval with nothing listed: it clears the stock's stored
+ * events and sets both stamps while recording the code. Every other error
+ * keeps the stored events and records only the code and attempt time; only
+ * stocks still on the watchlist reach this function (the service drops the
+ * rest before committing), and the writes below are fail-closed anyway —
+ * an UPDATE that matches no row and an events INSERT guarded on the
+ * watchlist row — so a stock removed between the check and the batch leaves
+ * neither a stock row nor orphan events.
+ */
+function earningsStatements(
+	db: SqlDatabase,
+	ownerId: string,
+	stocks: readonly EarningsCompletionStock[],
+	guard: Guard,
+): SqlStatement[] {
+	if (stocks.length === 0) return [];
+	// NO_SCHEDULED_DATE is a successful retrieval with nothing listed, not a
+	// failed attempt: like a dated success it clears the stock's stored events
+	// and sets both stamps — but the code is still recorded, so the page can
+	// say why there is no date. Every other error keeps the stored events and
+	// records only the code and attempt time.
+	const cleared = stocks.filter(
+		(entry) => entry.errorCode === null || entry.errorCode === "NO_SCHEDULED_DATE",
+	);
+	const failed = stocks.filter(
+		(entry) => entry.errorCode !== null && entry.errorCode !== "NO_SCHEDULED_DATE",
+	);
+	const statements: SqlStatement[] = [];
+	if (cleared.length > 0) {
+		// A cleared stock sets its attempt and success stamps and takes the
+		// runner's company name only when one was returned (COALESCE keeps
+		// the stored name otherwise) — never a guess. Dated successes clear
+		// the failure code; NO_SCHEDULED_DATE records it.
+		const rows = cleared.map((entry) => ({
+			stockId: entry.stockId,
+			name: entry.name,
+			fetchedAt: entry.fetchedAt,
+			unavailableCode: entry.errorCode,
+		}));
+		statements.push(
+			db
+				.prepare(
+					`UPDATE watchlist_stocks SET
+						name = COALESCE(payload.name, watchlist_stocks.name),
+						last_refreshed_at = payload.fetched_at,
+						retrieved_at = payload.fetched_at,
+						unavailable_code = payload.unavailable_code
+					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
+							json_extract(value, '$.name') AS name,
+							json_extract(value, '$.fetchedAt') AS fetched_at,
+							json_extract(value, '$.unavailableCode') AS unavailable_code
+						FROM json_each(?)) AS payload
+					WHERE watchlist_stocks.owner_id = ?
+						AND watchlist_stocks.stock_id = payload.stock_id
+						AND ${guard.sql}`,
+				)
+				.bind(JSON.stringify(rows), ownerId, ...guard.values),
+		);
+	}
+	if (failed.length > 0) {
+		// A failed stock keeps its stored events, name and success stamp and
+		// only records the failure code and attempt time. UPDATE-only: a
+		// watchlist row always pre-exists (the service drops stocks that
+		// left before committing), so a stock removed between the check and
+		// the batch is simply not recorded — never re-inserted.
+		const rows = failed.map((entry) => ({
+			stockId: entry.stockId,
+			fetchedAt: entry.fetchedAt,
+			unavailableCode: entry.errorCode,
+		}));
+		statements.push(
+			db
+				.prepare(
+					`UPDATE watchlist_stocks SET
+						last_refreshed_at = payload.fetched_at,
+						unavailable_code = payload.unavailable_code
+					FROM (SELECT json_extract(value, '$.stockId') AS stock_id,
+							json_extract(value, '$.fetchedAt') AS fetched_at,
+							json_extract(value, '$.unavailableCode') AS unavailable_code
+						FROM json_each(?)) AS payload
+					WHERE watchlist_stocks.owner_id = ?
+						AND watchlist_stocks.stock_id = payload.stock_id
+						AND ${guard.sql}`,
+				)
+				.bind(JSON.stringify(rows), ownerId, ...guard.values),
+		);
+	}
+	const clearedIds = cleared.map((entry) => entry.stockId);
+	if (cleared.length > 0) {
+		// A cleared stock REPLACES its stored events (set-based): rows of a
+		// rescheduled-away period vanish with the delete below, and a
+		// NO_SCHEDULED_DATE stock's stale dates vanish because its fresh
+		// event list is empty.
+		statements.push(
+			db
+				.prepare(
+					`DELETE FROM earnings_events WHERE owner_id = ?
+					AND stock_id IN (SELECT value FROM json_each(?)) AND ${guard.sql}`,
+				)
+				.bind(ownerId, JSON.stringify(clearedIds), ...guard.values),
+		);
+		const events = cleared.flatMap((entry) =>
+			entry.events.map((event) => ({
+				stockId: entry.stockId,
+				periodKey: event.periodKey,
+				announcementDate: event.announcementDate,
+				fiscalPeriodLabel: event.fiscalPeriodLabel,
+				fiscalPeriodEnd: event.fiscalPeriodEnd,
+				timing: event.timing,
+			})),
+		);
+		if (events.length > 0) {
+			statements.push(
+				db
+					.prepare(
+						`INSERT INTO earnings_events
+							(owner_id, stock_id, period_key, announcement_date, fiscal_period_label, fiscal_period_end, timing)
+						SELECT ?, json_extract(value, '$.stockId'), json_extract(value, '$.periodKey'),
+							json_extract(value, '$.announcementDate'), json_extract(value, '$.fiscalPeriodLabel'),
+							json_extract(value, '$.fiscalPeriodEnd'), json_extract(value, '$.timing')
+						FROM json_each(?) WHERE ${guard.sql}
+							AND EXISTS (SELECT 1 FROM watchlist_stocks AS guard_stock
+								WHERE guard_stock.owner_id = ?
+								AND guard_stock.stock_id = json_extract(value, '$.stockId'))
+						ON CONFLICT (owner_id, stock_id, period_key) DO UPDATE SET
+							announcement_date = excluded.announcement_date,
+							fiscal_period_label = excluded.fiscal_period_label,
+							fiscal_period_end = excluded.fiscal_period_end,
+							timing = excluded.timing`,
+					)
+					.bind(ownerId, JSON.stringify(events), ...guard.values, ownerId),
+			);
+		}
+	}
+	return statements;
+}
+
 export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 	return {
 		async enqueueResearch({
@@ -566,6 +711,7 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				);
 			}
 			statements.push(...marketStatements(db, ownerId, effects.marketSeries ?? [], guard));
+			statements.push(...earningsStatements(db, ownerId, effects.earnings ?? [], guard));
 
 			const results = await db.batch(statements);
 			if (results[0]?.meta.changes === 1) {

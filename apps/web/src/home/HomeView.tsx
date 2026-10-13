@@ -18,12 +18,19 @@ import {
 	Switch,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import type { ApiClient, HomeDataResponse } from "../api/client.ts";
+import type { ApiClient, HomeDataResponse, WatchlistData } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
+import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
+import {
+	EARNINGS_AUTO_REFRESH_NOTICE,
+	earningsAutoRefreshReason,
+	isWatchlistRefreshActive,
+	watchlistRefreshSignal,
+} from "../watchlist/watchlistModel.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
 import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 import "./shoelace.ts";
@@ -69,6 +76,15 @@ export function HomeView(props: {
 	const [dataEtag, setDataEtag] = createSignal<string | null>(null);
 	const [dataLoading, setDataLoading] = createSignal(true);
 	const [dataError, setDataError] = createSignal<ApiFailure | null>(null);
+	/**
+	 * The watchlist for earnings-calendar widgets, loaded only when the
+	 * dashboard holds at least one (an effect below starts the load). Like
+	 * the series, it arrives through an accessor so the widget stays
+	 * reactive across reloads.
+	 */
+	const [watchlist, setWatchlist] = createSignal<WatchlistData | null>(null);
+	const [watchlistEtag, setWatchlistEtag] = createSignal<string | null>(null);
+	const [watchlistError, setWatchlistError] = createSignal<ApiFailure | null>(null);
 	const [notice, setNotice] = createSignal<HomeNotice | null>(null);
 	const [busy, setBusy] = createSignal(false);
 	const [dialog, setDialog] = createSignal<WidgetDialogState | null>(null);
@@ -98,9 +114,14 @@ export function HomeView(props: {
 	let gridEl: HTMLDivElement | undefined;
 	/** True while a dropped preview is being saved (blocks a new drag). */
 	let savingPreview = false;
+	/** Earnings-date auto-refresh (FR-018 fix F): once per mount, like market data above. */
+	const earningsQueue = createEarningsRefreshQueue(props.api);
+	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
+	let earningsAutoTried = false;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
+		watchlistPoller.stop();
 	});
 
 	const loadData = async (): Promise<HomePollSignal> => {
@@ -156,6 +177,117 @@ export function HomeView(props: {
 		},
 		visibility: props.visibility,
 	});
+
+	/** Conditional watchlist re-read; the poller below runs it while a refresh is active. */
+	const loadWatchlist = async (): Promise<
+		"active" | "queued" | "changed" | "unchanged" | "failed"
+	> => {
+		const result = await props.api.getWatchlist(watchlistEtag());
+		if (disposed) return "unchanged";
+		if (!result.ok) {
+			if (watchlist() === null) setWatchlistError(result.error);
+			return "failed";
+		}
+		if (!result.value.changed) return watchlistRefreshSignal(watchlist());
+		setWatchlist(result.value.value);
+		setWatchlistEtag(result.value.etag);
+		setWatchlistError(null);
+		const current = result.value.value;
+		return current.refresh.activeRunId !== null ? watchlistRefreshSignal(current) : "changed";
+	};
+
+	const watchlistPoller = createPoller({
+		poll: async () => {
+			const signal = await loadWatchlist();
+			if (disposed) return "unchanged";
+			if (signal === "changed" || signal === "unchanged") {
+				watchlistPoller.stop();
+				// The run that was active at load has ended: the once-per-mount
+				// rule below never ran, so re-evaluate it now. When the ended
+				// run already covered every stock the reason is null and
+				// nothing more is queued.
+				maybeEarningsAutoRefresh();
+			}
+			return signal;
+		},
+		visibility: props.visibility,
+	});
+
+	/** Starts the watchlist load once the dashboard shows a calendar widget needs it. */
+	const maybeLoadWatchlist = () => {
+		if (disposed || watchlist() !== null || watchlistError() !== null) return;
+		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
+		void loadWatchlist().then(() => {
+			if (disposed) return;
+			if (isWatchlistRefreshActive(watchlist())) watchlistPoller.start();
+			else maybeEarningsAutoRefresh();
+		});
+	};
+	createEffect(() => {
+		// Tracks the dashboard: a newly added calendar widget triggers the load —
+		// or, when the watchlist already loaded, the once-per-mount auto-refresh.
+		if (dashboard.value() !== null) {
+			if (watchlist() === null) maybeLoadWatchlist();
+			else maybeEarningsAutoRefresh();
+		}
+	});
+
+	/**
+	 * Once per mount, after the watchlist has loaded: queue one earnings-date
+	 * refresh when a calendar widget is shown, no run is active, and dates
+	 * were never fetched or are more than a day old. Announces through Home's
+	 * notice; a failed queue is reported, never retried.
+	 */
+	const maybeEarningsAutoRefresh = (): void => {
+		if (earningsAutoTried || disposed) return;
+		const current = watchlist();
+		if (current === null) return;
+		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
+		if (current.refresh.activeRunId !== null) return;
+		const reason = earningsAutoRefreshReason(current, Date.now());
+		if (reason === null) return;
+		earningsAutoTried = true;
+		void queueEarningsRefresh(EARNINGS_AUTO_REFRESH_NOTICE[reason]);
+	};
+
+	/** Queues one earnings-date refresh through the shared queue (manual button or auto). */
+	const queueEarningsRefresh = async (announce: string): Promise<void> => {
+		if (earningsQueue.busy() || earningsQueueBusy()) {
+			setNotice({ tone: "info", text: "An earnings-date refresh is already being queued." });
+			return;
+		}
+		setEarningsQueueBusy(true);
+		const result = await earningsQueue.queue();
+		if (disposed) return;
+		setEarningsQueueBusy(false);
+		if (result.kind === "busy") {
+			setNotice({ tone: "info", text: "An earnings-date refresh is already being queued." });
+			return;
+		}
+		if (result.kind === "failed") {
+			setNotice({
+				tone: "error",
+				text: `The earnings-date refresh was not queued: ${result.error.message}`,
+			});
+			return;
+		}
+		setNotice({ tone: "info", text: announce });
+		watchlistPoller.start();
+		void loadWatchlist();
+	};
+
+	/** The calendar widget's refresh button: one manual queue, announced. */
+	const refreshEarnings = (): void => {
+		void queueEarningsRefresh("Earnings-date refresh queued for the local runner.");
+	};
+	/** True while an earnings queue request is in flight (the widget button reads this). */
+	const earningsRefreshBusy = (): boolean => earningsQueueBusy() || earningsQueue.busy();
+
+	/** The calendar widget's "Try again": clears the error and reloads. */
+	const retryWatchlist = () => {
+		setWatchlistError(null);
+		maybeLoadWatchlist();
+	};
 
 	/**
 	 * V3: decided only once BOTH dashboard and data are loaded (an effect
@@ -622,6 +754,12 @@ export function HomeView(props: {
 												component={WIDGET_REGISTRY[widget.type].component}
 												widget={widget}
 												seriesById={byId}
+												watchlist={watchlist}
+												watchlistError={watchlistError}
+												onRetryWatchlist={retryWatchlist}
+												onRefreshEarnings={refreshEarnings}
+												earningsRefreshBusy={earningsRefreshBusy}
+												api={props.api}
 												disabled={busy()}
 												onSaveRange={(next: HomeWidget) =>
 													void saveEdit({ kind: "replace", widget: next })

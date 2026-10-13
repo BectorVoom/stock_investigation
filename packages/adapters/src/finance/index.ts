@@ -1,10 +1,41 @@
 export {
+	createFinnhubEarningsSource,
+	FINNHUB_HOST,
+	FINNHUB_PUBLISHER,
+	FINNHUB_SOURCE_URL,
+	type FinnhubEarningsDeps,
+} from "./finnhubEarnings.ts";
+export {
 	createFredSeriesSource,
 	FRED_HOST,
 	FRED_PUBLISHER,
 	type FredSeriesDeps,
 	fredSourceUrl,
 } from "./fredSeries.ts";
+export {
+	createJpxEarningsSource,
+	extractJpxWorkbookUrls,
+	JPX_HOST,
+	JPX_INDEX_TTL_MS,
+	JPX_INDEX_URL,
+	JPX_PUBLISHER,
+	JPX_SHEET_PATH,
+	JPX_SOURCE_URL,
+	JPX_STRINGS_PATH,
+	type JpxEarningsDeps,
+	MAX_JPX_WORKBOOKS,
+} from "./jpxEarnings.ts";
+export {
+	decodeWorkbookText,
+	headerMatches,
+	type JpxWorkbookError,
+	type JpxWorkbookRow,
+	MAX_JPX_CELLS,
+	MAX_JPX_DATA_ROWS,
+	MAX_JPX_SHARED_STRINGS,
+	parseJpxWorkbook,
+	slugFiscalKind,
+} from "./jpxWorkbook.ts";
 export {
 	type JpMarginBalanceReport,
 	type JpMarginBalanceSource,

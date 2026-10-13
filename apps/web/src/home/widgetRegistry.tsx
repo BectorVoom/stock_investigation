@@ -1,5 +1,6 @@
-import type { HomeWidget, MarketSeries } from "@research/contracts";
+import type { HomeWidget, MarketSeries, WatchlistResponse } from "@research/contracts";
 import { type Accessor, type Component, type JSX, Show } from "solid-js";
+import { EarningsCalendarWidget } from "./widgets/EarningsCalendarWidget.tsx";
 import { IndicatorTableWidget } from "./widgets/IndicatorTableWidget.tsx";
 import { LineChartWidget } from "./widgets/LineChartWidget.tsx";
 import { MetricWidget } from "./widgets/MetricWidget.tsx";
@@ -12,7 +13,11 @@ export const HOME_WIDGET_TYPES: readonly HomeWidgetType[] = [
 	"line-chart",
 	"stock-table",
 	"indicator-table",
+	"earnings-calendar",
 ];
+
+import type { ApiClient } from "../api/client.ts";
+import type { ApiFailure } from "../api/http.ts";
 
 export interface WidgetRendererProps {
 	readonly widget: HomeWidget;
@@ -23,6 +28,23 @@ export interface WidgetRendererProps {
 	 * `<article>` being torn down.
 	 */
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
+	/**
+	 * The watchlist as an accessor (same live pattern as `seriesById`):
+	 * HomeView loads it only when the dashboard holds at least one
+	 * earnings-calendar widget. Null until loaded; widgets without calendar
+	 * content ignore it.
+	 */
+	readonly watchlist: Accessor<WatchlistResponse | null>;
+	/** Watchlist load failure for the earnings calendar (other widgets ignore it). */
+	readonly watchlistError: Accessor<ApiFailure | null>;
+	/** Retries the watchlist load (the calendar widget's "Try again"). */
+	readonly onRetryWatchlist: () => void;
+	/** Queues an earnings-date refresh (the calendar widget's refresh button). */
+	readonly onRefreshEarnings: () => void;
+	/** True while an earnings-date refresh queue request is in flight. */
+	readonly earningsRefreshBusy: Accessor<boolean>;
+	/** Typed access to the backend (the calendar widget downloads the .ics through it). */
+	readonly api: ApiClient;
 	/** Line-chart range changes save the widget; other widgets ignore it. */
 	readonly onSaveRange: (widget: HomeWidget) => void;
 	/**
@@ -47,9 +69,16 @@ export interface WidgetTypeInfo {
 	readonly defaultSize: HomeWidget["size"];
 	readonly minSeries: number;
 	readonly maxSeries: number;
-	/** Which series are allowed together: one id, or 1..4 ids that share a unit. */
-	readonly seriesKind: "single" | "multi-same-unit" | "multi";
+	/**
+	 * Which series are allowed together: one id, 1..4 ids that share a unit,
+	 * free multi, or none (the earnings calendar shows watchlist dates, not
+	 * market series — the dialog hides the series picker for it instead of
+	 * special-casing the type).
+	 */
+	readonly seriesKind: "single" | "multi-same-unit" | "multi" | "none";
 	readonly hasRange: boolean;
+	/** True for widgets with a days-ahead select instead of a series picker. */
+	readonly hasDaysAhead: boolean;
 	readonly component: Component<WidgetRendererProps>;
 }
 
@@ -104,6 +133,26 @@ function IndicatorTableEntry(props: WidgetRendererProps): JSX.Element {
 	);
 }
 
+function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
+	const calendar = (): Extract<HomeWidget, { readonly type: "earnings-calendar" }> | null =>
+		props.widget.type === "earnings-calendar" ? props.widget : null;
+	return (
+		<Show when={calendar()} fallback={null}>
+			{(current) => (
+				<EarningsCalendarWidget
+					widget={current()}
+					watchlist={props.watchlist}
+					watchlistError={props.watchlistError}
+					onRetryWatchlist={props.onRetryWatchlist}
+					onRefreshEarnings={props.onRefreshEarnings}
+					earningsRefreshBusy={props.earningsRefreshBusy}
+					api={props.api}
+				/>
+			)}
+		</Show>
+	);
+}
+
 export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo } = {
 	metric: {
 		type: "metric",
@@ -114,6 +163,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		maxSeries: 1,
 		seriesKind: "single",
 		hasRange: false,
+		hasDaysAhead: false,
 		component: MetricEntry,
 	},
 	"line-chart": {
@@ -125,6 +175,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		maxSeries: 4,
 		seriesKind: "multi-same-unit",
 		hasRange: true,
+		hasDaysAhead: false,
 		component: LineChartEntry,
 	},
 	"stock-table": {
@@ -136,6 +187,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		maxSeries: 12,
 		seriesKind: "multi",
 		hasRange: false,
+		hasDaysAhead: false,
 		component: StockTableEntry,
 	},
 	"indicator-table": {
@@ -147,7 +199,21 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		maxSeries: 12,
 		seriesKind: "multi",
 		hasRange: false,
+		hasDaysAhead: false,
 		component: IndicatorTableEntry,
+	},
+	"earnings-calendar": {
+		type: "earnings-calendar",
+		label: "Earnings calendar",
+		description:
+			"Upcoming earnings announcement dates of the stocks on the Watchlist page, with calendar links.",
+		defaultSize: "large",
+		minSeries: 0,
+		maxSeries: 0,
+		seriesKind: "none",
+		hasRange: false,
+		hasDaysAhead: true,
+		component: EarningsCalendarEntry,
 	},
 };
 
@@ -187,6 +253,14 @@ export function defaultWidgetOf(type: HomeWidgetType): HomeWidget {
 				title: "",
 				size: info.defaultSize,
 				seriesIds: [],
+			};
+		case "earnings-calendar":
+			return {
+				type,
+				widgetId: newWidgetId(),
+				title: "",
+				size: info.defaultSize,
+				daysAhead: 90,
 			};
 	}
 }

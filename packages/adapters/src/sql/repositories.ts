@@ -2,7 +2,10 @@ import type {
 	ArticlePage,
 	ArticleRepository,
 	AuditLog,
+	CalendarFeedRecord,
+	CalendarFeedRepository,
 	ChatRepository,
+	EarningsRepository,
 	EnqueueResult,
 	HomeDashboardRepository,
 	JobRecord,
@@ -16,7 +19,10 @@ import type {
 	RunnerStatusRepository,
 	SettingsRepository,
 	SourceRepository,
+	StoredEarningsEvent,
 	StoredMarketObservation,
+	StoredWatchlistStock,
+	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
 import { toProgressRows } from "@research/application";
@@ -41,12 +47,14 @@ import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	bodyOf,
+	decode,
 	numberColumn,
 	parseJsonColumn,
 	StoredDataError,
 	textColumn,
 	toAppliedCommand,
 	toArticle,
+	toCalendarFeedRecord,
 	toChatMessage,
 	toConversationSummary,
 	toHomeDashboardRecord,
@@ -54,7 +62,9 @@ import {
 	toNewsSource,
 	toRunnerCredential,
 	toStoredAgentSettings,
+	toStoredEarningsEvent,
 	toStoredMarketSeries,
+	toStoredWatchlistStock,
 	toWorkspaceRecord,
 	toWorkspaceSummary,
 } from "./rows.ts";
@@ -205,11 +215,12 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * part of the INSERT, so a run submitted against a concurrently deleted
  * conversation writes nothing instead of orphaning a job.
  *
- * S1: "at most one active market-refresh job per owner" is enforced the same
- * way — the INSERT is a no-op while an unfinished job of kind
- * `market-refresh` exists for the owner, no matter which idempotency key the
- * concurrent request used. `enqueueOutcome` maps that no-op back to the active
- * run, so the loser of the race answers with the winner's run id.
+ * S1: "at most one active refresh job per owner, per refresh kind" is
+ * enforced the same way — the INSERT is a no-op while an unfinished job of
+ * the same refresh kind (`market-refresh` or `earnings-refresh`) exists for
+ * the owner, no matter which idempotency key the concurrent request used.
+ * `enqueueOutcome` maps that no-op back to the active run, so the loser of
+ * the race answers with the winner's run id.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -230,8 +241,8 @@ export function insertJobStatement(
 			WHERE (SELECT COUNT(*) FROM research_jobs
 				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
 				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
-				AND NOT (? = 'market-refresh' AND EXISTS (SELECT 1 FROM research_jobs
-					WHERE owner_id = ? AND kind = 'market-refresh' AND state NOT IN (${TERMINAL_SQL})))
+				AND NOT (? IN ('market-refresh', 'earnings-refresh') AND EXISTS (SELECT 1 FROM research_jobs
+					WHERE owner_id = ? AND kind = ? AND state NOT IN (${TERMINAL_SQL})))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -272,6 +283,7 @@ export function insertJobStatement(
 			job.workspaceId,
 			job.kind,
 			job.ownerId,
+			job.kind,
 		);
 }
 
@@ -292,11 +304,11 @@ async function findActiveJobByKind(db: SqlDatabase, ownerId: string, kind: strin
 /**
  * Why an enqueue INSERT changed no row: the idempotency key already names a
  * job (a replay or a key reuse), the named workspace is gone, the owner is
- * at the unfinished-job cap, or — for kind `market-refresh` — an unfinished
- * job of that kind already exists (S1: the INSERT itself refused the second
- * active job, so map the no-op back to the active run instead of reporting
- * capacity). The key is checked first so a replay still answers from the
- * stored job.
+ * at the unfinished-job cap, or — for a refresh kind (`market-refresh`,
+ * `earnings-refresh`) — an unfinished job of that kind already exists (S1:
+ * the INSERT itself refused the second active job, so map the no-op back to
+ * the active run instead of reporting capacity). The key is checked first so
+ * a replay still answers from the stored job.
  */
 export async function enqueueOutcome(
 	db: SqlDatabase,
@@ -312,7 +324,7 @@ export async function enqueueOutcome(
 			sameRequest: existing.requestFingerprint === requestFingerprint,
 		};
 	}
-	if (job.kind === "market-refresh") {
+	if (job.kind === "market-refresh" || job.kind === "earnings-refresh") {
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind);
 		if (active !== null) {
 			const { requestFingerprint: _fingerprint, ...record } = active;
@@ -1244,6 +1256,134 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 					.bind(ownerId, keep),
 			]);
 			return results[1]?.meta.changes ?? 0;
+		},
+	};
+}
+
+export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository {
+	return {
+		async listStocks(ownerId) {
+			// Insertion order: `added_at` first, `rowid` breaks ties from
+			// same-millisecond adds, so the order is always the added order.
+			const { results } = await db
+				.prepare(`SELECT * FROM watchlist_stocks WHERE owner_id = ? ORDER BY added_at, rowid`)
+				.bind(ownerId)
+				.all();
+			const stocks: StoredWatchlistStock[] = results.map(toStoredWatchlistStock);
+			return stocks;
+		},
+		async getStock(ownerId, stockId) {
+			const row = await db
+				.prepare(`SELECT * FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`)
+				.bind(ownerId, stockId)
+				.first();
+			return row === null ? null : toStoredWatchlistStock(row);
+		},
+		async countStocks(ownerId) {
+			const row = await db
+				.prepare(`SELECT COUNT(*) AS n FROM watchlist_stocks WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			if (row === null) return 0;
+			return numberColumn("watchlist_stocks", "n", row);
+		},
+		async insertStock(ownerId, stock, maxStocks) {
+			// The cap lives in the INSERT's own WHERE clause (like the job
+			// insert's capacity guard): check-then-insert would let two
+			// interleaved adds at 49 both write, leaving 51 rows — after
+			// which every watchlist route answers 500 because the response
+			// schema rejects the list. `changes === 0` means the row was
+			// already present or the list is full; the follow-up read tells
+			// those apart (idempotent re-adds succeed even when full).
+			const result = await db
+				.prepare(
+					`INSERT INTO watchlist_stocks
+						(owner_id, stock_id, market, symbol, name, added_at, last_refreshed_at, retrieved_at, unavailable_code)
+					SELECT ?, ?, ?, ?, NULL, ?, NULL, NULL, NULL
+					WHERE (SELECT COUNT(*) FROM watchlist_stocks WHERE owner_id = ?) < ?
+					ON CONFLICT (owner_id, stock_id) DO NOTHING`,
+				)
+				.bind(ownerId, stock.stockId, stock.market, stock.symbol, stock.addedAt, ownerId, maxStocks)
+				.run();
+			if (result.meta.changes === 1) return "added";
+			const present = await db
+				.prepare(`SELECT 1 FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`)
+				.bind(ownerId, stock.stockId)
+				.first();
+			return present === null ? "full" : "already-present";
+		},
+		async removeStock(ownerId, stockId) {
+			// The stock and its events go in one atomic batch: a crash between
+			// the two statements cannot orphan event rows.
+			const results = await db.batch([
+				db
+					.prepare(`DELETE FROM earnings_events WHERE owner_id = ? AND stock_id = ?`)
+					.bind(ownerId, stockId),
+				db
+					.prepare(`DELETE FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`)
+					.bind(ownerId, stockId),
+			]);
+			return (results[1]?.meta.changes ?? 0) === 1;
+		},
+	};
+}
+
+export function createEarningsRepository(db: SqlDatabase): EarningsRepository {
+	return {
+		async getEvents(ownerId, stockIds) {
+			if (stockIds.length === 0) return [];
+			// Dated events ascending, undecided last — per stock, in one statement.
+			const { results } = await db
+				.prepare(
+					`SELECT * FROM earnings_events
+					WHERE owner_id = ? AND stock_id IN (SELECT value FROM json_each(?))
+					ORDER BY stock_id, announcement_date IS NULL, announcement_date, period_key`,
+				)
+				.bind(ownerId, JSON.stringify([...stockIds]))
+				.all();
+			const events: StoredEarningsEvent[] = results.map(toStoredEarningsEvent);
+			return events;
+		},
+	};
+}
+
+export function createCalendarFeedRepository(db: SqlDatabase): CalendarFeedRepository {
+	return {
+		async get(ownerId) {
+			const row = await db
+				.prepare(`SELECT token_hash, created_at FROM calendar_feeds WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			if (row === null) return null;
+			const record: CalendarFeedRecord = toCalendarFeedRecord(row);
+			return record;
+		},
+		async put(ownerId, tokenHash, createdAt) {
+			// One feed per owner: an issue replaces any previous hash, so a
+			// rotation instantly invalidates the old token.
+			await db
+				.prepare(
+					`INSERT INTO calendar_feeds (owner_id, token_hash, created_at)
+					VALUES (?, ?, ?)
+					ON CONFLICT (owner_id) DO UPDATE SET token_hash = excluded.token_hash, created_at = excluded.created_at`,
+				)
+				.bind(ownerId, tokenHash, createdAt)
+				.run();
+		},
+		async revoke(ownerId) {
+			const result = await db
+				.prepare(`DELETE FROM calendar_feeds WHERE owner_id = ?`)
+				.bind(ownerId)
+				.run();
+			return result.meta.changes === 1;
+		},
+		async findOwnerByTokenHash(tokenHash) {
+			const row = await db
+				.prepare(`SELECT owner_id FROM calendar_feeds WHERE token_hash = ?`)
+				.bind(tokenHash)
+				.first();
+			if (row === null) return null;
+			return decode("calendar_feeds", z.object({ owner_id: z.string() }), row).owner_id;
 		},
 	};
 }

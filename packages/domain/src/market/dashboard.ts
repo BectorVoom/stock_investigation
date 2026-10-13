@@ -36,7 +36,23 @@ export type DashboardWidget =
 			readonly title: string;
 			readonly size: DashboardWidgetSize;
 			readonly seriesIds: readonly string[];
+	  }
+	| {
+			/**
+			 * Earnings-date calendar (FR-018): shows the watchlist's upcoming
+			 * announcements within `daysAhead`. It carries no market series —
+			 * every series walk treats it as zero series. The Lean `Dashboard`
+			 * model abstracts widget props, so its vectors are unaffected.
+			 */
+			readonly type: "earnings-calendar";
+			readonly widgetId: string;
+			readonly title: string;
+			readonly size: DashboardWidgetSize;
+			readonly daysAhead: number;
 	  };
+
+/** Days-ahead choices the earnings-calendar widget offers (SPEC section 2). */
+export const EARNINGS_CALENDAR_DAYS_AHEAD: readonly number[] = [30, 60, 90, 180];
 
 /**
  * The single definition of every dashboard bound (section 2). Contracts
@@ -77,6 +93,7 @@ export type DashboardEditError =
 
 function seriesOf(widget: DashboardWidget): readonly string[] {
 	if (widget.type === "metric") return [widget.seriesId];
+	if (widget.type === "earnings-calendar") return [];
 	return widget.seriesIds;
 }
 
@@ -89,7 +106,7 @@ export function distinctDashboardSeriesIds(widgets: readonly DashboardWidget[]):
 	const ids: string[] = [];
 	for (const widget of widgets) {
 		if (widget.type === "metric") ids.push(widget.seriesId);
-		else ids.push(...widget.seriesIds);
+		else if (widget.type !== "earnings-calendar") ids.push(...widget.seriesIds);
 	}
 	return [...new Set(ids)];
 }
@@ -103,6 +120,9 @@ function validWidget(widget: DashboardWidget): boolean {
 		return false;
 	}
 	const series = [...seriesOf(widget)];
+	if (widget.type === "earnings-calendar") {
+		return EARNINGS_CALENDAR_DAYS_AHEAD.includes(widget.daysAhead);
+	}
 	if (widget.type === "metric" && series.length !== 1) return false;
 	if (
 		widget.type === "line-chart" &&

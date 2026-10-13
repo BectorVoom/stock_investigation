@@ -263,6 +263,16 @@ describe("home view-model", () => {
 				seriesIds: ["twelve-data:AAPL"],
 			}),
 		).toEqual(["twelve-data:AAPL"]);
+		// The earnings calendar carries no market series (FR-018).
+		expect(
+			widgetSeriesIds({
+				type: "earnings-calendar",
+				widgetId: "w",
+				title: "t",
+				size: "large",
+				daysAhead: 90,
+			}),
+		).toEqual([]);
 	});
 
 	it("decides the one automatic refresh per visit", () => {

@@ -442,7 +442,7 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		const requested = new Set(
 			iconResponses.map((response) => new URL(response.url).pathname.split("/").pop()),
 		);
-		// Widget frames, menus and buttons are native now (ADR-0016), so the
+		// Widget frames, menus and buttons are native now (ADR-0017), so the
 		// kit no longer reaches for `caret` (sl-button) or the menu-item
 		// submenu chevrons — only the select expand icon and dialog close.
 		for (const name of ["chevron-down", "x-lg"]) {

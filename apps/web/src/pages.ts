@@ -11,6 +11,12 @@ export const PAGES = [
 			"Check market prices, charts and economic indicators at a glance on widgets you arrange.",
 	},
 	{
+		view: "watchlist",
+		title: "Watchlist",
+		purpose:
+			"Register the stocks you follow and keep their earnings announcement dates in your calendar.",
+	},
+	{
 		view: "chat",
 		title: "Chat",
 		purpose: "Ask research questions and read the answers, with their sources and run progress.",

@@ -124,6 +124,7 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `FRED_API_KEY` | Enables the FRED market-data source for Home (FR-017, ADR-0014). Without it FRED series are "unavailable (source not configured)" — never estimated. |
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED sends 2 per series (metadata + observations), Twelve Data 1. |
+| `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
 | `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` | Opt in to backends whose tool isolation is unverified (Codex). Default: refused. |
 | `RUNNER_SCRATCH_ROOT` | Parent of per-job scratch directories. Must not sit under a directory containing `opencode.json(c)` or `.opencode/`. |
 | `RUNNER_PAGES_DIR` | Where retrieved public pages are archived as Markdown (the launcher sets this to `data/pages` in production, `data-dev/pages` in development). Unset it and the web page tool is disabled (the runner logs `web_pages_disabled`). |
@@ -328,6 +329,7 @@ fails the test — it is recorded as a finding in
 - **Local operation costs nothing to host.** The runner polls the local API every 15 s when idle.
 - **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. Home market data (FR-017, ADR-0014) runs on the vendors' free plans: no money, but provider quota.
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series (metadata + observations) and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests; a full 30-series refresh costs at most 60. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
+- **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute, and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -366,6 +368,20 @@ personal-use vendor data (ADR-0014): they are not part of workspace
 export/import, but a directory copy of `data/` carries them — include that
 in what "back up by copying that directory" means.
 
+Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
+(one row per registered stock: market, symbol, company name once known,
+attempt/success stamps, failure code), `earnings_events` (`WITHOUT ROWID`,
+keyed by owner/stock/period) and `calendar_feeds` (one row per owner: only
+the SHA-256 of the `cal_`-prefixed subscription token). Its header comment
+is the rollback: after a `wrangler d1 export`, `DELETE` the three tables'
+rows and `DROP TABLE` them. Earnings dates are personal-use vendor data
+(ADR-0016): they are not part of workspace export/import, but a directory
+copy of `data/` carries them — include that in what "back up by copying
+that directory" means. To revoke a leaked subscription link without the UI:
+delete the owner's `calendar_feeds` row (the link answers 404 at once); from
+the UI, Watchlist → "Replace link" (the old link stops working immediately)
+or "Revoke link".
+
 Its tables are created with `IF NOT EXISTS`: before the merge of 2026-10-13
 this migration was named `0006_market_data.sql`, and a development database
 that applied it under that name must pass it again under the new one without
@@ -381,6 +397,17 @@ Persistence sits behind two seams, so the database can be switched without touch
 - API: `data/logs/server.log` (production) or `data-dev/logs/server.log`
   (development). The development Vite server logs to `data-dev/logs/vite.log`.
   Unhandled errors are logged as `{event, name, method, route}` without messages or payloads.
+- Both launch plans run `wrangler dev` with `--log-level warn` (FR-018): the
+  calendar subscription token travels in a URL path and wrangler's
+  per-request info lines print the expanded path, so those lines are dropped
+  — and with them the startup banner. Consequence: `server.log` carries the
+  Worker's own `console.error` event lines (route pattern with `:token`
+  unexpanded, never the token) but no per-request lines and no banner.
+  Readiness is an HTTP poll and failures are exit events, so nothing the
+  launcher waits for or greps is lost. `tests/local/calendarFeedServerLog.test.ts`
+  starts the planned server command, issues and fetches a feed, and asserts
+  the token string is absent from every file under the log directory while a
+  forced Worker log event is present.
 - Runner: JSON lines in `data/logs/runner.log` (or `data-dev/logs/runner.log`)
   (`agent_probe`, `job_claimed`, `job_finished`, `completion_rejected`, …) carrying ids and codes only.
   `job_finished` is logged once per terminal submission and carries what the
@@ -411,6 +438,7 @@ Then configure access (ADR-0002):
 1. In Cloudflare Zero Trust, an **Access application** for the Worker hostname with a policy allowing only your email (done).
 2. In `env.production.vars`: `ACCESS_TEAM_DOMAIN` and `ACCESS_AUDIENCE` (done), and `OWNER_EMAIL` — the address the policy allows (**outstanding**). Until all three are set, every request is denied.
 3. Make the runner path reachable non-interactively (**outstanding**): a second Access application for `/api/v1/runner` with either a **Bypass** policy (the runner's bearer credential is then the only gate) or a **Service Auth** policy (give the runner the service token as `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`).
+4. The calendar subscription feed needs the same treatment (**outstanding**): a Bypass application for `/api/v1/calendar-feed/*` — calendar apps cannot present Access JWTs, and the feed authenticates by its own secret token path segment (SHA-256 stored, uniform 404 on failure). Without the bypass the feed is unreachable through Access; the `.ics` download and per-date links keep working.
 4. Run the runner against it: issue a credential under **Settings**, then `RESEARCH_API_URL=https://… RUNNER_TOKEN=… bun run runner`. `node dist/runner/main.mjs renew` rotates the credential and prints the new token once.
 
 Verified on a real account (2026-10-12): database creation, migration, deployment, and that the live Worker served the SPA and refused every unauthenticated request. Not verified: signing in through Access, the runner against the deployed Worker, and the remote backup below.

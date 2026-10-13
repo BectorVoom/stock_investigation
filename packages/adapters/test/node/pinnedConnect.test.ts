@@ -19,7 +19,12 @@ function pinnedRequest(overrides: Partial<PinnedRequest> = {}): PinnedRequest {
 		hostname: HOSTNAME,
 		address: LOOPBACK,
 		path: "/echo?x=1",
-		headers: { accept: "text/plain", "user-agent": "pinned-connect-test", authorization: null },
+		headers: {
+			accept: "text/plain",
+			"user-agent": "pinned-connect-test",
+			authorization: null,
+			finnhubToken: null,
+		},
 		maxEncodedBytes: 1_000_000,
 		signal: new AbortController().signal,
 		...overrides,
@@ -65,9 +70,23 @@ describe("pinned request options (production defaults)", () => {
 	it("forwards a caller-supplied Authorization header and sends none otherwise", () => {
 		expect(buildPinnedRequestOptions(pinnedRequest()).headers).not.toHaveProperty("authorization");
 		const authorized = buildPinnedRequestOptions(
-			pinnedRequest({ headers: { accept: "t", "user-agent": "u", authorization: "apikey k" } }),
+			pinnedRequest({
+				headers: { accept: "t", "user-agent": "u", authorization: "apikey k", finnhubToken: null },
+			}),
 		);
 		expect(authorized.headers).toMatchObject({ authorization: "apikey k" });
+	});
+
+	it("forwards a caller-supplied Finnhub token as X-Finnhub-Token and sends none otherwise", () => {
+		expect(buildPinnedRequestOptions(pinnedRequest()).headers).not.toHaveProperty(
+			"x-finnhub-token",
+		);
+		const withToken = buildPinnedRequestOptions(
+			pinnedRequest({
+				headers: { accept: "t", "user-agent": "u", authorization: null, finnhubToken: "k" },
+			}),
+		);
+		expect(withToken.headers).toMatchObject({ "x-finnhub-token": "k" });
 	});
 
 	it("refuses any DNS lookup Node might attempt for this request", async () => {

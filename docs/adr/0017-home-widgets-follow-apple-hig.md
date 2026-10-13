@@ -1,4 +1,4 @@
-# ADR-0016: Home widgets follow Apple's Human Interface Guidelines
+# ADR-0017: Home widgets follow Apple's Human Interface Guidelines
 
 **Status:** Accepted · **Date:** 2026-10-13
 

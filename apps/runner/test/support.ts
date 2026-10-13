@@ -221,6 +221,7 @@ export function createDeps(
 		// No limits by default: existing tests never wait. Tests that cover
 		// pacing build their own pacer with a fake clock and sleep.
 		marketPacer: createMarketPacer({ clock: time.clock, sleep: async () => {}, limits: new Map() }),
+		earningsSources: new Map(),
 	};
 	return {
 		deps,

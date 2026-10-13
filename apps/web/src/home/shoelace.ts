@@ -22,7 +22,7 @@
  *   the popup positions itself through the CSSOM, both permitted by
  *   `style-src 'self'`; the E2E icon test proves it in all three engines.
  * - Widget frames, menus and buttons are native elements in the app style
- *   (ADR-0016): `sl-card`, `sl-button`, `sl-dropdown`, `sl-menu` and
+ *   (ADR-0017): `sl-card`, `sl-button`, `sl-dropdown`, `sl-menu` and
  *   `sl-menu-item` are not imported. Only dialogs, form controls and
  *   skeletons come from the kit.
  */

@@ -107,7 +107,7 @@ html:root {
  * LABEL). Shoelace renders inside shadow roots, so only its documented parts
  * and tokens are reachable — never the internals. Minimum target height
  * stays 24 px (guideline 9). Widget frames, menus and buttons are native
- * elements (ADR-0016), not Shoelace parts.
+ * elements (ADR-0017), not Shoelace parts.
  */
 
 /* Form-control labels read as LABEL (0.75rem, medium, slate-700). */

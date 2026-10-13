@@ -2,13 +2,25 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
-import { createFredSeriesSource, createTwelveDataSeriesSource } from "@research/adapters/finance";
-import { createFilePageArchive, createNodeSafeFetcher } from "@research/adapters/node";
+import {
+	createFinnhubEarningsSource,
+	createFredSeriesSource,
+	createJpxEarningsSource,
+	createTwelveDataSeriesSource,
+} from "@research/adapters/finance";
+import {
+	createFilePageArchive,
+	createNodeSafeBinaryFetcher,
+	createNodeSafeFetcher,
+} from "@research/adapters/node";
 import { createAgentRuntimes, createNodeProcessRunner } from "@research/adapters/providers";
 import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
 import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
-import { unconfiguredMarketSeriesSource } from "@research/application";
+import {
+	unconfiguredEarningsCalendarSource,
+	unconfiguredMarketSeriesSource,
+} from "@research/application";
 import { marketUnavailableReason } from "@research/contracts";
 import { attempt, createEventLogger, type EventLogger, UnexpectedError } from "@research/effects";
 import { Effect } from "effect";
@@ -22,7 +34,13 @@ import {
 	UnsupportedRuntimeError,
 } from "./exitCodes.ts";
 import type { ScratchDirectories } from "./jobExecution.ts";
-import { createMarketPacer, FRED_RATE_LIMIT, twelveDataRateLimit } from "./marketPacing.ts";
+import {
+	createMarketPacer,
+	FINNHUB_RATE_LIMIT,
+	FRED_RATE_LIMIT,
+	JPX_RATE_LIMIT,
+	twelveDataRateLimit,
+} from "./marketPacing.ts";
 import { runRunnerLoop } from "./runner.ts";
 import { isUnsupportedRuntime, runtimeName } from "./runtime.ts";
 
@@ -130,6 +148,8 @@ function runnerProgram(
 			logger.warn("market_source_disabled", { reason: "FRED_API_KEY not set" });
 		if (value.twelveDataApiKey === null)
 			logger.warn("market_source_disabled", { reason: "TWELVE_DATA_API_KEY not set" });
+		if (value.finnhubApiKey === null)
+			logger.warn("earnings_source_disabled", { reason: "FINNHUB_API_KEY not set" });
 
 		const exit = yield* attempt("run_runner_loop", () =>
 			runRunnerLoop(
@@ -191,8 +211,29 @@ function runnerProgram(
 						limits: new Map([
 							["fred", FRED_RATE_LIMIT],
 							["twelve-data", twelveDataRateLimit(value.twelveDataRequestsPerMinute)],
+							["finnhub", FINNHUB_RATE_LIMIT],
+							["jpx", JPX_RATE_LIMIT],
 						]),
 					}),
+					// Keyed earnings-date adapters (FR-018): Finnhub without a
+					// key keeps its "unconfigured" source, so US stocks
+					// honestly report SOURCE_NOT_CONFIGURED; JPX needs no key.
+					earningsSources: new Map([
+						[
+							"finnhub",
+							value.finnhubApiKey === null
+								? unconfiguredEarningsCalendarSource("finnhub")
+								: createFinnhubEarningsSource({ apiKey: value.finnhubApiKey, fetcher }),
+						],
+						[
+							"jpx",
+							createJpxEarningsSource({
+								fetcher,
+								binaryFetcher: createNodeSafeBinaryFetcher(),
+								clock: systemClock,
+							}),
+						],
+					]),
 					scratch: createScratchDirectories(value.scratchRoot ?? join(tmpdir(), "research-runner")),
 					every: (ms, task) => {
 						const timer = setInterval(task, ms);

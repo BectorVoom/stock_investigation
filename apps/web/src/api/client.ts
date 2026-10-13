@@ -1,16 +1,20 @@
 import {
+	type AddWatchlistStockRequest,
 	type AgentSettings,
 	type AgentSettingsResponse,
 	type AgentsResponse,
 	API_PREFIX,
 	type Article,
+	addWatchlistStockRequestSchema,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
 	agentsResponseSchema,
 	approveRunRequestSchema,
 	articleListResponseSchema,
+	type CalendarFeedIssued,
 	type Conversation,
 	type ConversationSummary,
+	calendarFeedIssuedSchema,
 	conversationListResponseSchema,
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
@@ -51,8 +55,10 @@ import {
 	type UpdateSourceRequest,
 	uiCommandSchema,
 	updateSourceRequestSchema,
+	type WatchlistResponse,
 	type WorkspaceSummary,
 	type WorkspaceView,
+	watchlistResponseSchema,
 	workspaceEventsResponseSchema,
 	workspaceListResponseSchema,
 	workspaceSummarySchema,
@@ -77,6 +83,8 @@ export type Session = Parsed<typeof sessionResponseSchema>;
 export type { AgentSettings, AgentSettingsResponse };
 export type HomeDashboardResponse = Parsed<typeof homeDashboardResponseSchema>;
 export type HomeDataResponse = Parsed<typeof homeDataResponseSchema>;
+export type WatchlistData = Parsed<typeof watchlistResponseSchema>;
+export type { AddWatchlistStockRequest, CalendarFeedIssued, WatchlistResponse };
 export type UiCommand = Parsed<typeof uiCommandSchema>;
 export type SubmitCommandResponse = Parsed<typeof submitCommandResponseSchema>;
 export type WorkspaceEvents = Parsed<typeof workspaceEventsResponseSchema>;
@@ -504,6 +512,65 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 			return result.ok ? ok(result.value.run) : result;
 		},
+
+		/* ----- watchlist and earnings-date calendar (FR-018) ----- */
+		getWatchlist: (etag: string | null = null): Promise<ApiResult<Conditional<WatchlistData>>> =>
+			conditionalGet(`${API_PREFIX}/watchlist`, watchlistResponseSchema, etag),
+		addWatchlistStock: (stock: AddWatchlistStockRequest): Promise<ApiResult<WatchlistData>> =>
+			write(
+				{ method: "POST", path: `${API_PREFIX}/watchlist/stocks` },
+				addWatchlistStockRequestSchema,
+				stock,
+				watchlistResponseSchema,
+			),
+		removeWatchlistStock: (stockId: string): Promise<ApiResult<WatchlistData>> =>
+			requestJson(
+				{ method: "DELETE", path: `${API_PREFIX}/watchlist/stocks/${segment(stockId)}` },
+				watchlistResponseSchema,
+			),
+		/** Queues an earnings-date refresh job for the local runner. */
+		refreshEarnings: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await requestJson(
+				{ method: "POST", path: `${API_PREFIX}/watchlist/refresh`, idempotencyKey: key.value },
+				researchRunResponseSchema,
+			);
+			return result.ok ? ok(result.value.run) : result;
+		},
+		/** The owner's calendar document as .ics text (the caller offers it as a download). */
+		downloadWatchlistIcs: (): Promise<ApiResult<string>> =>
+			request(
+				http,
+				{
+					method: "GET",
+					path: `${API_PREFIX}/watchlist/calendar.ics`,
+					accept: "text/calendar",
+				},
+				async (response) => {
+					const contentType = response.headers.get("Content-Type") ?? "";
+					if (!contentType.toLowerCase().startsWith("text/calendar")) {
+						return fail({
+							kind: "invalid-response",
+							code: "INVALID_RESPONSE",
+							status: response.status,
+							message: `Expected a text/calendar file but received "${contentType || "no content type"}".`,
+						});
+					}
+					return ok(await response.text());
+				},
+			),
+		/**
+		 * Issues (or rotates) the calendar subscription token. The token is
+		 * shown once and must never be persisted by the SPA.
+		 */
+		issueCalendarFeed: (): Promise<ApiResult<CalendarFeedIssued>> =>
+			requestJson(
+				{ method: "POST", path: `${API_PREFIX}/watchlist/feed` },
+				calendarFeedIssuedSchema,
+			),
+		revokeCalendarFeed: (): Promise<ApiResult<null>> =>
+			requestEmpty({ method: "DELETE", path: `${API_PREFIX}/watchlist/feed` }),
 
 		/* ----- runner credentials ----- */
 		listRunnerCredentials: async (): Promise<ApiResult<readonly RunnerCredential[]>> => {

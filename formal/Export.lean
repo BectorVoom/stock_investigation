@@ -291,6 +291,165 @@ def recordVectors : List String := Id.run do
         out := recordVec times maxPer window :: out
   return out.reverse
 
+/-! ## Earnings-date calendar (FR-018) -/
+
+/-- Character-width lists of length 0..3 over {1, 2, 3, 4} octets. -/
+def foldSmall : List (List Nat) :=
+  [[]] ++ ([1, 2, 3, 4].map fun a => [a])
+  ++ ([1, 2, 3, 4].flatMap fun a => [1, 2, 3, 4].map fun b => [a, b])
+  ++ ([1, 2, 3, 4].flatMap fun a =>
+    [1, 2, 3, 4].flatMap fun b => [1, 2, 3, 4].map fun c => [a, b, c])
+
+/-- Width runs around the 75-octet first line and the 74-octet continuation
+    lines, plus mixed widths straddling a fold. -/
+def foldBoundary : List (List Nat) :=
+  let rep := List.replicate
+  [rep 74 1, rep 75 1, rep 76 1, rep 149 1, rep 150 1,
+   rep 36 2, rep 37 2, rep 38 2, rep 74 2, rep 75 2,
+   rep 24 3, rep 25 3, rep 26 3, rep 49 3, rep 50 3,
+   rep 17 4, rep 18 4, rep 19 4, rep 37 4, rep 38 4,
+   rep 74 1 ++ [2], rep 74 1 ++ [4], rep 73 1 ++ [2, 2],
+   rep 18 4 ++ [3], [4, 4] ++ rep 70 1 ++ [2], rep 24 3 ++ [4]]
+
+def foldVectors : List String :=
+  (foldSmall ++ foldBoundary).map fun widths =>
+    jsonObj [("widths", jsonNatList widths),
+      ("lines", jsonArr ((foldWidths widths).map jsonNatList))]
+
+def earnRowJson : EarnRow → String
+  | ⟨s, none⟩ => jsonObj [("stock", jsonNat s), ("date", "null")]
+  | ⟨s, some d⟩ => jsonObj [("stock", jsonNat s), ("date", jsonNat d)]
+
+def earnPairJson (p : Nat × Nat) : String :=
+  jsonObj [("date", jsonNat p.1), ("stock", jsonNat p.2)]
+
+/-- Row lists of length 0..2 over a six-row alphabet (one undecided row and
+    five dated rows over three stocks and three day offsets). -/
+def earnAlphabet : List EarnRow :=
+  [⟨0, none⟩, ⟨0, some 0⟩, ⟨1, some 1⟩, ⟨0, some 2⟩, ⟨2, some 0⟩, ⟨1, some 2⟩]
+
+def earnRowLists : List (List EarnRow) :=
+  [[]] ++ (earnAlphabet.map fun a => [a])
+  ++ (earnAlphabet.flatMap fun a => earnAlphabet.map fun b => [a, b])
+
+def upcomingVectors : List String := Id.run do
+  let mut out := []
+  for rows in earnRowLists do
+    for today in [0, 1] do
+      for daysAhead in [0, 1, 3] do
+        for maxItems in [0, 1, 2, 5] do
+          out := jsonObj [("rows", jsonArr (rows.map earnRowJson)),
+            ("today", jsonNat today), ("daysAhead", jsonNat daysAhead),
+            ("maxItems", jsonNat maxItems),
+            ("selected", jsonArr ((selectUpcoming rows today daysAhead maxItems).map earnPairJson))] :: out
+  return out.reverse
+
+/-! ## Earnings month grid (FR-019 section 1) -/
+
+def pad2 (n : Nat) : String :=
+  if n < 10 then "0" ++ toString n else toString n
+
+def pad4 (n : Nat) : String :=
+  if n < 10 then "000" ++ toString n
+  else if n < 100 then "00" ++ toString n
+  else if n < 1000 then "0" ++ toString n
+  else toString n
+
+def isoOfInts (y m d : Int) : String :=
+  pad4 y.toNat ++ "-" ++ pad2 m.toNat ++ "-" ++ pad2 d.toNat
+
+/-- ISO date of absolute day `a` (days since 1970-01-01). -/
+def isoOfAbs (a : Int) : String :=
+  match gridCivilFromDays a with
+  | (y, m, d) => isoOfInts y m d
+
+/-- Sample months: epoch edges, leap and common Februaries, 4/5/6-week grids. -/
+def monthSamples : List (Nat × Nat) :=
+  [(1970, 1), (1970, 2), (2024, 2), (2026, 2), (2026, 8),
+   (2026, 10), (2026, 12), (2027, 1), (9999, 12)]
+
+def monthGridVec (year month weekStart : Nat) : String :=
+  let days := gridDaysInMonth year month
+  let fw := gridWeekday year month 1
+  let leading := gridLeading fw weekStart
+  let total := gridCells leading days
+  let base := gridDaysFromCivil year month 1
+  let first := isoOfAbs (base - leading)
+  let inMonth := (List.range' 1 days).map fun k =>
+    isoOfAbs (gridDaysFromCivil year month k)
+  jsonObj [("year", jsonNat year), ("month", jsonNat month),
+    ("weekStart", jsonNat weekStart), ("firstWeekday", jsonNat fw),
+    ("days", jsonNat days), ("leading", jsonNat leading),
+    ("rows", jsonNat (total / 7)), ("first", jsonStr first),
+    ("inMonth", jsonArr (inMonth.map jsonStr))]
+
+def monthGridVectors : List String :=
+  monthSamples.flatMap fun (year, month) =>
+    [0, 1, 6].map fun weekStart => monthGridVec year month weekStart
+
+/-! ## Google sync plan + base32hex encoder (FR-019 section 2.3) -/
+
+def pairJson (p : Nat × Nat) : String :=
+  jsonObj [("id", jsonNat p.1), ("fp", jsonNat p.2)]
+
+def syncRowJson (r : SyncRow) : String :=
+  jsonObj [("id", jsonNat r.id), ("cancelled", jsonBool r.cancelled),
+    ("fp", jsonNat r.fingerprint)]
+
+def pairAlphabet : List (Nat × Nat) :=
+  [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0)]
+
+def pairLists : List (List (Nat × Nat)) :=
+  [[]] ++ (pairAlphabet.map fun a => [a])
+  ++ (pairAlphabet.flatMap fun a => pairAlphabet.map fun b => [a, b])
+
+def syncRowAlphabet : List SyncRow :=
+  [⟨0, false, 0⟩, ⟨0, true, 0⟩, ⟨1, false, 0⟩,
+   ⟨1, false, 1⟩, ⟨1, true, 1⟩, ⟨2, false, 0⟩]
+
+def syncRowLists : List (List SyncRow) :=
+  [[]] ++ (syncRowAlphabet.map fun a => [a])
+  ++ (syncRowAlphabet.flatMap fun a => syncRowAlphabet.map fun b => [a, b])
+
+/-- Distinct-id inputs only: duplicates are rejected by the implementation
+    (`DUPLICATE_ID`) and covered by fail-closed unit tests instead. -/
+def distinctIds (d : List (Nat × Nat)) : Bool :=
+  decide ((d.map (·.1)).Nodup)
+
+def distinctRowIds (e : List SyncRow) : Bool :=
+  decide ((e.map (·.id)).Nodup)
+
+def syncPlanVec (desired : List (Nat × Nat)) (existing : List SyncRow) : String :=
+  let plan := planSync desired existing
+  jsonObj [("desired", jsonArr (desired.map pairJson)),
+    ("existing", jsonArr (existing.map syncRowJson)),
+    ("inserts", jsonArr (plan.inserts.map pairJson)),
+    ("updates", jsonArr (plan.updates.map pairJson)),
+    ("deletes", jsonNatList plan.deletes),
+    ("unchanged", jsonNatList plan.unchanged)]
+
+def syncPlanVectors : List String := Id.run do
+  let mut out := []
+  for desired in pairLists do
+    if !distinctIds desired then continue
+    for existing in syncRowLists do
+      if !distinctRowIds existing then continue
+      out := syncPlanVec desired existing :: out
+  return out.reverse
+
+def b32Samples : List (List Nat) :=
+  [[]] ++ [[0, 0, 0, 0, 0], [255, 255, 255, 255, 255],
+  [0, 0, 0, 0, 1], [1, 0, 0, 0, 0], [0, 0, 0, 0, 255], [255, 0, 0, 0, 0],
+  [0, 1, 2, 3, 4], [1, 2, 3, 4, 5], [10, 20, 30, 40, 50], [7, 7, 7, 7, 7],
+  [128, 64, 32, 16, 8], [1, 255, 1, 255, 1]]
+  ++ [List.replicate 20 0, List.replicate 20 255, List.range' 0 20,
+    [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4]]
+
+def b32Vectors : List String :=
+  b32Samples.map fun bytes =>
+    jsonObj [("bytes", jsonNatList bytes),
+      ("chars", jsonNatList (encodeB32 bytes))]
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -313,5 +472,10 @@ def main : IO Unit := do
   IO.println ("\"dashboard\": [\n" ++ ",\n".intercalate dashboardVectors ++ "\n],")
   IO.println ("\"ratePermit\": [\n" ++ ",\n".intercalate permitVectors ++ "\n],")
   IO.println ("\"rateRecord\": [\n" ++ ",\n".intercalate recordVectors ++ "\n],")
-  IO.println ("\"recentWithinBudget\": [\n" ++ ",\n".intercalate recentWithinBudgetVectors ++ "\n]")
+  IO.println ("\"recentWithinBudget\": [\n" ++ ",\n".intercalate recentWithinBudgetVectors ++ "\n],")
+  IO.println ("\"foldIcs\": [\n" ++ ",\n".intercalate foldVectors ++ "\n],")
+  IO.println ("\"upcomingEarnings\": [\n" ++ ",\n".intercalate upcomingVectors ++ "\n],")
+  IO.println ("\"monthGrid\": [\n" ++ ",\n".intercalate monthGridVectors ++ "\n],")
+  IO.println ("\"syncPlan\": [\n" ++ ",\n".intercalate syncPlanVectors ++ "\n],")
+  IO.println ("\"base32hex\": [\n" ++ ",\n".intercalate b32Vectors ++ "\n]")
   IO.println "}"

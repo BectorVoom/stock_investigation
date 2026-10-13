@@ -50,6 +50,12 @@ former label); the per-widget actions open a text menu with leading icons.
   hairline on the grey page; a body taller than its frame scrolls inside
   the frame. Every widget header is a drag handle (grip, title, actions);
   a completed move is announced with its new position.
+- The earnings-calendar widget, when arranged: the upcoming dated announcements
+  within its days-ahead window with per-date calendar links, a "Refresh earnings
+  dates" button beside the `.ics` download, a "Fetching earnings dates…" status
+  while a run is active, "Earnings dates have not been fetched yet." when a stock
+  was never looked up ("No announcement in the next N days." only when every
+  stock was refreshed), and the count of stocks with no upcoming date with reasons.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
@@ -62,6 +68,49 @@ former label); the per-widget actions open a text menu with leading icons.
 - Asking questions, reading answers, run progress or evidence records — see Chat
   (`#/chat`). No question form, no run controls and no message list live here.
 - Research tables, charts or reports — see Chat (`#/chat`, Canvas panel).
+- Choosing news sources — see Sources (`#/sources`).
+- Runner credentials or export — see Settings (`#/settings`).
+- Registering stocks or tracking earnings announcement dates — see Watchlist
+  (`#/watchlist`).
+
+## Watchlist — `#/watchlist`
+
+**Purpose**
+
+Register the stocks you follow and keep their earnings announcement dates in your calendar.
+
+**User actions**
+
+- Add a stock (a US listing or a Japanese listing). The add queues an
+  earnings-date refresh itself, so the dates arrive without a further click;
+  when a refresh is already running, one follow-up is queued when it ends with
+  a stock still never refreshed.
+- Remove a stock, with confirmation.
+- Queue an earnings-date refresh for the local runner (manual button; opening
+  the page with dates never fetched or more than a day old queues one refresh,
+  once per visit).
+- Download the earnings calendar file (.ics).
+- Add one announcement date to Google Calendar or Outlook.
+- Create, replace or revoke the calendar subscription link.
+
+**Shows**
+
+- The registered stocks: symbol, company name (or "unavailable (not retrieved yet)"),
+  market, the next announcement date with fiscal period and timing, further dates in a
+  disclosure, "date undecided" stated as text, the retrieved date, the source link, a
+  per-row "unavailable (reason)" when there is no date, and a Remove action.
+- The earnings-date refresh status: last successful refresh time, the active run id and
+  state while refreshing, or the last failure with its stable code beside the last
+  success; a note that the refresh waits for the local runner when it is queued but
+  nothing executes it. A queued notice ("…are being fetched…", "…was queued") clears
+  when the run ends; the status line then tells the outcome.
+- The calendar section: the `.ics` download and the subscription link block (created
+  date, replace and revoke with confirmation; the link is shown once and is a secret).
+
+**Not here**
+
+- Checking market prices or arranging market widgets — see Home (`#/home`).
+- Asking questions or watching runs — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
 - Runner credentials or export — see Settings (`#/settings`).
 
@@ -135,6 +184,8 @@ Ask research questions and read the answers, with their sources and run progress
 - Checking market prices or arranging market widgets — see Home (`#/home`).
 - Choosing news sources — see Sources (`#/sources`).
 - Runner credentials or export — see Settings (`#/settings`).
+- Registering stocks or tracking earnings announcement dates — see Watchlist
+  (`#/watchlist`).
 
 ## Sources — `#/sources`
 
@@ -161,6 +212,8 @@ Choose which news sources research may read.
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Inspecting produced tables and charts — see Chat (`#/chat`, Canvas panel).
 - Runner credentials or export — see Settings (`#/settings`).
+- Registering stocks or tracking earnings announcement dates — see Watchlist
+  (`#/watchlist`).
 
 ## Settings — `#/settings`
 
@@ -186,6 +239,8 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 - Asking questions or reading answers — see Chat (`#/chat`).
 - Produced tables and charts — see Chat (`#/chat`, Canvas panel).
 - Subscribing to news — see Sources (`#/sources`).
+- Registering stocks or tracking earnings announcement dates — see Watchlist
+  (`#/watchlist`).
 
 ## Journeys to pages
 
@@ -199,6 +254,7 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 | 6. Manipulate research UI | Chat (Canvas panel: select items; arranging and removing are agent-driven since 2026-10-13) |
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
+| 9. Track earnings announcement dates | Watchlist (register stocks — each add queues its own earnings-date refresh — export the calendar) and Home (earnings-calendar widget with its own refresh button) |
 
 ## How the split was checked
 
@@ -210,6 +266,7 @@ Web tests assert the Chat page shape (three panels with collapse, Canvas not
 mounted when collapsed, one shared session, Chat/Canvas tabs below `lg`),
 that Home has no composer, message list, run status or canvas region,
 the old `#/canvas/<workspaceId>`, `#/canvas`, `#/workspace/<workspaceId>`
-and `#/workspace` URLs open the Chat page, and
+and `#/workspace` URLs open the Chat page, that the Watchlist page adds a
+stock and shows its refresh status, and
 `tests/architecture/pagesDoc.test.ts` fails if this document drifts from
 `apps/web/src/pages.ts` (titles, routes, purpose sentences).
