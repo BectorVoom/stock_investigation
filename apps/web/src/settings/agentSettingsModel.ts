@@ -4,6 +4,7 @@ import {
 	type AgentsResponse,
 	BASELINE_AGENT_IDS,
 	BUDGET_LIMITS,
+	isFreeTierModelId,
 	type ResearchRequest,
 	type WebAccess,
 } from "@research/contracts";
@@ -157,14 +158,11 @@ export const MODEL_OTHER_LABEL = "Other — type a model id…";
 /** Label suffix for a stored model that the runner did not list. */
 export const MODEL_SAVED_SUFFIX = " (saved — not in the runner's list)";
 
-/** Exact caution shown for free-tier OpenCode models (provider policy, may change). */
+/** Exact caution shown for free-tier OpenCode models (ask-and-reject isolation). */
 export const FREE_TIER_CAUTION =
-	"Free-tier models may be refused when used from this app; choose a plan model if a question fails.";
+	"OpenCode serves free-tier models only to sessions that list its tools, so this app runs them with every tool call rejected; an answer fails if the model tries a tool, and a plan model avoids that.";
 
-/** True for an OpenCode model id on the provider's free tier. */
-export function isFreeTierModelId(modelId: string): boolean {
-	return modelId.endsWith("-free");
-}
+export { isFreeTierModelId };
 
 export interface ModelProviderGroup {
 	readonly provider: string;

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createOpenCodeRuntime } from "../../src/providers/index.ts";
 import {
+	buildOpenCodeConfigContent,
+	OPENCODE_CONFIG_CONTENT,
+	OPENCODE_FREE_TIER_CONFIG_CONTENT,
+	OPENCODE_FREE_TIER_GATED_PERMISSIONS,
+} from "../../src/providers/openCode.ts";
+import {
 	BASE_ENV,
 	collect,
 	createFakeProcessRunner,
@@ -18,6 +24,7 @@ import {
 } from "./helpers.ts";
 
 const MODEL = "opencode-go/example-model";
+const FREE_MODEL = "opencode/muse-spark-1.3-contributor-free";
 const line = (value: unknown): string => JSON.stringify(value);
 const textPart = (text: string): string => line({ type: "text", part: { type: "text", text } });
 
@@ -150,6 +157,90 @@ describe("opencode invocation", () => {
 	});
 });
 
+describe("opencode free-tier config selection", () => {
+	it("uses the deny-all config for a plan model and the ask-and-reject config for a free-tier model", () => {
+		expect(buildOpenCodeConfigContent(MODEL)).toBe(OPENCODE_CONFIG_CONTENT);
+		expect(buildOpenCodeConfigContent(FREE_MODEL)).toBe(OPENCODE_FREE_TIER_CONFIG_CONTENT);
+		expect(buildOpenCodeConfigContent(MODEL)).not.toBe(OPENCODE_FREE_TIER_CONFIG_CONTENT);
+	});
+
+	it("writes the deny-all config for a plan model run", async () => {
+		const { written, runtime } = runtimeFor(fixtureLines("opencode/ok.jsonl"));
+
+		await collect(
+			runtime.run(makeRequest(), makeContext({ model: MODEL, scratchDirectory: "/scratch/plan" })),
+		);
+
+		expect(itemAt(written, 0).content).toBe(OPENCODE_CONFIG_CONTENT);
+	});
+
+	it("writes the ask-and-reject config for a free-tier model run", async () => {
+		const { written, runtime } = runtimeFor(fixtureLines("opencode/ok.jsonl"));
+
+		await collect(
+			runtime.run(
+				makeRequest(),
+				makeContext({ model: FREE_MODEL, scratchDirectory: "/scratch/free" }),
+			),
+		);
+
+		expect(itemAt(written, 0).path).toBe("/scratch/free/opencode.jsonc");
+		expect(itemAt(written, 0).content).toBe(OPENCODE_FREE_TIER_CONFIG_CONTENT);
+	});
+
+	it("builds the free-tier config as deny-first then ask for exactly the ten verified permissions", () => {
+		expect([...OPENCODE_FREE_TIER_GATED_PERMISSIONS]).toEqual([
+			"edit",
+			"glob",
+			"grep",
+			"question",
+			"read",
+			"shell",
+			"skill",
+			"subagent",
+			"webfetch",
+			"websearch",
+		]);
+		const config = configSchema.parse(JSON.parse(OPENCODE_FREE_TIER_CONFIG_CONTENT));
+		const denyAll = { action: "*", resource: "*", effect: "deny" };
+		const expected = [
+			denyAll,
+			...OPENCODE_FREE_TIER_GATED_PERMISSIONS.map((action) => ({
+				action,
+				resource: "*",
+				effect: "ask",
+			})),
+		];
+		expect(config.permissions).toEqual(expected);
+		const agent = config.agents["research-text"];
+		expect(agent?.permissions).toEqual(expected);
+		expect(agent?.mode).toBe("primary");
+		expect(config.default_agent).toBe("research-text");
+	});
+
+	it("never makes execute askable and keeps the free-tier agent honest about rejected tools", () => {
+		for (const content of [OPENCODE_CONFIG_CONTENT, OPENCODE_FREE_TIER_CONFIG_CONTENT]) {
+			const config = configSchema.parse(JSON.parse(content));
+			const agentPermissions = config.agents["research-text"]?.permissions ?? [];
+			const rules = [...config.permissions, ...agentPermissions];
+			expect(rules.some((rule) => rule.action === "execute")).toBe(false);
+			expect(rules.some((rule) => rule.effect !== "deny" && rule.effect !== "ask")).toBe(false);
+		}
+		// The first rule denies everything unknown, so execute (and any future
+		// tool) matches only the deny rule and is never advertised as usable.
+		expect(JSON.parse(OPENCODE_FREE_TIER_CONFIG_CONTENT).permissions[0]).toEqual({
+			action: "*",
+			resource: "*",
+			effect: "deny",
+		});
+		const system: string = JSON.parse(OPENCODE_FREE_TIER_CONFIG_CONTENT).agents["research-text"]
+			.system;
+		expect(system).toContain("every tool call is rejected");
+		expect(system).toContain("Do not call any tool");
+		expect(system).toContain("text only");
+	});
+});
+
 describe("opencode stream interpretation", () => {
 	it("completes the recorded run that has no step_finish event", async () => {
 		const lines = fixtureLines("opencode/ok.jsonl");
@@ -227,6 +318,72 @@ describe("opencode tool-use guard", () => {
 		]);
 		expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
 	});
+
+	it.each([
+		[
+			"a rejected read call",
+			line({
+				type: "tool_use",
+				part: { type: "tool", tool: "read", state: { status: "error" } },
+			}),
+		],
+		[
+			"a rejected shell call with provider text",
+			line({
+				type: "tool_use",
+				part: {
+					type: "tool",
+					tool: "shell",
+					state: {
+						status: "error",
+						error:
+							"This non-interactive run cannot ask the user for permission, so the request was rejected",
+						input: { command: "echo hi" },
+					},
+				},
+			}),
+		],
+	])("reports %s as PROVIDER_TOOL_CALL_REJECTED without surfacing provider text", async (_label, toolLine) => {
+		const fake = createFakeProcessRunner({
+			lines: [textPart("before"), toolLine, textPart("after")],
+			hang: true,
+		});
+		const runtime = createOpenCodeRuntime(makeEnvironment({ processRunner: fake.runner }), {
+			writeConfigFile: () => Promise.resolve(),
+		});
+
+		const events = await collect(runtime.run(makeRequest(), makeContext({ model: FREE_MODEL })));
+
+		expect(textOf(events)).toBe("before");
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_TOOL_CALL_REJECTED", retryable: false },
+		]);
+		expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
+		// SEC-010: the provider's message text and tool inputs never leave the adapter.
+		expect(JSON.stringify(events)).not.toContain("non-interactive");
+		expect(JSON.stringify(events)).not.toContain("echo hi");
+	});
+
+	it("treats a rejected tool event in a plan-model run as an isolation violation (no tool is sent there)", async () => {
+		const fake = createFakeProcessRunner({
+			lines: [
+				line({
+					type: "tool_use",
+					part: { type: "tool", tool: "read", state: { status: "error" } },
+				}),
+			],
+			hang: true,
+		});
+		const runtime = createOpenCodeRuntime(makeEnvironment({ processRunner: fake.runner }), {
+			writeConfigFile: () => Promise.resolve(),
+		});
+
+		const events = await collect(runtime.run(makeRequest(), makeContext({ model: MODEL })));
+
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
+		]);
+	});
 });
 
 describe("opencode failures", () => {
@@ -290,7 +447,7 @@ describe("opencode failures", () => {
 describe("opencode probe", () => {
 	function probeRuntime(
 		authList: { lines: readonly string[]; code: number },
-		version = "opencode v2.0.24",
+		version = "opencode v2.0.27",
 		models?: { lines: readonly string[]; code: number },
 	) {
 		const fake = createFakeProcessRunner((spec) => {
@@ -377,12 +534,22 @@ describe("opencode probe", () => {
 
 		expect((await runtime.probe()).availability).toEqual({ status: "available" });
 	});
+
+	it("reports UNSUPPORTED_VERSION for a CLI older than the 2.0.27 floor", async () => {
+		const { fake, runtime } = probeRuntime({ lines: ["[]"], code: 0 }, "opencode v2.0.24");
+
+		expect((await runtime.probe()).availability).toMatchObject({
+			status: "unavailable",
+			reasonCode: "UNSUPPORTED_VERSION",
+		});
+		expect(fake.spawns).toHaveLength(1);
+	});
 });
 
 describe("opencode model listing", () => {
 	function modelsProbe(models: { lines: readonly string[]; code: number }) {
 		const fake = createFakeProcessRunner((spec) => {
-			if (spec.args[0] === "--version") return { lines: ["opencode v2.0.24"] };
+			if (spec.args[0] === "--version") return { lines: ["opencode v2.0.27"] };
 			if (spec.args[0] === "models") return { lines: models.lines, exit: { code: models.code } };
 			return {
 				lines: fixtureText("opencode/auth-list.json").split("\n"),

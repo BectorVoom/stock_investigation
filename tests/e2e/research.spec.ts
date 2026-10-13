@@ -6,7 +6,6 @@ import { E2E_ORIGIN, FEED_URL, HEADLINE } from "./fixtures.ts";
  * chat -> research -> sourced table/chart -> workspace reload, plus the UI
  * safety properties that only a real browser can show.
  */
-const WORKSPACE_TITLE = `E2E ${Date.now()}`;
 
 async function xssFlag(page: Page): Promise<unknown> {
 	return page.evaluate(() => Reflect.get(window, "__xss"));
@@ -39,9 +38,10 @@ test("a fresh installation guides the owner from chat to a sent message", async 
 	// a visible notice names Settings → AI agent with a link.
 	await page.goto("/");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
-	const freshTitle = `Fresh ${Date.now()}`;
-	await page.getByLabel("New conversation title").fill(freshTitle);
-	await page.getByRole("button", { name: "Start conversation" }).click();
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 
 	const composer = page.getByRole("form", { name: "Research composer" });
@@ -163,14 +163,14 @@ test("an upgrade keeps the last question's backend so sending works without visi
 	}
 });
 
-test("the owner is signed in and creates a conversation", async () => {
+test("the owner is signed in and creates a chat", async () => {
 	await page.goto("/");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
-	await page.getByLabel("New conversation title").fill(WORKSPACE_TITLE);
-	await page.getByRole("button", { name: "Start conversation" }).click();
-	await expect(page.getByRole("navigation", { name: "Conversations" })).toContainText(
-		WORKSPACE_TITLE,
-	);
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
+	await expect(page.getByRole("navigation", { name: "Chats" })).toContainText("New chat");
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 });
 
@@ -222,24 +222,30 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 		.getByRole("textbox", { name: "Question" })
 		.fill("Which storage products will see demand growth?");
 
-	// A plan-limited backend is never shown as free.
-	await composer.getByText("Limits and cost").click();
-	await expect(composer.locator('[data-cost-statement="plan-limited"]')).toBeVisible();
+	// Limits and the cost statement live in Settings → AI agent; the composer
+	// shows only the backend/model/effort/web-access summary and is never $0.
+	await expect(composer).toContainText("Scripted example agent");
 	await expect(composer).not.toContainText("$0");
 
 	await composer.getByRole("button", { name: "Send question" }).click();
 
 	const thread = page.getByRole("list", { name: "Messages" });
-	await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({ timeout: 60_000 });
-	await expect(thread.locator('[data-field="cost"]').first()).toContainText(/unknown/i);
+	await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({ timeout: 60_000 });
+	// The compact run card shows state only: no Run details disclosure, cost, limits or provenance.
+	await expect(thread.getByText("Run details")).toHaveCount(0);
 
 	// The answer arrives in the conversation with its claims.
 	const conversation = page.getByRole("region", { name: "Conversation" });
 	await expect(conversation.getByRole("article", { name: "Assistant message" })).toContainText(
 		"1 of 2 claim(s) are supported",
 	);
+	// A citation chip opens its source card with an Open source link.
+	await conversation
+		.getByRole("button", { name: /^Source 1:/ })
+		.first()
+		.click();
+	await expect(conversation.getByRole("link", { name: "Open source" }).first()).toBeVisible();
 
-	await page.getByRole("link", { name: "Open canvas" }).click();
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	for (const type of ["research-report", "source-list", "data-table", "bar-chart"]) {
 		await expect(canvas.locator(`[data-component-type="${type}"]`).first()).toBeVisible();
@@ -266,14 +272,31 @@ test("a question runs to a sourced report, table and chart (FR-004, FR-005, FR-0
 	await expect(page.locator("body")).not.toContainText("999%");
 
 	// Every source is a real link to the retrieved article, with tracking parameters stripped.
-	const sourceLink = canvas
-		.locator('[data-component-type="source-list"]')
-		.getByRole("link", { name: new RegExp(HEADLINE) });
+	// The sources block is the compact "N sources" disclosure: open it first.
+	const sourceList = canvas.locator('[data-component-type="source-list"]');
+	await sourceList.locator("summary").click();
+	const sourceLink = sourceList.getByRole("link", { name: new RegExp(HEADLINE) });
 	await expect(sourceLink).toHaveAttribute(
 		"href",
 		"https://news.example.org/articles/grid-storage-orders",
 	);
 	await expect(sourceLink).toHaveAttribute("rel", /noopener/);
+
+	// A chip in a canvas component opens its source card, inside the panel.
+	const canvasChip = report.locator("[data-citation-chip]").first();
+	await canvasChip.click();
+	const canvasCard = report.locator("[data-citation-card]");
+	await expect(canvasCard.getByRole("link", { name: "Open source" })).toBeVisible();
+	const cardBox = await canvasCard.boundingBox();
+	const canvasBox = await canvas.boundingBox();
+	expect(cardBox).not.toBeNull();
+	expect(canvasBox).not.toBeNull();
+	if (cardBox !== null && canvasBox !== null) {
+		expect(cardBox.x).toBeGreaterThanOrEqual(canvasBox.x - 1);
+		expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(canvasBox.x + canvasBox.width + 1);
+	}
+	await page.keyboard.press("Escape");
+	await expect(canvasCard).toHaveCount(0);
 
 	// The chart is derived (20% a year for the base case) and has an accessible name.
 	await expect(
@@ -323,12 +346,12 @@ test("the chat page stays usable on narrow screens and keeps its desktop layout 
 		});
 		expect(noOverlap).toBe(true);
 
-		// 4. At lg the history sits beside the thread and the page itself does not scroll.
+		// 4. At lg the chats list sits beside the thread and the page itself does not scroll.
 		await page.setViewportSize({ width: 1440, height: 900 });
-		const nav = page.getByRole("navigation", { name: "Conversations" });
+		const nav = page.getByRole("navigation", { name: "Chats" });
 		await expect(nav).toBeVisible();
 		const sideBySide = await page.evaluate(() => {
-			const navElement = document.querySelector('nav[aria-label="Conversations"]');
+			const navElement = document.querySelector('nav[aria-label="Chats"]');
 			const listElement = document.querySelector('ol[aria-label="Messages"]');
 			if (!(navElement instanceof HTMLElement) || !(listElement instanceof HTMLElement)) {
 				return false;
@@ -343,7 +366,6 @@ test("the chat page stays usable on narrow screens and keeps its desktop layout 
 		);
 		expect(pageScrolls).toBe(true);
 
-		await page.getByRole("link", { name: "Canvas", exact: true }).click();
 		await expect(page.getByRole("region", { name: "Canvas" })).toBeVisible();
 	} finally {
 		await page.setViewportSize({ width: 1280, height: 720 });
@@ -362,13 +384,13 @@ test("hostile model text is rendered as inert text, never as markup (SEC-003, UI
 });
 
 test("the conversation, canvas and run survive a reload without re-running research (FR-010)", async () => {
-	await page.getByRole("link", { name: "Canvas", exact: true }).click();
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	const before = await canvas
 		.locator("[data-component-id]")
 		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-component-id")));
 	expect(before.length).toBeGreaterThanOrEqual(5);
-	const versionBefore = await canvas.getByText(/Workspace version \d+/).textContent();
+	const countBefore = await canvas.locator("[data-component-id]").count();
+	expect(countBefore).toBeGreaterThanOrEqual(5);
 
 	await page.reload();
 
@@ -377,7 +399,7 @@ test("the conversation, canvas and run survive a reload without re-running resea
 		.locator("[data-component-id]")
 		.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-component-id")));
 	expect(after).toEqual(before);
-	await expect(canvas.getByText(/Workspace version \d+/)).toHaveText(versionBefore ?? "");
+	expect(after).toHaveLength(countBefore);
 
 	await page.getByRole("link", { name: "Chat", exact: true }).click();
 	await expect(
@@ -390,29 +412,43 @@ test("the conversation, canvas and run survive a reload without re-running resea
 		page.getByRole("list", { name: "Messages" }).locator("[data-run-state]"),
 	).toHaveCount(1);
 
-	await page.getByRole("link", { name: "Canvas", exact: true }).click();
 	await expect(page.getByRole("region", { name: "Canvas" })).toBeVisible();
 });
 
-test("the owner can remove a component and the change persists (journey 6)", async () => {
+test("the owner can select a component row and the change persists (journey 6)", async () => {
+	// The canvas cards carry no owner arrange controls (no Up/Down/Focus/
+	// Remove buttons, no component id text — owner's decision of
+	// 2026-10-13): the remaining canvas manipulation is item selection
+	// inside a component, which persists across a reload.
 	const canvas = page.getByRole("region", { name: "Canvas" });
-	const sources = canvas.locator('[data-component-type="source-list"]');
-	const componentId = await sources.getAttribute("data-component-id");
-	expect(componentId).not.toBeNull();
-	await canvas.getByRole("button", { name: `Remove ${componentId}` }).click();
-	await expect(sources).toHaveCount(0);
+	for (const name of ["Remove", "Move", "Focus"]) {
+		await expect(canvas.getByRole("button", { name: new RegExp(`^${name} `) })).toHaveCount(0);
+	}
+	const table = canvas.locator('[data-component-type="data-table"]').first();
+	await table.getByRole("button", { name: "Select row 1" }).click();
+	await expect(table.getByRole("button", { name: "Select row 1" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
 	await page.reload();
 	await expect(canvas.locator("[data-component-id]").first()).toBeVisible();
-	await expect(canvas.locator('[data-component-type="source-list"]')).toHaveCount(0);
+	const reloadedTable = canvas.locator('[data-component-type="data-table"]').first();
+	await expect(reloadedTable.getByRole("button", { name: "Select row 1" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
 });
 
 test("an invalid UI command is rejected by the server and changes nothing (hard gate 4)", async () => {
 	const workspaceId = /#\/(?:chat|canvas|workspace)\/([^/?]+)/.exec(page.url())?.[1] ?? "";
 	const canvas = page.getByRole("region", { name: "Canvas" });
 	const count = await canvas.locator("[data-component-id]").count();
-	const version = Number(
-		/\d+/.exec((await canvas.getByText(/Workspace version \d+/).textContent()) ?? "")?.[0],
-	);
+	// The command below must carry the version the server currently holds:
+	// read it through the API (the canvas no longer shows a version line).
+	const viewResponse = await page.request.get(`/api/v1/workspaces/${workspaceId}`);
+	expect(viewResponse.status()).toBe(200);
+	const version = (await viewResponse.json()).state.version as number;
+	expect(Number.isInteger(version)).toBe(true);
 
 	const response = await page.request.post(`/api/v1/workspaces/${workspaceId}/commands`, {
 		headers: { "X-Research-Csrf": "1", Origin: new URL(page.url()).origin },
@@ -459,8 +495,7 @@ test("a 260-character unbroken word stays inside the thread column", async () =>
 			timeout: 30_000,
 		});
 		await expect(thread.locator("[data-run-state]")).toHaveCount(2, { timeout: 30_000 });
-		// Open the new run's details so its question line is rendered too.
-		await thread.locator('article[aria-label^="Run "]').last().getByText("Run details").click();
+		// The compact run card has no details to open: the question lives in the owner bubble.
 
 		const geometry = await page.evaluate(() => {
 			const list = document.querySelector('ol[aria-label="Messages"]');
@@ -493,8 +528,10 @@ test("on a tall narrow screen the input rests at the bottom of the viewport", as
 	try {
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
 		await page.locator('details[data-conversations-disclosure="true"] > summary').click();
-		await page.getByLabel("New conversation title").fill(`Empty ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(
 			page.getByRole("heading", { level: 3, name: "What would you like to research?" }),
 		).toBeVisible();
@@ -580,4 +617,32 @@ test("the page ran under its Content-Security-Policy without errors", async () =
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);
+});
+
+test("a chat can be renamed and deleted", async () => {
+	await page.goto("/");
+	const nav = page.getByRole("navigation", { name: "Chats" });
+	await expect(nav).toBeVisible();
+	const chatName = `E2E rename ${Date.now()}`;
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
+	await expect(page).toHaveURL(/#\/chat\/ws_/);
+	const more = nav.getByRole("button", { name: "More actions for New chat" }).first();
+	await more.click();
+	await page.getByRole("menuitem", { name: "Rename" }).click();
+	await page.getByLabel("Chat title").fill(chatName);
+	// Keyboard press (not locator press): a failed rename exits edit mode and
+	// unmounts the input, which locator.press would chase until timeout.
+	await page.keyboard.press("Enter");
+	await expect(nav).toContainText(chatName, { timeout: 10_000 });
+	const moreAfter = nav.getByRole("button", { name: `More actions for ${chatName}` }).first();
+	await moreAfter.click();
+	await page.getByRole("menuitem", { name: "Delete" }).click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toContainText(chatName);
+	await expect(dialog).toContainText("cannot be undone");
+	await dialog.getByRole("button", { name: "Delete" }).click();
+	await expect(nav).not.toContainText(chatName);
 });

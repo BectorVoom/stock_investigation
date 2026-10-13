@@ -267,6 +267,8 @@ POST   /api/v1/research-runs/:id/approve
 GET    /api/v1/workspaces
 POST   /api/v1/workspaces/import
 POST   /api/v1/workspaces
+PATCH  /api/v1/workspaces/:id
+DELETE /api/v1/workspaces/:id
 GET    /api/v1/workspaces/:id
 GET    /api/v1/workspaces/:id/events?after=...
 POST   /api/v1/workspaces/:id/commands
@@ -293,7 +295,12 @@ POST   /api/v1/runner/jobs/:id/complete
 only messages with a smaller `seq` are returned) and `limit` (1..200, default 200),
 and reports `hasEarlier` when older messages exist. `GET /api/v1/conversations`
 lists one summary per workspace (message count, last-message preview cut to 160
-characters, last-activity sort key), newest activity first.
+characters, last-activity sort key), newest activity first. `PATCH
+/api/v1/workspaces/:id` renames the conversation without touching the canvas
+version; `DELETE /api/v1/workspaces/:id` removes the conversation with
+everything it solely owns, atomically, and refuses with 409 while one of its
+runs is unfinished. A research question accepted for a still-untitled
+conversation without messages names it from the question's first line.
 
 All inputs and stored JSON are runtime-validated. Browser calls do not expose runner endpoints. Runner authentication is separately scoped, renewable and revocable. Maintain uniqueness constraints on canonical article IDs, command IDs, and job idempotency keys, and use conditional updates for leases/workspace versions.
 

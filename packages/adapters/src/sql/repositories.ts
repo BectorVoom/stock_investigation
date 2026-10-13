@@ -58,7 +58,7 @@ import {
 /** Quoted, comma-separated SQL literals for a fixed list of state names. */
 const sqlList = (values: readonly string[]) => values.map((value) => `'${value}'`).join(", ");
 const LEASED_SQL = sqlList(LEASED_JOB_STATES);
-const TERMINAL_SQL = sqlList(TERMINAL_JOB_STATES);
+export const TERMINAL_SQL = sqlList(TERMINAL_JOB_STATES);
 
 /* ---------- Sources and articles ---------- */
 
@@ -197,6 +197,9 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * Statement that inserts a job row unless its idempotency key is already taken
  * or the owner already has `maxUnfinished` unfinished jobs. The capacity test is
  * part of the INSERT itself, so two concurrent requests cannot both pass it.
+ * When the job names a workspace, that workspace must still exist: the test is
+ * part of the INSERT, so a run submitted against a concurrently deleted
+ * conversation writes nothing instead of orphaning a job.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -216,6 +219,7 @@ export function insertJobStatement(
 			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			WHERE (SELECT COUNT(*) FROM research_jobs
 				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
+				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -251,12 +255,17 @@ export function insertJobStatement(
 			job.updatedAt,
 			job.ownerId,
 			maxUnfinished,
+			job.workspaceId,
+			job.ownerId,
+			job.workspaceId,
 		);
 }
 
 /**
  * Why an enqueue INSERT changed no row: the idempotency key already names a
- * job (a replay or a key reuse), or the owner is at the unfinished-job cap.
+ * job (a replay or a key reuse), the named workspace is gone, or the owner is
+ * at the unfinished-job cap. The key is checked first so a replay still
+ * answers from the stored job.
  */
 export async function enqueueOutcome(
 	db: SqlDatabase,
@@ -265,12 +274,30 @@ export async function enqueueOutcome(
 	requestFingerprint: string,
 ): Promise<EnqueueResult> {
 	const existing = await findJobByIdempotencyKey(db, job.ownerId, idempotencyKey);
-	if (existing === null) return { kind: "at-capacity" };
-	return {
-		kind: "existing",
-		job: existing,
-		sameRequest: existing.requestFingerprint === requestFingerprint,
-	};
+	if (existing !== null) {
+		return {
+			kind: "existing",
+			job: existing,
+			sameRequest: existing.requestFingerprint === requestFingerprint,
+		};
+	}
+	if (job.workspaceId !== null && !(await workspaceExists(db, job.ownerId, job.workspaceId))) {
+		return { kind: "no-workspace" };
+	}
+	return { kind: "at-capacity" };
+}
+
+/** Whether the owner's conversation still exists (guards enqueue against a concurrent delete). */
+export async function workspaceExists(
+	db: SqlDatabase,
+	ownerId: string,
+	workspaceId: string,
+): Promise<boolean> {
+	const row = await db
+		.prepare("SELECT 1 AS found FROM workspaces WHERE owner_id = ? AND workspace_id = ?")
+		.bind(ownerId, workspaceId)
+		.first();
+	return row !== null;
 }
 
 export async function findJobByIdempotencyKey(
@@ -567,6 +594,31 @@ export function createWorkspaceRepository(db: SqlDatabase): WorkspaceRepository 
 					record.summary.updatedAt,
 				)
 				.run();
+		},
+		/**
+		 * A rename touches the title only: the canvas version is not a
+		 * compare-and-set here, so a rename racing a command write changes the
+		 * label without invalidating the writer's expected version.
+		 */
+		async rename(ownerId, workspaceId, title, updatedAt) {
+			const row = await db
+				.prepare(
+					`UPDATE workspaces SET title = ?, updated_at = ?
+					WHERE owner_id = ? AND workspace_id = ?
+					RETURNING workspace_id, title, version, created_at, updated_at`,
+				)
+				.bind(title, updatedAt, ownerId, workspaceId)
+				.first();
+			return row === null ? null : toWorkspaceSummary(row);
+		},
+		async listRecords(ownerId) {
+			const { results } = await db
+				.prepare(
+					"SELECT * FROM workspaces WHERE owner_id = ? ORDER BY updated_at DESC, workspace_id",
+				)
+				.bind(ownerId)
+				.all();
+			return results.map(toWorkspaceRecord);
 		},
 		async findCommand(ownerId, workspaceId, commandId) {
 			const row = await db

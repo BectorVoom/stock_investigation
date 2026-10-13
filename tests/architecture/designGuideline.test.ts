@@ -74,7 +74,7 @@ const INLINE_STYLE = /\bstyle\s*=/g;
  * The token ends where a word character, `[` or `-` no longer continues it
  * (a trailing `\b` cannot match after `]`, e.g. before a closing quote).
  */
-const RADIUS = /\brounded(?:-(?:[a-z0-9]+|\[[^\]]+\]))?(?![\w\[-])/g;
+const RADIUS = /\brounded(?:-(?:[a-z0-9]+|\[[^\]]+\]))?(?![\w[-])/g;
 /** Guideline section 2: secondary text lighter than slate-600. */
 const LIGHT_SECONDARY_TEXT = /\btext-slate-(50|100|200|300|400|500)\b/g;
 /** Guideline section 7. */

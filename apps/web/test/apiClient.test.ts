@@ -314,17 +314,71 @@ describe("request validation", () => {
 	});
 });
 
+describe("workspaces: create, rename and delete", () => {
+	it("creates an untitled workspace with no title in the body", async () => {
+		const { backend, api } = setup();
+		backend.on("POST", /workspaces$/, () => jsonResponse(WORKSPACE_SUMMARY, { status: 201 }));
+		const result = await api.createWorkspace();
+		expect(result).toEqual({ ok: true, value: WORKSPACE_SUMMARY });
+		expect(backend.requests[0]?.body).toEqual({});
+		expect(backend.requests[0]?.headers[CSRF]).toBe(CSRF_HEADER_VALUE);
+	});
+
+	it("renames with PATCH and the contract shape", async () => {
+		const { backend, api } = setup();
+		const renamed = { ...WORKSPACE_SUMMARY, title: "Renamed" };
+		backend.on("PATCH", /workspaces\/ws_1$/, () => jsonResponse(renamed));
+		const result = await api.renameWorkspace(WORKSPACE_ID, "Renamed");
+		expect(result).toEqual({ ok: true, value: renamed });
+		expect(backend.requests[0]?.method).toBe("PATCH");
+		expect(backend.requests[0]?.path).toBe("/api/v1/workspaces/ws_1");
+		expect(backend.requests[0]?.body).toEqual({ title: "Renamed" });
+		expect(backend.requests[0]?.headers[CSRF]).toBe(CSRF_HEADER_VALUE);
+	});
+
+	it("validates a rename locally and sends nothing invalid", async () => {
+		const { backend, api } = setup();
+		const result = await api.renameWorkspace(WORKSPACE_ID, "   ");
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.error.code).toBe("INVALID_REQUEST");
+		expect(backend.requests).toHaveLength(0);
+	});
+
+	it("deletes with DELETE and returns null on 204, like deleteAsset", async () => {
+		const { backend, api } = setup();
+		backend.on("DELETE", /workspaces\/ws_1$/, () => new Response(null, { status: 204 }));
+		const result = await api.deleteWorkspace(WORKSPACE_ID);
+		expect(result).toEqual({ ok: true, value: null });
+		expect(backend.requests[0]?.method).toBe("DELETE");
+		expect(backend.requests[0]?.path).toBe("/api/v1/workspaces/ws_1");
+		expect(backend.requests[0]?.headers[CSRF]).toBe(CSRF_HEADER_VALUE);
+	});
+
+	it("carries a 409 from delete as an api failure", async () => {
+		const { backend, api } = setup();
+		backend.on("DELETE", /workspaces\/ws_1$/, () =>
+			errorResponse(409, "CONFLICT", "A question is still running in this chat."),
+		);
+		const result = await api.deleteWorkspace(WORKSPACE_ID);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.error.code).toBe("CONFLICT");
+		expect(result.error.status).toBe(409);
+	});
+});
+
 describe("write protection headers", () => {
 	it("sends the CSRF header, JSON content type and same-origin credentials on every write", async () => {
 		const { backend, api } = setup();
 		backend.on("POST", /workspaces$/, () => jsonResponse(WORKSPACE_SUMMARY, { status: 201 }));
 		backend.on("PATCH", /sources\/src_1$/, () => errorResponse(404, "NOT_FOUND", "no such source"));
-		backend.on("DELETE", /assets\/asset_1$/, () => new Response(null, { status: 204 }));
+		backend.on("DELETE", /sources\/src_1$/, () => new Response(null, { status: 204 }));
 		backend.on("POST", /cancel$/, () => jsonResponse({ run: makeRun({ state: "cancelled" }) }));
 
 		await api.createWorkspace("New workspace");
 		await api.updateSource("src_1", { feedStatus: "paused" });
-		const deleted = await api.deleteAsset("asset_1");
+		const deleted = await api.deleteSource("src_1");
 		await api.cancelResearchRun("run_1");
 
 		expect(deleted).toEqual({ ok: true, value: null });

@@ -252,8 +252,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await waitForRunnerWithModel();
 		await page.goto(VITE_ORIGIN);
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
-		await page.getByLabel("New conversation title").fill(`Live positive path ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		// Fresh state: no backend saved, so the composer says where to fix it.
 		const composer = page.getByRole("form", { name: "Research composer" });
@@ -324,7 +326,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_1);
 		await composer.getByRole("button", { name: "Send question" }).click();
 		const thread = page.getByRole("list", { name: "Messages" });
-		await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({
+		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
 			timeout: 720_000,
 		});
 		const conversation = page.getByRole("region", { name: "Conversation" });
@@ -334,6 +336,31 @@ test.describe("live positive path through the real backend (spends real quota)",
 			await assistant.locator('ul[aria-label="Claims"] > li[data-claim-id]').count(),
 		).toBeGreaterThan(0);
 		expect(await assistant.locator("a").count()).toBeGreaterThan(0);
+
+		// The first question named the chat: it started as "New chat".
+		const openChat = page
+			.getByRole("navigation", { name: "Chats" })
+			.locator('li[data-conversation-id] a[aria-current="page"]');
+		await expect(openChat).toContainText("What did EIA Today in Energy report", {
+			timeout: 30_000,
+		});
+		await expect(
+			page.getByRole("region", { name: "Chat", exact: true }).getByRole("heading").first(),
+		).toContainText("What did EIA Today in Energy report");
+		// A citation chip opens its source card with a link to the source.
+		const chip = assistant.locator("[data-citation-chip]").first();
+		await chip.click();
+		const card = assistant.locator("[data-citation-card]");
+		await expect(card).toBeVisible();
+		await expect(card.getByRole("link", { name: "Open source" })).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(card).toHaveCount(0);
+		// The canvas of this conversation sits beside the thread, on the same page.
+		const canvas = page.getByRole("region", { name: "Canvas" });
+		await expect(canvas).toBeVisible();
+		await expect(
+			canvas.locator('ul[aria-label="Workspace components"] > li').first(),
+		).toBeVisible();
 	});
 
 	test("a question naming a public page archives it as Markdown starting with its heading", async () => {
@@ -388,6 +415,40 @@ test.describe("live positive path through the real backend (spends real quota)",
 		}
 	});
 
+	test("a past chat is renamed and then deleted with its runs", async () => {
+		const page = activePage();
+		const nav = page.getByRole("navigation", { name: "Chats" });
+		const row = nav.locator("li[data-conversation-id]");
+		await expect(row).toHaveCount(1);
+		const workspaceId = await row.getAttribute("data-conversation-id");
+		const renamed = `Live renamed ${Date.now()}`;
+		await row.getByRole("button", { name: /^More actions for / }).click();
+		await page.getByRole("menuitem", { name: "Rename" }).click();
+		await page.getByLabel("Chat title").fill(renamed);
+		await page.keyboard.press("Enter");
+		await expect(nav).toContainText(renamed, { timeout: 15_000 });
+		await expect(
+			page.getByRole("region", { name: "Chat", exact: true }).getByRole("heading").first(),
+		).toContainText(renamed);
+
+		// Both runs are finished, so the delete is accepted; the open chat
+		// was the only one, so the page falls back to the welcome.
+		await nav.getByRole("button", { name: `More actions for ${renamed}` }).click();
+		await page.getByRole("menuitem", { name: "Delete" }).click();
+		const dialog = page.getByRole("dialog");
+		await expect(dialog).toContainText(renamed);
+		await dialog.getByRole("button", { name: "Delete" }).click();
+		await expect(row).toHaveCount(0, { timeout: 15_000 });
+		await expect(page.getByRole("heading", { name: "Welcome to Chat" })).toBeVisible();
+		// Gone on the server too, with its runs.
+		const gone = await fetch(`${API_ORIGIN}/api/v1/workspaces/${workspaceId ?? ""}`, {
+			headers: ownerHeaders(API_ORIGIN),
+		});
+		expect(gone.status).toBe(404);
+		const runs = await apiJson("GET", `/api/v1/research-runs?workspaceId=${workspaceId ?? ""}`);
+		expect(JSON.stringify(runs)).not.toContain('"runId"');
+	});
+
 	test("upgraded state: a run without saved settings can send without visiting Settings", async () => {
 		test.setTimeout(900_000);
 		const page = activePage();
@@ -429,8 +490,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// Without visiting Settings, the composer offers to send.
 		await page.goto(VITE_ORIGIN);
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
-		await page.getByLabel("New conversation title").fill(`Upgraded state ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		const composer = page.getByRole("form", { name: "Research composer" });
 		await expect(composer).not.toContainText("Choose a default agent backend");

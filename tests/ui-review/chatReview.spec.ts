@@ -234,7 +234,7 @@ async function audit(page: Page, state: string): Promise<void> {
 
 		// 5b. Content wider than its box inside the chat thread (long unbroken words, URLs).
 		for (const el of Array.from(
-			document.querySelectorAll('[aria-label="Messages"] *, [aria-label="Conversations"] *'),
+			document.querySelectorAll('[aria-label="Messages"] *, [aria-label="Chats"] *'),
 		)) {
 			if (!visible(el)) continue;
 			const style = getComputedStyle(el);
@@ -330,8 +330,10 @@ async function ensurePrepared(page: Page): Promise<void> {
 	}
 
 	await page.getByRole("link", { name: "Chat", exact: true }).click();
-	await page.getByLabel("New conversation title").fill(`UI review ${Date.now()}`);
-	await page.getByRole("button", { name: "Start conversation" }).click();
+	await page
+		.getByRole("navigation", { name: "Chats" })
+		.getByRole("button", { name: "New chat", exact: true })
+		.click();
 	await expect(page).toHaveURL(/#\/chat\/ws_/);
 	const composer = page.getByRole("form", { name: "Research composer" });
 	await composer
@@ -339,7 +341,7 @@ async function ensurePrepared(page: Page): Promise<void> {
 		.fill("Which storage products will see demand growth?");
 	await composer.getByRole("button", { name: "Send question" }).click();
 	const thread = page.getByRole("list", { name: "Messages" });
-	await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({ timeout: 90_000 });
+	await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({ timeout: 90_000 });
 }
 
 test("UI review of the Chat page", async ({ browser }) => {
@@ -392,17 +394,75 @@ test("UI review of the Chat page", async ({ browser }) => {
 			detail: `last thread item ends at ${Math.round(lastBox.y + lastBox.height)}, input starts at ${Math.round(composerBox.y)}`,
 		});
 
-	// Run details expanded.
-	const runDetails = page.locator("details", { hasText: "Run details" }).first();
-	await runDetails.locator("summary").first().click();
+	// Sources row expanded, then a citation chip pins its source card.
+	const sourcesRow = page
+		.getByRole("region", { name: "Conversation" })
+		.locator("details", { hasText: "source" })
+		.first();
+	await sourcesRow.locator("summary").first().click();
 	await page.waitForTimeout(300);
-	await runDetails.scrollIntoViewIfNeeded();
-	await shot(page, "A2-run-details");
-	await audit(page, "A run details open");
-	await runDetails.locator("summary").first().click();
+	await sourcesRow.scrollIntoViewIfNeeded();
+	await shot(page, "A2-sources-open");
+	await audit(page, "A sources row open");
+	await sourcesRow.locator("summary").first().click();
+	const sourceChip = page
+		.getByRole("region", { name: "Conversation" })
+		.getByRole("button", { name: /^Source \d+:/ })
+		.first();
+	if ((await sourceChip.count()) > 0) {
+		await sourceChip.click();
+		await page.waitForTimeout(300);
+		await shot(page, "A2b-source-card");
+		await audit(page, "A source card open");
+		await page.keyboard.press("Escape");
+		await page.waitForTimeout(300);
+	}
 
-	// Composer disclosures.
-	await page.locator("summary", { hasText: "Limits and cost" }).click();
+	// A chip in a canvas component pins its source card inside the panel.
+	const canvasChip = page
+		.getByRole("region", { name: "Canvas" })
+		.locator("[data-citation-chip]")
+		.first();
+	if ((await canvasChip.count()) > 0) {
+		await canvasChip.scrollIntoViewIfNeeded();
+		await canvasChip.click();
+		await page.waitForTimeout(300);
+		await shot(page, "A2c-canvas-source-card");
+		await audit(page, "A canvas source card open");
+		const boxes = await page.evaluate(() => {
+			const card = document.querySelector("[data-citation-card]");
+			const panel = document.querySelector('[data-panel="canvas"]');
+			if (!(card instanceof HTMLElement) || !(panel instanceof HTMLElement)) return null;
+			const rect = (element: HTMLElement) => {
+				const box = element.getBoundingClientRect();
+				return { left: box.left, right: box.right };
+			};
+			return { card: rect(card), panel: rect(panel) };
+		});
+		if (boxes === null) {
+			findings.push({
+				state: "A canvas source card open",
+				rule: "missing-control",
+				detail: "the open canvas card or its panel was not found",
+			});
+		} else if (boxes.card.left < boxes.panel.left - 1 || boxes.card.right > boxes.panel.right + 1) {
+			findings.push({
+				state: "A canvas source card open",
+				rule: "card-overflows-panel",
+				detail: `card ${Math.round(boxes.card.left)}-${Math.round(boxes.card.right)} vs panel ${Math.round(boxes.panel.left)}-${Math.round(boxes.panel.right)}`,
+			});
+		}
+		await page.keyboard.press("Escape");
+		await page.waitForTimeout(300);
+	} else {
+		findings.push({
+			state: "A canvas source card open",
+			rule: "missing-control",
+			detail: "no citation chip in the Canvas panel",
+		});
+	}
+
+	// Composer disclosure (Options only; "Limits and cost" was removed).
 	await page.locator("summary", { hasText: /^Options:/ }).click();
 	await page.waitForTimeout(300);
 	await shot(page, "A3-composer-disclosures");
@@ -414,7 +474,6 @@ test("UI review of the Chat page", async ({ browser }) => {
 			rule: "composer-below-fold",
 			detail: `composer bottom at ${Math.round(afterDisclosures.y + afterDisclosures.height)} in a 900px viewport`,
 		});
-	await page.locator("summary", { hasText: "Limits and cost" }).click();
 	await page.locator("summary", { hasText: /^Options:/ }).click();
 
 	// Records drawer: opens, takes focus, closes with Escape, returns focus.
@@ -580,7 +639,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 				'[data-run-state="completed"], [data-run-state="partial"], [data-run-state="failed"]',
 			)
 			.last(),
-	).toBeVisible({ timeout: 90_000 });
+	).toBeAttached({ timeout: 90_000 });
 	await page.waitForTimeout(2500);
 	await shot(page, "B3-after-answer");
 	await audit(page, "B after answer");
@@ -625,7 +684,7 @@ test("UI review of the Chat page", async ({ browser }) => {
 		});
 	}
 	await page.reload();
-	await expect(page.getByRole("navigation", { name: "Conversations" })).toBeVisible({
+	await expect(page.getByRole("navigation", { name: "Chats" })).toBeVisible({
 		timeout: 20_000,
 	});
 	await page.waitForTimeout(1200);
@@ -642,15 +701,15 @@ test("UI review of the Chat page", async ({ browser }) => {
 		});
 
 	/* ---------- D. Empty conversation ---------- */
-	const emptyLink = page
-		.getByRole("navigation", { name: "Conversations" })
-		.getByRole("link")
-		.first();
+	const emptyLink = page.getByRole("navigation", { name: "Chats" }).getByRole("link").first();
 	await emptyLink.click();
 	await page.waitForTimeout(1000);
 	await shot(page, "D1-empty");
 	await audit(page, "D empty conversation");
-	const chip = page.getByRole("list", { name: "Suggestions" }).getByRole("button").first();
+	// Two suggestion copies exist (one above the composer for narrow screens,
+	// one centred below it at this viewport): use the visible one.
+	const visibleSuggestions = page.locator('ul[aria-label="Suggestions"]:visible');
+	const chip = visibleSuggestions.getByRole("button").first();
 	if ((await chip.count()) > 0) {
 		const chipText = (await chip.textContent()) ?? "";
 		await chip.click();

@@ -147,6 +147,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		job: JobRecord,
 	): Promise<UseCaseResult<CreatedRun>> {
 		if (outcome.kind === "at-capacity") return atCapacity();
+		if (outcome.kind === "no-workspace") return fail("NOT_FOUND", "Workspace not found.");
 		if (outcome.kind === "existing") {
 			return outcome.sameRequest
 				? ok({ run: await view(outcome.job), replayed: true })

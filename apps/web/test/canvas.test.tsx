@@ -23,7 +23,7 @@ beforeEach(() => {
 	backend = createFakeBackend();
 	server = initialServerState();
 	installWorkspaceRoutes(backend, server);
-	window.location.hash = `#/canvas/${WORKSPACE_ID}`;
+	window.location.hash = `#/chat/${WORKSPACE_ID}`;
 });
 
 afterEach(() => {
@@ -43,12 +43,20 @@ async function canvasReady(): Promise<HTMLElement> {
 	return screen.getByRole("region", { name: "Canvas" });
 }
 
-describe("canvas view", () => {
-	it("renders the canvas from layout.order through the registry", async () => {
+describe("canvas panel", () => {
+	it("renders the canvas from layout.order through the registry, beside the thread", async () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
+		// One narrow column always: no version line, no column switch, no column marker.
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
+		expect(canvas.textContent).not.toContain("Workspace version");
+		expect(within(canvas).queryByRole("button", { name: "Use 2 columns" })).toBeNull();
+		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
+		const list = within(canvas).getByRole("list", { name: "Workspace components" });
+		expect(list.getAttribute("data-columns")).toBeNull();
+		expect(list.className).toContain("grid-cols-1");
+		expect(list.className).not.toContain("xl:grid-cols-2");
 		expect(
 			within(canvas).getByRole("heading", {
 				level: 3,
@@ -60,39 +68,106 @@ describe("canvas view", () => {
 		).toBeDefined();
 		// The unavailable cell is explicit, with its reason.
 		expect(canvas.textContent).toContain("N/A — not yet published");
+		// The thread shares the page: one session backs both.
+		expect(screen.getByRole("region", { name: "Conversation" })).toBeDefined();
+		expect(screen.getByRole("form", { name: "Research composer" })).toBeDefined();
 	});
 
-	it("opens the conversation with the newest activity when the URL names none", async () => {
-		window.location.hash = "#/canvas";
+	it("shows numbered citation chips with a sources disclosure, and a chip opens its card", async () => {
 		mountApp(backend);
-		await waitFor(() => expect(window.location.hash).toBe("#/canvas/ws_2"));
+		const canvas = await canvasReady();
+		// The news card cites its source as a numbered chip, not a citation line.
+		const news = within(canvas).getByRole("article", { name: "Component news_1" });
+		const chip = within(news).getByRole("button", {
+			name: "Source 1: Grid storage outlook 2026",
+		});
+		expect(chip.textContent).toBe("1");
+		// The sources component is the compact disclosure, not citation lines.
+		const sources = within(canvas).getByRole("article", { name: "Component sources_1" });
+		expect(within(sources).getByText("1 source")).toBeDefined();
+		expect(sources.textContent).not.toContain("published");
+		// The chip opens its source card with the labelled dates.
+		fireEvent.click(chip);
+		const card = within(news).getByText("Example Energy Review").closest("[data-citation-card]");
+		expect(card).not.toBeNull();
+		expect(card?.textContent).toContain("published");
+		expect(card?.textContent).toContain("retrieved");
+		expect(
+			within(card as HTMLElement)
+				.getByRole("link", { name: "Open source" })
+				.getAttribute("href"),
+		).toBe("https://example.com/reports/grid-storage");
 	});
 
-	it("offers the conversation picker and a back-to-chat link", async () => {
+	it("shows no toolbar: no buttons, no id text and no type label on a card", async () => {
 		mountApp(backend);
-		await canvasReady();
-		const picker = await screen.findByRole("combobox", { name: "Conversation" });
-		expect(within(picker).getByRole("option", { name: "Grid storage research" })).toBeDefined();
-		const back = screen.getByRole("link", { name: "Back to chat" });
-		expect(back.getAttribute("href")).toBe(`#/chat/${WORKSPACE_ID}`);
+		const canvas = await canvasReady();
+		const list = within(canvas).getByRole("list", { name: "Workspace components" });
+		// A canvas card is just the rendered component: no toolbar region,
+		// no Up/Down/Focus/Remove buttons, no component id text, no type label.
+		expect(within(canvas).queryByRole("toolbar")).toBeNull();
+		for (const name of ["Move", "Focus", "Remove"]) {
+			expect(within(canvas).queryByRole("button", { name: new RegExp(`^${name} `) })).toBeNull();
+		}
+		expect(list.textContent).not.toContain("news_1");
+		expect(list.textContent).not.toContain("table_1");
+		expect(list.textContent).not.toContain("sources_1");
+		expect(within(canvas).getByRole("article", { name: "Component news_1" }).textContent).toContain(
+			"Utilities accelerate storage tenders",
+		);
 	});
 
-	it("opens the canvas from the legacy workspace URL", async () => {
-		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
+	it("marks the focused component by its ring and aria-current, with no text label", async () => {
+		server.view = {
+			...server.view,
+			state: { ...server.view.state, focusedComponentId: "table_1" },
+		};
+		mountApp(backend);
+		const canvas = await canvasReady();
+		const focused = canvas.querySelector('li[data-focused="true"]');
+		expect(focused).not.toBeNull();
+		expect(focused?.getAttribute("aria-current")).toBe("true");
+		expect(focused?.className).toContain("ring-2");
+		// The ring is an outline (a shape, not only a colour); there is no label.
+		expect(focused?.textContent).not.toContain("Focused");
+		const unfocused = canvas.querySelector('li[data-focused="false"]');
+		expect(unfocused?.className).not.toContain("ring-2");
+		expect(unfocused?.getAttribute("aria-current")).toBeNull();
+	});
+
+	it("shows no component count in the panel header, and an empty state when there are none", async () => {
+		mountApp(backend);
+		const canvas = await canvasReady();
+		// The panel header (the region's first heading) is the title alone.
+		expect(canvas.querySelector("h3")?.textContent?.trim()).toBe("Canvas");
+		expect(canvas.textContent).not.toMatch(/\(\d+ components?\)/);
+		server.secondView = {
+			...server.secondView,
+			state: {
+				...server.secondView.state,
+				version: 0,
+				components: [],
+				layout: { order: [], columns: 1 },
+			},
+		};
+		window.location.hash = "#/chat/ws_2";
+		window.dispatchEvent(new Event("hashchange"));
+		const empty = await screen.findByRole("region", { name: "Canvas" });
+		await within(empty).findByText(/No canvas content yet/);
+		expect(empty.textContent).not.toMatch(/\(\d+ components?\)/);
+	});
+
+	it("opens the chat page for old canvas and workspace bookmarks", async () => {
+		window.location.hash = `#/canvas/${WORKSPACE_ID}`;
 		mountApp(backend);
 		const canvas = await canvasReady();
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
-	});
-
-	it("shows an empty state that links to Chat when there are no conversations", async () => {
-		server.conversations = [];
-		window.location.hash = "#/canvas";
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
+		cleanup();
+		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
 		mountApp(backend);
-		await screen.findByText(/Start one on the Chat page/);
-		expect(
-			screen.getByRole("link", { name: /Start one on the Chat page/ }).getAttribute("href"),
-		).toBe("#/chat");
+		await canvasReady();
+		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
 	});
 
 	it("shows an API error with its code instead of a blank screen, and can retry", async () => {
@@ -102,21 +177,11 @@ describe("canvas view", () => {
 		mountApp(backend);
 		const alert = await screen.findByText(/database unavailable/);
 		expect(alert.closest('[role="alert"]')?.textContent).toContain("INTERNAL");
-		expect(screen.queryByRole("region", { name: "Canvas" })).toBeNull();
 
 		backend.on("GET", /^\/api\/v1\/workspaces\/ws_1$/, () => jsonResponse(server.view));
-		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+		fireEvent.click(screen.getAllByRole("button", { name: "Try again" })[0] as HTMLElement);
 		await canvasReady();
 		expect(screen.queryByText(/database unavailable/)).toBeNull();
-	});
-
-	it("has no composer, message list or run status: the split is exclusive", async () => {
-		mountApp(backend);
-		await canvasReady();
-		expect(screen.queryByRole("form", { name: "Research composer" })).toBeNull();
-		expect(screen.queryByRole("list", { name: "Messages" })).toBeNull();
-		expect(screen.queryByRole("region", { name: "Run status" })).toBeNull();
-		expect(screen.queryByRole("region", { name: "Conversation" })).toBeNull();
 	});
 });
 
@@ -130,8 +195,7 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 				state: {
 					...server.view.state,
 					version: 5,
-					components: server.view.state.components.filter((c) => c.componentId !== "news_1"),
-					layout: { order: ["table_1", "sources_1"], columns: 1 },
+					selection: { componentId: "table_1", itemKey: "row-0" },
 				},
 			};
 			return jsonResponse({ state: server.view.state, replayed: false });
@@ -139,46 +203,62 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 
-		fireEvent.click(within(canvas).getByRole("button", { name: "Remove news_1" }));
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
 		await waitFor(() => expect(commandRequests(backend)).toHaveLength(1));
 		expect(commandRequests(backend)[0]?.body).toEqual({
 			protocolVersion: 1,
 			commandId: expect.stringMatching(/^cmd-[0-9a-f-]{36}$/),
 			workspaceId: WORKSPACE_ID,
 			expectedWorkspaceVersion: 4,
-			operation: "component.remove",
-			componentId: "news_1",
+			operation: "component.select",
+			componentId: "table_1",
+			itemKey: "row-0",
 		});
-		// No optimistic guess: until the server answers, the component is still shown.
-		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(canvas.getAttribute("aria-busy")).toBe("true");
+		// No optimistic guess: until the server answers, the row is still unselected.
+		expect(
+			within(canvas).getByRole("button", { name: "Select row 1" }).getAttribute("aria-pressed"),
+		).toBe("false");
 
 		gate.resolve();
-		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "sources_1"]));
-		expect(within(canvas).getByText("Workspace version 5")).toBeDefined();
-		expect(canvas.getAttribute("aria-busy")).toBe("false");
+		await waitFor(() =>
+			expect(
+				within(canvas).getByRole("button", { name: "Select row 1" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
+		// The command carried the rendered version; the canvas shows no version text.
+		expect(commandRequests(backend)[0]?.body).toMatchObject({ expectedWorkspaceVersion: 4 });
+		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
 	});
 
 	it("uses the version the server returned for the next command, with a new command id", async () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 
-		fireEvent.click(within(canvas).getByRole("button", { name: "Move sources_1 up" }));
-		await waitFor(() => expect(componentOrder()).toEqual(["news_1", "sources_1", "table_1"]));
-		fireEvent.click(within(canvas).getByRole("button", { name: "Move news_1 down" }));
-		await waitFor(() => expect(componentOrder()).toEqual(["sources_1", "news_1", "table_1"]));
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
+		await waitFor(() =>
+			expect(
+				within(canvas).getByRole("button", { name: "Select row 1" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 2" }));
+		await waitFor(() =>
+			expect(
+				within(canvas).getByRole("button", { name: "Select row 2" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
 
 		const [first, second] = commandRequests(backend).map((request) => request.body);
 		expect(first).toMatchObject({
 			expectedWorkspaceVersion: 4,
-			operation: "layout.update",
-			order: ["news_1", "sources_1", "table_1"],
-			columns: 1,
+			operation: "component.select",
+			componentId: "table_1",
+			itemKey: "row-0",
 		});
 		expect(second).toMatchObject({
 			expectedWorkspaceVersion: 5,
-			operation: "layout.update",
-			order: ["sources_1", "news_1", "table_1"],
+			operation: "component.select",
+			componentId: "table_1",
+			itemKey: "row-1",
 		});
 		const ids = commandRequests(backend).map((request) =>
 			typeof request.body === "object" && request.body !== null && "commandId" in request.body
@@ -186,7 +266,6 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 				: null,
 		);
 		expect(new Set(ids).size).toBe(2);
-		expect(within(canvas).getByText("Workspace version 6")).toBeDefined();
 	});
 
 	it("renders the state the server returned even when it differs from what was asked", async () => {
@@ -201,33 +280,41 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		mountApp(backend);
 		const canvas = await canvasReady();
 
-		fireEvent.click(within(canvas).getByRole("button", { name: "Focus news_1" }));
-		await within(canvas).findByText("Workspace version 99");
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
+		// The server's accepted state wins: the agent-focused component is marked.
+		await waitFor(() =>
+			expect(
+				[...canvas.querySelectorAll('li[data-focused="true"] article')].map((article) =>
+					article.getAttribute("data-component-id"),
+				),
+			).toEqual(["table_1"]),
+		);
 		const focused = [...canvas.querySelectorAll('li[data-focused="true"] article')].map((article) =>
 			article.getAttribute("data-component-id"),
 		);
 		expect(focused).toEqual(["table_1"]);
-		expect(
-			within(canvas).getByRole("button", { name: "Focus table_1" }).getAttribute("aria-pressed"),
-		).toBe("true");
-		expect(
-			within(canvas).getByRole("button", { name: "Focus news_1" }).getAttribute("aria-pressed"),
-		).toBe("false");
+		const focusedCard = canvas.querySelector('li[data-focused="true"]');
+		expect(focusedCard?.getAttribute("aria-current")).toBe("true");
 	});
 
-	it("toggles between one and two columns through a layout command", async () => {
+	it("keeps one column for a stored two-column layout", async () => {
+		// A canvas saved earlier with two columns must not be stuck in a grid
+		// the owner can no longer switch: it renders in one column here.
+		server.view = {
+			...server.view,
+			state: {
+				...server.view.state,
+				layout: { order: ["news_1", "table_1", "sources_1"], columns: 2 },
+			},
+		};
 		mountApp(backend);
 		const canvas = await canvasReady();
-		fireEvent.click(within(canvas).getByRole("button", { name: "Use 2 columns" }));
-		await within(canvas).findByRole("button", { name: "Use 1 column" });
-		expect(commandRequests(backend)[0]?.body).toMatchObject({
-			operation: "layout.update",
-			order: ["news_1", "table_1", "sources_1"],
-			columns: 2,
-		});
-		expect(
-			screen.getByRole("list", { name: "Workspace components" }).getAttribute("data-columns"),
-		).toBe("2");
+		const list = within(canvas).getByRole("list", { name: "Workspace components" });
+		expect(list.className).toContain("grid-cols-1");
+		expect(list.className).not.toContain("xl:grid-cols-2");
+		expect(list.getAttribute("data-columns")).toBeNull();
+		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
+		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
 	});
 
 	it("selects a table row through a component.select command", async () => {
@@ -261,15 +348,15 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 			},
 		};
 
-		fireEvent.click(within(canvas).getByRole("button", { name: "Remove news_1" }));
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("VERSION_CONFLICT");
 		expect(alert.textContent).toContain("version conflict");
 		expect(alert.textContent).toContain("please repeat the action");
 
-		// The stale command changed nothing; the canvas now shows the server's version 7.
+		// The stale command changed nothing; the canvas now shows the server's
+		// accepted order after the refetch.
 		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "news_1"]));
-		expect(within(canvas).getByText("Workspace version 7")).toBeDefined();
 		expect(commandRequests(backend)[0]?.body).toMatchObject({ expectedWorkspaceVersion: 4 });
 		const lastRequests = backend.requests.slice(
 			backend.requests.findIndex((request) => request.method === "POST"),
@@ -281,8 +368,12 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		).toBe(true);
 
 		// Repeating the action now uses the refreshed version and succeeds.
-		fireEvent.click(within(canvas).getByRole("button", { name: "Remove news_1" }));
-		await waitFor(() => expect(componentOrder()).toEqual(["table_1"]));
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
+		await waitFor(() =>
+			expect(
+				within(canvas).getByRole("button", { name: "Select row 1" }).getAttribute("aria-pressed"),
+			).toBe("true"),
+		);
 		expect(commandRequests(backend)[1]?.body).toMatchObject({ expectedWorkspaceVersion: 7 });
 		expect(screen.queryByRole("alert")).toBeNull();
 	});
@@ -293,12 +384,14 @@ describe("command dispatch (UI-006 / UI-009)", () => {
 		);
 		mountApp(backend);
 		const canvas = await canvasReady();
-		fireEvent.click(within(canvas).getByRole("button", { name: "Remove table_1" }));
+		fireEvent.click(within(canvas).getByRole("button", { name: "Select row 1" }));
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("UI_COMMAND_REJECTED");
 		expect(alert.textContent).toContain("COMPONENT_NOT_FOUND");
 		expect(componentOrder()).toEqual(["news_1", "table_1", "sources_1"]);
-		expect(within(canvas).getByText("Workspace version 4")).toBeDefined();
+		expect(
+			within(canvas).getByRole("button", { name: "Select row 1" }).getAttribute("aria-pressed"),
+		).toBe("false");
 	});
 });
 
@@ -306,8 +399,6 @@ describe("canvas reload (FR-010)", () => {
 	it("renders the same components after a remount, from server state, without rerunning research", async () => {
 		const first = mountApp(backend);
 		const canvas = await canvasReady();
-		fireEvent.click(within(canvas).getByRole("button", { name: "Remove news_1" }));
-		await waitFor(() => expect(componentOrder()).toEqual(["table_1", "sources_1"]));
 		const before = {
 			order: componentOrder(),
 			table: within(canvas).getByRole("table", { name: "Grid storage demand by year" }).textContent,
@@ -324,8 +415,7 @@ describe("canvas reload (FR-010)", () => {
 		expect(
 			within(reloaded).getByRole("table", { name: "Grid storage demand by year" }).textContent,
 		).toBe(before.table);
-		expect(within(reloaded).getByText("Workspace version 5")).toBeDefined();
-		expect(window.location.hash).toBe(`#/canvas/${WORKSPACE_ID}`);
+		expect(window.location.hash).toBe(`#/chat/${WORKSPACE_ID}`);
 		// Reopening a canvas reads stored state only.
 		expect(backend.requestsTo("POST", /research-runs/)).toHaveLength(0);
 	});

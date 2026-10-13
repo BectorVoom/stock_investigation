@@ -179,7 +179,12 @@ export const workspaceSummarySchema = z.strictObject({
 });
 export type WorkspaceSummary = z.infer<typeof workspaceSummarySchema>;
 
-export const createWorkspaceRequestSchema = z.strictObject({ title: shortTextSchema });
+/** Title a conversation carries until its first question names it. */
+export const DEFAULT_CONVERSATION_TITLE = "New chat";
+
+/** `title` omitted: the conversation starts as DEFAULT_CONVERSATION_TITLE. */
+export const createWorkspaceRequestSchema = z.strictObject({ title: shortTextSchema.optional() });
+export const renameWorkspaceRequestSchema = z.strictObject({ title: shortTextSchema });
 export const workspaceListResponseSchema = z.strictObject({
 	workspaces: z.array(workspaceSummarySchema),
 });

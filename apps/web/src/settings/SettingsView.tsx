@@ -1,5 +1,4 @@
 import { MAX_REQUEST_BODY_BYTES, type WorkspaceSummary } from "@research/contracts";
-import { DateText, SafeLink } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
 import type { ApiClient, IssuedRunnerCredential, Session } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
@@ -264,143 +263,6 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 	);
 }
 
-/* ---------- Approved image assets ---------- */
-
-function ApprovedAssets(props: { readonly api: ApiClient }): JSX.Element {
-	const assets = createRemote(() => props.api.listAssets());
-	const [imageUrl, setImageUrl] = createSignal("");
-	const [altText, setAltText] = createSignal("");
-	const [permissionBasis, setPermissionBasis] = createSignal("");
-	const [sourceEvidenceId, setSourceEvidenceId] = createSignal("");
-	const [failure, setFailure] = createSignal<ActionFailure | null>(null);
-	const [busy, setBusy] = createSignal(false);
-
-	const approve = async (event: SubmitEvent) => {
-		event.preventDefault();
-		if (busy()) return;
-		setBusy(true);
-		setFailure(null);
-		const result = await props.api.approveAsset({
-			imageUrl: imageUrl().trim(),
-			altText: altText(),
-			permissionBasis: permissionBasis(),
-			sourceEvidenceId: sourceEvidenceId().trim() === "" ? null : sourceEvidenceId().trim(),
-		});
-		setBusy(false);
-		if (result.ok) {
-			setImageUrl("");
-			setAltText("");
-			setPermissionBasis("");
-			setSourceEvidenceId("");
-			await assets.reload();
-		} else {
-			setFailure({ title: "The image was not approved.", error: result.error });
-		}
-	};
-
-	const remove = async (assetId: string) => {
-		if (busy()) return;
-		setBusy(true);
-		setFailure(null);
-		const result = await props.api.deleteAsset(assetId);
-		setBusy(false);
-		if (result.ok) await assets.reload();
-		else setFailure({ title: "The image was not removed.", error: result.error });
-	};
-
-	return (
-		<Section title="Approved images">
-			<p class="text-xs text-slate-700">
-				Only images you approve here, with a stated permission basis, can appear in a workspace.
-			</p>
-			<form
-				aria-label="Approve image"
-				class="mt-2 flex flex-wrap items-start gap-2"
-				onSubmit={approve}
-			>
-				<TextField
-					label="Image URL"
-					type="url"
-					value={imageUrl()}
-					onInput={setImageUrl}
-					hint="https only"
-				/>
-				<TextField label="Alt text" value={altText()} onInput={setAltText} />
-				<TextField
-					label="Permission basis"
-					value={permissionBasis()}
-					onInput={setPermissionBasis}
-					hint="e.g. press kit, licence, own work"
-				/>
-				<TextField
-					label="Source evidence id (optional)"
-					value={sourceEvidenceId()}
-					onInput={setSourceEvidenceId}
-				/>
-				<button
-					type="submit"
-					class={`${BUTTON_PRIMARY} mt-4`}
-					disabled={
-						busy() ||
-						imageUrl().trim() === "" ||
-						altText().trim() === "" ||
-						permissionBasis().trim() === ""
-					}
-				>
-					Approve image
-				</button>
-			</form>
-			<Show when={failure()}>
-				{(current) => <ErrorNotice failure={current().error} title={current().title} />}
-			</Show>
-			<RemoteView
-				remote={assets.state()}
-				label="approved images"
-				onRetry={() => void assets.reload()}
-			>
-				{(list) => (
-					<Show when={list().length > 0} fallback={<Empty>No images approved yet.</Empty>}>
-						<ul aria-label="Approved image list" class="mt-2 space-y-1 text-xs">
-							<For each={list()}>
-								{(asset) => (
-									<li
-										data-asset-id={asset.assetId}
-										class="flex flex-wrap items-start justify-between gap-2 rounded border border-slate-200 p-2"
-									>
-										<div class="min-w-0">
-											<p class="font-mono text-slate-600">{asset.assetId}</p>
-											<p>
-												<SafeLink url={asset.imageUrl}>{asset.imageUrl}</SafeLink>
-											</p>
-											<p>Alt text: {asset.altText}</p>
-											<p>Permission: {asset.permissionBasis}</p>
-											<p class="text-slate-600">
-												Approved <DateText iso={asset.createdAt} missing="date not stated" />
-												{asset.sourceEvidenceId === null
-													? ""
-													: ` · source evidence ${asset.sourceEvidenceId}`}
-											</p>
-										</div>
-										<button
-											type="button"
-											class={BUTTON_DANGER}
-											aria-label={`Remove image ${asset.assetId}`}
-											disabled={busy()}
-											onClick={() => void remove(asset.assetId)}
-										>
-											Remove
-										</button>
-									</li>
-								)}
-							</For>
-						</ul>
-					</Show>
-				)}
-			</RemoteView>
-		</Section>
-	);
-}
-
 /* ---------- Export / import ---------- */
 
 function parseJsonFile(
@@ -587,7 +449,7 @@ function ExportImport(props: {
 	);
 }
 
-/** Settings: AI agent, session, runner credentials, approved images, export/import. */
+/** Settings: AI agent, session, runner credentials, export/import. */
 export function SettingsView(props: {
 	readonly api: ApiClient;
 	readonly session: Remote<Session>;
@@ -621,7 +483,6 @@ export function SettingsView(props: {
 				</RemoteView>
 			</Section>
 			<RunnerCredentials api={props.api} />
-			<ApprovedAssets api={props.api} />
 			<ExportImport api={props.api} onOpenWorkspace={props.onOpenWorkspace} />
 		</div>
 	);

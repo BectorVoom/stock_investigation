@@ -212,7 +212,9 @@ export interface ProgressEntry {
 export type EnqueueResult =
 	| { readonly kind: "inserted" }
 	| { readonly kind: "existing"; readonly job: JobRecord; readonly sameRequest: boolean }
-	| { readonly kind: "at-capacity" };
+	| { readonly kind: "at-capacity" }
+	/** The job names a workspace that no longer exists (deleted concurrently). */
+	| { readonly kind: "no-workspace" };
 
 export interface JobRepository {
 	/**
@@ -284,6 +286,19 @@ export interface WorkspaceRepository {
 	list(ownerId: string): Promise<readonly WorkspaceSummary[]>;
 	get(ownerId: string, workspaceId: string): Promise<WorkspaceRecord | null>;
 	insert(ownerId: string, record: WorkspaceRecord): Promise<void>;
+	/**
+	 * Renames a conversation. Only the title and `updatedAt` change: the canvas
+	 * `version` is untouched, so a rename never conflicts with command writes.
+	 * Null when the owner has no such workspace.
+	 */
+	rename(
+		ownerId: string,
+		workspaceId: string,
+		title: string,
+		updatedAt: string,
+	): Promise<WorkspaceSummary | null>;
+	/** Every workspace record of this owner, for reference scans (conversation delete). */
+	listRecords(ownerId: string): Promise<readonly WorkspaceRecord[]>;
 	findCommand(
 		ownerId: string,
 		workspaceId: string,
@@ -374,6 +389,31 @@ export type CompletionCommitResult =
 	| { readonly kind: "workspace-conflict" };
 
 /**
+ * Ownership rule for conversation deletion. A conversation owns directly: its
+ * workspace row, canvas commands, chat messages and run links. It owns
+ * indirectly, through its runs: the jobs (with transitions and events) whose
+ * `workspace_id` is the conversation or which its run links name (the latter
+ * covers imported runs, which have records but no job row), and the evidence,
+ * claims, claim edges, research records and datasets written under those run
+ * ids. Owner-global rows — news sources, articles, approved assets, settings,
+ * credentials, rate limits, audit trail — are never touched. A run-scoped row
+ * whose id the caller lists in `keep*` (still referenced by a surviving
+ * conversation's canvas) survives: the delete removes only unreferenced rows.
+ */
+export interface DeleteWorkspaceInput {
+	readonly ownerId: string;
+	readonly workspaceId: string;
+	/** Evidence ids still referenced by a surviving conversation; never deleted. */
+	readonly keepEvidenceIds: readonly string[];
+	/** Dataset ids still referenced by a surviving conversation; never deleted. */
+	readonly keepDatasetIds: readonly string[];
+	/** Claim ids still referenced by a surviving conversation; never deleted. */
+	readonly keepClaimIds: readonly string[];
+}
+
+export type DeleteWorkspaceOutcome = "deleted" | "not-found" | "has-unfinished";
+
+/**
  * Cross-aggregate atomic writes. Kept as one port because the guarantee that
  * matters — a job and its effects commit together or not at all — spans tables.
  */
@@ -402,6 +442,15 @@ export interface ResearchUnitOfWork {
 		readonly messages: readonly ChatMessage[];
 		readonly at: string;
 	}): Promise<void>;
+	/**
+	 * Deletes a conversation and everything it solely owns (see
+	 * `DeleteWorkspaceInput` for the ownership rule). The unfinished-run check
+	 * and every removal commit in one atomic batch: either the conversation is
+	 * gone with all its owned rows, or nothing changed. "has-unfinished" means
+	 * a run of this conversation is not in a terminal state and nothing was
+	 * deleted.
+	 */
+	deleteWorkspace(input: DeleteWorkspaceInput): Promise<DeleteWorkspaceOutcome>;
 }
 
 export interface StoredRunnerCredential extends RunnerCredential {

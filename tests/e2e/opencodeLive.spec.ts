@@ -121,11 +121,13 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 		}
 		await expect(subscribed).toContainText("Example Energy News (synthetic)");
 
-		// Chat: start a conversation. The form only asks the question and
+		// Chat: start a chat. The form only asks the question and
 		// shows a read-only agent summary.
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
-		await page.getByLabel("New conversation title").fill(`Live OpenCode ${Date.now()}`);
-		await page.getByRole("button", { name: "Start conversation" }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
 		const composer = page.getByRole("form", { name: "Research composer" });
 		await expect(composer).toContainText("OpenCode");
@@ -133,7 +135,7 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 		await composer.getByRole("button", { name: "Send question" }).click();
 
 		const thread = page.getByRole("list", { name: "Messages" });
-		await expect(thread.locator('[data-run-state="completed"]')).toBeVisible({
+		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
 			timeout: 900_000,
 		});
 
@@ -152,13 +154,12 @@ test.describe("live OpenCode through the whole application (spends real quota)",
 		await expect(cost).toContainText(/unknown/i);
 		await expect(cost).not.toContainText("$0");
 
-		// Run count while the thread is rendered (the canvas page has no
-		// message list): the reload below must not start another run.
+		// Run count while the thread is rendered: the reload below must not
+		// start another run.
 		const runsBefore = await thread.locator("[data-run-state]").count();
 		expect(runsBefore).toBeGreaterThan(0);
 
-		// Canvas: a research report and a source list, no fallback component.
-		await page.getByRole("link", { name: "Open canvas" }).click();
+		// Canvas panel: a research report and a source list, no fallback component.
 		const canvas = page.getByRole("region", { name: "Canvas" });
 		await expect(canvas.locator('[data-component-type="research-report"]').first()).toBeVisible();
 		await expect(canvas.locator('[data-component-type="source-list"]').first()).toBeVisible();

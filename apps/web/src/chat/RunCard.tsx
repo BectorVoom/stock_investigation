@@ -4,24 +4,11 @@ import {
 	isTerminalJobState,
 	type ResearchRun,
 } from "@research/contracts";
-import { createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
+import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BudgetFields } from "../components/BudgetFields.tsx";
-import {
-	BUTTON,
-	BUTTON_DANGER,
-	BUTTON_PRIMARY,
-	DisclosureSummary,
-	ErrorNotice,
-} from "../components/ui.tsx";
-import {
-	describeCost,
-	formatInstant,
-	formatInteger,
-	formatMinutes,
-	formatUsd,
-} from "../lib/format.ts";
+import { BUTTON, BUTTON_DANGER, BUTTON_PRIMARY, ErrorNotice } from "../components/ui.tsx";
 import {
 	type BudgetDraft,
 	budgetDraftFrom,
@@ -34,42 +21,10 @@ import {
 const RETRYABLE_STATES: readonly ResearchRun["state"][] = ["failed", "cancelled", "partial"];
 
 const STATE_CLASSES: { readonly [S in ResearchRun["state"]]?: string } = {
-	completed: "border-emerald-700 bg-emerald-50 text-emerald-900",
-	failed: "border-red-700 bg-red-50 text-red-900",
 	cancelled: "border-slate-500 bg-slate-100 text-slate-800",
 	partial: "border-amber-700 bg-amber-50 text-amber-900",
 	waiting_approval: "border-amber-700 bg-amber-50 text-amber-900",
 };
-
-function describeLimits(budget: ResearchBudget): readonly (readonly [string, string])[] {
-	return [
-		["Max agent steps", formatInteger(budget.maxAgentSteps)],
-		["Max tool calls", formatInteger(budget.maxToolCalls)],
-		["Max wall-clock time", formatMinutes(budget.maxWallClockMs)],
-		["Max input", `${formatInteger(budget.maxInputBytes)} bytes`],
-		["Max spend", budget.maxSpendUsd === null ? "none authorized" : formatUsd(budget.maxSpendUsd)],
-	];
-}
-
-/**
- * What produced a published result, for reproducibility (AGT-010): backend and
- * model, prompt version, tool versions and the data cut-off, on one line.
- */
-function describeProvenance(provenance: NonNullable<ResearchRun["provenance"]>): string {
-	const backend =
-		provenance.providerModel === null
-			? provenance.agentId
-			: `${provenance.agentId} (${provenance.providerModel})`;
-	const tools = Object.entries(provenance.toolVersions)
-		.sort(([a], [b]) => a.localeCompare(b))
-		.map(([toolId, version]) => `${toolId} ${version}`);
-	return [
-		backend,
-		`prompt version ${provenance.promptVersion}`,
-		tools.length === 0 ? "no tool versions recorded" : `tools: ${tools.join(", ")}`,
-		`data cut-off ${formatInstant(provenance.dataCutoffAt)}`,
-	].join(" · ");
-}
 
 /** Owner consent to resume a run that asked for more than its budget allowed. */
 export function ApprovalForm(props: {
@@ -98,7 +53,7 @@ export function ApprovalForm(props: {
 	return (
 		<form
 			aria-label={`Approve run ${props.run.runId}`}
-			class="mt-2 space-y-2 rounded border border-amber-300 bg-amber-50 p-2"
+			class="mt-2 space-y-2 rounded bg-slate-200 p-2"
 			noValidate
 			onSubmit={submit}
 		>
@@ -140,9 +95,11 @@ export function ApprovalForm(props: {
 
 /**
  * One research run rendered inline in the thread (CopilotKit-style agent
- * activity): a compact collapsed line plus a "Run details" disclosure with
- * everything the former status panel showed. WHY a card here: the owner must
- * see agent state where the question was asked, not in a separate panel.
+ * activity): always visible and compact — a state badge (not for completed
+ * or failed), latest progress line, working indicator, Stop, state note,
+ * failure line, retry and the approval form. WHY no disclosure: run kind, attempt, timings,
+ * limits, usage, cost, provenance, verification and the progress log now live
+ * in the runner/server logs (`job_finished`), not in the thread.
  */
 export function RunCard(props: {
 	readonly run: ResearchRun;
@@ -150,7 +107,6 @@ export function RunCard(props: {
 	readonly onCancel: (runId: string) => Promise<void>;
 	readonly onRetry: (runId: string) => Promise<void>;
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
-	readonly onOpenRecords: (runId: string, opener: HTMLElement | null) => void;
 }): JSX.Element {
 	const [busy, setBusy] = createSignal(false);
 	const costModel = createMemo((): CostModelView => {
@@ -174,32 +130,32 @@ export function RunCard(props: {
 		if (isLeasedJobState(props.run.state)) return "A runner is working on this.";
 		return null;
 	};
-	// The owner must act on these, so their details start expanded.
-	const expandedByDefault = () =>
-		props.run.state === "waiting_approval" || props.run.state === "failed";
-	// Disclosure state lives outside the snapshot (finding 3): a poll that
-	// replaces the run object must not close details the owner opened, nor
-	// erase an approval draft. The card opens on its own when it newly needs
-	// action, but it never closes itself.
-	const [detailsOpen, setDetailsOpen] = createSignal(expandedByDefault());
-	// A run that newly needs action opens on its own; nothing here closes.
-	createEffect(() => {
-		if (expandedByDefault()) setDetailsOpen(true);
-	});
+	// Only failed or partial runs get the alert line; retry is for retryable states.
+	// The alert shows even when no code was recorded (never a blank): the
+	// code span itself stays present only when a code exists, so tests and
+	// logs can key on it.
+	const showFailure = () => props.run.state === "failed" || props.run.state === "partial";
+	// No badge for the two ordinary endings (owner's decision of 2026-10-12):
+	// a completed run is followed by its answer and a failed one by the alert
+	// line below, so the word would only repeat them. Every other state keeps
+	// its badge. The state stays on `data-run-state` and in the status region.
+	const showStateBadge = () => props.run.state !== "completed" && props.run.state !== "failed";
 
 	return (
 		<article
 			aria-label={`Run ${props.run.runId}`}
 			data-run-state={props.run.state}
-			class="rounded border border-slate-200 bg-white p-2 wrap-anywhere"
+			class="rounded bg-slate-100 p-2 wrap-anywhere"
 		>
 			<p class="flex flex-wrap items-center gap-2 text-xs">
-				<span
-					data-field="state"
-					class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
-				>
-					{props.run.state}
-				</span>
+				<Show when={showStateBadge()}>
+					<span
+						data-field="state"
+						class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
+					>
+						{props.run.state}
+					</span>
+				</Show>
 				<Show when={latestProgress()}>
 					{(entry) => <span class="min-w-0 flex-1 text-slate-700">{entry().text}</span>}
 				</Show>
@@ -224,142 +180,50 @@ export function RunCard(props: {
 			<Show when={stateNote()}>
 				{(note) => <p class="mt-1 text-xs text-slate-700">{note()}</p>}
 			</Show>
-			<details
-				class="group mt-1 text-xs"
-				open={detailsOpen()}
-				onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
-			>
-				<DisclosureSummary class="text-slate-700">Run details</DisclosureSummary>
-				<div class="mt-1 space-y-1">
-					<p>
-						<span>{props.run.kind === "research" ? "Research" : "News refresh"}</span>
-						{" · "}
-						<span data-field="attempt">
-							Attempt {props.run.attempt} of {props.run.maxAttempts}
-						</span>
-						{" · "}
-						<span class="text-slate-600">started {formatInstant(props.run.createdAt)}</span>
-					</p>
-					<Show when={props.run.request}>
-						{(request) => (
-							<p class="text-xs text-slate-800">
-								<span class="font-semibold">{request().agentId}</span>
-								<Show when={props.run.providerModel}>{(model) => <span> ({model()})</span>}</Show>
-								{": "}
-								{request().question}
-							</p>
-						)}
-					</Show>
-					<Show when={props.run.failureCode}>
+			<Show when={showFailure()}>
+				<p role="alert" class="mt-1 text-xs text-red-900">
+					<span class="font-semibold">
+						{props.run.state === "partial" ? "Stopped early: " : "Failure code: "}
+					</span>
+					<Show when={props.run.failureCode} fallback={<span>reason not stated</span>}>
 						{(code) => (
-							<p role="alert" class="mt-1 text-xs text-red-900">
-								<span class="font-semibold">
-									{props.run.state === "partial" ? "Stopped early: " : "Failure code: "}
+							<span data-field="failure-code" class="font-mono">
+								{code()}
+							</span>
+						)}
+					</Show>
+					<Show when={props.run.failureDetail}>
+						{(detail) => (
+							<span>
+								{" ("}
+								<span data-field="failure-detail" class="font-mono">
+									{detail()}
 								</span>
-								<span data-field="failure-code" class="font-mono">
-									{code()}
-								</span>
-								<Show when={props.run.failureDetail}>
-									{(detail) => (
-										<span>
-											{" ("}
-											<span data-field="failure-detail" class="font-mono">
-												{detail()}
-											</span>
-											{")"}
-										</span>
-									)}
-								</Show>
-							</p>
+								{")"}
+							</span>
 						)}
 					</Show>
-					<Show when={props.run.verificationStatus}>
-						{(status) => (
-							<p class="mt-1 text-xs text-slate-800">
-								<span class="font-semibold">Verification: </span>
-								{status()}
-							</p>
-						)}
-					</Show>
-					<Show when={props.run.provenance}>
-						{(provenance) => (
-							<p data-field="provenance" class="mt-1 text-xs text-slate-800">
-								<span class="font-semibold">Produced by: </span>
-								{describeProvenance(provenance())}
-							</p>
-						)}
-					</Show>
-					<div class="mt-1 grid grid-cols-2 gap-2 text-xs">
-						<Show when={props.run.request}>
-							{(request) => (
-								<dl aria-label="Limits in force">
-									<dt class="font-semibold text-slate-700">Limits in force</dt>
-									<For each={describeLimits(request().budget)}>
-										{([label, value]) => (
-											<dd>
-												{label}: {value}
-											</dd>
-										)}
-									</For>
-								</dl>
-							)}
-						</Show>
-						<dl aria-label="Usage so far">
-							<dt class="font-semibold text-slate-700">Usage so far</dt>
-							<dd>Agent steps: {formatInteger(props.run.usage.agentSteps)}</dd>
-							<dd>Tool calls: {formatInteger(props.run.usage.toolCalls)}</dd>
-							<dd>Input: {formatInteger(props.run.usage.inputBytes)} bytes</dd>
-							<dd data-field="cost">Cost: {describeCost(props.run.cost)}</dd>
-						</dl>
-					</div>
-					<details class="group mt-1 text-xs">
-						<DisclosureSummary class="text-slate-700">
-							Progress log ({props.run.progress.length})
-						</DisclosureSummary>
-						<Show
-							when={props.run.progress.length > 0}
-							fallback={<p class="text-slate-600">No progress reported yet.</p>}
-						>
-							<ol aria-label="Progress log" class="mt-1 space-y-0.5">
-								<For each={props.run.progress}>
-									{(entry) => (
-										<li>
-											<time datetime={entry.at} class="text-slate-600">
-												{formatInstant(entry.at)}
-											</time>{" "}
-											<span class="font-mono text-2xs">[{entry.kind}]</span> {entry.text}
-										</li>
-									)}
-								</For>
-							</ol>
-						</Show>
-					</details>
-					<div class="mt-2 flex flex-wrap gap-2">
-						<Show when={RETRYABLE_STATES.includes(props.run.state)}>
-							<button
-								type="button"
-								class={BUTTON}
-								disabled={busy()}
-								onClick={() => void act(props.onRetry)}
-							>
-								Retry run
-							</button>
-						</Show>
-						<Show when={props.run.kind === "research"}>
-							<button
-								type="button"
-								class={BUTTON}
-								onClick={(event) => props.onOpenRecords(props.run.runId, event.currentTarget)}
-							>
-								Evidence
-							</button>
-						</Show>
-					</div>
-					<Show when={props.run.state === "waiting_approval"}>
-						<ApprovalForm run={props.run} costModel={costModel()} onApprove={props.onApprove} />
-					</Show>
+				</p>
+			</Show>
+			<Show when={RETRYABLE_STATES.includes(props.run.state)}>
+				<div class="mt-2 flex flex-wrap gap-2">
+					<button
+						type="button"
+						class={BUTTON}
+						disabled={busy()}
+						onClick={() => void act(props.onRetry)}
+					>
+						Retry run
+					</button>
 				</div>
-			</details>
+			</Show>
+			<Show when={props.run.state === "waiting_approval"}>
+				{/* The form's draft signal is created once per mount; Conversation
+				    keys cards by stable run-id strings, so a poll that replaces
+				    the run object updates text in place instead of recreating
+				    the form — an approval draft being typed survives. */}
+				<ApprovalForm run={props.run} costModel={costModel()} onApprove={props.onApprove} />
+			</Show>
 		</article>
 	);
 }

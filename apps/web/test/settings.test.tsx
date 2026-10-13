@@ -69,7 +69,6 @@ beforeEach(() => {
 		credentials = [{ ...CREDENTIAL, revokedAt: "2026-10-06T00:00:00Z" }];
 		return new Response(null, { status: 204 });
 	});
-	backend.on("GET", /assets$/, () => jsonResponse({ assets: [] }));
 	backend.on("GET", /workspaces$/, () => jsonResponse({ workspaces: [WORKSPACE_SUMMARY] }));
 	backend.on("GET", /agents$/, () => jsonResponse(AGENTS));
 	backend.on("GET", /settings\/agent$/, () => jsonResponse(AGENT_SETTINGS_RESPONSE));
@@ -236,52 +235,16 @@ describe("Settings: runner credentials", () => {
 });
 
 describe("Settings: approved images", () => {
-	it("approves an image with alt text and a permission basis", async () => {
-		const asset = {
-			assetId: "asset_1",
-			imageUrl: "https://images.example.com/plant.jpg",
-			altText: "Battery plant",
-			permissionBasis: "Press kit",
-			sourceEvidenceId: null,
-			createdAt: "2026-10-06T00:00:00Z",
-		};
-		let assets: (typeof asset)[] = [];
-		backend.on("GET", /assets$/, () => jsonResponse({ assets }));
-		backend.on("POST", /assets$/, () => {
-			assets = [asset];
-			return jsonResponse(asset, { status: 201 });
-		});
-		backend.on("DELETE", /assets\/asset_1$/, () => {
-			assets = [];
-			return new Response(null, { status: 204 });
-		});
+	it("offers no image-approval UI; the API and stored data remain (owner decision 2026-10-12)", async () => {
 		mount();
-		const section = screen.getByRole("region", { name: "Approved images" });
-		const approve = within(section).getByRole("button", { name: "Approve image" });
-		expect(approve.hasAttribute("disabled")).toBe(true);
-
-		fireEvent.input(within(section).getByLabelText("Image URL"), {
-			target: { value: "https://images.example.com/plant.jpg" },
-		});
-		fireEvent.input(within(section).getByLabelText("Alt text"), {
-			target: { value: "Battery plant" },
-		});
-		fireEvent.input(within(section).getByLabelText("Permission basis"), {
-			target: { value: "Press kit" },
-		});
-		fireEvent.click(approve);
-
-		const list = await within(section).findByRole("list", { name: "Approved image list" });
-		expect(list.textContent).toContain("Permission: Press kit");
-		expect(backend.requestsTo("POST", /assets$/)[0]?.body).toEqual({
-			imageUrl: "https://images.example.com/plant.jpg",
-			altText: "Battery plant",
-			permissionBasis: "Press kit",
-			sourceEvidenceId: null,
-		});
-
-		fireEvent.click(within(section).getByRole("button", { name: "Remove image asset_1" }));
-		await within(section).findByText("No images approved yet.");
+		// Wait for the remaining sections so the absence is observed on the
+		// settled page, not on a half-rendered one.
+		await screen.findByRole("region", { name: "Runner credentials" });
+		await screen.findByRole("region", { name: "Export and import" });
+		expect(screen.queryByRole("region", { name: "Approved images" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Approve image" })).toBeNull();
+		expect(backend.requestsTo("GET", /assets$/)).toHaveLength(0);
+		expect(backend.requestsTo("POST", /assets$/)).toHaveLength(0);
 	});
 });
 

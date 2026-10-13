@@ -46,7 +46,6 @@ describe("composer evaluation", () => {
 	it("builds the research request from the saved agent settings", () => {
 		const result = evaluateComposer(draft(), AGENTS, AGENT_SETTINGS, WORKSPACE_ID);
 		expect(result.problems).toEqual([]);
-		expect(result.costModel).toBe("plan-limited");
 		expect(result.model).toBeNull();
 		expect(result.spendConsentRequired).toBe(false);
 		expect(result.budget).toEqual(AGENT_SETTINGS.budget);
@@ -174,7 +173,6 @@ describe("composer evaluation", () => {
 			WORKSPACE_ID,
 		);
 		expect(result.problems).toEqual([]);
-		expect(result.costModel).toBe("unknown");
 		expect(result.request?.budget.maxSpendUsd).toBeNull();
 	});
 
@@ -215,9 +213,12 @@ describe("composer evaluation", () => {
 		expect(result.request?.horizonYears).toBe(3);
 	});
 
-	it("describes a plan-limited backend as cost-unknown, never $0", () => {
+	it("carries no cost statement or cost model; limits and cost live in Settings → AI agent", () => {
 		const result = evaluateComposer(draft(), AGENTS, AGENT_SETTINGS, WORKSPACE_ID);
-		expect(result.costStatement).toContain("Cost unknown — limited by your plan");
-		expect(result.costStatement).not.toMatch(/\$\s?0|free of charge|no cost/i);
+		// Owner decision 2026-10-12: the composer shows the backend/model/effort
+		// summary and the consent amount, never the limits or cost statement.
+		expect("costStatement" in result).toBe(false);
+		expect("costModel" in result).toBe(false);
+		expect(result.request?.budget.maxSpendUsd).toBeNull();
 	});
 });

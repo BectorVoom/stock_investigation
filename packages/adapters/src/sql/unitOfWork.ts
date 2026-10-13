@@ -1,10 +1,14 @@
 import type {
 	CompletionEffects,
+	DeleteWorkspaceInput,
+	DeleteWorkspaceOutcome,
 	JobWrite,
 	ResearchUnitOfWork,
 	WorkspaceWrite,
 } from "@research/application";
+import { deriveConversationTitle } from "@research/application";
 import type { ChatMessage, Dataset, ResearchBundle, RunRecords } from "@research/contracts";
+import { DEFAULT_CONVERSATION_TITLE } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	enqueueOutcome,
@@ -13,6 +17,7 @@ import {
 	JOB_GUARD_SQL,
 	jobWriteStatements,
 	type RecordType,
+	TERMINAL_SQL,
 } from "./repositories.ts";
 import { numberColumn } from "./rows.ts";
 
@@ -255,6 +260,34 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 							...guard.values,
 						),
 				);
+				// Names a still-untitled conversation from its first question. The
+				// message just inserted is the only one exactly when no message
+				// predates this batch, and the title still being the default
+				// proves the owner never renamed it — so this UPDATE fires only
+				// for the first question of an unrenamed conversation, in the
+				// same batch as the question itself (no rename race).
+				const firstTitle = deriveConversationTitle(ownerMessage.text);
+				if (firstTitle !== null) {
+					statements.push(
+						db
+							.prepare(
+								`UPDATE workspaces SET title = ?, updated_at = ?
+								WHERE owner_id = ? AND workspace_id = ? AND title = ?
+									AND (SELECT COUNT(*) FROM chat_messages WHERE owner_id = ? AND workspace_id = ?) = 1
+									AND ${JOB_GUARD_SQL}`,
+							)
+							.bind(
+								firstTitle,
+								job.createdAt,
+								job.ownerId,
+								job.workspaceId,
+								DEFAULT_CONVERSATION_TITLE,
+								job.ownerId,
+								job.workspaceId,
+								...guard.values,
+							),
+					);
+				}
 			}
 			const results = await db.batch(statements);
 			if (results[0]?.meta.changes === 1) return { kind: "inserted" };
@@ -435,6 +468,145 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				);
 			}
 			await db.batch(statements);
+		},
+
+		/**
+		 * Deletes a conversation and everything it solely owns in one atomic
+		 * batch (ownership rule in `DeleteWorkspaceInput`). The first statement
+		 * is a guarded compare-and-set: it stamps a mutation id only when the
+		 * workspace exists AND no run of it is unfinished. Every removal after
+		 * it is conditional on that stamp, so a run submitted concurrently
+		 * either commits first (and the delete refuses with "has-unfinished")
+		 * or commits after (and its workspace-guarded insert writes nothing) —
+		 * no run can survive pointing at a deleted conversation. Within the
+		 * batch every statement is set-based; no per-row loops.
+		 *
+		 * What is NOT guaranteed: the `keep*` lists are a snapshot of surviving
+		 * references taken before the batch. A borrow (a component or dataset
+		 * cell in another conversation) that commits concurrently with the
+		 * delete may reference a removed row; reads tolerate the dangling id
+		 * (unknown ids resolve as absent) and the next write re-validates.
+		 */
+		async deleteWorkspace(input: DeleteWorkspaceInput): Promise<DeleteWorkspaceOutcome> {
+			const { ownerId, workspaceId } = input;
+			const mutationId = crypto.randomUUID();
+			const guard: Guard = {
+				sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)",
+				values: [ownerId, workspaceId, mutationId],
+			};
+			// Runs this conversation owns: jobs naming it, plus linked runs (an
+			// import writes records under its run id without a job row).
+			const runIdList: Guard = {
+				sql: `SELECT run_id FROM research_jobs WHERE owner_id = ? AND workspace_id = ?
+					UNION SELECT run_id FROM workspace_runs WHERE owner_id = ? AND workspace_id = ?`,
+				values: [ownerId, workspaceId, ownerId, workspaceId],
+			};
+			const doomedRuns = (column: string): Guard => ({
+				sql: `${column} IN (${runIdList.sql})`,
+				values: runIdList.values,
+			});
+			const keepIds = (column: string, ids: readonly string[]): Guard => ({
+				sql: `${column} NOT IN (SELECT value FROM json_each(?))`,
+				values: [JSON.stringify(ids)],
+			});
+			const prep = (sql: string, values: readonly SqlValue[]): SqlStatement =>
+				db.prepare(`${sql} AND ${guard.sql}`).bind(...values, ...guard.values);
+			const doomed = doomedRuns("run_id");
+			const keptClaims = keepIds("claim_id", input.keepClaimIds);
+			const keptEvidence = keepIds("evidence_id", input.keepEvidenceIds);
+			const keptDatasets = keepIds("dataset_id", input.keepDatasetIds);
+			const statements: SqlStatement[] = [
+				// The compare-and-set the whole delete hangs off: stamps only
+				// when the workspace exists with no unfinished run.
+				db
+					.prepare(
+						`UPDATE workspaces SET last_mutation_id = ?
+						WHERE owner_id = ? AND workspace_id = ?
+							AND NOT EXISTS (SELECT 1 FROM research_jobs
+								WHERE owner_id = ? AND workspace_id = ? AND state NOT IN (${TERMINAL_SQL}))`,
+					)
+					.bind(mutationId, ownerId, workspaceId, ownerId, workspaceId),
+				// Claim edges of removed claims (kept claims keep theirs, so
+				// their evidence survives the check below).
+				prep(
+					`DELETE FROM claim_evidence WHERE owner_id = ? AND claim_id IN
+						(SELECT claim_id FROM claims WHERE owner_id = ? AND ${doomed.sql} AND ${keptClaims.sql})`,
+					[ownerId, ownerId, ...doomed.values, ...keptClaims.values],
+				),
+				prep(`DELETE FROM claims WHERE owner_id = ? AND ${doomed.sql} AND ${keptClaims.sql}`, [
+					ownerId,
+					...doomed.values,
+					...keptClaims.values,
+				]),
+				// Evidence survives when a remaining edge, a surviving
+				// dataset cell, or a surviving canvas still cites it.
+				prep(
+					`DELETE FROM evidence WHERE owner_id = ? AND ${doomed.sql} AND ${keptEvidence.sql}
+						AND NOT EXISTS (SELECT 1 FROM claim_evidence
+							WHERE owner_id = ? AND claim_evidence.evidence_id = evidence.evidence_id)
+						AND NOT EXISTS (SELECT 1 FROM datasets d,
+							json_each(d.body_json, '$.rows') AS rows, json_each(rows.value) AS cell
+							WHERE d.owner_id = ? AND (d.run_id NOT IN (${runIdList.sql})
+								OR d.dataset_id IN (SELECT value FROM json_each(?)))
+							AND json_extract(cell.value, '$.sourceId') = evidence.evidence_id)`,
+					[
+						ownerId,
+						...doomed.values,
+						...keptEvidence.values,
+						ownerId,
+						ownerId,
+						...runIdList.values,
+						JSON.stringify(input.keepDatasetIds),
+					],
+				),
+				prep(`DELETE FROM research_records WHERE owner_id = ? AND ${doomed.sql}`, [
+					ownerId,
+					...doomed.values,
+				]),
+				prep(`DELETE FROM datasets WHERE owner_id = ? AND ${doomed.sql} AND ${keptDatasets.sql}`, [
+					ownerId,
+					...doomed.values,
+					...keptDatasets.values,
+				]),
+				prep(`DELETE FROM job_events WHERE owner_id = ? AND ${doomed.sql}`, [
+					ownerId,
+					...doomed.values,
+				]),
+				prep(`DELETE FROM job_transitions WHERE owner_id = ? AND ${doomed.sql}`, [
+					ownerId,
+					...doomed.values,
+				]),
+				prep(`DELETE FROM research_jobs WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM workspace_runs WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM chat_messages WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM workspace_commands WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM workspaces WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+			];
+			const results = await db.batch(statements);
+			if (results[0]?.meta.changes === 1) return "deleted";
+			// The stamp lost: either the workspace is gone, or an unfinished
+			// run exists. The follow-up read only names the answer; the
+			// atomic decision already happened above.
+			const workspace = await db
+				.prepare("SELECT 1 AS found FROM workspaces WHERE owner_id = ? AND workspace_id = ?")
+				.bind(ownerId, workspaceId)
+				.first();
+			return workspace === null ? "not-found" : "has-unfinished";
 		},
 	};
 }

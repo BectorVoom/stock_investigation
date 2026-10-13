@@ -32,7 +32,9 @@ One logger, built on Effect (`@research/effects`). See
   `camelCase`/`snake_case` segment: `token`, `secret`, `password`, `passwd`,
   `authorization`, `cookie`, `credential`, `apikey`/`api_key`, `prompt`,
   `content`, `text`, `body`, `message`, `stack`, `quote`, `excerpt` —
-  `credentialId` is spelled out as the exception and stays allowed) is
+  `credentialId` is spelled out as the exception and stays allowed, as does
+  `promptVersion` (the short prompt template version such as `research-v4`,
+  never prompt text — the runner logs it on `job_finished`) is
   dropped; a string value longer than 200 characters or spanning lines is
   dropped; any other value type (objects, arrays, `Error`s) is dropped; every
   dropped field is counted in `redacted_fields`. The keys `at`, `level`,

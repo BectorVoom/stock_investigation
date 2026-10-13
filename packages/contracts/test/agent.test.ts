@@ -9,6 +9,7 @@ import {
 	BASELINE_AGENT_IDS,
 	capabilitySchema,
 	costModelSchema,
+	isFreeTierModelId,
 	toolIsolationSchema,
 } from "../src/index.ts";
 import { agentDescriptor } from "./fixtures.ts";
@@ -273,5 +274,18 @@ describe("agentEventSchema (AGT-002)", () => {
 		expectRejected(agentEventSchema, { type: "failed", code: "X", retryable: "yes" }, [
 			"retryable",
 		]);
+	});
+});
+
+describe("isFreeTierModelId (shared OpenCode free-tier rule)", () => {
+	it.each([
+		["opencode/muse-spark-1.3-contributor-free", true],
+		["provider/model-free", true],
+		["provider/model", false],
+		["provider/free-model", false],
+		["", false],
+		["-free", true],
+	])("reports %j as free-tier: %s", (modelId, expected) => {
+		expect(isFreeTierModelId(modelId)).toBe(expected);
 	});
 });

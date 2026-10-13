@@ -6,7 +6,7 @@ export const VIEWS = PAGES.map((page) => page.view);
 
 export interface Route {
 	readonly view: ViewName;
-	/** Only meaningful for the chat and canvas views; survives a browser reload via the URL. */
+	/** Only meaningful for the chat view; survives a browser reload via the URL. */
 	readonly workspaceId: string | null;
 	/**
 	 * Settings sub-section marker (e.g. `#/settings/agent` scrolls the AI
@@ -20,21 +20,22 @@ const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
 const SETTINGS_SECTIONS = new Set(["agent"]);
 
 /**
- * Parses `#/chat`, `#/chat/<id>`, `#/canvas/<id>`, `#/sources`, `#/settings`
- * and `#/settings/agent`; the legacy `#/workspace/<id>` and `#/workspace`
- * aliases parse as the canvas view (bookmarks from before the page split).
+ * Parses `#/chat`, `#/chat/<id>`, `#/sources`, `#/settings`
+ * and `#/settings/agent`; the legacy `#/canvas`, `#/canvas/<id>`,
+ * `#/workspace/<id>` and `#/workspace` aliases parse as the chat view
+ * (bookmarks from before Chat and Canvas merged into one page).
  * Anything else (unknown or empty hash) is the default `chat` view.
  */
 export function parseHash(hash: string): Route {
 	const normalized = hash.replace(/^#\/?/, "");
 	const [viewText, idText] = normalized.split("/");
-	if (viewText === "workspace") {
+	if (viewText === "workspace" || viewText === "canvas") {
 		const workspaceId = idText !== undefined && WORKSPACE_ID.test(idText) ? idText : null;
-		return { view: "canvas", workspaceId, section: null };
+		return { view: "chat", workspaceId, section: null };
 	}
 	const known = PAGES.find((page) => page.view === viewText);
 	if (known === undefined) return { view: "chat", workspaceId: null, section: null };
-	if ((known.view === "chat" || known.view === "canvas") && idText !== undefined) {
+	if (known.view === "chat" && idText !== undefined) {
 		return {
 			view: known.view,
 			workspaceId: WORKSPACE_ID.test(idText) ? idText : null,
@@ -52,8 +53,8 @@ export function parseHash(hash: string): Route {
 }
 
 export function formatHash(route: Route): string {
-	if ((route.view === "chat" || route.view === "canvas") && route.workspaceId !== null) {
-		return `#/${route.view}/${route.workspaceId}`;
+	if (route.view === "chat" && route.workspaceId !== null) {
+		return `#/chat/${route.workspaceId}`;
 	}
 	if (route.view === "settings" && route.section !== null) {
 		return `#/${route.view}/${route.section}`;

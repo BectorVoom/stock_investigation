@@ -6,17 +6,16 @@ import type {
 	ResearchRun,
 } from "@research/contracts";
 import { isTerminalJobState } from "@research/contracts";
-import { ClaimStatusBadge, ClaimTypeBadge, SourceCitation } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
+import { AnswerClaims } from "./Citations.tsx";
 import { RunCard } from "./RunCard.tsx";
 import { SUGGESTIONS } from "./suggestions.ts";
 
 type Message = ConversationData["messages"][number];
-type EvidenceLink = Claim["links"][number];
 /** Minimal clipboard surface, injectable so tests can replace it. */
 type ClipboardLike = Pick<Clipboard, "writeText">;
 
@@ -32,55 +31,6 @@ function defaultClipboard(): ClipboardLike | null {
 }
 
 const MAX_LISTED_RUNS = 5;
-
-const RELATION_TEXT: { readonly [R in EvidenceLink["relation"]]: string } = {
-	supports: "Supports",
-	contradicts: "Contradicts",
-	context: "Context",
-};
-
-function ClaimItem(props: {
-	readonly claimId: string;
-	readonly claims: ReadonlyMap<string, Claim>;
-	readonly evidence: ReadonlyMap<string, Evidence>;
-}): JSX.Element {
-	const claim = createMemo(() => props.claims.get(props.claimId));
-	return (
-		<li data-claim-id={props.claimId} class="border-l-2 border-slate-300 pl-2">
-			<Show
-				when={claim()}
-				fallback={<span class="italic text-amber-900">Claim unavailable (id {props.claimId})</span>}
-			>
-				{(current) => (
-					<>
-						<p class="text-sm text-slate-900">{current().text}</p>
-						<p class="mt-0.5 flex flex-wrap gap-1">
-							<ClaimTypeBadge claimType={current().claimType} />
-							<ClaimStatusBadge status={current().status} />
-						</p>
-						<Show
-							when={current().links.length > 0}
-							fallback={
-								<p class="text-xs italic text-amber-900">No evidence linked to this claim.</p>
-							}
-						>
-							<ul aria-label="Claim evidence" class="mt-0.5 space-y-0.5 text-xs">
-								<For each={current().links}>
-									{(link) => (
-										<li data-relation={link.relation}>
-											<span class="font-semibold">{RELATION_TEXT[link.relation]}: </span>
-											<SourceCitation sourceId={link.evidenceId} sources={props.evidence} />
-										</li>
-									)}
-								</For>
-							</ul>
-						</Show>
-					</>
-				)}
-			</Show>
-		</li>
-	);
-}
 
 function CopyButton(props: {
 	readonly text: string;
@@ -162,14 +112,11 @@ function AssistantMessage(props: {
 				{props.message.text}
 			</p>
 			<Show when={props.message.claimIds.length > 0}>
-				<h4 class="mt-2 text-xs font-semibold text-slate-700">Claims in this answer</h4>
-				<ul aria-label="Claims" class="mt-0.5 space-y-1.5">
-					<For each={props.message.claimIds}>
-						{(claimId) => (
-							<ClaimItem claimId={claimId} claims={props.claims} evidence={props.evidence} />
-						)}
-					</For>
-				</ul>
+				<AnswerClaims
+					claimIds={props.message.claimIds}
+					claims={props.claims}
+					evidence={props.evidence}
+				/>
 			</Show>
 			<p class="mt-1 flex flex-wrap gap-2">
 				<CopyButton text={props.message.text} clipboard={props.clipboard} />
@@ -224,6 +171,47 @@ function describeRunAnnouncement(run: ResearchRun): string {
 }
 
 /**
+ * Starter questions that fill the question input without sending. Rendered
+ * twice on a truly empty conversation: once with the greeting (what narrow
+ * screens show above the pinned composer) and once below the composer (what
+ * `lg` and up shows, centred with the greeting). Only one copy is ever
+ * visible — the other is `display: none` — and the chips hold no state, so
+ * the duplication cannot strand anything. WHY two copies instead of flex
+ * `order`: the narrow order (greeting, suggestions, composer) and the wide
+ * order (greeting, composer, suggestions) interleave, while the composer
+ * itself must stay in one DOM position (see the `composer` prop).
+ */
+function SuggestionList(props: {
+	readonly placement: "above-composer" | "below-composer";
+	readonly displayClass?: string;
+	readonly hiddenAtLarge?: () => boolean;
+	readonly onSelect?: (text: string) => void;
+}): JSX.Element {
+	return (
+		<ul
+			aria-label="Suggestions"
+			data-suggestions={props.placement}
+			class={`mt-3 flex-wrap justify-center gap-2 ${props.displayClass ?? "flex"}`}
+			classList={{ "lg:hidden": props.hiddenAtLarge?.() === true }}
+		>
+			<For each={SUGGESTIONS}>
+				{(suggestion) => (
+					<li>
+						<button
+							type="button"
+							class="min-h-6 rounded-2xl bg-slate-200 px-3 py-1.5 text-xs text-slate-900 hover:bg-slate-300"
+							onClick={() => props.onSelect?.(suggestion)}
+						>
+							{suggestion}
+						</button>
+					</li>
+				)}
+			</For>
+		</ul>
+	);
+}
+
+/**
  * The message thread: the main element of the Chat page. It takes the
  * available height and keeps the newest message in view only while the owner
  * was already at the bottom, so reading older messages is never interrupted.
@@ -245,6 +233,12 @@ export function Conversation(props: {
 	readonly onOpenRecords?: (runId: string, opener: HTMLElement | null) => void;
 	readonly onSelectSuggestion?: (text: string) => void;
 	readonly clipboard?: ClipboardLike | null;
+	/**
+	 * The question form, owned by the page. Rendered in exactly one DOM
+	 * position below, so sending the first question (which flips the empty
+	 * state into the thread) never remounts it: the draft and focus survive.
+	 */
+	readonly composer?: JSX.Element;
 }): JSX.Element {
 	const messages = createMemo(() =>
 		[...(props.conversation?.messages ?? [])].sort((a, b) => a.seq - b.seq),
@@ -316,11 +310,25 @@ export function Conversation(props: {
 		}
 		return ids;
 	});
+	// Completed runs are left out: their cards are hidden, and a heading
+	// over nothing but hidden cards would be an empty section.
 	const earlierRunIds = createMemo(() =>
 		listedRuns()
-			.map((run) => run.runId)
-			.filter((runId) => !placedInlineIds().has(runId)),
+			.filter((run) => run.state !== "completed" && !placedInlineIds().has(run.runId))
+			.map((run) => run.runId),
 	);
+	/**
+	 * A truly empty conversation: loaded, no messages, no runs, nothing
+	 * earlier. At `lg` and up the greeting, the composer and the suggestions
+	 * form one vertically centred group; below `lg` the layout is unchanged
+	 * (the composer stays pinned to the viewport bottom). A run without
+	 * messages yet is NOT centred: it already shows the thread layout.
+	 */
+	const isCenteredEmpty = () =>
+		props.conversation !== null &&
+		messages().length === 0 &&
+		listedRuns().length === 0 &&
+		props.hasEarlier !== true;
 	let list: HTMLOListElement | undefined;
 	const [stickToBottom, setStickToBottom] = createSignal(true);
 
@@ -387,14 +395,17 @@ export function Conversation(props: {
 		return (
 			<Show when={run()} fallback={null}>
 				{(current) => (
-					<li aria-label="Run status">
+					// A completed run has nothing left to show (no badge, no
+					// action; its answer follows), so its card is hidden rather
+					// than left as an empty box. It stays in the DOM: the state
+					// is still readable on `data-run-state`.
+					<li aria-label="Run status" hidden={current().state === "completed"}>
 						<RunCard
 							run={current()}
 							agents={props.agents ?? null}
 							onCancel={props.onCancel ?? noopCancel}
 							onRetry={props.onRetry ?? noopRetry}
 							onApprove={props.onApprove ?? noopApprove}
-							onOpenRecords={openRecords}
 						/>
 					</li>
 				)}
@@ -403,7 +414,12 @@ export function Conversation(props: {
 	}
 
 	return (
-		<section aria-label="Conversation" class="flex flex-1 flex-col lg:min-h-0">
+		<section
+			aria-label="Conversation"
+			data-layout={isCenteredEmpty() ? "empty-centered" : "thread"}
+			class="flex flex-1 flex-col lg:min-h-0"
+			classList={{ "lg:justify-center": isCenteredEmpty() }}
+		>
 			<output data-run-status="true" class="sr-only">
 				{liveAnnouncement()}
 			</output>
@@ -448,7 +464,13 @@ export function Conversation(props: {
 				<Show
 					when={messages().length > 0}
 					fallback={
-						<div class="mx-auto w-full max-w-3xl flex-1 content-center px-4 py-8 text-center">
+						<div
+							data-greeting="true"
+							class="mx-auto w-full max-w-3xl flex-1 content-center px-4 py-8 text-center"
+							classList={{
+								"lg:mb-3 lg:flex-none lg:py-0": isCenteredEmpty(),
+							}}
+						>
 							<h3 class="text-base font-semibold text-slate-900">
 								What would you like to research?
 							</h3>
@@ -456,21 +478,11 @@ export function Conversation(props: {
 								Ask about demand growth, suppliers or pricing power — answers arrive with their
 								sources.
 							</p>
-							<ul aria-label="Suggestions" class="mt-3 flex flex-wrap justify-center gap-2">
-								<For each={SUGGESTIONS}>
-									{(suggestion) => (
-										<li>
-											<button
-												type="button"
-												class="rounded-2xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-800 hover:bg-slate-50"
-												onClick={() => props.onSelectSuggestion?.(suggestion)}
-											>
-												{suggestion}
-											</button>
-										</li>
-									)}
-								</For>
-							</ul>
+							<SuggestionList
+								placement="above-composer"
+								hiddenAtLarge={isCenteredEmpty}
+								onSelect={(text) => props.onSelectSuggestion?.(text)}
+							/>
 						</div>
 					}
 				>
@@ -530,6 +542,22 @@ export function Conversation(props: {
 						</For>
 					</ol>
 				</Show>
+			</Show>
+			{props.composer !== undefined ? (
+				<div
+					data-composer-wrap="true"
+					class="sticky bottom-0 z-10 mx-auto w-full max-w-3xl shrink-0 bg-white px-1 pb-2 pt-1 lg:static"
+					classList={{ "lg:mt-3": isCenteredEmpty() }}
+				>
+					{props.composer}
+				</div>
+			) : null}
+			<Show when={isCenteredEmpty()}>
+				<SuggestionList
+					placement="below-composer"
+					displayClass="mx-auto hidden w-full max-w-3xl lg:flex"
+					onSelect={(text) => props.onSelectSuggestion?.(text)}
+				/>
 			</Show>
 		</section>
 	);

@@ -54,20 +54,22 @@ describe("pages document matches the page map", () => {
 			expect(DOC).toContain(`#/${page.view}`);
 		}
 		expect(checkPurposes(DOC)).toEqual([]);
-		// The parameterized chat and canvas routes are documented too.
+		// The parameterized chat route is documented too.
 		expect(DOC).toContain("#/chat/<workspaceId>");
+		// Old canvas and workspace bookmarks still open the Chat page.
 		expect(DOC).toContain("#/canvas/<workspaceId>");
+		expect(DOC).toContain("#/workspace/<workspaceId>");
 		// The settings agent marker that chat notices link to is documented too.
 		expect(DOC).toContain("#/settings/agent");
 	});
 
 	it("fails when two pages swap their purpose paragraphs", () => {
 		const chat = PAGES.find((page) => page.view === "chat");
-		const canvas = PAGES.find((page) => page.view === "canvas");
-		if (chat === undefined || canvas === undefined) throw new Error("expected chat and canvas");
+		const sources = PAGES.find((page) => page.view === "sources");
+		if (chat === undefined || sources === undefined) throw new Error("expected chat and sources");
 		const swapped = DOC.replace(chat.purpose, "__CHAT_PURPOSE__")
-			.replace(canvas.purpose, chat.purpose)
-			.replace("__CHAT_PURPOSE__", canvas.purpose);
+			.replace(sources.purpose, chat.purpose)
+			.replace("__CHAT_PURPOSE__", sources.purpose);
 		expect(swapped).not.toBe(DOC);
 		expect(checkPurposes(swapped).length).toBeGreaterThan(0);
 	});

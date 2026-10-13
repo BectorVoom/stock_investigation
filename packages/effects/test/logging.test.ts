@@ -250,6 +250,18 @@ describe("field-name and field-value enforcement (A1-1)", () => {
 		});
 	});
 
+	it("keeps promptVersion: it is the short template version, never prompt text", () => {
+		const { lines, run } = collect();
+		run(logEvent("info", "job_finished", { runId: "run_1", promptVersion: "research-v4" }));
+		expect(parseLine(lines[0])).toEqual({
+			at: "2026-10-12T00:00:00.000Z",
+			level: "info",
+			event: "job_finished",
+			runId: "run_1",
+			promptVersion: "research-v4",
+		});
+	});
+
 	it("drops a prompt, a multi-line stack and a 5,000-character value", () => {
 		const { lines, run } = collect();
 		run(

@@ -160,6 +160,7 @@ export function LineChart(props: RendererProps<LineChartProps>): JSX.Element {
 			data={data()}
 			sourceIds={props.props.sourceIds}
 			sources={props.context.sources}
+			citationScopeKey={props.componentId}
 			plottedCount={model()?.plottedCount ?? 0}
 			unavailableCount={model()?.unavailableCount ?? 0}
 			missingColumns={model()?.missingColumns ?? []}

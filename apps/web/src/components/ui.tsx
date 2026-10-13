@@ -1,9 +1,13 @@
 import {
 	type Accessor,
+	createEffect,
+	createSignal,
 	createUniqueId,
 	For,
 	type JSX,
 	Match,
+	onCleanup,
+	onMount,
 	Show,
 	Switch,
 	splitProps,
@@ -13,15 +17,30 @@ import type { Remote } from "../lib/remote.ts";
 import { PAGES, type ViewName } from "../pages.ts";
 
 export const BUTTON =
-	"rounded border border-slate-400 bg-white px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50";
+	"min-h-6 rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
 export const BUTTON_PRIMARY =
-	"rounded border border-blue-800 bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:border-slate-400 disabled:bg-slate-300 disabled:text-slate-600";
+	"min-h-6 rounded bg-blue-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600";
 export const BUTTON_DANGER =
-	"rounded border border-red-700 bg-white px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50";
+	"min-h-6 rounded bg-red-100 px-2 py-1 text-xs font-medium text-red-900 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50";
+/**
+ * Full-width pill variant of `BUTTON` for the one primary creation action
+ * per panel (the "New chat" button, guideline section 6). Same fill, tones
+ * and 24 px floor as `BUTTON`, with centred content; the plus icon arrives
+ * from the caller.
+ */
+export const BUTTON_PILL =
+	"flex min-h-6 w-full items-center justify-center gap-1 rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
 export const INPUT =
 	"min-h-6 w-full rounded border border-slate-400 bg-white px-2 py-1 text-sm text-slate-900 disabled:bg-slate-100";
 export const LABEL = "block text-xs font-medium text-slate-700";
 export const PANEL = "rounded border border-slate-300 bg-white p-3";
+/**
+ * The Chat page's own panel surface (guideline section 5): plain white
+ * rounded blocks on the grey page background, with no outline — separation
+ * is by background tone. `PANEL` above stays bordered for Sources and
+ * Settings, which keep every border they have.
+ */
+export const CHAT_PANEL = "rounded bg-white p-3";
 export const HEADING = "text-sm font-semibold text-slate-900";
 
 /**
@@ -279,13 +298,326 @@ export function Empty(props: { readonly children: JSX.Element }): JSX.Element {
 /**
  * The one page header every page starts with: the title as the page's `<h2>`
  * and the purpose sentence from `PAGES` beneath it (ARCH-010: no copies).
+ * The Chat page shows the title only (owner's decision of 2026-10-12): its
+ * three panels say what the page is for, and the line cost thread height.
  */
 export function PageHeader(props: { readonly view: ViewName }): JSX.Element {
 	const page = () => PAGES.find((entry) => entry.view === props.view) ?? PAGES[0];
 	return (
 		<div class="mb-3">
 			<h2 class="text-lg font-semibold text-slate-900">{page()?.title}</h2>
-			<p class="text-sm text-slate-600">{page()?.purpose}</p>
+			<Show when={props.view !== "chat"}>
+				<p class="text-sm text-slate-600">{page()?.purpose}</p>
+			</Show>
 		</div>
+	);
+}
+
+/**
+ * Icon-only collapse/expand button for the Chat page side panels, in
+ * NotebookLM's manner: one small side-panel glyph (an outlined rounded
+ * rectangle with a vertical divider near one side; inline SVG using
+ * `currentColor`), sitting in the top corner of the panel header, and the
+ * same glyph at the top of the collapsed rail to expand. No visible text:
+ * the accessible name, `aria-expanded` and the `title` tooltip carry the
+ * words instead. The divider side mirrors for the left (Chats) and right
+ * (Canvas) panels. The filled borderless tone matches `BUTTON`.
+ */
+export function PanelCollapseButton(props: {
+	readonly label: string;
+	readonly expanded: boolean;
+	readonly onToggle: () => void;
+	readonly side: "left" | "right";
+}): JSX.Element {
+	return (
+		<button
+			type="button"
+			class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+			aria-expanded={props.expanded}
+			aria-label={props.label}
+			title={props.label}
+			onClick={() => props.onToggle()}
+		>
+			<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+				<rect
+					x="1.5"
+					y="2"
+					width="11"
+					height="10"
+					rx="2"
+					stroke="currentColor"
+					stroke-width="1.5"
+				/>
+				<path
+					d={props.side === "left" ? "M5 2v10" : "M9 2v10"}
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+				/>
+			</svg>
+		</button>
+	);
+}
+
+/**
+ * Small header for one panel of the Chat page (guideline section 5): the
+ * panel title as an `h3` plus header actions (collapse/expand, count). WHY a
+ * shared part: the three panels repeat the same title-plus-button row, and
+ * the guideline requires the same thing to look the same everywhere.
+ */
+export function PanelHeader(props: {
+	readonly title: string;
+	readonly count?: string;
+	readonly expanded: boolean;
+	readonly collapseLabel: string;
+	readonly expandLabel: string;
+	readonly onToggle: () => void;
+	readonly actions?: JSX.Element;
+	readonly side: "left" | "right";
+}): JSX.Element {
+	return (
+		<div class="flex items-center gap-2">
+			<h3 class={`${HEADING} min-w-0 flex-1 truncate`}>
+				{props.title}
+				<Show when={props.count}>
+					{(count) => <span class="font-normal text-slate-600"> {count()}</span>}
+				</Show>
+			</h3>
+			<Show when={props.actions}>{(actions) => actions()}</Show>
+			<PanelCollapseButton
+				label={props.expanded ? props.collapseLabel : props.expandLabel}
+				expanded={props.expanded}
+				onToggle={props.onToggle}
+				side={props.side}
+			/>
+		</div>
+	);
+}
+
+export interface ActionMenuItem {
+	readonly label: string;
+	readonly onSelect: () => void;
+}
+
+/**
+ * Menu-button pattern for row actions (guideline section 6): Enter/Space/
+ * ArrowDown on the button opens the menu, arrows move between items, Escape
+ * closes and returns focus to the button, click outside closes. Status is
+ * never colour alone: items are text verbs, not colour swatches.
+ */
+export function ActionMenu(props: {
+	readonly buttonLabel: string;
+	readonly menuLabel: string;
+	readonly items: readonly ActionMenuItem[];
+}): JSX.Element {
+	const [open, setOpen] = createSignal(false);
+	let button: HTMLButtonElement | undefined;
+	let menu: HTMLDivElement | undefined;
+	const itemElements: (HTMLButtonElement | undefined)[] = [];
+
+	const close = (returnFocus: boolean) => {
+		setOpen(false);
+		if (returnFocus) button?.focus();
+	};
+
+	const openAndFocus = (index: number) => {
+		setOpen(true);
+		// Focus after Solid renders the menu.
+		queueMicrotask(() => {
+			itemElements[index]?.focus();
+		});
+	};
+
+	const onButtonKeyDown = (event: KeyboardEvent) => {
+		if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+			event.preventDefault();
+			if (!open()) openAndFocus(0);
+		} else if (event.key === "ArrowUp") {
+			event.preventDefault();
+			if (!open()) openAndFocus(props.items.length - 1);
+		}
+	};
+
+	const focusItem = (index: number) => {
+		const count = props.items.length;
+		if (count === 0) return;
+		const wrapped = (index + count) % count;
+		itemElements[wrapped]?.focus();
+	};
+
+	const currentIndex = (): number => {
+		const active = document.activeElement;
+		return itemElements.indexOf(active as HTMLButtonElement | undefined);
+	};
+
+	const onMenuKeyDown = (event: KeyboardEvent) => {
+		if (event.key === "Escape") {
+			event.preventDefault();
+			close(true);
+		} else if (event.key === "ArrowDown") {
+			event.preventDefault();
+			focusItem(currentIndex() + 1);
+		} else if (event.key === "ArrowUp") {
+			event.preventDefault();
+			focusItem(currentIndex() - 1);
+		} else if (event.key === "Home") {
+			event.preventDefault();
+			focusItem(0);
+		} else if (event.key === "End") {
+			event.preventDefault();
+			focusItem(props.items.length - 1);
+		} else if (event.key === "Tab") {
+			setOpen(false);
+		}
+	};
+
+	createEffect(() => {
+		if (!open()) return;
+		const onPointerDown = (event: PointerEvent) => {
+			const target = event.target;
+			if (!(target instanceof Node)) return;
+			if (button?.contains(target) === true || menu?.contains(target) === true) return;
+			setOpen(false);
+		};
+		document.addEventListener("pointerdown", onPointerDown);
+		onCleanup(() => document.removeEventListener("pointerdown", onPointerDown));
+	});
+
+	return (
+		<div class="relative inline-flex">
+			<button
+				ref={(element) => {
+					button = element;
+				}}
+				type="button"
+				class={`${BUTTON} min-w-6`}
+				aria-label={props.buttonLabel}
+				aria-haspopup="menu"
+				aria-expanded={open()}
+				onClick={() => {
+					if (open()) close(false);
+					else openAndFocus(0);
+				}}
+				onKeyDown={onButtonKeyDown}
+			>
+				<span aria-hidden="true">⋮</span>
+			</button>
+			<Show when={open()}>
+				<div
+					ref={(element) => {
+						menu = element;
+					}}
+					role="menu"
+					aria-label={props.menuLabel}
+					class="absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
+					onKeyDown={onMenuKeyDown}
+				>
+					<For each={props.items}>
+						{(item, index) => (
+							<button
+								ref={(element) => {
+									itemElements[index()] = element;
+								}}
+								type="button"
+								role="menuitem"
+								class="block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200"
+								onClick={() => {
+									setOpen(false);
+									button?.focus();
+									item.onSelect();
+								}}
+							>
+								{item.label}
+							</button>
+						)}
+					</For>
+				</div>
+			</Show>
+		</div>
+	);
+}
+
+/**
+ * Modal confirmation built on the native `<dialog>` (guideline section 6):
+ * focus is trapped while open, Escape/Cancel closes and returns focus to the
+ * opener. The opener arrives explicitly so Safari (which does not focus a
+ * clicked button) still returns focus correctly.
+ */
+export function ConfirmDialog(props: {
+	readonly title: string;
+	readonly opener: HTMLElement | null;
+	readonly confirmLabel: string;
+	readonly pending: boolean;
+	readonly failure: ApiFailure | null;
+	readonly onConfirm: () => void;
+	readonly onCancel: () => void;
+	readonly children: JSX.Element;
+}): JSX.Element {
+	const headingId = createUniqueId();
+	let dialog: HTMLDialogElement | undefined;
+	let cancelButton: HTMLButtonElement | undefined;
+
+	const closeToOpener = () => {
+		props.opener?.focus();
+	};
+
+	onMount(() => {
+		dialog?.showModal();
+		cancelButton?.focus();
+	});
+	onCleanup(() => {
+		if (dialog?.open === true) dialog.close();
+	});
+
+	return (
+		<dialog
+			ref={(element) => {
+				dialog = element;
+			}}
+			aria-labelledby={headingId}
+			class="rounded bg-slate-100 p-4"
+			onCancel={(event) => {
+				event.preventDefault();
+				props.onCancel();
+				closeToOpener();
+			}}
+			onClose={() => closeToOpener()}
+		>
+			<h3 id={headingId} class="text-base font-semibold text-slate-900">
+				{props.title}
+			</h3>
+			<div class="mt-2 max-w-md text-sm text-slate-800">{props.children}</div>
+			<Show when={props.failure}>
+				{(failure) => (
+					<div class="mt-2">
+						<ErrorNotice failure={failure()} title="The chat was not deleted." />
+					</div>
+				)}
+			</Show>
+			<div class="mt-3 flex gap-2">
+				<button
+					ref={(element) => {
+						cancelButton = element;
+					}}
+					type="button"
+					class={BUTTON}
+					disabled={props.pending}
+					onClick={() => {
+						props.onCancel();
+						closeToOpener();
+					}}
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					class={BUTTON_DANGER}
+					disabled={props.pending}
+					onClick={() => props.onConfirm()}
+				>
+					{props.pending ? "Deleting…" : props.confirmLabel}
+				</button>
+			</div>
+		</dialog>
 	);
 }
