@@ -1,19 +1,55 @@
 # Pages
 
-The SPA is split into three pages by user action (MECE): every action lives on
+The SPA is split into four pages by user action (MECE): every action lives on
 exactly one page, and every primary journey step has a page. A "chat" and a
 "workspace" are the same stored thing (one conversation + one canvas); the UI
 says "chat" for a conversation everywhere.
 
-Routes: `#/chat` and `#/chat/<workspaceId>` (default), `#/sources`,
+Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
 `#/settings`. The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
 that conversation so old bookmarks keep working. `#/settings/agent`
 scrolls the AI agent section into view and moves focus to its Default backend
 select, so a notice in Chat can link straight to the control that fixes it.
+An empty or unknown hash opens Home.
 
 Page layout (frame, panels, headings, shared parts) follows
 [docs/DESIGN_GUIDELINE.md](DESIGN_GUIDELINE.md).
+
+## Home — `#/home`
+
+**Purpose**
+
+Check market prices, charts and economic indicators at a glance on widgets you arrange.
+
+**User actions**
+
+- Add a widget.
+- Edit a widget (title, series, range, size).
+- Move a widget earlier/later.
+- Remove a widget.
+- Reset to the default arrangement.
+- Queue a market-data refresh for the local runner.
+
+**Shows**
+
+- The arranged widgets (metric, line-chart, stock-table, indicator-table):
+  latest values with unit, as-of date, change and source link, or
+  "unavailable (reason)" when a series has no usable data.
+- The market-data refresh status: last successful refresh time, the active
+  run id and state while refreshing ("pending" polls slowly until the local
+  runner claims it), or the last failure with its stable code beside the last
+  success; a note that the refresh waits for the local runner when it is
+  queued but nothing executes it.
+- The FRED attribution line whenever a FRED series is shown.
+
+**Not here**
+
+- Asking questions, reading answers, run progress or evidence records — see Chat
+  (`#/chat`). No question form, no run controls and no message list live here.
+- Research tables, charts or reports — see Chat (`#/chat`, Canvas panel).
+- Choosing news sources — see Sources (`#/sources`).
+- Runner credentials or export — see Settings (`#/settings`).
 
 ## Chat — `#/chat`
 
@@ -82,6 +118,7 @@ Ask research questions and read the answers, with their sources and run progress
 
 **Not here**
 
+- Checking market prices or arranging market widgets — see Home (`#/home`).
 - Choosing news sources — see Sources (`#/sources`).
 - Runner credentials or export — see Settings (`#/settings`).
 
@@ -106,6 +143,7 @@ Choose which news sources research may read.
 
 **Not here**
 
+- Checking market prices or arranging market widgets — see Home (`#/home`).
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Inspecting produced tables and charts — see Chat (`#/chat`, Canvas panel).
 - Runner credentials or export — see Settings (`#/settings`).
@@ -130,6 +168,7 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 
 **Not here**
 
+- Checking market prices or arranging market widgets — see Home (`#/home`).
 - Asking questions or reading answers — see Chat (`#/chat`).
 - Produced tables and charts — see Chat (`#/chat`, Canvas panel).
 - Subscribing to news — see Sources (`#/sources`).
@@ -145,14 +184,17 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 | 5. Inspect positions and investors | Chat (records and financial components) |
 | 6. Manipulate research UI | Chat (Canvas panel: select items; arranging and removing are agent-driven since 2026-10-13) |
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
+| 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
 
 ## How the split was checked
 
 Each user action above appears under exactly one page (exclusive), and every
 journey step maps to a page (exhaustive). Dialogs such as the records drawer
-and the delete-chat confirmation belong to the page that opens them (Chat).
+and the delete-chat confirmation belong to the page that opens them (Chat);
+the widget dialog belongs to Home.
 Web tests assert the Chat page shape (three panels with collapse, Canvas not
 mounted when collapsed, one shared session, Chat/Canvas tabs below `lg`),
+that Home has no composer, message list, run status or canvas region,
 the old `#/canvas/<workspaceId>`, `#/canvas`, `#/workspace/<workspaceId>`
 and `#/workspace` URLs open the Chat page, and
 `tests/architecture/pagesDoc.test.ts` fails if this document drifts from

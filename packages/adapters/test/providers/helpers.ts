@@ -16,6 +16,7 @@
  *   opencode/auth-list.json                                       LIVE, `opencode auth list --standalone --format json`
  *   opencode/models.txt                                            LIVE, `opencode models` (one provider/model id per line)
  *   openrouter/*.sse                                              DOC-DERIVED from openrouter.ai/docs (no API key was available)
+ *   openrouter/models.json                                         LIVE, public GET /api/v1/models, 2026-10-12, trimmed to nine entries
  */
 import { readFileSync } from "node:fs";
 import type { AgentRunContext } from "@research/agent-core";
@@ -140,6 +141,7 @@ export const SECRET_ENV: Readonly<Record<string, string>> = {
 	CLOUDFLARE_ACCOUNT_ID: "secret-cloudflare-account",
 	OPENROUTER_API_KEY: "sk-or-v1-secret-openrouter-key",
 	OPENROUTER_MODEL: "example/model",
+	OPENROUTER_FREE_MODEL: "example/model:free",
 	DATABASE_URL: "postgres://user:secret-db-password@host/db",
 	D1_DATABASE_TOKEN: "secret-d1",
 	ANTHROPIC_API_KEY: "sk-ant-secret",

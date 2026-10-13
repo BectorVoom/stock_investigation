@@ -97,7 +97,9 @@ test("production and development run side by side with separate data", async () 
 	});
 	// Finding 9: registered at the moment it is created, so a failure
 	// starting development below still stops production in `afterAll`.
-	resources.add(() => prod.stop());
+	resources.add(async () => {
+		await prod.stop();
+	});
 	const dev = await startLauncher({
 		cwd: pristineRoot,
 		args: ["dev"],
@@ -109,7 +111,9 @@ test("production and development run side by side with separate data", async () 
 			devApiPort: String(API_PORT),
 		}),
 	});
-	resources.add(() => dev.stop());
+	resources.add(async () => {
+		await dev.stop();
+	});
 	try {
 		expect(prod.output()).toMatch(/agents: /);
 		expect(dev.output()).toMatch(/agents: /);

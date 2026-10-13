@@ -3,13 +3,18 @@ import { createClaudeCodeRuntime } from "./claudeCode.ts";
 import { createCodexRuntime } from "./codex.ts";
 import type { ProviderEnvironment } from "./environment.ts";
 import { createOpenCodeRuntime } from "./openCode.ts";
-import { createOpenRouterRuntime } from "./openRouter.ts";
+import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
 
 export { createClaudeCodeRuntime } from "./claudeCode.ts";
 export { createCodexRuntime } from "./codex.ts";
 export type { ProviderEnvironment } from "./environment.ts";
 export { createOpenCodeRuntime, type OpenCodeRuntimeOptions } from "./openCode.ts";
-export { createOpenRouterRuntime } from "./openRouter.ts";
+export { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
+export {
+	createFreeModelCatalog,
+	type FreeModelCatalog,
+	OPENROUTER_MODELS_URL,
+} from "./openRouterModels.ts";
 export {
 	createNodeProcessRunner,
 	type NodeProcessRunnerOptions,
@@ -36,4 +41,9 @@ export function createBaselineAgentRuntimes(
 		createClaudeCodeRuntime(environment),
 		createOpenRouterRuntime(environment),
 	];
+}
+
+/** Baseline backends plus the OpenRouter free-models backend. */
+export function createAgentRuntimes(environment: ProviderEnvironment): readonly AgentRuntime[] {
+	return [...createBaselineAgentRuntimes(environment), createOpenRouterFreeRuntime(environment)];
 }

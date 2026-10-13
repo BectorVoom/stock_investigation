@@ -7,7 +7,7 @@ The default is local operation (ADR-0006): browser, API and runner all on the ow
 ## Trust boundaries
 
 ```text
-[untrusted]  news feeds, article pages, SEC responses, model output, import files, URL input
+[untrusted]  news feeds, article pages, SEC responses, market-data responses, model output, import files, URL input
      |
      v  (validated at every arrow)
 Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQL)--> D1
@@ -17,6 +17,7 @@ Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQ
                                        |
                                        +--(pinned, allowlisted HTTPS)--> subscribed sources, sec.gov
                                        +--(pinned HTTPS, one page per call)--> public web pages
+                                       +--(pinned HTTPS, keyed)--> api.stlouisfed.org, api.twelvedata.com
 ```
 
 Local operation (ADR-0006) keeps this shape twice, once per environment
@@ -48,6 +49,7 @@ database, and they are never uploaded.
 | T14 | XML bombs / oversized responses | Entity expansion off, input caps, byte and time limits; the page-to-Markdown converter is linear-time (nesting ceiling 32 per formatting element kind, per-tag match index, root-directed work budget) | feed parser tests, `htmlToMarkdown` hostile/nesting tests, `scripts/bench.ts` worst-case conversions |
 | T17 | Model-proposed URL exfiltrates what the model knows in a query string, or reaches where it should not | Gated by the owner's setting (`DEFAULT_AGENT_SETTINGS.webAccess` is `"public-web"`; a stored request from before the field parses as `"off"`, fail closed); `authorizeToolCall` on every call; https-only string policy plus the runner's pinned fetcher with per-hop validation; one page per call; URL length cap; tool-call budget; no secrets in prompts; robots.txt honoured per RFC 9309 — percent-encoding normalised before comparison, every redirect hop checked before it is contacted (`REDIRECT_NOT_AUTHORIZED` otherwise), cross-host robots redirects followed and applied to the asked host | `tests/security/webFetch.test.ts`, `packages/adapters/test/tools/webTools.test.ts`, `robotsPolicy.test.ts`, pipeline gating tests |
 | T18 | A build, rollback or stray write swaps the code under a running instance, or old code runs against a newer database | Release generations: builds write a new read-only directory and move the pointer atomically; `prod:start` serves only the generation it started with; `prod:rollback` moves only the pointer; a generation older than the database refuses unless overridden; the served generation id and build time are reported by `GET /api/v1/version` | `tests/e2e/startLocal.spec.ts`, `tests/local/releaseOps.test.ts` |
+| T19 | Market-data API keys leak, or provider text poisons storage/logs/UI | Keys live only in the runner environment (`FRED_API_KEY`, `TWELVE_DATA_API_KEY`); Twelve Data travels in the `Authorization` header sent on the first request only and **never follows a redirect**; FRED's key stays in its `api_key` parameter because that API requires it. Provider message bodies are untrusted: they are never stored, shown or logged — every unavailable code carries our own fixed wording (`marketUnavailableReason`), and error bodies stay inside the adapter | `packages/adapters/test/finance/` (key-never-in-error tests, redirect tests), `packages/adapters/test/worker/workerSafeFetcher.test.ts` |
 
 ## Residual risks (accepted for V1)
 
@@ -62,4 +64,5 @@ database, and they are never uploaded.
 - **Worker CPU**: validation of the largest admissible submission is benchmarked locally, not on Cloudflare. Imports and exports are capped (3,000 table cells) for the same reason.
 - **Access misconfiguration** (deployment only) locks the owner out (fails closed).
 - **Copyright**: excerpts are stored only for sources the owner marked as permitting them, capped at 500 characters; quotes on claims are capped at 400.
+- **Market observations are personal-use vendor data** (ADR-0014): FRED series notes carrying "Copyright" (e.g. VIXCLS, © Chicago Board Options Exchange) and Twelve Data free-tier data are for the owner's internal use — they are not part of workspace export and must not be redistributed, displayed to third parties or used commercially on the free plan.
 - **Model-proposed URLs** (ADR-0009): a prompt injection in retrieved text can steer the model to propose a URL carrying the question or retrieved text in its query string (the question and retrieved text — never credentials: prompts contain no secrets, SEC-005, and the URL length cap truncates exfiltration attempts). Bounded by the off-switch, one https page per call, the URL length cap, the tool-call budget, per-hop robots authorization before any redirect target is contacted, and no secrets in prompts — but a motivated injection can still encode a short secret-free fact (e.g. what the owner is researching) into a hostname or path the attacker's server logs.

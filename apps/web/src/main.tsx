@@ -1,3 +1,4 @@
+import "./zodJitless.ts";
 import "./styles.css";
 import { createBaselineUiRegistry } from "@research/ui-registry";
 import { render } from "solid-js/web";

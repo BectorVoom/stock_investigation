@@ -38,7 +38,12 @@ export interface PinnedRequest {
 	readonly address: ResolvedAddress;
 	/** Path and query, starting with "/". */
 	readonly path: string;
-	readonly headers: { readonly accept: string; readonly "user-agent": string };
+	readonly headers: {
+		readonly accept: string;
+		readonly "user-agent": string;
+		/** Caller-supplied Authorization value, or null when the caller sent none. */
+		readonly authorization: string | null;
+	};
 	/** Ceiling on body bytes read from the socket before content decoding. */
 	readonly maxEncodedBytes: number;
 	readonly signal: AbortSignal;
@@ -102,6 +107,9 @@ export function buildPinnedRequestOptions(
 			host: request.hostname,
 			accept: request.headers.accept,
 			"user-agent": request.headers["user-agent"],
+			...(request.headers.authorization === null
+				? {}
+				: { authorization: request.headers.authorization }),
 			"accept-encoding": "gzip",
 		},
 		// A fresh socket per request: a connection validated for one host is never reused for another.

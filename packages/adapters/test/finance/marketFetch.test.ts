@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import {
+	datePrefixOf,
+	fetchJsonDocument,
+	httpStatusOf,
+	isIsoDate,
+	subtractDaysIso,
+} from "../../src/finance/marketFetch.ts";
+import { createScriptedFetcher } from "../tools/support.ts";
+
+const URL = "https://api.synthetic-wire.org/x";
+const LIMITS = { maxBytes: 1000, timeoutMs: 2000, accept: "application/json" } as const;
+
+describe("market HTTP helpers", () => {
+	it("reads the status out of an HTTP_ERROR detail and nothing else", () => {
+		expect(httpStatusOf({ code: "HTTP_ERROR", detail: "HTTP 404" })).toBe(404);
+		expect(httpStatusOf({ code: "HTTP_ERROR", detail: "HTTP 429" })).toBe(429);
+		expect(httpStatusOf({ code: "TIMEOUT", detail: "no complete response" })).toBeNull();
+		expect(httpStatusOf({ code: "NETWORK_ERROR", detail: "404 in a message" })).toBeNull();
+	});
+
+	it("parses a JSON document and keeps the final URL", async () => {
+		const fetcher = createScriptedFetcher({ [URL]: { text: '{"a":1}' } });
+		const result = await fetchJsonDocument(fetcher, URL, LIMITS);
+		expect(result).toEqual({ ok: true, value: { finalUrl: URL, json: { a: 1 } } });
+	});
+
+	it("reports non-JSON as NETWORK_ERROR with a fixed detail", async () => {
+		const fetcher = createScriptedFetcher({ [URL]: { text: "{oops" } });
+		const result = await fetchJsonDocument(fetcher, URL, LIMITS);
+		expect(result).toEqual({
+			ok: false,
+			error: { code: "NETWORK_ERROR", detail: "response is not valid JSON" },
+		});
+	});
+
+	it("passes transport failures through untouched, error body included", async () => {
+		const failure = { code: "HTTP_ERROR", detail: "HTTP 400", body: '{"error_code":400}' } as const;
+		const fetcher = createScriptedFetcher({ [URL]: { error: failure } });
+		const result = await fetchJsonDocument(fetcher, URL, LIMITS);
+		expect(result).toEqual({ ok: false, error: failure });
+	});
+});
+
+describe("market ISO date helpers", () => {
+	it("validates real calendar dates only", () => {
+		expect(isIsoDate("2026-10-01")).toBe(true);
+		expect(isIsoDate("2024-02-29")).toBe(true);
+		for (const bad of [
+			"2026-13-01",
+			"2026-02-30",
+			"2026-1-1",
+			"10/01/2026",
+			"",
+			"2026-10-01T00:00",
+		]) {
+			expect(isIsoDate(bad)).toBe(false);
+		}
+	});
+
+	it("takes the leading date of a provider timestamp", () => {
+		expect(datePrefixOf("2026-10-09 00:00:00")).toBe("2026-10-09");
+		expect(datePrefixOf("2026-10-09")).toBe("2026-10-09");
+		expect(datePrefixOf("not-a-date")).toBeNull();
+	});
+
+	it("subtracts calendar days in UTC", () => {
+		// The revision overlap used by both adapters: 2026-10-01 − 45 days = 2026-08-17.
+		expect(subtractDaysIso("2026-10-01", 45)).toBe("2026-08-17");
+		expect(subtractDaysIso("2024-03-01", 1)).toBe("2024-02-29");
+		expect(subtractDaysIso("2026-01-01", 1)).toBe("2025-12-31");
+		expect(subtractDaysIso("2026-02-30", 45)).toBeNull();
+		expect(subtractDaysIso("not-a-date", 45)).toBeNull();
+	});
+});

@@ -19,7 +19,7 @@ function pinnedRequest(overrides: Partial<PinnedRequest> = {}): PinnedRequest {
 		hostname: HOSTNAME,
 		address: LOOPBACK,
 		path: "/echo?x=1",
-		headers: { accept: "text/plain", "user-agent": "pinned-connect-test" },
+		headers: { accept: "text/plain", "user-agent": "pinned-connect-test", authorization: null },
 		maxEncodedBytes: 1_000_000,
 		signal: new AbortController().signal,
 		...overrides,
@@ -60,6 +60,14 @@ describe("pinned request options (production defaults)", () => {
 			"user-agent": "pinned-connect-test",
 			"accept-encoding": "gzip",
 		});
+	});
+
+	it("forwards a caller-supplied Authorization header and sends none otherwise", () => {
+		expect(buildPinnedRequestOptions(pinnedRequest()).headers).not.toHaveProperty("authorization");
+		const authorized = buildPinnedRequestOptions(
+			pinnedRequest({ headers: { accept: "t", "user-agent": "u", authorization: "apikey k" } }),
+		);
+		expect(authorized.headers).toMatchObject({ authorization: "apikey k" });
 	});
 
 	it("refuses any DNS lookup Node might attempt for this request", async () => {

@@ -138,8 +138,18 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 	},
 	{
 		// CSS and asset imports are relative, which is always allowed inside the package.
+		// Shoelace is allowed package-wide so the Home surface can use it;
+		// only apps/web/src/home imports it, and the lazy Home chunk (measured
+		// in the Phase C report) proves the other pages do not pay for it.
 		root: "apps/web",
-		allowed: [CONTRACTS, UI_REGISTRY, DOMAIN, pkg("solid-js"), pkg("zod")],
+		allowed: [
+			CONTRACTS,
+			UI_REGISTRY,
+			DOMAIN,
+			pkg("solid-js"),
+			pkg("zod"),
+			pkg("@shoelace-style/shoelace"),
+		],
 		forbidden: [
 			pkg("hono"),
 			nodeBuiltin(),

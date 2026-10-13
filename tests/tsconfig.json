@@ -2,7 +2,9 @@
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
 		"lib": ["ES2022", "DOM"],
-		"types": ["node"]
+		"types": ["node"],
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js"
 	},
 	"include": [
 		"architecture/**/*.ts",
@@ -15,6 +17,7 @@
 		"formal/**/*.ts",
 		"local/**/*.ts",
 		"live/**/*.ts",
+		"real/**/*.ts",
 		"ui-review/**/*.ts"
 	],
 	"exclude": ["e2e/worker.ts"]

@@ -34,6 +34,8 @@ def jsonObj (fields : List (String × String)) : String :=
 def jsonBool (b : Bool) : String := if b then "true" else "false"
 def jsonNat (n : Nat) : String := toString n
 def jsonNatList (l : List Nat) : String := jsonArr (l.map jsonNat)
+def jsonInt (i : Int) : String := toString i
+def jsonIntList (l : List Int) : String := jsonArr (l.map jsonInt)
 def jsonOptNat : Option Nat → String
   | none => "null"
   | some n => jsonNat n
@@ -212,6 +214,81 @@ def recentWithinBudgetVectors : List String := Id.run do
           ("count", jsonNat (recentCountWithinBudget xs budget maxItems))] :: out
   return out.reverse
 
+/-! ## Home dashboard edits -/
+
+def dashboardEditJson : DashboardEdit → String
+  | .add id => jsonObj [("kind", jsonStr "add"), ("id", jsonNat id)]
+  | .remove id => jsonObj [("kind", jsonStr "remove"), ("id", jsonNat id)]
+  | .moveEarlier id => jsonObj [("kind", jsonStr "moveEarlier"), ("id", jsonNat id)]
+  | .moveLater id => jsonObj [("kind", jsonStr "moveLater"), ("id", jsonNat id)]
+
+/-- Every id list of length 0..3 over {0, 1, 2} without duplicates, plus one
+    full 24-widget dashboard for the maximum rule. -/
+def dashboardGrid : List (List Nat) :=
+  [[]] ++ [[0], [1], [2]]
+  ++ [[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]]
+  ++ [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]
+  ++ [List.range 24]
+
+def dashboardEdits : List DashboardEdit :=
+  ([0, 1, 2, 3].map DashboardEdit.add) ++ ([0, 1, 2, 3].map DashboardEdit.remove)
+  ++ ([0, 1, 2, 3].map DashboardEdit.moveEarlier) ++ ([0, 1, 2, 3].map DashboardEdit.moveLater)
+
+def dashboardVec (ids : List Nat) (e : DashboardEdit) : String :=
+  let result := applyDashboardEdit ⟨ids⟩ e
+  jsonObj [("dashboard", jsonNatList ids), ("edit", dashboardEditJson e),
+    ("accepted", jsonBool result.isSome),
+    ("ids", jsonNatList (result.getD ⟨ids⟩).ids)]
+
+def dashboardVectors : List String :=
+  dashboardGrid.flatMap fun ids => dashboardEdits.map (dashboardVec ids)
+
+/-! ## Fixed-window rate gate -/
+
+/-- Grant-time lists of length 0..2 over {0, 1, 5} (not necessarily ordered). -/
+def grantLists : List (List Int) :=
+  [[]] ++ ([0, 1, 5].map fun a => [a])
+  ++ ([0, 1, 5].flatMap fun a => [0, 1, 5].map fun b => [a, b])
+
+def permitVec (grants : List Int) (now maxPer window : Nat) : String :=
+  let allowed := ratePermit grants now maxPer window
+  let retry : String :=
+    if allowed then "null"
+    else match (grants.filter (windowFilter now window)).min? with
+      | none => "null"
+      | some oldest => toString (oldest + window - now)
+  jsonObj [("grants", jsonIntList grants), ("now", jsonNat now),
+    ("maxPer", jsonNat maxPer), ("window", jsonNat window),
+    ("allowed", jsonBool allowed), ("retryAfter", retry)]
+
+def permitVectors : List String := Id.run do
+  let mut out := []
+  for grants in grantLists do
+    for now in List.range 7 do
+      for maxPer in [1, 2, 3] do
+        for window in [1, 2, 3, 5] do
+          out := permitVec grants now maxPer window :: out
+  return out.reverse
+
+/-- Non-decreasing grant-time lists of length 0..3 over {0, 1, 2}. -/
+def sortedTimeLists : List (List Int) :=
+  [[]] ++ [[0], [1], [2]]
+  ++ [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]
+  ++ [[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1], [0, 1, 2], [0, 2, 2],
+      [1, 1, 1], [1, 1, 2], [1, 2, 2], [2, 2, 2]]
+
+def recordVec (times : List Int) (maxPer window : Nat) : String :=
+  jsonObj [("times", jsonIntList times), ("maxPer", jsonNat maxPer),
+    ("window", jsonNat window), ("recorded", jsonIntList (recordGrants times maxPer window))]
+
+def recordVectors : List String := Id.run do
+  let mut out := []
+  for times in sortedTimeLists do
+    for maxPer in [1, 2] do
+      for window in [1, 2, 3] do
+        out := recordVec times maxPer window :: out
+  return out.reverse
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -231,5 +308,8 @@ def main : IO Unit := do
   IO.println ("\"claimStatus\": [\n" ++ ",\n".intercalate claimStatusVectors ++ "\n],")
   IO.println ("\"workspace\": [\n" ++ ",\n".intercalate workspaceVectors ++ "\n],")
   IO.println ("\"commandGuard\": [\n" ++ ",\n".intercalate guardVectors ++ "\n],")
+  IO.println ("\"dashboard\": [\n" ++ ",\n".intercalate dashboardVectors ++ "\n],")
+  IO.println ("\"ratePermit\": [\n" ++ ",\n".intercalate permitVectors ++ "\n],")
+  IO.println ("\"rateRecord\": [\n" ++ ",\n".intercalate recordVectors ++ "\n],")
   IO.println ("\"recentWithinBudget\": [\n" ++ ",\n".intercalate recentWithinBudgetVectors ++ "\n]")
   IO.println "}"

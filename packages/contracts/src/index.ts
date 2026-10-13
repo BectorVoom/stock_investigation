@@ -3,6 +3,7 @@ export * from "./api.ts";
 export * from "./errors.ts";
 export * from "./export.ts";
 export * from "./jobs.ts";
+export * from "./market.ts";
 export * from "./primitives.ts";
 export * from "./records.ts";
 export * from "./settings.ts";

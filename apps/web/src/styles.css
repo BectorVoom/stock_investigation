@@ -20,3 +20,175 @@
 		@apply outline-2 outline-offset-2 outline-blue-700;
 	}
 }
+
+/*
+ * Home surface (guideline "Home surface"): Shoelace token mapping. Shoelace's
+ * light theme sets these same variables on `:root`; this selector wins by
+ * specificity (`html:root` beats `:root`) no matter which stylesheet loads
+ * last — the Shoelace stylesheet arrives inside the lazily loaded Home chunk.
+ * Every value references this app's own theme variables; no hex is invented.
+ */
+html:root {
+	--sl-font-sans: var(--font-sans);
+	--sl-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	/* Primary → the Tailwind blue scale (Shoelace defaults to sky). */
+	--sl-color-primary-50: var(--color-blue-50);
+	--sl-color-primary-100: var(--color-blue-100);
+	--sl-color-primary-200: var(--color-blue-200);
+	--sl-color-primary-300: var(--color-blue-300);
+	--sl-color-primary-400: var(--color-blue-400);
+	--sl-color-primary-500: var(--color-blue-500);
+	--sl-color-primary-600: var(--color-blue-600);
+	--sl-color-primary-700: var(--color-blue-700);
+	--sl-color-primary-800: var(--color-blue-800);
+	--sl-color-primary-900: var(--color-blue-900);
+	--sl-color-primary-950: var(--color-blue-950);
+
+	/* Neutral → slate (Shoelace defaults to gray). */
+	--sl-color-neutral-50: var(--color-slate-50);
+	--sl-color-neutral-100: var(--color-slate-100);
+	--sl-color-neutral-200: var(--color-slate-200);
+	--sl-color-neutral-300: var(--color-slate-300);
+	--sl-color-neutral-400: var(--color-slate-400);
+	--sl-color-neutral-500: var(--color-slate-500);
+	--sl-color-neutral-600: var(--color-slate-600);
+	--sl-color-neutral-700: var(--color-slate-700);
+	--sl-color-neutral-800: var(--color-slate-800);
+	--sl-color-neutral-900: var(--color-slate-900);
+	--sl-color-neutral-950: var(--color-slate-950);
+
+	/* Success → emerald (Shoelace defaults to green). Warning/danger already are amber/red. */
+	--sl-color-success-50: var(--color-emerald-50);
+	--sl-color-success-100: var(--color-emerald-100);
+	--sl-color-success-200: var(--color-emerald-200);
+	--sl-color-success-300: var(--color-emerald-300);
+	--sl-color-success-400: var(--color-emerald-400);
+	--sl-color-success-500: var(--color-emerald-500);
+	--sl-color-success-600: var(--color-emerald-600);
+	--sl-color-success-700: var(--color-emerald-700);
+	--sl-color-success-800: var(--color-emerald-800);
+	--sl-color-success-900: var(--color-emerald-900);
+	--sl-color-success-950: var(--color-emerald-950);
+
+	/* One corner radius: bare `rounded` (0.25rem) on every Shoelace part. */
+	--sl-border-radius-small: 0.25rem;
+	--sl-border-radius-medium: 0.25rem;
+	--sl-border-radius-large: 0.25rem;
+	--sl-border-radius-x-large: 0.25rem;
+	--sl-border-radius-circle: 0.25rem;
+	--sl-border-radius-pill: 0.25rem;
+
+	/* Borders, not shadows (guideline section 4). */
+	--sl-shadow-x-small: none;
+	--sl-shadow-small: none;
+	--sl-shadow-medium: none;
+	--sl-shadow-large: none;
+	--sl-shadow-x-large: none;
+
+	/* Focus ring matches the app `:focus-visible` rule (2px blue-700, offset 2px). */
+	--sl-focus-ring-width: 2px;
+	--sl-focus-ring-offset: 2px;
+	--sl-focus-ring-color: var(--color-blue-700);
+
+	/* Inputs look like INPUT: slate-400 hairline, blue-700 on focus. */
+	--sl-input-border-color: var(--color-slate-400);
+	--sl-input-border-color-hover: var(--color-slate-400);
+	--sl-input-border-color-focus: var(--color-blue-700);
+	--sl-input-border-color-disabled: var(--color-slate-300);
+	--sl-input-background-color-disabled: var(--color-slate-100);
+}
+
+/*
+ * Home surface density: every Shoelace control on Home carries size="small"
+ * and is mapped here onto the app's INPUT / LABEL / BUTTON parts, so a
+ * Shoelace control looks like its existing counterpart at the same scale
+ * (control text 0.875rem like INPUT, labels 0.75rem medium slate-700 like
+ * LABEL, small buttons 0.75rem medium like BUTTON). Shoelace renders inside
+ * shadow roots, so only its documented parts and tokens are reachable —
+ * never the internals. Minimum target height stays 24 px (guideline 9).
+ */
+
+/* Form-control labels read as LABEL (0.75rem, medium, slate-700). */
+sl-select::part(form-control-label),
+sl-input::part(form-control-label) {
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--color-slate-700);
+}
+
+/* Control text reads as INPUT text (0.875rem) with at least the 24 px floor. */
+sl-select::part(combobox),
+sl-select::part(display-input),
+sl-input::part(input) {
+	font-size: 0.875rem;
+	min-height: 24px;
+}
+
+/* Small buttons read as BUTTON (0.75rem, medium, borderless slate-200 fill, slate-900 text). */
+sl-button[size="small"]::part(base) {
+	font-size: 0.75rem;
+	font-weight: 500;
+	min-height: 24px;
+}
+
+sl-button[size="small"]:not([variant="primary"]):not([variant="danger"]):not(
+		[variant="success"]
+	):not([variant="warning"]):not([variant="neutral"]):not([variant="text"])::part(base) {
+	/* Borderless grey fill, like the application's BUTTON (components/ui.tsx). */
+	border-color: transparent;
+	background-color: var(--color-slate-200);
+	color: var(--color-slate-900);
+}
+
+sl-button[size="small"]:not([variant]):not([disabled])::part(base):hover {
+	background-color: var(--color-slate-300);
+}
+
+sl-button[size="small"][variant="primary"]::part(base) {
+	border-color: transparent;
+	background-color: var(--color-blue-700);
+	color: white;
+}
+
+/* A disabled primary small button reads as the app's disabled BUTTON_PRIMARY. */
+sl-button[size="small"][variant="primary"][disabled]::part(base) {
+	border-color: transparent;
+	background-color: var(--color-slate-300);
+	color: var(--color-slate-600);
+	opacity: 1;
+}
+
+/* Menu items read as 0.875rem rows with compact padding. */
+sl-menu-item::part(base) {
+	font-size: 0.875rem;
+	padding-top: 0.25rem;
+	padding-bottom: 0.25rem;
+	min-height: 24px;
+}
+
+/* The dialog title reads as a 1rem semibold heading. */
+sl-dialog::part(title) {
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+/* Widget cards pad like PANEL (p-3). */
+sl-card::part(header),
+sl-card::part(body),
+sl-card::part(footer) {
+	padding: 0.75rem;
+}
+
+/*
+ * Widget menus float over card content: the menu (`sl-menu`) is light DOM
+ * slotted into the dropdown popup, so the hairline goes on the menu itself
+ * (the dropdown's `panel` part is only the slot and draws no box). Slate-300
+ * on white, like every other surface (guideline 4: borders, not shadows —
+ * the shadow tokens above are already none).
+ */
+sl-menu {
+	border: 1px solid var(--color-slate-300);
+	border-radius: 0.25rem;
+	background-color: white;
+}

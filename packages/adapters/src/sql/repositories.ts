@@ -4,9 +4,11 @@ import type {
 	AuditLog,
 	ChatRepository,
 	EnqueueResult,
+	HomeDashboardRepository,
 	JobRecord,
 	JobRepository,
 	JobWrite,
+	MarketRepository,
 	RateLimiter,
 	ReferenceLookup,
 	ResearchRecordRepository,
@@ -14,6 +16,7 @@ import type {
 	RunnerStatusRepository,
 	SettingsRepository,
 	SourceRepository,
+	StoredMarketObservation,
 	WorkspaceRepository,
 } from "@research/application";
 import { toProgressRows } from "@research/application";
@@ -24,6 +27,7 @@ import {
 	demandScenarioSchema,
 	evidenceSchema,
 	financialObservationSchema,
+	homeDashboardSchema,
 	investorFilingSchema,
 	positionObservationSchema,
 	pricingPowerRecordSchema,
@@ -39,15 +43,18 @@ import {
 	bodyOf,
 	numberColumn,
 	parseJsonColumn,
+	StoredDataError,
 	textColumn,
 	toAppliedCommand,
 	toArticle,
 	toChatMessage,
 	toConversationSummary,
+	toHomeDashboardRecord,
 	toJobRecord,
 	toNewsSource,
 	toRunnerCredential,
 	toStoredAgentSettings,
+	toStoredMarketSeries,
 	toWorkspaceRecord,
 	toWorkspaceSummary,
 } from "./rows.ts";
@@ -197,6 +204,12 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * When the job names a workspace, that workspace must still exist: the test is
  * part of the INSERT, so a run submitted against a concurrently deleted
  * conversation writes nothing instead of orphaning a job.
+ *
+ * S1: "at most one active market-refresh job per owner" is enforced the same
+ * way — the INSERT is a no-op while an unfinished job of kind
+ * `market-refresh` exists for the owner, no matter which idempotency key the
+ * concurrent request used. `enqueueOutcome` maps that no-op back to the active
+ * run, so the loser of the race answers with the winner's run id.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -217,6 +230,8 @@ export function insertJobStatement(
 			WHERE (SELECT COUNT(*) FROM research_jobs
 				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
 				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
+				AND NOT (? = 'market-refresh' AND EXISTS (SELECT 1 FROM research_jobs
+					WHERE owner_id = ? AND kind = 'market-refresh' AND state NOT IN (${TERMINAL_SQL})))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -255,14 +270,33 @@ export function insertJobStatement(
 			job.workspaceId,
 			job.ownerId,
 			job.workspaceId,
+			job.kind,
+			job.ownerId,
 		);
+}
+
+/** Newest non-terminal job of a kind, if any (shared by the repository and the enqueue path). */
+async function findActiveJobByKind(db: SqlDatabase, ownerId: string, kind: string) {
+	const { results } = await db
+		.prepare(
+			`SELECT * FROM research_jobs
+			WHERE owner_id = ?1 AND kind = ?2 AND state NOT IN (${TERMINAL_SQL})
+			ORDER BY created_at DESC, run_id DESC LIMIT 1`,
+		)
+		.bind(ownerId, kind)
+		.all();
+	const row = results[0];
+	return row === undefined ? null : toJobRecord(row);
 }
 
 /**
  * Why an enqueue INSERT changed no row: the idempotency key already names a
- * job (a replay or a key reuse), the named workspace is gone, or the owner is
- * at the unfinished-job cap. The key is checked first so a replay still
- * answers from the stored job.
+ * job (a replay or a key reuse), the named workspace is gone, the owner is
+ * at the unfinished-job cap, or — for kind `market-refresh` — an unfinished
+ * job of that kind already exists (S1: the INSERT itself refused the second
+ * active job, so map the no-op back to the active run instead of reporting
+ * capacity). The key is checked first so a replay still answers from the
+ * stored job.
  */
 export async function enqueueOutcome(
 	db: SqlDatabase,
@@ -277,6 +311,13 @@ export async function enqueueOutcome(
 			job: existing,
 			sameRequest: existing.requestFingerprint === requestFingerprint,
 		};
+	}
+	if (job.kind === "market-refresh") {
+		const active = await findActiveJobByKind(db, job.ownerId, job.kind);
+		if (active !== null) {
+			const { requestFingerprint: _fingerprint, ...record } = active;
+			return { kind: "kind-active", job: record };
+		}
 	}
 	if (job.workspaceId !== null && !(await workspaceExists(db, job.ownerId, job.workspaceId))) {
 		return { kind: "no-workspace" };
@@ -521,6 +562,48 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 				text: z.string(),
 			});
 			return results.map((row) => entrySchema.parse(row)).reverse();
+		},
+		async findActiveByKind(ownerId, kind) {
+			const active = await findActiveJobByKind(db, ownerId, kind);
+			if (active === null) return null;
+			const { requestFingerprint: _fingerprint, ...record } = active;
+			return record;
+		},
+		async findLatestSuccessAtByKind(ownerId, kind) {
+			// S2: only a COMPLETED run counts as a success — failed/cancelled
+			// runs have their own line and never pose as one.
+			const row = await db
+				.prepare(
+					`SELECT updated_at FROM research_jobs
+					WHERE owner_id = ?1 AND kind = ?2 AND state = 'completed'
+					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
+				)
+				.bind(ownerId, kind)
+				.first();
+			if (row === null) return null;
+			const value = (row as Record<string, unknown>).updated_at;
+			return typeof value === "string" ? value : null;
+		},
+		async findLatestFailureByKind(ownerId, kind) {
+			// S2: the newest terminal run that did not succeed (completed runs
+			// are excluded here; they feed lastSucceededAt instead).
+			const row = await db
+				.prepare(
+					`SELECT state, failure_code, updated_at FROM research_jobs
+					WHERE owner_id = ?1 AND kind = ?2 AND state IN (${TERMINAL_SQL}) AND state <> 'completed'
+					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
+				)
+				.bind(ownerId, kind)
+				.first();
+			if (row === null) return null;
+			const record = row as Record<string, unknown>;
+			const { state, failure_code, updated_at } = record;
+			if (typeof state !== "string" || typeof updated_at !== "string") return null;
+			return {
+				state,
+				failureCode: typeof failure_code === "string" ? failure_code : null,
+				at: updated_at,
+			};
 		},
 	};
 }
@@ -994,6 +1077,173 @@ export function createSettingsRepository(db: SqlDatabase): SettingsRepository {
 				)
 				.bind(ownerId, JSON.stringify(settings), updatedAt)
 				.run();
+		},
+	};
+}
+
+export function createHomeDashboardRepository(db: SqlDatabase): HomeDashboardRepository {
+	return {
+		async get(ownerId) {
+			const row = await db
+				.prepare(
+					"SELECT dashboard_json, version, updated_at FROM home_dashboards WHERE owner_id = ?",
+				)
+				.bind(ownerId)
+				.first();
+			if (row === null) return null;
+			// Fail closed: a stored dashboard that no longer parses is reported
+			// as "unreadable" (never silently replaced by the defaults) — the
+			// service maps it to STORED_DASHBOARD_UNREADABLE and the app offers
+			// a reset (V2).
+			try {
+				const record = toHomeDashboardRecord(row);
+				return {
+					dashboard: record.dashboard,
+					version: record.version,
+					updatedAt: record.updatedAt,
+				};
+			} catch (error) {
+				if (error instanceof StoredDataError) return "unreadable";
+				throw error;
+			}
+		},
+		async put(ownerId, dashboard, expectedVersion, updatedAt) {
+			const validated = homeDashboardSchema.parse(dashboard);
+			if (expectedVersion === 0) {
+				const result = await db
+					.prepare(
+						`INSERT INTO home_dashboards (owner_id, dashboard_json, version, updated_at)
+						VALUES (?, ?, 1, ?)
+						ON CONFLICT (owner_id) DO UPDATE SET
+							dashboard_json = excluded.dashboard_json,
+							version = version + 1,
+							updated_at = excluded.updated_at
+						WHERE version = ?`,
+					)
+					.bind(ownerId, JSON.stringify(validated), updatedAt, expectedVersion)
+					.run();
+				return result.meta.changes === 1 ? "written" : "version-conflict";
+			}
+			const result = await db
+				.prepare(
+					`UPDATE home_dashboards SET dashboard_json = ?, version = version + 1, updated_at = ?
+					WHERE owner_id = ? AND version = ?`,
+				)
+				.bind(JSON.stringify(validated), updatedAt, ownerId, expectedVersion)
+				.run();
+			return result.meta.changes === 1 ? "written" : "version-conflict";
+		},
+		async reset(ownerId, dashboard, updatedAt) {
+			// V2: unconditional replace — the way out when the stored document
+			// no longer parses. No expectedVersion: the owner explicitly
+			// discards whatever is stored.
+			const validated = homeDashboardSchema.parse(dashboard);
+			await db
+				.prepare(
+					`INSERT INTO home_dashboards (owner_id, dashboard_json, version, updated_at)
+					VALUES (?, ?, 1, ?)
+					ON CONFLICT (owner_id) DO UPDATE SET
+						dashboard_json = excluded.dashboard_json,
+						version = version + 1,
+						updated_at = excluded.updated_at`,
+				)
+				.bind(ownerId, JSON.stringify(validated), updatedAt)
+				.run();
+			const row = await db
+				.prepare(
+					"SELECT dashboard_json, version, updated_at FROM home_dashboards WHERE owner_id = ?",
+				)
+				.bind(ownerId)
+				.first();
+			if (row === null) throw new Error("home dashboard reset did not persist");
+			const record = toHomeDashboardRecord(row);
+			return { dashboard: record.dashboard, version: record.version, updatedAt: record.updatedAt };
+		},
+	};
+}
+
+export function createMarketRepository(db: SqlDatabase): MarketRepository {
+	return {
+		async getSeriesMeta(ownerId, seriesIds) {
+			if (seriesIds.length === 0) return [];
+			const { results } = await db
+				.prepare(
+					`SELECT * FROM market_series WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))`,
+				)
+				.bind(ownerId, JSON.stringify(seriesIds))
+				.all();
+			return results.map(toStoredMarketSeries);
+		},
+		async getLatestObservedOn(ownerId, seriesIds) {
+			if (seriesIds.length === 0) return new Map();
+			const { results } = await db
+				.prepare(
+					`SELECT series_id, MAX(observed_on) AS latest FROM market_observations
+					WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))
+					GROUP BY series_id`,
+				)
+				.bind(ownerId, JSON.stringify(seriesIds))
+				.all();
+			const map = new Map<string, string>();
+			for (const row of results) {
+				const record = row as Record<string, unknown>;
+				if (typeof record.series_id === "string" && typeof record.latest === "string") {
+					map.set(record.series_id, record.latest);
+				}
+			}
+			return map;
+		},
+		async getObservations(ownerId, seriesIds, limitPerSeries) {
+			if (seriesIds.length === 0) return [];
+			// One statement: newest N rows per series via a window function, ascending output.
+			const { results } = await db
+				.prepare(
+					`SELECT series_id, observed_on, value FROM (
+						SELECT series_id, observed_on, value,
+							ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observed_on DESC) AS rn
+						FROM market_observations
+						WHERE owner_id = ? AND series_id IN (SELECT value FROM json_each(?))
+					) WHERE rn <= ? ORDER BY series_id, observed_on`,
+				)
+				.bind(ownerId, JSON.stringify(seriesIds), limitPerSeries)
+				.all();
+			const out: StoredMarketObservation[] = [];
+			for (const row of results) {
+				const record = row as Record<string, unknown>;
+				if (
+					typeof record.series_id === "string" &&
+					typeof record.observed_on === "string" &&
+					typeof record.value === "number"
+				) {
+					out.push({
+						seriesId: record.series_id,
+						observedOn: record.observed_on,
+						value: record.value,
+					});
+				}
+			}
+			return out;
+		},
+		async deleteSeriesNotIn(ownerId, keepSeriesIds) {
+			// S4b: one batch — observations first (child rows), then the series
+			// rows. An empty keep list removes everything (an empty dashboard
+			// references nothing).
+			const keep = JSON.stringify([...keepSeriesIds]);
+			const results = await db.batch([
+				db
+					.prepare(
+						`DELETE FROM market_observations WHERE owner_id = ?
+						AND series_id NOT IN (SELECT value FROM json_each(?))`,
+					)
+					.bind(ownerId, keep),
+				db
+					.prepare(
+						`DELETE FROM market_series WHERE owner_id = ?
+						AND series_id NOT IN (SELECT value FROM json_each(?))`,
+					)
+					.bind(ownerId, keep),
+			]);
+			return results[1]?.meta.changes ?? 0;
 		},
 	};
 }

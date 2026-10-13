@@ -5,6 +5,7 @@ import {
 	type Hasher,
 	ingestSources,
 	MAX_JOB_ATTEMPTS,
+	type MarketSourceRegistry,
 	type PipelineOutcome,
 	type PipelineReporter,
 	PROMPT_VERSION,
@@ -16,12 +17,14 @@ import {
 	type CompleteJobRequest,
 	type HeartbeatResponse,
 	leasedJobStateSchema,
+	MARKET_LIMITS,
 	MAX_RUNNER_EVENTS_PER_REQUEST,
 	type RunnerEvent,
 } from "@research/contracts";
-import { EMPTY_USAGE, type ResourceUsage } from "@research/domain";
+import { EMPTY_USAGE, parseMarketSeriesId, type ResourceUsage } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import type { RunnerApi, RunnerApiResult } from "./apiClient.ts";
+import type { MarketPacer } from "./marketPacing.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
 export interface ScratchDirectories {
@@ -41,6 +44,10 @@ export interface JobExecutionDeps {
 	readonly every: (ms: number, task: () => void) => () => void;
 	readonly newFenceToken: () => string;
 	readonly allowUnverifiedToolIsolation: boolean;
+	/** Provider registry (ARCH-006); an entry is absent until its key is configured. */
+	readonly marketSources: MarketSourceRegistry;
+	/** Per-provider request pacing (API-007), shared across jobs. */
+	readonly marketPacer: MarketPacer;
 }
 
 /** Why work on a job stopped before it finished on its own. */
@@ -247,7 +254,9 @@ export async function executeJob(
 	try {
 		scratchDirectory = await deps.scratch.create(job.runId);
 		let completion: CompleteJobRequest;
-		if (job.kind === "news-ingest") {
+		if (job.kind === "market-refresh") {
+			completion = await executeMarketRefresh(job, deps, abort.signal, reporter);
+		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
 				job.sources,
@@ -363,12 +372,114 @@ export async function executeJob(
 }
 
 type LeasedState = Extract<RunnerEvent["event"], { type: "state" }>["state"];
-
 /** The pipeline only ever reports lifecycle stages; anything else is a programming error. */
 function leasedState(state: string): LeasedState {
 	const parsed = leasedJobStateSchema.safeParse(state);
 	if (!parsed.success) throw new Error(`pipeline reported a non-lifecycle state: ${state}`);
 	return parsed.data;
+}
+
+/**
+ * Runs a claimed market-refresh job: fetches every series sequentially,
+ * pacing each provider through the shared gate, honouring cancellation. One
+ * failing series never aborts the others; a series whose provider has no
+ * keyed adapter honestly reports SOURCE_NOT_CONFIGURED.
+ *
+ * Progress walks the same leased states as a news-ingest job (the completion
+ * must come from `publishing`, like every other completion).
+ */
+async function executeMarketRefresh(
+	job: Extract<ClaimedJob, { kind: "market-refresh" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const series: Extract<CompleteJobRequest, { outcome: "market-refreshed" }>["series"] = [];
+	for (const query of job.series) {
+		if (signal.aborted) break;
+		const fetchedAt = deps.clock.nowIso();
+		const parsed = parseMarketSeriesId(query.seriesId);
+		if (!parsed.ok) {
+			series.push({
+				seriesId: query.seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: "SERIES_NOT_FOUND",
+			});
+			continue;
+		}
+		const source = deps.marketSources.get(parsed.value.provider);
+		if (source === undefined) {
+			series.push({
+				seriesId: query.seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: "SOURCE_NOT_CONFIGURED",
+			});
+			continue;
+		}
+		// The provider's window must admit this request before it is sent
+		// (API-007); an abort while waiting ends the refresh without fetching.
+		const paced = await deps.marketPacer.pace(parsed.value.provider, signal);
+		if (!paced || signal.aborted) break;
+		let result: Awaited<ReturnType<typeof source.fetchSeries>>;
+		try {
+			result = await source.fetchSeries({
+				symbol: parsed.value.symbol,
+				since: query.latestObservedOn,
+				maxObservations: MARKET_LIMITS.maxObservationsPerResponse,
+				signal,
+			});
+		} catch (error) {
+			// An adapter throws only for the unexpected: log its class name
+			// (never its message or URL, SEC-010) and report the series as
+			// failed without aborting the others.
+			deps.logger.warn("market_series_failed", {
+				seriesId: query.seriesId,
+				error: error instanceof Error ? error.name : "unknown",
+			});
+			series.push({
+				seriesId: query.seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: "SOURCE_FAILED",
+			});
+			continue;
+		}
+		if (!result.ok) {
+			series.push({
+				seriesId: query.seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: result.error.code,
+			});
+			continue;
+		}
+		series.push({
+			seriesId: query.seriesId,
+			fetchedAt,
+			meta: { ...result.value.meta },
+			observations: result.value.observations
+				.slice(-MARKET_LIMITS.maxObservationsPerResponse)
+				.map((point): [string, number] => [point.observedOn, point.value]),
+			errorCode: null,
+		});
+	}
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	return {
+		outcome: "market-refreshed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		series,
+	};
 }
 
 export function toCompletion(

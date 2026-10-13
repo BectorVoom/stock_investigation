@@ -113,7 +113,9 @@ async function startDev(dataDir: string): Promise<LaunchedService> {
 		args: ["dev"],
 		env: childEnv(dataDir),
 	});
-	stoppers.add(() => launched.stop());
+	stoppers.add(async () => {
+		await launched.stop();
+	});
 	return launched;
 }
 

@@ -1,0 +1,651 @@
+{
+	"data": [
+		{
+			"id": "stepfun/step-5-preview",
+			"canonical_slug": "stepfun/step-5-preview-20261008",
+			"hugging_face_id": null,
+			"name": "StepFun: Step 5 Preview",
+			"created": 1791462849,
+			"description": "Step 5 Preview is StepFun's flagship model for agentic work, built on a sparse M",
+			"context_length": 1000000,
+			"architecture": {
+				"modality": "text+image+video->text",
+				"input_modalities": ["text", "image", "video"],
+				"output_modalities": ["text"],
+				"tokenizer": "Other",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0.000001",
+				"completion": "0.0000027",
+				"input_cache_read": "0.00000005"
+			},
+			"top_provider": {
+				"context_length": 1000000,
+				"max_completion_tokens": 64000,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"frequency_penalty",
+				"include_reasoning",
+				"logprobs",
+				"max_tokens",
+				"reasoning",
+				"reasoning_effort",
+				"response_format",
+				"stop",
+				"structured_outputs",
+				"temperature",
+				"tools",
+				"top_logprobs",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": null,
+				"top_p": null,
+				"top_k": null,
+				"frequency_penalty": null,
+				"presence_penalty": null,
+				"repetition_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/stepfun/step-5-preview-20261008/endpoints"
+			},
+			"reasoning": {
+				"mandatory": true,
+				"supported_efforts": ["high", "medium", "low"],
+				"default_effort": "medium"
+			}
+		},
+		{
+			"id": "anthropic/claude-haiku-5.5",
+			"canonical_slug": "anthropic/claude-haiku-5.5-20261007",
+			"hugging_face_id": null,
+			"name": "Anthropic: Claude Haiku 5.5",
+			"created": 1791397883,
+			"description": "Claude Haiku 5.5 is Anthropic's small, fast model for high-volume, cost-sensitiv",
+			"context_length": 1000000,
+			"architecture": {
+				"modality": "text+image+file->text",
+				"input_modalities": ["text", "image", "file"],
+				"output_modalities": ["text"],
+				"tokenizer": "Claude",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0.0000001",
+				"completion": "0.0000005",
+				"web_search": "0.01",
+				"input_cache_read": "0.00000001",
+				"input_cache_write": "0.000000125",
+				"input_cache_write_1h": "0.0000002",
+				"overrides": [
+					{
+						"min_prompt_tokens": 100000,
+						"prompt": "0.0000005",
+						"completion": "0.0000025",
+						"input_cache_read": "0.00000005",
+						"input_cache_write": "0.000000625",
+						"input_cache_write_1h": "0.000001"
+					}
+				]
+			},
+			"top_provider": {
+				"context_length": 1000000,
+				"max_completion_tokens": 128000,
+				"is_moderated": true
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"include_reasoning",
+				"max_completion_tokens",
+				"max_tokens",
+				"reasoning",
+				"reasoning_effort",
+				"response_format",
+				"stop",
+				"structured_outputs",
+				"tool_choice",
+				"tools",
+				"verbosity"
+			],
+			"default_parameters": {},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/anthropic/claude-haiku-5.5-20261007/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [
+					{
+						"arena": "models",
+						"category": "3d",
+						"elo": 1351,
+						"win_rate": 58.7,
+						"rank": 6
+					},
+					{
+						"arena": "models",
+						"category": "codecategories",
+						"elo": 1283,
+						"win_rate": 50.1,
+						"rank": 20
+					},
+					{
+						"arena": "models",
+						"category": "gamedev",
+						"elo": 1307,
+						"win_rate": 52.9,
+						"rank": 15
+					},
+					{
+						"arena": "models",
+						"category": "website",
+						"elo": 1272,
+						"win_rate": 49.2,
+						"rank": 28
+					}
+				],
+				"artificial_analysis": {
+					"intelligence_index": 43.4,
+					"coding_index": null,
+					"agentic_index": null
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"supported_efforts": ["max", "xhigh", "high", "medium", "low"],
+				"default_effort": "medium"
+			}
+		},
+		{
+			"id": "inclusionai/ling-3.1-flash",
+			"canonical_slug": "inclusionai/ling-3.1-flash-20261002",
+			"hugging_face_id": null,
+			"name": "inclusionAI: Ling 3.1 Flash",
+			"created": 1790950024,
+			"description": "Ling 3.1 Flash is a hybrid reasoning mixture-of-experts model from inclusionAI, ",
+			"context_length": 262144,
+			"architecture": {
+				"modality": "text->text",
+				"input_modalities": ["text"],
+				"output_modalities": ["text"],
+				"tokenizer": "Other",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 262144,
+				"max_completion_tokens": 235929,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"frequency_penalty",
+				"include_reasoning",
+				"logprobs",
+				"max_tokens",
+				"presence_penalty",
+				"reasoning",
+				"repetition_penalty",
+				"seed",
+				"stop",
+				"temperature",
+				"tool_choice",
+				"tools",
+				"top_k",
+				"top_logprobs",
+				"top_p"
+			],
+			"default_parameters": {},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/inclusionai/ling-3.1-flash-20261002/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [],
+				"artificial_analysis": {
+					"intelligence_index": 41.1,
+					"coding_index": null,
+					"agentic_index": null
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"default_enabled": true
+			}
+		},
+		{
+			"id": "thinkingmachines/inkling:free",
+			"canonical_slug": "thinkingmachines/inkling-20260715",
+			"hugging_face_id": "thinkingmachines/Inkling",
+			"name": "Thinking Machines: Inkling (free)",
+			"created": 1784325956,
+			"description": "Inkling is an open-weight multimodal mixture-of-experts model from Thinking Mach",
+			"context_length": 1048576,
+			"architecture": {
+				"modality": "text+image+audio->text",
+				"input_modalities": ["text", "image", "audio"],
+				"output_modalities": ["text"],
+				"tokenizer": "Other",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 1048576,
+				"max_completion_tokens": 262144,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"frequency_penalty",
+				"include_reasoning",
+				"max_tokens",
+				"presence_penalty",
+				"reasoning",
+				"reasoning_effort",
+				"seed",
+				"stop",
+				"temperature",
+				"tools",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": null,
+				"top_p": null,
+				"top_k": null,
+				"frequency_penalty": null,
+				"presence_penalty": null,
+				"repetition_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/thinkingmachines/inkling-20260715/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [
+					{
+						"arena": "agents",
+						"category": "webapps",
+						"elo": 1189,
+						"win_rate": 48.6,
+						"rank": 22
+					},
+					{
+						"arena": "models",
+						"category": "3d",
+						"elo": 1166,
+						"win_rate": 40.6,
+						"rank": 59
+					},
+					{
+						"arena": "models",
+						"category": "asciiart",
+						"elo": 1092,
+						"win_rate": 34,
+						"rank": 62
+					},
+					{
+						"arena": "models",
+						"category": "codecategories",
+						"elo": 1209,
+						"win_rate": 42.3,
+						"rank": 55
+					},
+					{
+						"arena": "models",
+						"category": "dataviz",
+						"elo": 1161,
+						"win_rate": 37.4,
+						"rank": 75
+					},
+					{
+						"arena": "models",
+						"category": "gamedev",
+						"elo": 1169,
+						"win_rate": 37.8,
+						"rank": 65
+					},
+					{
+						"arena": "models",
+						"category": "svg",
+						"elo": 1112,
+						"win_rate": 35,
+						"rank": 57
+					},
+					{
+						"arena": "models",
+						"category": "uicomponent",
+						"elo": 1201,
+						"win_rate": 40.2,
+						"rank": 54
+					},
+					{
+						"arena": "models",
+						"category": "website",
+						"elo": 1228,
+						"win_rate": 44.7,
+						"rank": 51
+					}
+				],
+				"artificial_analysis": {
+					"intelligence_index": 25,
+					"coding_index": 52.1,
+					"agentic_index": 22.5
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"default_enabled": true,
+				"supported_efforts": ["max", "high", "medium", "low", "minimal", "none"],
+				"default_effort": "high"
+			}
+		},
+		{
+			"id": "google/gemma-4-26b-a4b-it:free",
+			"canonical_slug": "google/gemma-4-26b-a4b-it-20260403",
+			"hugging_face_id": "google/gemma-4-26B-A4B-it",
+			"name": "Google: Gemma 4 26B A4B  (free)",
+			"created": 1775227989,
+			"description": "Gemma 4 26B A4B IT is an instruction-tuned Mixture-of-Experts (MoE) model from G",
+			"context_length": 262144,
+			"architecture": {
+				"modality": "text+image+video->text",
+				"input_modalities": ["image", "text", "video"],
+				"output_modalities": ["text"],
+				"tokenizer": "Gemma",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 262144,
+				"max_completion_tokens": 32768,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"include_reasoning",
+				"max_tokens",
+				"reasoning",
+				"response_format",
+				"seed",
+				"temperature",
+				"tool_choice",
+				"tools",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": 1,
+				"top_p": 0.95,
+				"top_k": 64
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/google/gemma-4-26b-a4b-it-20260403/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [],
+				"artificial_analysis": {
+					"intelligence_index": 16.7,
+					"coding_index": 39.3,
+					"agentic_index": 2.9
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"default_enabled": false
+			}
+		},
+		{
+			"id": "google/gemma-4-31b-it:free",
+			"canonical_slug": "google/gemma-4-31b-it-20260402",
+			"hugging_face_id": "google/gemma-4-31B-it",
+			"name": "Google: Gemma 4 31B (free)",
+			"created": 1775148486,
+			"description": "Gemma 4 31B Instruct is Google DeepMind's 30.7B dense multimodal model supportin",
+			"context_length": 262144,
+			"architecture": {
+				"modality": "text+image+video->text",
+				"input_modalities": ["image", "text", "video"],
+				"output_modalities": ["text"],
+				"tokenizer": "Gemma",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 262144,
+				"max_completion_tokens": 32768,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"include_reasoning",
+				"max_tokens",
+				"reasoning",
+				"response_format",
+				"seed",
+				"temperature",
+				"tool_choice",
+				"tools",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": 1,
+				"top_p": 0.95,
+				"top_k": 64,
+				"frequency_penalty": null,
+				"presence_penalty": null,
+				"repetition_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/google/gemma-4-31b-it-20260402/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [],
+				"artificial_analysis": {
+					"intelligence_index": 14.7,
+					"coding_index": 43.4,
+					"agentic_index": 4.2
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"default_enabled": false
+			}
+		},
+		{
+			"id": "google/lyria-3-pro-preview",
+			"canonical_slug": "google/lyria-3-pro-preview-20260330",
+			"hugging_face_id": null,
+			"name": "Google: Lyria 3 Pro Preview",
+			"created": 1774907286,
+			"description": "Full-length songs are priced at $0.08 per song. Lyria 3 is Google's family of mu",
+			"context_length": 1048576,
+			"architecture": {
+				"modality": "text+image->text+audio",
+				"input_modalities": ["text", "image"],
+				"output_modalities": ["text", "audio"],
+				"tokenizer": "Other",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 1048576,
+				"max_completion_tokens": 65536,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": ["max_tokens", "response_format", "seed", "temperature", "top_p"],
+			"default_parameters": {
+				"temperature": null,
+				"top_p": null,
+				"top_k": null,
+				"frequency_penalty": null,
+				"presence_penalty": null,
+				"repetition_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/google/lyria-3-pro-preview-20260330/endpoints"
+			}
+		},
+		{
+			"id": "nvidia/nemotron-3-super-120b-a12b:free",
+			"canonical_slug": "nvidia/nemotron-3-super-120b-a12b-20230311",
+			"hugging_face_id": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8",
+			"name": "NVIDIA: Nemotron 3 Super (free)",
+			"created": 1773245239,
+			"description": "NVIDIA Nemotron 3 Super is a 120B-parameter open hybrid MoE model, activating ju",
+			"context_length": 262144,
+			"architecture": {
+				"modality": "text->text",
+				"input_modalities": ["text"],
+				"output_modalities": ["text"],
+				"tokenizer": "Other",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": 262144,
+				"max_completion_tokens": 235929,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"include_reasoning",
+				"max_tokens",
+				"reasoning",
+				"reasoning_effort",
+				"response_format",
+				"seed",
+				"structured_outputs",
+				"temperature",
+				"tool_choice",
+				"tools",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": 1,
+				"top_p": 0.95,
+				"top_k": null,
+				"frequency_penalty": null,
+				"presence_penalty": null,
+				"repetition_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/nvidia/nemotron-3-super-120b-a12b-20230311/endpoints"
+			},
+			"benchmarks": {
+				"design_arena": [],
+				"artificial_analysis": {
+					"intelligence_index": 12.8,
+					"coding_index": 37.7,
+					"agentic_index": 1.7
+				}
+			},
+			"reasoning": {
+				"mandatory": false,
+				"default_enabled": true,
+				"supports_max_tokens": true,
+				"supported_efforts": ["medium", "low"],
+				"default_effort": "medium"
+			}
+		},
+		{
+			"id": "openrouter/free",
+			"canonical_slug": "openrouter/free",
+			"hugging_face_id": "",
+			"name": "Free Models Router",
+			"created": 1769917427,
+			"description": "The simplest way to get free inference. openrouter/free is a router that selects",
+			"context_length": 200000,
+			"architecture": {
+				"modality": "text+image->text",
+				"input_modalities": ["text", "image"],
+				"output_modalities": ["text"],
+				"tokenizer": "Router",
+				"instruct_type": null
+			},
+			"pricing": {
+				"prompt": "0",
+				"completion": "0"
+			},
+			"top_provider": {
+				"context_length": null,
+				"max_completion_tokens": null,
+				"is_moderated": false
+			},
+			"per_request_limits": null,
+			"supported_parameters": [
+				"frequency_penalty",
+				"include_reasoning",
+				"logprobs",
+				"max_completion_tokens",
+				"max_tokens",
+				"min_p",
+				"presence_penalty",
+				"reasoning",
+				"reasoning_effort",
+				"repetition_penalty",
+				"response_format",
+				"seed",
+				"stop",
+				"structured_outputs",
+				"temperature",
+				"tool_choice",
+				"tools",
+				"top_k",
+				"top_logprobs",
+				"top_p"
+			],
+			"default_parameters": {
+				"temperature": null,
+				"top_p": null,
+				"frequency_penalty": null
+			},
+			"supported_voices": null,
+			"knowledge_cutoff": null,
+			"expiration_date": null,
+			"links": {
+				"details": "/api/v1/models/openrouter/free/endpoints"
+			}
+		}
+	]
+}

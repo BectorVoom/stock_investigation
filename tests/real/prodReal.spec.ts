@@ -134,7 +134,9 @@ test("clean-checkout prod:build succeeds with no dist/ and serves a real feed re
 		args: ["prod:start"],
 		env,
 	});
-	resources.add(() => service.stop());
+	resources.add(async () => {
+		await service.stop();
+	});
 	try {
 		expect(service.output()).toMatch(/agents: /);
 		const session = await (await fetch(`${PROD_ORIGIN}/api/v1/session`)).json();
@@ -168,7 +170,9 @@ test("a running instance keeps its generation through a rebuild and a rollback",
 	const generationA = activeGeneration(absRelease);
 
 	const service = await startLauncher({ cwd: pristineRoot, args: ["prod:start"], env });
-	resources.add(() => service.stop());
+	resources.add(async () => {
+		await service.stop();
+	});
 	try {
 		expect(await apiGeneration(ABS_ORIGIN)).toBe(generationA);
 
@@ -192,7 +196,9 @@ test("a running instance keeps its generation through a rebuild and a rollback",
 
 	// The restored generation starts again and reports itself.
 	const again = await startLauncher({ cwd: pristineRoot, args: ["prod:start"], env });
-	resources.add(() => again.stop());
+	resources.add(async () => {
+		await again.stop();
+	});
 	try {
 		expect(await apiGeneration(ABS_ORIGIN)).toBe(generationA);
 		const page = await (await fetch(`${ABS_ORIGIN}/`)).text();
@@ -205,7 +211,9 @@ test("a running instance keeps its generation through a rebuild and a rollback",
 	const forward = runReleaseCommand(pristineRoot, "prod:rollback", env);
 	expect(forward.status, `second prod:rollback failed:\n${forward.output}`).toBe(0);
 	const last = await startLauncher({ cwd: pristineRoot, args: ["prod:start"], env });
-	resources.add(() => last.stop());
+	resources.add(async () => {
+		await last.stop();
+	});
 	try {
 		expect(await apiGeneration(ABS_ORIGIN)).not.toBe(generationA);
 		const page = await (await fetch(`${ABS_ORIGIN}/`)).text();

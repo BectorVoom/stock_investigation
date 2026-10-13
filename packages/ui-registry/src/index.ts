@@ -1,4 +1,37 @@
 export { BASELINE_REGISTRY_ENTRIES, createBaselineUiRegistry } from "./baseline.ts";
+export { ChartFrame, ChartLegend, type LegendItem } from "./charts/ChartFrame.tsx";
+export {
+	buildXTicks,
+	CHART_INK,
+	contiguousRuns,
+	DEFAULT_PLOT,
+	extractSeries,
+	FONT_SIZE,
+	LABELLED_PLOT,
+	linearScale,
+	nearestIndex,
+	niceTicks,
+	type PlotArea,
+	planSeries,
+	presentedSeriesLabels,
+	type Scale,
+	SERIES_COLORS,
+	seriesColor,
+	thinnedIndexes,
+	VIEW_HEIGHT,
+	VIEW_WIDTH,
+	valueExtent,
+	type WithheldSeries,
+	type XTick,
+	xAxisModel,
+} from "./charts/chartMath.ts";
+export {
+	buildHomeLineModel,
+	type HomeLineModel,
+	type HomeLinePath,
+	type HomeLineSeriesInput,
+	sparklinePath,
+} from "./charts/homeLineModel.ts";
 export {
 	type CitationNumbering,
 	type ClaimLinksInput,

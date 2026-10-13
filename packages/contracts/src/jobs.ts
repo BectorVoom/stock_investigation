@@ -7,7 +7,14 @@ import {
 } from "@research/domain";
 import { z } from "zod";
 import { agentDescriptorSchema, agentIdSchema } from "./agent.ts";
-import { idSchema, isoDateTimeSchema, marketSchema } from "./primitives.ts";
+import {
+	MARKET_LIMITS,
+	marketObservationSchema,
+	marketSeriesIdSchema,
+	marketSeriesMetaSchema,
+	marketUnavailableCodeSchema,
+} from "./market.ts";
+import { idSchema, isoDateSchema, isoDateTimeSchema, marketSchema } from "./primitives.ts";
 import {
 	articleSchema,
 	claimSchema,
@@ -39,7 +46,7 @@ export {
 
 export const jobStateSchema = z.enum(JOB_STATES);
 export const leasedJobStateSchema = z.enum(LEASED_JOB_STATES);
-export const jobKindSchema = z.enum(["research", "news-ingest"]);
+export const jobKindSchema = z.enum(["research", "news-ingest", "market-refresh"]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
 /* ---------- Budget, usage, cost ---------- */
@@ -176,7 +183,7 @@ export const researchRunSchema = z
 		kind: jobKindSchema,
 		workspaceId: idSchema.nullable(),
 		state: jobStateSchema,
-		/** null for news-ingest jobs. */
+		/** null for news-ingest and market-refresh jobs. */
 		request: researchRequestSchema.nullable(),
 		usage: resourceUsageSchema,
 		cost: costSummarySchema,
@@ -379,6 +386,18 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		conversationContext: conversationContextSchema,
 	}),
 	z.strictObject({ kind: z.literal("news-ingest"), ...leaseShape }),
+	z.strictObject({
+		kind: z.literal("market-refresh"),
+		...leaseShape,
+		series: z
+			.array(
+				z.strictObject({
+					seriesId: marketSeriesIdSchema,
+					latestObservedOn: isoDateSchema.nullable(),
+				}),
+			)
+			.max(MARKET_LIMITS.maxSeries),
+	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -478,6 +497,36 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		articles: z.array(ingestedArticleSchema).max(BUNDLE_LIMITS.articles),
 		sourceReports: z.array(sourceFetchReportSchema).max(200),
 	}),
+	z
+		.strictObject({
+			outcome: z.literal("market-refreshed"),
+			...completionBase,
+			series: z
+				.array(
+					z.strictObject({
+						seriesId: marketSeriesIdSchema,
+						fetchedAt: isoDateTimeSchema,
+						meta: marketSeriesMetaSchema.nullable(),
+						observations: z
+							.array(marketObservationSchema)
+							.max(MARKET_LIMITS.maxObservationsPerResponse),
+						errorCode: marketUnavailableCodeSchema.nullable(),
+					}),
+				)
+				.max(MARKET_LIMITS.maxSeries),
+		})
+		.refine(
+			(completion) =>
+				completion.series.every(
+					(entry) =>
+						(entry.errorCode === null) === (entry.meta !== null) &&
+						(entry.errorCode !== null ? entry.observations.length === 0 : true),
+				),
+			{
+				message: "errorCode is null exactly when meta is present; errors carry no observations",
+				path: ["series"],
+			},
+		),
 	failedCompletionSchema,
 	z.strictObject({ outcome: z.literal("cancelled"), ...completionBase }),
 	z.strictObject({

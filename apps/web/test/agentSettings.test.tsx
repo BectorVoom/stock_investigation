@@ -3,6 +3,7 @@ import {
 	agentSettingsResponseSchema,
 	agentsResponseSchema,
 	DEFAULT_AGENT_SETTINGS,
+	OPENROUTER_FREE_AGENT_ID,
 } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -629,5 +630,93 @@ describe("Agent settings: section link", () => {
 		mount();
 		await sectionReady();
 		expect(document.activeElement).not.toBe(screen.getByLabelText("Default backend"));
+	});
+});
+
+const FREE_AGENTS = agentsResponseSchema.parse({
+	...AGENTS,
+	agents: [
+		...AGENTS.agents,
+		{
+			agentId: OPENROUTER_FREE_AGENT_ID,
+			displayName: "OpenRouter (free models)",
+			capabilities: {
+				supported: ["stream", "cancel"],
+				models: ["b/model:free", "a/model:free", "openrouter/free"],
+			},
+			costModel: "plan-limited",
+			toolIsolation: "enforced",
+			availability: { status: "available" },
+		},
+	],
+});
+
+describe("Agent settings: openrouter free backend", () => {
+	it("lists the runner-reported free models grouped by provider", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), FREE_AGENTS);
+		await sectionReady();
+		chooseBackend(OPENROUTER_FREE_AGENT_ID);
+		const groups = [...modelSelect().querySelectorAll("optgroup")];
+		expect(groups.map((group) => group.getAttribute("label"))).toEqual(["a", "b", "openrouter"]);
+		const values = [...modelSelect().querySelectorAll("option")].map((option) =>
+			option.getAttribute("value"),
+		);
+		expect(values).toContain("a/model:free");
+		expect(values).toContain("openrouter/free");
+	});
+
+	it("blocks saving without a model and with a non-free model, and saves a free model", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), FREE_AGENTS);
+		await sectionReady();
+		chooseBackend(OPENROUTER_FREE_AGENT_ID);
+		expect(saveButton().disabled).toBe(true);
+		expect(screen.getByRole("list", { name: "Before you can save" }).textContent).toContain(
+			"OpenRouter (free models) needs a model",
+		);
+
+		chooseOther();
+		typeModelId("provider/model");
+		expect(screen.getByRole("list", { name: "Before you can save" }).textContent).toContain(
+			"The OpenRouter free model must end in :free",
+		);
+		expect(saveButton().disabled).toBe(true);
+
+		chooseModel("a/model:free");
+		expect(saveButton().disabled).toBe(false);
+		fireEvent.click(saveButton());
+		await screen.findByText(/Saved /);
+		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toMatchObject({
+			defaultAgentId: OPENROUTER_FREE_AGENT_ID,
+			models: { [OPENROUTER_FREE_AGENT_ID]: "a/model:free" },
+			budget: expect.objectContaining({ maxSpendUsd: null }),
+		});
+	});
+
+	it("shows the free plan note only for the free backend and links it to the select", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), FREE_AGENTS);
+		await sectionReady();
+		expect(screen.queryByText(/No spend is authorized for this backend/)).toBeNull();
+
+		chooseBackend(OPENROUTER_FREE_AGENT_ID);
+		const note = await screen.findByText(/No spend is authorized for this backend/);
+		expect(note.getAttribute("data-free-plan-note")).toBe("true");
+		const describedBy = modelSelect().getAttribute("aria-describedby") ?? "";
+		expect(describedBy.split(" ")).toContain(note.getAttribute("id"));
+
+		chooseBackend("claude-code");
+		expect(screen.queryByText(/No spend is authorized for this backend/)).toBeNull();
+	});
+
+	it("uses the free placeholder for the Other input", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), FREE_AGENTS);
+		await sectionReady();
+		chooseBackend(OPENROUTER_FREE_AGENT_ID);
+		chooseOther();
+		expect(screen.getByLabelText("Model id").getAttribute("placeholder")).toBe(
+			"provider/model:free",
+		);
+		chooseBackend("claude-code");
+		chooseOther();
+		expect(screen.getByLabelText("Model id").getAttribute("placeholder")).toBe("provider/model");
 	});
 });

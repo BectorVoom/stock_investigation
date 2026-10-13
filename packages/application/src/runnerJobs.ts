@@ -8,15 +8,22 @@ import type {
 	ComponentCatalog,
 	ConversationContextMessage,
 	HeartbeatResponse,
+	HomeDashboard,
 	IngestedArticle,
 	RunnerEventsRequest,
 	SubscribedSourceRef,
 	WorkspaceComponentSummary,
 } from "@research/contracts";
-import { CONVERSATION_CONTEXT_LIMITS } from "@research/contracts";
+import {
+	CONVERSATION_CONTEXT_LIMITS,
+	DEFAULT_HOME_DASHBOARD,
+	MARKET_LIMITS,
+	parseMarketSeriesId,
+} from "@research/contracts";
 import {
 	checkLease,
 	decideClaim,
+	distinctDashboardSeriesIds,
 	isTerminalJobState,
 	type JobLeaseView,
 	type JobState,
@@ -30,10 +37,13 @@ import type {
 	ChatRepository,
 	Clock,
 	CompletionEffects,
+	HomeDashboardRepository,
 	IdGenerator,
 	JobPatch,
 	JobRecord,
 	JobRepository,
+	MarketCompletionSeries,
+	MarketRepository,
 	ResearchRecordRepository,
 	ResearchUnitOfWork,
 	RunnerStatusRepository,
@@ -96,6 +106,8 @@ export interface RunnerJobServiceDeps {
 	readonly catalog: ComponentCatalog;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
+	readonly homeDashboard: HomeDashboardRepository;
+	readonly market: MarketRepository;
 }
 
 /**
@@ -128,6 +140,14 @@ function toArticle(article: IngestedArticle): Article {
 }
 
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
+	async function marketDashboard(ownerId: string): Promise<HomeDashboard> {
+		const stored = await deps.homeDashboard.get(ownerId);
+		// An unreadable stored dashboard claims the defaults (like an absent
+		// one): the refresh keeps working while the app shows the error state
+		// with its reset way out (V2). It is never silently replaced here.
+		return stored === null || stored === "unreadable" ? DEFAULT_HOME_DASHBOARD : stored.dashboard;
+	}
+
 	async function activeSources(ownerId: string): Promise<readonly SubscribedSourceRef[]> {
 		const sources = await deps.sources.list(ownerId);
 		return sources
@@ -209,6 +229,45 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		return { fromState, toState, actor: `runner:${runner.credentialId}`, reason } as const;
 	}
 
+	/** Effects of a market-refreshed completion, or the reason it cannot be accepted. */
+	async function marketEffects(
+		request: Extract<CompleteJobRequest, { outcome: "market-refreshed" }>,
+	): Promise<UseCaseResult<CompletionEffects>> {
+		const marketSeries: MarketCompletionSeries[] = [];
+		for (const entry of request.series) {
+			const parsed = parseMarketSeriesId(entry.seriesId);
+			if (parsed === null) {
+				return fail("VALIDATION_FAILED", "Unknown market series id.", entry.seriesId.slice(0, 64));
+			}
+			marketSeries.push({
+				seriesId: entry.seriesId,
+				provider: parsed.provider,
+				symbol: parsed.symbol,
+				fetchedAt: entry.fetchedAt,
+				meta:
+					entry.meta === null
+						? null
+						: {
+								title: entry.meta.title,
+								unit: entry.meta.unit,
+								frequency: entry.meta.frequency,
+								publisher: entry.meta.publisher,
+								sourceUrl: entry.meta.sourceUrl,
+							},
+				observations: entry.observations.map(([observedOn, value]) => ({ observedOn, value })),
+				errorCode: entry.errorCode,
+			});
+		}
+		return ok({
+			bundle: null,
+			articles: [],
+			sourceReports: [],
+			workspace: null,
+			assistantMessage: null,
+			marketSeries,
+		});
+	}
+
 	/** Effects of a bundle-bearing completion, or the reason it cannot be accepted. */
 	async function bundleEffects(
 		job: JobRecord,
@@ -229,7 +288,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		};
 		const workspace =
 			job.workspaceId === null ? null : await deps.workspaces.get(job.ownerId, job.workspaceId);
-		if (workspace === null) return ok({ ...base, workspace: null, assistantMessage: null });
+		if (workspace === null)
+			return ok({ ...base, workspace: null, assistantMessage: null, marketSeries: [] });
 
 		const external = await deps.records.resolve(
 			job.ownerId,
@@ -255,6 +315,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						.join(", ")}.)`;
 		return ok({
 			...base,
+			marketSeries: [],
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -353,6 +414,28 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					audits,
 				);
 				if (!granted) continue;
+				if (job.kind === "market-refresh") {
+					const dashboard = await marketDashboard(runner.ownerId);
+					const ids = distinctDashboardSeriesIds(dashboard.widgets).slice(
+						0,
+						MARKET_LIMITS.maxSeries,
+					);
+					const latest = await deps.market.getLatestObservedOn(runner.ownerId, ids);
+					const claimedMarket: ClaimedJob = {
+						kind: "market-refresh",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						series: ids.map((seriesId) => ({
+							seriesId,
+							latestObservedOn: latest.get(seriesId) ?? null,
+						})),
+					};
+					return ok({ job: claimedMarket, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
 				const lease = {
 					runId: job.runId,
 					leaseGeneration: decision.nextLeaseGeneration,
@@ -362,7 +445,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					sources: [...(await activeSources(runner.ownerId))],
 				};
 				const claimed: ClaimedJob =
-					job.request === null
+					job.kind === "news-ingest" || job.request === null
 						? { kind: "news-ingest", ...lease }
 						: {
 								kind: "research",
@@ -496,19 +579,32 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				if (!lease.ok) return staleLease(lease.error);
 
 				const isIngest = job.kind === "news-ingest";
+				const isMarket = job.kind === "market-refresh";
+				const isResearch = job.kind === "research";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
-				if ((isIngest && researchOnly) || (!isIngest && request.outcome === "ingested")) {
+				const marketOnly = request.outcome === "market-refreshed";
+				if (
+					(isIngest && (researchOnly || marketOnly)) ||
+					(isMarket &&
+						!marketOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(isResearch && (request.outcome === "ingested" || marketOnly))
+				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
 				}
 
 				const now = deps.clock.nowIso();
 				let target: JobState;
+				// S4a: completion series that left the dashboard since the claim.
+				let droppedMarketSeries = 0;
 				let effects: CompletionEffects = {
 					bundle: null,
 					articles: [],
 					sourceReports: [],
 					workspace: null,
 					assistantMessage: null,
+					marketSeries: [],
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -545,6 +641,22 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						...effects,
 						...(await ownedArticles(runner.ownerId, request.articles, request.sourceReports)),
 					};
+				} else if (request.outcome === "market-refreshed") {
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					const built = await marketEffects(request);
+					if (!built.ok) return built;
+					// S4a: store only series on the owner's CURRENT dashboard —
+					// the dashboard may have changed since the claim. Dropped
+					// series are counted in the audit detail, never stored.
+					const current = new Set(
+						distinctDashboardSeriesIds((await marketDashboard(runner.ownerId)).widgets),
+					);
+					const kept = built.value.marketSeries.filter((entry) => current.has(entry.seriesId));
+					droppedMarketSeries = built.value.marketSeries.length - kept.length;
+					effects = { ...built.value, marketSeries: kept };
 				} else if (request.outcome === "completed" || request.outcome === "partial") {
 					target = request.outcome;
 					const built = await bundleEffects(job, request, now);
@@ -580,7 +692,17 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						runId,
 						expectedVersion: job.version,
 						patch,
-						audits: [auditFor(runner, job.state, target, `completion: ${outcome}`)],
+						audits: [
+							auditFor(
+								runner,
+								job.state,
+								target,
+								// S4a: the dropped off-dashboard count travels in the audit detail.
+								droppedMarketSeries > 0
+									? `completion: ${outcome}, dropped ${droppedMarketSeries} off-dashboard series`
+									: `completion: ${outcome}`,
+							),
+						],
 						at: now,
 					},
 					effects,

@@ -1,4 +1,9 @@
-import type { AgentSettings, AgentSettingsResponse, AgentsResponse } from "@research/contracts";
+import {
+	type AgentSettings,
+	type AgentSettingsResponse,
+	type AgentsResponse,
+	OPENROUTER_FREE_AGENT_ID,
+} from "@research/contracts";
 import {
 	createEffect,
 	createMemo,
@@ -32,6 +37,7 @@ import {
 	backendRequiresModel,
 	buildModelSelectOptions,
 	evaluateAgentSettings,
+	FREE_PLAN_NOTE,
 	FREE_TIER_CAUTION,
 	isFreeTierModelId,
 	isSettingsDraftChanged,
@@ -192,12 +198,21 @@ export function AgentSettingsSection(props: {
 			trimmedModel() !== "" &&
 			isFreeTierModelId(trimmedModel()),
 	);
+	const isFreeBackend = createMemo(() => selectedBackendId() === OPENROUTER_FREE_AGENT_ID);
+	const selectedDisplayName = createMemo(() => evaluation()?.selectedAgent?.displayName ?? "");
 
 	const backendId = createUniqueId();
 	const modelSelectId = createUniqueId();
 	const customModelId = createUniqueId();
 	const modelHelpId = createUniqueId();
 	const modelCautionId = createUniqueId();
+	const freePlanNoteId = createUniqueId();
+	const modelDescribedBy = createMemo(() => {
+		const ids = [modelHelpId];
+		if (showFreeCaution()) ids.push(modelCautionId);
+		if (isFreeBackend()) ids.push(freePlanNoteId);
+		return ids.join(" ");
+	});
 	const effortId = createUniqueId();
 	const webAccessId = createUniqueId();
 	const problemsId = createUniqueId();
@@ -365,7 +380,7 @@ export function AgentSettingsSection(props: {
 							<Select
 								id={modelSelectId}
 								disabled={current().defaultAgentId === ""}
-								describedBy={showFreeCaution() ? `${modelHelpId} ${modelCautionId}` : modelHelpId}
+								describedBy={modelDescribedBy()}
 								onChange={(event) => onModelSelect(event.currentTarget.value)}
 							>
 								<option value="" selected={selectValue() === ""}>
@@ -405,7 +420,7 @@ export function AgentSettingsSection(props: {
 									type="text"
 									class={INPUT}
 									maxLength={100}
-									placeholder="provider/model"
+									placeholder={isFreeBackend() ? "provider/model:free" : "provider/model"}
 									value={modelText()}
 									onInput={(event) => setModelText(event.currentTarget.value)}
 								/>
@@ -415,6 +430,15 @@ export function AgentSettingsSection(props: {
 									{FREE_TIER_CAUTION}
 								</p>
 							</Show>
+							<Show when={isFreeBackend()}>
+								<p
+									id={freePlanNoteId}
+									data-free-plan-note="true"
+									class="mt-0.5 text-2xs text-slate-600"
+								>
+									{FREE_PLAN_NOTE}
+								</p>
+							</Show>
 							<p id={modelHelpId} class="mt-0.5 text-2xs text-slate-600">
 								<Show
 									when={waitingForModels()}
@@ -422,7 +446,7 @@ export function AgentSettingsSection(props: {
 										<>
 											Models reported by the runner for this backend.{" "}
 											{requiresModel()
-												? "OpenCode needs a model — choose one from the list."
+												? `${selectedDisplayName()} needs a model — choose one from the list.`
 												: "Empty means the backend's own default."}
 										</>
 									}

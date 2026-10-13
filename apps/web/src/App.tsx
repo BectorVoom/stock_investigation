@@ -1,14 +1,29 @@
 import type { UiRegistry } from "@research/ui-registry";
-import { createEffect, For, type JSX, Match, Show, Switch } from "solid-js";
+import {
+	createEffect,
+	ErrorBoundary,
+	For,
+	type JSX,
+	lazy,
+	Match,
+	Show,
+	Suspense,
+	Switch,
+} from "solid-js";
 import type { ApiClient } from "./api/client.ts";
 import { ChatView } from "./chat/ChatView.tsx";
-import { PageHeader } from "./components/ui.tsx";
+import { BUTTON, Loading, PageHeader } from "./components/ui.tsx";
 import type { VisibilitySource } from "./lib/polling.ts";
 import { createRemote } from "./lib/remote.ts";
 import { PAGES } from "./pages.ts";
 import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
+
+/** Home is loaded lazily so the other pages never pay for Shoelace. */
+const HomeView = lazy(() =>
+	import("./home/HomeView.tsx").then((module) => ({ default: module.HomeView })),
+);
 
 export interface AppProps {
 	/** The only way the UI reaches the backend (UI-001). */
@@ -27,7 +42,7 @@ export function App(props: AppProps): JSX.Element {
 	// The tab title is external to Solid's tree, hence an effect.
 	createEffect(() => {
 		const page = PAGES.find((entry) => entry.view === view());
-		props.window.document.title = `${page?.title ?? "Chat"} · Research workspace`;
+		props.window.document.title = `${page?.title ?? "Home"} · Research workspace`;
 	});
 
 	return (
@@ -99,6 +114,31 @@ export function App(props: AppProps): JSX.Element {
 			>
 				<PageHeader view={view()} />
 				<Switch>
+					<Match when={view() === "home"}>
+						{/* V10: the lazy chunk has a designed loading state and an
+						    error state with "Try again" — a failed chunk load must
+						    not leave the default page blank. */}
+						<ErrorBoundary
+							fallback={(error, reset) => (
+								<div
+									role="alert"
+									class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+								>
+									<p>
+										<span class="font-semibold">Home could not be loaded. </span>
+										{error instanceof Error ? error.message : "Unknown error."}
+									</p>
+									<button type="button" class={`${BUTTON} mt-1`} onClick={reset}>
+										Try again
+									</button>
+								</div>
+							)}
+						>
+							<Suspense fallback={<Loading label="Home" />}>
+								<HomeView api={props.api} visibility={props.visibility} />
+							</Suspense>
+						</ErrorBoundary>
+					</Match>
 					<Match when={view() === "chat"}>
 						<ChatView
 							api={props.api}

@@ -9,6 +9,8 @@ import {
 	type ConversationSummary,
 	chatMessageSchema,
 	conversationSummarySchema,
+	type HomeDashboard,
+	homeDashboardSchema,
 	type NewsSource,
 	newsSourceSchema,
 	type RunnerCredential,
@@ -125,7 +127,7 @@ export function toArticle(row: unknown): Article {
 const jobRowSchema = z.object({
 	owner_id: z.string(),
 	run_id: z.string(),
-	kind: z.enum(["research", "news-ingest"]),
+	kind: z.enum(["research", "news-ingest", "market-refresh"]),
 	state: z.string(),
 	request_json: nullableText,
 	workspace_id: nullableText,
@@ -398,4 +400,102 @@ export function numberColumn(table: string, column: string, row: unknown): numbe
 	const value = r[column];
 	if (typeof value !== "number") throw new StoredDataError(table, column);
 	return value;
+}
+
+const homeDashboardRowSchema = z.object({
+	dashboard_json: z.string(),
+	version: z.number(),
+	updated_at: z.string(),
+});
+
+/** A stored dashboard that no longer parses is a typed failure (fail closed). */
+export function toHomeDashboardRecord(row: unknown): {
+	readonly dashboard: HomeDashboard;
+	readonly version: number;
+	readonly updatedAt: string;
+} {
+	const r = decode("home_dashboards", homeDashboardRowSchema, row);
+	return {
+		dashboard: parseJsonColumn("home_dashboards", homeDashboardSchema, r.dashboard_json),
+		version: r.version,
+		updatedAt: r.updated_at,
+	};
+}
+
+const marketSeriesRowSchema = z.object({
+	series_id: z.string(),
+	provider: z.string(),
+	symbol: z.string(),
+	title: z.string(),
+	unit: z.string(),
+	frequency: z.string(),
+	publisher: z.string(),
+	source_url: z.string(),
+	last_refreshed_at: z.string().nullable(),
+	retrieved_at: z.string().nullable(),
+	unavailable_code: z.string().nullable(),
+});
+
+const marketFrequencySchema = z.enum([
+	"daily",
+	"weekly",
+	"monthly",
+	"quarterly",
+	"annual",
+	"unknown",
+]);
+const marketUnavailableCodeSchema = z.enum([
+	"NEVER_REFRESHED",
+	"SOURCE_NOT_CONFIGURED",
+	"SOURCE_AUTH_FAILED",
+	"SERIES_NOT_FOUND",
+	"PLAN_NOT_ENTITLED",
+	"RATE_LIMITED",
+	"NO_DATA",
+	"SOURCE_FAILED",
+]);
+
+export function toStoredMarketSeries(row: unknown): {
+	readonly seriesId: string;
+	readonly provider: "fred" | "twelve-data";
+	readonly symbol: string;
+	readonly title: string;
+	readonly unit: string;
+	readonly frequency: "daily" | "weekly" | "monthly" | "quarterly" | "annual" | "unknown";
+	readonly publisher: string;
+	readonly sourceUrl: string;
+	readonly lastRefreshedAt: string | null;
+	readonly retrievedAt: string | null;
+	readonly unavailableCode:
+		| "NEVER_REFRESHED"
+		| "SOURCE_NOT_CONFIGURED"
+		| "SOURCE_AUTH_FAILED"
+		| "SERIES_NOT_FOUND"
+		| "PLAN_NOT_ENTITLED"
+		| "RATE_LIMITED"
+		| "NO_DATA"
+		| "SOURCE_FAILED"
+		| null;
+} {
+	const r = decode("market_series", marketSeriesRowSchema, row);
+	const provider = r.provider === "twelve-data" ? "twelve-data" : "fred";
+	if (r.provider !== "fred" && r.provider !== "twelve-data") {
+		throw new StoredDataError("market_series", "provider");
+	}
+	return {
+		seriesId: r.series_id,
+		provider,
+		symbol: r.symbol,
+		title: r.title,
+		unit: r.unit,
+		frequency: decode("market_series", marketFrequencySchema, r.frequency),
+		publisher: r.publisher,
+		sourceUrl: r.source_url,
+		lastRefreshedAt: r.last_refreshed_at,
+		retrievedAt: r.retrieved_at,
+		unavailableCode:
+			r.unavailable_code === null
+				? null
+				: decode("market_series", marketUnavailableCodeSchema, r.unavailable_code),
+	};
 }

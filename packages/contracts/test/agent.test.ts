@@ -10,6 +10,9 @@ import {
 	capabilitySchema,
 	costModelSchema,
 	isFreeTierModelId,
+	isOpenRouterFreeModelId,
+	OPENROUTER_FREE_AGENT_ID,
+	OPENROUTER_FREE_ROUTER_MODEL_ID,
 	toolIsolationSchema,
 } from "../src/index.ts";
 import { agentDescriptor } from "./fixtures.ts";
@@ -99,6 +102,30 @@ describe("agent identity and capabilities (FR-012 / FR-013)", () => {
 		expectAccepted(toolIsolationSchema, "enforced");
 		expectAccepted(toolIsolationSchema, "unverified");
 		expectRejected(toolIsolationSchema, "trusted");
+	});
+
+	it("names the OpenRouter free-models backend and its router model", () => {
+		expect(OPENROUTER_FREE_AGENT_ID).toBe("openrouter-free");
+		expect(OPENROUTER_FREE_ROUTER_MODEL_ID).toBe("openrouter/free");
+		expectAccepted(agentIdSchema, OPENROUTER_FREE_AGENT_ID);
+	});
+
+	it.each([
+		"google/gemma-4-31b-it:free",
+		"openrouter/free",
+	])("accepts the free model id %j", (modelId) => {
+		expect(isOpenRouterFreeModelId(modelId)).toBe(true);
+	});
+
+	it.each([
+		"",
+		":free",
+		"google/gemma-4-31b-it",
+		"x:free ",
+		"X:FREE",
+		"opencode/muse-spark-1.3-contributor-free",
+	])("rejects the non-free model id %j", (modelId) => {
+		expect(isOpenRouterFreeModelId(modelId)).toBe(false);
 	});
 });
 

@@ -100,3 +100,48 @@ Text contrast on every state · focus visibility on every tab stop · heading or
 
 - An element scrolled out of a scroll container can be reported as "obscured"; content behind the pinned input is reported as "covered-by-pinned-area". Both are expected.
 - Geometry and contrast are checked; whether a screen makes sense to a first-time owner is not. That is why the screenshots are read, and why the review also starts from a fresh installation.
+
+# UI review — Home page
+
+**Date:** 2026-10-13 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `REVIEW_BROWSER=firefox bun run review:ui` (`tests/ui-review/homeReview.spec.ts`)
+
+## How it was reviewed
+
+The Home page (FR-017) was driven in Firefox with the Playwright library against the E2E server and runner with fixture market data, and every Home screenshot was read. It was also looked at with real data: the real-environment runs (`tests/real/homeReal.spec.ts`, `tests/real/homeUpgrade.spec.ts`) save full-page screenshots at 1440×900 and 390×844 after a real FRED and Twelve Data refresh, and those were read too. Playwright MCP was not used, for the reason given in the Chat section.
+
+**States:** loading · populated desktop · Add-widget dialog · widget Actions menu · a series the provider cannot serve ("unavailable (reason)") · stale data · tablet and phone, top and bottom.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots (real data) | Change digits followed the size of the change instead of the value ("▲ +4.2525" beside 4,173.67) | Fixed: a change shows the same fraction digits as the value it belongs to |
+| Screenshots (real data) | Whole-number series showed changes with two decimals (159,044 with "+29.00") | Fixed the same way ("+29") |
+| Screenshots (real data) | Indicator "As of" cells repeated "as of", "Previous" cells repeated the unit beside the Unit column | Fixed |
+| Screenshots | Shoelace's own icons did not render: it loads them as `data:` URIs, which the page's `connect-src 'self'` policy blocks | Fixed without touching the policy: the 18 icons ship as files from the same origin; an E2E test fails if any `sl-icon` has no SVG |
+| Screenshots | Shoelace's default density and colours did not match the rest of the application | Fixed by mapping Shoelace's tokens to the application's in `apps/web/src/styles.css` |
+| Screenshots | The Add-widget dialog opened with red errors on an untouched form | Fixed: a neutral "To add this widget:" list until a field is changed, red "Fix before saving:" afterwards |
+| Screenshots (after the merge with upstream) | Home's Shoelace buttons kept a border while the application's buttons had become borderless grey | Fixed in the token mapping (`apps/web/src/styles.css`) |
+| Automated (14, all `small-target`) | Source links in provenance lines are under 24 px tall | Kept: links in running text are exempt (guideline section 9) |
+
+## What scripted review could not find
+
+The most serious Home defect was not visible in any screenshot and passed every scripted check: **choosing an option in any dropdown inside the widget dialog closed the dialog.** Shoelace's events bubble, so the dropdown's own "closed" event reached the dialog's handler. The scripted review and the first E2E tests set values without clicking through a real dropdown. It was found by an independent code review, fixed (handlers act only on their own element's events) and is now covered by E2E tests that select with a real mouse and with the keyboard, and that press Escape with a list open.
+
+The same independent review found twenty-one further defects in page state, display and server code, most of a kind a browser pass does not show (a poller that stopped after one failed request, no error state when the stored arrangement cannot be read, a refresh that could be queued twice, data not reloaded after a save, a previous value of 0 shown as missing). All are fixed with tests.
+
+Two E2E tests passed on Firefox and timed out on Chromium after that fix: they clicked a button behind the still-open dialog. The tests were wrong, not the page; they now close the dialog first.
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Firefox | Reviewed (scripted review and real-data screenshots); browser suite passes (22 passed, 1 skipped, after the merge with upstream `06c00d6`) |
+| Chromium (Playwright's bundled build, not the Chrome channel) | Browser suite passes (22 passed, 1 skipped). **Not reviewed** with `review:ui` |
+| Chrome (Chrome channel) | **Not run.** Google Chrome is not installed on the development machine; the launcher specs that run only under Chrome were not run either |
+| Safari engine (Playwright WebKit) | **Not run.** WebKit cannot start on the development machine (missing system libraries). Home on Safari is unverified |
+
+## Known limits
+
+- On a phone-width screen the two tables are wider than the card and scroll sideways inside it; the first columns (name, latest value) are visible without scrolling.
+- The review data is a small fixture (five observations per series); dense charts were only seen in the real-data screenshots.

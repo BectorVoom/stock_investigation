@@ -11,7 +11,9 @@
  *  - the caller's `authorizeRedirect` callback before each redirect hop is
  *    contacted (shared core, so both runtimes honour it; a refusal ends the
  *    fetch with `REDIRECT_NOT_AUTHORIZED`);
- *  - GET only, no cookies, no Authorization, byte and time limits.
+ *  - GET only, no cookies, byte and time limits. One caller-supplied
+ *    `Authorization` header at most, sent on the first request only (the
+ *    core strips it from every redirect hop).
  *
  * RESPONSE SIZE — what is and is not bounded here
  *  `fetch` decodes Content-Encoding inside the runtime and exposes only the
@@ -90,7 +92,13 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 				method: "GET",
 				// The core validates each Location itself; the runtime must not follow anything.
 				redirect: "manual",
-				headers: { accept: request.headers.accept, "user-agent": request.headers["user-agent"] },
+				headers: {
+					accept: request.headers.accept,
+					"user-agent": request.headers["user-agent"],
+					...(request.headers.authorization === null
+						? {}
+						: { authorization: request.headers.authorization }),
+				},
 				signal: request.signal,
 			});
 		} catch (error) {

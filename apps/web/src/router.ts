@@ -20,11 +20,11 @@ const WORKSPACE_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$/;
 const SETTINGS_SECTIONS = new Set(["agent"]);
 
 /**
- * Parses `#/chat`, `#/chat/<id>`, `#/sources`, `#/settings`
+ * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/settings`
  * and `#/settings/agent`; the legacy `#/canvas`, `#/canvas/<id>`,
  * `#/workspace/<id>` and `#/workspace` aliases parse as the chat view
  * (bookmarks from before Chat and Canvas merged into one page).
- * Anything else (unknown or empty hash) is the default `chat` view.
+ * Anything else (unknown or empty hash) is the default `home` view.
  */
 export function parseHash(hash: string): Route {
 	const normalized = hash.replace(/^#\/?/, "");
@@ -34,7 +34,7 @@ export function parseHash(hash: string): Route {
 		return { view: "chat", workspaceId, section: null };
 	}
 	const known = PAGES.find((page) => page.view === viewText);
-	if (known === undefined) return { view: "chat", workspaceId: null, section: null };
+	if (known === undefined) return { view: "home", workspaceId: null, section: null };
 	if (known.view === "chat" && idText !== undefined) {
 		return {
 			view: known.view,

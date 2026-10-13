@@ -38,7 +38,12 @@ export interface HopRequest {
 	readonly url: URL;
 	/** Lower-case host name without a trailing dot, as checked against policy and allowlist. */
 	readonly hostname: string;
-	readonly headers: { readonly accept: string; readonly "user-agent": string };
+	readonly headers: {
+		readonly accept: string;
+		readonly "user-agent": string;
+		/** Caller-supplied Authorization value, or null when the caller sent none. */
+		readonly authorization: string | null;
+	};
 	/**
 	 * The caller's byte ceiling. The core applies it to the decoded body; a
 	 * transport that decodes content itself must also apply it to the encoded
@@ -212,6 +217,18 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 		if (userAgent === null || !HEADER_VALUE.test(options.accept)) {
 			return fail("NETWORK_ERROR", "request header value contains unsupported characters");
 		}
+		// The only extra header the fetcher can send (a provider API key).
+		// A value outside printable ASCII fails the request before any byte is sent.
+		const authorization =
+			options.authorization === undefined
+				? null
+				: HEADER_VALUE.test(options.authorization)
+					? options.authorization
+					: null;
+		if (options.authorization !== undefined && authorization === null) {
+			return fail("NETWORK_ERROR", "request header value contains unsupported characters");
+		}
+		const includeErrorBody = options.includeErrorBody === true;
 		const allowedHosts =
 			options.allowedHosts === undefined
 				? null
@@ -267,7 +284,13 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 					transport({
 						url: target.value.url,
 						hostname: target.value.hostname,
-						headers: { accept: options.accept, "user-agent": userAgent },
+						headers: {
+							accept: options.accept,
+							"user-agent": userAgent,
+							// A key must never travel to a host the caller did not
+							// address: redirects get no Authorization header.
+							authorization: hop === 0 ? authorization : null,
+						},
 						maxBytes: options.maxBytes,
 						signal,
 					}),
@@ -300,6 +323,22 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 				continue;
 			}
 			if (outcome.status < 200 || outcome.status > 299) {
+				// Opt-in only (FRED's 400 carries the error code in JSON): read
+				// the bounded error body so the adapter can map it. The body is
+				// untrusted provider text; only the adapter ever sees it.
+				if (includeErrorBody) {
+					const errorBody = await readBounded(outcome.body, options.maxBytes, signal);
+					outcome.discard();
+					if (errorBody.kind === "aborted") return timedOut();
+					if (errorBody.kind === "complete") {
+						return err({
+							code: "HTTP_ERROR",
+							detail: `HTTP ${outcome.status}`,
+							body: new TextDecoder("utf-8").decode(errorBody.bytes),
+						});
+					}
+					return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
+				}
 				outcome.discard();
 				return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
 			}

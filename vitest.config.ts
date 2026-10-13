@@ -31,6 +31,7 @@ export default defineConfig({
 				test: {
 					name: "web",
 					environment: "happy-dom",
+					setupFiles: ["apps/web/test/setup.ts"],
 					include: [
 						"apps/web/test/**/*.test.{ts,tsx}",
 						"packages/ui-registry/test/**/*.test.{ts,tsx}",

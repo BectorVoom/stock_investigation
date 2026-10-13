@@ -1,4 +1,8 @@
-import { agentsResponseSchema, DEFAULT_AGENT_SETTINGS } from "@research/contracts";
+import {
+	agentsResponseSchema,
+	DEFAULT_AGENT_SETTINGS,
+	OPENROUTER_FREE_AGENT_ID,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	type AgentSettingsDraft,
@@ -10,6 +14,7 @@ import {
 	defaultBudgetDraft,
 	evaluateAgentSettings,
 	evaluateBudget,
+	FREE_PLAN_NOTE,
 	FREE_TIER_CAUTION,
 	groupModelsByProvider,
 	isFreeTierModelId,
@@ -475,5 +480,88 @@ describe("settings change detection", () => {
 				AGENT_SETTINGS,
 			),
 		).toBe(true);
+	});
+});
+
+const FREE_AGENTS = agentsResponseSchema.parse({
+	...AGENTS,
+	agents: [
+		...AGENTS.agents,
+		{
+			agentId: OPENROUTER_FREE_AGENT_ID,
+			displayName: "OpenRouter (free models)",
+			capabilities: {
+				supported: ["stream", "cancel"],
+				models: ["b/provider:free", "a/model:free", "openrouter/free"],
+			},
+			costModel: "plan-limited",
+			toolIsolation: "enforced",
+			availability: { status: "available" },
+		},
+	],
+});
+
+describe("openrouter free backend", () => {
+	it("requires a model for opencode and the free backend only", () => {
+		expect(backendRequiresModel("opencode")).toBe(true);
+		expect(backendRequiresModel(OPENROUTER_FREE_AGENT_ID)).toBe(true);
+		expect(backendRequiresModel("claude-code")).toBe(false);
+		expect(backendRequiresModel("openrouter")).toBe(false);
+	});
+
+	it("blocks saving without a model and with a non-free model", () => {
+		const missing = evaluateAgentSettings(
+			settingsDraft({ defaultAgentId: OPENROUTER_FREE_AGENT_ID }),
+			FREE_AGENTS,
+		);
+		expect(missing.settings).toBeNull();
+		expect(missing.problems).toContain(
+			"OpenRouter (free models) needs a model — without one it cannot run. Choose one from the list the runner reported, or type one.",
+		);
+
+		const billed = evaluateAgentSettings(
+			settingsDraft({
+				defaultAgentId: OPENROUTER_FREE_AGENT_ID,
+				models: { [OPENROUTER_FREE_AGENT_ID]: "provider/model" },
+			}),
+			FREE_AGENTS,
+		);
+		expect(billed.settings).toBeNull();
+		expect(billed.problems).toContain(
+			"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
+		);
+	});
+
+	it("saves a free model with no metered spend", () => {
+		const result = evaluateAgentSettings(
+			settingsDraft({
+				defaultAgentId: OPENROUTER_FREE_AGENT_ID,
+				models: { [OPENROUTER_FREE_AGENT_ID]: "a/model:free" },
+			}),
+			FREE_AGENTS,
+		);
+		expect(result.problems).toEqual([]);
+		expect(result.settings?.models).toEqual({ [OPENROUTER_FREE_AGENT_ID]: "a/model:free" });
+		expect(result.settings?.budget.maxSpendUsd).toBeNull();
+		expect(result.costModel).toBe("plan-limited");
+	});
+
+	it("reports the runner's free models grouped by provider", () => {
+		expect(reportedModels(FREE_AGENTS, OPENROUTER_FREE_AGENT_ID)).toEqual([
+			"b/provider:free",
+			"a/model:free",
+			"openrouter/free",
+		]);
+		expect(groupModelsByProvider(["b/provider:free", "a/model:free", "openrouter/free"])).toEqual([
+			{ provider: "a", models: ["a/model:free"] },
+			{ provider: "b", models: ["b/provider:free"] },
+			{ provider: "openrouter", models: ["openrouter/free"] },
+		]);
+	});
+
+	it("states that no spend is authorized for the free backend", () => {
+		expect(FREE_PLAN_NOTE).toBe(
+			"OpenRouter limits free models per minute and per day, and each agent step of a question uses one request. No spend is authorized for this backend.",
+		);
 	});
 });

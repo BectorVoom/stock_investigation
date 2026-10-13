@@ -3,12 +3,13 @@ import type {
 	DeleteWorkspaceInput,
 	DeleteWorkspaceOutcome,
 	JobWrite,
+	MarketCompletionSeries,
 	ResearchUnitOfWork,
 	WorkspaceWrite,
 } from "@research/application";
 import { deriveConversationTitle } from "@research/application";
 import type { ChatMessage, Dataset, ResearchBundle, RunRecords } from "@research/contracts";
-import { DEFAULT_CONVERSATION_TITLE } from "@research/contracts";
+import { DEFAULT_CONVERSATION_TITLE, MARKET_LIMITS } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	enqueueOutcome,
@@ -27,6 +28,33 @@ interface Guard {
 }
 
 const ALWAYS: Guard = { sql: "1 = 1", values: [] };
+
+export interface MarketObservationPoint {
+	readonly seriesId: string;
+	readonly observedOn: string;
+	readonly value: number;
+}
+
+/**
+ * S5: D1 limits a bound string to about 2 MB (Cloudflare's documented limit;
+ * a single observations JSON parameter measured 1.96 MB for a 30 x 800 first
+ * refresh). Split the observations upsert into chunks that stay well under
+ * 1 MB each: one point serializes to at most ~160 bytes (series id ≤ 64
+ * chars, ISO date, number, JSON overhead), so 4,000 points peak near 640 KB.
+ * A maximal completion (30 series x 800 = 24,000 points) needs 6 chunks.
+ */
+export const MARKET_OBSERVATION_CHUNK_POINTS = 4_000;
+
+/** Packs observation points into upsert chunks of at most `MARKET_OBSERVATION_CHUNK_POINTS`. */
+export function chunkObservationPoints(
+	points: readonly MarketObservationPoint[],
+): MarketObservationPoint[][] {
+	const chunks: MarketObservationPoint[][] = [];
+	for (let start = 0; start < points.length; start += MARKET_OBSERVATION_CHUNK_POINTS) {
+		chunks.push(points.slice(start, start + MARKET_OBSERVATION_CHUNK_POINTS));
+	}
+	return chunks;
+}
 
 function recordRows(records: RunRecords) {
 	const rows: { recordId: string; recordType: RecordType; ordinal: number; body: unknown }[] = [];
@@ -211,6 +239,153 @@ function workspaceUpdateStatement(
 		);
 }
 
+/**
+ * Narrows a completion entry to one that carried provider metadata. The
+ * succeeded branch then reads `entry.meta.*` directly: no `?? fallback`
+ * chain that could invent a title, unit or source URL.
+ */
+function hasMarketMeta(entry: MarketCompletionSeries): entry is MarketCompletionSeries & {
+	readonly meta: NonNullable<MarketCompletionSeries["meta"]>;
+} {
+	return entry.meta !== null;
+}
+
+/**
+ * Statements storing one market-refresh completion (FR-017). Writes are
+ * set-based: one `json_each` statement for ALL succeeded series' metadata, one
+ * for ALL failed series' status rows, chunked `json_each` statements for the
+ * observations (S5: no bound parameter near D1's ~2 MB string limit), one prune
+ * to `MARKET_LIMITS.maxStoredObservations` rows per series — regardless of row
+ * count. A full 30-series completion costs 2 (job + audit, counted by the
+ * caller) + at most 2 + 6 + 1 = 11 here, well under the ~50-query D1 budget;
+ * a failed series keeps its stored observations and only records the failure
+ * code and attempt time. The whole completion stays one guarded batch.
+ */
+function marketStatements(
+	db: SqlDatabase,
+	ownerId: string,
+	series: readonly NonNullable<CompletionEffects["marketSeries"]>[number][],
+	guard: Guard,
+): SqlStatement[] {
+	if (series.length === 0) return [];
+	const succeeded = series.filter(hasMarketMeta);
+	const failed = series.filter((entry) => entry.meta === null);
+	const statements: SqlStatement[] = [];
+	if (succeeded.length > 0) {
+		const meta = succeeded.map((entry) => ({
+			seriesId: entry.seriesId,
+			provider: entry.provider,
+			symbol: entry.symbol,
+			title: entry.meta.title,
+			unit: entry.meta.unit,
+			frequency: entry.meta.frequency,
+			publisher: entry.meta.publisher,
+			sourceUrl: entry.meta.sourceUrl,
+			lastRefreshedAt: entry.fetchedAt,
+			retrievedAt: entry.fetchedAt,
+		}));
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
+						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code)
+					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
+						json_extract(value, '$.symbol'), json_extract(value, '$.title'),
+						json_extract(value, '$.unit'), json_extract(value, '$.frequency'),
+						json_extract(value, '$.publisher'), json_extract(value, '$.sourceUrl'),
+						json_extract(value, '$.lastRefreshedAt'), json_extract(value, '$.retrievedAt'), NULL
+					FROM json_each(?) WHERE ${guard.sql}
+					ON CONFLICT (owner_id, series_id) DO UPDATE SET
+						provider = excluded.provider, symbol = excluded.symbol, title = excluded.title,
+						unit = excluded.unit, frequency = excluded.frequency, publisher = excluded.publisher,
+						source_url = excluded.source_url, last_refreshed_at = excluded.last_refreshed_at,
+						retrieved_at = excluded.retrieved_at, unavailable_code = NULL`,
+				)
+				.bind(ownerId, JSON.stringify(meta), ...guard.values),
+		);
+	}
+	if (failed.length > 0) {
+		// A failed series keeps its stored observations and metadata and only
+		// records the failure code and attempt time; a brand-new failed series
+		// gets a placeholder row so the failure is visible instead of NEVER_REFRESHED.
+		const meta = failed.map((entry) => ({
+			seriesId: entry.seriesId,
+			provider: entry.provider,
+			symbol: entry.symbol,
+			title: entry.symbol,
+			sourceUrl:
+				entry.provider === "fred"
+					? `https://fred.stlouisfed.org/series/${entry.symbol}`
+					: "https://twelvedata.com/",
+			lastRefreshedAt: entry.fetchedAt,
+			unavailableCode: entry.errorCode,
+		}));
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO market_series (owner_id, series_id, provider, symbol, title, unit, frequency,
+						publisher, source_url, last_refreshed_at, retrieved_at, unavailable_code)
+					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.provider'),
+						json_extract(value, '$.symbol'), json_extract(value, '$.title'), '', 'unknown', '',
+						json_extract(value, '$.sourceUrl'), json_extract(value, '$.lastRefreshedAt'), NULL,
+						json_extract(value, '$.unavailableCode')
+					FROM json_each(?) WHERE ${guard.sql}
+					ON CONFLICT (owner_id, series_id) DO UPDATE SET
+						last_refreshed_at = excluded.last_refreshed_at,
+						unavailable_code = excluded.unavailable_code`,
+				)
+				.bind(ownerId, JSON.stringify(meta), ...guard.values),
+		);
+	}
+	const points: MarketObservationPoint[] = succeeded.flatMap((entry) =>
+		entry.observations.map((point) => ({
+			seriesId: entry.seriesId,
+			observedOn: point.observedOn,
+			value: point.value,
+		})),
+	);
+	// S5: one upsert statement per chunk, each well under 1 MB of bound JSON.
+	for (const chunk of chunkObservationPoints(points)) {
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO market_observations (owner_id, series_id, observed_on, value)
+					SELECT ?, json_extract(value, '$.seriesId'), json_extract(value, '$.observedOn'),
+						json_extract(value, '$.value')
+					FROM json_each(?) WHERE ${guard.sql}
+					ON CONFLICT (owner_id, series_id, observed_on) DO UPDATE SET value = excluded.value
+					WHERE excluded.value <> market_observations.value`,
+				)
+				.bind(ownerId, JSON.stringify(chunk), ...guard.values),
+		);
+	}
+	statements.push(
+		db
+			.prepare(
+				`DELETE FROM market_observations WHERE owner_id = ?
+				AND series_id IN (SELECT value FROM json_each(?))
+				AND (owner_id, series_id, observed_on) IN (
+					SELECT owner_id, series_id, observed_on FROM (
+						SELECT owner_id, series_id, observed_on,
+							ROW_NUMBER() OVER (PARTITION BY series_id ORDER BY observed_on DESC) AS rn
+						FROM market_observations WHERE owner_id = ?
+						-- S4c: the window scan is restricted to this completion's
+						-- series, not every observation the owner holds.
+						AND series_id IN (SELECT value FROM json_each(?))
+					) WHERE rn > ${MARKET_LIMITS.maxStoredObservations}
+				) AND ${guard.sql}`,
+			)
+			.bind(
+				ownerId,
+				JSON.stringify(series.map((entry) => entry.seriesId)),
+				ownerId,
+				JSON.stringify(series.map((entry) => entry.seriesId)),
+				...guard.values,
+			),
+	);
+	return statements;
+}
+
 export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 	return {
 		async enqueueResearch({
@@ -390,6 +565,7 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 						.bind(JSON.stringify(effects.sourceReports), ownerId, ...guard.values),
 				);
 			}
+			statements.push(...marketStatements(db, ownerId, effects.marketSeries ?? [], guard));
 
 			const results = await db.batch(statements);
 			if (results[0]?.meta.changes === 1) {

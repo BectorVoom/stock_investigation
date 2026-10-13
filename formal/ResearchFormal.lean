@@ -4,4 +4,6 @@ import ResearchFormal.Lease
 import ResearchFormal.Budget
 import ResearchFormal.Workspace
 import ResearchFormal.Classification
+import ResearchFormal.Dashboard
+import ResearchFormal.RateWindow
 import ResearchFormal.RecentWithinBudget

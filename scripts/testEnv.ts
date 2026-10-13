@@ -16,7 +16,8 @@
  *   RESEARCH_DEV_API_PORT on its children itself.
  * - `apps/runner/src/config.ts`: RESEARCH_API_URL, RUNNER_TOKEN,
  *   CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET, SEC_USER_AGENT,
- *   ALLOW_UNVERIFIED_TOOL_ISOLATION, RUNNER_SCRATCH_ROOT, RUNNER_PAGES_DIR.
+ *   ALLOW_UNVERIFIED_TOOL_ISOLATION, RUNNER_SCRATCH_ROOT, RUNNER_PAGES_DIR,
+ *   FRED_API_KEY, TWELVE_DATA_API_KEY, TWELVE_DATA_REQUESTS_PER_MINUTE.
  * - `apps/web/vite.config.ts`: RESEARCH_DEV_API_PORT (proxy target),
  *   RESEARCH_WEB_OUT_DIR (build output, default `dist/web`).
  * - `scripts/launch.ts`: WRANGLER_SEND_METRICS (forced `false` here).
@@ -41,8 +42,8 @@ import { join } from "node:path";
  * is set explicitly per suite; what remains is process plumbing (PATH so
  * `bun`/`node`/`wrangler` resolve, HOME for tool caches, locale/timezone).
  * In particular no `RESEARCH_*`, `RUNNER_*`, `SEC_*`, `OPENCODE_*`,
- * `OPENROUTER_*`, `CF_ACCESS_*`, `E2E_*`, `REVIEW_*` or `BUN_*`/`NODE_*`
- * variable is ever inherited. Windows needs its system variables to spawn
+ * `OPENROUTER_*`, `FRED_*`, `TWELVE_DATA_*`, `CF_ACCESS_*`, `E2E_*`,
+ * `REVIEW_*` or `BUN_*`/`NODE_*` variable is ever inherited. Windows needs its system variables to spawn
  * anything, so they are included there only.
  */
 export const INHERITED_ENV_ALLOWLIST: readonly string[] =
@@ -93,6 +94,10 @@ export const RUNNER_BEHAVIOR_SETTINGS = [
 	"OPENCODE_MODEL",
 	"OPENROUTER_API_KEY",
 	"OPENROUTER_MODEL",
+	"OPENROUTER_FREE_MODEL",
+	"FRED_API_KEY",
+	"TWELVE_DATA_API_KEY",
+	"TWELVE_DATA_REQUESTS_PER_MINUTE",
 ] as const;
 
 /** Release behaviour switches: set explicitly per test, never inherited. */

@@ -13,6 +13,7 @@
 			"!**/node_modules",
 			"!**/.wrangler",
 			"!examples/fixtures",
+			"!packages/adapters/test/finance/fixtures",
 			"!formal/vectors.json",
 			"!formal/.lake"
 		]

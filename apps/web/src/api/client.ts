@@ -16,12 +16,18 @@ import {
 	createResearchRunRequestSchema,
 	createWorkspaceRequestSchema,
 	dropLegacyEmptyAssets,
+	type HomeDashboard,
+	homeDashboardResponseSchema,
+	homeDataResponseSchema,
 	idempotencyKeySchema,
 	issuedRunnerCredentialSchema,
 	issueRunnerCredentialRequestSchema,
+	type MarketCatalogEntry,
+	marketCatalogResponseSchema,
 	type NewsSource,
 	newsSourceSchema,
 	previewSourceRequestSchema,
+	putHomeDashboardRequestSchema,
 	type RecommendedSource,
 	type RegisterSourceRequest,
 	type ResearchExport,
@@ -69,6 +75,8 @@ import {
 
 export type Session = Parsed<typeof sessionResponseSchema>;
 export type { AgentSettings, AgentSettingsResponse };
+export type HomeDashboardResponse = Parsed<typeof homeDashboardResponseSchema>;
+export type HomeDataResponse = Parsed<typeof homeDataResponseSchema>;
 export type UiCommand = Parsed<typeof uiCommandSchema>;
 export type SubmitCommandResponse = Parsed<typeof submitCommandResponseSchema>;
 export type WorkspaceEvents = Parsed<typeof workspaceEventsResponseSchema>;
@@ -450,6 +458,52 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				dropLegacyEmptyAssets(payload),
 				workspaceSummarySchema,
 			),
+
+		/* ----- home dashboard (FR-017) ----- */
+		getHomeDashboard: (): Promise<ApiResult<HomeDashboardResponse>> =>
+			requestJson(
+				{ method: "GET", path: `${API_PREFIX}/home/dashboard` },
+				homeDashboardResponseSchema,
+			),
+		saveHomeDashboard: (
+			dashboard: HomeDashboard,
+			expectedVersion: number,
+		): Promise<ApiResult<HomeDashboardResponse>> =>
+			write(
+				{ method: "PUT", path: `${API_PREFIX}/home/dashboard` },
+				putHomeDashboardRequestSchema,
+				{ dashboard, expectedVersion },
+				homeDashboardResponseSchema,
+			),
+		/**
+		 * V2: replaces the stored dashboard with the defaults without an
+		 * expectedVersion — the way out when the stored document no longer
+		 * parses (the server exposes no version in that error path).
+		 */
+		resetHomeDashboard: (): Promise<ApiResult<HomeDashboardResponse>> =>
+			requestJson(
+				{ method: "POST", path: `${API_PREFIX}/home/dashboard/reset` },
+				homeDashboardResponseSchema,
+			),
+		getHomeData: (etag: string | null = null): Promise<ApiResult<Conditional<HomeDataResponse>>> =>
+			conditionalGet(`${API_PREFIX}/home/data`, homeDataResponseSchema, etag),
+		listMarketCatalog: async (): Promise<ApiResult<readonly MarketCatalogEntry[]>> => {
+			const result = await requestJson(
+				{ method: "GET", path: `${API_PREFIX}/home/catalog` },
+				marketCatalogResponseSchema,
+			);
+			return result.ok ? ok(result.value.entries) : result;
+		},
+		/** Queues a market-refresh job for the local runner. */
+		refreshMarket: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await requestJson(
+				{ method: "POST", path: `${API_PREFIX}/home/refresh`, idempotencyKey: key.value },
+				researchRunResponseSchema,
+			);
+			return result.ok ? ok(result.value.run) : result;
+		},
 
 		/* ----- runner credentials ----- */
 		listRunnerCredentials: async (): Promise<ApiResult<readonly RunnerCredential[]>> => {

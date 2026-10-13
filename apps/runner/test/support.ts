@@ -1,10 +1,12 @@
 import { createAgentRegistry } from "@research/agent-core";
+import { unconfiguredMarketSeriesSource } from "@research/application";
 import type {
 	ClaimedJob,
 	ClaimJobResponse,
 	CompleteJobRequest,
 	RunnerEventsRequest,
 } from "@research/contracts";
+import { marketUnavailableReason } from "@research/contracts";
 import { err, ok } from "@research/domain";
 import { silentEventLogger } from "@research/effects";
 import {
@@ -22,6 +24,7 @@ import {
 } from "../../../packages/application/test/support.ts";
 import type { RunnerApi, RunnerApiError, RunnerApiResult } from "../src/apiClient.ts";
 import type { JobExecutionDeps } from "../src/jobExecution.ts";
+import { createMarketPacer } from "../src/marketPacing.ts";
 
 export const RUN_ID = "run_test";
 
@@ -199,6 +202,25 @@ export function createDeps(
 		},
 		newFenceToken: () => "fence",
 		allowUnverifiedToolIsolation: false,
+		marketSources: new Map([
+			[
+				"fred",
+				unconfiguredMarketSeriesSource(
+					"fred",
+					marketUnavailableReason("SOURCE_NOT_CONFIGURED", "fred"),
+				),
+			],
+			[
+				"twelve-data",
+				unconfiguredMarketSeriesSource(
+					"twelve-data",
+					marketUnavailableReason("SOURCE_NOT_CONFIGURED", "twelve-data"),
+				),
+			],
+		]),
+		// No limits by default: existing tests never wait. Tests that cover
+		// pacing build their own pacer with a fake clock and sleep.
+		marketPacer: createMarketPacer({ clock: time.clock, sleep: async () => {}, limits: new Map() }),
 	};
 	return {
 		deps,

@@ -2,11 +2,14 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
+import { createFredSeriesSource, createTwelveDataSeriesSource } from "@research/adapters/finance";
 import { createFilePageArchive, createNodeSafeFetcher } from "@research/adapters/node";
-import { createBaselineAgentRuntimes, createNodeProcessRunner } from "@research/adapters/providers";
+import { createAgentRuntimes, createNodeProcessRunner } from "@research/adapters/providers";
 import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
 import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
+import { unconfiguredMarketSeriesSource } from "@research/application";
+import { marketUnavailableReason } from "@research/contracts";
 import { attempt, createEventLogger, type EventLogger, UnexpectedError } from "@research/effects";
 import { Effect } from "effect";
 import { createHttpRunnerApi } from "./apiClient.ts";
@@ -19,6 +22,7 @@ import {
 	UnsupportedRuntimeError,
 } from "./exitCodes.ts";
 import type { ScratchDirectories } from "./jobExecution.ts";
+import { createMarketPacer, FRED_RATE_LIMIT, twelveDataRateLimit } from "./marketPacing.ts";
 import { runRunnerLoop } from "./runner.ts";
 import { isUnsupportedRuntime, runtimeName } from "./runtime.ts";
 
@@ -122,13 +126,17 @@ function runnerProgram(
 			logger.warn("sec_tools_disabled", { reason: "SEC_USER_AGENT not set" });
 		if (value.pagesDirectory === null)
 			logger.warn("web_pages_disabled", { reason: "RUNNER_PAGES_DIR not set" });
+		if (value.fredApiKey === null)
+			logger.warn("market_source_disabled", { reason: "FRED_API_KEY not set" });
+		if (value.twelveDataApiKey === null)
+			logger.warn("market_source_disabled", { reason: "TWELVE_DATA_API_KEY not set" });
 
 		const exit = yield* attempt("run_runner_loop", () =>
 			runRunnerLoop(
 				{
 					api,
 					agents: createAgentRegistry(
-						createBaselineAgentRuntimes({
+						createAgentRuntimes({
 							processRunner: createNodeProcessRunner(),
 							fetch,
 							env: process.env,
@@ -154,6 +162,37 @@ function runnerProgram(
 					feed: { fetcher, feedParser, hasher: webCryptoHasher },
 					clock: systemClock,
 					logger,
+					// Keyed market-data adapters (FR-017): a provider without a key
+					// keeps its "unconfigured" source, so its series honestly
+					// report SOURCE_NOT_CONFIGURED while the other provider works.
+					marketSources: new Map([
+						[
+							"fred",
+							value.fredApiKey === null
+								? unconfiguredMarketSeriesSource(
+										"fred",
+										marketUnavailableReason("SOURCE_NOT_CONFIGURED", "fred"),
+									)
+								: createFredSeriesSource({ apiKey: value.fredApiKey, fetcher }),
+						],
+						[
+							"twelve-data",
+							value.twelveDataApiKey === null
+								? unconfiguredMarketSeriesSource(
+										"twelve-data",
+										marketUnavailableReason("SOURCE_NOT_CONFIGURED", "twelve-data"),
+									)
+								: createTwelveDataSeriesSource({ apiKey: value.twelveDataApiKey, fetcher }),
+						],
+					]),
+					marketPacer: createMarketPacer({
+						clock: systemClock,
+						sleep,
+						limits: new Map([
+							["fred", FRED_RATE_LIMIT],
+							["twelve-data", twelveDataRateLimit(value.twelveDataRequestsPerMinute)],
+						]),
+					}),
 					scratch: createScratchDirectories(value.scratchRoot ?? join(tmpdir(), "research-runner")),
 					every: (ms, task) => {
 						const timer = setInterval(task, ms);

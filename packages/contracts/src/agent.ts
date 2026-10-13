@@ -20,6 +20,22 @@ export function isFreeTierModelId(modelId: string): boolean {
 
 export const BASELINE_AGENT_IDS = ["opencode", "codex", "claude-code", "openrouter"] as const;
 
+/** Agent id of the OpenRouter free-models backend: plan-limited, free ids only. */
+export const OPENROUTER_FREE_AGENT_ID = "openrouter-free" as const;
+
+/** Router id that selects a free model on the owner's behalf. */
+export const OPENROUTER_FREE_ROUTER_MODEL_ID = "openrouter/free" as const;
+
+/**
+ * True for the model ids the free backend may run: the free router itself,
+ * or an id ending in `:free` with at least one character before it. No
+ * trimming, case-sensitive: a billed id must never pass by accident.
+ */
+export function isOpenRouterFreeModelId(modelId: string): boolean {
+	if (modelId === OPENROUTER_FREE_ROUTER_MODEL_ID) return true;
+	return modelId.length > ":free".length && modelId.endsWith(":free");
+}
+
 export const capabilitySchema = z.enum([
 	"stream",
 	"cancel",

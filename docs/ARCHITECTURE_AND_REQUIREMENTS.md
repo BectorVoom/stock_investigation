@@ -9,7 +9,12 @@
 owner's decision of 2026-10-13 (ADR-0013): FR-011 no longer names images, the
 V1 component list drops `image-gallery` (nine types), the `/assets` endpoints
 and the `approved_assets` table are gone, and stored pre-removal galleries are
-stripped on read. No other requirement changed.
+stripped on read. That decision changed no other requirement.
+Also in 1.2: FR-017 (Home dashboard) is a new Must requirement with its
+journey, endpoints and vendor decision (ADR-0014); "Out of scope" now keeps
+streaming / real-time market feeds out while end-of-day and periodic series
+retrieved on request are in; the endpoint list gains the Home routes; the
+Shoelace-on-Home decision is ADR-0015.
 
 **Change note (1.0 → 1.1):** the deployment section now describes the local-first
 default and the two local environments (ADR-0006, ADR-0011) instead of a
@@ -33,7 +38,7 @@ Build a **single-user**, agent-driven research web application that discovers cu
 
 ### Out of scope for V1
 
-Automatic order placement, brokerage credentials, multi-user collaboration, autonomous code editing by research agents, unbounded web crawling, automated scraping in conflict with publisher restrictions, live market feeds, and self-hosted GPU inference.
+Automatic order placement, brokerage credentials, multi-user collaboration, autonomous code editing by research agents, unbounded web crawling, automated scraping in conflict with publisher restrictions, streaming / real-time market feeds (end-of-day and periodic series retrieved on request by the local runner are in scope, FR-017), and self-hosted GPU inference.
 
 ## 2. Primary user journeys
 
@@ -44,6 +49,7 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 5. **Inspect positions and investors:** show Japanese margin buy/sell balances; show US short interest separately; surface investor filings with dates and properly qualified conclusions.
 6. **Manipulate research UI:** ask the agent to create/update/remove tables, graphs and timelines. Reopen an existing workspace without rerunning research.
 7. **Continue without local compute:** when the local runner is offline, browse prior findings and queue research; pending jobs resume when a valid runner reconnects.
+8. **Check market prices at a glance:** arrange Home widgets over market series and queue a market-data refresh for the local runner; every number shows its unit, as-of date and source link.
 
 The page for each journey step is mapped in [PAGES.md](PAGES.md).
 
@@ -67,6 +73,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-014 | Cancel, retry and resume research jobs | Must | State machine and lease recovery tested |
 | FR-015 | Export/import a portable research record | Should | Versioned JSON/Markdown including citations; invalid files rejected |
 | FR-016 | Explain cost and show current job resource limits | Must | Max calls/time/spend visible; no paid fallback without consent |
+| FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
 
 ## 4. Deployment and component architecture
 
@@ -286,6 +293,12 @@ POST   /api/v1/runner-credentials
 DELETE /api/v1/runner-credentials/:id
 GET    /api/v1/settings/agent
 PUT    /api/v1/settings/agent
+GET    /api/v1/home/dashboard
+PUT    /api/v1/home/dashboard
+POST   /api/v1/home/dashboard/reset
+GET    /api/v1/home/data
+GET    /api/v1/home/catalog
+POST   /api/v1/home/refresh
 GET    /api/v1/runner/credential
 POST   /api/v1/runner/credentials/renew
 POST   /api/v1/runner/jobs/claim
@@ -357,13 +370,13 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 ## 13. Open design decisions / defaults
 
 - **Owner identity:** choose an established auth method before implementation; do not create bespoke password cryptography.
-- **Market data vendors:** pending cost/license research; use source-neutral ports and mark uncovered metrics unavailable.
+- **Market data vendors:** decided by ADR-0014 — FRED plus Twelve Data, keyed, fetched on request by the local runner behind source-neutral ports; metrics neither covers stay unavailable.
 - **Images:** withdrawn in full by the owner's decision of 2026-10-13 (ADR-0013); the earlier plan (external link/display by permission first, R2 for licensed retained assets later) no longer applies.
 - **Runner OS:** macOS/Windows/WSL supported by capability tests rather than assuming identical CLI interfaces.
 - **Backups:** define periodic D1 export and restore test before storing valuable production-only research.
 - **Provider terms:** check per-backend authentication and automation rules at implementation and after major updates. No bypassing provider usage controls.
 
-## 14. References (official documentation; accessed 2026-10-11)
+## 14. References (official documentation; accessed 2026-10-11, vendor terms 15–17 accessed 2026-10-12)
 
 1. Cloudflare Workers pricing: https://developers.cloudflare.com/workers/platform/pricing/
 2. Cloudflare D1 pricing: https://developers.cloudflare.com/d1/platform/pricing/
@@ -379,5 +392,8 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 12. FINRA short interest: https://www.finra.org/finra-data/browse-catalog/equity-short-interest/data
 13. JPX margin statistics: https://www.jpx.co.jp/english/markets/statistics-equities/margin/
 14. OWASP LLM Top 10: https://genai.owasp.org/llm-top-10/
+15. FRED API terms of use: https://fred.stlouisfed.org/docs/api/terms_of_use.html
+16. Twelve Data terms of service: https://twelvedata.com/terms
+17. Twelve Data API credits and limits: https://support.twelvedata.com/en/articles/5194820-api-credits-limits
 
 **Reference URLs are starting points, not an assertion that every vendor's pricing, SDK version, CLI subscription rights, or financial-data license remains unchanged. Verify before implementing each adapter.**

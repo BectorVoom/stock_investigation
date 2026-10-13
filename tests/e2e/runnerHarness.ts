@@ -26,9 +26,14 @@ import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
 import { CSRF_HEADER, CSRF_HEADER_VALUE, issuedRunnerCredentialSchema } from "@research/contracts";
 import { createEventLogger } from "@research/effects";
-import { createHttpRunnerApi, runRunnerLoop } from "../../apps/runner/src/index.ts";
+import {
+	createHttpRunnerApi,
+	createMarketPacer,
+	runRunnerLoop,
+} from "../../apps/runner/src/index.ts";
 import { createScriptedAgent } from "../../examples/extensions/scriptedAgent.ts";
 import { E2E_ORIGIN, fixtureFetcher, HEADLINE, HOSTILE_MARKUP } from "./fixtures.ts";
+import { fixtureMarketSources } from "./marketFixtures.ts";
 
 /** Live backend for `tests/e2e/opencodeLive.spec.ts`; unset everywhere else. */
 const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
@@ -231,6 +236,13 @@ const exit = await runRunnerLoop(
 		},
 		newFenceToken: () => crypto.randomUUID(),
 		allowUnverifiedToolIsolation: false,
+		// Market data: the real FRED and Twelve Data adapters served from real
+		// recorded provider responses (tests/e2e/marketFixtures.ts) — no keys,
+		// no network. Series without a recorded response fail as
+		// SERIES_NOT_FOUND, so the browser only ever shows fixture numbers.
+		marketSources: fixtureMarketSources(),
+		// No limits in E2E: the fixture loop never paces.
+		marketPacer: createMarketPacer({ clock: systemClock, sleep, limits: new Map() }),
 		// Poll quickly so the browser test does not wait on the production idle interval.
 		sleep: (ms, signal) =>
 			new Promise<void>((resolve) => {

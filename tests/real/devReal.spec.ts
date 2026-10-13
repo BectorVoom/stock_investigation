@@ -71,7 +71,9 @@ test("dev refreshes a real feed with the runner under Node, and restarts it on a
 	const pristineRoot = pristine.root;
 	const env = devEnv();
 	const service = await startLauncher({ cwd: pristineRoot, args: ["dev"], env });
-	resources.add(() => service.stop());
+	resources.add(async () => {
+		await service.stop();
+	});
 	try {
 		expect(service.output()).toMatch(/agents: /);
 		// The runner runs under Node, not Bun: the pinned HTTPS fetcher only

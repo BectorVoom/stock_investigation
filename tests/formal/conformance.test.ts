@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
+	applyDashboardEdit,
 	applyUiCommand,
 	type CommandContext,
 	checkBudget,
@@ -13,6 +14,7 @@ import {
 	JOB_STATES,
 	JOB_TRANSITIONS,
 	NO_REFERENCES,
+	rateWindowPermit,
 	recentCountWithinBudget,
 	transitionJob,
 	type UiCommand,
@@ -98,6 +100,32 @@ const vectorsSchema = z.object({
 			accepted: z.boolean(),
 			version: z.number(),
 			replayAccepted: z.boolean(),
+		}),
+	),
+	dashboard: z.array(
+		z.object({
+			dashboard: z.array(z.number()),
+			edit: z.object({ kind: z.string(), id: z.number() }),
+			accepted: z.boolean(),
+			ids: z.array(z.number()),
+		}),
+	),
+	ratePermit: z.array(
+		z.object({
+			grants: z.array(z.number()),
+			now: z.number(),
+			maxPer: z.number(),
+			window: z.number(),
+			allowed: z.boolean(),
+			retryAfter: z.number().nullable(),
+		}),
+	),
+	rateRecord: z.array(
+		z.object({
+			times: z.array(z.number()),
+			maxPer: z.number(),
+			window: z.number(),
+			recorded: z.array(z.number()),
 		}),
 	),
 	workspace: z.array(
@@ -361,6 +389,94 @@ describe("Lean model conformance: recent message count within budget", () => {
 				recentCountWithinBudget(oldestFirst, vector.budget, vector.maxItems),
 				JSON.stringify(vector),
 			).toBe(vector.count);
+		}
+	});
+});
+
+describe("Lean model conformance: home dashboard edits", () => {
+	const widgetId = (id: number) => `w${id}`;
+	const toDashboard = (ids: readonly number[]) => ({
+		schemaVersion: 1 as const,
+		widgets: ids.map((id) => ({
+			widgetId: widgetId(id),
+			title: `Widget ${id}`,
+			size: "small" as const,
+			type: "metric" as const,
+			seriesId: "fred:VIXCLS",
+		})),
+	});
+
+	it(`reaches the model's accept/reject and final ids on all ${vectors.dashboard.length} vectors`, () => {
+		expect(vectors.dashboard.length).toBe(272);
+		for (const vector of vectors.dashboard) {
+			const dashboard = toDashboard(vector.dashboard);
+			const edit =
+				vector.edit.kind === "add"
+					? {
+							kind: "add" as const,
+							widget: {
+								widgetId: widgetId(vector.edit.id),
+								title: `Widget ${vector.edit.id}`,
+								size: "small" as const,
+								type: "metric" as const,
+								seriesId: "fred:VIXCLS",
+							},
+						}
+					: vector.edit.kind === "remove"
+						? { kind: "remove" as const, widgetId: widgetId(vector.edit.id) }
+						: vector.edit.kind === "moveEarlier"
+							? {
+									kind: "move" as const,
+									widgetId: widgetId(vector.edit.id),
+									direction: "earlier" as const,
+								}
+							: {
+									kind: "move" as const,
+									widgetId: widgetId(vector.edit.id),
+									direction: "later" as const,
+								};
+			const result = applyDashboardEdit(dashboard, edit);
+			const label = JSON.stringify(vector);
+			expect(result.ok, label).toBe(vector.accepted);
+			const ids = result.ok
+				? result.value.widgets.map((widget) => widget.widgetId)
+				: dashboard.widgets.map((widget) => widget.widgetId);
+			expect(ids, label).toEqual(vector.ids.map(widgetId));
+		}
+	});
+});
+
+describe("Lean model conformance: fixed-window rate gate", () => {
+	it(`agrees with rateWindowPermit on all ${vectors.ratePermit.length} vectors`, () => {
+		expect(vectors.ratePermit.length).toBe(1092);
+		for (const vector of vectors.ratePermit) {
+			const result = rateWindowPermit(vector.grants, vector.now, vector.maxPer, vector.window);
+			const label = JSON.stringify(vector);
+			expect(result.allowed, label).toBe(vector.allowed);
+			if (!result.allowed) {
+				expect(result.retryAfterMs, label).toBe(vector.retryAfter);
+			}
+		}
+	});
+
+	it(`replays the recorded-grant trace on all ${vectors.rateRecord.length} vectors`, () => {
+		expect(vectors.rateRecord.length).toBe(120);
+		for (const vector of vectors.rateRecord) {
+			// The model's times are non-decreasing (clock order); the test folds
+			// them through the real implementation and checks the model's trace.
+			const recorded: number[] = [];
+			for (const at of vector.times) {
+				if (rateWindowPermit(recorded, at, vector.maxPer, vector.window).allowed) {
+					recorded.push(at);
+				}
+			}
+			const label = JSON.stringify(vector);
+			expect(recorded, label).toEqual(vector.recorded);
+			// The proved bound, checked independently: no window holds more than maxPer.
+			for (let now = 0; now <= 5; now += 1) {
+				const inWindow = recorded.filter((at) => at > now - vector.window && at <= now);
+				expect(inWindow.length, `${label} @${now}`).toBeLessThanOrEqual(vector.maxPer);
+			}
 		}
 	});
 });

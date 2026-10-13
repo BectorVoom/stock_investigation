@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-import { browserUse } from "../e2e/engines.ts";
+import { browserUse, parseBrowser } from "../e2e/engines.ts";
 
 /**
  * Real-environment suite (`bun run test:real`): the launchers for real, one
@@ -11,7 +11,12 @@ import { browserUse } from "../e2e/engines.ts";
  * "chrome"`), so no browser download is needed. `live.spec.ts` in this
  * directory skips without `RUN_LIVE_OPENCODE=1` + `OPENCODE_MODEL` and runs
  * as `bun run test:real:live`.
+ *
+ * The engine is selected with `REAL_BROWSER=chrome|firefox|webkit` (default
+ * chrome), exactly like `E2E_BROWSER` in the E2E suite.
  */
+const browser = parseBrowser(process.env.REAL_BROWSER, "REAL_BROWSER");
+
 export default defineConfig({
 	testDir: ".",
 	testMatch: "*.spec.ts",
@@ -21,5 +26,5 @@ export default defineConfig({
 	timeout: 600_000,
 	reporter: [["list"]],
 	outputDir: "../../test-results-real",
-	use: { headless: true, trace: "retain-on-failure", ...browserUse("chrome") },
+	use: { headless: true, trace: "retain-on-failure", ...browserUse(browser) },
 });

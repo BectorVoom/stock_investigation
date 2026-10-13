@@ -97,7 +97,7 @@ directory, which is the hazard ADR-0011 removes.
 
 | Path | Content |
 |---|---|
-| `data/d1/` | The production database (SQLite): workspaces, chats, claims, evidence, runs, sources. |
+| `data/d1/` | The production database (SQLite): workspaces, chats, claims, evidence, runs, sources, Home dashboards and market observations. |
 | `data/runner-credential.json` | The production runner's bearer token, readable only by you (mode 0600). |
 | `data/pages/` | Retrieved public web pages as Markdown (one file per page, with retrieval metadata in front matter). Nothing here is in the database. |
 | `data/logs/` | `build.log`, `server.log`, `runner.log`, rewritten on every start. |
@@ -120,6 +120,10 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
+| `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
+| `FRED_API_KEY` | Enables the FRED market-data source for Home (FR-017, ADR-0014). Without it FRED series are "unavailable (source not configured)" — never estimated. |
+| `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
+| `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED sends 2 per series (metadata + observations), Twelve Data 1. |
 | `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` | Opt in to backends whose tool isolation is unverified (Codex). Default: refused. |
 | `RUNNER_SCRATCH_ROOT` | Parent of per-job scratch directories. Must not sit under a directory containing `opencode.json(c)` or `.opencode/`. |
 | `RUNNER_PAGES_DIR` | Where retrieved public pages are archived as Markdown (the launcher sets this to `data/pages` in production, `data-dev/pages` in development). Unset it and the web page tool is disabled (the runner logs `web_pages_disabled`). |
@@ -322,7 +326,8 @@ fails the test — it is recorded as a finding in
 ## Cost profile
 
 - **Local operation costs nothing to host.** The runner polls the local API every 15 s when idle.
-- **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. No market-data vendor is wired in V1.
+- **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. Home market data (FR-017, ADR-0014) runs on the vendors' free plans: no money, but provider quota.
+- **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series (metadata + observations) and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests; a full 30-series refresh costs at most 60. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -348,6 +353,24 @@ checking), and even then the old approval endpoints find no table and no rows �
 the approvals are gone unless a pre-migration backup is restored. Stored
 `image-gallery` components in old workspaces need no restore: the new code
 strips them on read (see the migration's header comment).
+
+Migration `0006_market_data.sql` (FR-017) adds `home_dashboards` (one row per
+owner: dashboard JSON, compare-and-set `version`, `updated_at`),
+`market_series` (one metadata row per series) and `market_observations`
+(`WITHOUT ROWID`, keyed by owner/series/date). Its header comment is the
+rollback: after a `wrangler d1 export`, `DELETE` all three tables' rows and
+`DROP TABLE` them, restoring the version-5 schema. Migrations apply by name
+on every start, so a database from before it gains the Home tables on the next
+start with its data intact (`tests/real/homeUpgrade.spec.ts`). Market observations are
+personal-use vendor data (ADR-0014): they are not part of workspace
+export/import, but a directory copy of `data/` carries them — include that
+in what "back up by copying that directory" means.
+
+Its tables are created with `IF NOT EXISTS`: before the merge of 2026-10-13
+this migration was named `0006_market_data.sql`, and a development database
+that applied it under that name must pass it again under the new one without
+an error. Such a database keeps the old name in `d1_migrations`; development
+starts do not check for unknown names, production starts do (see above).
 
 ## Switching the database
 

@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalizeDir } from "../../scripts/releaseOps.ts";
 import { baseChildEnv, ISOLATION_RECORD_ENV_VAR } from "../../scripts/testEnv.ts";
+import { marketFailureFile } from "./marketFixtures.ts";
 
 /**
  * Starts the E2E runner process once the Worker is up (Playwright starts
@@ -44,6 +45,13 @@ export default function globalSetup(): () => Promise<void> {
 	// Fresh audit record for this run; specs append through `buildChildEnv`.
 	const recordFile = join(tmpdir(), `research-e2e-isolation-${process.pid}-${Date.now()}.log`);
 	process.env[ISOLATION_RECORD_ENV_VAR] = recordFile;
+	// A crashed UI review could leave the market-failure injection file behind;
+	// without this, a later run would fail the listed series for no reason.
+	try {
+		rmSync(marketFailureFile(), { force: true });
+	} catch {
+		// Best effort.
+	}
 	const runner = spawn("node", ["tests/e2e/runnerHarness.ts"], {
 		cwd: repoRoot,
 		// Explicit passthrough (finding 5): the harness is a test runner, so

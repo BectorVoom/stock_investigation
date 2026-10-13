@@ -148,6 +148,11 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 	): Promise<UseCaseResult<CreatedRun>> {
 		if (outcome.kind === "at-capacity") return atCapacity();
 		if (outcome.kind === "no-workspace") return fail("NOT_FOUND", "Workspace not found.");
+		if (outcome.kind === "kind-active") {
+			// S1: the INSERT refused a second active market-refresh job (or a
+			// retry of one while another is active) — answer with that run.
+			return ok({ run: await view(outcome.job), replayed: true });
+		}
 		if (outcome.kind === "existing") {
 			return outcome.sameRequest
 				? ok({ run: await view(outcome.job), replayed: true })
@@ -276,6 +281,48 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 				await deps.jobs.insert(job, idempotencyKey, requestFingerprint, MAX_UNFINISHED_JOBS),
 				job,
 			);
+		},
+
+		/**
+		 * Queues a market-data refresh. AT MOST ONE non-terminal
+		 * market-refresh job per owner: a request while one is active returns
+		 * that active run (no second job).
+		 */
+		async createMarketRefresh(
+			ownerId: string,
+			idempotencyKey: string,
+		): Promise<UseCaseResult<CreatedRun>> {
+			const active = await deps.jobs.findActiveByKind(ownerId, "market-refresh");
+			if (active !== null) return ok({ run: await view(active), replayed: true });
+			const requestFingerprint = "market-refresh";
+			const replay = await replayOf(ownerId, idempotencyKey, requestFingerprint);
+			if (replay !== null) return replay;
+			const admitted = await admit(ownerId);
+			if (!admitted.ok) return admitted;
+			const job = newJob(ownerId, {
+				kind: "market-refresh",
+				request: null,
+				workspaceId: null,
+				retryOfRunId: null,
+				contextAnchorSeq: null,
+			});
+			const outcome = await deps.jobs.insert(
+				job,
+				idempotencyKey,
+				requestFingerprint,
+				MAX_UNFINISHED_JOBS,
+			);
+			if (outcome.kind === "inserted") {
+				await deps.audit.record({
+					ownerId,
+					actor: "owner",
+					action: "run.create_market_refresh",
+					resource: job.runId,
+					detail: "kind=market-refresh",
+					at: job.createdAt,
+				});
+			}
+			return enqueued(outcome, job);
 		},
 
 		async get(ownerId: string, runId: string): Promise<UseCaseResult<ResearchRun>> {

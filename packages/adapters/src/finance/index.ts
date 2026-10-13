@@ -1,4 +1,11 @@
 export {
+	createFredSeriesSource,
+	FRED_HOST,
+	FRED_PUBLISHER,
+	type FredSeriesDeps,
+	fredSourceUrl,
+} from "./fredSeries.ts";
+export {
 	type JpMarginBalanceReport,
 	type JpMarginBalanceSource,
 	type MarketDataProvenance,
@@ -14,6 +21,13 @@ export {
 	unconfiguredSharePriceSource,
 	unconfiguredUsShortInterestSource,
 } from "./marketData.ts";
+export {
+	datePrefixOf,
+	fetchJsonDocument,
+	httpStatusOf,
+	isIsoDate,
+	subtractDaysIso,
+} from "./marketFetch.ts";
 export {
 	createSec13FSource,
 	type FilingRef,
@@ -54,3 +68,11 @@ export {
 	secCompanyFactsUrl,
 	type Unavailable,
 } from "./secFinancials.ts";
+export {
+	createTwelveDataSeriesSource,
+	splitTwelveSymbol,
+	TWELVE_DATA_HOST,
+	TWELVE_DATA_PUBLISHER,
+	TWELVE_DATA_SOURCE_URL,
+	type TwelveDataSeriesDeps,
+} from "./twelveDataSeries.ts";

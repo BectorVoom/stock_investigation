@@ -12,10 +12,12 @@ import {
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
+	createAgentRuntimes,
 	createBaselineAgentRuntimes,
 	createClaudeCodeRuntime,
 	createCodexRuntime,
 	createOpenCodeRuntime,
+	createOpenRouterFreeRuntime,
 	createOpenRouterRuntime,
 	type ProviderEnvironment,
 } from "../../src/providers/index.ts";
@@ -37,11 +39,18 @@ const OPENROUTER_ENV = {
 	OPENROUTER_MODEL: "example/model",
 };
 
+const OPENROUTER_FREE_ENV = {
+	...BASE_ENV,
+	OPENROUTER_API_KEY: "sk-or-v1-TEST-KEY-0123456789abcdef",
+	OPENROUTER_FREE_MODEL: "example/model:free",
+};
+
 interface Scenario {
 	readonly name: string;
 	readonly runtime: AgentRuntime;
 	readonly deadline?: string;
 	readonly aborted?: boolean;
+	readonly model?: string | null;
 }
 
 function cliScenario(
@@ -65,6 +74,21 @@ function openRouterScenario(
 		makeEnvironment({ env: OPENROUTER_ENV, fetch: () => Promise.resolve(respond()) }),
 	);
 	return { name, runtime, ...extra };
+}
+
+function openRouterFreeScenario(
+	name: string,
+	respond: () => Response,
+	extra: Partial<Scenario> = {},
+): Scenario {
+	const runtime = createOpenRouterFreeRuntime(
+		makeEnvironment({
+			env: OPENROUTER_FREE_ENV,
+			fetch: () => Promise.resolve(respond()),
+		}),
+		{ catalog: { list: () => Promise.resolve(null) } },
+	);
+	return { name, runtime, model: "example/model:free", ...extra };
 }
 
 const createOpenCode = (environment: ProviderEnvironment): AgentRuntime =>
@@ -148,6 +172,14 @@ const SCENARIOS: readonly Scenario[] = [
 		name: "openrouter not configured",
 		runtime: createOpenRouterRuntime(makeEnvironment({ env: BASE_ENV })),
 	},
+	openRouterFreeScenario("openrouter-free ok", () => sse(fixtureText("openrouter/ok-no-cost.sse"))),
+	openRouterFreeScenario("openrouter-free garbage", () =>
+		sse(GARBAGE.map((line) => `data: ${line}\n\n`).join("")),
+	),
+	{
+		name: "openrouter-free not configured",
+		runtime: createOpenRouterFreeRuntime(makeEnvironment({ env: BASE_ENV })),
+	},
 ];
 
 async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
@@ -155,11 +187,20 @@ async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
 	const request = makeRequest(
 		scenario.deadline === undefined ? {} : { deadline: scenario.deadline },
 	);
+	const defaultModel =
+		scenario.runtime.agentId === "opencode"
+			? "opencode-go/example-model"
+			: scenario.runtime.agentId === "openrouter-free"
+				? "example/model:free"
+				: null;
 	const context = makeContext({
 		signal: controller.signal,
 		// CLI backends need a model for OpenCode; a pure HTTPS backend gets no scratch directory.
-		model: scenario.runtime.agentId === "opencode" ? "opencode-go/example-model" : null,
-		scratchDirectory: scenario.runtime.agentId === "openrouter" ? null : "/scratch/job_1",
+		model: scenario.model !== undefined ? scenario.model : defaultModel,
+		scratchDirectory:
+			scenario.runtime.agentId === "openrouter" || scenario.runtime.agentId === "openrouter-free"
+				? null
+				: "/scratch/job_1",
 	});
 	const pending = collect(scenario.runtime.run(request, context));
 	if (scenario.aborted === true) controller.abort();
@@ -249,6 +290,18 @@ describe("baseline registry", () => {
 				"openrouter",
 				expect.objectContaining({ status: "unavailable", reasonCode: "NOT_CONFIGURED" }),
 			],
+		]);
+	});
+
+	it("provides the baseline four followed by openrouter-free through createAgentRuntimes", () => {
+		const all = createAgentRuntimes(
+			makeEnvironment({
+				processRunner: createFakeProcessRunner({ spawnErrorCode: "ENOENT" }).runner,
+			}),
+		);
+		expect(all.map((runtime) => runtime.agentId)).toEqual([
+			...BASELINE_AGENT_IDS,
+			"openrouter-free",
 		]);
 	});
 });

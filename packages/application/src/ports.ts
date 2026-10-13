@@ -7,8 +7,12 @@ import type {
 	ConversationSummary,
 	Dataset,
 	Evidence,
+	HomeDashboard,
 	JobKind,
 	JobState,
+	MarketFrequency,
+	MarketProviderId,
+	MarketUnavailableCode,
 	NewsSource,
 	ResearchBundle,
 	ResearchRequest,
@@ -64,6 +68,13 @@ export type SafeFetchErrorCode =
 export interface SafeFetchError {
 	readonly code: SafeFetchErrorCode;
 	readonly detail: string;
+	/**
+	 * Response body of an HTTP error status, present only when the caller set
+	 * `includeErrorBody`. Untrusted provider text: adapters must parse it
+	 * with zod and never log, store or show it — only the fixed wording per
+	 * code leaves the adapter.
+	 */
+	readonly body?: string;
 }
 
 export interface SafeFetchOptions {
@@ -86,6 +97,23 @@ export interface SafeFetchOptions {
 	 * fair-access policy). Adapters send a generic descriptive value when absent.
 	 */
 	readonly userAgent?: string;
+	/**
+	 * The ONLY extra request header the fetcher can ever send, and only on the
+	 * initial request (never forwarded across redirects). This is the fixed
+	 * allowlist: a provider API key travels as `Authorization: <value>` (e.g.
+	 * Twelve Data's `apikey <KEY>`) rather than in the URL, so it never lands
+	 * in a log line or a stored document. The value must be printable ASCII
+	 * (≤ 300 chars); anything else fails the request before any byte is sent.
+	 */
+	readonly authorization?: string;
+	/**
+	 * When true, the response body of an HTTP error status is read (bounded
+	 * by `maxBytes`, like a success body) and attached to the `HTTP_ERROR`
+	 * as `body`, so an adapter can map a provider's error JSON. Default
+	 * false: other callers never pay for, or see, error bodies. The body is
+	 * untrusted provider text (see `SafeFetchError.body`).
+	 */
+	readonly includeErrorBody?: boolean;
 }
 
 /**
@@ -207,10 +235,13 @@ export interface ProgressEntry {
 /**
  * Outcome of an enqueue. The unfinished-job cap is checked inside the same
  * statement that inserts, so concurrent requests cannot both slip under it.
+ * S1 extends the same guarantee to "one active market-refresh job per owner":
+ * the INSERT refuses a second one, reported as `kind-active` with that run.
  */
 export type EnqueueResult =
 	| { readonly kind: "inserted" }
 	| { readonly kind: "existing"; readonly job: JobRecord; readonly sameRequest: boolean }
+	| { readonly kind: "kind-active"; readonly job: JobRecord }
 	| { readonly kind: "at-capacity" }
 	/** The job names a workspace that no longer exists (deleted concurrently). */
 	| { readonly kind: "no-workspace" };
@@ -259,6 +290,25 @@ export interface JobRepository {
 		events: readonly RunnerEvent[],
 	): Promise<boolean>;
 	listProgress(ownerId: string, runId: string, limit: number): Promise<readonly ProgressEntry[]>;
+	/** Newest non-terminal job of a kind, if any (market-refresh de-duplication). */
+	findActiveByKind(ownerId: string, kind: JobKind): Promise<JobRecord | null>;
+	/**
+	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a
+	 * failed or cancelled refresh is never presented as a success).
+	 */
+	findLatestSuccessAtByKind(ownerId: string, kind: JobKind): Promise<string | null>;
+	/**
+	 * Newest terminal job of a kind that did not succeed, if any (S2: state +
+	 * stable failure code + time for the "last refresh failed" line).
+	 */
+	findLatestFailureByKind(
+		ownerId: string,
+		kind: JobKind,
+	): Promise<{
+		readonly state: string;
+		readonly failureCode: string | null;
+		readonly at: string;
+	} | null>;
 }
 
 export interface AppliedCommand {
@@ -357,6 +407,22 @@ export interface ChatRepository {
 }
 
 /** What a finished job writes besides its own row; committed all-or-nothing with it. */
+export interface MarketCompletionSeries {
+	readonly seriesId: string;
+	readonly provider: MarketProviderId;
+	readonly symbol: string;
+	readonly fetchedAt: string;
+	readonly meta: {
+		readonly title: string;
+		readonly unit: string;
+		readonly frequency: MarketFrequency;
+		readonly publisher: string;
+		readonly sourceUrl: string;
+	} | null;
+	readonly observations: readonly { readonly observedOn: string; readonly value: number }[];
+	readonly errorCode: MarketUnavailableCode | null;
+}
+
 export interface CompletionEffects {
 	readonly bundle: ResearchBundle | null;
 	readonly articles: readonly Article[];
@@ -372,6 +438,7 @@ export interface CompletionEffects {
 		readonly text: string;
 		readonly claimIds: readonly string[];
 	} | null;
+	readonly marketSeries: readonly MarketCompletionSeries[];
 }
 
 export type CompletionCommitResult =
@@ -509,6 +576,136 @@ export interface AuditLog {
 	record(entry: AuditEntry): Promise<void>;
 }
 
+export interface StoredMarketSeries {
+	readonly seriesId: string;
+	readonly provider: MarketProviderId;
+	readonly symbol: string;
+	readonly title: string;
+	readonly unit: string;
+	readonly frequency: MarketFrequency;
+	readonly publisher: string;
+	readonly sourceUrl: string;
+	readonly lastRefreshedAt: string | null;
+	readonly retrievedAt: string | null;
+	readonly unavailableCode: MarketUnavailableCode | null;
+}
+
+export interface StoredMarketObservation {
+	readonly seriesId: string;
+	readonly observedOn: string;
+	readonly value: number;
+}
+
+export interface HomeDashboardRecord {
+	readonly dashboard: HomeDashboard;
+	readonly version: number;
+	readonly updatedAt: string | null;
+}
+
+export interface HomeDashboardRepository {
+	/**
+	 * The stored dashboard, null when never saved, or "unreadable" when the
+	 * stored document no longer parses (fail closed — never the defaults).
+	 */
+	get(ownerId: string): Promise<HomeDashboardRecord | null | "unreadable">;
+	/** Compare-and-set on version; insert when absent and expectedVersion === 0. */
+	put(
+		ownerId: string,
+		dashboard: HomeDashboard,
+		expectedVersion: number,
+		updatedAt: string,
+	): Promise<"written" | "version-conflict">;
+	/**
+	 * Unconditional replace with the given dashboard (V2: the way out when the
+	 * stored document no longer parses — no expectedVersion is needed because
+	 * the owner explicitly discards whatever is stored). Returns the new record.
+	 */
+	reset(ownerId: string, dashboard: HomeDashboard, updatedAt: string): Promise<HomeDashboardRecord>;
+}
+
+export interface MarketRepository {
+	getSeriesMeta(
+		ownerId: string,
+		seriesIds: readonly string[],
+	): Promise<readonly StoredMarketSeries[]>;
+	/** Newest stored observation date per series (missing series are absent). */
+	getLatestObservedOn(
+		ownerId: string,
+		seriesIds: readonly string[],
+	): Promise<ReadonlyMap<string, string>>;
+	/** Newest `limitPerSeries` observations per series, ascending by date. */
+	getObservations(
+		ownerId: string,
+		seriesIds: readonly string[],
+		limitPerSeries: number,
+	): Promise<readonly StoredMarketObservation[]>;
+	/**
+	 * Deletes stored series rows and their observations that are no longer
+	 * referenced by the owner's dashboard (S4b: set-based, same batch as the
+	 * dashboard write — completions never accumulate series that left).
+	 * Returns the number of deleted series rows.
+	 */
+	deleteSeriesNotIn(ownerId: string, keepSeriesIds: readonly string[]): Promise<number>;
+}
+
+/* ---------- Market data source (section 4.1; Phase A wires "unconfigured" only) ---------- */
+
+export interface MarketSeriesMeta {
+	readonly title: string;
+	readonly unit: string;
+	readonly frequency: MarketFrequency;
+	readonly publisher: string;
+	readonly sourceUrl: string;
+}
+
+export interface MarketSeriesPoint {
+	readonly observedOn: string;
+	readonly value: number;
+}
+
+export interface MarketSourceUnavailable {
+	readonly code: MarketUnavailableCode;
+	readonly reason: string;
+}
+
+/** Source-neutral fetch port; adapters implement it per provider (ARCH-006). */
+export interface MarketSeriesSource {
+	readonly providerId: MarketProviderId;
+	fetchSeries(query: {
+		readonly symbol: string;
+		readonly since: string | null;
+		readonly maxObservations: number;
+		readonly signal: AbortSignal;
+	}): Promise<
+		Result<
+			{ readonly meta: MarketSeriesMeta; readonly observations: readonly MarketSeriesPoint[] },
+			MarketSourceUnavailable
+		>
+	>;
+}
+
+/** Registry of providers keyed by id; adding a provider adds an entry, not a switch. */
+export type MarketSourceRegistry = ReadonlyMap<MarketProviderId, MarketSeriesSource>;
+
+/**
+ * A source that always reports the provider as not configured. Used until a
+ * keyed adapter is wired (Phase B); the runner then honestly reports every
+ * series of that provider as SOURCE_NOT_CONFIGURED.
+ */
+export function unconfiguredMarketSeriesSource(
+	providerId: MarketProviderId,
+	reason: string,
+): MarketSeriesSource {
+	return {
+		providerId,
+		fetchSeries: () =>
+			Promise.resolve({
+				ok: false as const,
+				error: { code: "SOURCE_NOT_CONFIGURED", reason } satisfies MarketSourceUnavailable,
+			}),
+	};
+}
+
 /**
  * The whole persistence seam as one named bundle (ARCH-004, ADR-0008): the
  * composition root depends on this, never on an engine type. Today it is
@@ -526,6 +723,8 @@ export interface Persistence {
 	readonly runnerCredentials: RunnerCredentialRepository;
 	readonly runnerStatus: RunnerStatusRepository;
 	readonly settings: SettingsRepository;
+	readonly homeDashboard: HomeDashboardRepository;
+	readonly market: MarketRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;

@@ -1,6 +1,6 @@
-import { MESSAGE_LIMIT, renderExportMarkdown } from "@research/application";
+import { homeDataDigestEtag, MESSAGE_LIMIT, renderExportMarkdown } from "@research/application";
+import type { ApiErrorBody } from "@research/contracts";
 import {
-	type ApiErrorBody,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
 	approveRunRequestSchema,
@@ -12,10 +12,14 @@ import {
 	createWorkspaceRequestSchema,
 	DEFAULT_CONVERSATION_TITLE,
 	heartbeatRequestSchema,
+	homeDashboardResponseSchema,
+	homeDataResponseSchema,
 	idSchema,
 	issueRunnerCredentialRequestSchema,
 	MAX_REQUEST_BODY_BYTES,
+	marketCatalogResponseSchema,
 	previewSourceRequestSchema,
+	putHomeDashboardRequestSchema,
 	type RunnerCredentialCheck,
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
@@ -831,6 +835,95 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.agentSettings.update(owner(c), body),
 				);
 				return c.json(agentSettingsResponseSchema.parse(updated));
+			}),
+		),
+	);
+
+	/* Home dashboard (FR-017) */
+	api.get("/home/dashboard", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// V2: a stored dashboard that no longer parses answers with the
+				// stable STORED_DASHBOARD_UNREADABLE code (fail closed), not a
+				// silent default — the app shows the error state with a reset.
+				const dashboard = yield* useCase("home.get_dashboard", () =>
+					c.var.services.home.getDashboard(owner(c)),
+				);
+				return c.json(homeDashboardResponseSchema.parse(dashboard));
+			}),
+		),
+	);
+	api.put("/home/dashboard", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const body = yield* readJson(c, putHomeDashboardRequestSchema);
+				const updated = yield* useCase("home.put_dashboard", () =>
+					c.var.services.home.putDashboard(owner(c), body.dashboard, body.expectedVersion),
+				);
+				return c.json(homeDashboardResponseSchema.parse(updated));
+			}),
+		),
+	);
+	// V2: dedicated reset — replaces the stored document with the defaults
+	// without an expectedVersion, so it stays usable when the stored document
+	// no longer parses (the owner explicitly discards whatever is stored).
+	api.post("/home/dashboard/reset", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const reset = yield* useCase("home.reset_dashboard", () =>
+					c.var.services.home.resetDashboard(owner(c)),
+				);
+				return c.json(homeDashboardResponseSchema.parse(reset));
+			}),
+		),
+	);
+	api.get("/home/data", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// S3: the ETag covers a cheap digest (dashboard version, active
+				// run id + state, last success/failure, per-series stamps), so
+				// a 304 is answered BEFORE any observation row is loaded.
+				const digest = yield* useCase("home.get_data_digest", () =>
+					c.var.services.home.getDataDigest(owner(c)),
+				);
+				const etag = homeDataDigestEtag(digest);
+				c.header("ETag", `"${etag}"`);
+				if (c.req.header("If-None-Match") === `"${etag}"`) return c.body(null, 304);
+				const data = yield* useCase("home.get_data", () =>
+					c.var.services.home.getData(owner(c), digest),
+				);
+				const parsed = homeDataResponseSchema.parse(data);
+				return c.json(parsed);
+			}),
+		),
+	);
+	api.get("/home/catalog", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.succeed(
+				c.json(marketCatalogResponseSchema.parse({ entries: c.var.services.marketCatalog })),
+			),
+		),
+	);
+	api.post("/home/refresh", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const key = yield* idempotencyKey(c);
+				const created = yield* useCase("runs.create_market_refresh", () =>
+					c.var.services.runs.createMarketRefresh(owner(c), key),
+				);
+				return c.json({ run: created.run }, 202);
 			}),
 		),
 	);

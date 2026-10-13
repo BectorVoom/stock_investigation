@@ -1,4 +1,8 @@
-import { type AgentSettings, agentsResponseSchema } from "@research/contracts";
+import {
+	type AgentSettings,
+	agentsResponseSchema,
+	OPENROUTER_FREE_AGENT_ID,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	type ComposerDraft,
@@ -220,5 +224,44 @@ describe("composer evaluation", () => {
 		expect("costStatement" in result).toBe(false);
 		expect("costModel" in result).toBe(false);
 		expect(result.request?.budget.maxSpendUsd).toBeNull();
+	});
+
+	it("cannot submit with the free backend until a model is chosen in Settings", () => {
+		const freeAgents = agentsResponseSchema.parse({
+			...AGENTS,
+			agents: [
+				...AGENTS.agents,
+				{
+					agentId: OPENROUTER_FREE_AGENT_ID,
+					displayName: "OpenRouter (free models)",
+					capabilities: { supported: ["stream", "cancel"] },
+					costModel: "plan-limited",
+					toolIsolation: "enforced",
+					availability: { status: "available" },
+				},
+			],
+		});
+		const missing = evaluateComposer(
+			draft(),
+			freeAgents,
+			settings({ defaultAgentId: OPENROUTER_FREE_AGENT_ID }),
+			WORKSPACE_ID,
+		);
+		expect(missing.request).toBeNull();
+		expect(missing.problems).toContain(
+			"OpenRouter (free models) needs a model — choose one in Settings → AI agent.",
+		);
+
+		const chosen = evaluateComposer(
+			draft(),
+			freeAgents,
+			settings({
+				defaultAgentId: OPENROUTER_FREE_AGENT_ID,
+				models: { [OPENROUTER_FREE_AGENT_ID]: "a/model:free" },
+			}),
+			WORKSPACE_ID,
+		);
+		expect(chosen.problems).toEqual([]);
+		expect(chosen.request?.model).toBe("a/model:free");
 	});
 });

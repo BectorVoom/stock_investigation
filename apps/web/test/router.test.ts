@@ -3,6 +3,7 @@ import { formatHash, parseHash } from "../src/router.ts";
 
 describe("router", () => {
 	it("parses every route", () => {
+		expect(parseHash("#/home")).toEqual({ view: "home", workspaceId: null, section: null });
 		expect(parseHash("#/chat")).toEqual({ view: "chat", workspaceId: null, section: null });
 		expect(parseHash("#/chat/ws_1")).toEqual({ view: "chat", workspaceId: "ws_1", section: null });
 		expect(parseHash("#/sources")).toEqual({ view: "sources", workspaceId: null, section: null });
@@ -46,10 +47,10 @@ describe("router", () => {
 		});
 	});
 
-	it("treats an unknown or empty hash as the default chat view", () => {
-		expect(parseHash("")).toEqual({ view: "chat", workspaceId: null, section: null });
-		expect(parseHash("#")).toEqual({ view: "chat", workspaceId: null, section: null });
-		expect(parseHash("#/unknown")).toEqual({ view: "chat", workspaceId: null, section: null });
+	it("treats an unknown or empty hash as the default home view", () => {
+		expect(parseHash("")).toEqual({ view: "home", workspaceId: null, section: null });
+		expect(parseHash("#")).toEqual({ view: "home", workspaceId: null, section: null });
+		expect(parseHash("#/unknown")).toEqual({ view: "home", workspaceId: null, section: null });
 		expect(parseHash("#/chat/")).toEqual({ view: "chat", workspaceId: null, section: null });
 	});
 
@@ -70,6 +71,7 @@ describe("router", () => {
 
 	it("round-trips every route", () => {
 		const routes = [
+			{ view: "home" as const, workspaceId: null, section: null },
 			{ view: "chat" as const, workspaceId: null, section: null },
 			{ view: "chat" as const, workspaceId: "ws_1", section: null },
 			{ view: "sources" as const, workspaceId: null, section: null },
@@ -82,6 +84,7 @@ describe("router", () => {
 	});
 
 	it("formats the routes in the page map", () => {
+		expect(formatHash({ view: "home", workspaceId: null, section: null })).toBe("#/home");
 		expect(formatHash({ view: "chat", workspaceId: null, section: null })).toBe("#/chat");
 		expect(formatHash({ view: "chat", workspaceId: "ws_1", section: null })).toBe("#/chat/ws_1");
 		expect(formatHash({ view: "sources", workspaceId: null, section: null })).toBe("#/sources");

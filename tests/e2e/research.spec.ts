@@ -11,6 +11,59 @@ async function xssFlag(page: Page): Promise<unknown> {
 	return page.evaluate(() => Reflect.get(window, "__xss"));
 }
 
+/**
+ * F1/F2: clicks a Shoelace select's shadow combobox at its center with real
+ * mouse events — what a person clicks. (Clicking the select host's center
+ * can land on the label, which opens nothing.) Resolves only once the
+ * listbox reports open.
+ */
+async function openSelectViaCombobox(
+	target: Page,
+	scope: string,
+	selectLabel: string,
+): Promise<void> {
+	const point = await target.evaluate(
+		([scopeSelector, label]) => {
+			const scope =
+				scopeSelector === "dialog" ? document : (document.querySelector(scopeSelector) ?? document);
+			const select = scope.querySelector(`sl-select[label="${label}"]`);
+			const root = (select as (HTMLElement & { shadowRoot: ShadowRoot | null }) | null)?.shadowRoot;
+			const combo = (root?.querySelector('[part="combobox"]') as HTMLElement | null) ?? null;
+			if (combo === null) return null;
+			const rect = combo.getBoundingClientRect();
+			return [rect.x + rect.width / 2, rect.y + rect.height / 2];
+		},
+		[scope, selectLabel] as [string, string],
+	);
+	if (point === null) throw new Error(`no combobox for select ${selectLabel}`);
+	await target.mouse.click(point[0] ?? 0, point[1] ?? 0);
+	await target.waitForFunction(
+		([scopeSelector, label]) => {
+			const root =
+				scopeSelector === "dialog" ? document : (document.querySelector(scopeSelector) ?? document);
+			const sel = root.querySelector(`sl-select[label="${label}"]`);
+			return sel !== null && (sel as unknown as { open: boolean }).open === true;
+		},
+		[scope, selectLabel] as [string, string],
+		{ timeout: 10_000 },
+	);
+}
+
+/** F1: resolves once the select's listbox reports closed (or is gone). */
+async function waitSelectClosed(target: Page, scope: string, selectLabel: string): Promise<void> {
+	await target.waitForFunction(
+		([scopeSelector, label]) => {
+			const root =
+				scopeSelector === "dialog" ? document : (document.querySelector(scopeSelector) ?? document);
+			const sel = root.querySelector(`sl-select[label="${label}"]`);
+			if (sel === null) return true;
+			return (sel as unknown as { open: boolean }).open === false;
+		},
+		[scope, selectLabel] as [string, string],
+		{ timeout: 10_000 },
+	);
+}
+
 test.describe.configure({ mode: "serial" });
 
 let page: Page;
@@ -36,7 +89,7 @@ test.afterAll(async () => {
 test("a fresh installation guides the owner from chat to a sent message", async () => {
 	// Fresh database: nothing saved, no runs. The send button is disabled and
 	// a visible notice names Settings → AI agent with a link.
-	await page.goto("/");
+	await page.goto("/#/chat");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
 	await page
 		.getByRole("navigation", { name: "Chats" })
@@ -143,7 +196,7 @@ test("an upgrade keeps the last question's backend so sending works without visi
 	const upgrade = await browser.newContext({ extraHTTPHeaders: { "X-E2E-Owner": upgradeOwner } });
 	const second = await upgrade.newPage();
 	try {
-		await second.goto("/");
+		await second.goto("/#/chat");
 		await expect(second).toHaveURL(/#\/chat\/ws_/, { timeout: 30_000 });
 		const composer = second.getByRole("form", { name: "Research composer" });
 		await expect(composer).toContainText("Using the backend of your last question");
@@ -164,7 +217,7 @@ test("an upgrade keeps the last question's backend so sending works without visi
 });
 
 test("the owner is signed in and creates a chat", async () => {
-	await page.goto("/");
+	await page.goto("/#/chat");
 	await expect(page.getByRole("heading", { level: 1, name: "Research workspace" })).toBeVisible();
 	await page
 		.getByRole("navigation", { name: "Chats" })
@@ -613,14 +666,66 @@ test("a clipboard failure shows Copy failed instead of an unhandled rejection (a
 
 test("the page ran under its Content-Security-Policy without errors", async () => {
 	const response = await page.request.get("/");
-	expect(response.headers()["content-security-policy"]).toContain("script-src 'self'");
+	const policy = response.headers()["content-security-policy"] ?? "";
+	expect(policy).toContain("script-src 'self'");
+	expect(policy).toContain("style-src 'self'");
+	expect(policy).toContain("connect-src 'self'");
+
+	// Home exercises Shoelace under the UNCHANGED policy: the dialog close
+	// icon, a select chevron and a widget menu, plus one icon of each shipped
+	// name instantiated directly. A blocked fetch or stylesheet logs a
+	// console error, which fails this test in every engine.
+	await page.goto("/#/home");
+	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
+	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await page.getByRole("button", { name: "Add widget" }).click();
+	const dialog = page.locator("sl-dialog");
+	await expect(dialog).toBeAttached();
+	await expect(dialog.locator("sl-icon[name='x-lg']")).toBeAttached();
+	await openSelectViaCombobox(page, "dialog", "Widget type");
+	await expect(page.locator("sl-popup").first()).toBeAttached();
+	// F1: on Chromium the first Escape closes only the select listbox
+	// (CloseWatcher); the modal dialog stays open and would swallow the click
+	// below. Close the listbox, then the dialog, and only then touch anything
+	// behind it.
+	await page.keyboard.press("Escape");
+	await waitSelectClosed(page, "dialog", "Widget type");
+	await page.keyboard.press("Escape");
+	await expect(page.locator("sl-dialog")).toHaveCount(0);
+	await page.locator("article[data-widget-id] sl-button", { hasText: "Actions" }).first().click();
+	await expect(page.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
+	await page.keyboard.press("Escape");
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+	await page.evaluate(() => {
+		for (const name of ["x-lg", "chevron-down", "check"]) {
+			const icon = document.createElement("sl-icon");
+			icon.setAttribute("name", name);
+			icon.setAttribute("library", "system");
+			icon.setAttribute("aria-label", `csp probe ${name}`);
+			document.body.append(icon);
+		}
+	});
+	await expect
+		.poll(
+			async () =>
+				page.evaluate(
+					() =>
+						[...document.querySelectorAll("sl-icon")].filter(
+							(element) => element.shadowRoot?.querySelector("svg") !== null,
+						).length,
+				),
+			{ timeout: 15_000 },
+		)
+		.toBe(3);
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);
 });
 
 test("a chat can be renamed and deleted", async () => {
-	await page.goto("/");
+	// Home is the landing page (FR-017), so the Chat page is opened by its route.
+	await page.goto("/#/chat");
 	const nav = page.getByRole("navigation", { name: "Chats" });
 	await expect(nav).toBeVisible();
 	const chatName = `E2E rename ${Date.now()}`;

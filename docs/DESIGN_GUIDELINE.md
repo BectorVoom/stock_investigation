@@ -182,6 +182,11 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey canvas cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
 | Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`, grey `bg-slate-200` fill with no outline, darker `hover:bg-slate-300`) |
 | Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` grey `bg-slate-100` container with no outline, white textarea inside, `rounded-full` send button; focus ring stays via `focus-within:ring-2`) |
+| Widget frame | One market widget: title `h3`, actions menu, body, provenance footer | — | `WidgetFrame` in `home/WidgetFrame.tsx`: an `article` labelled by its title inside an `sl-card` (header slot). Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
+| Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | `sl-dropdown` + `sl-menu` + `sl-menu-item` in `WidgetFrame` (one `sl-select` event, values `edit`/`earlier`/`later`/`remove`) |
+| Widget dialog | Add / edit a widget (type, title, size, series, range); reset confirmation | add / edit / confirm-reset | `WidgetDialog` in `home/WidgetDialog.tsx` (`sl-dialog`, labelled by its heading, focus in on open and returned to the explicit opener on close) |
+| Widget controls | Buttons, selects, inputs and loading blocks on Home | — | `sl-button` / `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL / BUTTON (0.875rem control text, 0.75rem medium slate-700 labels, card padding `p-3`); controls carry their own `label` prop instead of `Field` |
+| Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
 
 ## 7. Heading structure
@@ -313,3 +318,60 @@ vertically centred group in the middle of the panel.
 - Motion is limited to the activity indicator (three dots) and the sending
   spinner, both with a `motion-safe:` animation class so reduced-motion users
   get a static indicator.
+
+## 13. Home surface
+
+The Home page (`apps/web/src/home/`) is the one place a third-party UI kit
+appears: `@shoelace-style/shoelace` (npm, bundled — no CDN) supplies the
+widget chrome (card, buttons, actions menu, dialog, selects, input,
+skeletons). It is loaded lazily with the Home view so the other
+pages do not pay for it, and only the used component modules are imported —
+never the whole library. If a Shoelace component cannot work under the
+Content-Security-Policy, that component is replaced by a native element styled
+the app's way; the policy itself is never relaxed (see ADR-0015).
+
+- What Shoelace is used for: widget frames, menus, dialogs and form controls
+  only. Tables stay semantic `<table>` elements inside the `sl-card` because
+  Shoelace has no table component; charts stay the registry SVG primitives
+  (`ChartFrame`, `ChartLegend`, palette, scales, ticks) with a native
+  data-table twin.
+- Token mapping (`apps/web/src/styles.css`, `html:root` so it wins over the
+  lazily loaded Shoelace stylesheet): primary → the blue scale, neutral →
+  slate, success → emerald, warning → amber (already), danger → red (already);
+  every `--sl-border-radius-*` is `0.25rem` (bare `rounded`); every
+  `--sl-shadow-*` is `none` (borders, not shadows); the app font; the
+  `--sl-focus-ring-*` matches the `:focus-visible` rule. Every value
+  references the app's own theme variables — no invented hex.
+- Icons: the `system` and `default` libraries are registered to same-origin
+  SVG files shipped in the web build (`apps/web/public/icons/`, MIT —
+  Bootstrap Icons via Shoelace), because the built-in `data:` resolver is
+  `fetch()`ed and `connect-src 'self'` blocks it. Every icon in the system
+  library is shipped (all 18: `caret`, `check`, `chevron-down`,
+  `chevron-left`, `chevron-right`, `copy`, `eye`, `eye-slash`, `eyedropper`,
+  `grip-vertical`, `indeterminate`, `person-fill`, `play-fill`, `pause-fill`,
+  `radio`, `star-fill`, `x-lg`, `x-circle-fill`), so every icon a used
+  component can request resolves — `caret` (sl-button caret), the chevrons
+  (every sl-menu-item renders its submenu indicator), `chevron-down`
+  (sl-select), `x-lg` (sl-dialog close). An E2E test opens the dialog, a
+  select and a widget menu and asserts every `/icons/*.svg` request answers
+  200 as SVG and no `sl-icon` is left without an `<svg>`.
+- Widget grid: `grid-cols-1` → `md:grid-cols-2` → `xl:grid-cols-4`; small /
+  medium / large widgets span 1 / 2 / 4 columns at `xl` (1 / 2 / 2 at `md`,
+  full width below) through static column-span classes. No page-level
+  horizontal overflow at 390 px; tables scroll inside their card.
+- States follow principle 2 (`sl-skeleton` blocks plus "Loading" text,
+  "unavailable (reason)", `ErrorNotice` with "Try again"); status is never
+  colour alone (change marks carry ▲/▼/▬ plus a word); every number shows its
+  unit, as-of date and source. The widget dialog's problem list is a neutral
+  slate notice ("To add this widget:" / "To save this widget:") while the
+  form is pristine and turns red ("Fix before saving:") once any field has
+  changed.
+- Lazy cost, measured: the Home chunk (`HomeView-*.js` 230.35 kB, 60.09 kB
+  gzip, plus `HomeView-*.css` 14.96 kB in the 2026-10-13 production build)
+  downloads on the first visit to `#/home` only; re-measure if the kit
+  version or the imported set changes (see ADR-0015).
+- Zod runs `jitless` in the SPA (`apps/web/src/zodJitless.ts`, imported
+  first in `main.tsx`): zod's `new Function` probe is reported as a
+  Content-Security-Policy violation by strict engines, and the SPA's small
+  payloads never need JIT parsing — at the cost of slower schema parsing in
+  the browser. The Worker and Node paths keep their own configuration.

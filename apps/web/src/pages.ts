@@ -5,6 +5,12 @@
  */
 export const PAGES = [
 	{
+		view: "home",
+		title: "Home",
+		purpose:
+			"Check market prices, charts and economic indicators at a glance on widgets you arrange.",
+	},
+	{
 		view: "chat",
 		title: "Chat",
 		purpose: "Ask research questions and read the answers, with their sources and run progress.",

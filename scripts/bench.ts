@@ -8,10 +8,12 @@
  * Each case reports the median time of one call at a realistic worst-case size.
  */
 import { extractJsonObject } from "@research/agent-core";
-import { checkBundleIntegrity } from "@research/application";
+import { checkBundleIntegrity, createHomeService, homeDataDigestEtag } from "@research/application";
 import {
 	BASELINE_COMPONENT_DEFINITIONS,
 	createComponentCatalog,
+	type HomeDashboard,
+	homeDataResponseSchema,
 	type ResearchBundle,
 	researchBundleSchema,
 } from "@research/contracts";
@@ -19,15 +21,19 @@ import {
 	applyUiCommand,
 	type CommandContext,
 	canonicalizeArticleUrl,
+	changeOverOneYear,
 	classifyIpAddress,
 	type DraftClaim,
 	emptyWorkspaceState,
+	latestChange,
+	type MarketPoint,
 	normalizeFeed,
 	type RawFeed,
 	verifyClaims,
 	type WorkspaceState,
 } from "@research/domain";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
+import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 
 interface Case {
 	readonly name: string;
@@ -197,6 +203,112 @@ const deepNestingHtml =
 	`<p>${`${longLine}<br>`.repeat(900)}</p>` +
 	"</em></strong></li></ul></blockquote>".repeat(4_000);
 
+/* Worst case at the contract bounds: 30 dashboard series with 800 observations each. */
+function homeBenchPoints(series: number, count: number): MarketPoint[] {
+	const points: MarketPoint[] = [];
+	let value = 100 + (series % 7) * 13;
+	let seed = 0x9e3779b9 + series * 101;
+	const next = () => {
+		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+		return seed / 0x7fffffff - 0.5;
+	};
+	let day = Date.UTC(2024, 0, 1);
+	for (let index = 0; index < count; index += 1) {
+		value = Math.max(1, value + next() * 4);
+		const iso = new Date(day).toISOString().slice(0, 10);
+		points.push({ observedOn: iso, value: Math.round(value * 100) / 100 });
+		day += 86_400_000;
+	}
+	return points;
+}
+
+const HOME_BENCH_SERIES = Array.from({ length: 30 }, (_, series) => ({
+	key: `bench-${series}`,
+	label: `Bench series ${series}`,
+	points: homeBenchPoints(series, 800),
+}));
+
+const homeBenchDashboard: HomeDashboard = {
+	schemaVersion: 1,
+	widgets: Array.from({ length: 10 }, (_, widget) => ({
+		type: "stock-table" as const,
+		widgetId: `w-bench-${widget}`,
+		title: `Bench table ${widget}`,
+		size: "medium" as const,
+		seriesIds: [0, 1, 2].map((slot) => {
+			const series = widget * 3 + slot;
+			return series % 2 === 0 ? `fred:SYN${series}` : `twelve-data:SYN${series}`;
+		}),
+	})),
+};
+
+const homeBenchMetas = HOME_BENCH_SERIES.map((entry, series) => {
+	const provider = series % 2 === 0 ? ("fred" as const) : ("twelve-data" as const);
+	const symbol = `SYN${series}`;
+	return {
+		seriesId: `${provider}:${symbol}`,
+		provider,
+		symbol,
+		title: entry.label,
+		unit: "Index",
+		frequency: "daily" as const,
+		publisher: provider === "fred" ? "Fred Bench" : "Twelve Bench",
+		sourceUrl:
+			provider === "fred"
+				? `https://fred.stlouisfed.org/series/${symbol}`
+				: "https://twelvedata.com/",
+		lastRefreshedAt: "2026-10-12T12:00:00Z",
+		retrievedAt: "2026-10-12T12:00:00Z",
+		unavailableCode: null,
+	};
+});
+
+const homeBenchObservationsBySeries = new Map(
+	homeBenchMetas.map((meta, series) => {
+		const entry = HOME_BENCH_SERIES[series];
+		if (entry === undefined) throw new Error("benchmark fixture: series missing");
+		return [
+			meta.seriesId,
+			entry.points.map((point) => ({
+				seriesId: meta.seriesId,
+				observedOn: point.observedOn,
+				value: point.value,
+			})),
+		] as const;
+	}),
+);
+
+const homeBenchService = createHomeService({
+	dashboard: {
+		get: async () => ({
+			dashboard: homeBenchDashboard,
+			version: 4,
+			updatedAt: "2026-10-12T12:00:00Z",
+		}),
+		put: async () => "written" as const,
+		reset: async () => ({
+			dashboard: homeBenchDashboard,
+			version: 5,
+			updatedAt: "2026-10-12T12:00:00Z",
+		}),
+	},
+	market: {
+		getSeriesMeta: async (_owner, ids) =>
+			homeBenchMetas.filter((meta) => ids.includes(meta.seriesId)),
+		getLatestObservedOn: async () => new Map(),
+		getObservations: async (_owner, ids, limit) =>
+			ids.flatMap((id) => (homeBenchObservationsBySeries.get(id) ?? []).slice(-limit)),
+		deleteSeriesNotIn: async () => 0,
+	},
+	jobs: {
+		findActiveByKind: async () => null,
+		findLatestSuccessAtByKind: async () => "2026-10-12T12:00:00Z",
+		findLatestFailureByKind: async () => null,
+	} as never,
+	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
+	audit: { record: async () => undefined },
+});
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -285,6 +397,31 @@ const cases: Case[] = [
 				maxChars: 20_000,
 			}),
 	},
+	{
+		name: "derive home view-model and chart paths for 30 series x 800 observations",
+		budgetMs: 25,
+		run: () => {
+			for (const entry of HOME_BENCH_SERIES) {
+				latestChange(entry.points);
+				changeOverOneYear(entry.points);
+			}
+			return buildHomeLineModel(HOME_BENCH_SERIES, "max");
+		},
+	},
+	{
+		name: "assemble GET /home/data for 30 series x 800 observations including response parse",
+		budgetMs: 15,
+		run: async () => {
+			// S3: the digest-first flow — cheap ETag, then the full assembly.
+			const digestResult = await homeBenchService.getDataDigest("owner_bench");
+			if (!digestResult.ok) throw new Error(digestResult.error.code);
+			const etag = homeDataDigestEtag(digestResult.value);
+			const assembled = await homeBenchService.getData("owner_bench", digestResult.value);
+			if (!assembled.ok) throw new Error(assembled.error.code);
+			const parsed = homeDataResponseSchema.parse(assembled.value);
+			return `${etag}:${parsed.series.length}`;
+		},
+	},
 ];
 
 function median(values: number[]): number {
@@ -294,11 +431,11 @@ function median(values: number[]): number {
 
 let overBudget = 0;
 for (const benchCase of cases) {
-	for (let warmup = 0; warmup < 5; warmup += 1) benchCase.run();
+	for (let warmup = 0; warmup < 5; warmup += 1) await benchCase.run();
 	const samples: number[] = [];
 	for (let sample = 0; sample < 25; sample += 1) {
 		const started = performance.now();
-		benchCase.run();
+		await benchCase.run();
 		samples.push(performance.now() - started);
 	}
 	const ms = median(samples);

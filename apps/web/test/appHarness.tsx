@@ -2,10 +2,13 @@ import type {
 	AgentSettingsResponse,
 	Conversation,
 	ConversationSummary,
+	HomeDashboard,
+	MarketCatalogEntry,
+	MarketSeries,
 	ResearchRun,
 	WorkspaceView,
 } from "@research/contracts";
-import { agentSettingsSchema } from "@research/contracts";
+import { agentSettingsSchema, DEFAULT_HOME_DASHBOARD } from "@research/contracts";
 import { createBaselineUiRegistry } from "@research/ui-registry";
 import { render } from "@solidjs/testing-library";
 import { App } from "../src/App.tsx";
@@ -364,6 +367,341 @@ export function mountApp(backend: FakeBackend) {
 			window={window}
 		/>
 	));
+}
+
+/* ----- Home dashboard fake backend (FR-017) ----- */
+
+function homeSeries(entry: {
+	readonly seriesId: string;
+	readonly provider: "fred" | "twelve-data";
+	readonly symbol: string;
+	readonly title: string;
+	readonly unit: string;
+	readonly publisher: string;
+	readonly sourceUrl: string;
+	readonly lastRefreshedAt: string | null;
+	readonly unavailable?: MarketSeries["unavailable"];
+	readonly closes: readonly (readonly [string, number])[];
+}): MarketSeries {
+	return {
+		seriesId: entry.seriesId,
+		provider: entry.provider,
+		symbol: entry.symbol,
+		title: entry.title,
+		unit: entry.unit,
+		frequency: "daily",
+		publisher: entry.publisher,
+		sourceUrl: entry.sourceUrl,
+		lastRefreshedAt: entry.lastRefreshedAt,
+		retrievedAt: entry.lastRefreshedAt,
+		unavailable: entry.unavailable ?? null,
+		observations: entry.closes.map(([observedOn, value]): [string, number] => [observedOn, value]),
+	};
+}
+
+const FRED_PUBLISHER = "Federal Reserve Bank of St. Louis (FRED)";
+const TWELVE_PUBLISHER = "Twelve Data";
+const FRESH_AT = "2026-10-12T11:50:00Z";
+
+/** Series for every id on the default dashboard, with numbers from the recorded fixtures. */
+export function defaultHomeSeries(stale: boolean): MarketSeries[] {
+	const at = stale ? "2026-10-10T00:00:00Z" : FRESH_AT;
+	const fred = (
+		symbol: string,
+		title: string,
+		unit: string,
+		closes: readonly (readonly [string, number])[],
+	): MarketSeries =>
+		homeSeries({
+			seriesId: `fred:${symbol}`,
+			provider: "fred",
+			symbol,
+			title,
+			unit,
+			publisher: FRED_PUBLISHER,
+			sourceUrl: `https://fred.stlouisfed.org/series/${symbol}`,
+			lastRefreshedAt: at,
+			closes,
+		});
+	const twelve = (
+		symbol: string,
+		title: string,
+		unit: string,
+		closes: readonly (readonly [string, number])[],
+	): MarketSeries =>
+		homeSeries({
+			seriesId: `twelve-data:${symbol}`,
+			provider: "twelve-data",
+			symbol,
+			title,
+			unit,
+			publisher: TWELVE_PUBLISHER,
+			sourceUrl: "https://twelvedata.com/",
+			lastRefreshedAt: at,
+			closes,
+		});
+	return [
+		fred("VIXCLS", "CBOE Volatility Index: VIX", "Index", [
+			["2026-10-06", 15.01],
+			["2026-10-07", 15.08],
+			["2026-10-08", 15.41],
+		]),
+		twelve("XAU/USD", "XAU/USD", "USD per XAU (troy ounce of gold)", [
+			["2026-10-10", 4195.80423],
+			["2026-10-11", 4195.84955],
+			["2026-10-12", 4168.44041],
+		]),
+		fred("DGS10", "10-Year Treasury Constant Maturity Rate", "Percent", [
+			["2026-10-06", 4.12],
+			["2026-10-07", 4.15],
+			["2026-10-08", 4.18],
+		]),
+		fred("SP500", "S&P 500", "Index", [
+			["2026-10-06", 6651.21],
+			["2026-10-07", 6671.06],
+			["2026-10-08", 6692.34],
+		]),
+		twelve("AAPL", "AAPL (NASDAQ)", "USD", [
+			["2026-10-07", 336.67001],
+			["2026-10-08", 340.42001],
+			["2026-10-09", 336.64001],
+		]),
+		twelve("MSFT", "MSFT (NASDAQ)", "USD", [
+			["2026-10-07", 531.2],
+			["2026-10-08", 533.9],
+			["2026-10-09", 535.070007],
+		]),
+		twelve("NVDA", "NVDA (NASDAQ)", "USD", [
+			["2026-10-07", 181.5],
+			["2026-10-08", 183.2],
+			["2026-10-09", 182.75],
+		]),
+		fred("CPIAUCSL", "Consumer Price Index", "Index", [
+			["2026-07-01", 322.1],
+			["2026-08-01", 322.8],
+			["2026-09-01", 323.5],
+		]),
+		fred("UNRATE", "Unemployment Rate", "Percent", [
+			["2026-07-01", 4.1],
+			["2026-08-01", 4.2],
+			["2026-09-01", 4.2],
+		]),
+		fred("FEDFUNDS", "Effective Federal Funds Rate", "Percent", [
+			["2026-07-01", 4.33],
+			["2026-08-01", 4.33],
+			["2026-09-01", 4.33],
+		]),
+		fred("GDPC1", "Real Gross Domestic Product", "Billions of Chained 2017 Dollars", [
+			["2026-01-01", 23500.5],
+			["2026-04-01", 23610.2],
+			["2026-07-01", 23720.8],
+		]),
+		fred("PAYEMS", "All Employees, Total Nonfarm", "Thousands of Persons", [
+			["2026-07-01", 159100],
+			["2026-08-01", 159250],
+			["2026-09-01", 159400],
+		]),
+		fred("T10Y2Y", "10-Year Treasury Minus 2-Year Treasury", "Percent", [
+			["2026-10-06", 0.52],
+			["2026-10-07", 0.55],
+			["2026-10-08", 0.58],
+		]),
+	];
+}
+
+export const HOME_CATALOG: readonly MarketCatalogEntry[] = [
+	{
+		seriesId: "fred:VIXCLS",
+		label: "VIX Index",
+		category: "volatility",
+		description: "CBOE Volatility Index, daily close from FRED.",
+	},
+	{
+		seriesId: "fred:DGS10",
+		label: "US 10-year yield",
+		category: "rates",
+		description: "10-year Treasury constant maturity rate.",
+	},
+	{
+		seriesId: "twelve-data:AAPL",
+		label: "Apple",
+		category: "equity",
+		description: "Apple Inc. share price.",
+	},
+];
+
+/** What the home fake server stores; tests mutate it (complete a refresh, change series). */
+export interface HomeServerState {
+	dashboard: HomeDashboard;
+	version: number;
+	updatedAt: string | null;
+	saved: boolean;
+	/** V2: when true the dashboard GET answers STORED_DASHBOARD_UNREADABLE. */
+	dashboardUnreadable: boolean;
+	series: MarketSeries[];
+	catalog: readonly MarketCatalogEntry[];
+	activeRunId: string | null;
+	runState: string;
+	lastSucceededAt: string | null;
+	lastFailure: { readonly state: string; readonly code: string; readonly at: string } | null;
+	refreshCount: number;
+	/** Test hook: the next N data GETs answer 500 instead (V1/V2b). */
+	dataFailures: number;
+}
+
+export function initialHomeServerState(stale: boolean): HomeServerState {
+	return {
+		dashboard: structuredClone(DEFAULT_HOME_DASHBOARD),
+		version: 0,
+		updatedAt: null,
+		saved: false,
+		dashboardUnreadable: false,
+		series: defaultHomeSeries(stale),
+		catalog: HOME_CATALOG,
+		activeRunId: null,
+		runState: "pending",
+		lastSucceededAt: null,
+		lastFailure: null,
+		refreshCount: 0,
+		dataFailures: 0,
+	};
+}
+
+function homeDataEtag(home: HomeServerState): string {
+	const stamp = home.series
+		.map(
+			(entry) =>
+				`${entry.seriesId}:${entry.lastRefreshedAt ?? "never"}:${entry.observations.length}`,
+		)
+		.join(",");
+	const failure =
+		home.lastFailure === null
+			? "no-failure"
+			: `${home.lastFailure.state}:${home.lastFailure.code}:${home.lastFailure.at}`;
+	return `"home-${home.activeRunId ?? "idle"}-${home.runState}-${home.lastSucceededAt ?? "never"}-${failure}-${stamp.length}-${stamp}"`;
+}
+
+/** Registers the `/home/*` routes plus the run read the status line needs, backed by `home`. */
+export function installHomeRoutes(
+	backend: FakeBackend,
+	server: ServerState,
+	home: HomeServerState,
+): void {
+	installWorkspaceRoutes(backend, server);
+	backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () => {
+		if (home.dashboardUnreadable) {
+			return errorResponse(
+				500,
+				"STORED_DASHBOARD_UNREADABLE",
+				"The stored dashboard could not be read. Reset to the default arrangement to continue.",
+			);
+		}
+		return jsonResponse({
+			dashboard: home.dashboard,
+			version: home.version,
+			updatedAt: home.updatedAt,
+			origin: home.saved ? "saved" : "defaults",
+		});
+	});
+	backend.on("PUT", /^\/api\/v1\/home\/dashboard$/, (request) => {
+		const body = request.body as { dashboard?: unknown; expectedVersion?: unknown };
+		if (
+			typeof body?.expectedVersion !== "number" ||
+			body.expectedVersion !== home.version ||
+			typeof body?.dashboard !== "object" ||
+			body.dashboard === null ||
+			!Array.isArray((body.dashboard as { widgets?: unknown }).widgets)
+		) {
+			if (typeof body?.expectedVersion === "number" && body.expectedVersion !== home.version) {
+				return errorResponse(
+					409,
+					"VERSION_CONFLICT",
+					"The dashboard changed; reload and try again.",
+				);
+			}
+			return errorResponse(400, "VALIDATION_FAILED", "dashboard is required");
+		}
+		home.dashboard = body.dashboard as HomeDashboard;
+		home.version += 1;
+		home.updatedAt = "2026-10-12T12:00:00Z";
+		home.saved = true;
+		return jsonResponse({
+			dashboard: home.dashboard,
+			version: home.version,
+			updatedAt: home.updatedAt,
+			origin: "saved",
+		});
+	});
+	backend.on("GET", /^\/api\/v1\/home\/data(\?.*)?$/, (request) => {
+		if (home.dataFailures > 0) {
+			home.dataFailures -= 1;
+			return errorResponse(500, "INTERNAL", "boom (V1/V2b fixture)");
+		}
+		const etag = homeDataEtag(home);
+		if (request.headers["if-none-match"] === etag) return new Response(null, { status: 304 });
+		return jsonResponse(
+			{
+				series: home.series,
+				refresh: {
+					activeRunId: home.activeRunId,
+					activeRunState: home.activeRunId === null ? null : home.runState,
+					lastSucceededAt: home.lastSucceededAt,
+					lastFailure: home.lastFailure,
+				},
+			},
+			{ headers: { ETag: etag } },
+		);
+	});
+	backend.on("POST", /^\/api\/v1\/home\/dashboard\/reset$/, () => {
+		home.dashboard = structuredClone(DEFAULT_HOME_DASHBOARD);
+		home.version += 1;
+		home.updatedAt = "2026-10-12T12:00:00Z";
+		home.saved = true;
+		home.dashboardUnreadable = false;
+		return jsonResponse({
+			dashboard: home.dashboard,
+			version: home.version,
+			updatedAt: home.updatedAt,
+			origin: "saved",
+		});
+	});
+	backend.on("GET", /^\/api\/v1\/home\/catalog$/, () => jsonResponse({ entries: home.catalog }));
+	backend.on("POST", /^\/api\/v1\/home\/refresh$/, () => {
+		home.refreshCount += 1;
+		if (home.activeRunId === null) {
+			home.activeRunId = `run_market_${home.refreshCount}`;
+			home.runState = "pending";
+		}
+		return jsonResponse(
+			{
+				run: makeRun({
+					runId: home.activeRunId,
+					kind: "market-refresh",
+					request: null,
+					workspaceId: null,
+					state: home.runState as ResearchRun["state"],
+				}),
+			},
+			{ status: 202 },
+		);
+	});
+	backend.on("GET", /^\/api\/v1\/research-runs\/([^/?]+)$/, (_request, match) => {
+		const runId = match[1] ?? "";
+		const runs = [...server.runs, ...server.secondRuns];
+		const found =
+			runs.find((run) => run.runId === runId) ??
+			(runId === home.activeRunId
+				? makeRun({
+						runId,
+						kind: "market-refresh",
+						request: null,
+						workspaceId: null,
+						state: home.runState as ResearchRun["state"],
+					})
+				: null);
+		if (found === null) return errorResponse(404, "NOT_FOUND", "no such run");
+		return jsonResponse({ run: found });
+	});
 }
 
 export function commandRequests(backend: FakeBackend): RecordedRequest[] {

@@ -1,22 +1,23 @@
 # Agent backends
 
-Status as verified on 2026-10-12 against the locally installed tools (OpenCode v2.0.27 with the Go-plan model `opencode-go/muse-spark-1.3-contributor` and the free-tier model `opencode/muse-spark-1.3-contributor-free`, codex-cli 0.160.0, Claude Code 2.1.296; OpenRouter documentation only, no API key). Re-verify after any CLI upgrade (section 13: provider terms and flags change). Adapters live in `packages/adapters/src/providers`; each file's header records the exact version and evidence.
+Status as verified on 2026-10-12 against the locally installed tools (OpenCode v2.0.27 with the Go-plan model `opencode-go/muse-spark-1.3-contributor` and the free-tier model `opencode/muse-spark-1.3-contributor-free`, codex-cli 0.160.0, Claude Code 2.1.296; OpenRouter chat completions from documentation only, no API key; the OpenRouter model list from the live public endpoint). Re-verify after any CLI upgrade (section 13: provider terms and flags change). Adapters live in `packages/adapters/src/providers`; each file's header records the exact version and evidence.
 
 All adapters are **text in, text out**. The orchestrator owns tools (ADR-0003), so no adapter claims `tool-calls` or `structured-output`.
 
-| | OpenCode | Codex | Claude Code | OpenRouter |
-|---|---|---|---|---|
-| Integration | `opencode run --standalone --format json` | `codex exec --json` | `claude -p --output-format stream-json` | HTTPS chat completions (SSE) |
-| Capabilities claimed | none | none | `stream` | `stream`, `cancel` |
-| Cost model | plan-limited (unknown) | plan-limited (unknown) | plan-limited (unknown) | metered |
-| Tool isolation | enforced (version-pinned) | **unverified** | enforced (checked per run) | enforced (no tools sent) |
-| Verified | live, v2.0.27, Go-plan model `opencode-go/muse-spark-1.3-contributor` and free-tier model `opencode/muse-spark-1.3-contributor-free` (2026-10-12) | live, codex-cli 0.160.0 | live, 2.1.296 | **documentation only** (no API key available) |
+| | OpenCode | Codex | Claude Code | OpenRouter | OpenRouter (free models) |
+|---|---|---|---|---|---|
+| Integration | `opencode run --standalone --format json` | `codex exec --json` | `claude -p --output-format stream-json` | HTTPS chat completions (SSE) | the same HTTPS chat completions, free model ids only |
+| Capabilities claimed | none | none | `stream` | `stream`, `cancel` | `stream`, `cancel` |
+| Cost model | plan-limited (unknown) | plan-limited (unknown) | plan-limited (unknown) | metered | plan-limited (no spend authorized; a reported charge fails the turn) |
+| Tool isolation | enforced (version-pinned) | **unverified** | enforced (checked per run) | enforced (no tools sent) | enforced (no tools sent) |
+| Verified | live, v2.0.27, Go-plan model `opencode-go/muse-spark-1.3-contributor` and free-tier model `opencode/muse-spark-1.3-contributor-free` (2026-10-12) | live, codex-cli 0.160.0 | live, 2.1.296 | **documentation only** (no API key available) | model list: live public endpoint (2026-10-12); chat: **documentation only** (no API key available) |
 
 ## What "enforced" rests on
 
 - **Claude Code.** Launched with `--tools ""`, `--strict-mcp-config`, `--setting-sources ""`, `--disable-slash-commands`, `--no-session-persistence`, `--safe-mode`, `--permission-mode dontAsk`, `--permission-prompts none`, prompt on stdin, cwd = per-job scratch directory. The CLI's own init event listed zero tools and zero MCP servers, and the adapter re-checks that on every run: any tool, MCP server or tool-use block fails the turn closed.
 - **OpenCode.** A per-run config in the scratch directory defines the `research-text` agent; the config is chosen by model. Plan models get a deny-all agent (`{action:"*", resource:"*", effect:"deny"}` last at both levels); `opencode debug agents` showed the deny rule last, and a live attempt to run a command was refused. Free-tier models (ids ending in `-free`) get a deny-first, ask-for-the-ten-gated-permissions agent (`edit`, `glob`, `grep`, `question`, `read`, `shell`, `skill`, `subagent`, `webfetch`, `websearch`; `edit` covers the `write` tool too): the provider only serves free-tier models to sessions that list its tools, and a non-interactive run without `--auto` rejects every ask before the tool runs, so a forced tool call ends the turn with `PROVIDER_TOOL_CALL_REJECTED` and no side effect. `execute` is not permission-gated and stays denied by the deny-first rule. There is no per-run tool listing to re-check, so the adapter accepts only the verified version range and reports `TOOL_ISOLATION_UNVERIFIED` for newer versions until re-verified. Requires a model chosen in Settings → AI agent, with `OPENCODE_MODEL` as the runner-side fallback, so the CLI never picks a provider — possibly a metered one — on its own. Stream handling stays fail-closed: any tool event ends the turn; a rejected call (`part.state.status` `"error"`) reports `PROVIDER_TOOL_CALL_REJECTED`, any other tool event reports `PROVIDER_TOOL_ISOLATION_VIOLATED`. See ADR-0012.
 - **OpenRouter.** A plain HTTPS completion with no `tools` field; there is nothing to isolate. Requires `OPENROUTER_API_KEY` and a model. Real cost from the response is reported; a response without a cost is reported as unknown, never as zero. No fallback models.
+- **OpenRouter (free models).** Backend id `openrouter-free`: the same request as OpenRouter, restricted to models OpenRouter serves at no charge — an id ending in `:free`, or the router `openrouter/free`. It exists so a free-plan account (no credits) can be used without authorizing any spend: the backend is plan-limited, so a question carries no maximum spend and asks for no consent. Two checks keep that honest. Before any network activity a model id that is not a free one is refused (`PROVIDER_MODEL_INVALID`), and the model never falls back to `OPENROUTER_MODEL`. If the provider nevertheless reports a cost above zero, the turn stops, reports that cost and fails with `PROVIDER_FREE_MODEL_CHARGED` (not retryable). Otherwise cost is reported as unknown, as for every plan-limited backend. Requires `OPENROUTER_API_KEY` (a free account's key works) and a model chosen in Settings → AI agent, with `OPENROUTER_FREE_MODEL` as the runner-side fallback.
 
 **Claude Code and metered authentication.** The adapter is plan-limited by declaration, so it refuses API-key or third-party-provider authentication, which would be metered: `probe()` reports such a login as `NOT_CONFIGURED`, and a run whose init event shows an API key source is killed with `PROVIDER_METERED_AUTH_NOT_ALLOWED` before any text is accepted. Use OpenRouter (with an explicit spend ceiling) for metered access.
 
@@ -30,6 +31,7 @@ With every hardening flag applied (`--sandbox read-only`, `--ephemeral`, `--igno
 - Each child process gets an explicit allowlisted environment (`PATH`, `HOME`, locale, temp dir and the CLI's own config variables). The runner token, Cloudflare credentials and other providers' keys are never passed.
 - `probe()` checks installation and login status without spending model quota.
 - **OpenCode model list.** `probe()` also runs `opencode models`, which prints the local model catalog (one `provider/model` id per line) without sending a prompt or spending model quota; the adapter reports the ids that pass its model-id validation (de-duplicated, sorted, capped at 300) as `capabilities.models` so Settings → AI agent can suggest them. If that command fails, the backend is reported as it otherwise would be and the list is simply omitted.
+- **OpenRouter free model list.** When `OPENROUTER_API_KEY` is set, the `openrouter-free` probe reads OpenRouter's public model list (`GET https://openrouter.ai/api/v1/models`) and reports the free ids as `capabilities.models`, which is what Settings → AI agent offers in the model selector. The request carries no API key and no prompt and spends no quota; without a key the runner never contacts OpenRouter at all. An id is listed only when it is a free id (`:free` or `openrouter/free`), both its prompt and completion prices are zero, and it produces text. A zero-priced model without a `:free` id is left out, because its price can change while its id stays the same. The list is cached for 10 minutes, a failed refresh keeps the last good list (or omits the list when there is none) and is not retried for a minute, and the response is bounded in time and size.
 
 ## Live-test note (2026-10-12)
 
@@ -38,6 +40,7 @@ With every hardening flag applied (`--sandbox read-only`, `--ephemeral`, `--igno
 
 ## Known limitations
 
+- OpenRouter rate-limits free models. Its documentation (read 2026-10-12) gives 20 requests a minute, and 50 requests a day for an account that has bought fewer than 10 credits (1,000 a day otherwise). Each agent step of a question is one request, so a free-plan account answers only a few questions a day; a refused request fails the run with `PROVIDER_RATE_LIMITED`. Which models are free is OpenRouter's decision and changes without notice.
 - Subscription automation is subject to each provider's terms; check them before unattended use. OpenAI documents API keys as the default for automation.
 - Killing a CLI process is best-effort cancellation; correctness after a cancel comes from lease fencing, not from the kill.
 - Windows: spawning without a shell does not find `.cmd` shims; only the direct child is killed on abort.

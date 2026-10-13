@@ -481,3 +481,63 @@ describe("worker SafeFetcher: size, time and failure limits", () => {
 		expect(fake.calls).toHaveLength(0);
 	});
 });
+
+describe("worker SafeFetcher: Authorization header and error bodies", () => {
+	it("sends the Authorization header on the first request only, never on redirects", async () => {
+		const fake = createFakeFetch({
+			"https://a.synthetic-wire.org/start": redirectTo("https://a.synthetic-wire.org/final"),
+			"https://a.synthetic-wire.org/final": text("done"),
+		});
+		const result = await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://a.synthetic-wire.org/start",
+			{ ...FETCH_LIMITS, authorization: "apikey synthetic-key" },
+		);
+		expect(result).toMatchObject({ ok: true, value: { text: "done" } });
+		expect(fake.calls).toHaveLength(2);
+		expect(fake.calls[0]?.headers.authorization).toBe("apikey synthetic-key");
+		expect(fake.calls[1]?.headers).not.toHaveProperty("authorization");
+	});
+
+	it("sends no Authorization header unless the caller supplies one", async () => {
+		const fake = createFakeFetch({ "https://a.synthetic-wire.org/x": text("ok") });
+		await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://a.synthetic-wire.org/x",
+			FETCH_LIMITS,
+		);
+		expect(fake.calls[0]?.headers).toEqual({
+			accept: "text/plain",
+			"user-agent": DEFAULT_USER_AGENT,
+		});
+	});
+
+	it("refuses an Authorization value that could inject headers, before any request", async () => {
+		const fake = createFakeFetch({ "https://a.synthetic-wire.org/x": text("ok") });
+		const result = await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://a.synthetic-wire.org/x",
+			{ ...FETCH_LIMITS, authorization: "apikey bad\r\nCookie: session=1" },
+		);
+		expect(result).toMatchObject({ ok: false, error: { code: "NETWORK_ERROR" } });
+		expect(fake.calls).toHaveLength(0);
+	});
+
+	it("attaches the error body only when includeErrorBody is set", async () => {
+		const routes = {
+			"https://a.synthetic-wire.org/x": () => new Response('{"code":429}', { status: 429 }),
+		};
+		const without = await createWorkerSafeFetcher(createFakeFetch(routes).fetch).fetchText(
+			"https://a.synthetic-wire.org/x",
+			FETCH_LIMITS,
+		);
+		expect(without).toEqual({ ok: false, error: { code: "HTTP_ERROR", detail: "HTTP 429" } });
+
+		const fake = createFakeFetch(routes);
+		const withBody = await createWorkerSafeFetcher(fake.fetch).fetchText(
+			"https://a.synthetic-wire.org/x",
+			{ ...FETCH_LIMITS, includeErrorBody: true },
+		);
+		expect(withBody).toEqual({
+			ok: false,
+			error: { code: "HTTP_ERROR", detail: "HTTP 429", body: '{"code":429}' },
+		});
+	});
+});

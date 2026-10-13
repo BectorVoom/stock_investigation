@@ -8,7 +8,9 @@ import type {
 	ArticleRepository,
 	AuditLog,
 	ChatRepository,
+	HomeDashboardRepository,
 	JobRepository,
+	MarketRepository,
 	Persistence,
 	RateLimiter,
 	ResearchRecordRepository,
@@ -24,7 +26,9 @@ import {
 	createArticleRepository,
 	createAuditLog,
 	createChatRepository,
+	createHomeDashboardRepository,
 	createJobRepository,
+	createMarketRepository,
 	createRateLimiter,
 	createResearchRecordRepository,
 	createRunnerCredentialRepository,
@@ -49,6 +53,8 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const runnerCredentials: RunnerCredentialRepository = createRunnerCredentialRepository(db);
 	const runnerStatus: RunnerStatusRepository = createRunnerStatusRepository(db);
 	const settings: SettingsRepository = createSettingsRepository(db);
+	const homeDashboard: HomeDashboardRepository = createHomeDashboardRepository(db);
+	const market: MarketRepository = createMarketRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
@@ -62,6 +68,8 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		runnerCredentials,
 		runnerStatus,
 		settings,
+		homeDashboard,
+		market,
 		rateLimiter,
 		audit,
 		unitOfWork,

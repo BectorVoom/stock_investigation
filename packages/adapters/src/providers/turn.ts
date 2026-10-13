@@ -7,7 +7,7 @@ export interface ProviderFailure {
 }
 
 /**
- * Stable failure codes shared by all four adapters. `retryable` is conservative:
+ * Stable failure codes shared by all adapters. `retryable` is conservative:
  * it is true only where trying the SAME backend again can plausibly succeed
  * without the owner changing anything, because every retry spends quota.
  */
@@ -32,6 +32,11 @@ export const PROVIDER_FAILURES = {
 		code: "PROVIDER_METERED_AUTH_NOT_ALLOWED",
 		retryable: false,
 	},
+	/**
+	 * A backend that only runs free models was charged for a request; continuing would
+	 * spend money without the owner's consent (AGT-012).
+	 */
+	PROVIDER_FREE_MODEL_CHARGED: { code: "PROVIDER_FREE_MODEL_CHARGED", retryable: false },
 	PROVIDER_PAYMENT_REQUIRED: { code: "PROVIDER_PAYMENT_REQUIRED", retryable: false },
 	PROVIDER_RATE_LIMITED: { code: "PROVIDER_RATE_LIMITED", retryable: true },
 	PROVIDER_UNAVAILABLE: { code: "PROVIDER_UNAVAILABLE", retryable: true },

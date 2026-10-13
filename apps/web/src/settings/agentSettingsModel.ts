@@ -5,6 +5,8 @@ import {
 	BASELINE_AGENT_IDS,
 	BUDGET_LIMITS,
 	isFreeTierModelId,
+	isOpenRouterFreeModelId,
+	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
 	type WebAccess,
 } from "@research/contracts";
@@ -145,9 +147,9 @@ export function reportedModels(
 	return models === undefined ? null : [...models];
 }
 
-/** Only OpenCode refuses to pick a provider by itself, so only it requires a model. */
+/** OpenCode and the free backend require a model; other backends have their own default. */
 export function backendRequiresModel(agentId: string): boolean {
-	return agentId === "opencode";
+	return agentId === "opencode" || agentId === OPENROUTER_FREE_AGENT_ID;
 }
 
 /** Value of the "Other — type a model id…" option; never saved as a model id. */
@@ -163,6 +165,10 @@ export const FREE_TIER_CAUTION =
 	"OpenCode serves free-tier models only to sessions that list its tools, so this app runs them with every tool call rejected; an answer fails if the model tries a tool, and a plan model avoids that.";
 
 export { isFreeTierModelId };
+
+/** Note shown for the OpenRouter free-models backend, which never authorizes spend. */
+export const FREE_PLAN_NOTE =
+	"OpenRouter limits free models per minute and per day, and each agent step of a question uses one request. No spend is authorized for this backend.";
 
 export interface ModelProviderGroup {
 	readonly provider: string;
@@ -451,6 +457,17 @@ export function evaluateAgentSettings(
 			);
 		} else if (!modelText.trim().includes("/")) {
 			problems.push("The OpenCode model must have the form provider/model.");
+		}
+	}
+	if (selectedAgent !== null && selectedAgent.agentId === OPENROUTER_FREE_AGENT_ID) {
+		if (modelText.trim() === "") {
+			problems.push(
+				"OpenRouter (free models) needs a model — without one it cannot run. Choose one from the list the runner reported, or type one.",
+			);
+		} else if (!isOpenRouterFreeModelId(modelText.trim())) {
+			problems.push(
+				"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
+			);
 		}
 	}
 	if (modelText.length > MAX_MODEL_LENGTH) {

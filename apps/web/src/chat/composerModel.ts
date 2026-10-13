@@ -2,6 +2,7 @@ import {
 	type AgentSettings,
 	type AgentsResponse,
 	BUDGET_LIMITS,
+	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
 } from "@research/contracts";
 import type { ResearchBudget } from "../api/client.ts";
@@ -81,6 +82,13 @@ export function evaluateComposer(
 		problems.push(
 			"OpenCode needs a model of the form provider/model — choose one in Settings → AI agent.",
 		);
+	}
+	if (
+		selectedAgent !== null &&
+		selectedAgent.agentId === OPENROUTER_FREE_AGENT_ID &&
+		(model === null || model.trim() === "")
+	) {
+		problems.push("OpenRouter (free models) needs a model — choose one in Settings → AI agent.");
 	}
 	const markets = (["JP", "US"] as const).filter((market) => draft.markets[market]);
 	if (markets.length === 0) problems.push("Choose at least one market (JP or US).");
