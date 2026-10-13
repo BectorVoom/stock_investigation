@@ -1046,6 +1046,8 @@ test("a touch pointer drag reorders (synthetic touch pointer events)", async () 
 	} finally {
 		page.off("request", handler);
 	}
-	const after = await widgetIds();
-	expect(after.indexOf(dragged)).toBe(2);
+	// The PUT is counted when it is SENT; the DOM order follows once the
+	// server copy renders (until then the new order is shown through CSS
+	// `order`), so the DOM order is polled rather than read once.
+	await expect.poll(async () => (await widgetIds()).indexOf(dragged), { timeout: 30_000 }).toBe(2);
 });

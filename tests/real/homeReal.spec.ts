@@ -192,6 +192,57 @@ test("a market-data refresh shows a real Twelve Data price with an as-of date", 
 		mkdirSync(shotsDir, { recursive: true });
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.waitForTimeout(1_000);
+
+		// Drag to reposition, on the real development stack: the first
+		// widget's header is dragged onto the third widget with the real
+		// mouse, the drop is saved by the real API, and the new order
+		// survives a reload (so it came from the stored dashboard, not from
+		// the drag preview).
+		const widgetOrder = () =>
+			page
+				.locator("article[data-widget-id]")
+				.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-widget-id") ?? ""));
+		const handleCenter = async (widgetId: string) => {
+			const box = await page
+				.locator(`article[data-widget-id="${widgetId}"] [data-widget-drag-handle]`)
+				.boundingBox();
+			if (box === null) throw new Error(`the drag handle of ${widgetId} is not on screen`);
+			return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+		};
+		await page.evaluate(() => window.scrollTo(0, 0));
+		const orderBefore = await widgetOrder();
+		const draggedId = orderBefore[0];
+		const targetId = orderBefore[2];
+		if (draggedId === undefined || targetId === undefined) {
+			throw new Error("the default dashboard has fewer than three widgets");
+		}
+		const from = await handleCenter(draggedId);
+		const to = await handleCenter(targetId);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(to.x + 20, to.y + 10, { steps: 12 });
+		await expect(page.locator("[data-widget-placeholder]")).toHaveCount(1);
+		await page.screenshot({ path: join(shotsDir, "home-real-drag-mid.png") });
+		await page.mouse.up();
+		const expectedOrder = orderBefore.filter((id) => id !== draggedId);
+		expectedOrder.splice(2, 0, draggedId);
+		await expect.poll(widgetOrder, { timeout: 30_000 }).toEqual(expectedOrder);
+		await expect
+			.poll(
+				async () => {
+					const stored = await api<{ dashboard: { widgets: { widgetId: string }[] } }>(
+						"GET",
+						"/api/v1/home/dashboard",
+					);
+					return stored.dashboard.widgets.map((widget) => widget.widgetId);
+				},
+				{ timeout: 30_000 },
+			)
+			.toEqual(expectedOrder);
+		await page.reload();
+		await expect(watchlist).toBeVisible({ timeout: 60_000 });
+		await expect.poll(widgetOrder, { timeout: 30_000 }).toEqual(expectedOrder);
+		await page.waitForTimeout(1_000);
 		await page.screenshot({ path: join(shotsDir, "home-real-1440x900.png"), fullPage: true });
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.waitForTimeout(1_000);
