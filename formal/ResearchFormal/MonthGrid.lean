@@ -55,13 +55,50 @@ theorem grid_first_weekday (firstWeekday weekStart : Nat)
   unfold gridLeading
   omega
 
-/-- Whether cell index `idx` holds an in-month day. -/
-def inMonthIdx (leading days idx : Nat) : Bool :=
-  decide (leading ≤ idx ∧ idx < leading + days)
-
 /-- In-month day numbers (1-based) in cell order. -/
 def gridDayNums (leading days total : Nat) : List Nat :=
-  ((List.range total).filter (inMonthIdx leading days)).map (fun idx => idx - leading + 1)
+  ((List.range total).filter fun idx =>
+    decide (leading ≤ idx ∧ idx < leading + days)).map
+    fun idx => idx - leading + 1
+
+/-- Singleton filter facts (no core-version dependence). -/
+theorem filter_singleton_false (p : Nat → Bool) (n : Nat)
+    (h : ¬ p n = true) : [n].filter p = [] := by
+  rw [List.filter_cons, ifNeg h, List.filter_nil]
+
+theorem filter_singleton_true (p : Nat → Bool) (n : Nat)
+    (h : p n = true) : [n].filter p = [n] := by
+  rw [List.filter_cons, ifPos h, List.filter_nil]
+
+/-- Below the month (`idx < leading`) nothing is kept. -/
+theorem filter_range_lt_self (n leading : Nat) :
+    ((List.range n).filter fun idx =>
+      decide (leading ≤ idx ∧ idx < leading)) = [] := by
+  induction n with
+  | zero => simp
+  | succ m ihm =>
+    have h1 : (([m].filter fun idx =>
+      decide (leading ≤ idx ∧ idx < leading))) = [] := by
+      apply filter_singleton_false
+      simp only [decide_eq_true_eq]
+      omega
+    simp only [List.range_succ, List.filter_append, ihm, h1, List.nil_append]
+
+/-- Congruence of `map` over a range. -/
+theorem map_congr_range (f g : Nat → Nat) (n : Nat)
+    (h : ∀ k ∈ List.range n, f k = g k) :
+    (List.range n).map f = (List.range n).map g := by
+  induction n with
+  | zero => rfl
+  | succ m ihm =>
+    have h1 : ∀ k ∈ List.range m, f k = g k := by
+      intro k hk
+      exact h k (by simp [List.range_succ, hk])
+    have hlast : f m = g m := h m (by simp [List.range_succ])
+    simp only [List.range_succ, List.map_append]
+    rw [ihm h1]
+    show _ ++ [f m] = _ ++ [g m]
+    rw [hlast]
 
 /-- The kept indices are exactly `leading .. leading + days - 1`. -/
 theorem filter_range_aux : ∀ (n leading days : Nat), leading + days ≤ n →
@@ -83,52 +120,53 @@ theorem filter_range_aux : ∀ (n leading days : Nat), leading + days ≤ n →
     · rw [ih leading days hn]
       have hnil : (([n].filter fun idx =>
         decide (leading ≤ idx ∧ idx < leading + days))) = [] := by
-        simp only [List.filter_singleton]
-        simp only [decide_eq_false_iff_not]
+        apply filter_singleton_false
+        simp only [decide_eq_true_eq]
         omega
       rw [hnil, List.append_nil]
     · by_cases hd : days = 0
       · subst hd
-        simp only [Nat.add_zero] at h hn
-        have hnil : ((List.range n).filter fun idx =>
-          decide (leading ≤ idx ∧ idx < leading)) = [] := by
-          rw [List.filter_eq_nil]
-          intro x _
-          simp only [decide_eq_false_iff_not]
-          omega
+        simp only [Nat.add_zero]
+        rw [filter_range_lt_self]
         have hnil2 : (([n].filter fun idx =>
           decide (leading ≤ idx ∧ idx < leading)) = []) := by
-          simp only [List.filter_singleton]
-          simp only [decide_eq_false_iff_not]
+          apply filter_singleton_false
+          simp only [decide_eq_true_eq]
           omega
-        rw [hnil, hnil2, List.nil_append]
-        simp
+        rw [hnil2, List.nil_append]
+        rfl
       · obtain ⟨days', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hd
-        have hn' : leading + days' ≤ n := by omega
-        rw [ih leading days' hn']
-        have hkeep : (([n].filter fun idx =>
-          decide (leading ≤ idx ∧ idx < leading + (days' + 1)))) = [n] := by
-          simp only [List.filter_singleton]
-          have hle : leading ≤ n := by omega
-          have hlt : n < leading + (days' + 1) := by omega
-          simp [hle, hlt]
-        rw [hkeep, List.range'_concat]
         have heq : n = leading + days' := by omega
-        rw [heq]
+        subst heq
+        have hkeep : (([leading + days'].filter fun idx =>
+          decide (leading ≤ idx ∧ idx < leading + (days' + 1)))) = [leading + days'] := by
+          apply filter_singleton_true
+          simp only [decide_eq_true_eq]
+          omega
+        have htight : ∀ idx ∈ List.range (leading + days'),
+            decide (leading ≤ idx ∧ idx < leading + (days' + 1))
+              = decide (leading ≤ idx ∧ idx < leading + days') := by
+          intro idx hmem
+          have hlt : idx < leading + days' := List.mem_range.mp hmem
+          have e1 : (leading ≤ idx ∧ idx < leading + (days' + 1)) ↔
+              (leading ≤ idx ∧ idx < leading + days') := by omega
+          simp [e1]
+        have hsub : ((List.range (leading + days')).filter fun idx =>
+            decide (leading ≤ idx ∧ idx < leading + (days' + 1)))
+            = List.range' leading days' := by
+          rw [List.filter_congr htight]
+          exact ih leading days' (by omega)
+        rw [hsub, hkeep, Nat.succ_eq_add_one, List.range'_concat]
+        simp only [Nat.one_mul]
 
 /-- Mapping the kept indices to 1-based day numbers gives `1 .. days`. -/
 theorem map_range'_sub (leading days : Nat) :
     ((List.range' leading days).map fun idx => idx - leading + 1)
       = List.range' 1 days := by
-  rw [List.range'_eq_map_range]
-  have hcongr : ((List.range days).map fun k => leading + k - leading + 1)
-      = ((List.range days).map fun k => k + 1) := by
-    apply List.map_congr_left
-    intro k _
-    rw [Nat.add_sub_cancel_left]
-  rw [hcongr, ← List.range'_eq_map_range]
-  apply List.map_congr_left
+  rw [List.range'_eq_map_range, List.map_map, List.range'_eq_map_range]
+  apply map_congr_range
   intro k _
+  show leading + k - leading + 1 = 1 + k
   omega
 
 /-- **(c) The in-month cells are exactly days 1..n in order.** -/

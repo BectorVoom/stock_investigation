@@ -3,18 +3,25 @@ import { fileURLToPath } from "node:url";
 import {
 	applyDashboardEdit,
 	applyUiCommand,
+	buildMonthGrid,
 	type CommandContext,
 	checkBudget,
 	checkLease,
 	classifyReportedPositionChange,
+	daysInMonth,
 	decideClaim,
 	emptyWorkspaceState,
+	encodeBase32Hex,
 	foldIcsLine,
+	type GoogleEventBody,
+	googleEventId,
 	isLeasedJobState,
 	isTerminalJobState,
 	JOB_STATES,
 	JOB_TRANSITIONS,
+	type ManagedGoogleEvent,
 	NO_REFERENCES,
+	planGoogleSync,
 	rateWindowPermit,
 	recentCountWithinBudget,
 	selectUpcomingEarnings,
@@ -22,6 +29,7 @@ import {
 	type UiCommand,
 	verifyClaim,
 	type WorkspaceState,
+	weekdayOf,
 } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -156,6 +164,30 @@ const vectorsSchema = z.object({
 			selected: z.array(z.object({ date: z.number(), stock: z.number() })),
 		}),
 	),
+	monthGrid: z.array(
+		z.object({
+			year: z.number(),
+			month: z.number(),
+			weekStart: z.number(),
+			firstWeekday: z.number(),
+			days: z.number(),
+			leading: z.number(),
+			rows: z.number(),
+			first: z.string(),
+			inMonth: z.array(z.string()),
+		}),
+	),
+	syncPlan: z.array(
+		z.object({
+			desired: z.array(z.object({ id: z.number(), fp: z.number() })),
+			existing: z.array(z.object({ id: z.number(), cancelled: z.boolean(), fp: z.number() })),
+			inserts: z.array(z.object({ id: z.number(), fp: z.number() })),
+			updates: z.array(z.object({ id: z.number(), fp: z.number() })),
+			deletes: z.array(z.number()),
+			unchanged: z.array(z.number()),
+		}),
+	),
+	base32hex: z.array(z.object({ bytes: z.array(z.number()), chars: z.array(z.number()) })),
 });
 
 const vectors = vectorsSchema.parse(
@@ -599,5 +631,167 @@ describe("Lean model conformance: fixed-window rate gate", () => {
 				expect(inWindow.length, `${label} @${now}`).toBeLessThanOrEqual(vector.maxPer);
 			}
 		}
+	});
+});
+
+describe("Lean model conformance: earnings month grid", () => {
+	it(`agrees with buildMonthGrid on all ${vectors.monthGrid.length} vectors`, () => {
+		expect(vectors.monthGrid.length).toBe(27);
+		for (const vector of vectors.monthGrid) {
+			const grid = buildMonthGrid(vector.year, vector.month, vector.weekStart);
+			const label = JSON.stringify(vector);
+			expect(grid.ok, label).toBe(true);
+			if (!grid.ok) continue;
+			const flat = grid.value.weeks.flat();
+			expect(grid.value.weeks.length, label).toBe(vector.rows);
+			expect(flat.length % 7, label).toBe(0);
+			expect(flat[0]?.date, label).toBe(vector.first);
+			expect(
+				flat.filter((cell) => cell.inMonth).map((cell) => cell.date),
+				label,
+			).toEqual(vector.inMonth);
+			// The proved properties, checked independently on the wire values.
+			const [fy, fm, fd] = vector.first.split("-");
+			expect(weekdayOf(Number(fy), Number(fm), Number(fd)), label).toBe(vector.weekStart);
+			expect(daysInMonth(vector.year, vector.month), label).toBe(vector.days);
+			expect(weekdayOf(vector.year, vector.month, 1), label).toBe(vector.firstWeekday);
+			expect(
+				flat.findIndex((cell) => cell.inMonth),
+				label,
+			).toBe(vector.leading);
+		}
+	});
+
+	it("fails closed outside the model: invalid inputs build nothing", () => {
+		// The Lean model counts grid offsets in Nat, so out-of-range years,
+		// months and week starts are outside it; the implementation fails
+		// closed (also covered by unit tests).
+		expect(buildMonthGrid(1969, 1, 0)).toEqual({ ok: false, error: "INVALID_YEAR" });
+		expect(buildMonthGrid(10_000, 1, 0)).toEqual({ ok: false, error: "INVALID_YEAR" });
+		expect(buildMonthGrid(2026, 0, 0)).toEqual({ ok: false, error: "INVALID_MONTH" });
+		expect(buildMonthGrid(2026, 13, 0)).toEqual({ ok: false, error: "INVALID_MONTH" });
+		expect(buildMonthGrid(2026, 10, -1)).toEqual({ ok: false, error: "INVALID_WEEK_START" });
+		expect(buildMonthGrid(2026, 10, 7)).toEqual({ ok: false, error: "INVALID_WEEK_START" });
+	});
+});
+
+describe("Lean model conformance: Google sync plan", () => {
+	// Fingerprint n maps to one fixed assignment of the compared fields
+	// (start/end/summary/description); differing fingerprints always differ.
+	const fpBody = (id: number, fp: number): GoogleEventBody => ({
+		id: `s${id}`,
+		summary: `fp-${fp}`,
+		description: `desc-${fp}`,
+		startDate: "2026-10-29",
+		endDate: "2026-10-30",
+		privateProperties: {
+			researchWorkspace: "earnings",
+			stockId: "us:AAPL",
+			periodKey: "2026-q4",
+		},
+		sourceTitle: "Finnhub",
+		sourceUrl: "https://finnhub.io/",
+	});
+	const fpManaged = (row: { id: number; cancelled: boolean; fp: number }): ManagedGoogleEvent => ({
+		id: `s${row.id}`,
+		status: row.cancelled ? "cancelled" : "confirmed",
+		startDate: "2026-10-29",
+		endDate: "2026-10-30",
+		summary: `fp-${row.fp}`,
+		description: `desc-${row.fp}`,
+	});
+	const pairOf = (body: GoogleEventBody) => ({
+		id: Number(body.id.slice(1)),
+		fp: Number(body.summary.slice("fp-".length)),
+	});
+	const idOf = (id: string) => Number(id.slice(1));
+	const sortedIds = (ids: readonly number[]) => [...ids].sort((a, b) => a - b);
+
+	it(`agrees with planGoogleSync on all ${vectors.syncPlan.length} vectors`, () => {
+		expect(vectors.syncPlan.length).toBe(638);
+		for (const vector of vectors.syncPlan) {
+			const label = JSON.stringify(vector);
+			const plan = planGoogleSync(
+				vector.desired.map((entry) => fpBody(entry.id, entry.fp)),
+				vector.existing.map(fpManaged),
+			);
+			expect(plan.ok, label).toBe(true);
+			if (!plan.ok) continue;
+			expect(plan.value.inserts.map(pairOf), label).toEqual(
+				vector.inserts.map((entry) => ({ id: entry.id, fp: entry.fp })),
+			);
+			expect(plan.value.updates.map(pairOf), label).toEqual(
+				vector.updates.map((entry) => ({ id: entry.id, fp: entry.fp })),
+			);
+			expect(plan.value.deletes.map(idOf), label).toEqual(vector.deletes);
+			expect(plan.value.unchanged.map(idOf), label).toEqual(vector.unchanged);
+			// Deterministic order (by id), asserted on the wire values.
+			expect(
+				plan.value.inserts.map((body) => idOf(body.id)),
+				label,
+			).toEqual(sortedIds(plan.value.inserts.map((body) => idOf(body.id))));
+			expect(
+				plan.value.updates.map((body) => idOf(body.id)),
+				label,
+			).toEqual(sortedIds(plan.value.updates.map((body) => idOf(body.id))));
+			expect(plan.value.deletes.map(idOf), label).toEqual(sortedIds(plan.value.deletes.map(idOf)));
+			expect(plan.value.unchanged.map(idOf), label).toEqual(
+				sortedIds(plan.value.unchanged.map(idOf)),
+			);
+		}
+	});
+
+	it("fails closed outside the model: duplicate ids plan nothing", () => {
+		// Duplicate ids are outside the Nat model (its buckets assume
+		// distinct ids); the implementation rejects them instead of
+		// double-writing (also covered by unit tests).
+		const body = fpBody(0, 0);
+		expect(planGoogleSync([body, body], []).ok).toBe(false);
+		expect(
+			planGoogleSync(
+				[],
+				[
+					fpManaged({ id: 0, cancelled: false, fp: 0 }),
+					fpManaged({ id: 0, cancelled: false, fp: 0 }),
+				],
+			).ok,
+		).toBe(false);
+	});
+});
+
+describe("Lean model conformance: base32hex encoder", () => {
+	// Nats 0..31 in the RFC 4648 base32hex alphabet order (`0-9a-v`).
+	const ALPHABET = "0123456789abcdefghijklmnopqrstuv";
+
+	it(`agrees with encodeBase32Hex on all ${vectors.base32hex.length} vectors`, () => {
+		expect(vectors.base32hex.length).toBe(17);
+		for (const vector of vectors.base32hex) {
+			const label = JSON.stringify(vector.bytes);
+			const encoded = encodeBase32Hex(vector.bytes);
+			expect(encoded.ok, label).toBe(true);
+			if (!encoded.ok) continue;
+			expect(
+				[...encoded.value].map((char) => ALPHABET.indexOf(char)),
+				label,
+			).toEqual(vector.chars);
+			// The proved length property, checked on the wire value.
+			expect(encoded.value.length, label).toBe((vector.bytes.length * 8) / 5);
+			if (vector.bytes.length === 20) {
+				const id = googleEventId(vector.bytes);
+				expect(id.ok, label).toBe(true);
+				if (id.ok) expect(id.value, label).toBe(encoded.value);
+			}
+		}
+	});
+
+	it("fails closed outside the model: bad lengths and bytes encode nothing", () => {
+		// Lengths that are not a multiple of 5 bytes (and out-of-range
+		// bytes) are outside the model; the implementation fails closed
+		// (also covered by unit tests).
+		expect(encodeBase32Hex([0, 1, 2]).ok).toBe(false);
+		expect(encodeBase32Hex([0, 0, 0, 0, 256]).ok).toBe(false);
+		expect(encodeBase32Hex([0, 0, 0, 0, -1]).ok).toBe(false);
+		expect(googleEventId([0, 0, 0]).ok).toBe(false);
+		expect(googleEventId(Array.from({ length: 21 }, () => 0)).ok).toBe(false);
 	});
 });
