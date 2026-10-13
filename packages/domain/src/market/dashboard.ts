@@ -61,6 +61,7 @@ export type DashboardEdit<W extends DashboardWidget = DashboardWidget> =
 	| { readonly kind: "add"; readonly widget: W }
 	| { readonly kind: "remove"; readonly widgetId: string }
 	| { readonly kind: "move"; readonly widgetId: string; readonly direction: "earlier" | "later" }
+	| { readonly kind: "reorder"; readonly widgetId: string; readonly toIndex: number }
 	| { readonly kind: "replace"; readonly widget: W }
 	| { readonly kind: "reset"; readonly dashboard: Dashboard<W> };
 
@@ -68,6 +69,7 @@ export type DashboardEditError =
 	| "DUPLICATE_WIDGET_ID"
 	| "WIDGET_NOT_FOUND"
 	| "MOVE_AT_END"
+	| "POSITION_OUT_OF_RANGE"
 	| "TOO_MANY_WIDGETS"
 	| "TOO_MANY_SERIES"
 	| "DUPLICATE_SERIES_IN_WIDGET"
@@ -159,6 +161,35 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 				schemaVersion: 1,
 				widgets: dashboard.widgets.filter((widget) => widget.widgetId !== edit.widgetId),
 			});
+		}
+		case "reorder": {
+			const index = dashboard.widgets.findIndex((widget) => widget.widgetId === edit.widgetId);
+			if (index === -1) return err("WIDGET_NOT_FOUND");
+			if (
+				!Number.isInteger(edit.toIndex) ||
+				edit.toIndex < 0 ||
+				edit.toIndex > dashboard.widgets.length - 1
+			) {
+				return err("POSITION_OUT_OF_RANGE");
+			}
+			const moved = dashboard.widgets[index];
+			if (moved === undefined) return err("WIDGET_NOT_FOUND");
+			// One pass over the result positions: the moved widget lands at
+			// `toIndex` of the result, every other widget keeps its order.
+			const next: W[] = new Array<W>(dashboard.widgets.length);
+			let source = 0;
+			for (let target = 0; target < next.length; target += 1) {
+				if (target === edit.toIndex) {
+					next[target] = moved;
+					continue;
+				}
+				if (source === index) source += 1;
+				const widget = dashboard.widgets[source];
+				if (widget === undefined) return err("WIDGET_NOT_FOUND");
+				next[target] = widget;
+				source += 1;
+			}
+			return ok({ schemaVersion: 1, widgets: next });
 		}
 		case "move": {
 			const index = dashboard.widgets.findIndex((widget) => widget.widgetId === edit.widgetId);
