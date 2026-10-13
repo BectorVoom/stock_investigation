@@ -397,12 +397,20 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   edit; an unchanged position saves nothing and the preview stays on screen
   while the save is in flight. `Escape`, `pointercancel` or the window losing
   focus cancels with nothing saved. No drag starts while a save is in flight,
-  while loading, or with one widget; the page auto-scrolls near the viewport
-  edges. Reflow animates for at most 200 ms and only under `motion-safe:`
+  while loading, or with one widget; while a drag is active and the pointer
+  rests within 80 px of the top or bottom edge of the viewport and the page
+  can still scroll that way, the page keeps scrolling every frame (faster the
+  deeper into the zone the pointer is, at most about 16 px per frame),
+  re-evaluating the drop target as content passes under the pointer, until
+  the pointer leaves the zone, the page reaches its end, or the drag ends or
+  is cancelled. Slot rectangles are cached in page coordinates so scrolling
+  never stales the decision. The pointer/DOM engine lives in
+  `home/widgetDrag.ts` (`createWidgetDrag`, returning the grid pointerdown
+  handler plus dispose); `HomeView` keeps only the wiring. Reflow animates for at most 200 ms and only under `motion-safe:`
   (instant with reduced motion). The menu's Move earlier/later is the
   keyboard and assistive-technology path, and one visually hidden polite live
   region announces every completed move (`Moved “<title>” to position <i> of
-  <n>.`).
+  <n>.`, clearing first so a repeated sentence announces again).
 - States follow principle 2 (`sl-skeleton` blocks plus "Loading" text,
   "unavailable (reason)", `ErrorNotice` with "Try again"); status is never
   colour alone (change marks carry ▲/▼/▬ plus a word); every number shows its

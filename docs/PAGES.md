@@ -29,7 +29,9 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - Move a widget earlier/later.
 - Drag a widget to a new position (the header strip is the handle; Move
   earlier/later in the menu is the keyboard and assistive-technology path,
-  announced with the position).
+  announced with the position; the page auto-scrolls while the pointer rests
+  near the top or bottom edge of the viewport; the pointer engine lives in
+  `apps/web/src/home/widgetDrag.ts`).
 - Remove a widget.
 - Reset to the default arrangement.
 - Queue a market-data refresh for the local runner.

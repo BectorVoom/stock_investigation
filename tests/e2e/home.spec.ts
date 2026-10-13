@@ -835,6 +835,151 @@ test("the actions button still opens its menu, and Move later works and is annou
 	await expect(live).toContainText(/Moved “.+” to position 2 of /);
 });
 
+/** Restores the default dashboard so scrolled-drag tests start deterministic. */
+async function resetDashboardToDefaults(): Promise<void> {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const reset = page.getByRole("button", { name: "Reset to default arrangement" });
+	await expect(reset).toBeEnabled({ timeout: 30_000 });
+	await reset.click();
+	const dialog = page.locator("sl-dialog", { hasText: "cannot be undone" });
+	await expect(dialog).toBeAttached();
+	await dialog.getByRole("button", { name: "Reset widgets" }).click();
+	await expect
+		.poll(() => widgetIds(), { timeout: 30_000 })
+		.toEqual([
+			"w-vix",
+			"w-gold",
+			"w-dgs10",
+			"w-sp500",
+			"w-vix-chart",
+			"w-watchlist",
+			"w-us-economy",
+		]);
+}
+
+test("dragging the first widget to the last widget below the fold drops it last, after a reload too", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	expect(dragged).toBe("w-vix");
+	const from = await headerCenter(dragged);
+	const puts = await countPutsDuring(async () => {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 30, { steps: 4 });
+		// Ride the bottom edge: the edge auto-scroll carries the page down
+		// while the pointer rests in the zone, staling nothing.
+		await page.mouse.move(720, 880, { steps: 10 });
+		await page.waitForTimeout(1500);
+		// The last (Large, "US economy") widget is now on screen: drop on
+		// its lower half, past its center.
+		const box = await page.locator('article[data-widget-id="w-us-economy"]').boundingBox();
+		if (box === null) throw new Error("the US economy widget never scrolled into view");
+		await page.mouse.move(box.x + box.width / 2, box.y + (box.height * 3) / 4, { steps: 10 });
+		await page.waitForTimeout(300);
+		await page.mouse.up();
+	});
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.filter((id) => id !== dragged)).toEqual(before.filter((id) => id !== dragged));
+	expect(after[after.length - 1]).toBe(dragged);
+	await page.reload();
+	await expect(page.locator(`article[data-widget-id="${dragged}"]`)).toBeVisible();
+	expect(await widgetIds()).toEqual(after);
+});
+
+test("a wheel scroll in the middle of a drag still drops over the intended widget", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	// The last (Large, "US economy") widget: dropping on its lower half
+	// ends last no matter how the pointer approached, so the assertion is
+	// deterministic while still proving the scrolled decision was right.
+	const targetId = "w-us-economy";
+	const from = await headerCenter(dragged);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 40, { steps: 4 });
+		await page.waitForTimeout(300);
+		// Scroll the page under the held pointer without moving the mouse:
+		// the cached slots are page coordinates, so the decision stays right.
+		await page.mouse.wheel(0, 800);
+		await page.waitForTimeout(400);
+		let box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
+		if (box === null) {
+			await page.locator(`article[data-widget-id="${targetId}"]`).scrollIntoViewIfNeeded();
+			box = await page.locator(`article[data-widget-id="${targetId}"]`).boundingBox();
+		}
+		if (box === null) throw new Error(`the ${targetId} widget has no box`);
+		await page.mouse.move(box.x + box.width / 2, box.y + (box.height * 3) / 4, { steps: 10 });
+		await page.waitForTimeout(300);
+		await page.mouse.up();
+		await expect.poll(() => puts, { timeout: 30_000 }).toBeGreaterThan(0);
+		await page.waitForTimeout(500);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(1);
+	const after = await widgetIds();
+	expect(after.filter((id) => id !== dragged)).toEqual(before.filter((id) => id !== dragged));
+	expect(after[after.length - 1]).toBe(dragged);
+	await page.reload();
+	await expect(page.locator(`article[data-widget-id="${dragged}"]`)).toBeVisible();
+	expect(await widgetIds()).toEqual(after);
+});
+
+test("holding a drag near the bottom edge auto-scrolls, and Escape stops it", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await resetDashboardToDefaults();
+	await scrollHomeTop();
+	const before = await widgetIds();
+	const dragged = before[0] ?? "";
+	const from = await headerCenter(dragged);
+	let puts = 0;
+	const handler = (request: { method(): string; url(): string }) => {
+		if (request.method() === "PUT" && /\/home\/dashboard$/.test(request.url())) puts += 1;
+	};
+	page.on("request", handler);
+	try {
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await page.mouse.move(from.x, from.y + 30, { steps: 4 });
+		await page.waitForTimeout(300);
+		const startY = await page.evaluate(() => window.scrollY);
+		expect(startY).toBe(0);
+		// Rest the pointer inside the 80 px bottom zone without moving it:
+		// the page keeps scrolling every frame, with no pointer movement.
+		await page.mouse.move(720, 885, { steps: 5 });
+		await page.waitForTimeout(600);
+		const midY = await page.evaluate(() => window.scrollY);
+		expect(midY).toBeGreaterThan(startY);
+		await page.keyboard.press("Escape");
+		await page.mouse.up();
+		await page.waitForTimeout(300);
+		const endY = await page.evaluate(() => window.scrollY);
+		await page.waitForTimeout(400);
+		expect(await page.evaluate(() => window.scrollY)).toBe(endY);
+	} finally {
+		page.off("request", handler);
+	}
+	expect(puts).toBe(0);
+	expect(await widgetIds()).toEqual(before);
+});
+
 test("a touch pointer drag reorders (synthetic touch pointer events)", async () => {
 	test.setTimeout(120_000);
 	await page.goto("/#/home");

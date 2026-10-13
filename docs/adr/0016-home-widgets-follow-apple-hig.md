@@ -144,6 +144,33 @@ one saved arrangement like any other menu move; moving the widget back (by
 drag or by menu) restores the earlier order, so no separate undo stack is
 kept.
 
+## Addendum (2026-10-14): scroll-correct slots, continuous edge auto-scroll, engine extraction
+
+- **The engine lives in `apps/web/src/home/widgetDrag.ts`.** `HomeView.tsx`
+  no longer holds pointer/DOM code: `createWidgetDrag({ getGrid, getWidgets,
+  canStart, onDrop })` owns the state, the listeners, the CSSOM writes and
+  the cleanup, and returns the grid `pointerdown` handler plus
+  `dispose`/`clearPreview`/`cancel`. `HomeView` keeps only the wiring (what
+  may start a drag, what a drop saves, keeping the preview on screen until
+  the save settles). `dragModel.ts` stays pure.
+- **Slots are page coordinates.** Slot rectangles are cached as
+  `getBoundingClientRect` plus the scroll offset at measure time and the
+  pointer is converted to page coordinates on every evaluation, so any
+  scrolling during a drag (edge auto-scroll, wheel, trackpad, scrollbar)
+  never stales the decision. A `scroll` listener schedules a re-evaluation
+  frame; at most one slot re-read happens per frame, only when the target
+  changed.
+- **Edge auto-scroll is continuous.** While a drag is active and the pointer
+  rests within 80 px of the top or bottom viewport edge and the page can
+  still scroll that way, every frame scrolls by an amount proportional to
+  how deep into the zone the pointer is (capped at about 16 px) and
+  re-evaluates the drop target as content passes under the pointer. It stops
+  when the pointer leaves the zone, the page reaches its end, or the drag
+  ends or is cancelled.
+- **A repeated move announces again.** The polite live region clears its
+  text before setting the new sentence (on a later task), so moving a widget
+  to the same position number again still announces.
+
 ### Alternatives considered (deliberately not done)
 
 - **Free placement with gaps.** Rejected: visual order must equal DOM order
