@@ -4,6 +4,12 @@
  * request starts pass through `rateWindowPermit`; a request that does not fit
  * waits out its `retryAfterMs` instead of spending the provider's quota.
  *
+ * The pacer is keyed by provider/source id (`MarketProviderId |
+ * EarningsSourceId`), so the earnings-date refresh (FR-018: Finnhub at 30
+ * request starts per 60 s, JPX at 6) paces through the SAME gate rather than
+ * a copy: entries are added in the composition root, never by branching here
+ * (ARCH-006).
+ *
  * The clock and sleep are injected (ARCH-002): tests use a fake clock with a
  * sleep that advances it — a sleep that never advances time would wait
  * forever, exactly as a real sleep that never elapsed would. The pacer holds
@@ -11,7 +17,7 @@
  * so back-to-back refreshes share one window per provider.
  */
 import type { Clock } from "@research/application";
-import type { MarketProviderId } from "@research/contracts";
+import type { EarningsSourceId, MarketProviderId } from "@research/contracts";
 import { rateWindowPermit } from "@research/domain";
 
 export interface MarketRateLimit {
@@ -27,22 +33,28 @@ export const TWELVE_DATA_REQUESTS_PER_MINUTE_MAX = 600;
 export const TWELVE_DATA_WINDOW_MS = 60_000;
 /** FRED allows 100 requests per minute; 30 series can never reach it, but the gate is uniform. */
 export const FRED_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 100, windowMs: 60_000 };
+/** Finnhub's free plan documents 60 calls/minute; the runner paces at half that (FR-018). */
+export const FINNHUB_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 30, windowMs: 60_000 };
+/** JPX asks callers to avoid high-frequency access: one paced batch per 10 s (FR-018). */
+export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_000 };
 
 export function twelveDataRateLimit(requestsPerMinute: number): MarketRateLimit {
 	return { maxPerWindow: requestsPerMinute, windowMs: TWELVE_DATA_WINDOW_MS };
 }
 
+export type PacerKey = MarketProviderId | EarningsSourceId;
+
 export interface MarketPacerDeps {
 	readonly clock: Clock;
 	readonly sleep: (ms: number, signal?: AbortSignal) => Promise<void>;
-	readonly limits: ReadonlyMap<MarketProviderId, MarketRateLimit>;
+	readonly limits: ReadonlyMap<PacerKey, MarketRateLimit>;
 	/**
 	 * HTTP requests sent per fetched series (S6): FRED needs two (metadata +
 	 * observations) while Twelve Data needs one. The pacer takes that many
 	 * grants per `pace` call so back-to-back refreshes stay inside the
 	 * documented per-minute request budget. Defaults to the registry below.
 	 */
-	readonly requestsPerSeries?: ReadonlyMap<MarketProviderId, number>;
+	readonly requestsPerSeries?: ReadonlyMap<string, number>;
 }
 
 /**
@@ -51,30 +63,35 @@ export interface MarketPacerDeps {
  * sends one. A per-series grant would let two back-to-back 30-series
  * refreshes send 120 FRED requests against the stated 100/min.
  */
-export const MARKET_REQUESTS_PER_SERIES: ReadonlyMap<MarketProviderId, number> = new Map([
+export const MARKET_REQUESTS_PER_SERIES: ReadonlyMap<string, number> = new Map([
 	["fred", 2],
 	["twelve-data", 1],
 ]);
 
 export interface MarketPacer {
 	/**
-	 * Waits until a request to `provider` fits its window, then records the
-	 * grant. A provider without a limit is always allowed. False when the
-	 * signal aborted while waiting — the caller must stop, not fetch.
+	 * Waits until `requests` request starts to `provider` fit its window,
+	 * then records the grants. A provider without a limit is always allowed.
+	 * False when the signal aborted while waiting — the caller must stop, not
+	 * fetch. `requests` defaults to the per-series table above (one market
+	 * series); callers that pace one request at a time omit it.
 	 */
-	pace(provider: MarketProviderId, signal: AbortSignal): Promise<boolean>;
+	pace(provider: PacerKey, signal: AbortSignal, requests?: number): Promise<boolean>;
 }
 
 export function createMarketPacer(deps: MarketPacerDeps): MarketPacer {
-	const grants = new Map<MarketProviderId, number[]>();
+	const grants = new Map<PacerKey, number[]>();
 	return {
-		async pace(provider, signal) {
+		async pace(provider, signal, requests) {
 			const limit = deps.limits.get(provider);
 			if (limit === undefined) return true;
 			// S6: one grant per HTTP request, not per series.
-			const requests =
-				deps.requestsPerSeries?.get(provider) ?? MARKET_REQUESTS_PER_SERIES.get(provider) ?? 1;
-			for (let taken = 0; taken < requests; taken += 1) {
+			const count =
+				requests ??
+				deps.requestsPerSeries?.get(provider) ??
+				MARKET_REQUESTS_PER_SERIES.get(provider) ??
+				1;
+			for (let taken = 0; taken < count; taken += 1) {
 				for (;;) {
 					if (signal.aborted) return false;
 					const nowMs = deps.clock.nowMs();

@@ -708,3 +708,144 @@ describe("agent settings", () => {
 		expect(backend.requests).toHaveLength(0);
 	});
 });
+
+describe("watchlist and earnings-date calendar", () => {
+	const WATCHLIST = {
+		stocks: [
+			{
+				stockId: "us:AAPL",
+				market: "US",
+				symbol: "AAPL",
+				name: "Apple Inc",
+				addedAt: "2026-10-12T00:00:00Z",
+				source: "finnhub",
+				publisher: "Finnhub",
+				sourceUrl: "https://finnhub.io/",
+				lastRefreshedAt: "2026-10-12T12:00:00Z",
+				retrievedAt: "2026-10-12T12:00:00Z",
+				unavailable: null,
+				events: [
+					{
+						periodKey: "2026-q4",
+						announcementDate: "2026-10-29",
+						fiscalPeriodLabel: "Q4 2026",
+						fiscalPeriodEnd: null,
+						timing: "after-close",
+					},
+				],
+			},
+		],
+		refresh: {
+			activeRunId: null,
+			activeRunState: null,
+			lastSucceededAt: "2026-10-12T12:00:00Z",
+			lastFailure: null,
+		},
+		feed: { enabled: false, createdAt: null },
+		googleCalendar: {
+			status: "disconnected",
+			authUrl: null,
+			calendarId: null,
+			connectedAt: null,
+			lastSyncedAt: null,
+			lastSync: null,
+			inSync: null,
+			activeRunId: null,
+			activeRunState: null,
+			activeAction: null,
+			lastFailure: null,
+		},
+	};
+
+	it("reads the watchlist conditionally like home data", async () => {
+		const { backend, api } = setup();
+		backend.on("GET", /watchlist$/, () => jsonResponse(WATCHLIST, { headers: { ETag: '"w1"' } }));
+		const first = await api.getWatchlist();
+		expect(first.ok).toBe(true);
+		if (!first.ok || !first.value.changed) return;
+		expect(first.value.value.stocks).toHaveLength(1);
+		expect(first.value.etag).toBe('"w1"');
+		expect(backend.requests[0]?.headers["if-none-match"]).toBeUndefined();
+
+		backend.on("GET", /watchlist$/, () => new Response(null, { status: 304 }));
+		const second = await api.getWatchlist('"w1"');
+		expect(second).toEqual({ ok: true, value: { changed: false } });
+		expect(backend.requests[1]?.headers["if-none-match"]).toBe('"w1"');
+	});
+
+	it("adds a stock with the contract shape and validates locally first", async () => {
+		const { backend, api } = setup();
+		backend.on("POST", /watchlist\/stocks$/, () => jsonResponse(WATCHLIST));
+		const added = await api.addWatchlistStock({ market: "JP", symbol: " 7203 " });
+		expect(added.ok).toBe(true);
+		expect(backend.requests[0]?.body).toEqual({ market: "JP", symbol: "7203" });
+
+		const invalid = await api.addWatchlistStock({ market: "US", symbol: "bad!" });
+		expect(invalid.ok).toBe(false);
+		if (invalid.ok) return;
+		expect(invalid.error.code).toBe("INVALID_REQUEST");
+		expect(backend.requests).toHaveLength(1);
+	});
+
+	it("removes a stock by encoded id and queues a refresh with an idempotency key", async () => {
+		const { backend, api } = setup();
+		backend.on("DELETE", /watchlist\/stocks\//, () => jsonResponse(WATCHLIST));
+		backend.on("POST", /watchlist\/refresh$/, () =>
+			jsonResponse(
+				{ run: makeRun({ kind: "earnings-refresh", state: "pending" }) },
+				{ status: 202 },
+			),
+		);
+		expect((await api.removeWatchlistStock("us:AAPL")).ok).toBe(true);
+		expect(backend.requests[0]?.path).toBe("/api/v1/watchlist/stocks/us%3AAAPL");
+
+		const queued = await api.refreshEarnings("idem-1234567890");
+		expect(queued.ok).toBe(true);
+		if (!queued.ok) return;
+		expect(queued.value.kind).toBe("earnings-refresh");
+		expect(backend.requests[1]?.headers["idempotency-key"]).toBe("idem-1234567890");
+	});
+
+	it("downloads the .ics only when the content type is a calendar", async () => {
+		const { backend, api } = setup();
+		backend.on(
+			"GET",
+			/calendar\.ics$/,
+			() =>
+				new Response("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n", {
+					status: 200,
+					headers: { "Content-Type": "text/calendar; charset=utf-8" },
+				}),
+		);
+		const downloaded = await api.downloadWatchlistIcs();
+		expect(downloaded).toEqual({ ok: true, value: "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n" });
+		expect(backend.requests[0]?.headers.accept).toBe("text/calendar");
+
+		backend.on("GET", /calendar\.ics$/, () => jsonResponse({ error: "nope" }, { status: 200 }));
+		const wrongType = await api.downloadWatchlistIcs();
+		expect(wrongType.ok).toBe(false);
+		if (wrongType.ok) return;
+		expect(wrongType.error.code).toBe("INVALID_RESPONSE");
+	});
+
+	it("issues and revokes the calendar feed", async () => {
+		const { backend, api } = setup();
+		const token = "a".repeat(43);
+		backend.on("POST", /watchlist\/feed$/, () =>
+			jsonResponse(
+				{
+					token,
+					path: `/api/v1/calendar-feed/${token}/earnings.ics`,
+					createdAt: "2026-10-12T13:00:00Z",
+				},
+				{ status: 201 },
+			),
+		);
+		backend.on("DELETE", /watchlist\/feed$/, () => new Response(null, { status: 204 }));
+		const issued = await api.issueCalendarFeed();
+		expect(issued.ok).toBe(true);
+		if (!issued.ok) return;
+		expect(issued.value.path).toBe(`/api/v1/calendar-feed/${token}/earnings.ics`);
+		expect((await api.revokeCalendarFeed()).ok).toBe(true);
+	});
+});

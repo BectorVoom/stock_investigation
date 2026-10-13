@@ -6,6 +6,7 @@ import type { ApiFailure } from "../api/http.ts";
 import { CHAT_PANEL, ErrorNotice, Loading } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { ChatsPanel, DeleteChatDialog, NewChatButton } from "./ChatsPanel.tsx";
+import { focusComposerBox } from "./composerFocus.ts";
 import { byNewestActivity, createConversationList } from "./conversationList.ts";
 import { OpenWorkspace } from "./OpenWorkspace.tsx";
 
@@ -82,13 +83,11 @@ export function ChatView(props: {
 	const focusComposer = (workspaceId: string) => {
 		setFocusNonce((nonce) => nonce + 1);
 		// Fallback for engines where the effect runs before mount: retry once.
+		// It never steals focus the owner has since taken (a rename input
+		// saves on blur and would close), and only when the open conversation
+		// still matches: the timeout may fire after they navigated elsewhere.
 		setTimeout(() => {
-			const box = document.querySelector('form[aria-label="Research composer"] textarea');
-			if (box instanceof HTMLElement && document.activeElement !== box) {
-				// Only steal focus when the open conversation matches: the
-				// timeout may fire after the owner navigated elsewhere.
-				if (props.workspaceId === workspaceId) box.focus();
-			}
+			if (props.workspaceId === workspaceId) focusComposerBox();
 		}, 100);
 	};
 

@@ -16,6 +16,7 @@ import { createRemote } from "../lib/remote.ts";
 import { createWorkspaceSession, type WorkspaceSession } from "../lib/session.ts";
 import { Composer } from "./Composer.tsx";
 import { Conversation } from "./Conversation.tsx";
+import { focusComposerBox } from "./composerFocus.ts";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
 
 export interface OpenWorkspaceProps {
@@ -80,9 +81,10 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		if (nonce > 0) {
 			focusedNonce = nonce;
 			// The composer mounts with this workspace; focus after Solid commits it.
+			// The guard keeps a late effect from stealing focus the owner has
+			// since taken (e.g. the chat rename input, which saves on blur).
 			queueMicrotask(() => {
-				const box = document.querySelector('form[aria-label="Research composer"] textarea');
-				if (box instanceof HTMLElement) box.focus();
+				focusComposerBox();
 			});
 		}
 	});

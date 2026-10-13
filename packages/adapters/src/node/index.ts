@@ -35,13 +35,15 @@
  *    remains the stronger control and is out of scope here.
  */
 import { lookup as dnsLookup } from "node:dns/promises";
-import type { SafeFetcher } from "@research/application";
+import type { SafeBinaryFetcher, SafeFetcher } from "@research/application";
 import { classifyIpAddress } from "@research/domain";
 import {
+	createSafeBinaryFetcher,
 	createSafeFetcher,
 	describeError,
 	type HopOutcome,
 	type HopRequest,
+	type HopTransport,
 } from "../worker/safeFetchCore.ts";
 import {
 	createPinnedHttpsConnect,
@@ -57,6 +59,12 @@ export type {
 	PinnedResponse,
 	ResolvedAddress,
 } from "./pinnedConnect.ts";
+export {
+	MAX_ZIP_ARCHIVE_BYTES,
+	MAX_ZIP_ENTRY_BYTES,
+	readZipEntries,
+	type ZipReaderError,
+} from "./zipReader.ts";
 
 /** Returns every address the name resolves to. Rejecting means "could not resolve". */
 export type DnsLookup = (hostname: string) => Promise<readonly ResolvedAddress[]>;
@@ -105,10 +113,26 @@ function firstUnsafeClass(addresses: readonly ResolvedAddress[]): "non-public" |
 }
 
 export function createNodeSafeFetcher(overrides: NodeSafeFetcherOverrides = {}): SafeFetcher {
+	return createSafeFetcher(createNodeHopTransport(overrides));
+}
+
+/**
+ * Binary twin of `createNodeSafeFetcher` (FR-018: JPX workbooks). Same
+ * DNS-pinning hop transport, same redirect validation and ceilings — only the
+ * UTF-8 decode is skipped so the caller receives exact bytes. The runner is
+ * the only caller. Same test-seam caveat as `createNodeSafeFetcher`.
+ */
+export function createNodeSafeBinaryFetcher(
+	overrides: NodeSafeFetcherOverrides = {},
+): SafeBinaryFetcher {
+	return createSafeBinaryFetcher(createNodeHopTransport(overrides));
+}
+
+function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTransport {
 	const lookup = overrides.lookup ?? systemLookup;
 	const connect = overrides.connect ?? createPinnedHttpsConnect();
 
-	return createSafeFetcher(async (request: HopRequest): Promise<HopOutcome> => {
+	return async (request: HopRequest): Promise<HopOutcome> => {
 		let addresses: readonly ResolvedAddress[];
 		try {
 			addresses = await lookup(request.hostname);
@@ -145,5 +169,5 @@ export function createNodeSafeFetcher(overrides: NodeSafeFetcherOverrides = {}):
 			}
 		}
 		return { kind: "network-error", detail: lastFailure };
-	});
+	};
 }

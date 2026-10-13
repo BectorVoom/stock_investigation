@@ -289,6 +289,59 @@ def recordVectors : List String := Id.run do
         out := recordVec times maxPer window :: out
   return out.reverse
 
+/-! ## Earnings-date calendar (FR-018) -/
+
+/-- Character-width lists of length 0..3 over {1, 2, 3, 4} octets. -/
+def foldSmall : List (List Nat) :=
+  [[]] ++ ([1, 2, 3, 4].map fun a => [a])
+  ++ ([1, 2, 3, 4].flatMap fun a => [1, 2, 3, 4].map fun b => [a, b])
+  ++ ([1, 2, 3, 4].flatMap fun a =>
+    [1, 2, 3, 4].flatMap fun b => [1, 2, 3, 4].map fun c => [a, b, c])
+
+/-- Width runs around the 75-octet first line and the 74-octet continuation
+    lines, plus mixed widths straddling a fold. -/
+def foldBoundary : List (List Nat) :=
+  let rep := List.replicate
+  [rep 74 1, rep 75 1, rep 76 1, rep 149 1, rep 150 1,
+   rep 36 2, rep 37 2, rep 38 2, rep 74 2, rep 75 2,
+   rep 24 3, rep 25 3, rep 26 3, rep 49 3, rep 50 3,
+   rep 17 4, rep 18 4, rep 19 4, rep 37 4, rep 38 4,
+   rep 74 1 ++ [2], rep 74 1 ++ [4], rep 73 1 ++ [2, 2],
+   rep 18 4 ++ [3], [4, 4] ++ rep 70 1 ++ [2], rep 24 3 ++ [4]]
+
+def foldVectors : List String :=
+  (foldSmall ++ foldBoundary).map fun widths =>
+    jsonObj [("widths", jsonNatList widths),
+      ("lines", jsonArr ((foldWidths widths).map jsonNatList))]
+
+def earnRowJson : EarnRow → String
+  | ⟨s, none⟩ => jsonObj [("stock", jsonNat s), ("date", "null")]
+  | ⟨s, some d⟩ => jsonObj [("stock", jsonNat s), ("date", jsonNat d)]
+
+def earnPairJson (p : Nat × Nat) : String :=
+  jsonObj [("date", jsonNat p.1), ("stock", jsonNat p.2)]
+
+/-- Row lists of length 0..2 over a six-row alphabet (one undecided row and
+    five dated rows over three stocks and three day offsets). -/
+def earnAlphabet : List EarnRow :=
+  [⟨0, none⟩, ⟨0, some 0⟩, ⟨1, some 1⟩, ⟨0, some 2⟩, ⟨2, some 0⟩, ⟨1, some 2⟩]
+
+def earnRowLists : List (List EarnRow) :=
+  [[]] ++ (earnAlphabet.map fun a => [a])
+  ++ (earnAlphabet.flatMap fun a => earnAlphabet.map fun b => [a, b])
+
+def upcomingVectors : List String := Id.run do
+  let mut out := []
+  for rows in earnRowLists do
+    for today in [0, 1] do
+      for daysAhead in [0, 1, 3] do
+        for maxItems in [0, 1, 2, 5] do
+          out := jsonObj [("rows", jsonArr (rows.map earnRowJson)),
+            ("today", jsonNat today), ("daysAhead", jsonNat daysAhead),
+            ("maxItems", jsonNat maxItems),
+            ("selected", jsonArr ((selectUpcoming rows today daysAhead maxItems).map earnPairJson))] :: out
+  return out.reverse
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -311,5 +364,7 @@ def main : IO Unit := do
   IO.println ("\"dashboard\": [\n" ++ ",\n".intercalate dashboardVectors ++ "\n],")
   IO.println ("\"ratePermit\": [\n" ++ ",\n".intercalate permitVectors ++ "\n],")
   IO.println ("\"rateRecord\": [\n" ++ ",\n".intercalate recordVectors ++ "\n],")
-  IO.println ("\"recentWithinBudget\": [\n" ++ ",\n".intercalate recentWithinBudgetVectors ++ "\n]")
+  IO.println ("\"recentWithinBudget\": [\n" ++ ",\n".intercalate recentWithinBudgetVectors ++ "\n],")
+  IO.println ("\"foldIcs\": [\n" ++ ",\n".intercalate foldVectors ++ "\n],")
+  IO.println ("\"upcomingEarnings\": [\n" ++ ",\n".intercalate upcomingVectors ++ "\n]")
   IO.println "}"

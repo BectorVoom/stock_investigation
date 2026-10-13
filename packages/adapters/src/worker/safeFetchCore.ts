@@ -19,7 +19,9 @@
  * encoded bytes at all is runtime-specific; each adapter's header says so.
  */
 import type {
+	BinaryDocument,
 	FetchedDocument,
+	SafeBinaryFetcher,
 	SafeFetchError,
 	SafeFetcher,
 	SafeFetchOptions,
@@ -43,6 +45,8 @@ export interface HopRequest {
 		readonly "user-agent": string;
 		/** Caller-supplied Authorization value, or null when the caller sent none. */
 		readonly authorization: string | null;
+		/** Caller-supplied Finnhub key value, or null when the caller sent none. */
+		readonly finnhubToken: string | null;
 	};
 	/**
 	 * The caller's byte ceiling. The core applies it to the decoded body; a
@@ -207,159 +211,13 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 		url: string,
 		options: SafeFetchOptions,
 	): Promise<Result<FetchedDocument, SafeFetchError>> {
-		if (!(Number.isFinite(options.maxBytes) && options.maxBytes > 0)) {
-			return fail("RESPONSE_TOO_LARGE", "maxBytes must be a positive number");
-		}
-		if (!(Number.isFinite(options.timeoutMs) && options.timeoutMs > 0)) {
-			return fail("TIMEOUT", "timeoutMs must be a positive number");
-		}
-		const userAgent = resolveUserAgent(options);
-		if (userAgent === null || !HEADER_VALUE.test(options.accept)) {
-			return fail("NETWORK_ERROR", "request header value contains unsupported characters");
-		}
-		// The only extra header the fetcher can send (a provider API key).
-		// A value outside printable ASCII fails the request before any byte is sent.
-		const authorization =
-			options.authorization === undefined
-				? null
-				: HEADER_VALUE.test(options.authorization)
-					? options.authorization
-					: null;
-		if (options.authorization !== undefined && authorization === null) {
-			return fail("NETWORK_ERROR", "request header value contains unsupported characters");
-		}
-		const includeErrorBody = options.includeErrorBody === true;
-		const allowedHosts =
-			options.allowedHosts === undefined
-				? null
-				: new Set([...options.allowedHosts].map(normalizeHost));
-
-		const deadline = AbortSignal.timeout(options.timeoutMs);
-		const signal =
-			options.signal === undefined ? deadline : AbortSignal.any([options.signal, deadline]);
-		const timedOut = (): Result<never, SafeFetchError> =>
-			fail(
-				"TIMEOUT",
-				options.signal?.aborted === true
-					? "aborted by the caller"
-					: `no complete response within ${options.timeoutMs} ms`,
-			);
-
-		const visited = new Set<string>();
-		let currentUrl = url;
-		// hop 0 is the original request; hops 1..MAX_REDIRECT_HOPS are redirects. A further
-		// redirect ends the loop and is reported below without being validated or requested.
-		for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop += 1) {
-			const isRedirectHop = hop > 0;
-			if (isRedirectHop && options.authorizeRedirect !== undefined) {
-				// Robots/allowlist approval precedes every page request: a refusal
-				// (or a throw, treated as a refusal) ends the fetch before the hop
-				// is contacted. Terminates: one awaited call per hop, at most
-				// MAX_REDIRECT_HOPS + 1 hops.
-				let authorized = false;
-				try {
-					authorized = await options.authorizeRedirect(currentUrl);
-				} catch {
-					authorized = false;
-				}
-				if (!authorized) {
-					return fail("REDIRECT_NOT_AUTHORIZED", `redirect ${hop} was not authorized`);
-				}
-			}
-			const target = validateHop(currentUrl, allowedHosts);
-			if (!target.ok) {
-				return isRedirectHop
-					? fail("UNSAFE_REDIRECT", `redirect ${hop} rejected: ${target.error.detail}`)
-					: fail(target.error.code, target.error.detail);
-			}
-			if (visited.has(target.value.url.href)) {
-				return fail("TOO_MANY_REDIRECTS", "redirect loop");
-			}
-			visited.add(target.value.url.href);
-			if (signal.aborted) return timedOut();
-
-			let outcome: HopOutcome | typeof ABORTED;
-			try {
-				outcome = await untilAborted(
-					transport({
-						url: target.value.url,
-						hostname: target.value.hostname,
-						headers: {
-							accept: options.accept,
-							"user-agent": userAgent,
-							// A key must never travel to a host the caller did not
-							// address: redirects get no Authorization header.
-							authorization: hop === 0 ? authorization : null,
-						},
-						maxBytes: options.maxBytes,
-						signal,
-					}),
-					signal,
-				);
-			} catch (error) {
-				outcome = { kind: "network-error", detail: describeError(error) };
-			}
-			if (outcome === ABORTED || signal.aborted) {
-				if (outcome !== ABORTED && outcome.kind === "response") outcome.discard();
-				return timedOut();
-			}
-			if (outcome.kind === "network-error") return fail("NETWORK_ERROR", outcome.detail);
-			if (outcome.kind === "unsafe-destination") {
-				return isRedirectHop
-					? fail("UNSAFE_REDIRECT", `redirect ${hop} rejected: ${outcome.detail}`)
-					: fail("UNSAFE_URL", outcome.detail);
-			}
-
-			if (REDIRECT_STATUSES.has(outcome.status)) {
-				outcome.discard();
-				if (outcome.location === null) {
-					return fail("HTTP_ERROR", `HTTP ${outcome.status} without a Location header`);
-				}
-				if (!URL.canParse(outcome.location, target.value.url.href)) {
-					return fail("UNSAFE_REDIRECT", `redirect ${hop + 1} rejected: MALFORMED_URL`);
-				}
-				// Relative locations resolve against the hop that issued them, then get the full policy.
-				currentUrl = new URL(outcome.location, target.value.url).href;
-				continue;
-			}
-			if (outcome.status < 200 || outcome.status > 299) {
-				// Opt-in only (FRED's 400 carries the error code in JSON): read
-				// the bounded error body so the adapter can map it. The body is
-				// untrusted provider text; only the adapter ever sees it.
-				if (includeErrorBody) {
-					const errorBody = await readBounded(outcome.body, options.maxBytes, signal);
-					outcome.discard();
-					if (errorBody.kind === "aborted") return timedOut();
-					if (errorBody.kind === "complete") {
-						return err({
-							code: "HTTP_ERROR",
-							detail: `HTTP ${outcome.status}`,
-							body: new TextDecoder("utf-8").decode(errorBody.bytes),
-						});
-					}
-					return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
-				}
-				outcome.discard();
-				return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
-			}
-			if (outcome.contentLength !== null && outcome.contentLength > options.maxBytes) {
-				outcome.discard();
-				return fail("RESPONSE_TOO_LARGE", `declared size exceeds ${options.maxBytes} bytes`);
-			}
-			const body = await readBounded(outcome.body, options.maxBytes, signal);
-			outcome.discard();
-			if (body.kind === "aborted") return timedOut();
-			if (body.kind === "too-large") {
-				return fail("RESPONSE_TOO_LARGE", `body exceeds ${options.maxBytes} bytes`);
-			}
-			if (body.kind === "failed") return fail("NETWORK_ERROR", body.detail);
-			return ok({
-				finalUrl: target.value.url.href,
-				contentType: outcome.contentType,
-				text: new TextDecoder("utf-8").decode(body.bytes),
-			});
-		}
-		return fail("TOO_MANY_REDIRECTS", `more than ${MAX_REDIRECT_HOPS} redirects`);
+		const raw = await fetchRawBytes(transport, url, options);
+		if (!raw.ok) return raw;
+		return ok({
+			finalUrl: raw.value.finalUrl,
+			contentType: raw.value.contentType,
+			text: new TextDecoder("utf-8").decode(raw.value.bytes),
+		});
 	}
 
 	return {
@@ -372,4 +230,207 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 			}
 		},
 	};
+}
+
+/**
+ * Builds a SafeBinaryFetcher from a single-hop transport (FR-018: workbooks).
+ * The same hop loop as `fetchText` — URL policy, allowlist, redirect
+ * validation, byte and time ceilings — minus the UTF-8 decode, so the caller
+ * receives the exact response bytes. The result never throws.
+ */
+export function createSafeBinaryFetcher(transport: HopTransport): SafeBinaryFetcher {
+	return {
+		fetchBytes: async (url, options) => {
+			try {
+				const raw = await fetchRawBytes(transport, url, options);
+				if (!raw.ok) return raw;
+				const document: BinaryDocument = {
+					finalUrl: raw.value.finalUrl,
+					contentType: raw.value.contentType,
+					bytes: raw.value.bytes,
+				};
+				return ok(document);
+			} catch (error) {
+				// Nothing above is expected to throw; if it does, the port contract still holds.
+				return fail("NETWORK_ERROR", describeError(error));
+			}
+		},
+	};
+}
+
+interface RawDocument {
+	readonly finalUrl: string;
+	readonly contentType: string | null;
+	readonly bytes: Uint8Array;
+}
+
+/** The shared hop loop behind `fetchText` and `fetchBytes`. */
+async function fetchRawBytes(
+	transport: HopTransport,
+	url: string,
+	options: SafeFetchOptions,
+): Promise<Result<RawDocument, SafeFetchError>> {
+	if (!(Number.isFinite(options.maxBytes) && options.maxBytes > 0)) {
+		return fail("RESPONSE_TOO_LARGE", "maxBytes must be a positive number");
+	}
+	if (!(Number.isFinite(options.timeoutMs) && options.timeoutMs > 0)) {
+		return fail("TIMEOUT", "timeoutMs must be a positive number");
+	}
+	const userAgent = resolveUserAgent(options);
+	if (userAgent === null || !HEADER_VALUE.test(options.accept)) {
+		return fail("NETWORK_ERROR", "request header value contains unsupported characters");
+	}
+	// The fixed header allowlist (provider API keys). A value outside
+	// printable ASCII fails the request before any byte is sent.
+	const authorization =
+		options.authorization === undefined
+			? null
+			: HEADER_VALUE.test(options.authorization)
+				? options.authorization
+				: null;
+	if (options.authorization !== undefined && authorization === null) {
+		return fail("NETWORK_ERROR", "request header value contains unsupported characters");
+	}
+	const finnhubToken =
+		options.finnhubToken === undefined
+			? null
+			: HEADER_VALUE.test(options.finnhubToken)
+				? options.finnhubToken
+				: null;
+	if (options.finnhubToken !== undefined && finnhubToken === null) {
+		return fail("NETWORK_ERROR", "request header value contains unsupported characters");
+	}
+	const includeErrorBody = options.includeErrorBody === true;
+	const allowedHosts =
+		options.allowedHosts === undefined
+			? null
+			: new Set([...options.allowedHosts].map(normalizeHost));
+
+	const deadline = AbortSignal.timeout(options.timeoutMs);
+	const signal =
+		options.signal === undefined ? deadline : AbortSignal.any([options.signal, deadline]);
+	const timedOut = (): Result<never, SafeFetchError> =>
+		fail(
+			"TIMEOUT",
+			options.signal?.aborted === true
+				? "aborted by the caller"
+				: `no complete response within ${options.timeoutMs} ms`,
+		);
+
+	const visited = new Set<string>();
+	let currentUrl = url;
+	// hop 0 is the original request; hops 1..MAX_REDIRECT_HOPS are redirects. A further
+	// redirect ends the loop and is reported below without being validated or requested.
+	for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop += 1) {
+		const isRedirectHop = hop > 0;
+		if (isRedirectHop && options.authorizeRedirect !== undefined) {
+			// Robots/allowlist approval precedes every page request: a refusal
+			// (or a throw, treated as a refusal) ends the fetch before the hop
+			// is contacted. Terminates: one awaited call per hop, at most
+			// MAX_REDIRECT_HOPS + 1 hops.
+			let authorized = false;
+			try {
+				authorized = await options.authorizeRedirect(currentUrl);
+			} catch {
+				authorized = false;
+			}
+			if (!authorized) {
+				return fail("REDIRECT_NOT_AUTHORIZED", `redirect ${hop} was not authorized`);
+			}
+		}
+		const target = validateHop(currentUrl, allowedHosts);
+		if (!target.ok) {
+			return isRedirectHop
+				? fail("UNSAFE_REDIRECT", `redirect ${hop} rejected: ${target.error.detail}`)
+				: fail(target.error.code, target.error.detail);
+		}
+		if (visited.has(target.value.url.href)) {
+			return fail("TOO_MANY_REDIRECTS", "redirect loop");
+		}
+		visited.add(target.value.url.href);
+		if (signal.aborted) return timedOut();
+
+		let outcome: HopOutcome | typeof ABORTED;
+		try {
+			outcome = await untilAborted(
+				transport({
+					url: target.value.url,
+					hostname: target.value.hostname,
+					headers: {
+						accept: options.accept,
+						"user-agent": userAgent,
+						// A key must never travel to a host the caller did not
+						// address: redirects get neither header.
+						authorization: hop === 0 ? authorization : null,
+						finnhubToken: hop === 0 ? finnhubToken : null,
+					},
+					maxBytes: options.maxBytes,
+					signal,
+				}),
+				signal,
+			);
+		} catch (error) {
+			outcome = { kind: "network-error", detail: describeError(error) };
+		}
+		if (outcome === ABORTED || signal.aborted) {
+			if (outcome !== ABORTED && outcome.kind === "response") outcome.discard();
+			return timedOut();
+		}
+		if (outcome.kind === "network-error") return fail("NETWORK_ERROR", outcome.detail);
+		if (outcome.kind === "unsafe-destination") {
+			return isRedirectHop
+				? fail("UNSAFE_REDIRECT", `redirect ${hop} rejected: ${outcome.detail}`)
+				: fail("UNSAFE_URL", outcome.detail);
+		}
+
+		if (REDIRECT_STATUSES.has(outcome.status)) {
+			outcome.discard();
+			if (outcome.location === null) {
+				return fail("HTTP_ERROR", `HTTP ${outcome.status} without a Location header`);
+			}
+			if (!URL.canParse(outcome.location, target.value.url.href)) {
+				return fail("UNSAFE_REDIRECT", `redirect ${hop + 1} rejected: MALFORMED_URL`);
+			}
+			// Relative locations resolve against the hop that issued them, then get the full policy.
+			currentUrl = new URL(outcome.location, target.value.url).href;
+			continue;
+		}
+		if (outcome.status < 200 || outcome.status > 299) {
+			// Opt-in only (FRED's 400 carries the error code in JSON): read
+			// the bounded error body so the adapter can map it. The body is
+			// untrusted provider text; only the adapter ever sees it.
+			if (includeErrorBody) {
+				const errorBody = await readBounded(outcome.body, options.maxBytes, signal);
+				outcome.discard();
+				if (errorBody.kind === "aborted") return timedOut();
+				if (errorBody.kind === "complete") {
+					return err({
+						code: "HTTP_ERROR",
+						detail: `HTTP ${outcome.status}`,
+						body: new TextDecoder("utf-8").decode(errorBody.bytes),
+					});
+				}
+				return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
+			}
+			outcome.discard();
+			return fail("HTTP_ERROR", `HTTP ${outcome.status}`);
+		}
+		if (outcome.contentLength !== null && outcome.contentLength > options.maxBytes) {
+			outcome.discard();
+			return fail("RESPONSE_TOO_LARGE", `declared size exceeds ${options.maxBytes} bytes`);
+		}
+		const body = await readBounded(outcome.body, options.maxBytes, signal);
+		outcome.discard();
+		if (body.kind === "aborted") return timedOut();
+		if (body.kind === "too-large") {
+			return fail("RESPONSE_TOO_LARGE", `body exceeds ${options.maxBytes} bytes`);
+		}
+		if (body.kind === "failed") return fail("NETWORK_ERROR", body.detail);
+		return ok({
+			finalUrl: target.value.url.href,
+			contentType: outcome.contentType,
+			bytes: body.bytes,
+		});
+	}
+	return fail("TOO_MANY_REDIRECTS", `more than ${MAX_REDIRECT_HOPS} redirects`);
 }

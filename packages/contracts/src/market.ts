@@ -154,6 +154,14 @@ export type MarketSeries = z.infer<typeof marketSeriesSchema>;
 export const marketWidgetSizeSchema = z.enum(["small", "medium", "large"]);
 export type MarketWidgetSize = z.infer<typeof marketWidgetSizeSchema>;
 
+export const earningsCalendarDaysAheadSchema = z.union([
+	z.literal(30),
+	z.literal(60),
+	z.literal(90),
+	z.literal(180),
+]);
+export type EarningsCalendarDaysAhead = z.infer<typeof earningsCalendarDaysAheadSchema>;
+
 const widgetBase = {
 	widgetId: idSchema,
 	title: z.string().trim().min(MARKET_LIMITS.minWidgetTitle).max(MARKET_LIMITS.maxWidgetTitle),
@@ -182,8 +190,25 @@ export const homeWidgetSchema = z.discriminatedUnion("type", [
 		type: z.literal("indicator-table"),
 		seriesIds: z.array(marketSeriesIdSchema).min(1).max(MARKET_LIMITS.maxTableSeries),
 	}),
+	/**
+	 * Earnings-date calendar (FR-018): the watchlist's upcoming announcements
+	 * within `daysAhead`. No market series — every series walk treats it as
+	 * zero series. Additive: stored `schemaVersion: 1` dashboards stay valid.
+	 */
+	z.strictObject({
+		...widgetBase,
+		type: z.literal("earnings-calendar"),
+		daysAhead: earningsCalendarDaysAheadSchema,
+	}),
 ]);
 export type HomeWidget = z.infer<typeof homeWidgetSchema>;
+
+/** Market series of one widget: the earnings calendar carries none. */
+export function homeWidgetSeriesIds(widget: HomeWidget): readonly string[] {
+	if (widget.type === "metric") return [widget.seriesId];
+	if (widget.type === "earnings-calendar") return [];
+	return widget.seriesIds;
+}
 
 export const homeDashboardSchema = z
 	.strictObject({
@@ -207,7 +232,7 @@ export const homeDashboardSchema = z
 	.refine(
 		(dashboard) =>
 			dashboard.widgets.every((widget) => {
-				const raw = widget.type === "metric" ? [widget.seriesId] : widget.seriesIds;
+				const raw = homeWidgetSeriesIds(widget);
 				return distinctDashboardSeriesIds([widget]).length === raw.length;
 			}),
 		{ message: "a widget must not repeat a series", path: ["widgets"] },

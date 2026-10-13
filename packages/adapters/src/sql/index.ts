@@ -7,7 +7,9 @@
 import type {
 	ArticleRepository,
 	AuditLog,
+	CalendarFeedRepository,
 	ChatRepository,
+	EarningsRepository,
 	HomeDashboardRepository,
 	JobRepository,
 	MarketRepository,
@@ -19,13 +21,16 @@ import type {
 	RunnerStatusRepository,
 	SettingsRepository,
 	SourceRepository,
+	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
 import type { SqlDatabase } from "./database.ts";
 import {
 	createArticleRepository,
 	createAuditLog,
+	createCalendarFeedRepository,
 	createChatRepository,
+	createEarningsRepository,
 	createHomeDashboardRepository,
 	createJobRepository,
 	createMarketRepository,
@@ -35,6 +40,7 @@ import {
 	createRunnerStatusRepository,
 	createSettingsRepository,
 	createSourceRepository,
+	createWatchlistRepository,
 	createWorkspaceRepository,
 } from "./repositories.ts";
 import { createResearchUnitOfWork } from "./unitOfWork.ts";
@@ -55,6 +61,9 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const settings: SettingsRepository = createSettingsRepository(db);
 	const homeDashboard: HomeDashboardRepository = createHomeDashboardRepository(db);
 	const market: MarketRepository = createMarketRepository(db);
+	const watchlist: WatchlistRepository = createWatchlistRepository(db);
+	const earnings: EarningsRepository = createEarningsRepository(db);
+	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
@@ -70,6 +79,9 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		settings,
 		homeDashboard,
 		market,
+		watchlist,
+		earnings,
+		calendarFeed,
 		rateLimiter,
 		audit,
 		unitOfWork,

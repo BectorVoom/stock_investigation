@@ -37,6 +37,8 @@ const configSchema = z.object({
 	fredApiKey: z.string().min(1).nullable(),
 	/** Twelve Data API key for Home market data; without it Twelve Data series are unavailable. */
 	twelveDataApiKey: z.string().min(1).nullable(),
+	/** Finnhub API key for earnings dates (FR-018); without it US stocks are unavailable. */
+	finnhubApiKey: z.string().min(1).nullable(),
 	/** Twelve Data request starts per minute (free plan: 8); FRED is paced at 100 per minute. */
 	twelveDataRequestsPerMinute: z
 		.number()
@@ -75,6 +77,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 		pagesDirectory: blankToNull(env.RUNNER_PAGES_DIR),
 		fredApiKey: blankToNull(env.FRED_API_KEY),
 		twelveDataApiKey: blankToNull(env.TWELVE_DATA_API_KEY),
+		finnhubApiKey: blankToNull(env.FINNHUB_API_KEY),
 		twelveDataRequestsPerMinute: requestsPerMinute(env.TWELVE_DATA_REQUESTS_PER_MINUTE),
 	});
 	if (parsed.success) return { ok: true, value: parsed.data };

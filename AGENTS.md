@@ -54,3 +54,6 @@ bun run deploy         # optional, postponed: deploy env.production to Cloudflar
 
 ## TEST_GUDILINE
 /Users/ods/Documents/stock_investigation/docs/rule/test_guideline.md
+
+## Widget design guidline
+Apple Human Interface Guidelines(ios,macos)

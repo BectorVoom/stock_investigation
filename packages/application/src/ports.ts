@@ -6,6 +6,10 @@ import type {
 	Claim,
 	ConversationSummary,
 	Dataset,
+	EarningsEvent,
+	EarningsSourceId,
+	EarningsTiming,
+	EarningsUnavailableCode,
 	Evidence,
 	HomeDashboard,
 	JobKind,
@@ -20,6 +24,7 @@ import type {
 	RunnerEvent,
 	RunRecords,
 	UpdateSourceRequest,
+	WatchMarket,
 	WorkspaceSummary,
 } from "@research/contracts";
 import type { RawFeed, ResourceUsage, Result, UiCommand, WorkspaceState } from "@research/domain";
@@ -98,14 +103,24 @@ export interface SafeFetchOptions {
 	 */
 	readonly userAgent?: string;
 	/**
-	 * The ONLY extra request header the fetcher can ever send, and only on the
-	 * initial request (never forwarded across redirects). This is the fixed
-	 * allowlist: a provider API key travels as `Authorization: <value>` (e.g.
-	 * Twelve Data's `apikey <KEY>`) rather than in the URL, so it never lands
-	 * in a log line or a stored document. The value must be printable ASCII
-	 * (≤ 300 chars); anything else fails the request before any byte is sent.
+	 * One of exactly two extra request headers the fetcher can ever send, and
+	 * only on the initial request (never forwarded across redirects). This is
+	 * the fixed allowlist: a provider API key travels as `Authorization:
+	 * <value>` (e.g. Twelve Data's `apikey <KEY>`) rather than in the URL, so
+	 * it never lands in a log line or a stored document. The value must be
+	 * printable ASCII (≤ 300 chars); anything else fails the request before
+	 * any byte is sent.
 	 */
 	readonly authorization?: string;
+	/**
+	 * The second and last entry of the fixed header allowlist: Finnhub's API
+	 * key travels as `X-Finnhub-Token: <value>` (its API has no Authorization
+	 * scheme and the key must stay out of the URL). Same rule as
+	 * `authorization`: attached to the first request only, never forwarded
+	 * across redirects, printable ASCII (≤ 300 chars) or the request fails
+	 * before any byte is sent.
+	 */
+	readonly finnhubToken?: string;
 	/**
 	 * When true, the response body of an HTTP error status is read (bounded
 	 * by `maxBytes`, like a success body) and attached to the `HTTP_ERROR`
@@ -423,6 +438,17 @@ export interface MarketCompletionSeries {
 	readonly errorCode: MarketUnavailableCode | null;
 }
 
+/** What a finished earnings-refresh job writes; committed all-or-nothing with it. */
+export interface EarningsCompletionStock {
+	readonly stockId: string;
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly fetchedAt: string;
+	readonly name: string | null;
+	readonly events: readonly EarningsEvent[];
+	readonly errorCode: EarningsUnavailableCode | null;
+}
+
 export interface CompletionEffects {
 	readonly bundle: ResearchBundle | null;
 	readonly articles: readonly Article[];
@@ -439,6 +465,7 @@ export interface CompletionEffects {
 		readonly claimIds: readonly string[];
 	} | null;
 	readonly marketSeries: readonly MarketCompletionSeries[];
+	readonly earnings: readonly EarningsCompletionStock[];
 }
 
 export type CompletionCommitResult =
@@ -648,6 +675,90 @@ export interface MarketRepository {
 	deleteSeriesNotIn(ownerId: string, keepSeriesIds: readonly string[]): Promise<number>;
 }
 
+/* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */
+
+export interface StoredWatchlistStock {
+	readonly stockId: string;
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	/** The provider's company name once a refresh has returned one. */
+	readonly name: string | null;
+	readonly addedAt: string;
+	/** Last refresh attempt; null when never attempted. */
+	readonly lastRefreshedAt: string | null;
+	/** Last successful refresh; null when none has succeeded. */
+	readonly retrievedAt: string | null;
+	readonly unavailableCode: EarningsUnavailableCode | null;
+}
+
+export interface StoredEarningsEvent {
+	readonly stockId: string;
+	readonly periodKey: string;
+	/** Null when the source lists the announcement with the date undecided. */
+	readonly announcementDate: string | null;
+	readonly fiscalPeriodLabel: string;
+	readonly fiscalPeriodEnd: string | null;
+	readonly timing: EarningsTiming;
+}
+
+export interface WatchlistRepository {
+	/** Stocks in the order they were added. */
+	listStocks(ownerId: string): Promise<readonly StoredWatchlistStock[]>;
+	getStock(ownerId: string, stockId: string): Promise<StoredWatchlistStock | null>;
+	countStocks(ownerId: string): Promise<number>;
+	/**
+	 * Adds the stock, enforcing the cap inside the INSERT itself (like the
+	 * job insert enforces its capacity): `"added"` when the row was written,
+	 * `"already-present"` when the stock was already there (an idempotent
+	 * add changes nothing, ARCH-016 — reported even when the list is full),
+	 * `"full"` when the list already holds `maxStocks` other stocks and
+	 * nothing was written. Two interleaved adds cannot both slip under the
+	 * cap: the loser reports `"full"`.
+	 */
+	insertStock(
+		ownerId: string,
+		stock: {
+			readonly stockId: string;
+			readonly market: WatchMarket;
+			readonly symbol: string;
+			readonly addedAt: string;
+		},
+		maxStocks: number,
+	): Promise<WatchlistInsertOutcome>;
+	/**
+	 * Removes the stock and its events atomically (one batch); false when the
+	 * stock is unknown.
+	 */
+	removeStock(ownerId: string, stockId: string): Promise<boolean>;
+}
+
+/**
+ * Outcome of an attempted watchlist add. The service audits `"added"` only,
+ * so a lost race writes no second audit row.
+ */
+export type WatchlistInsertOutcome = "added" | "already-present" | "full";
+
+export interface EarningsRepository {
+	/** Events for the given stocks, dated ascending then undecided last per stock. */
+	getEvents(ownerId: string, stockIds: readonly string[]): Promise<readonly StoredEarningsEvent[]>;
+}
+
+export interface CalendarFeedRecord {
+	readonly tokenHash: string;
+	readonly createdAt: string;
+}
+
+export interface CalendarFeedRepository {
+	/** The owner's feed, null when no feed was issued (or after revocation). */
+	get(ownerId: string): Promise<CalendarFeedRecord | null>;
+	/** Issues or rotates: replaces any previous token hash. Only the hash is stored. */
+	put(ownerId: string, tokenHash: string, createdAt: string): Promise<void>;
+	/** Revokes the feed; false when there was none. */
+	revoke(ownerId: string): Promise<boolean>;
+	/** The owner holding this token hash, null when unknown or revoked. */
+	findOwnerByTokenHash(tokenHash: string): Promise<string | null>;
+}
+
 /* ---------- Market data source (section 4.1; Phase A wires "unconfigured" only) ---------- */
 
 export interface MarketSeriesMeta {
@@ -706,6 +817,107 @@ export function unconfiguredMarketSeriesSource(
 	};
 }
 
+/* ---------- Earnings calendar sources (FR-018 Phase A: ports only) ---------- */
+
+export interface EarningsCalendarStock {
+	readonly symbol: string;
+	readonly needName: boolean;
+}
+
+export interface EarningsCalendarQuery {
+	readonly stocks: readonly EarningsCalendarStock[];
+	readonly fromDate: string;
+	readonly toDate: string;
+	readonly signal: AbortSignal;
+	/**
+	 * Admits one HTTP request start (API-007): the adapter calls this
+	 * immediately before EVERY request it sends (never for cached reads that
+	 * send nothing) and sends nothing when it resolves false (the signal
+	 * aborted while waiting). Built by the runner from the shared pacer —
+	 * Finnhub 30 starts per 60 s, JPX 6 per 60 s — never by the adapter
+	 * itself, so one window is shared across jobs.
+	 */
+	readonly beforeRequest: () => Promise<boolean>;
+}
+
+export interface EarningsCalendarResult {
+	readonly name: string | null;
+	readonly events: readonly EarningsEvent[];
+}
+
+/**
+ * One symbol's failure. `NO_SCHEDULED_DATE` is a successful retrieval with
+ * nothing listed (not a failed attempt): it alone may carry the company
+ * `name`, so a stock without an upcoming date still gets its name and the
+ * profile is not requested again. Every other code carries no name.
+ */
+export type EarningsSourceFailure =
+	| { readonly code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE"> }
+	| { readonly code: "NO_SCHEDULED_DATE"; readonly name: string | null };
+
+/** One result per requested symbol, in the same order. */
+export type EarningsSourceResult = Result<EarningsCalendarResult, EarningsSourceFailure>;
+
+/** Source-neutral earnings-date fetch port; adapters implement it per source (ARCH-006). */
+export interface EarningsCalendarSource {
+	readonly sourceId: EarningsSourceId;
+	/** One result per requested symbol, in the same order. */
+	fetchEarnings(query: EarningsCalendarQuery): Promise<readonly EarningsSourceResult[]>;
+}
+
+/** Registry of earnings sources keyed by id; adding a source adds an entry, not a switch. */
+export type EarningsSourceRegistry = ReadonlyMap<EarningsSourceId, EarningsCalendarSource>;
+
+export interface EarningsSourceUnavailable {
+	readonly code: EarningsUnavailableCode;
+	readonly reason: string;
+}
+
+/**
+ * A source that always reports itself as not configured. Used until the
+ * keyed adapter is wired; the runner then honestly reports every stock of
+ * that source as SOURCE_NOT_CONFIGURED. The error carries the code only —
+ * the API derives the fixed wording from the code and source id.
+ */
+export function unconfiguredEarningsCalendarSource(
+	sourceId: EarningsSourceId,
+): EarningsCalendarSource {
+	return {
+		sourceId,
+		fetchEarnings: (query) =>
+			Promise.resolve(
+				query.stocks.map(
+					(): EarningsSourceResult => ({
+						ok: false as const,
+						error: { code: "SOURCE_NOT_CONFIGURED" },
+					}),
+				),
+			),
+	};
+}
+
+/* ---------- Narrow binary fetch (FR-018: workbooks; the runner is the only caller) ---------- */
+
+export interface BinaryDocument {
+	/** URL after validated redirects. */
+	readonly finalUrl: string;
+	readonly contentType: string | null;
+	readonly bytes: Uint8Array;
+}
+
+/**
+ * Outbound binary fetch with the same SSRF defences as `SafeFetcher`
+ * (SEC-002): https only, per-hop redirect validation, byte and time limits.
+ * Narrow on purpose (ARCH-007): the text-only `SafeFetcher` is untouched, and
+ * only the Node adapter implements this — the runner is the only caller.
+ */
+export interface SafeBinaryFetcher {
+	fetchBytes(
+		url: string,
+		options: SafeFetchOptions,
+	): Promise<Result<BinaryDocument, SafeFetchError>>;
+}
+
 /**
  * The whole persistence seam as one named bundle (ARCH-004, ADR-0008): the
  * composition root depends on this, never on an engine type. Today it is
@@ -725,6 +937,9 @@ export interface Persistence {
 	readonly settings: SettingsRepository;
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
+	readonly watchlist: WatchlistRepository;
+	readonly earnings: EarningsRepository;
+	readonly calendarFeed: CalendarFeedRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;

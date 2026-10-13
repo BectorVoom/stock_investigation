@@ -65,6 +65,15 @@ describe("market data configuration (FR-017)", () => {
 		expect(result.value.twelveDataRequestsPerMinute).toBe(8);
 	});
 
+	it("leaves the Finnhub key unset by default and accepts it when given", () => {
+		const blank = loadConfig(base);
+		if (!blank.ok) throw new Error(`expected a valid config: ${blank.problems.join("; ")}`);
+		expect(blank.value.finnhubApiKey).toBeNull();
+		const keyed = loadConfig({ ...base, FINNHUB_API_KEY: "finnhub-key" });
+		if (!keyed.ok) throw new Error(`expected a valid config: ${keyed.problems.join("; ")}`);
+		expect(keyed.value.finnhubApiKey).toBe("finnhub-key");
+	});
+
 	it("accepts both keys and a rate override", () => {
 		const result = loadConfig({
 			...base,

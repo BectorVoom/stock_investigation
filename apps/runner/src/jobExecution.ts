@@ -1,6 +1,7 @@
 import type { AgentRegistry, ToolRegistry } from "@research/agent-core";
 import {
 	type Clock,
+	type EarningsSourceRegistry,
 	type FeedFetchDeps,
 	type Hasher,
 	ingestSources,
@@ -15,13 +16,21 @@ import {
 	BUNDLE_LIMITS,
 	type ClaimedJob,
 	type CompleteJobRequest,
+	EARNINGS_LIMITS,
+	type EarningsSourceId,
 	type HeartbeatResponse,
 	leasedJobStateSchema,
 	MARKET_LIMITS,
 	MAX_RUNNER_EVENTS_PER_REQUEST,
+	parseStockId,
 	type RunnerEvent,
 } from "@research/contracts";
-import { EMPTY_USAGE, parseMarketSeriesId, type ResourceUsage } from "@research/domain";
+import {
+	EARNINGS_SOURCE_BY_MARKET,
+	EMPTY_USAGE,
+	parseMarketSeriesId,
+	type ResourceUsage,
+} from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import type { RunnerApi, RunnerApiResult } from "./apiClient.ts";
 import type { MarketPacer } from "./marketPacing.ts";
@@ -46,6 +55,8 @@ export interface JobExecutionDeps {
 	readonly allowUnverifiedToolIsolation: boolean;
 	/** Provider registry (ARCH-006); an entry is absent until its key is configured. */
 	readonly marketSources: MarketSourceRegistry;
+	/** Earnings-date source registry (ARCH-006); JPX needs no key, Finnhub does. */
+	readonly earningsSources: EarningsSourceRegistry;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketPacer;
 }
@@ -256,6 +267,8 @@ export async function executeJob(
 		let completion: CompleteJobRequest;
 		if (job.kind === "market-refresh") {
 			completion = await executeMarketRefresh(job, deps, abort.signal, reporter);
+		} else if (job.kind === "earnings-refresh") {
+			completion = await executeEarningsRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -274,7 +287,7 @@ export async function executeJob(
 				articles: [...ingested.articles],
 				sourceReports: [...ingested.sourceReports],
 			};
-		} else {
+		} else if (job.kind === "research") {
 			const agent = deps.agents.get(job.request.agentId);
 			const outcome: PipelineOutcome =
 				agent === undefined
@@ -307,6 +320,16 @@ export async function executeJob(
 						);
 			usage = outcome.usage;
 			completion = toCompletion(job.leaseGeneration, outcome);
+		} else {
+			// FR-019 phase G1: google-calendar execution lands in a later
+			// phase; fail closed instead of running an unknown job kind.
+			completion = {
+				outcome: "failed",
+				leaseGeneration: job.leaseGeneration,
+				usage,
+				failureCode: "UNKNOWN_JOB_KIND",
+				retryable: false,
+			};
 		}
 		await flush();
 
@@ -479,6 +502,172 @@ async function executeMarketRefresh(
 		leaseGeneration: job.leaseGeneration,
 		usage: EMPTY_USAGE,
 		series,
+	};
+}
+
+/**
+ * Runs a claimed earnings-refresh job: fetches every watchlist stock's
+ * announcement dates, grouping stocks by source so JPX is one batch (one
+ * index page plus its workbook set per refresh). One failing stock never
+ * aborts the others; a stock whose source has no keyed adapter honestly
+ * reports SOURCE_NOT_CONFIGURED.
+ *
+ * Progress walks the same leased states as a market-refresh job (the
+ * completion must come from `publishing`, like every other completion).
+ */
+async function executeEarningsRefresh(
+	job: Extract<ClaimedJob, { kind: "earnings-refresh" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	type CompletionStock = Extract<
+		CompleteJobRequest,
+		{ outcome: "earnings-refreshed" }
+	>["stocks"][number];
+	const byId = new Map<string, CompletionStock>();
+	const bySource = new Map<EarningsSourceId, { symbol: string; needName: boolean }[]>();
+	const order: { stockId: string; symbol: string; needName: boolean }[] = [];
+	for (const entry of job.stocks) {
+		const fetchedAt = deps.clock.nowIso();
+		const parsed = parseStockId(entry.stockId);
+		if (parsed === null) {
+			// Fail closed: a claimed id that no longer parses is a storage
+			// fault, reported as a failed stock, never skipped silently.
+			byId.set(entry.stockId, {
+				stockId: entry.stockId,
+				fetchedAt,
+				name: null,
+				events: [],
+				errorCode: "SOURCE_FAILED",
+			});
+			continue;
+		}
+		const sourceId = EARNINGS_SOURCE_BY_MARKET[parsed.market];
+		const group = bySource.get(sourceId) ?? [];
+		group.push({ symbol: parsed.symbol, needName: entry.name === null });
+		bySource.set(sourceId, group);
+		order.push({ stockId: entry.stockId, symbol: parsed.symbol, needName: entry.name === null });
+	}
+	for (const [sourceId, group] of bySource) {
+		if (signal.aborted) break;
+		const fetchedAt = deps.clock.nowIso();
+		const source = deps.earningsSources.get(sourceId);
+		if (source === undefined) {
+			// No keyed adapter for this source: every stock honestly reports it.
+			for (const item of order.filter((entry) =>
+				group.some((member) => member.symbol === entry.symbol),
+			)) {
+				byId.set(item.stockId, {
+					stockId: item.stockId,
+					fetchedAt,
+					name: null,
+					events: [],
+					errorCode: "SOURCE_NOT_CONFIGURED",
+				});
+			}
+			continue;
+		}
+		// One grant per HTTP request, taken by the adapter immediately
+		// before it sends (API-007): the runner only builds the hook from
+		// the shared window — Finnhub 30 starts per 60 s, JPX 6 per 60 s.
+		// A false hook (an abort while waiting) ends the refresh without
+		// fetching anything further.
+		const beforeRequest = (): Promise<boolean> => deps.marketPacer.pace(sourceId, signal);
+		let results: Awaited<ReturnType<typeof source.fetchEarnings>>;
+		try {
+			results = await source.fetchEarnings({
+				stocks: group,
+				fromDate: job.fromDate,
+				toDate: job.toDate,
+				signal,
+				beforeRequest,
+			});
+		} catch (error) {
+			// An adapter throws only for the unexpected: log its class name
+			// (never its message or URL, SEC-010) and report every stock of
+			// this source as failed without aborting the other source.
+			deps.logger.warn("earnings_source_failed", {
+				source: sourceId,
+				error: error instanceof Error ? error.name : "unknown",
+			});
+			for (const item of order.filter((entry) =>
+				group.some((member) => member.symbol === entry.symbol),
+			)) {
+				byId.set(item.stockId, {
+					stockId: item.stockId,
+					fetchedAt,
+					name: null,
+					events: [],
+					errorCode: "SOURCE_FAILED",
+				});
+			}
+			continue;
+		}
+		if (results.length !== group.length) {
+			// The port promises one result per symbol in order; a short batch
+			// is a contract breach, failed closed for the whole source.
+			deps.logger.warn("earnings_source_failed", { source: sourceId, error: "RangeError" });
+			for (const item of order.filter((entry) =>
+				group.some((member) => member.symbol === entry.symbol),
+			)) {
+				byId.set(item.stockId, {
+					stockId: item.stockId,
+					fetchedAt,
+					name: null,
+					events: [],
+					errorCode: "SOURCE_FAILED",
+				});
+			}
+			continue;
+		}
+		group.forEach((query, index) => {
+			const item = order.find((entry) => entry.symbol === query.symbol && !byId.has(entry.stockId));
+			if (item === undefined) return;
+			const result = results[index];
+			if (result === undefined || !result.ok) {
+				byId.set(item.stockId, {
+					stockId: item.stockId,
+					fetchedAt,
+					// NO_SCHEDULED_DATE is a listed-nothing success: its name
+					// still flows into the completion (the profile is not
+					// asked again); every other error carries no name.
+					name:
+						result !== undefined && !result.ok && result.error.code === "NO_SCHEDULED_DATE"
+							? result.error.name
+							: null,
+					events: [],
+					errorCode: result === undefined ? "SOURCE_FAILED" : result.error.code,
+				});
+				return;
+			}
+			byId.set(item.stockId, {
+				stockId: item.stockId,
+				fetchedAt,
+				name: result.value.name,
+				events: result.value.events
+					.slice(0, EARNINGS_LIMITS.maxEventsPerStock)
+					.map((event) => ({ ...event })),
+				errorCode: null,
+			});
+		});
+	}
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	// Claim order is preserved for every stock.
+	const stocks: CompletionStock[] = [...byId.values()].sort(
+		(a, b) =>
+			job.stocks.findIndex((entry) => entry.stockId === a.stockId) -
+			job.stocks.findIndex((entry) => entry.stockId === b.stockId),
+	);
+	return {
+		outcome: "earnings-refreshed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		stocks,
 	};
 }
 

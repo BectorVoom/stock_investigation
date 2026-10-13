@@ -9,6 +9,7 @@ import {
 	classifyReportedPositionChange,
 	decideClaim,
 	emptyWorkspaceState,
+	foldIcsLine,
 	isLeasedJobState,
 	isTerminalJobState,
 	JOB_STATES,
@@ -16,6 +17,7 @@ import {
 	NO_REFERENCES,
 	rateWindowPermit,
 	recentCountWithinBudget,
+	selectUpcomingEarnings,
 	transitionJob,
 	type UiCommand,
 	verifyClaim,
@@ -142,6 +144,16 @@ const vectorsSchema = z.object({
 			budget: z.number(),
 			maxItems: z.number(),
 			count: z.number(),
+		}),
+	),
+	foldIcs: z.array(z.object({ widths: z.array(z.number()), lines: z.array(z.array(z.number())) })),
+	upcomingEarnings: z.array(
+		z.object({
+			rows: z.array(z.object({ stock: z.number(), date: z.number().nullable() })),
+			today: z.number(),
+			daysAhead: z.number(),
+			maxItems: z.number(),
+			selected: z.array(z.object({ date: z.number(), stock: z.number() })),
 		}),
 	),
 });
@@ -443,6 +455,115 @@ describe("Lean model conformance: home dashboard edits", () => {
 				: dashboard.widgets.map((widget) => widget.widgetId);
 			expect(ids, label).toEqual(vector.ids.map(widgetId));
 		}
+	});
+});
+
+describe("Lean model conformance: ICS line folding", () => {
+	// One character per octet width: `for...of` and `codePointAt` in the
+	// implementation observe exactly these widths (1..4 octets in UTF-8).
+	const charForWidth = (width: number): string => {
+		switch (width) {
+			case 1:
+				return "a";
+			case 2:
+				return "é";
+			case 3:
+				return "あ";
+			case 4:
+				return "𝄞";
+			default:
+				throw new Error(`unexpected width ${width}`);
+		}
+	};
+	const encoder = new TextEncoder();
+	const widthsOf = (text: string): number[] => [...text].map((char) => encoder.encode(char).length);
+
+	it(`agrees with foldIcsLine on all ${vectors.foldIcs.length} vectors`, () => {
+		expect(vectors.foldIcs.length).toBe(111);
+		for (const vector of vectors.foldIcs) {
+			const input = vector.widths.map(charForWidth).join("");
+			const folded = foldIcsLine(input);
+			const pieces = folded.split("\r\n ");
+			const label = JSON.stringify(vector.widths);
+			// Joining the pieces after removing each CRLF + space yields the input.
+			expect(pieces.join(""), `rejoin ${label}`).toBe(input);
+			expect(pieces.map(widthsOf), `lines ${label}`).toEqual(vector.lines);
+			expect(pieces.flatMap(widthsOf), `flatten ${label}`).toEqual(vector.widths);
+			// The proved bound, checked on the wire: the first line carries up
+			// to 75 octets; every continuation line adds one space to at most
+			// 74 content octets.
+			for (const [index, piece] of pieces.entries()) {
+				expect(encoder.encode(piece).length, `limit ${label}#${index}`).toBeLessThanOrEqual(
+					index === 0 ? 75 : 74,
+				);
+			}
+		}
+	});
+});
+
+describe("Lean model conformance: upcoming earnings selection", () => {
+	// The model's day offsets count from a fixed base; validated ISO dates
+	// order exactly like the offsets, which is what the implementation's
+	// string comparison assumes.
+	const BASE_MS = Date.UTC(2026, 9, 10);
+	const isoOf = (offset: number): string =>
+		new Date(BASE_MS + offset * 86_400_000).toISOString().slice(0, 10);
+
+	it(`agrees with selectUpcomingEarnings on all ${vectors.upcomingEarnings.length} vectors`, () => {
+		expect(vectors.upcomingEarnings.length).toBe(1032);
+		for (const vector of vectors.upcomingEarnings) {
+			const rows = vector.rows.map((row) => ({
+				stockId: `s${row.stock}`,
+				announcementDate: row.date === null ? null : isoOf(row.date),
+			}));
+			const today = isoOf(vector.today);
+			const selected = selectUpcomingEarnings(rows, today, vector.daysAhead, vector.maxItems);
+			const label = JSON.stringify(vector);
+			expect(
+				selected.map((entry) => ({
+					date:
+						entry.announcementDate === null
+							? null
+							: Math.round(
+									(Date.parse(`${entry.announcementDate}T00:00:00.000Z`) - BASE_MS) / 86_400_000,
+								),
+					stock: Number(entry.stockId.slice(1)),
+				})),
+				label,
+			).toEqual(vector.selected);
+			// The proved bounds, checked independently.
+			expect(selected.length, label).toBeLessThanOrEqual(vector.maxItems);
+			const end = isoOf(vector.today + vector.daysAhead);
+			const keys: string[] = [];
+			for (const entry of selected) {
+				const date = entry.announcementDate ?? "";
+				expect(date >= today && date <= end, label).toBe(true);
+				keys.push(`${date} ${entry.stockId}`);
+			}
+			expect([...keys].sort(), label).toEqual(keys);
+		}
+	});
+
+	it("fails closed outside the model: invalid inputs select nothing", () => {
+		// The Lean model counts days in Nat, so invalid date strings, negative
+		// or fractional counts, undecided dates and malformed dates are outside
+		// it; the implementation fails closed to [] (also covered by unit tests).
+		const rows = [{ stockId: "s0", announcementDate: "2026-10-10" }];
+		expect(selectUpcomingEarnings(rows, "not-a-date", 30, 10)).toEqual([]);
+		expect(selectUpcomingEarnings(rows, "2026-10-10", -1, 10)).toEqual([]);
+		expect(selectUpcomingEarnings(rows, "2026-10-10", 30, -1)).toEqual([]);
+		expect(selectUpcomingEarnings(rows, "2026-10-10", 1.5, 10)).toEqual([]);
+		expect(
+			selectUpcomingEarnings(
+				[
+					{ stockId: "s0", announcementDate: null },
+					{ stockId: "s1", announcementDate: "2026-02-30" },
+				],
+				"2026-10-10",
+				185,
+				10,
+			),
+		).toEqual([]);
 	});
 });
 

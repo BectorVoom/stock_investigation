@@ -479,6 +479,41 @@ describe("empty conversation grouping", () => {
 });
 
 describe("rename chats", () => {
+	it("keeps an open rename input when the new-chat composer fallback fires", async () => {
+		// The intermittent E2E failure ("a chat can be renamed and deleted"):
+		// opening the rename input inside the 100 ms composer-focus fallback
+		// window loses the input when the fallback steals focus (the input
+		// saves on blur, and an unchanged title exits edit mode). Pin that
+		// losing order with fake timers.
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			mountApp(backend);
+			await vi.advanceTimersByTimeAsync(1000);
+			const nav = screen.getByRole("navigation", { name: "Chats" });
+			fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+			// Advance in small steps: stop as soon as the chat opens, so the
+			// 100 ms composer-focus fallback scheduled with it is still pending.
+			for (let step = 0; step < 200 && window.location.hash !== "#/chat/ws_new"; step += 1) {
+				await vi.advanceTimersByTimeAsync(10);
+			}
+			expect(window.location.hash).toBe("#/chat/ws_new");
+			// No timer advanced since the chat opened: the fallback is pending.
+			fireEvent.click(within(nav).getByRole("button", { name: "More actions for New chat" }));
+			fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+			const box = screen.getByLabelText("Chat title") as HTMLInputElement;
+			expect(box.value).toBe("New chat");
+			await vi.advanceTimersByTimeAsync(0);
+			expect(document.activeElement).toBe(box);
+			// The losing order: the fallback fires while the rename input
+			// holds focus. It must not steal focus out of the input.
+			await vi.advanceTimersByTimeAsync(100);
+			expect(screen.queryByLabelText("Chat title")).not.toBeNull();
+			expect(document.activeElement).toBe(screen.getByLabelText("Chat title"));
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("renames a chat from the list", async () => {
 		mountApp(backend);
 		const nav = await historyReady();

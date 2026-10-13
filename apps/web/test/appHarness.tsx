@@ -6,6 +6,7 @@ import type {
 	MarketCatalogEntry,
 	MarketSeries,
 	ResearchRun,
+	WatchlistResponse,
 	WorkspaceView,
 } from "@research/contracts";
 import { agentSettingsSchema, DEFAULT_HOME_DASHBOARD } from "@research/contracts";
@@ -706,4 +707,87 @@ export function installHomeRoutes(
 
 export function commandRequests(backend: FakeBackend): RecordedRequest[] {
 	return backend.requestsTo("POST", /\/commands$/);
+}
+
+/* ----- Watchlist fake backend (FR-018 fix F: Home auto-refresh tests) ----- */
+
+/** What the watchlist fake server stores; tests mutate it to end runs and refresh stocks. */
+export interface WatchlistServerState {
+	stocks: WatchlistResponse["stocks"];
+	activeRunId: string | null;
+	runState: string;
+	lastSucceededAt: string | null;
+	lastFailure: { readonly state: string; readonly code: string; readonly at: string } | null;
+	refreshCount: number;
+}
+
+export function initialWatchlistServerState(): WatchlistServerState {
+	return {
+		stocks: [],
+		activeRunId: null,
+		runState: "pending",
+		lastSucceededAt: null,
+		lastFailure: null,
+		refreshCount: 0,
+	};
+}
+
+function watchlistEtag(watch: WatchlistServerState): string {
+	const stamp = watch.stocks
+		.map((entry) => `${entry.stockId}:${entry.lastRefreshedAt ?? "never"}`)
+		.join(",");
+	return `"watch-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}"`;
+}
+
+/** Registers the `/watchlist` + `/watchlist/refresh` routes Home's calendar widget needs. */
+export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistServerState): void {
+	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
+		const etag = watchlistEtag(watch);
+		if (request.headers["if-none-match"] === etag) return new Response(null, { status: 304 });
+		return jsonResponse(
+			{
+				stocks: watch.stocks,
+				refresh: {
+					activeRunId: watch.activeRunId,
+					activeRunState: watch.activeRunId === null ? null : watch.runState,
+					lastSucceededAt: watch.lastSucceededAt,
+					lastFailure: watch.lastFailure,
+				},
+				feed: { enabled: false, createdAt: null },
+				googleCalendar: {
+					status: "disconnected",
+					authUrl: null,
+					calendarId: null,
+					connectedAt: null,
+					lastSyncedAt: null,
+					lastSync: null,
+					inSync: null,
+					activeRunId: null,
+					activeRunState: null,
+					activeAction: null,
+					lastFailure: null,
+				},
+			},
+			{ headers: { ETag: etag } },
+		);
+	});
+	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () => {
+		watch.refreshCount += 1;
+		if (watch.activeRunId === null) {
+			watch.activeRunId = `run_earnings_${watch.refreshCount}`;
+			watch.runState = "pending";
+		}
+		return jsonResponse(
+			{
+				run: makeRun({
+					runId: watch.activeRunId,
+					kind: "earnings-refresh",
+					request: null,
+					workspaceId: null,
+					state: watch.runState as ResearchRun["state"],
+				}),
+			},
+			{ status: 202 },
+		);
+	});
 }

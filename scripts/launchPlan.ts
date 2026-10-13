@@ -300,6 +300,14 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 				"--persist-to",
 				stateDir,
 				"--show-interactive-dev-session=false",
+				// The calendar subscription token travels in a URL path, and
+				// wrangler's per-request info lines print the expanded path:
+				// `warn` drops those lines (and the startup banner) while the
+				// Worker's own console.error event lines still reach the log.
+				// Readiness is an HTTP poll and failures are exit events, so
+				// nothing the launcher waits for or greps is lost (SEC-005).
+				"--log-level",
+				"warn",
 				// The entry is the prebuilt release bundle, not the source
 				// tree: later edits and rebuilds cannot change what is served.
 				"--no-bundle",
@@ -416,6 +424,14 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 				"--persist-to",
 				stateDir,
 				"--show-interactive-dev-session=false",
+				// The calendar subscription token travels in a URL path, and
+				// wrangler's per-request info lines print the expanded path:
+				// `warn` drops those lines (and the startup banner) while the
+				// Worker's own console.error event lines still reach the log.
+				// Readiness is an HTTP poll and failures are exit events, so
+				// nothing the launcher waits for or greps is lost (SEC-005).
+				"--log-level",
+				"warn",
 			],
 			logFile: joinPath(logDir, "server.log"),
 			extraEnv: {},

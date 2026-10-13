@@ -32,6 +32,7 @@ import {
 	runRunnerLoop,
 } from "../../apps/runner/src/index.ts";
 import { createScriptedAgent } from "../../examples/extensions/scriptedAgent.ts";
+import { fixtureEarningsSources } from "./earningsFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, HEADLINE, HOSTILE_MARKUP } from "./fixtures.ts";
 import { fixtureMarketSources } from "./marketFixtures.ts";
 
@@ -243,6 +244,11 @@ const exit = await runRunnerLoop(
 		marketSources: fixtureMarketSources(),
 		// No limits in E2E: the fixture loop never paces.
 		marketPacer: createMarketPacer({ clock: systemClock, sleep, limits: new Map() }),
+		// Earnings dates: canned Finnhub/JPX answers beside the market
+		// fixtures (tests/e2e/earningsFixtures.ts) — no keys, no network.
+		// Stocks without a recorded answer fail with the fixed unavailable
+		// wording, so the browser only ever shows fixture dates.
+		earningsSources: fixtureEarningsSources(),
 		// Poll quickly so the browser test does not wait on the production idle interval.
 		sleep: (ms, signal) =>
 			new Promise<void>((resolve) => {
