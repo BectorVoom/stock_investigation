@@ -185,8 +185,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey canvas cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
 | Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`, grey `bg-slate-200` fill with no outline, darker `hover:bg-slate-300`) |
 | Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` grey `bg-slate-100` container with no outline, white textarea inside, `rounded-full` send button; focus ring stays via `focus-within:ring-2`) |
-| Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `home/WidgetFrame.tsx`: a native `article` labelled by its title (white, `slate-200` hairline, no shadow, `rounded-2xl`, `p-4`) holding a single header strip (title + one `IconButton`) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
-| Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | Native menu in `WidgetFrame` (icon-only `IconButton` trigger named "`<title>` actions" with `aria-haspopup="menu"` / `aria-expanded`; `role="menu"` / `role="menuitem"` with the same values and behaviour as before; text items with leading icons — pencil, left/right arrows, trash) |
+| Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `home/WidgetFrame.tsx`: a native `article` labelled by its title (white, `slate-200` hairline, no shadow, `rounded-2xl`, `p-4`) holding a single header strip (leading grip glyph + title + one `IconButton`; the whole strip is the drag handle — `cursor-grab`, `touch-none`, `select-none`) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
+| Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | Shared `ActionMenu` in `components/ui.tsx` with an icon-button trigger (icon-only `IconButton` named "`<title>` actions" with `aria-haspopup="menu"` / `aria-expanded` and `data-widget-actions`; `role="menu"` / `role="menuitem"` with the menu-button keyboard pattern — Enter/Space/ArrowDown opens, arrows skip disabled items, Home/End jump, Escape closes and returns focus, click outside closes; `Tab` closes); text items with leading icons — pencil, left/right arrows, trash. The Chats rows use the same part with its default filled trigger and text-only items |
 | Widget dialog | Add / edit a widget (type, title, size, series, range); reset confirmation | add / edit / confirm-reset | `WidgetDialog` in `home/WidgetDialog.tsx` (`sl-dialog`, labelled by its heading, focus in on open and returned to the explicit opener on close; icon-only `IconButton` footer buttons whose names are the former labels; the heading still says in words what the buttons do; the Size control names Small / Medium / Large with the shapes — "1 × 1", "2 × 2", "full width × 2" — in its help text) |
 | Widget controls | Selects, inputs and loading blocks on Home (buttons are the native `IconButton`, menus are native) | — | `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL (0.875rem control text, 0.75rem medium slate-700 labels); controls carry their own `label` prop instead of `Field` |
 | Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
@@ -368,11 +368,12 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   icon-only buttons do not use `sl-icon`: their glyphs are inline SVGs
   (Bootstrap Icons paths) in the shared `IconButton` part.
 - Widget grid: equal cells with a fixed row height —
-  `grid-cols-2 lg:grid-cols-4` with `auto-rows-[15rem]` and a 16 px gap
+  `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap
   (the HIG standard margin), in normal row flow so visual order equals DOM
   order. Three fixed sizes from one table (`HOME_SIZE_SPAN` in
-  `homeModel.ts`): Small 1 × 1 (15rem tall), Medium 2 × 2 (31rem),
-  Large full width × 2 at `lg` (4 columns) and 2 × 2 below it (31rem).
+  `homeModel.ts`): Small 1 × 1 (17rem tall, 272 px), Medium 2 × 2 (35rem,
+  560 px), Large full width × 2 at `lg` (4 columns) and 2 × 2 below it
+  (35rem, 560 px).
   Every widget of a size has exactly the same width and height as every
   other of that size on the same screen. The frame fills its cell (`h-full`)
   and never grows with content: the header strip stays fixed while the body
@@ -381,6 +382,35 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   scroll. Loading skeletons use the same grid and cell height so the page
   does not jump. No page-level
   horizontal overflow at 390 px; tables scroll inside their card.
+- Drag and drop (HIG Drag and drop): the whole header strip is the handle
+  (leading `grip-vertical` glyph, `text-slate-600`, as the visible affordance;
+  a press on the actions button never starts a drag). Pointer Events only
+  (never the HTML5 API), primary button / one touch / pen, starting after
+  4 px of movement so a press-and-release is a plain click. The lifted widget
+  follows the pointer with its grab offset at about 90 % opacity above its
+  neighbours with the blue focus-colour ring (no shadow) and never changes
+  size; the target slot shows a same-size dashed `slate-300` placeholder with
+  no fill while the others reflow in their real grid positions. Reflow is
+  order-based (the widget ends at an index, the rest keep their order —
+  never free placement with gaps) with midpoint-plus-ban hysteresis so a
+  resting pointer never flip-flops. The drop saves exactly one `reorder`
+  edit; an unchanged position saves nothing and the preview stays on screen
+  while the save is in flight. `Escape`, `pointercancel` or the window losing
+  focus cancels with nothing saved. No drag starts while a save is in flight,
+  while loading, or with one widget; while a drag is active and the pointer
+  rests within 80 px of the top or bottom edge of the viewport and the page
+  can still scroll that way, the page keeps scrolling every frame (faster the
+  deeper into the zone the pointer is, at most about 16 px per frame),
+  re-evaluating the drop target as content passes under the pointer, until
+  the pointer leaves the zone, the page reaches its end, or the drag ends or
+  is cancelled. Slot rectangles are cached in page coordinates so scrolling
+  never stales the decision. The pointer/DOM engine lives in
+  `home/widgetDrag.ts` (`createWidgetDrag`, returning the grid pointerdown
+  handler plus dispose); `HomeView` keeps only the wiring. Reflow animates for at most 200 ms and only under `motion-safe:`
+  (instant with reduced motion). The menu's Move earlier/later is the
+  keyboard and assistive-technology path, and one visually hidden polite live
+  region announces every completed move (`Moved “<title>” to position <i> of
+  <n>.`, clearing first so a repeated sentence announces again).
 - States follow principle 2 (`sl-skeleton` blocks plus "Loading" text,
   "unavailable (reason)", `ErrorNotice` with "Try again"); status is never
   colour alone (change marks carry ▲/▼/▬ plus a word); every number shows its

@@ -25,6 +25,7 @@ import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
+import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 import "./shoelace.ts";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
 import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
@@ -74,10 +75,29 @@ export function HomeView(props: {
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
+	/** Polite announcement for every completed move (drag or menu). */
+	const [announcement, setAnnouncement] = createSignal("");
+	/**
+	 * Every completed move announces, even when the sentence repeats the
+	 * previous one (a live region sets nothing when the same text is set
+	 * twice): the text is cleared first and the message is set on a later
+	 * task, so assistive technology observes a change each time.
+	 */
+	const announceMove = (title: string, position: number, total: number): void => {
+		const message = `Moved “${title}” to position ${position} of ${total}.`;
+		setAnnouncement("");
+		window.setTimeout(() => {
+			if (!disposed) setAnnouncement(message);
+		}, 0);
+	};
 	let disposed = false;
 	let autoRefreshTried = false;
 	let followUpTried = false;
 	let refreshKey: string | null = null;
+	/** Grid element holding the widget articles (drag preview via CSS `order`). */
+	let gridEl: HTMLDivElement | undefined;
+	/** True while a dropped preview is being saved (blocks a new drag). */
+	let savingPreview = false;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
@@ -237,6 +257,7 @@ export function HomeView(props: {
 					readonly widgetId: string;
 					readonly direction: "earlier" | "later";
 			  }
+			| { readonly kind: "reorder"; readonly widgetId: string; readonly toIndex: number }
 			| { readonly kind: "replace"; readonly widget: HomeWidget }
 			| { readonly kind: "reset" },
 	): Promise<void> => {
@@ -288,6 +309,16 @@ export function HomeView(props: {
 		}
 		dashboard.set(saved.value);
 		setDialog(null);
+		if (edit.kind === "move" || edit.kind === "reorder") {
+			const movedId = edit.widgetId;
+			const position = saved.value.dashboard.widgets.findIndex(
+				(entry) => entry.widgetId === movedId,
+			);
+			const moved = saved.value.dashboard.widgets[position];
+			if (position >= 0 && moved !== undefined) {
+				announceMove(moved.title, position + 1, saved.value.dashboard.widgets.length);
+			}
+		}
 		// V4: data is reloaded after every successful save, so widgets never
 		// show "unavailable … source not stated" for observations the server
 		// already holds.
@@ -406,6 +437,36 @@ export function HomeView(props: {
 	};
 
 	/**
+	 * Drag and drop repositioning (HIG Drag and drop): the pointer/DOM engine
+	 * lives in `widgetDrag.ts` (`createWidgetDrag` owns the state, the
+	 * listeners, the CSSOM writes and the cleanup). This view keeps only the
+	 * wiring: a drag may start when no save is in flight and the view is not
+	 * busy, a drop saves exactly one `reorder` edit, and the previewed order
+	 * stays on screen (CSS `order`, real DOM order changes only on commit)
+	 * until the server copy renders.
+	 */
+	const onWidgetDrop = (drop: WidgetDragDrop): void => {
+		savingPreview = true;
+		void saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex })
+			.catch(() => undefined)
+			.finally(() => {
+				savingPreview = false;
+				dragController.clearPreview();
+			});
+	};
+	const dragController = createWidgetDrag({
+		getGrid: () => gridEl,
+		getWidgets: () => widgets(),
+		canStart: () => !savingPreview && !busy() && dashboard.value() !== null,
+		onDrop: onWidgetDrop,
+	});
+
+	onCleanup(() => {
+		dragController.dispose();
+		savingPreview = false;
+	});
+
+	/**
 	 * V2: the data loading skeleton — and nothing else — while data loads.
 	 * When the data GET failed, the error state above stands alone (no
 	 * skeleton beside the error).
@@ -417,7 +478,7 @@ export function HomeView(props: {
 		>
 			<section class="space-y-2" aria-label="Loading market data">
 				<output class="block text-sm text-slate-600">Loading market data…</output>
-				<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
+				<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
 					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
 				</div>
 			</section>
@@ -480,6 +541,10 @@ export function HomeView(props: {
 				</div>
 			</section>
 
+			<output class="sr-only" aria-live="polite">
+				{announcement()}
+			</output>
+
 			{/* V2: the dashboard GET has its own error state (stable code, Try
 			    again) instead of an endless skeleton; when the stored document
 			    no longer parses, Reset replaces it (no expectedVersion needed). */}
@@ -487,7 +552,7 @@ export function HomeView(props: {
 				<Match when={dashboard.value() === null && dashboardError() === null}>
 					<section class="space-y-2" aria-label="Loading home">
 						<output class="block text-sm text-slate-600">Loading market widgets…</output>
-						<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
+						<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
 							<For each={[0, 1, 2, 3]}>
 								{() => <sl-skeleton effect="sheen" class="block h-full" />}
 							</For>
@@ -524,7 +589,14 @@ export function HomeView(props: {
 							when={(dashboard.value()?.dashboard.widgets.length ?? 0) > 0}
 							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
 						>
-							<div class="grid auto-rows-[15rem] grid-cols-2 gap-4 lg:grid-cols-4">
+							<div
+								class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4"
+								data-widget-grid
+								ref={(element) => {
+									gridEl = element;
+								}}
+								onPointerDown={(event) => dragController.onPointerDown(event)}
+							>
 								<For each={dashboard.value()?.dashboard.widgets ?? []}>
 									{(widget, index) => (
 										<WidgetFrame

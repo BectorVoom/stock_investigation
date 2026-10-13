@@ -1,18 +1,7 @@
 import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
-import {
-	type Accessor,
-	createEffect,
-	createSignal,
-	createUniqueId,
-	For,
-	type JSX,
-	Match,
-	onCleanup,
-	Show,
-	Switch,
-} from "solid-js";
-import { IconButton, type IconButtonName, IconGlyph } from "../components/ui.tsx";
+import { type Accessor, createUniqueId, For, type JSX, Match, Show, Switch } from "solid-js";
+import { ActionMenu } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { HOME_SIZE_SPAN, widgetSeriesIds } from "./homeModel.ts";
 
@@ -28,18 +17,12 @@ export interface WidgetFrameProps {
 	readonly children: JSX.Element;
 }
 
-interface FrameMenuItem {
-	readonly value: "edit" | "earlier" | "later" | "remove";
-	readonly label: string;
-	readonly icon: IconButtonName;
-	readonly disabled: boolean;
-}
-
 /**
  * One widget on the grid: a native `article` frame (white on the grey page,
  * 1 px `slate-200` hairline, no shadow, `rounded-2xl`) that fills its grid
- * cell exactly. The header is a single clean strip (title + one icon-only
- * actions button, leaving room for a later drag handle); the body below it
+ * cell exactly. The header is a single clean strip holding only the grip
+ * glyph, the title and the one icon-only actions button (the whole strip is
+ * the drag handle); the body below it
  * scrolls INSIDE the frame when taller (`overflow-y-auto`, `min-h-0`) and is
  * keyboard-focusable (labelled by the widget title). Provenance is rendered
  * by each widget at the end of its own output (never as a frame prop: prop
@@ -48,113 +31,6 @@ interface FrameMenuItem {
 export function WidgetFrame(props: WidgetFrameProps): JSX.Element {
 	const titleId = createUniqueId();
 	const span = () => HOME_SIZE_SPAN[props.widget.size];
-	const [open, setOpen] = createSignal(false);
-	let button: HTMLButtonElement | undefined;
-	let menu: HTMLDivElement | undefined;
-	const itemElements: (HTMLButtonElement | undefined)[] = [];
-
-	const items = (): readonly FrameMenuItem[] => [
-		{ value: "edit", label: "Edit widget", icon: "pencil", disabled: props.actionsDisabled },
-		{
-			value: "earlier",
-			label: "Move earlier",
-			icon: "arrow-left",
-			disabled: props.actionsDisabled || props.position === 0,
-		},
-		{
-			value: "later",
-			label: "Move later",
-			icon: "arrow-right",
-			disabled: props.actionsDisabled || props.position === props.total - 1,
-		},
-		{ value: "remove", label: "Remove widget", icon: "trash", disabled: props.actionsDisabled },
-	];
-
-	const close = (returnFocus: boolean) => {
-		setOpen(false);
-		if (returnFocus) button?.focus();
-	};
-
-	const openAndFocus = (index: number) => {
-		if (props.actionsDisabled) return;
-		setOpen(true);
-		queueMicrotask(() => {
-			itemElements[index]?.focus();
-		});
-	};
-
-	const select = (item: FrameMenuItem) => {
-		setOpen(false);
-		button?.focus();
-		if (item.value === "edit") props.onEdit(props.widget);
-		else if (item.value === "earlier" || item.value === "later") {
-			props.onMove(props.widget, item.value);
-		} else if (item.value === "remove") props.onRemove(props.widget);
-	};
-
-	const focusItem = (index: number) => {
-		const list = items();
-		if (list.length === 0) return;
-		const wrapped = (index + list.length) % list.length;
-		const start = wrapped;
-		for (let step = 0; step < list.length; step += 1) {
-			const candidate = (start + step) % list.length;
-			const entry = list[candidate];
-			const element = itemElements[candidate];
-			if (entry !== undefined && !entry.disabled && element !== undefined) {
-				element.focus();
-				return;
-			}
-		}
-	};
-
-	const currentIndex = (): number => {
-		const active = document.activeElement;
-		return itemElements.indexOf(active as HTMLButtonElement | undefined);
-	};
-
-	const onButtonKeyDown = (event: KeyboardEvent) => {
-		if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
-			event.preventDefault();
-			if (!open()) openAndFocus(0);
-		} else if (event.key === "ArrowUp") {
-			event.preventDefault();
-			if (!open()) openAndFocus(items().length - 1);
-		}
-	};
-
-	const onMenuKeyDown = (event: KeyboardEvent) => {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			close(true);
-		} else if (event.key === "ArrowDown") {
-			event.preventDefault();
-			focusItem(currentIndex() + 1);
-		} else if (event.key === "ArrowUp") {
-			event.preventDefault();
-			focusItem(currentIndex() - 1);
-		} else if (event.key === "Home") {
-			event.preventDefault();
-			focusItem(0);
-		} else if (event.key === "End") {
-			event.preventDefault();
-			focusItem(items().length - 1);
-		} else if (event.key === "Tab") {
-			setOpen(false);
-		}
-	};
-
-	createEffect(() => {
-		if (!open()) return;
-		const onPointerDown = (event: PointerEvent) => {
-			const target = event.target;
-			if (!(target instanceof Node)) return;
-			if (button?.contains(target) === true || menu?.contains(target) === true) return;
-			setOpen(false);
-		};
-		document.addEventListener("pointerdown", onPointerDown);
-		onCleanup(() => document.removeEventListener("pointerdown", onPointerDown));
-	});
 
 	const actionsLabel = () => `${props.widget.title} actions`;
 	return (
@@ -164,60 +40,62 @@ export function WidgetFrame(props: WidgetFrameProps): JSX.Element {
 			data-widget-type={props.widget.type}
 			class={`flex h-full min-h-0 min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4 ${span()}`}
 		>
-			<div class="flex min-h-7 items-center justify-between gap-2">
+			<div
+				class="flex min-h-7 cursor-grab touch-none items-center gap-2 select-none"
+				data-widget-drag-handle={props.widget.widgetId}
+			>
+				<svg
+					aria-hidden="true"
+					width="16"
+					height="16"
+					viewBox="0 0 16 16"
+					fill="currentColor"
+					class="shrink-0 text-slate-600"
+				>
+					<path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+				</svg>
 				<h3 id={titleId} class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
 					{props.widget.title}
 				</h3>
-				<div class="relative inline-flex shrink-0">
-					<IconButton
-						label={actionsLabel()}
-						icon="three-dots"
-						disabled={props.actionsDisabled}
-						expanded={open()}
-						hasPopup="menu"
-						widgetActions={props.widget.widgetId}
-						ref={(element) => {
-							button = element;
-						}}
-						onKeyDown={(event) => onButtonKeyDown(event)}
-						onClick={() => {
-							if (open()) close(false);
-							else openAndFocus(0);
-						}}
-					/>
-					<Show when={open()}>
-						<div
-							ref={(element) => {
-								menu = element;
-							}}
-							role="menu"
-							aria-label={actionsLabel()}
-							class="absolute right-0 z-20 min-w-44 rounded border border-slate-200 bg-white p-1"
-							onKeyDown={onMenuKeyDown}
-						>
-							<For each={items()}>
-								{(item, index) => (
-									<button
-										ref={(element) => {
-											itemElements[index()] = element;
-										}}
-										type="button"
-										role="menuitem"
-										data-menu-value={item.value}
-										disabled={item.disabled}
-										class="flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-										onClick={() => select(item)}
-									>
-										<span aria-hidden="true" class="inline-flex shrink-0">
-											<IconGlyph name={item.icon} />
-										</span>
-										<span>{item.label}</span>
-									</button>
-								)}
-							</For>
-						</div>
-					</Show>
-				</div>
+				<ActionMenu
+					buttonLabel={actionsLabel()}
+					menuLabel={actionsLabel()}
+					iconTrigger={{
+						icon: "three-dots",
+						disabled: props.actionsDisabled,
+						widgetActions: props.widget.widgetId,
+					}}
+					items={[
+						{
+							value: "edit",
+							label: "Edit widget",
+							icon: "pencil",
+							disabled: props.actionsDisabled,
+							onSelect: () => props.onEdit(props.widget),
+						},
+						{
+							value: "earlier",
+							label: "Move earlier",
+							icon: "arrow-left",
+							disabled: props.actionsDisabled || props.position === 0,
+							onSelect: () => props.onMove(props.widget, "earlier"),
+						},
+						{
+							value: "later",
+							label: "Move later",
+							icon: "arrow-right",
+							disabled: props.actionsDisabled || props.position === props.total - 1,
+							onSelect: () => props.onMove(props.widget, "later"),
+						},
+						{
+							value: "remove",
+							label: "Remove widget",
+							icon: "trash",
+							disabled: props.actionsDisabled,
+							onSelect: () => props.onRemove(props.widget),
+						},
+					]}
+				/>
 			</div>
 			{/* biome-ignore lint/a11y/useSemanticElements: the scrollable widget body is a named group (labelled by the widget title), not a form — fieldset does not apply. */}
 			<div
