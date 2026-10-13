@@ -24,14 +24,8 @@ import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
-import { nextDropTarget, type SlotRect } from "./dragModel.ts";
-import {
-	HOME_SIZE_SPAN,
-	hasFredSeries,
-	needsAutoRefresh,
-	seriesById,
-	widgetSeriesIds,
-} from "./homeModel.ts";
+import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
+import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 import "./shoelace.ts";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
 import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
@@ -83,36 +77,25 @@ export function HomeView(props: {
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
 	/** Polite announcement for every completed move (drag or menu). */
 	const [announcement, setAnnouncement] = createSignal("");
+	/**
+	 * Every completed move announces, even when the sentence repeats the
+	 * previous one (a live region sets nothing when the same text is set
+	 * twice): the text is cleared first and the message is set on a later
+	 * task, so assistive technology observes a change each time.
+	 */
+	const announceMove = (title: string, position: number, total: number): void => {
+		const message = `Moved “${title}” to position ${position} of ${total}.`;
+		setAnnouncement("");
+		window.setTimeout(() => {
+			if (!disposed) setAnnouncement(message);
+		}, 0);
+	};
 	let disposed = false;
 	let autoRefreshTried = false;
 	let followUpTried = false;
 	let refreshKey: string | null = null;
 	/** Grid element holding the widget articles (drag preview via CSS `order`). */
 	let gridEl: HTMLDivElement | undefined;
-	/** Active pointer drag, or null. All positions are preview-order indices. */
-	let drag: {
-		readonly widgetId: string;
-		readonly pointerId: number;
-		readonly pressX: number;
-		readonly pressY: number;
-		readonly grabDX: number;
-		readonly grabDY: number;
-		readonly width: number;
-		readonly height: number;
-		readonly fromIndex: number;
-		readonly article: HTMLElement;
-		readonly grid: HTMLElement;
-		readonly draggedSize: HomeWidget["size"];
-		started: boolean;
-		preview: string[];
-		target: number;
-		banned: number | null;
-		slots: SlotRect[];
-		lastX: number;
-		lastY: number;
-		raf: number;
-		placeholder: HTMLElement | null;
-	} | null = null;
 	/** True while a dropped preview is being saved (blocks a new drag). */
 	let savingPreview = false;
 	onCleanup(() => {
@@ -333,9 +316,7 @@ export function HomeView(props: {
 			);
 			const moved = saved.value.dashboard.widgets[position];
 			if (position >= 0 && moved !== undefined) {
-				setAnnouncement(
-					`Moved “${moved.title}” to position ${position + 1} of ${saved.value.dashboard.widgets.length}.`,
-				);
+				announceMove(moved.title, position + 1, saved.value.dashboard.widgets.length);
 			}
 		}
 		// V4: data is reloaded after every successful save, so widgets never
@@ -456,391 +437,32 @@ export function HomeView(props: {
 	};
 
 	/**
-	 * Drag and drop repositioning (HIG Drag and drop): the whole header strip
-	 * is the handle, Pointer Events only, 4 px threshold, the lifted widget
-	 * follows the pointer with its grab offset, the target slot shows a
-	 * same-size dashed placeholder and the others reflow in their real grid
-	 * positions via CSS `order` (DOM nodes never move during the drag, so open
-	 * disclosures, scroll positions and charts keep their state; the real DOM
-	 * order changes only on commit when the server copy renders). Positions
-	 * are applied through the CSSOM, never as an inline style attribute. Pointer moves coalesce on `requestAnimationFrame`
-	 * (one layout read and one write per frame at most); slot rectangles are
-	 * re-read only when the target changes. Window listeners survive Solid
-	 * `<For>` node moves; everything is removed and reset on end/cancel/dispose.
+	 * Drag and drop repositioning (HIG Drag and drop): the pointer/DOM engine
+	 * lives in `widgetDrag.ts` (`createWidgetDrag` owns the state, the
+	 * listeners, the CSSOM writes and the cleanup). This view keeps only the
+	 * wiring: a drag may start when no save is in flight and the view is not
+	 * busy, a drop saves exactly one `reorder` edit, and the previewed order
+	 * stays on screen (CSS `order`, real DOM order changes only on commit)
+	 * until the server copy renders.
 	 */
-	const articlesIn = (grid: HTMLElement): HTMLElement[] => {
-		const found: HTMLElement[] = [];
-		for (const node of grid.querySelectorAll("article[data-widget-id]")) {
-			if (node instanceof HTMLElement) found.push(node);
-		}
-		return found;
-	};
-
-	const articleWithId = (grid: HTMLElement, widgetId: string): HTMLElement | null => {
-		for (const article of articlesIn(grid)) {
-			if (article.getAttribute("data-widget-id") === widgetId) return article;
-		}
-		return null;
-	};
-
-	const rectOf = (element: HTMLElement): SlotRect => {
-		const box = element.getBoundingClientRect();
-		return { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
-	};
-
-	/** Slot rectangles in preview order; the dragged slot is the placeholder. */
-	const readPreviewSlots = (
-		grid: HTMLElement,
-		preview: readonly string[],
-		draggedId: string,
-		placeholder: HTMLElement,
-	): SlotRect[] => {
-		const byId = new Map<string, HTMLElement>();
-		for (const article of articlesIn(grid)) {
-			const id = article.getAttribute("data-widget-id");
-			if (id !== null) byId.set(id, article);
-		}
-		const slots: SlotRect[] = [];
-		for (const id of preview) {
-			if (id === draggedId) {
-				slots.push(rectOf(placeholder));
-				continue;
-			}
-			const article = byId.get(id);
-			if (article === undefined) continue;
-			slots.push(rectOf(article));
-		}
-		return slots;
-	};
-
-	const applyDuringDragOrders = (
-		grid: HTMLElement,
-		preview: readonly string[],
-		draggedId: string,
-		target: number,
-		placeholder: HTMLElement,
-	): void => {
-		const positions = new Map<string, number>();
-		for (const [index, id] of preview.entries()) positions.set(id, index);
-		for (const article of articlesIn(grid)) {
-			const id = article.getAttribute("data-widget-id");
-			if (id === null || id === draggedId) continue;
-			const position = positions.get(id);
-			if (position === undefined) continue;
-			article.style.setProperty("order", String(position));
-		}
-		placeholder.style.setProperty("order", String(target));
-	};
-
-	const applyPreviewOrders = (grid: HTMLElement, preview: readonly string[]): void => {
-		const positions = new Map<string, number>();
-		for (const [index, id] of preview.entries()) positions.set(id, index);
-		for (const article of articlesIn(grid)) {
-			const id = article.getAttribute("data-widget-id");
-			if (id === null) continue;
-			const position = positions.get(id);
-			if (position === undefined) continue;
-			article.style.setProperty("order", String(position));
-		}
-	};
-
-	const clearGridOrders = (grid: HTMLElement): void => {
-		for (const article of articlesIn(grid)) article.style.removeProperty("order");
-	};
-
-	const liftDragged = (article: HTMLElement, x: number, y: number, w: number, h: number): void => {
-		article.style.setProperty("position", "fixed");
-		article.style.setProperty("left", `${x}px`);
-		article.style.setProperty("top", `${y}px`);
-		article.style.setProperty("width", `${w}px`);
-		article.style.setProperty("height", `${h}px`);
-		article.style.setProperty("opacity", "0.9");
-		article.style.setProperty("z-index", "30");
-		article.style.setProperty("pointer-events", "none");
-		article.classList.add("ring-2", "ring-blue-600", "cursor-grabbing");
-		const handle = article.querySelector("[data-widget-drag-handle]");
-		if (handle instanceof HTMLElement) {
-			handle.classList.remove("cursor-grab");
-			handle.classList.add("cursor-grabbing");
-		}
-	};
-
-	const moveLifted = (article: HTMLElement, x: number, y: number): void => {
-		article.style.setProperty("left", `${x}px`);
-		article.style.setProperty("top", `${y}px`);
-	};
-
-	const unliftDragged = (article: HTMLElement): void => {
-		for (const property of [
-			"position",
-			"left",
-			"top",
-			"width",
-			"height",
-			"opacity",
-			"z-index",
-			"pointer-events",
-		]) {
-			article.style.removeProperty(property);
-		}
-		article.classList.remove("ring-2", "ring-blue-600", "cursor-grabbing");
-		const handle = article.querySelector("[data-widget-drag-handle]");
-		if (handle instanceof HTMLElement) {
-			handle.classList.remove("cursor-grabbing");
-			handle.classList.add("cursor-grab");
-		}
-	};
-
-	const suppressSelection = (): void => {
-		document.body.style.setProperty("user-select", "none");
-	};
-
-	const releaseSelection = (): void => {
-		document.body.style.removeProperty("user-select");
-	};
-
-	const removeDragListeners = (): void => {
-		window.removeEventListener("pointermove", onDragPointerMove);
-		window.removeEventListener("pointerup", onDragPointerUp);
-		window.removeEventListener("pointercancel", onDragPointerCancel);
-		window.removeEventListener("keydown", onDragKeyDown);
-		window.removeEventListener("blur", onDragBlur);
-	};
-
-	const resetDragDom = (): void => {
-		const state = drag;
-		if (state === null) return;
-		if (state.raf !== 0) {
-			cancelAnimationFrame(state.raf);
-			state.raf = 0;
-		}
-		unliftDragged(state.article);
-		state.placeholder?.remove();
-		clearGridOrders(state.grid);
-		releaseSelection();
-	};
-
-	/** Cancels the active press/drag: the widget returns, nothing is saved. */
-	function cancelDrag(): void {
-		if (drag === null) return;
-		removeDragListeners();
-		resetDragDom();
-		drag = null;
-	}
-
-	const scheduleDragFrame = (): void => {
-		if (drag === null || drag.raf !== 0) return;
-		drag.raf = requestAnimationFrame(onDragFrame);
-	};
-
-	function onDragFrame(): void {
-		const state = drag;
-		if (state === null) return;
-		state.raf = 0;
-		const placeholder = state.placeholder;
-		if (!state.started || placeholder === null) return;
-		// HIG: scroll the destination when necessary; stops when the drag ends
-		// (no loop — one nudge per coalesced frame while the pointer rests low/high).
-		if (state.lastY < 80) window.scrollBy(0, -12);
-		else if (state.lastY > window.innerHeight - 80) window.scrollBy(0, 12);
-		moveLifted(state.article, state.lastX - state.grabDX, state.lastY - state.grabDY);
-		const next = nextDropTarget({
-			slots: state.slots,
-			draggedIndex: state.target,
-			pointer: { x: state.lastX, y: state.lastY },
-			previous: { target: state.target, banned: state.banned },
-		});
-		if (next.target === state.target) {
-			state.banned = next.banned;
-			return;
-		}
-		const widgetId = state.widgetId;
-		const without = state.preview.filter((id) => id !== widgetId);
-		without.splice(next.target, 0, widgetId);
-		state.preview = without;
-		state.target = next.target;
-		state.banned = next.banned;
-		applyDuringDragOrders(state.grid, state.preview, state.widgetId, state.target, placeholder);
-		state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
-	}
-
-	function startDrag(state: NonNullable<typeof drag>): void {
-		state.started = true;
-		const placeholder = document.createElement("div");
-		placeholder.setAttribute("data-widget-placeholder", "");
-		placeholder.setAttribute("aria-hidden", "true");
-		placeholder.className = `rounded-2xl border border-dashed border-slate-300 ${HOME_SIZE_SPAN[state.draggedSize]}`;
-		state.grid.appendChild(placeholder);
-		state.placeholder = placeholder;
-		suppressSelection();
-		liftDragged(
-			state.article,
-			state.lastX - state.grabDX,
-			state.lastY - state.grabDY,
-			state.width,
-			state.height,
-		);
-		applyDuringDragOrders(state.grid, state.preview, state.widgetId, state.target, placeholder);
-		state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
-	}
-
-	function onDragPointerMove(event: PointerEvent): void {
-		const state = drag;
-		if (state === null || event.pointerId !== state.pointerId) return;
-		if (event.isPrimary === false) return;
-		state.lastX = event.clientX;
-		state.lastY = event.clientY;
-		if (!state.started) {
-			const moved = Math.hypot(state.lastX - state.pressX, state.lastY - state.pressY);
-			// HIG: the drag image appears after about three points (4 px here);
-			// a press and release without that movement is a plain click.
-			if (moved < 4) return;
-			startDrag(state);
-		}
-		scheduleDragFrame();
-	}
-
-	function onDragPointerUp(event: PointerEvent): void {
-		if (drag === null || event.pointerId !== drag.pointerId) return;
-		const finished = drag;
-		removeDragListeners();
-		if (finished.raf !== 0) {
-			cancelAnimationFrame(finished.raf);
-			finished.raf = 0;
-		}
-		if (!finished.started) {
-			drag = null;
-			return;
-		}
-		// Flush the release point synchronously: a coalesced frame holding the
-		// final pointer position may still be pending (or was just cancelled),
-		// and the drop must commit what is under the pointer, not the last
-		// frame that ran.
-		finished.lastX = event.clientX;
-		finished.lastY = event.clientY;
-		const flushed = nextDropTarget({
-			slots: finished.slots,
-			draggedIndex: finished.target,
-			pointer: { x: finished.lastX, y: finished.lastY },
-			previous: { target: finished.target, banned: finished.banned },
-		});
-		if (flushed.target !== finished.target) {
-			const widgetId = finished.widgetId;
-			const without = finished.preview.filter((id) => id !== widgetId);
-			without.splice(flushed.target, 0, widgetId);
-			finished.preview = without;
-			finished.target = flushed.target;
-			finished.banned = flushed.banned;
-		}
-		const widgetId = finished.widgetId;
-		const toIndex = finished.target;
-		const fromIndex = finished.fromIndex;
-		const preview = [...finished.preview];
-		// Settle the lifted widget back into flow before deciding.
-		unliftDragged(finished.article);
-		finished.placeholder?.remove();
-		releaseSelection();
-		if (toIndex === fromIndex) {
-			clearGridOrders(finished.grid);
-			drag = null;
-			return;
-		}
-		// The previewed order stays on screen while the save is in flight (no
-		// snap back): keep CSS orders until the server copy renders.
-		applyPreviewOrders(finished.grid, preview);
-		const grid = finished.grid;
-		drag = null;
+	const onWidgetDrop = (drop: WidgetDragDrop): void => {
 		savingPreview = true;
-		void saveEdit({ kind: "reorder", widgetId, toIndex })
+		void saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex })
 			.catch(() => undefined)
 			.finally(() => {
 				savingPreview = false;
-				clearGridOrders(grid);
+				dragController.clearPreview();
 			});
-	}
-
-	function onDragPointerCancel(event: PointerEvent): void {
-		if (drag === null || event.pointerId !== drag.pointerId) return;
-		cancelDrag();
-	}
-
-	function onDragKeyDown(event: KeyboardEvent): void {
-		if (event.key !== "Escape" || drag === null) return;
-		event.preventDefault();
-		cancelDrag();
-	}
-
-	function onDragBlur(): void {
-		if (drag === null) return;
-		cancelDrag();
-	}
-
-	const onGridPointerDown = (event: PointerEvent): void => {
-		if (drag !== null || savingPreview || busy()) return;
-		if (dashboard.value() === null || widgets().length <= 1) return;
-		if (event.isPrimary === false) return;
-		if (event.pointerType === "mouse" && event.button !== 0) return;
-		const target = event.target;
-		if (!(target instanceof Element)) return;
-		// A press on the actions button (or any interactive control) never
-		// starts a drag; a click on it still opens the menu.
-		if (
-			target.closest(
-				'button,a,input,select,textarea,summary,[role="menu"],[role="menuitem"],sl-dialog,sl-select,sl-input,sl-option',
-			) !== null
-		) {
-			return;
-		}
-		const handle = target.closest("[data-widget-drag-handle]");
-		if (!(handle instanceof HTMLElement)) return;
-		const widgetId = handle.getAttribute("data-widget-drag-handle");
-		if (widgetId === null || widgetId === "") return;
-		const grid = gridEl;
-		if (grid === undefined) return;
-		const article = articleWithId(grid, widgetId);
-		if (article === null) return;
-		const serverIds = widgets().map((entry) => entry.widgetId);
-		const fromIndex = serverIds.indexOf(widgetId);
-		if (fromIndex < 0) return;
-		const current = widgets().find((entry) => entry.widgetId === widgetId);
-		if (current === undefined) return;
-		const box = article.getBoundingClientRect();
-		drag = {
-			widgetId,
-			pointerId: event.pointerId,
-			pressX: event.clientX,
-			pressY: event.clientY,
-			grabDX: event.clientX - box.left,
-			grabDY: event.clientY - box.top,
-			width: box.width,
-			height: box.height,
-			fromIndex,
-			article,
-			grid,
-			draggedSize: current.size,
-			started: false,
-			preview: [...serverIds],
-			target: fromIndex,
-			banned: null,
-			slots: [],
-			lastX: event.clientX,
-			lastY: event.clientY,
-			raf: 0,
-			placeholder: null,
-		};
-		window.addEventListener("pointermove", onDragPointerMove);
-		window.addEventListener("pointerup", onDragPointerUp);
-		window.addEventListener("pointercancel", onDragPointerCancel);
-		window.addEventListener("keydown", onDragKeyDown);
-		window.addEventListener("blur", onDragBlur);
 	};
+	const dragController = createWidgetDrag({
+		getGrid: () => gridEl,
+		getWidgets: () => widgets(),
+		canStart: () => !savingPreview && !busy() && dashboard.value() !== null,
+		onDrop: onWidgetDrop,
+	});
 
 	onCleanup(() => {
-		removeDragListeners();
-		if (drag !== null) {
-			resetDragDom();
-			drag = null;
-		}
+		dragController.dispose();
 		savingPreview = false;
 	});
 
@@ -973,7 +595,7 @@ export function HomeView(props: {
 								ref={(element) => {
 									gridEl = element;
 								}}
-								onPointerDown={(event) => onGridPointerDown(event)}
+								onPointerDown={(event) => dragController.onPointerDown(event)}
 							>
 								<For each={dashboard.value()?.dashboard.widgets ?? []}>
 									{(widget, index) => (

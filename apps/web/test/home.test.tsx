@@ -1089,7 +1089,25 @@ describe("home view", () => {
 		);
 		const live = document.querySelector("output.sr-only");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
-		expect(live.textContent).toBe("Moved “Gold” to position 1 of 7.");
+		// The announcement clears first and sets on a later task (so a
+		// repeated sentence announces again): wait for the message.
+		await waitFor(() => expect(live.textContent).toBe("Moved “Gold” to position 1 of 7."));
+	});
+
+	it("announces a repeated sentence again: the same position twice still announces", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const live = (): string =>
+			document.querySelector("output.sr-only")?.textContent ?? "missing live region";
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
+		await chooseWidgetMenuItem("w-gold", "Move later");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 2 of 7."));
+		// The same sentence as the first move: a live region set to the
+		// identical text twice in a row announces nothing, so the move
+		// clears first and sets on a later task.
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
 	});
 
 	it("saves a drag reorder with exactly one PUT and announces it", async () => {
