@@ -15,7 +15,11 @@ import { toggleTodoLine } from "../richText/serializer.ts";
  */
 export function TextWidget(props: {
 	readonly widget: Extract<NotebookWidget, { readonly type: "text" }>;
-	/** True while the notebook saves: the body stays read-only. */
+	/**
+	 * True while the notebook saves: a closed body does not open. An open
+	 * editor stays editable — the session queues edits made during a save,
+	 * and the editor saves its newest draft after the one in flight.
+	 */
 	readonly editingDisabled: boolean;
 	/** Saves a new Markdown source; resolves false when the save failed. */
 	readonly onSaveText: (widgetId: string, text: string) => Promise<boolean>;
@@ -127,7 +131,6 @@ export function TextWidget(props: {
 			>
 				<RichTextEditor
 					initialText={props.widget.text}
-					readOnly={props.editingDisabled}
 					size={size()}
 					onSaveText={(text) => props.onSaveText(props.widget.widgetId, text)}
 					onDone={close}

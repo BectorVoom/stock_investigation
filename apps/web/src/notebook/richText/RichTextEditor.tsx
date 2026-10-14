@@ -22,7 +22,6 @@ const LazyEditor = lazy(() =>
 
 export function RichTextEditor(props: {
 	readonly initialText: string;
-	readonly readOnly: boolean;
 	readonly size: "small" | "medium" | "large";
 	readonly onSaveText: (text: string) => Promise<boolean>;
 	/** Leaves the editor after everything saved; the owner's text is never dropped. */
@@ -124,27 +123,32 @@ export function RichTextEditor(props: {
 			<Suspense fallback={<div class="p-2 text-sm text-slate-600">Loading editor…</div>}>
 				<LazyEditor
 					initialText={props.initialText}
-					readOnly={props.readOnly}
 					size={props.size}
 					onDocChange={onDocChange}
 					onLeave={leave}
 				/>
 			</Suspense>
-			<div class="mt-1 flex items-baseline justify-between gap-2">
-				<p class="text-2xs text-slate-600">
-					<Show
-						when={saving()}
-						fallback={"Type # for headings, / for blocks, select text to format"}
-					>
-						Saving…
-					</Show>
-				</p>
-				<Show when={counterVisible()}>
+			{/* The hint teaches an empty note only: under written text it would
+			    take a small widget's few lines for good. */}
+			<Show when={saving() || draft() === "" || counterVisible()}>
+				<div class="mt-1 flex items-baseline justify-between gap-2">
 					<p class="text-2xs text-slate-600">
-						{draft().length} / {MAX_CHARS} characters
+						<Show
+							when={saving()}
+							fallback={
+								draft() === "" ? "Type # for headings, / for blocks, select text to format" : ""
+							}
+						>
+							Saving…
+						</Show>
 					</p>
-				</Show>
-			</div>
+					<Show when={counterVisible()}>
+						<p class="text-2xs text-slate-600">
+							{draft().length} / {MAX_CHARS} characters
+						</p>
+					</Show>
+				</div>
+			</Show>
 		</div>
 	);
 }

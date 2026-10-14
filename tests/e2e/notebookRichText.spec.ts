@@ -213,6 +213,28 @@ test("a link is added through the link popover", async () => {
 	await expect(notebookWidgets().first().getByRole("link", { name: "travel" })).toBeVisible();
 });
 
+test("the editor stays open and editable while it autosaves", async () => {
+	const editor = await openFirstEditor();
+	// The caret after "far.": select the word, then collapse to its end.
+	await selectInEditor("far.");
+	await editor.press("ArrowRight");
+	await editor.pressSequentially(" Soon");
+	// The debounced autosave lands while the editor is open: a save replaces
+	// the widget object, which must neither close the editor nor block typing.
+	await expect
+		.poll(() => storedTextAt(0), { timeout: 15_000 })
+		.toBe("# Plan\n\nPack **light** and [travel](https://example.com) far. Soon");
+	await expect(editor).toBeVisible();
+	await expect(editor).toBeFocused();
+	await editor.pressSequentially("er");
+	await expect(richEditor().getByText("far. Sooner")).toBeVisible();
+	await escapeAndExpectSaved(
+		editor,
+		0,
+		"# Plan\n\nPack **light** and [travel](https://example.com) far. Sooner",
+	);
+});
+
 test("a to-do is added through the `/` block menu in the small widget", async () => {
 	// The small widget still says "New note": select all first, like a
 	// person replacing the placeholder, so no caret hunt is needed.
@@ -239,7 +261,7 @@ test("a to-do is added through the `/` block menu in the small widget", async ()
 	expect(await richEditor().evaluate((root) => root.scrollWidth <= root.clientWidth + 1)).toBe(
 		true,
 	);
-	expect(richEditor().getByText("Buy tickets")).toBeVisible();
+	await expect(richEditor().getByText("Buy tickets")).toBeVisible();
 	await reviewShot("rich-text-editing-small.png");
 	await escapeAndExpectSaved(editor, 1, "- [ ] Buy tickets");
 });
@@ -271,7 +293,9 @@ test("the stored Markdown is the canonical subset", async () => {
 	};
 	const texts = stored.notebook.widgets.filter((widget) => widget.type === "text");
 	expect(texts).toHaveLength(2);
-	expect(texts[0]?.text).toBe("# Plan\n\nPack **light** and [travel](https://example.com) far.");
+	expect(texts[0]?.text).toBe(
+		"# Plan\n\nPack **light** and [travel](https://example.com) far. Sooner",
+	);
 	expect(texts[1]?.text).toBe("- [ ] Buy tickets");
 	// Console errors exclude the expected error paths (422/403).
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(

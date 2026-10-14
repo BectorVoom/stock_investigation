@@ -81,7 +81,6 @@ function serializeDoc(doc: ReturnType<typeof modelToPm>): string {
 
 export function WysiwygEditor(props: {
 	readonly initialText: string;
-	readonly readOnly: boolean;
 	readonly size: "small" | "medium" | "large";
 	readonly onDocChange: (markdown: string) => void;
 	/** Leaves the editor (Escape, or focus moving outside): the loader saves, then closes. */
@@ -115,7 +114,6 @@ export function WysiwygEditor(props: {
 		const { $from } = state.selection;
 		const cursor = state.selection instanceof TextSelection ? state.selection.$cursor : null;
 		if (
-			!props.readOnly &&
 			cursor !== null &&
 			cursor.pos === $from.end() &&
 			($from.parent.type === nodes.paragraph || $from.parent.type === nodes.heading) &&
@@ -163,7 +161,7 @@ export function WysiwygEditor(props: {
 
 	const applyMark = (kind: "strong" | "em" | "strike" | "code"): void => {
 		const current = view;
-		if (current === undefined || props.readOnly) return;
+		if (current === undefined) return;
 		const markType =
 			kind === "strong"
 				? markTypes.strong
@@ -178,7 +176,7 @@ export function WysiwygEditor(props: {
 
 	const openLinkPopover = (): void => {
 		const current = view;
-		if (current === undefined || props.readOnly) return;
+		if (current === undefined) return;
 		const { from, to } = current.state.selection;
 		if (from === to) return;
 		let href = "";
@@ -291,7 +289,7 @@ export function WysiwygEditor(props: {
 
 	const applyBlockOption = (id: string): void => {
 		const current = view;
-		if (current === undefined || props.readOnly) return;
+		if (current === undefined) return;
 		if (id === "bullet" || id === "ordered" || id === "todo") {
 			const { $from } = current.state.selection;
 			const list = $from.depth >= 2 ? $from.node(-2) : null;
@@ -411,13 +409,11 @@ export function WysiwygEditor(props: {
 				role: "textbox",
 				"aria-multiline": "true",
 			},
-			editable: () => !props.readOnly,
 			dispatchTransaction: (tr) => {
 				const current = view;
 				if (current === undefined) return;
-				if (tr.docChanged && props.readOnly) return;
 				const applied = current.state.apply(tr);
-				if (tr.docChanged && !props.readOnly) {
+				if (tr.docChanged) {
 					const markdown = serializeDoc(applied.doc);
 					// The length cap behaves like `maxLength`: growth past it
 					// is dropped, shrinks and selections still apply.
@@ -431,7 +427,6 @@ export function WysiwygEditor(props: {
 				syncFromState();
 			},
 			handleClickOn: (targetView, pos, _node, _nodePos, event) => {
-				if (props.readOnly) return false;
 				const target = event.target;
 				if (!(target instanceof HTMLInputElement) || target.type !== "checkbox") return false;
 				event.preventDefault();
@@ -484,13 +479,7 @@ export function WysiwygEditor(props: {
 		});
 	});
 
-	// A mid-edit `readOnly` flip (the notebook saving) hides the toolbar and
-	// closes the menu/popover; ProseMirror reads `editable` itself.
 	createEffect(() => {
-		if (props.readOnly) {
-			setMenuFilter(null);
-			setLinkOpen(false);
-		}
 		syncFromState();
 	});
 
@@ -508,7 +497,7 @@ export function WysiwygEditor(props: {
 			class="relative"
 			onFocusOut={onFocusOut}
 		>
-			<Show when={hasSelection() && !props.readOnly && !linkOpen()}>
+			<Show when={hasSelection() && !linkOpen()}>
 				<div role="toolbar" aria-label="Formatting" class="mb-1 flex flex-wrap gap-1">
 					<button
 						type="button"
@@ -570,7 +559,7 @@ export function WysiwygEditor(props: {
 					"text-sm": props.size !== "small",
 				}}
 			/>
-			<Show when={menuFilter() !== null && !props.readOnly}>
+			<Show when={menuFilter() !== null}>
 				<div
 					id={menuId}
 					role="listbox"

@@ -149,6 +149,14 @@ html:root {
  * come from the schema's `toDOM` specs, identical to the read view, so a
  * block looks the same while reading and while editing.
  */
+/* While a Text widget is edited, the untitled frame's control cluster steps
+ * aside (as Notion hides block handles while typing): in a small widget it
+ * would cover the end of the first line. Escape or clicking away leaves the
+ * editor and brings the controls back. */
+.wg-frame[data-widget-title-hidden]:has([data-rich-text-editor]) .wg-header {
+	visibility: hidden;
+}
+
 .ProseMirror {
 	white-space: pre-wrap;
 	word-wrap: break-word;

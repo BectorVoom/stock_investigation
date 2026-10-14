@@ -37,6 +37,7 @@ import {
 	Notice,
 } from "../components/ui.tsx";
 import { ensureHomeIconLibraries } from "../home/shoelace.ts";
+import { createNotebookGridEntries } from "./gridEntries.ts";
 import { NotebookMarketDialog, type NotebookMarketDialogState } from "./MarketWidgetDialog.tsx";
 import { NotebookEditor } from "./NotebookEditor.tsx";
 import { createNotebookMarketContext } from "./notebookMarket.ts";
@@ -131,6 +132,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	// no `data:` fetch ever hits `connect-src`. Idempotent.
 	ensureHomeIconLibraries();
 	const widgets = () => props.session.widgets();
+	const gridEntries = createNotebookGridEntries(widgets);
 	const selection = () => props.session.selection();
 	const announcer = createMoveAnnouncer();
 	const [editorId, setEditorId] = createSignal<string | null>(null);
@@ -451,27 +453,27 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					</Match>
 					<Match when={widgets().length > 0}>
 						<WidgetGrid
-							widgets={widgets()}
+							widgets={gridEntries()}
 							columnsFrom="container"
 							variant="quiet"
 							canDrag={!pending()}
 							ignoreDragFrom="dialog,input,select,textarea,[data-rich-text-editor]"
 							onReorder={onDrop}
 						>
-							{(widget, index) => (
+							{(entry, index) => (
 								<WidgetFrame
-									widget={widget}
+									widget={entry}
 									titleHidden
-									selected={selection().includes(widget.widgetId)}
+									selected={selection().includes(entry.widgetId)}
 									onSelectChange={(id, mode) => props.session.select(id, mode)}
 									actions={
 										<ActionMenu
-											buttonLabel={`${widget.title} actions`}
-											menuLabel={`Actions for ${widget.title}`}
+											buttonLabel={`${entry.title} actions`}
+											menuLabel={`Actions for ${entry.title}`}
 											iconTrigger={{
 												icon: "three-dots",
 												disabled: pending(),
-												widgetActions: widget.widgetId,
+												widgetActions: entry.widgetId,
 											}}
 											items={[
 												{
@@ -479,61 +481,61 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 													label: "Edit…",
 													icon: "pencil",
 													disabled: pending(),
-													onSelect: () => openEditor(widget.widgetId),
+													onSelect: () => openEditor(entry.widgetId),
 												},
 												{
 													value: "size-small",
 													label: "Size: Small",
-													disabled: pending() || widget.size === "small",
-													onSelect: () => resize(widget, "small"),
+													disabled: pending() || entry.size === "small",
+													onSelect: () => resize(entry.widget, "small"),
 												},
 												{
 													value: "size-medium",
 													label: "Size: Medium",
-													disabled: pending() || widget.size === "medium",
-													onSelect: () => resize(widget, "medium"),
+													disabled: pending() || entry.size === "medium",
+													onSelect: () => resize(entry.widget, "medium"),
 												},
 												{
 													value: "size-large",
 													label: "Size: Large",
-													disabled: pending() || widget.size === "large",
-													onSelect: () => resize(widget, "large"),
+													disabled: pending() || entry.size === "large",
+													onSelect: () => resize(entry.widget, "large"),
 												},
 												{
 													value: "duplicate",
 													label: "Duplicate",
 													icon: "copy",
 													disabled: pending(),
-													onSelect: () => duplicateOne(widget),
+													onSelect: () => duplicateOne(entry.widget),
 												},
 												{
 													value: "earlier",
 													label: "Move earlier",
 													icon: "arrow-left",
 													disabled: pending() || index() === 0,
-													onSelect: () => move(widget, "earlier"),
+													onSelect: () => move(entry.widget, "earlier"),
 												},
 												{
 													value: "later",
 													label: "Move later",
 													icon: "arrow-right",
 													disabled: pending() || index() === widgets().length - 1,
-													onSelect: () => move(widget, "later"),
+													onSelect: () => move(entry.widget, "later"),
 												},
 												{
 													value: "ask",
 													label: "Ask AI",
 													icon: "chat",
 													disabled: pending(),
-													onSelect: () => props.onAskAssistant([widget.widgetId]),
+													onSelect: () => props.onAskAssistant([entry.widgetId]),
 												},
-												...(widget.origin.messageId !== null
+												...(entry.widget.origin.messageId !== null
 													? [
 															{
 																value: "source",
 																label: "Go to source",
 																disabled: pending(),
-																onSelect: () => props.onOpenOrigin?.(widget.origin),
+																onSelect: () => props.onOpenOrigin?.(entry.widget.origin),
 															},
 														]
 													: []),
@@ -542,14 +544,14 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 													label: "Remove…",
 													icon: "trash",
 													disabled: pending(),
-													onSelect: () => openRemove([widget.widgetId]),
+													onSelect: () => openRemove([entry.widgetId]),
 												},
 											]}
 										/>
 									}
 								>
 									<WidgetBody
-										widget={widget}
+										widget={entry.widget}
 										view={props.view}
 										registry={props.registry}
 										market={market}

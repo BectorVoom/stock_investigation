@@ -99,10 +99,11 @@ function cleanElement(element: Element): void {
  */
 export function sanitizePastedHTML(html: string): string {
 	if (html === "") return "";
-	// Fragment parsing through a detached host: `<script>` assigned via
-	// `innerHTML` never executes, and comments survive for ProseMirror to
-	// ignore during its own schema-checked parse.
-	const host = document.createElement("div");
+	// Parsed in an inert document (no browsing context), not a detached node
+	// of the live page: there `<img src=x onerror=…>` would still fetch and
+	// fire its handler. Comments survive for ProseMirror to ignore during its
+	// own schema-checked parse.
+	const host = document.implementation.createHTMLDocument("").createElement("div");
 	host.innerHTML = html;
 	for (const child of [...host.children]) cleanElement(child);
 	return host.innerHTML;
