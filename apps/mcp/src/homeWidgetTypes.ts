@@ -1,5 +1,6 @@
 import {
 	HOME_WIDGET_TYPE_META,
+	HOME_WIDGET_TYPES,
 	type HomeWidget,
 	type HomeWidgetType,
 	homeWidgetSchema,
@@ -13,22 +14,15 @@ import { z } from "zod";
  * one `WidgetAgentType<HomeWidget>` per Home widget type. The `configSchema`
  * of each type is generated with `z.toJSONSchema` from the matching member of
  * `homeWidgetSchema` minus the generic fields (`type`, `widgetId`, `title`,
- * `size`) — there is no second hand-written schema to drift. Each member is
- * taken by position and checked by its discriminator, so a reordered contract
- * fails fast at startup instead of describing the wrong type. Label,
- * description and default size come from the one shared table
- * (`HOME_WIDGET_TYPE_META`); only the series-id help and the limits are
- * written here, beside the `build`/`configOf` code they describe.
+ * `size`) — there is no second hand-written schema to drift. Members are
+ * keyed by their own discriminator value, so the order of the contract's
+ * members no longer matters. Label, description and default size come from
+ * the one shared table (`HOME_WIDGET_TYPE_META`); only the series-id help
+ * and the limits are written here, beside the `build`/`configOf` code they
+ * describe.
  */
 
 const GENERIC_FIELDS = { type: true, widgetId: true, title: true, size: true } as const;
-
-function checkedMember(index: number, type: HomeWidgetType): void {
-	const member = homeWidgetSchema.options[index];
-	if (member === undefined || member.shape.type.value !== type) {
-		throw new Error(`homeWidgetSchema member ${index} is not a "${type}" widget.`);
-	}
-}
 
 function toJsonObject(generated: unknown, type: HomeWidgetType): JsonObject {
 	if (!isJsonObject(generated)) {
@@ -37,45 +31,48 @@ function toJsonObject(generated: unknown, type: HomeWidgetType): JsonObject {
 	return generated;
 }
 
-checkedMember(0, "metric");
-const metricMember = homeWidgetSchema.options[0];
-if (metricMember === undefined) throw new Error("homeWidgetSchema member 0 is missing.");
-const metricConfigSchema = toJsonObject(
-	z.toJSONSchema(metricMember.omit(GENERIC_FIELDS)),
-	"metric",
-);
+/**
+ * One pass over the contract's members, keyed by each member's own
+ * discriminator value, so the order of the contract's members no longer
+ * matters. Every member shares the generic fields, so the union is read
+ * through one structural interface and `.omit` stays callable without a
+ * cast; the stored key is always the member's own discriminator. Any
+ * `HomeWidgetType` without a member fails fast at startup with the type
+ * named, instead of describing the wrong type.
+ */
+interface ContractMember {
+	readonly shape: { readonly type: { readonly value: HomeWidgetType } };
+	omit(mask: typeof GENERIC_FIELDS): z.ZodType;
+}
 
-checkedMember(1, "line-chart");
-const lineChartMember = homeWidgetSchema.options[1];
-if (lineChartMember === undefined) throw new Error("homeWidgetSchema member 1 is missing.");
-const lineChartConfigSchema = toJsonObject(
-	z.toJSONSchema(lineChartMember.omit(GENERIC_FIELDS)),
-	"line-chart",
-);
+const configSchemaByType = new Map<HomeWidgetType, JsonObject>();
+for (const member of homeWidgetSchema.options) {
+	const contractMember: ContractMember = member;
+	const type = contractMember.shape.type.value;
+	configSchemaByType.set(
+		type,
+		toJsonObject(z.toJSONSchema(contractMember.omit(GENERIC_FIELDS)), type),
+	);
+}
+for (const type of HOME_WIDGET_TYPES) {
+	if (configSchemaByType.get(type) === undefined) {
+		throw new Error(`homeWidgetSchema has no "${type}" widget member.`);
+	}
+}
 
-checkedMember(2, "stock-table");
-const stockTableMember = homeWidgetSchema.options[2];
-if (stockTableMember === undefined) throw new Error("homeWidgetSchema member 2 is missing.");
-const stockTableConfigSchema = toJsonObject(
-	z.toJSONSchema(stockTableMember.omit(GENERIC_FIELDS)),
-	"stock-table",
-);
+function configSchemaFor(type: HomeWidgetType): JsonObject {
+	const found = configSchemaByType.get(type);
+	if (found === undefined) {
+		throw new Error(`homeWidgetSchema has no "${type}" widget member.`);
+	}
+	return found;
+}
 
-checkedMember(3, "indicator-table");
-const indicatorTableMember = homeWidgetSchema.options[3];
-if (indicatorTableMember === undefined) throw new Error("homeWidgetSchema member 3 is missing.");
-const indicatorTableConfigSchema = toJsonObject(
-	z.toJSONSchema(indicatorTableMember.omit(GENERIC_FIELDS)),
-	"indicator-table",
-);
-
-checkedMember(4, "earnings-calendar");
-const earningsCalendarMember = homeWidgetSchema.options[4];
-if (earningsCalendarMember === undefined) throw new Error("homeWidgetSchema member 4 is missing.");
-const earningsCalendarConfigSchema = toJsonObject(
-	z.toJSONSchema(earningsCalendarMember.omit(GENERIC_FIELDS)),
-	"earnings-calendar",
-);
+const metricConfigSchema = configSchemaFor("metric");
+const lineChartConfigSchema = configSchemaFor("line-chart");
+const stockTableConfigSchema = configSchemaFor("stock-table");
+const indicatorTableConfigSchema = configSchemaFor("indicator-table");
+const earningsCalendarConfigSchema = configSchemaFor("earnings-calendar");
 
 interface DraftWidget {
 	readonly widgetId: string;
