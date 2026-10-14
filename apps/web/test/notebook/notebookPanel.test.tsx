@@ -249,7 +249,7 @@ describe("notebook panel", () => {
 			if (!(found instanceof HTMLElement)) throw new Error("no editor yet");
 			return found;
 		});
-		const textarea = within(dialog).getByLabelText("Text");
+		const textarea = within(dialog).getByLabelText("Text (Markdown)");
 		if (!(textarea instanceof HTMLTextAreaElement)) throw new Error("no text field");
 		fireEvent.input(textarea, { target: { value: "" } });
 		fireEvent.click(within(dialog).getByRole("button", { name: "Save widget" }));

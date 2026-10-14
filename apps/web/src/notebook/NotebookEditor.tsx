@@ -315,15 +315,22 @@ export function NotebookEditor(props: {
 					<Match when={props.widget.type === "text"}>
 						<div>
 							<label for={`${headingId}-text`} class={LABEL}>
-								Text
+								Text (Markdown)
 							</label>
 							<textarea
 								id={`${headingId}-text`}
 								class={INPUT}
 								rows={6}
+								maxLength={NOTEBOOK_LIMITS.maxTextChars}
+								aria-describedby={`${headingId}-text-hint`}
 								value={text()}
 								onInput={(event) => setText(event.currentTarget.value)}
 							/>
+							<p id={`${headingId}-text-hint`} class="mt-1 text-xs text-slate-600">
+								Markdown: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`,
+								[label](https://…) links, - bullets, 1. numbered, - [ ] to-dos, &gt; quotes, ```
+								code blocks, --- dividers.
+							</p>
 						</div>
 					</Match>
 					<Match when={props.widget.type === "metric"}>

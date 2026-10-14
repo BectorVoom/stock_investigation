@@ -84,6 +84,26 @@ The Notebook panel's widget list scrolls inside the panel below its fixed
 header and toolbar. Drag and drop auto-scrolls the nearest scrollable
 ancestor of the grid, not only the window.
 
+### Rich-text editor
+
+No editor library: the in-place editor is a hand-written textarea over the
+stored Markdown source (`apps/web/src/notebook/richText/RichTextEditor.tsx`),
+with the subset parser/serializer (`parser.ts`, `serializer.ts`) as the only
+conversion, so the stored text is always `NOTEBOOK_TEXT_MARKDOWN`. No
+dependency was added (`apps/web/package.json` and `bun.lock` are untouched,
+hence no versions to pin and no lazy chunk to measure): the whole rich-text
+layer (parser, serializer, Solid renderer, editor) ships in the Notebook's
+existing chunk. `bun run build:web` output with it included:
+
+- `index-B7f5d6AI.js` 522.53 kB (gzip 151.54 kB)
+- `index-COE5r6GN.css` 41.72 kB (gzip 8.64 kB)
+- `HomeView-DpRvJT_T.js` 195.22 kB (lazy Home chunk, unchanged)
+
+Positioning in the editor (toolbar, `/` menu, link popover) is classes only,
+never `style=` attributes or injected `<style>`, so the app's
+`style-src 'self'` policy holds (checked via the Chromium and WebKit E2E
+console assertions).
+
 ## Consequences
 
 - No migration: notebook bodies already hold JSON.
