@@ -15,6 +15,7 @@ import {
 	type WatchlistServerState,
 } from "./appHarness.tsx";
 import {
+	createControllableVisibility,
 	createFakeBackend,
 	deferred,
 	errorResponse,
@@ -1333,6 +1334,116 @@ describe("home view", () => {
 			expect(document.body.textContent).toContain("The earnings-date refresh was not queued:"),
 		);
 	}, 60_000);
+});
+
+describe("home follows edits made elsewhere", () => {
+	const dashboardGets = () => backend.requestsTo("GET", /\/home\/dashboard$/);
+
+	/** Another writer (an agent) moves the first widget last and bumps the version. */
+	function externalReorder(): void {
+		const first = home.dashboard.widgets[0];
+		if (first === undefined) throw new Error("no widgets on the fake backend");
+		home.dashboard = { schemaVersion: 1, widgets: [...home.dashboard.widgets.slice(1), first] };
+		home.version += 1;
+	}
+
+	it("adopts a changed dashboard when the tab becomes visible, without a reload", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+		const getsBefore = dashboardGets().length;
+		externalReorder();
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(widgets()[6]?.getAttribute("data-widget-id")).toBe("w-vix"), {
+			timeout: 10_000,
+		});
+		expect(dashboardGets().length).toBeGreaterThan(getsBefore);
+		// Quiet: no skeleton, no notice.
+		expect(document.body.textContent).not.toContain("Loading market widgets");
+		expect(document.body.textContent).not.toContain("changed elsewhere");
+	});
+
+	it("fetches nothing while a dialog is open", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await openAddDialog();
+		const getsBefore = dashboardGets().length;
+		externalReorder();
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(dashboardGets()).toHaveLength(getsBefore);
+		expect(document.querySelector("sl-dialog")).not.toBeNull();
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+	});
+
+	it("fetches nothing while a save is in flight", async () => {
+		usePollTimers();
+		try {
+			const gate = deferred<Response>();
+			let putBody: { dashboard: HomeDashboard; expectedVersion: number } | null = null;
+			backend.on("PUT", /^\/api\/v1\/home\/dashboard$/, (request) => {
+				putBody = request.body as typeof putBody;
+				return gate.promise;
+			});
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			const getsBefore = dashboardGets().length;
+			await chooseWidgetMenuItem("w-gold", "Remove widget");
+			await settleUntil(
+				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
+				"PUT in flight",
+			);
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(dashboardGets()).toHaveLength(getsBefore);
+			const releasePut = () => {
+				if (putBody === null) throw new Error("PUT never arrived");
+				home.dashboard = putBody.dashboard;
+				home.version += 1;
+				home.saved = true;
+				gate.resolve(
+					jsonResponse({
+						dashboard: home.dashboard,
+						version: home.version,
+						updatedAt: "2026-10-12T12:00:00Z",
+						origin: "saved",
+					}),
+				);
+			};
+			releasePut();
+			await settleUntil(
+				() => document.querySelector('article[data-widget-id="w-gold"]') === null,
+				"removed",
+			);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("re-renders nothing when the version is unchanged", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const before = widgets();
+		const getsBefore = dashboardGets().length;
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets().length).toBe(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		const after = widgets();
+		expect(after).toHaveLength(before.length);
+		for (const [index, article] of after.entries()) {
+			expect(article).toBe(before[index]);
+		}
+	});
 });
 
 describe("home api client", () => {

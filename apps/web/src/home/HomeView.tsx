@@ -420,6 +420,37 @@ export function HomeView(props: {
 		return ready === null ? null : { dashboard: ready.dashboard, version: ready.version };
 	};
 
+	/**
+	 * An agent (or another tab) may have edited the dashboard elsewhere: when
+	 * the page becomes visible again, re-read it quietly — no skeleton, no
+	 * notice — and adopt a newer version with its market data, as after a
+	 * save. Skipped while a save is in flight, a dialog is open or a drag is
+	 * active; failures are silent here (the next deliberate action reports
+	 * them as it does today). Never two re-reads at once.
+	 */
+	let rereadInFlight = false;
+	const rereadDashboardIfStale = async (): Promise<void> => {
+		if (disposed || rereadInFlight || busy() || dialog() !== null) return;
+		if (document.querySelector("[data-widget-dragging]") !== null) return;
+		const current = currentDashboard();
+		if (current === null) return;
+		rereadInFlight = true;
+		try {
+			const result = await props.api.getHomeDashboard();
+			if (disposed) return;
+			if (!result.ok) return;
+			if (result.value.version === current.version) return;
+			dashboard.set(result.value);
+			await reloadDataAfterSave();
+		} finally {
+			rereadInFlight = false;
+		}
+	};
+	const stopWatchingVisibility = props.visibility.subscribe(() => {
+		if (props.visibility.isVisible()) void rereadDashboardIfStale();
+	});
+	onCleanup(() => stopWatchingVisibility());
+
 	/** Applies an edit locally, saves with CAS, and re-renders from the server copy. */
 	const saveEdit = async (
 		edit:

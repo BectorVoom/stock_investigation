@@ -90,6 +90,27 @@ export const ALWAYS_VISIBLE: VisibilitySource = {
 	subscribe: () => () => {},
 };
 
+/** A visibility source the test drives: hidden tabs skip polls, visible tabs catch up. */
+export function createControllableVisibility(): VisibilitySource & {
+	setVisible: (visible: boolean) => void;
+} {
+	let visible = true;
+	const listeners = new Set<() => void>();
+	return {
+		isVisible: () => visible,
+		subscribe: (listener) => {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
+		},
+		setVisible: (next) => {
+			visible = next;
+			for (const listener of [...listeners]) listener();
+		},
+	};
+}
+
 /** A promise whose resolution the test controls, to observe the UI while a request is pending. */
 export function deferred<T>(): {
 	readonly promise: Promise<T>;
