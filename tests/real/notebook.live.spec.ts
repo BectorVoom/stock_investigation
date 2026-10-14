@@ -87,23 +87,32 @@ function dumpRunnerLog(label: string): void {
 	}
 }
 
-/** Sends one instruction to the notebook assistant and waits for its turn card. */
+/**
+ * Sends one instruction to the notebook assistant and waits for its turn
+ * card; a run that fails instead stops the wait at once with its reason.
+ */
 async function instruct(page: Page, instruction: string): Promise<void> {
 	const composer = page.getByRole("form", { name: "Notebook composer" });
 	await composer.getByRole("textbox", { name: "Instruction" }).fill(instruction);
-	const before = await page.locator("[data-notebook-turn]").count();
+	const turns = page.locator("[data-notebook-turn]");
+	const failures = page.getByRole("status").filter({ hasText: /^Failed:/ });
+	const turnsBefore = await turns.count();
+	const failuresBefore = await failures.count();
 	await composer.getByRole("button", { name: "Send instruction" }).click();
-	try {
-		await expect(page.locator("[data-notebook-turn]")).toHaveCount(before + 1, {
-			timeout: 300_000,
-		});
-	} catch (error) {
-		dumpRunnerLog(`no turn card for "${instruction}"`);
-		throw error;
+	await expect
+		.poll(
+			async () => {
+				if ((await failures.count()) > failuresBefore) return "failed";
+				return (await turns.count()) > turnsBefore ? "turn" : "waiting";
+			},
+			{ timeout: 300_000, intervals: [1_000] },
+		)
+		.not.toBe("waiting");
+	if ((await failures.count()) > failuresBefore) {
+		dumpRunnerLog(`the run for "${instruction}" failed`);
+		throw new Error(`the notebook-assist run failed: ${await failures.last().innerText()}`);
 	}
-	console.log(
-		`turn for "${instruction}": ${await page.locator("[data-notebook-turn]").last().innerText()}`,
-	);
+	console.log(`turn for "${instruction}": ${await turns.last().innerText()}`);
 }
 
 test.describe("notebook assistant through the real backend (spends real quota)", () => {

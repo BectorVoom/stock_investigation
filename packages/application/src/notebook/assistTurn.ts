@@ -38,6 +38,12 @@ export interface NotebookAssistTurnDeps {
 	readonly reporter: PipelineReporter;
 	/** Fresh unguessable token used to fence untrusted text in prompts. */
 	readonly newFenceToken: () => string;
+	/**
+	 * The job's own empty scratch directory (AGT-004). CLI backends need one
+	 * (OpenCode writes its deny-all config there and refuses to start without
+	 * it, `SCRATCH_DIRECTORY_REQUIRED`); null only for backends that need none.
+	 */
+	readonly scratchDirectory: string | null;
 }
 
 export type NotebookAssistTurnOutcome =
@@ -138,7 +144,7 @@ export async function runNotebookAssistTurn(
 				},
 				{
 					signal: input.signal,
-					scratchDirectory: null,
+					scratchDirectory: deps.scratchDirectory,
 					model: input.agent.model,
 					effort: input.agent.effort,
 				},

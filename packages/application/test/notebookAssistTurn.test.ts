@@ -87,6 +87,7 @@ function setup(
 				fence += 1;
 				return options.fenceToken ?? `fence-${fence}`;
 			},
+			scratchDirectory: "/scratch/run_notebook",
 		});
 	return { run, agent, requests, contexts, reporter, controller, time };
 }
@@ -141,7 +142,7 @@ describe("notebook-assistant turn: happy paths", () => {
 		expect(requests).toHaveLength(1);
 	});
 
-	it("passes the job's model and effort to the agent with no tools", async () => {
+	it("passes the job's model, effort and scratch directory to the agent with no tools", async () => {
 		const { run, requests, contexts } = setup([replyWith([ADD_CHART])], {
 			input: { agent: { agentId: "scripted", model: "m-1", effort: "high" } },
 		});
@@ -156,7 +157,8 @@ describe("notebook-assistant turn: happy paths", () => {
 		expect(contexts[0]).toMatchObject({
 			model: "m-1",
 			effort: "high",
-			scratchDirectory: null,
+			// CLI backends refuse to start without it (SCRATCH_DIRECTORY_REQUIRED).
+			scratchDirectory: "/scratch/run_notebook",
 		});
 	});
 

@@ -1,3 +1,4 @@
+import { type AgentRunContext, createAgentRegistry } from "@research/agent-core";
 import { type ClaimedJob, completeJobRequestSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
@@ -70,6 +71,31 @@ describe("notebook-assist jobs (ADR-0020)", () => {
 		expect(harness.scratch.created).toEqual(["/scratch/run_notebook"]);
 		expect(harness.scratch.removed).toEqual(["/scratch/run_notebook"]);
 		expect(harness.timers.every((timer) => timer.stopped)).toBe(true);
+	});
+
+	it("hands the agent the job's own scratch directory", async () => {
+		// The real OpenCode adapter refuses to start without one
+		// (SCRATCH_DIRECTORY_REQUIRED); the scripted agent does not care, so
+		// only this check catches a turn that forgets to pass it.
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		const scripted = harness.deps.agents.get("scripted");
+		if (scripted === undefined) throw new Error("the scripted agent is not registered");
+		const contexts: AgentRunContext[] = [];
+		const recording = {
+			...scripted,
+			run: (request: Parameters<typeof scripted.run>[0], context: AgentRunContext) => {
+				contexts.push(context);
+				return scripted.run(request, context);
+			},
+		};
+		await executeJob(
+			notebookJob(),
+			{ ...harness.deps, agents: createAgentRegistry([recording]) },
+			never,
+		);
+		expect(calls.completions[0]?.outcome).toBe("notebook-assisted");
+		expect(contexts.map((context) => context.scratchDirectory)).toEqual(["/scratch/run_notebook"]);
 	});
 
 	it("returns removals as proposals without commands", async () => {

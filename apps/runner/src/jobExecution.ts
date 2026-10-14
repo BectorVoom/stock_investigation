@@ -367,6 +367,7 @@ export async function executeJob(
 						clock: deps.clock,
 						reporter,
 						newFenceToken: deps.newFenceToken,
+						scratchDirectory,
 					},
 				);
 				usage = assist.usage;
