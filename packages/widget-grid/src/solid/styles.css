@@ -1,0 +1,192 @@
+/* Widget grid stylesheet (ADR-0019). Plain CSS, no Tailwind, no @apply.
+ * Class names are prefixed `wg-` and themed by `--wg-*` custom properties
+ * with neutral defaults. A host maps the properties to its own theme (see
+ * apps/web/src/styles.css); without a mapping the defaults below apply.
+ *
+ * The grid metrics are stated twice, here and in `core/sizes.ts`
+ * (WIDGET_GRID_METRICS, WIDGET_SIZE_SPANS), because CSS cannot import
+ * TypeScript. `test/solid/stylesMetrics.test.ts` reads this file as text and
+ * fails when the two disagree.
+ */
+
+:root {
+	--wg-surface: #ffffff;
+	--wg-border: #e2e8f0;
+	--wg-text: #0f172a;
+	--wg-text-muted: #475569;
+	--wg-accent: #2563eb;
+	--wg-focus: #1d4ed8;
+	--wg-placeholder-border: #cbd5e1;
+	--wg-radius: 1rem;
+	--wg-gap: 1rem;
+	--wg-row-height: 17rem;
+}
+
+/* Grid: 2 equal columns, 4 from 64rem, fixed 17rem rows, 1rem gap,
+ * normal row flow (never dense, so visual order equals DOM order). */
+.wg-grid {
+	box-sizing: border-box;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-auto-rows: var(--wg-row-height, 17rem);
+	gap: var(--wg-gap, 1rem);
+	grid-auto-flow: row;
+	margin: 0;
+	padding: 0;
+}
+
+@media (min-width: 64rem) {
+	.wg-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+/* Size spans. The same rule covers the frame and the drag placeholder,
+ * so the placeholder is always the dragged widget's size. */
+.wg-frame[data-widget-size="small"],
+.wg-placeholder[data-widget-size="small"] {
+	grid-column: span 1;
+	grid-row: span 1;
+}
+
+.wg-frame[data-widget-size="medium"],
+.wg-placeholder[data-widget-size="medium"] {
+	grid-column: span 2;
+	grid-row: span 2;
+}
+
+.wg-frame[data-widget-size="large"],
+.wg-placeholder[data-widget-size="large"] {
+	grid-column: span 2;
+	grid-row: span 2;
+}
+
+@media (min-width: 64rem) {
+	.wg-frame[data-widget-size="large"],
+	.wg-placeholder[data-widget-size="large"] {
+		grid-column: span 4;
+		grid-row: span 2;
+	}
+}
+
+/* Frame: fills its cell, white surface, 1px border, 1rem radius, 1rem
+ * padding, no shadow. Explicit box-sizing, margin and shadow so no host
+ * reset is needed. The frame sets no font size: widget content without its
+ * own text class inherits the page size. */
+.wg-frame {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	min-width: 0;
+	margin: 0;
+	padding: 1rem;
+	background-color: var(--wg-surface, #ffffff);
+	border: 1px solid var(--wg-border, #e2e8f0);
+	border-radius: var(--wg-radius, 1rem);
+	box-shadow: none;
+}
+
+/* Header strip: the drag handle. Single row, centred, 0.5rem gap,
+ * 1.75rem minimum height, grab cursor, never a touch scroll, never
+ * selectable. */
+.wg-header {
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5rem;
+	min-height: 1.75rem;
+	margin: 0;
+	padding: 0;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+/* Grip glyph: 16px, never shrinks, muted text colour. */
+.wg-grip {
+	box-sizing: border-box;
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	margin: 0;
+	padding: 0;
+	color: var(--wg-text-muted, #475569);
+}
+
+/* Title: 0.875rem / 1.25rem, weight 600, strong text colour, single line
+ * with ellipsis, takes the remaining header width. */
+.wg-title {
+	box-sizing: border-box;
+	min-width: 0;
+	flex: 1;
+	margin: 0;
+	padding: 0;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	font-weight: 600;
+	color: var(--wg-text, #0f172a);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Body: scrolls inside the frame, keyboard-focusable, labelled by the
+ * widget title. Sets no font size: content inherits the page size. */
+.wg-body {
+	box-sizing: border-box;
+	margin: 0.5rem 0 0 0;
+	padding: 0;
+	min-height: 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.wg-body:focus-visible {
+	outline: 2px solid var(--wg-focus, #1d4ed8);
+	outline-offset: 2px;
+}
+
+/* Placeholder: same size as the dragged widget, 1rem radius, 1px dashed
+ * border, no fill. */
+.wg-placeholder {
+	box-sizing: border-box;
+	min-height: 0;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	background-color: transparent;
+	border: 1px dashed var(--wg-placeholder-border, #cbd5e1);
+	border-radius: var(--wg-radius, 1rem);
+}
+
+/* Lifted widget while dragged: a 2px ring in the accent colour
+ * (box-shadow, never a shadow), grabbing cursor on the article and on its
+ * header strip. The state is `data-widget-dragging` on the article (set
+ * through the CSSOM by the drag engine), never a utility class. */
+.wg-frame[data-widget-dragging] {
+	box-shadow: 0 0 0 2px var(--wg-accent, #2563eb);
+	cursor: grabbing;
+}
+
+.wg-frame[data-widget-dragging] .wg-header {
+	cursor: grabbing;
+}
+
+/* Visually hidden polite live region for move announcements. */
+.wg-visually-hidden {
+	box-sizing: border-box;
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	border: 0;
+	white-space: nowrap;
+}

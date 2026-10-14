@@ -32,11 +32,14 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - Drag a widget to a new position (the header strip is the handle; Move
   earlier/later in the menu is the keyboard and assistive-technology path,
   announced with the position; the page auto-scrolls while the pointer rests
-  near the top or bottom edge of the viewport; the pointer engine lives in
-  `apps/web/src/home/widgetDrag.ts`).
+  near the top or bottom edge of the viewport; the grid, the frame, the
+  pointer engine and the announcer live in `@research/widget-grid`).
 - Remove a widget.
 - Reset to the default arrangement.
 - Queue a market-data refresh for the local runner.
+- (Elsewhere) Have an AI agent arrange the widgets through the MCP server
+  (`docs/OPERATIONS.md`); edits made elsewhere — another tab, an agent —
+  appear on this page when its tab becomes visible again.
 
 Every action is an icon-only button (accessible name and tooltip carry the
 former label); the per-widget actions open a text menu with leading icons.

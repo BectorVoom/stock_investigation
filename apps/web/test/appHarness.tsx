@@ -14,6 +14,7 @@ import { createBaselineUiRegistry } from "@research/ui-registry";
 import { render } from "@solidjs/testing-library";
 import { App } from "../src/App.tsx";
 import { createApiClient } from "../src/api/client.ts";
+import type { VisibilitySource } from "../src/lib/polling.ts";
 import {
 	ALWAYS_VISIBLE,
 	errorResponse,
@@ -358,15 +359,10 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 	});
 }
 
-export function mountApp(backend: FakeBackend) {
+export function mountApp(backend: FakeBackend, visibility: VisibilitySource = ALWAYS_VISIBLE) {
 	const api = createApiClient({ fetch: backend.fetch });
 	return render(() => (
-		<App
-			api={api}
-			registry={createBaselineUiRegistry()}
-			visibility={ALWAYS_VISIBLE}
-			window={window}
-		/>
+		<App api={api} registry={createBaselineUiRegistry()} visibility={visibility} window={window} />
 	));
 }
 

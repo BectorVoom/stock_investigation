@@ -111,6 +111,53 @@ directory, which is the hazard ADR-0011 removes.
 
 There is no login in local mode: whoever can open `http://localhost:8787` on this PC is the owner. The server listens on the loopback address only, so other devices on the network cannot connect. The API accepts the owner only when the request is addressed to `localhost`/`127.0.0.1`, which defeats DNS-rebinding pages, and writes need a same-origin `Origin` plus a custom header, which defeats cross-site requests. Other user accounts and programs **on the same PC** are not kept out; do not run it on a shared machine. See [THREAT_MODEL.md](THREAT_MODEL.md).
 
+### Let an AI agent arrange the Home widgets
+
+Any MCP client (OpenCode, Codex, Claude Code) can list the owner's Home
+widgets and add, remove, move, reorder, resize and reconfigure them through
+the `research-home-widgets` server ([ADR-0019](adr/0019-reusable-widget-grid-and-agent-layer.md)):
+
+1. Start the workspace (`bun run prod` for production, `bun run dev` for development).
+2. Connect the client. With OpenCode, from the repository root:
+
+```sh
+opencode mcp add home-widgets -- bun <repo>/apps/mcp/src/main.ts --api http://127.0.0.1:8787
+```
+
+Use `--api http://127.0.0.1:8788` for development. For any other client,
+register a generic stdio server: command `bun`, arguments
+`[<repo>/apps/mcp/src/main.ts, --api, <origin>]`. Prefer the direct
+`bun <path>/apps/mcp/src/main.ts` form in client configs: `bun run`
+prints its script line, but to stderr, so it never pollutes the protocol —
+still, the direct form has no wrapper at all.
+
+Two scripts run the server by hand (its diagnostics go to stderr; stdout
+carries only protocol messages):
+
+```sh
+bun run mcp:home        # against production (http://127.0.0.1:8787), or RESEARCH_API_URL
+bun run mcp:home:dev    # against development (http://127.0.0.1:8788)
+```
+
+The server exposes seven tools — `widgets_describe` (read first: the grid,
+the sizes, the widget types with their config schemas, and every widget in
+order), then `widgets_add`, `widgets_remove`, `widgets_move`,
+`widgets_reorder`, `widgets_resize` and `widgets_update`. Every edit goes
+through the existing owner API (`GET`/`PUT /home/dashboard` with the
+version as the revision), so it passes the same schema validation, the same
+limits and the same audit log as an edit made in the browser — no new route
+was added, and an edit from a stale revision is refused with `CONFLICT`
+(describe again and retry).
+
+What an agent cannot do: anything outside the Home dashboard. The server
+holds no other route, no research tool and no credential; the research
+agents inside the app do not get these tools at all (they read untrusted
+text, ADR-0003). It accepts loopback `http:` API origins only (`localhost`,
+`127.0.0.1`, `[::1]`) and refuses anything else at startup. An open Home
+page catches up by itself: when its tab becomes visible again it quietly
+adopts a newer stored dashboard, while a save attempted from a stale page
+is refused with the existing "changed elsewhere" notice.
+
 ### Runner settings
 
 Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the launcher passes that file to the runner and sets the API URL and credential itself.
@@ -265,6 +312,8 @@ bun run prod:build     # build a new release generation (safe while production r
 bun run prod:start     # serve the pointed-to generation (production)
 bun run prod:rollback  # move the pointer to the previous activation (then restart)
 bun run start          # same as bun run prod
+bun run mcp:home       # Home-widget MCP server against production (or RESEARCH_API_URL)
+bun run mcp:home:dev   # Home-widget MCP server against development
 bun run build          # SPA + runner bundle + dry-run of the Cloudflare bundle
 bun run build:web      # build the SPA only (vite build)
 bun run build:runner   # bundle the runner only (to dist/runner/main.mjs)

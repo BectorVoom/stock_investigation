@@ -2,6 +2,7 @@ import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, type JSX, Show } from "solid-js";
+import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import {
 	changeErrorText,
 	formatChange,
@@ -12,7 +13,6 @@ import {
 	toPoints,
 	unavailableText,
 } from "../homeModel.ts";
-import { TwelveDataSessionNote, WidgetProvenance } from "../WidgetFrame.tsx";
 
 /**
  * One series: latest value with its unit, change vs the previous observation,

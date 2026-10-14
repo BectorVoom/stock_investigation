@@ -619,6 +619,26 @@ test("a tall widget body scrolls inside its frame and is keyboard-focusable", as
 	expect(Math.round(after?.height ?? 0)).toBe(Math.round(before?.height ?? -1));
 });
 
+test("widget frames and bodies inherit the page font size (no shrink from the frame)", async () => {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const sizes = await page.evaluate(() => {
+		const main = document.querySelector("main");
+		const body = document.querySelector("article[data-widget-id] .wg-body");
+		if (!(main instanceof HTMLElement)) throw new Error("no main content");
+		if (!(body instanceof HTMLElement)) throw new Error("no widget body");
+		const article = body.closest("article");
+		if (!(article instanceof HTMLElement)) throw new Error("no widget article");
+		return {
+			mainFont: getComputedStyle(main).fontSize,
+			articleFont: getComputedStyle(article).fontSize,
+			bodyFont: getComputedStyle(body).fontSize,
+		};
+	});
+	expect(sizes.articleFont).toBe(sizes.mainFont);
+	expect(sizes.bodyFont).toBe(sizes.mainFont);
+});
+
 /**
  * Drag and drop repositioning (HIG Drag and drop): every widget header is the
  * handle, the others reflow around the dragged widget, and the drop saves
@@ -831,7 +851,9 @@ test("the actions button still opens its menu, and Move later works and is annou
 	expect(puts).toBe(1);
 	const after = await widgetIds();
 	expect(after.indexOf(first)).toBe(1);
-	const live = page.locator("output.sr-only");
+	// The live region is now styled by the package (`wg-visually-hidden`),
+	// not the Tailwind `sr-only` utility: assert the polite region.
+	const live = page.locator("output[aria-live='polite']");
 	await expect(live).toContainText(/Moved “.+” to position 2 of /);
 });
 
@@ -1050,4 +1072,72 @@ test("a touch pointer drag reorders (synthetic touch pointer events)", async () 
 	// server copy renders (until then the new order is shown through CSS
 	// `order`), so the DOM order is polled rather than read once.
 	await expect.poll(async () => (await widgetIds()).indexOf(dragged), { timeout: 30_000 }).toBe(2);
+});
+
+test("an edit made through the API appears when the tab becomes visible again", async () => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const before = await widgetIds();
+	expect(before.length).toBeGreaterThanOrEqual(3);
+
+	// As an agent would: change the stored dashboard through the existing
+	// owner API (same-origin Origin plus the CSRF header, local-dev mode).
+	const read = await page.request.get(`${E2E_ORIGIN}/api/v1/home/dashboard`);
+	expect(read.ok()).toBe(true);
+	const stored = (await read.json()) as {
+		dashboard: { schemaVersion: 1; widgets: { widgetId: string }[] };
+		version: number;
+	};
+	const firstWidget = stored.dashboard.widgets[0];
+	if (firstWidget === undefined) throw new Error("the stored dashboard is empty");
+	const reordered = [...stored.dashboard.widgets.slice(1), firstWidget];
+	const saved = await page.request.put(`${E2E_ORIGIN}/api/v1/home/dashboard`, {
+		headers: {
+			Origin: E2E_ORIGIN,
+			"X-Research-Csrf": "1",
+			"Content-Type": "application/json",
+		},
+		data: {
+			dashboard: { schemaVersion: 1, widgets: reordered },
+			expectedVersion: stored.version,
+		},
+	});
+	expect(saved.ok()).toBe(true);
+	const expected = reordered.map((widget) => widget.widgetId);
+
+	// The open page has not re-read yet: the old order is still on screen.
+	expect(await widgetIds()).toEqual(before);
+	// Becoming visible again adopts the stored order without navigation.
+	await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+	await expect.poll(async () => widgetIds(), { timeout: 30_000 }).toEqual(expected);
+
+	// Restore the order this test found, so later tests start deterministic.
+	const reread = await page.request.get(`${E2E_ORIGIN}/api/v1/home/dashboard`);
+	const current = (await reread.json()) as {
+		dashboard: { schemaVersion: 1; widgets: { widgetId: string }[] };
+		version: number;
+	};
+	const byId = new Map(current.dashboard.widgets.map((widget) => [widget.widgetId, widget]));
+	const restored = before.map((id) => {
+		const widget = byId.get(id);
+		if (widget === undefined) throw new Error(`the stored dashboard lost ${id}`);
+		return widget;
+	});
+	const putBack = await page.request.put(`${E2E_ORIGIN}/api/v1/home/dashboard`, {
+		headers: {
+			Origin: E2E_ORIGIN,
+			"X-Research-Csrf": "1",
+			"Content-Type": "application/json",
+		},
+		data: {
+			dashboard: { schemaVersion: 1, widgets: restored },
+			expectedVersion: current.version,
+		},
+	});
+	expect(putBack.ok()).toBe(true);
+	await page.reload();
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	expect(await widgetIds()).toEqual(before);
 });

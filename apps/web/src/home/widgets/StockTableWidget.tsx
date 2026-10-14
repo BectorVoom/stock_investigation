@@ -1,6 +1,7 @@
 import type { HomeWidget, MarketSeries } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Match, Show, Switch } from "solid-js";
+import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import {
 	changeErrorText,
 	formatAbsDelta,
@@ -10,7 +11,6 @@ import {
 	summarizeSeries,
 	unavailableText,
 } from "../homeModel.ts";
-import { TwelveDataSessionNote, WidgetProvenance } from "../WidgetFrame.tsx";
 
 /**
  * One row per series (price table): Series · Last close · Change ·

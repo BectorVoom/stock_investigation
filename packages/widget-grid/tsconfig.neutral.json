@@ -1,0 +1,11 @@
+{
+	// The pure core and the agent layer ship to every runtime (browser, Node,
+	// Workers), so they are also checked WITHOUT the DOM lib: a `window` or
+	// `document` reference in either directory fails this project.
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022"],
+		"types": []
+	},
+	"include": ["src/core/**/*.ts", "src/agent/**/*.ts"]
+}

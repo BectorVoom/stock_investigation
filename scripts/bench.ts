@@ -42,6 +42,13 @@ import {
 	verifyClaims,
 	type WorkspaceState,
 } from "@research/domain";
+import { createWidgetAgentHost, parseWidgetCommand } from "@research/widget-grid/agent";
+import {
+	applyWidgetLayoutEdit,
+	nextDropTarget,
+	ok,
+	type WidgetSize,
+} from "@research/widget-grid/core";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
@@ -127,6 +134,68 @@ const reorderBenchDashboard: Dashboard = {
 		seriesId: "fred:VIXCLS",
 	})),
 };
+
+/* A widget grid at the layout bound (24 widgets): the drag decision runs on
+ * every pointer frame during a drag, the edit and the agent path on drop. */
+interface GridBenchWidget {
+	readonly widgetId: string;
+	readonly type: string;
+	readonly title: string;
+	readonly size: WidgetSize;
+}
+
+const gridBenchWidgets: readonly GridBenchWidget[] = Array.from({ length: 24 }, (_, widget) => ({
+	widgetId: `w-grid-${widget}`,
+	type: "bench",
+	title: `Grid widget ${widget}`,
+	size: "small",
+}));
+
+const gridBenchSlots = Array.from({ length: 24 }, (_, slot) => ({
+	left: slot * 116,
+	top: 0,
+	right: slot * 116 + 100,
+	bottom: 100,
+}));
+const gridBenchHistory = { target: 0, banned: null as number | null };
+
+let gridBenchLive: GridBenchWidget[] = [...gridBenchWidgets];
+let gridBenchRevision = 0;
+const gridBenchHost = createWidgetAgentHost({
+	store: {
+		read: async () => ok({ widgets: gridBenchLive, revision: gridBenchRevision }),
+		write: async (widgets, revision) => {
+			if (revision !== gridBenchRevision) {
+				return {
+					ok: false as const,
+					error: { code: "CONFLICT" as const, message: "the layout changed elsewhere." },
+				};
+			}
+			gridBenchRevision += 1;
+			gridBenchLive = [...widgets];
+			return ok({ widgets: gridBenchLive, revision: gridBenchRevision });
+		},
+	},
+	types: [
+		{
+			type: "bench",
+			label: "Bench",
+			description: "A benchmark widget.",
+			defaultSize: "small",
+			sizes: ["small", "medium", "large"],
+			configSchema: { type: "object" },
+			build: (draft) =>
+				ok({
+					widgetId: draft.widgetId,
+					type: "bench",
+					title: draft.title,
+					size: draft.size,
+				}),
+			configOf: () => ({}),
+		},
+	],
+	newWidgetId: () => "w-grid-new",
+});
 
 const bundle: ResearchBundle = {
 	evidence: Array.from({ length: 80 }, (_, index) => ({
@@ -530,6 +599,37 @@ const cases: Case[] = [
 				widgetId: "w-bench-0",
 				toIndex: 23,
 			}),
+	},
+	{
+		name: "nextDropTarget over 24 slots",
+		budgetMs: 0.5,
+		run: () =>
+			nextDropTarget({
+				slots: gridBenchSlots,
+				draggedIndex: 0,
+				pointer: { x: 2000, y: 50 },
+				previous: gridBenchHistory,
+			}),
+	},
+	{
+		name: "applyWidgetLayoutEdit reorder on 24 widgets",
+		budgetMs: 0.5,
+		run: () =>
+			applyWidgetLayoutEdit(gridBenchWidgets, {
+				kind: "reorder",
+				widgetId: "w-grid-0",
+				toIndex: 23,
+			}),
+	},
+	{
+		name: "parseWidgetCommand for a reorder",
+		budgetMs: 0.5,
+		run: () => parseWidgetCommand({ kind: "reorder", widgetId: "w-grid-0", toIndex: 23 }),
+	},
+	{
+		name: "host.apply reorder over an in-memory store of 24 widgets",
+		budgetMs: 1,
+		run: () => gridBenchHost.apply({ kind: "reorder", widgetId: "w-grid-0", toIndex: 23 }),
 	},
 	{
 		name: "extract JSON after 40 KB of brace-laden prose",

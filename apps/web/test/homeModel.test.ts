@@ -7,7 +7,6 @@ import {
 	formatPctValue,
 	formatSignedDelta,
 	formatValue,
-	HOME_SIZE_SPAN,
 	hasFredSeries,
 	isPercentUnit,
 	needsAutoRefresh,
@@ -289,12 +288,6 @@ describe("home view-model", () => {
 		expect(hasFredSeries(["fred:VIXCLS", "twelve-data:AAPL"])).toBe(true);
 		expect(hasFredSeries(["twelve-data:AAPL"])).toBe(false);
 		expect(hasFredSeries([])).toBe(false);
-	});
-
-	it("maps sizes to static grid spans", () => {
-		expect(HOME_SIZE_SPAN.small).toBe("col-span-1 row-span-1");
-		expect(HOME_SIZE_SPAN.medium).toBe("col-span-2 row-span-2");
-		expect(HOME_SIZE_SPAN.large).toBe("col-span-2 row-span-2 lg:col-span-4");
 	});
 
 	it("uses the fixed unavailable wording, naming the key to set", () => {

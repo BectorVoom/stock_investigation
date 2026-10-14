@@ -12,6 +12,7 @@ import { createMemo, createSignal, For, type JSX, onMount, Show } from "solid-js
 import { DisclosureSummary, IconButton } from "../components/ui.tsx";
 import { HOME_RANGE_LABELS, HOME_RANGES, widgetSeriesIds } from "./homeModel.ts";
 import "./shoelace.ts";
+import { WIDGET_SIZE_SHAPES } from "@research/widget-grid/core";
 import { HOME_WIDGET_TYPES, type HomeWidgetType, WIDGET_REGISTRY } from "./widgetRegistry.tsx";
 
 export type WidgetDialogState =
@@ -417,7 +418,7 @@ function WidgetForm(props: {
 					value={size()}
 					size="small"
 					hoist
-					attr:help-text="Small is 1 × 1, Medium is 2 × 2, Large is full width × 2."
+					attr:help-text={`Small is ${WIDGET_SIZE_SHAPES.small}, Medium is ${WIDGET_SIZE_SHAPES.medium}, Large is ${WIDGET_SIZE_SHAPES.large}.`}
 					on:sl-change={(event) => {
 						if (!isDirectShoelaceEvent(event)) return;
 						const next = event.currentTarget.value;

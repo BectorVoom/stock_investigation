@@ -35,12 +35,18 @@ import {
 	watchlistRefreshSignal,
 } from "../watchlist/watchlistModel.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
-import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 import "./shoelace.ts";
+import {
+	createMoveAnnouncer,
+	MoveAnnouncerView,
+	WIDGET_GRID_CLASS,
+	WidgetGrid,
+} from "@research/widget-grid";
+import { HomeFrame } from "./HomeFrame.tsx";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
 import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
-import { WidgetFrame } from "./WidgetFrame.tsx";
 import { WIDGET_REGISTRY } from "./widgetRegistry.tsx";
+import "@research/widget-grid/styles.css";
 
 interface HomeNotice {
 	readonly tone: "info" | "warning" | "success" | "error";
@@ -95,28 +101,12 @@ export function HomeView(props: {
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
 	/** Polite announcement for every completed move (drag or menu). */
-	const [announcement, setAnnouncement] = createSignal("");
-	/**
-	 * Every completed move announces, even when the sentence repeats the
-	 * previous one (a live region sets nothing when the same text is set
-	 * twice): the text is cleared first and the message is set on a later
-	 * task, so assistive technology observes a change each time.
-	 */
-	const announceMove = (title: string, position: number, total: number): void => {
-		const message = `Moved “${title}” to position ${position} of ${total}.`;
-		setAnnouncement("");
-		window.setTimeout(() => {
-			if (!disposed) setAnnouncement(message);
-		}, 0);
-	};
+	const announcer = createMoveAnnouncer();
+	const announceMove = announcer.announceMove;
 	let disposed = false;
 	let autoRefreshTried = false;
 	let followUpTried = false;
 	let refreshKey: string | null = null;
-	/** Grid element holding the widget articles (drag preview via CSS `order`). */
-	let gridEl: HTMLDivElement | undefined;
-	/** True while a dropped preview is being saved (blocks a new drag). */
-	let savingPreview = false;
 	/** Earnings-date auto-refresh (FR-018 fix F): once per mount, like market data above. */
 	const earningsQueue = createEarningsRefreshQueue(props.api);
 	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
@@ -435,6 +425,40 @@ export function HomeView(props: {
 		return ready === null ? null : { dashboard: ready.dashboard, version: ready.version };
 	};
 
+	/**
+	 * An agent (or another tab) may have edited the dashboard elsewhere: when
+	 * the page becomes visible again, re-read it quietly — no skeleton, no
+	 * notice — and adopt a newer version with its market data, as after a
+	 * save. Skipped while a save is in flight, a dialog is open or a drag is
+	 * active; failures are silent here (the next deliberate action reports
+	 * them as it does today). Never two re-reads at once.
+	 */
+	let rereadInFlight = false;
+	const rereadDashboardIfStale = async (): Promise<void> => {
+		if (disposed || rereadInFlight || busy() || dialog() !== null) return;
+		if (document.querySelector("[data-widget-dragging]") !== null) return;
+		const current = currentDashboard();
+		if (current === null) return;
+		rereadInFlight = true;
+		try {
+			const result = await props.api.getHomeDashboard();
+			if (disposed || busy() || dialog() !== null) return;
+			if (document.querySelector("[data-widget-dragging]") !== null) return;
+			if (!result.ok) return;
+			const latest = currentDashboard();
+			if (latest === null) return;
+			if (result.value.version <= latest.version) return;
+			dashboard.set(result.value);
+			await reloadDataAfterSave();
+		} finally {
+			rereadInFlight = false;
+		}
+	};
+	const stopWatchingVisibility = props.visibility.subscribe(() => {
+		if (props.visibility.isVisible()) void rereadDashboardIfStale();
+	});
+	onCleanup(() => stopWatchingVisibility());
+
 	/** Applies an edit locally, saves with CAS, and re-renders from the server copy. */
 	const saveEdit = async (
 		edit:
@@ -626,33 +650,17 @@ export function HomeView(props: {
 
 	/**
 	 * Drag and drop repositioning (HIG Drag and drop): the pointer/DOM engine
-	 * lives in `widgetDrag.ts` (`createWidgetDrag` owns the state, the
-	 * listeners, the CSSOM writes and the cleanup). This view keeps only the
-	 * wiring: a drag may start when no save is in flight and the view is not
-	 * busy, a drop saves exactly one `reorder` edit, and the previewed order
-	 * stays on screen (CSS `order`, real DOM order changes only on commit)
-	 * until the server copy renders.
+	 * lives in `@research/widget-grid` (`createWidgetDrag` owns the state, the
+	 * listeners, the CSSOM writes and the cleanup; `WidgetGrid` owns the
+	 * preview-while-saving). A drop saves exactly one `reorder` edit; the
+	 * previewed order stays on screen (CSS `order`, real DOM order changes
+	 * only on commit) until the save settles.
 	 */
-	const onWidgetDrop = (drop: WidgetDragDrop): void => {
-		savingPreview = true;
-		void saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex })
-			.catch(() => undefined)
-			.finally(() => {
-				savingPreview = false;
-				dragController.clearPreview();
-			});
-	};
-	const dragController = createWidgetDrag({
-		getGrid: () => gridEl,
-		getWidgets: () => widgets(),
-		canStart: () => !savingPreview && !busy() && dashboard.value() !== null,
-		onDrop: onWidgetDrop,
-	});
-
-	onCleanup(() => {
-		dragController.dispose();
-		savingPreview = false;
-	});
+	const onWidgetDrop = (drop: {
+		readonly widgetId: string;
+		readonly toIndex: number;
+	}): Promise<void> =>
+		saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex });
 
 	/**
 	 * V2: the data loading skeleton — and nothing else — while data loads.
@@ -666,7 +674,7 @@ export function HomeView(props: {
 		>
 			<section class="space-y-2" aria-label="Loading market data">
 				<output class="block text-sm text-slate-600">Loading market data…</output>
-				<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
+				<div class={WIDGET_GRID_CLASS}>
 					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
 				</div>
 			</section>
@@ -729,9 +737,7 @@ export function HomeView(props: {
 				</div>
 			</section>
 
-			<output class="sr-only" aria-live="polite">
-				{announcement()}
-			</output>
+			<MoveAnnouncerView message={announcer.message()} />
 
 			{/* V2: the dashboard GET has its own error state (stable code, Try
 			    again) instead of an endless skeleton; when the stored document
@@ -740,7 +746,7 @@ export function HomeView(props: {
 				<Match when={dashboard.value() === null && dashboardError() === null}>
 					<section class="space-y-2" aria-label="Loading home">
 						<output class="block text-sm text-slate-600">Loading market widgets…</output>
-						<div class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4">
+						<div class={WIDGET_GRID_CLASS}>
 							<For each={[0, 1, 2, 3]}>
 								{() => <sl-skeleton effect="sheen" class="block h-full" />}
 							</For>
@@ -777,54 +783,50 @@ export function HomeView(props: {
 							when={(dashboard.value()?.dashboard.widgets.length ?? 0) > 0}
 							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
 						>
-							<div
-								class="grid auto-rows-[17rem] grid-cols-2 gap-4 lg:grid-cols-4"
-								data-widget-grid
-								ref={(element) => {
-									gridEl = element;
-								}}
-								onPointerDown={(event) => dragController.onPointerDown(event)}
+							<WidgetGrid
+								widgets={dashboard.value()?.dashboard.widgets ?? []}
+								canDrag={!busy() && dashboard.value() !== null}
+								ignoreDragFrom="sl-dialog,sl-select,sl-input,sl-option"
+								onReorder={onWidgetDrop}
 							>
-								<For each={dashboard.value()?.dashboard.widgets ?? []}>
-									{(widget, index) => (
-										<WidgetFrame
+								{(widget, index) => (
+									<HomeFrame
+										widget={widget}
+										position={index()}
+										total={dashboard.value()?.dashboard.widgets.length ?? 0}
+										actionsDisabled={busy()}
+										onEdit={openEditDialog}
+										onMove={(target, direction) =>
+											void saveEdit({ kind: "move", widgetId: target.widgetId, direction })
+										}
+										onRemove={(target) =>
+											void saveEdit({ kind: "remove", widgetId: target.widgetId })
+										}
+									>
+										{/*
+										 * The registry entry's component, with the live series
+										 * accessor as a prop: the For callback never reads the
+										 * data (only `widget.type`), so a refresh updates the
+										 * widgets in place instead of rebuilding every subtree.
+										 */}
+										<Dynamic
+											component={WIDGET_REGISTRY[widget.type].component}
 											widget={widget}
-											position={index()}
-											total={dashboard.value()?.dashboard.widgets.length ?? 0}
-											actionsDisabled={busy()}
-											onEdit={openEditDialog}
-											onMove={(target, direction) =>
-												void saveEdit({ kind: "move", widgetId: target.widgetId, direction })
+											seriesById={byId}
+											watchlist={watchlist}
+											watchlistError={watchlistError}
+											onRetryWatchlist={retryWatchlist}
+											onRefreshEarnings={refreshEarnings}
+											earningsRefreshBusy={earningsRefreshBusy}
+											api={props.api}
+											disabled={busy()}
+											onSaveRange={(next: HomeWidget) =>
+												void saveEdit({ kind: "replace", widget: next })
 											}
-											onRemove={(target) =>
-												void saveEdit({ kind: "remove", widgetId: target.widgetId })
-											}
-										>
-											{/*
-											 * The registry entry's component, with the live series
-											 * accessor as a prop: the For callback never reads the
-											 * data (only `widget.type`), so a refresh updates the
-											 * widgets in place instead of rebuilding every subtree.
-											 */}
-											<Dynamic
-												component={WIDGET_REGISTRY[widget.type].component}
-												widget={widget}
-												seriesById={byId}
-												watchlist={watchlist}
-												watchlistError={watchlistError}
-												onRetryWatchlist={retryWatchlist}
-												onRefreshEarnings={refreshEarnings}
-												earningsRefreshBusy={earningsRefreshBusy}
-												api={props.api}
-												disabled={busy()}
-												onSaveRange={(next: HomeWidget) =>
-													void saveEdit({ kind: "replace", widget: next })
-												}
-											/>
-										</WidgetFrame>
-									)}
-								</For>
-							</div>
+										/>
+									</HomeFrame>
+								)}
+							</WidgetGrid>
 						</Show>
 					</Show>
 				</Match>

@@ -170,6 +170,7 @@ kept.
 - **A repeated move announces again.** The polite live region clears its
   text before setting the new sentence (on a later task), so moving a widget
   to the same position number again still announces.
+- The engine and the pure decision now live in `packages/widget-grid` (ADR-0019).
 
 ### Alternatives considered (deliberately not done)
 

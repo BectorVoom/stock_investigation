@@ -15,6 +15,7 @@ import {
 	type WatchlistServerState,
 } from "./appHarness.tsx";
 import {
+	createControllableVisibility,
 	createFakeBackend,
 	deferred,
 	errorResponse,
@@ -564,6 +565,7 @@ describe("home view", () => {
 	});
 
 	it("names sizes Small / Medium / Large and states each shape in the size help", async () => {
+		const { WIDGET_SIZE_SHAPES } = await import("@research/widget-grid/core");
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const dialog = await openAddDialog();
@@ -572,9 +574,9 @@ describe("home view", () => {
 			[...size.querySelectorAll("sl-option")].map((option) => option.textContent?.trim()),
 		).toEqual(["Small", "Medium", "Large"]);
 		const help = size.getAttribute("help-text") ?? "";
-		expect(help).toContain("1 × 1");
-		expect(help).toContain("2 × 2");
-		expect(help).toContain("full width × 2");
+		expect(help).toContain(WIDGET_SIZE_SHAPES.small);
+		expect(help).toContain(WIDGET_SIZE_SHAPES.medium);
+		expect(help).toContain(WIDGET_SIZE_SHAPES.large);
 	});
 
 	it("F3: an untouched dialog explains itself in neutral tones, turning red after the first edit", async () => {
@@ -815,7 +817,10 @@ describe("home view", () => {
 			const scroller = article.querySelector('div[tabindex="0"]');
 			if (!(scroller instanceof HTMLElement)) throw new Error("a widget body is not focusable");
 			expect(scroller.getAttribute("aria-labelledby")).toBe(title.id);
-			expect(scroller.className).toContain("overflow-y-auto");
+			// The scroll container is now styled by the package stylesheet
+			// (`wg-body`), not the Tailwind `overflow-y-auto` utility: assert
+			// the package class instead of the removed class name.
+			expect(scroller.className).toContain("wg-body");
 		}
 	});
 
@@ -1131,7 +1136,10 @@ describe("home view", () => {
 		await waitFor(() =>
 			expect(widgets().map((article) => article.getAttribute("data-widget-id"))[0]).toBe("w-gold"),
 		);
-		const live = document.querySelector("output.sr-only");
+		// The live region is now styled by the package stylesheet
+		// (`wg-visually-hidden`), not the Tailwind `sr-only` utility: assert
+		// the observable polite region instead of the class name.
+		const live = document.querySelector("output[aria-live='polite']");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		// The announcement clears first and sets on a later task (so a
 		// repeated sentence announces again): wait for the message.
@@ -1142,7 +1150,7 @@ describe("home view", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const live = (): string =>
-			document.querySelector("output.sr-only")?.textContent ?? "missing live region";
+			document.querySelector("output[aria-live='polite']")?.textContent ?? "missing live region";
 		await chooseWidgetMenuItem("w-gold", "Move earlier");
 		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
 		await chooseWidgetMenuItem("w-gold", "Move later");
@@ -1217,7 +1225,7 @@ describe("home view", () => {
 			"w-vix",
 			...serverIds.filter((id) => id !== "w-vix").slice(2),
 		]);
-		const live = document.querySelector("output.sr-only");
+		const live = document.querySelector("output[aria-live='polite']");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		await waitFor(() => expect(live.textContent).toBe("Moved “VIX” to position 3 of 7."));
 	});
@@ -1327,6 +1335,201 @@ describe("home view", () => {
 			expect(document.body.textContent).toContain("The earnings-date refresh was not queued:"),
 		);
 	}, 60_000);
+});
+
+describe("home follows edits made elsewhere", () => {
+	const dashboardGets = () => backend.requestsTo("GET", /\/home\/dashboard$/);
+
+	/** Another writer (an agent) moves the first widget last and bumps the version. */
+	function externalReorder(): void {
+		const first = home.dashboard.widgets[0];
+		if (first === undefined) throw new Error("no widgets on the fake backend");
+		home.dashboard = { schemaVersion: 1, widgets: [...home.dashboard.widgets.slice(1), first] };
+		home.version += 1;
+	}
+
+	it("adopts a changed dashboard when the tab becomes visible, without a reload", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+		const getsBefore = dashboardGets().length;
+		externalReorder();
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(widgets()[6]?.getAttribute("data-widget-id")).toBe("w-vix"), {
+			timeout: 10_000,
+		});
+		expect(dashboardGets().length).toBeGreaterThan(getsBefore);
+		// Quiet: no skeleton, no notice.
+		expect(document.body.textContent).not.toContain("Loading market widgets");
+		expect(document.body.textContent).not.toContain("changed elsewhere");
+	});
+
+	it("fetches nothing while a dialog is open", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await openAddDialog();
+		const getsBefore = dashboardGets().length;
+		externalReorder();
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(dashboardGets()).toHaveLength(getsBefore);
+		expect(document.querySelector("sl-dialog")).not.toBeNull();
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+	});
+
+	it("fetches nothing while a save is in flight", async () => {
+		usePollTimers();
+		try {
+			const gate = deferred<Response>();
+			let putBody: { dashboard: HomeDashboard; expectedVersion: number } | null = null;
+			backend.on("PUT", /^\/api\/v1\/home\/dashboard$/, (request) => {
+				putBody = request.body as typeof putBody;
+				return gate.promise;
+			});
+			const visibility = createControllableVisibility();
+			mountApp(backend, visibility);
+			await settleUntil(() => widgets().length === 7, "initial widgets");
+			const getsBefore = dashboardGets().length;
+			await chooseWidgetMenuItem("w-gold", "Remove widget");
+			await settleUntil(
+				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
+				"PUT in flight",
+			);
+			visibility.setVisible(false);
+			visibility.setVisible(true);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(dashboardGets()).toHaveLength(getsBefore);
+			const releasePut = () => {
+				if (putBody === null) throw new Error("PUT never arrived");
+				home.dashboard = putBody.dashboard;
+				home.version += 1;
+				home.saved = true;
+				gate.resolve(
+					jsonResponse({
+						dashboard: home.dashboard,
+						version: home.version,
+						updatedAt: "2026-10-12T12:00:00Z",
+						origin: "saved",
+					}),
+				);
+			};
+			releasePut();
+			await settleUntil(
+				() => document.querySelector('article[data-widget-id="w-gold"]') === null,
+				"removed",
+			);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("drops a re-read answer older than a save made while the GET was in flight", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const getsBefore = dashboardGets().length;
+		// Hold the re-read's GET open; the released answer will be older than
+		// the save made meanwhile (same version number, pre-save content).
+		const gate = deferred<Response>();
+		backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () => gate.promise);
+		const first = home.dashboard.widgets[0];
+		if (first === undefined) throw new Error("no widgets on the fake backend");
+		const staleDashboard = {
+			schemaVersion: 1 as const,
+			widgets: [...home.dashboard.widgets.slice(1), first],
+		};
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets()).toHaveLength(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		// The owner's own save lands while the GET is in flight.
+		await chooseWidgetMenuItem("w-gold", "Remove widget");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(
+			() => expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull(),
+			{ timeout: 10_000 },
+		);
+		const savedOrder = widgets().map((article) => article.getAttribute("data-widget-id"));
+		expect(savedOrder).toHaveLength(6);
+		// Release the GET with the older arrangement: it must be dropped, so
+		// the page still shows the saved arrangement.
+		gate.resolve(
+			jsonResponse({
+				dashboard: staleDashboard,
+				version: home.version,
+				updatedAt: home.updatedAt,
+				origin: "saved",
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(widgets().map((article) => article.getAttribute("data-widget-id"))).toEqual(savedOrder);
+		expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull();
+		// The version on screen still tracks the server, so the next save is
+		// not refused with "changed elsewhere".
+		await chooseWidgetMenuItem("w-vix", "Remove widget");
+		await waitFor(() => expect(homePuts()).toHaveLength(2));
+		await waitFor(
+			() => expect(document.querySelector('article[data-widget-id="w-vix"]')).toBeNull(),
+			{ timeout: 10_000 },
+		);
+		expect(document.body.textContent).not.toContain("changed elsewhere");
+	});
+
+	it("drops a re-read answer when a dialog was opened while the GET was in flight", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const getsBefore = dashboardGets().length;
+		const gate = deferred<Response>();
+		backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () => gate.promise);
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets()).toHaveLength(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		// A dialog opens while the GET is in flight; the answer must not disturb it.
+		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+		await waitFor(() => expect(document.querySelector("sl-dialog")).not.toBeNull(), {
+			timeout: 10_000,
+		});
+		externalReorder();
+		gate.resolve(
+			jsonResponse({
+				dashboard: home.dashboard,
+				version: home.version,
+				updatedAt: "2026-10-12T12:00:00Z",
+				origin: "saved",
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(document.querySelector("sl-dialog")).not.toBeNull();
+		expect(widgets()).toHaveLength(7);
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+	});
+
+	it("re-renders nothing when the version is unchanged", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const before = widgets();
+		const getsBefore = dashboardGets().length;
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets().length).toBe(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		const after = widgets();
+		expect(after).toHaveLength(before.length);
+		for (const [index, article] of after.entries()) {
+			expect(article).toBe(before[index]);
+		}
+	});
 });
 
 describe("home api client", () => {

@@ -1,0 +1,11 @@
+{
+	"name": "@app/mcp",
+	"private": true,
+	"type": "module",
+	"version": "0.1.0",
+	"dependencies": {
+		"@research/contracts": "workspace:*",
+		"@research/widget-grid": "workspace:*",
+		"zod": "^4.6.5"
+	}
+}

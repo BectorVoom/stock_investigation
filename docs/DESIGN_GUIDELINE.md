@@ -107,9 +107,10 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   `rounded-full` is additionally permitted for the full-width "New chat" pill
   button, citation chips and round icon-only buttons (send, copy, activity
   dots, collapsed-rail actions, Home icon buttons). The chat surface (section 12) additionally
-  uses `rounded-2xl` and `rounded-full` exactly as stated there, and widget
-  frames on Home (section 13) use `rounded-2xl` exactly as stated there. No other
-  `rounded-*` step.
+  uses `rounded-2xl` and `rounded-full` exactly as stated there. Widget
+  frames on Home (section 13) use the package stylesheet's 1rem radius
+  (`--wg-radius` in `packages/widget-grid/src/solid/styles.css`), never a
+  Tailwind `rounded-*` class. No other `rounded-*` step.
 - Background tone, not shadows or outlines, separates the Chat page's panels,
   cards, buttons, chips, menus and dialog from their surfaces (section 5):
   white panels on the grey page, light grey (`bg-slate-100`) run and canvas
@@ -121,8 +122,10 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   `style=` attribute anywhere in UI source. Everything else keeps its hairline:
   table cell rules, text inputs/selects/checkboxes, badges, the header's
   bottom rule, notices and dashed empty states stay bordered, and Sources and
-  Settings keep every border they have. Home widget frames, table rules and
-  provenance dividers are `slate-200` hairlines with no shadow (section 13).
+  Settings keep every border they have. Home widget frames are a 1 px border
+  in `--wg-border` (mapped to `slate-200` in `apps/web/src/styles.css`) with
+  no shadow (section 13); table rules and provenance dividers stay `slate-200`
+  hairlines with no shadow.
 
 ## 5. Layout
 
@@ -185,7 +188,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey canvas cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
 | Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`, grey `bg-slate-200` fill with no outline, darker `hover:bg-slate-300`) |
 | Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` grey `bg-slate-100` container with no outline, white textarea inside, `rounded-full` send button; focus ring stays via `focus-within:ring-2`) |
-| Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `home/WidgetFrame.tsx`: a native `article` labelled by its title (white, `slate-200` hairline, no shadow, `rounded-2xl`, `p-4`) holding a single header strip (leading grip glyph + title + one `IconButton`; the whole strip is the drag handle — `cursor-grab`, `touch-none`, `select-none`) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
+| Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `@research/widget-grid` (`packages/widget-grid/src/solid/WidgetFrame.tsx`, styled by `packages/widget-grid/src/solid/styles.css`): a native `article` labelled by its title (white surface, 1 px border in `--wg-border` mapped to `slate-200` in `apps/web/src/styles.css`, no shadow, 1rem radius, 1rem padding) holding a single header strip (leading grip glyph + title + one `IconButton`; the whole strip is the drag handle) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. This app's `HomeFrame` in `home/HomeFrame.tsx` puts its own `ActionMenu` in the frame's actions slot. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
 | Widget actions | Per-widget Edit / Move earlier / Move later / Remove | enabled / disabled at the ends, and all disabled while a save is in flight | Shared `ActionMenu` in `components/ui.tsx` with an icon-button trigger (icon-only `IconButton` named "`<title>` actions" with `aria-haspopup="menu"` / `aria-expanded` and `data-widget-actions`; `role="menu"` / `role="menuitem"` with the menu-button keyboard pattern — Enter/Space/ArrowDown opens, arrows skip disabled items, Home/End jump, Escape closes and returns focus, click outside closes; `Tab` closes); text items with leading icons — pencil, left/right arrows, trash. The Chats rows use the same part with its default filled trigger and text-only items |
 | Widget dialog | Add / edit a widget (type, title, size, series, range); reset confirmation | add / edit / confirm-reset | `WidgetDialog` in `home/WidgetDialog.tsx` (`sl-dialog`, labelled by its heading, focus in on open and returned to the explicit opener on close; icon-only `IconButton` footer buttons whose names are the former labels; the heading still says in words what the buttons do; the Size control names Small / Medium / Large with the shapes — "1 × 1", "2 × 2", "full width × 2" — in its help text) |
 | Widget controls | Selects, inputs and loading blocks on Home (buttons are the native `IconButton`, menus are native) | — | `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL (0.875rem control text, 0.75rem medium slate-700 labels); controls carry their own `label` prop instead of `Field` |
@@ -292,12 +295,17 @@ to the palette constants.
 ## 11. How this is enforced
 
 `tests/architecture/designGuideline.test.ts` scans every `.ts`/`.tsx` file
-under `apps/web/src` and `packages/ui-registry/src` and fails with file, line
+under `apps/web/src`, `packages/ui-registry/src` and `packages/widget-grid/src`
+and fails with file, line
 and offending token on: a non-guideline colour family; an arbitrary font size
 or colour; a hex literal outside `chartMath.ts`; an inline `style=`; a radius
 other than `rounded`/`rounded-full` (plus `rounded-2xl` in `apps/web/src/chat/`
-per section 12 and for widget frames in `apps/web/src/home/` per section 13); secondary text lighter than slate-600;
-an `h1` outside `App.tsx` or an `h2` outside `components/ui.tsx`. The test
+per section 12); secondary text lighter than slate-600;
+an `h1` outside `App.tsx` or an `h2` outside `components/ui.tsx`. The package
+stylesheet (`packages/widget-grid/src/solid/styles.css`, `wg-` classes themed
+by `--wg-*` custom properties mapped in `apps/web/src/styles.css`) carries the
+grid look, and `packages/widget-grid/test/solid/stylesMetrics.test.ts` fails
+when the stylesheet disagrees with `core/sizes.ts`. The test
 carries its own self-test (synthetic strings violating each rule) so a
 checker that can never fail cannot pass silently.
 
@@ -341,9 +349,12 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
 
 - What Shoelace is used for: dialogs and form controls
   only (`sl-dialog`, `sl-select` + `sl-option`, `sl-input`, `sl-skeleton`;
-  `sl-icon` serves their internal icons). Widget frames are native `article`
-  elements (white surface on the grey page, 1 px `slate-200` hairline, no
-  shadow, no header divider, `rounded-2xl`, inner padding `p-4`); per-widget
+  `sl-icon` serves their internal icons). Widget frames are the package's
+  `WidgetFrame` (`packages/widget-grid/src/solid/WidgetFrame.tsx`, styled by
+  `packages/widget-grid/src/solid/styles.css`): native `article` elements
+  (white surface on the grey page, 1 px border in `--wg-border` mapped to
+  `slate-200` in `apps/web/src/styles.css`, no shadow, no header divider,
+  1rem radius, 1rem padding); per-widget
   actions are a native menu behind one icon-only `IconButton`; every other
   button on Home is the same shared `IconButton` part. Tables stay semantic
   `<table>` elements in the frame body because
@@ -371,13 +382,18 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   200 as SVG and no `sl-icon` is left without an `<svg>`. The app's own
   icon-only buttons do not use `sl-icon`: their glyphs are inline SVGs
   (Bootstrap Icons paths) in the shared `IconButton` part.
-- Widget grid: equal cells with a fixed row height —
-  `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap
-  (the HIG standard margin), in normal row flow so visual order equals DOM
-  order. Three fixed sizes from one table (`HOME_SIZE_SPAN` in
-  `homeModel.ts`): Small 1 × 1 (17rem tall, 272 px), Medium 2 × 2 (35rem,
-  560 px), Large full width × 2 at `lg` (4 columns) and 2 × 2 below it
-  (35rem, 560 px).
+- Widget grid (`@research/widget-grid`): equal cells with a fixed row height —
+  2 columns, 4 from `min-width: 64rem`, `17rem` rows and a `1rem` gap (the HIG
+  standard margin), in normal row flow so visual order equals DOM order. Three
+  fixed sizes from one table (`WIDGET_SIZE_SPANS` in `core/sizes.ts`, stated
+  again in the package stylesheet `src/solid/styles.css` and tied by
+  `test/solid/stylesMetrics.test.ts`): Small 1 × 1 (17rem tall, 272 px),
+  Medium 2 × 2 (35rem, 560 px), Large full width × 2 at the wide breakpoint
+  (4 columns) and 2 × 2 below it (35rem, 560 px). The stylesheet (`wg-`
+  classes, themed by `--wg-*` custom properties mapped to the app theme in
+  `apps/web/src/styles.css`) carries the grid, the frame, the header strip,
+  the body and the placeholder; `HomeView` uses its grid class for the
+  loading skeletons too.
   Every widget of a size has exactly the same width and height as every
   other of that size on the same screen. The frame fills its cell (`h-full`)
   and never grows with content: the header strip stays fixed while the body
@@ -386,14 +402,14 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   scroll. Loading skeletons use the same grid and cell height so the page
   does not jump. No page-level
   horizontal overflow at 390 px; tables scroll inside their card.
-- Drag and drop (HIG Drag and drop): the whole header strip is the handle
-  (leading `grip-vertical` glyph, `text-slate-600`, as the visible affordance;
+- Drag and drop (HIG Drag and drop, `@research/widget-grid`): the whole header strip is the handle
+  (leading grip glyph in the muted text colour as the visible affordance;
   a press on the actions button never starts a drag). Pointer Events only
   (never the HTML5 API), primary button / one touch / pen, starting after
   4 px of movement so a press-and-release is a plain click. The lifted widget
   follows the pointer with its grab offset at about 90 % opacity above its
-  neighbours with the blue focus-colour ring (no shadow) and never changes
-  size; the target slot shows a same-size dashed `slate-300` placeholder with
+  neighbours with the accent-colour 2 px ring (no shadow) and never changes
+  size; the target slot shows a same-size dashed placeholder with
   no fill while the others reflow in their real grid positions. Reflow is
   order-based (the widget ends at an index, the rest keep their order —
   never free placement with gaps) with midpoint-plus-ban hysteresis so a
@@ -408,10 +424,9 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   re-evaluating the drop target as content passes under the pointer, until
   the pointer leaves the zone, the page reaches its end, or the drag ends or
   is cancelled. Slot rectangles are cached in page coordinates so scrolling
-  never stales the decision. The pointer/DOM engine lives in
-  `home/widgetDrag.ts` (`createWidgetDrag`, returning the grid pointerdown
-  handler plus dispose); `HomeView` keeps only the wiring. Reflow animates for at most 200 ms and only under `motion-safe:`
-  (instant with reduced motion). The menu's Move earlier/later is the
+  never stales the decision. The pointer/DOM engine lives in the package
+  (`packages/widget-grid/src/solid/widgetDrag.ts`, `createWidgetDrag`, returning the grid pointerdown
+  handler plus dispose); `WidgetGrid` keeps only the wiring. The menu's Move earlier/later is the
   keyboard and assistive-technology path, and one visually hidden polite live
   region announces every completed move (`Moved “<title>” to position <i> of
   <n>.`, clearing first so a repeated sentence announces again).

@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 
 /**
  * Four projects: plain Node for runtime-neutral packages and the runner, a
- * DOM for the SPA, the real Workers runtime (workerd + D1) for the API and
+ * DOM for the SPA (and the Solid side of the widget grid), the real Workers runtime (workerd + D1) for the API and
  * D1 adapters, and `api-sqlite`, which runs the SAME API suite in Node
  * against `node:sqlite` (ADR-0008). `api-sqlite` aliases `cloudflare:test` to
  * a shim with an in-memory database; nothing else differs.
@@ -18,8 +18,10 @@ export default defineConfig({
 					environment: "node",
 					include: [
 						"packages/{domain,contracts,agent-core,application,effects}/test/**/*.test.ts",
+						"packages/widget-grid/test/{core,agent}/**/*.test.ts",
 						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite,google}/**/*.test.ts",
 						"apps/runner/test/**/*.test.ts",
+						"apps/mcp/test/**/*.test.ts",
 						"tests/{architecture,security,formal,local,live,ui-review}/**/*.test.ts",
 					],
 				},
@@ -31,10 +33,14 @@ export default defineConfig({
 				test: {
 					name: "web",
 					environment: "happy-dom",
+					// stylesMetrics reads the package stylesheet through `?raw`;
+					// only that file is processed, every other stylesheet stays mocked.
+					css: { include: [/packages\/widget-grid\/src\/solid\/styles\.css/] },
 					setupFiles: ["apps/web/test/setup.ts"],
 					include: [
 						"apps/web/test/**/*.test.{ts,tsx}",
 						"packages/ui-registry/test/**/*.test.{ts,tsx}",
+						"packages/widget-grid/test/solid/**/*.test.{ts,tsx}",
 					],
 				},
 			},

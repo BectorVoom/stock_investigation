@@ -210,6 +210,65 @@ export function homeWidgetSeriesIds(widget: HomeWidget): readonly string[] {
 	return widget.seriesIds;
 }
 
+export type HomeWidgetType = HomeWidget["type"];
+
+export const HOME_WIDGET_TYPES: readonly HomeWidgetType[] = [
+	"metric",
+	"line-chart",
+	"stock-table",
+	"indicator-table",
+	"earnings-calendar",
+];
+
+/** Every size every Home widget type may take (ADR-0019: the agent layer allows all three). */
+export const HOME_WIDGET_SIZES: readonly MarketWidgetSize[] = ["small", "medium", "large"];
+
+export interface HomeWidgetTypeMeta {
+	readonly label: string;
+	readonly description: string;
+	readonly defaultSize: MarketWidgetSize;
+	readonly sizes: readonly MarketWidgetSize[];
+}
+
+/**
+ * The one table of per-type presentation facts (ADR-0019): the web widget
+ * registry and the MCP agent types both read their label, description and
+ * default size from here, so neither is written twice.
+ */
+export const HOME_WIDGET_TYPE_META: { readonly [T in HomeWidgetType]: HomeWidgetTypeMeta } = {
+	metric: {
+		label: "Metric",
+		description: "One series: latest value, change, one-year change and a sparkline.",
+		defaultSize: "small",
+		sizes: HOME_WIDGET_SIZES,
+	},
+	"line-chart": {
+		label: "Line chart",
+		description: "One to four series that share one unit, over a range, with a data table.",
+		defaultSize: "medium",
+		sizes: HOME_WIDGET_SIZES,
+	},
+	"stock-table": {
+		label: "Stock table",
+		description: "One row per series: last close, change and as-of date.",
+		defaultSize: "medium",
+		sizes: HOME_WIDGET_SIZES,
+	},
+	"indicator-table": {
+		label: "Indicator table",
+		description: "One row per series: latest, unit, previous, change and one-year change.",
+		defaultSize: "large",
+		sizes: HOME_WIDGET_SIZES,
+	},
+	"earnings-calendar": {
+		label: "Earnings calendar",
+		description:
+			"A glanceable month grid of the Watchlist page's upcoming earnings announcement dates, with a short next list; the full calendar lives on the Watchlist page.",
+		defaultSize: "large",
+		sizes: HOME_WIDGET_SIZES,
+	},
+};
+
 export const homeDashboardSchema = z
 	.strictObject({
 		schemaVersion: z.literal(1),

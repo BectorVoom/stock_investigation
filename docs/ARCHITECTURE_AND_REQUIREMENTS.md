@@ -357,6 +357,7 @@ apps/
   web/                         # SolidJS SPA
   api/                         # Hono/Workers
   runner/                      # local process; CLI adapters
+  mcp/                         # stdio MCP server through which AI agents arrange Home (ADR-0019)
 packages/
   contracts/                   # schema versions, API/UI/job contracts
   domain/                      # pure calculations and policies
