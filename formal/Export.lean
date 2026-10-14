@@ -450,6 +450,70 @@ def b32Vectors : List String :=
     jsonObj [("bytes", jsonNatList bytes),
       ("chars", jsonNatList (encodeB32 bytes))]
 
+/-! ## Drop-target decision (`DragTarget.lean`) -/
+
+/-- Small alphabet: two same-size neighbours (`dragR0`, `dragR1`, with a
+    2-unit gap), a large slot next to a small one (`dragR2`, `dragR3`), and
+    a slot sharing `dragR0`'s center (`dragR4`, for the coincident-centers
+    branch). -/
+def dragR0 : SlotRect := { left := 0, top := 0, right := 10, bottom := 10 }
+def dragR1 : SlotRect := { left := 12, top := 0, right := 22, bottom := 10 }
+def dragR2 : SlotRect := { left := 0, top := 0, right := 22, bottom := 22 }
+def dragR3 : SlotRect := { left := 24, top := 0, right := 34, bottom := 10 }
+def dragR4 : SlotRect := { left := 3, top := 3, right := 7, bottom := 7 }
+
+/-- Slot lists of length 0..3: empty, singleton, same-size neighbours, a
+    large/small pair (disjoint, so the reverse behaves identically and is
+    omitted), the same-center pair in both orders (they overlap, so the
+    order decides the hover), and a nested triple. -/
+def dragSlotLists : List (List SlotRect) :=
+  [[], [dragR0], [dragR0, dragR1], [dragR2, dragR3],
+   [dragR0, dragR4], [dragR4, dragR0], [dragR2, dragR0, dragR4]]
+
+/-- Pointer lattice: x hits outside-left, a small-slot interior, the small
+    right edge, the gap, the neighbour left edge and interior, the far
+    small's edge and interior, and outside-right; y hits outside-below, a
+    mid row through every slot, and a row inside only the large slot. -/
+def dragPointers : List (Int × Int) :=
+  (([-2, 5, 10, 11, 12, 17, 24, 29, 36] : List Int).flatMap fun x =>
+    (([-2, 5, 11] : List Int).map fun y => (x, y)))
+
+def slotRectJson (r : SlotRect) : String :=
+  jsonObj [("left", jsonInt r.left), ("top", jsonInt r.top),
+    ("right", jsonInt r.right), ("bottom", jsonInt r.bottom)]
+
+def dragHistoryJson (h : DragHistory) : String :=
+  jsonObj [("target", jsonNat h.target),
+    ("banned", match h.banned with | none => "null" | some b => jsonNat b)]
+
+/-- 2943 vectors: every slot list against every `draggedIndex` in
+    `0..length` (one out of range), every lattice pointer, every
+    `previous.banned` in `none | 0..length-1`, and `previous.target =
+    draggedIndex` (what the engine passes) plus `(draggedIndex + 1) %
+    length` when there is more than one slot. The grid reaches every
+    branch: short lists, the out-of-range dragged index, gaps and outside,
+    hover-is-dragged, hover-is-banned, coincident centers, held midpoints
+    and commits. -/
+def dragTargetVectors : List String := Id.run do
+  let mut out := []
+  for slots in dragSlotLists do
+    for d in List.range (slots.length + 1) do
+      for p in dragPointers do
+        for banned in none :: (List.range slots.length).map some do
+          let targets :=
+            if slots.length ≥ 2 then [d, (d + 1) % slots.length] else [d]
+          for t in targets do
+            let prev : DragHistory := { target := t, banned := banned }
+            let res := nextDropTarget slots d p.1 p.2 prev
+            out := jsonObj [("slots", jsonArr (slots.map slotRectJson)),
+              ("draggedIndex", jsonNat d),
+              ("pointer", jsonObj [("x", jsonInt p.1), ("y", jsonInt p.2)]),
+              ("previous", dragHistoryJson prev),
+              ("target", jsonNat res.target),
+              ("banned", match res.banned with
+                | none => "null" | some b => jsonNat b)] :: out
+  return out.reverse
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -477,5 +541,6 @@ def main : IO Unit := do
   IO.println ("\"upcomingEarnings\": [\n" ++ ",\n".intercalate upcomingVectors ++ "\n],")
   IO.println ("\"monthGrid\": [\n" ++ ",\n".intercalate monthGridVectors ++ "\n],")
   IO.println ("\"syncPlan\": [\n" ++ ",\n".intercalate syncPlanVectors ++ "\n],")
-  IO.println ("\"base32hex\": [\n" ++ ",\n".intercalate b32Vectors ++ "\n]")
+  IO.println ("\"base32hex\": [\n" ++ ",\n".intercalate b32Vectors ++ "\n],")
+  IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n]")
   IO.println "}"
