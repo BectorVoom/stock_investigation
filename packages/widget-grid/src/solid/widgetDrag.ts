@@ -12,14 +12,15 @@ import type { WidgetBase, WidgetSize } from "../core/types.ts";
  * `dragModel.ts` stays pure: this module converts DOM measurements to its
  * input and applies its output to the DOM, nothing more.
  *
- * Coordinates: slot rectangles are re-measured in PAGE coordinates
- * (`getBoundingClientRect` plus the window scroll offset) on every animation
- * frame, and the pointer is converted to page coordinates on every
- * evaluation, so any scrolling during a drag (auto-scroll, wheel, trackpad,
- * scrollbar — in the window or in a scroll container) never stales the
- * decision. A `scroll` listener (capture, so container scrolls count)
- * schedules a re-evaluation frame; pointer frames coalesce on
- * `requestAnimationFrame`.
+ * Coordinates: slot rectangles are cached in CONTENT coordinates
+ * (`getBoundingClientRect` plus the window scroll offset plus the scroll
+ * offset of the grid's scroll container, when it has one) and the pointer is
+ * converted the same way on every evaluation, so any scrolling during a drag
+ * (auto-scroll, wheel, trackpad, scrollbar — in the window or in the
+ * container) never stales the decision. A `scroll` listener (capture, so
+ * container scrolls count) schedules a re-evaluation frame; pointer frames
+ * coalesce on `requestAnimationFrame` with at most one slot re-read per
+ * frame (only when the target actually changed).
  *
  * Edge auto-scroll (HIG: scroll the destination when necessary): while a drag
  * is active and the pointer rests within 80 px of the top or bottom edge of
@@ -157,20 +158,33 @@ const articleWithId = (grid: HTMLElement, widgetId: string): HTMLElement | null 
 	return null;
 };
 
-/** Viewport box shifted into page coordinates (stable under scrolling). */
-const pageRectOf = (element: HTMLElement): SlotRect => {
+/**
+ * Offset from viewport to content coordinates: the window's scroll plus the
+ * grid's scroll container's (null: the page itself scrolls). Boxes inside the
+ * container move by exactly its scroll, so content coordinates stay stable
+ * under both kinds of scrolling.
+ */
+const contentOffset = (
+	scroller: HTMLElement | null,
+): { readonly x: number; readonly y: number } => ({
+	x: window.scrollX + (scroller?.scrollLeft ?? 0),
+	y: window.scrollY + (scroller?.scrollTop ?? 0),
+});
+
+/** Viewport box shifted into content coordinates (stable under scrolling). */
+const contentRectOf = (element: HTMLElement, scroller: HTMLElement | null): SlotRect => {
 	const box = element.getBoundingClientRect();
-	const x = window.scrollX;
-	const y = window.scrollY;
+	const { x, y } = contentOffset(scroller);
 	return { left: box.left + x, top: box.top + y, right: box.right + x, bottom: box.bottom + y };
 };
 
-/** Slot rectangles in preview order, in page coordinates; the dragged slot is the placeholder. */
+/** Slot rectangles in preview order, in content coordinates; the dragged slot is the placeholder. */
 const readPreviewSlots = (
 	grid: HTMLElement,
 	preview: readonly string[],
 	draggedId: string,
 	placeholder: HTMLElement,
+	scroller: HTMLElement | null,
 ): SlotRect[] => {
 	const byId = new Map<string, HTMLElement>();
 	for (const article of articlesIn(grid)) {
@@ -180,12 +194,12 @@ const readPreviewSlots = (
 	const slots: SlotRect[] = [];
 	for (const id of preview) {
 		if (id === draggedId) {
-			slots.push(pageRectOf(placeholder));
+			slots.push(contentRectOf(placeholder, scroller));
 			continue;
 		}
 		const article = byId.get(id);
 		if (article === undefined) continue;
-		slots.push(pageRectOf(article));
+		slots.push(contentRectOf(article, scroller));
 	}
 	return slots;
 };
@@ -409,16 +423,12 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			else scroller.scrollTop += autoStep;
 		}
 		moveLifted(state.article, state.lastClientX - state.grabDX, state.lastClientY - state.grabDY);
-		// Slots are re-measured every frame: any scrolling during the drag
-		// (auto-scroll, wheel, trackpad, scrollbar — window or container)
-		// moves every box, so a cached rectangle would stale the decision.
-		state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
 		const next = nextDropTarget({
 			slots: state.slots,
 			draggedIndex: state.target,
 			pointer: {
-				x: state.lastClientX + window.scrollX,
-				y: state.lastClientY + window.scrollY,
+				x: state.lastClientX + contentOffset(scroller).x,
+				y: state.lastClientY + contentOffset(scroller).y,
 			},
 			previous: { target: state.target, banned: state.banned },
 		});
@@ -430,6 +440,16 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			state.target = next.target;
 			state.banned = next.banned;
 			applyDuringDragOrders(state.grid, state.preview, state.widgetId, state.target, placeholder);
+			// The single layout read of this frame: slots are re-measured
+			// only when the target changed (scrolling alone never stales
+			// content-coordinate slots).
+			state.slots = readPreviewSlots(
+				state.grid,
+				state.preview,
+				state.widgetId,
+				placeholder,
+				scroller,
+			);
 		} else {
 			state.banned = next.banned;
 		}
@@ -464,7 +484,13 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			state.height,
 		);
 		applyDuringDragOrders(state.grid, state.preview, state.widgetId, state.target, placeholder);
-		state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
+		state.slots = readPreviewSlots(
+			state.grid,
+			state.preview,
+			state.widgetId,
+			placeholder,
+			state.scroller,
+		);
 	}
 
 	function onPointerMove(event: PointerEvent): void {
@@ -505,8 +531,8 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			slots: finished.slots,
 			draggedIndex: finished.target,
 			pointer: {
-				x: finished.lastClientX + window.scrollX,
-				y: finished.lastClientY + window.scrollY,
+				x: finished.lastClientX + contentOffset(finished.scroller).x,
+				y: finished.lastClientY + contentOffset(finished.scroller).y,
 			},
 			previous: { target: finished.target, banned: finished.banned },
 		});
