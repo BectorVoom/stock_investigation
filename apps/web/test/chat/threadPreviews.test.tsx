@@ -233,7 +233,8 @@ describe("thread previews (integration)", () => {
 			runId: "run_1",
 			componentId: "run_1_extra",
 		});
-		expect(call?.core.type).toBe("research");
+		// A table component becomes a self-contained table widget (its rows copied).
+		expect(call?.core.type).toBe("table");
 		expect(typeof call?.core.widgetId).toBe("string");
 		// …while an orphan (no visible run owns it) carries no run or message.
 		const orphan = document.querySelector('[data-preview-component="table_1"]');

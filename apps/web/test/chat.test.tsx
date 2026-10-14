@@ -162,7 +162,11 @@ describe("chat history", () => {
 		mountApp(backend);
 		await threadReady();
 		const notebook = await notebookReady();
-		expect(within(notebook).getByText("Nothing saved yet.")).toBeDefined();
+		expect(
+			within(notebook).getByText(
+				"Save answers, charts and tables from Chat to build your notebook.",
+			),
+		).toBeDefined();
 		// One workspace session and one notebook session: a single read each backs both panels.
 		await waitFor(() =>
 			expect(backend.requestsTo("GET", /^\/api\/v1\/workspaces\/ws_1$/)).toHaveLength(1),
@@ -1022,7 +1026,11 @@ describe("chat thread", () => {
 		mountApp(backend);
 		await threadReady();
 		const notebook = await screen.findByRole("region", { name: "Notebook" });
-		expect(within(notebook).getByText("Nothing saved yet.")).toBeDefined();
+		expect(
+			within(notebook).getByText(
+				"Save answers, charts and tables from Chat to build your notebook.",
+			),
+		).toBeDefined();
 	});
 });
 
