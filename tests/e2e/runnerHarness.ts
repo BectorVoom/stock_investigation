@@ -43,18 +43,11 @@ import {
 import { createScriptedAgent } from "../../examples/extensions/scriptedAgent.ts";
 import { fixtureEarningsSources } from "./earningsFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, HEADLINE, HOSTILE_MARKUP } from "./fixtures.ts";
+import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { fixtureMarketSources } from "./marketFixtures.ts";
 
 /** Live backend for `tests/e2e/opencodeLive.spec.ts`; unset everywhere else. */
 const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
-
-/**
- * While this file exists, the scripted Google handler fails every
- * `google-calendar` job with `GOOGLE_NOT_CONFIGURED` (the unconfigured
- * runner, honestly). A test creates it to cover the fixed failure sentence,
- * then removes it. E2E-only: production never reads it.
- */
-export const E2E_GOOGLE_UNCONFIGURED_FLAG = join(tmpdir(), "research-e2e-google-unconfigured");
 
 const logger = createEventLogger((line) => process.stderr.write(line));
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -294,7 +287,7 @@ const exit = await runRunnerLoop(
 		// removes it) every google-calendar job fails honestly with
 		// GOOGLE_NOT_CONFIGURED, exactly like the unconfigured runner.
 		executeGoogleCalendar: async (job, env, signal, reporter, sendAuthUrl) => {
-			if (existsSync(E2E_GOOGLE_UNCONFIGURED_FLAG)) {
+			if (existsSync(googleUnconfiguredFlagFile())) {
 				env.logger.warn("google_not_configured", { runId: job.runId });
 				return {
 					outcome: "failed",

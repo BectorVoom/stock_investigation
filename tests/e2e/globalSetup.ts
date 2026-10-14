@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalizeDir } from "../../scripts/releaseOps.ts";
 import { baseChildEnv, ISOLATION_RECORD_ENV_VAR } from "../../scripts/testEnv.ts";
+import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { marketFailureFile } from "./marketFixtures.ts";
 
 /**
@@ -45,10 +46,12 @@ export default function globalSetup(): () => Promise<void> {
 	// Fresh audit record for this run; specs append through `buildChildEnv`.
 	const recordFile = join(tmpdir(), `research-e2e-isolation-${process.pid}-${Date.now()}.log`);
 	process.env[ISOLATION_RECORD_ENV_VAR] = recordFile;
-	// A crashed UI review could leave the market-failure injection file behind;
-	// without this, a later run would fail the listed series for no reason.
+	// A crashed run could leave an injection file behind (the UI review's
+	// market failures, the watchlist suite's Google flag); without this, a
+	// later run would fail the listed series or every Google job for no reason.
 	try {
 		rmSync(marketFailureFile(), { force: true });
+		rmSync(googleUnconfiguredFlagFile(), { force: true });
 	} catch {
 		// Best effort.
 	}

@@ -1,11 +1,8 @@
-import { rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { E2E_ORIGIN } from "./fixtures.ts";
-
-/** Mirrors `E2E_GOOGLE_UNCONFIGURED_FLAG` in `runnerHarness.ts` (importing it would start a runner). */
-const GOOGLE_UNCONFIGURED_FLAG = join(tmpdir(), "research-e2e-google-unconfigured");
+import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 
 /**
  * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
@@ -349,7 +346,9 @@ test("Google Calendar connects, syncs automatically, then disconnects", async ()
 
 test("a Google connect without credentials ends in the fixed not-configured sentence", async () => {
 	test.setTimeout(120_000);
-	writeFileSync(GOOGLE_UNCONFIGURED_FLAG, "unconfigured\n");
+	const flagFile = googleUnconfiguredFlagFile();
+	mkdirSync(dirname(flagFile), { recursive: true });
+	writeFileSync(flagFile, "unconfigured\n");
 	try {
 		await page.goto("/#/watchlist");
 		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
@@ -360,7 +359,7 @@ test("a Google connect without credentials ends in the fixed not-configured sent
 			),
 		).toBeVisible({ timeout: 60_000 });
 	} finally {
-		rmSync(GOOGLE_UNCONFIGURED_FLAG, { force: true });
+		rmSync(flagFile, { force: true });
 	}
 });
 
