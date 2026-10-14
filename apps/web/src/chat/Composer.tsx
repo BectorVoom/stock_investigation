@@ -81,6 +81,8 @@ export function Composer(props: {
 	/** Widgets the instruction is about, in notebook order (empty: the whole notebook). */
 	readonly selection?: readonly { readonly widgetId: string; readonly title: string }[];
 	readonly onRemoveSelection?: (widgetId: string) => void;
+	/** Reports the draft text upward, so the target can follow what names the notebook. */
+	readonly onDraftChange?: (text: string) => void;
 	readonly onSubmitNotebook?: (
 		instruction: string,
 		idempotencyKey: string,
@@ -152,6 +154,13 @@ export function Composer(props: {
 		if (!needsScriptGrow || box === undefined || text === fittedText) return;
 		fittedText = text;
 		fitTextarea(box);
+	});
+
+	// The draft text travels upward, so the workspace can route a draft
+	// that names the notebook to the notebook assistant. The post-send
+	// clear flows through the same path, resetting the route as today.
+	createEffect(() => {
+		props.onDraftChange?.(draft().question);
 	});
 
 	const submit = async (event: SubmitEvent) => {

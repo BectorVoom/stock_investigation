@@ -264,6 +264,60 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		await page.screenshot({ path: test.info().outputPath("3-after-reload.png") });
 	});
 
+	test("a gold instruction from fresh Chat-first adds a market chart", async () => {
+		test.setTimeout(900_000);
+		const page = activePage();
+		// A new chat: fresh state, Chat-first, nothing selected.
+		await page.getByRole("link", { name: "Chat", exact: true }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
+		await expect(page).toHaveURL(/#\/chat\/ws_/);
+		const freshChatBox = await page.locator('section[data-panel="chat"]').boundingBox();
+		const freshNotebookBox = await page.locator('div[data-panel="notebook"]').boundingBox();
+		expect((freshChatBox?.width ?? 0) > (freshNotebookBox?.width ?? 0) * 2).toBe(true);
+
+		// The draft names the notebook, so the pills route to the notebook
+		// assistant live, before anything is sent.
+		const research = page.getByRole("form", { name: "Research composer" });
+		await research
+			.getByRole("textbox", { name: "Question" })
+			.fill("Create a chart of gold prices over the past year in the Notebook");
+		const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
+		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await instruct(page, "Create a chart of gold prices over the past year in the Notebook");
+		await expect(
+			page.locator('div[data-panel="notebook"] article[data-widget-type="line-chart"]'),
+		).toHaveCount(1);
+		await expect(page.locator("[data-notebook-turn]").last()).toContainText(/added/i);
+		await page.screenshot({ path: test.info().outputPath("5-gold-chart.png") });
+
+		// The stored notebook names the gold series and range: no invented numbers.
+		const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+		if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+		const read = await fetch(`${API_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`, {
+			headers: ownerHeaders(API_ORIGIN),
+		});
+		expect(read.status).toBe(200);
+		const stored = (await read.json()) as {
+			notebook: {
+				widgets: {
+					widgetId: string;
+					type: string;
+					seriesIds?: readonly string[];
+					range?: string;
+				}[];
+			};
+		};
+		const chart = stored.notebook.widgets.find((widget) => widget.type === "line-chart");
+		expect(chart?.seriesIds).toEqual(["twelve-data:XAU/USD"]);
+		expect(chart?.range).toBe("1y");
+	});
+
 	test("a large notebook with nothing selected: the assistant works from its summary index", async () => {
 		test.setTimeout(900_000);
 		const page = activePage();

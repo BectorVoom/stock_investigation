@@ -117,6 +117,130 @@ describe("applyNotebookCommands", () => {
 		]);
 	});
 
+	it("adds every market type through its config", async () => {
+		const applied = await applyNotebookCommands(
+			notebookOf([]),
+			[
+				{
+					kind: "add",
+					type: "market-metric",
+					title: "US 10-year yield",
+					config: { seriesId: "fred:DGS10" },
+				},
+				{
+					kind: "add",
+					type: "line-chart",
+					title: "Gold price, past year",
+					size: "medium",
+					config: { seriesIds: ["twelve-data:XAU/USD"], range: "1y" },
+				},
+				{
+					kind: "add",
+					type: "stock-table",
+					title: "Watchlist",
+					config: { seriesIds: ["twelve-data:AAPL", "twelve-data:MSFT"] },
+				},
+				{
+					kind: "add",
+					type: "indicator-table",
+					title: "US economy",
+					config: { seriesIds: ["fred:CPIAUCSL", "fred:UNRATE"] },
+				},
+				{
+					kind: "add",
+					type: "earnings-calendar",
+					title: "Earnings",
+					config: { daysAhead: 30 },
+				},
+			],
+			context(),
+		);
+		if (!applied.ok) throw new Error(`expected success: ${applied.error.failure.message}`);
+		expect(applied.value.widgets.map((widget) => widget.type)).toEqual([
+			"market-metric",
+			"line-chart",
+			"stock-table",
+			"indicator-table",
+			"earnings-calendar",
+		]);
+		expect(applied.value.changes.map((change) => change.kind)).toEqual([
+			"added",
+			"added",
+			"added",
+			"added",
+			"added",
+		]);
+		// The change-card preview names the market content, not a blank frame.
+		expect(applied.value.changes[1]).toMatchObject({
+			title: "Gold price, past year",
+			after: expect.stringContaining("twelve-data:XAU/USD"),
+		});
+	});
+
+	it("updates a market widget's series and range", async () => {
+		const start = notebookOf([textWidget("w-1")]);
+		const added = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "add",
+					type: "line-chart",
+					title: "Gold price, past year",
+					config: { seriesIds: ["twelve-data:XAU/USD"], range: "1y" },
+				},
+			],
+			context(),
+		);
+		if (!added.ok) throw new Error(`expected success: ${added.error.failure.message}`);
+		const widgetId = added.value.widgets[1]?.widgetId ?? "";
+		const stored = notebookOf([
+			textWidget("w-1"),
+			{
+				...added.value.widgets[1],
+				createdAt: EARLIER,
+				updatedAt: EARLIER,
+				revision: 1,
+				origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+			} as NotebookWidget,
+		]);
+		const updated = await applyNotebookCommands(
+			stored,
+			[
+				{
+					kind: "update",
+					widgetId,
+					config: { seriesIds: ["twelve-data:XAU/USD", "twelve-data:AAPL"], range: "3y" },
+				},
+			],
+			context(),
+		);
+		if (!updated.ok) throw new Error(`expected success: ${updated.error.failure.message}`);
+		expect(updated.value.changes).toMatchObject([{ widgetId, kind: "updated" }]);
+	});
+
+	it("names the field of an invalid market series id", async () => {
+		for (const command of [
+			{
+				kind: "add",
+				type: "line-chart",
+				title: "Bad",
+				config: { seriesIds: ["not-a-series"], range: "1y" },
+			},
+			{
+				kind: "add",
+				type: "market-metric",
+				title: "Bad",
+				config: { seriesId: "bogus:!!!" },
+			},
+		] as const) {
+			const applied = await applyNotebookCommands(notebookOf([]), [command], context());
+			if (applied.ok) throw new Error("expected an invalid series id to fail");
+			expect(applied.error.index).toBe(0);
+			expect(applied.error.failure.code).toBe("INVALID_WIDGET");
+			expect(applied.error.failure.message).toContain("seriesId");
+		}
+	});
+
 	it("adds a research widget only for a known canvas component", async () => {
 		const known = await applyNotebookCommands(
 			notebookOf([]),

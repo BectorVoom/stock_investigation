@@ -470,6 +470,24 @@ describe("notebook-assistant prompt budget", () => {
 		expect(bytes).toBeLessThan(NOTEBOOK_PROMPT_BUDGET_BYTES);
 	});
 
+	it("lists the market catalog, the data rules and the gold example", async () => {
+		const { run, requests } = setup([replyWith([])]);
+		const outcome = await run();
+		expect(outcome.kind).toBe("assisted");
+		const prompt = requests[0]?.prompt ?? "";
+		expect(prompt).toContain("Market series you can use");
+		expect(prompt).toContain("twelve-data:XAU/USD — Gold (commodity)");
+		expect(prompt).toContain("fred:DGS10 — US 10-year yield (rates)");
+		expect(prompt).toContain('"fred:<FRED id>"');
+		expect(prompt).toContain('"twelve-data:<symbol>"');
+		expect(prompt).toContain("never invent numbers");
+		expect(prompt).toContain('"placeholder"');
+		expect(prompt).toContain('"type":"line-chart"');
+		expect(prompt).toContain('"range":"1y"');
+		expect(prompt).toContain("a Research question can find it");
+		expect(new TextEncoder().encode(prompt).byteLength).toBeLessThan(NOTEBOOK_PROMPT_BUDGET_BYTES);
+	});
+
 	it("shows a full notebook with nothing selected as previews within budget, the rest as summaries", async () => {
 		const widgets = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) =>
 			textWidget(`w-${index}`, `${"y".repeat(NOTEBOOK_LIMITS.maxTextChars - 10)} end-${index}`),
