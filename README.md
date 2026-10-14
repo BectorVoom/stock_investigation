@@ -71,7 +71,7 @@ Every `bun run` script in `package.json` (the ground truth), with its meaning to
 ```sh
 bun run check          # format + lint (Biome; `any` and non-null assertions are errors)
 bun run typecheck      # strict tsc; each project sees only its own runtime's globals
-bun run test           # vitest: 4,735 tests passed, 14 skipped across Node, DOM and the real Workers runtime with local D1 (2026-10-14)
+bun run test           # vitest: 4,742 tests passed, 14 skipped across Node, DOM and the real Workers runtime with local D1 (2026-10-14)
 bun run test:e2e       # Playwright, once per engine (Chrome channel, Firefox, WebKit), each with a fresh server and database: chat → research → sourced table/chart → reload, plus `bun run prod` and `bun run dev` themselves (Chrome only)
 bun run test:e2e:chrome|firefox|webkit  # one engine at a time
 bun run test:real      # Playwright, needs the network, spends no model quota: pristine-copy prod + dev with one real feed refresh each (PARTIAL coverage of the owner's rule — network path only)

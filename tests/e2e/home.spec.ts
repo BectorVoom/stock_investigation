@@ -824,10 +824,22 @@ test("a held pointer is stable: no flip-flopping between samples", async () => {
 	await page.mouse.move(from.x, from.y);
 	await page.mouse.down();
 	await page.mouse.move(to.x + 20, to.y + 10, { steps: 12 });
+	// Pointer moves coalesce on requestAnimationFrame: let the frame that
+	// holds the final position run before the first sample. Without this a
+	// slow engine (WebKit under load) is sampled before that frame, and the
+	// one legitimate move to the target reads as a flip-flop.
+	await page.evaluate(
+		() =>
+			new Promise<void>((resolve) => {
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+			}),
+	);
 	const first = await visualSnapshot();
-	await page.waitForTimeout(500);
-	const second = await visualSnapshot();
-	expect(second).toEqual(first);
+	// The held pointer must then change nothing, sampled repeatedly.
+	for (let sample = 0; sample < 5; sample += 1) {
+		await page.waitForTimeout(100);
+		expect(await visualSnapshot()).toEqual(first);
+	}
 	await page.keyboard.press("Escape");
 	await page.mouse.up();
 	await page.waitForTimeout(300);
