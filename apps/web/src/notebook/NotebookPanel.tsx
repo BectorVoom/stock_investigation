@@ -4,6 +4,15 @@ import type {
 	NotebookWidgetOrigin,
 	WorkspaceView,
 } from "@research/contracts";
+import {
+	type HomeWidget,
+	homeWidgetAsNotebookWidget,
+	isNotebookMarketWidget,
+	type MarketCatalogEntry,
+	NOTEBOOK_MARKET_WIDGET_TYPES,
+	NOTEBOOK_WIDGET_TYPE_META,
+	type NotebookMarketWidgetType,
+} from "@research/contracts";
 import type { UiRegistry } from "@research/ui-registry";
 import {
 	createMoveAnnouncer,
@@ -27,7 +36,10 @@ import {
 	Loading,
 	Notice,
 } from "../components/ui.tsx";
+import { ensureHomeIconLibraries } from "../home/shoelace.ts";
+import { NotebookMarketDialog, type NotebookMarketDialogState } from "./MarketWidgetDialog.tsx";
 import { NotebookEditor } from "./NotebookEditor.tsx";
+import { createNotebookMarketContext } from "./notebookMarket.ts";
 import {
 	duplicateNotebookWidget,
 	moveNotebookWidget,
@@ -114,6 +126,10 @@ function starterOf(type: "text" | "metric" | "chart" | "table"): NotebookWidgetC
 }
 
 export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
+	// Market widgets reuse Home's Shoelace controls (range select, add/edit
+	// form): point the icon libraries at the shipped SVGs like Home does, so
+	// no `data:` fetch ever hits `connect-src`. Idempotent.
+	ensureHomeIconLibraries();
 	const widgets = () => props.session.widgets();
 	const selection = () => props.session.selection();
 	const announcer = createMoveAnnouncer();
@@ -121,6 +137,22 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	const [editorOpener, setEditorOpener] = createSignal<HTMLElement | null>(null);
 	const [removeIds, setRemoveIds] = createSignal<readonly string[] | null>(null);
 	const [removeOpener, setRemoveOpener] = createSignal<HTMLElement | null>(null);
+	/**
+	 * Live market data for the notebook's market widgets (ADR-0021): the
+	 * Home components in `WidgetBody` read their series through this, the
+	 * same shape HomeView passes them. Loads nothing until the notebook
+	 * holds a market widget.
+	 */
+	const market = createNotebookMarketContext({
+		api: props.api,
+		workspaceId: () => props.session.state()?.workspaceId ?? null,
+		widgets,
+	});
+	const [marketDialog, setMarketDialog] = createSignal<NotebookMarketDialogState | null>(null);
+	const [marketOpener, setMarketOpener] = createSignal<HTMLElement | null>(null);
+	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
+	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
+	let catalogLoading = false;
 
 	const editing = (): NotebookWidget | null => {
 		const id = editorId();
@@ -128,8 +160,40 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		return widgets().find((widget) => widget.widgetId === id) ?? null;
 	};
 
-	const openEditor = (widgetId: string): void => {
+	/** Home's series catalog for the market-widget form, loaded on first use. */
+	const ensureCatalog = (): void => {
+		if (catalog() !== null || catalogLoading) return;
+		catalogLoading = true;
+		setCatalogState("loading");
+		void props.api.listMarketCatalog().then((result) => {
+			if (result.ok) {
+				setCatalog(result.value);
+				setCatalogState("ready");
+			} else {
+				catalogLoading = false;
+				setCatalogState("error");
+			}
+		});
+	};
+
+	const openMarketDialog = (state: NotebookMarketDialogState): void => {
 		const active = document.activeElement;
+		setMarketOpener(active instanceof HTMLElement ? active : null);
+		setMarketDialog(state);
+		ensureCatalog();
+	};
+
+	const openEditor = (widgetId: string): void => {
+		const widget = widgets().find((entry) => entry.widgetId === widgetId);
+		const active = document.activeElement;
+		// Market widgets are edited in Home's form (series, range, days
+		// ahead); the other types use the notebook editor.
+		if (widget !== undefined && isNotebookMarketWidget(widget)) {
+			setMarketOpener(active instanceof HTMLElement ? active : null);
+			setMarketDialog({ mode: "edit", widget });
+			ensureCatalog();
+			return;
+		}
 		setEditorOpener(active instanceof HTMLElement ? active : null);
 		setEditorId(widgetId);
 	};
@@ -224,6 +288,50 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			),
 		);
 
+	/**
+	 * A market widget edited through its Home component (today: the
+	 * line-chart range select) saves like any owner edit, keeping the
+	 * server-stamped metadata.
+	 */
+	const saveMarketWidget = (widget: HomeWidget): void => {
+		void props.session.edit((current) =>
+			current.map((entry) => {
+				if (entry.widgetId !== widget.widgetId || !isNotebookMarketWidget(entry)) return entry;
+				const core = homeWidgetAsNotebookWidget(widget);
+				return {
+					...core,
+					createdAt: entry.createdAt,
+					updatedAt: entry.updatedAt,
+					revision: entry.revision,
+					origin: entry.origin,
+				};
+			}),
+		);
+	};
+
+	/** Saves the market-widget dialog: an edit keeps the metadata, an add is owner-made. */
+	const saveMarketDialog = (core: NotebookWidgetCore): void => {
+		const current = marketDialog();
+		setMarketDialog(null);
+		if (current?.mode === "edit") {
+			void props.session.edit((widgets) =>
+				widgets.map((entry) =>
+					entry.widgetId === core.widgetId
+						? {
+								...core,
+								createdAt: entry.createdAt,
+								updatedAt: entry.updatedAt,
+								revision: entry.revision,
+								origin: entry.origin,
+							}
+						: entry,
+				),
+			);
+		} else {
+			void props.session.addWidget(core, ownerOrigin());
+		}
+	};
+
 	const undoAvailable = () => props.session.state()?.undoAvailable ?? false;
 	const pending = () => props.session.pending();
 	const notice = () => props.session.notice();
@@ -257,6 +365,15 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 						{ value: "metric", label: "Metric", onSelect: () => addStarter("metric") },
 						{ value: "chart", label: "Chart", onSelect: () => addStarter("chart") },
 						{ value: "table", label: "Table", onSelect: () => addStarter("table") },
+						// Live market widgets (ADR-0021), reusing Home's components
+						// and form; each needs a series, so adding opens the form.
+						...(NOTEBOOK_MARKET_WIDGET_TYPES as readonly NotebookMarketWidgetType[]).map(
+							(type) => ({
+								value: type,
+								label: NOTEBOOK_WIDGET_TYPE_META[type].label,
+								onSelect: () => openMarketDialog({ mode: "add", notebookType: type }),
+							}),
+						),
 					]}
 				/>
 			</div>
@@ -432,9 +549,10 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 										widget={widget}
 										view={props.view}
 										registry={props.registry}
-										market={null}
+										market={market}
 										editingDisabled={pending()}
 										onSaveText={saveText}
+										onSaveMarketWidget={saveMarketWidget}
 									/>
 								</WidgetFrame>
 							)}
@@ -487,6 +605,17 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					/>
 				)}
 			</Show>
+
+			<NotebookMarketDialog
+				state={marketDialog()}
+				opener={marketOpener()}
+				widgets={widgets()}
+				catalog={catalog()}
+				catalogState={catalogState()}
+				seriesById={market.seriesById()}
+				onSave={saveMarketDialog}
+				onClose={() => setMarketDialog(null)}
+			/>
 		</section>
 	);
 }
