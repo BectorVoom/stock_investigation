@@ -1,5 +1,6 @@
 import type { AgentProbe, AgentRunContext, AgentRuntime } from "@research/agent-core";
 import type { AgentEvent, AgentRequest } from "@research/contracts";
+import { type JobState, transitionJob } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	NOTEBOOK_ASSIST_TURN_MARKER,
@@ -297,6 +298,9 @@ describe("notebook-assistant turn: prompt narrowing and fencing", () => {
 	});
 });
 
+/** Every stage in order: the job state machine never skips one. */
+const LEGAL_PATH = ["planning", "collecting", "analyzing", "verifying", "publishing"];
+
 describe("notebook-assistant turn: repair, refusal, cancellation, usage", () => {
 	it("asks once for corrected JSON after an unparseable first reply", async () => {
 		const { run, requests, reporter } = setup(["this is not json", replyWith([ADD_CHART])]);
@@ -311,7 +315,22 @@ describe("notebook-assistant turn: repair, refusal, cancellation, usage", () => 
 		expect(requests[1]?.prompt).toContain("Return corrected JSON only.");
 		expect(reporter.recorded.notes).toHaveLength(1);
 		expect(reporter.recorded.notes[0]).toContain("NOTEBOOK_REPLY_INVALID");
-		expect(reporter.recorded.states).toEqual(["planning", "analyzing", "publishing"]);
+		expect(reporter.recorded.states).toEqual(LEGAL_PATH);
+	});
+
+	it("reports a path the job state machine accepts, from claimed to completed", async () => {
+		// A skipped stage makes the API refuse the completion
+		// (SUBMISSION_REJECTED_ILLEGAL_TRANSITION), which a recording reporter
+		// alone would never notice.
+		const { run, reporter } = setup([replyWith([ADD_CHART])]);
+		const outcome = await run();
+		expect(outcome.kind).toBe("assisted");
+		const path: readonly JobState[] = ["claimed", ...reporter.recorded.states, "completed"];
+		for (const [index, state] of path.entries()) {
+			const next = path[index + 1];
+			if (next !== undefined)
+				expect(transitionJob(state, next).ok, `${state} -> ${next}`).toBe(true);
+		}
 	});
 
 	it("ends NOTEBOOK_REPLY_INVALID (not retryable) when the repair also fails", async () => {

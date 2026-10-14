@@ -871,6 +871,45 @@ describe("notebookAssistedEffects", () => {
 		});
 	});
 
+	it("writes no version for a turn whose commands change nothing", async () => {
+		const f = fakes();
+		f.notebookStore.record = {
+			notebook: { widgets: [textWidget("w-1")] },
+			version: 1,
+			updatedAt: NOW,
+		};
+		const size = textWidget("w-1").size;
+		const effects = unwrap(
+			await notebookAssistedEffects(
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				job(),
+				{
+					outcome: "notebook-assisted",
+					leaseGeneration: 1,
+					usage: {
+						agentSteps: 1,
+						toolCalls: 0,
+						inputBytes: 10,
+						knownCostUsd: 0,
+						hasUnmeteredUsage: true,
+					},
+					baseVersion: 1,
+					reply: "It is already that size.",
+					commands: [{ kind: "resize", widgetId: "w-1", size }],
+					proposedRemovals: [],
+				},
+				NOW,
+			),
+		);
+		expect(effects.notebook).toBeNull();
+		expect(effects.notebookTurn?.turn).toMatchObject({
+			appliedVersion: null,
+			changes: [],
+			failure: null,
+		});
+		expect(effects.assistantMessage.text).toBe("It is already that size.");
+	});
+
 	it("records NOTEBOOK_CHANGED and applies nothing when the notebook moved", async () => {
 		const f = fakes();
 		f.notebookStore.record = {

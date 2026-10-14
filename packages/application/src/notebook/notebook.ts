@@ -579,19 +579,25 @@ export async function notebookAssistedEffects(
 		const title = titles.get(widgetId);
 		return title === undefined ? [] : [{ widgetId, title }];
 	});
+	// A turn whose commands change nothing (resizing a widget to the size it
+	// has, a reply with no commands) writes no version: there is nothing to
+	// undo, and a new version would make the owner's open tab stale for nothing.
+	const changed = applied.value.changes.length > 0;
 	return ok({
-		notebook: {
-			workspaceId,
-			expectedVersion: request.baseVersion,
-			notebook: stamped,
-			updatedAt: now,
-		},
+		notebook: changed
+			? {
+					workspaceId,
+					expectedVersion: request.baseVersion,
+					notebook: stamped,
+					updatedAt: now,
+				}
+			: null,
 		notebookTurn: {
 			workspaceId,
 			turn: {
 				runId: job.runId,
 				baseVersion: request.baseVersion,
-				appliedVersion: request.baseVersion + 1,
+				appliedVersion: changed ? request.baseVersion + 1 : null,
 				changes: [...applied.value.changes],
 				proposedRemovals,
 				failure: null,

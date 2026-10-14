@@ -47,7 +47,13 @@ describe("notebook-assist jobs (ADR-0020)", () => {
 		const harness = createDeps(api);
 		await executeJob(notebookJob(), harness.deps, never);
 
-		expect(stateSequence(calls.events)).toEqual(["planning", "analyzing", "publishing"]);
+		expect(stateSequence(calls.events)).toEqual([
+			"planning",
+			"collecting",
+			"analyzing",
+			"verifying",
+			"publishing",
+		]);
 		expect(calls.completions).toHaveLength(1);
 		const completion = calls.completions[0];
 		expect(completeJobRequestSchema.safeParse(completion).success).toBe(true);

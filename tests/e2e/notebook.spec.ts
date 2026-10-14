@@ -76,6 +76,27 @@ async function panelWidths(): Promise<{ readonly chat: number; readonly notebook
 	return { chat: chatBox.width, notebook: notebookBox.width };
 }
 
+/** The Notebook's widgets only: thread previews use the same frame. */
+function notebookWidgets() {
+	return page.locator('div[data-panel="notebook"] article[data-widget-id]');
+}
+
+/**
+ * Waits until the dominant panel is more than twice the other: the switch
+ * animates `grid-template-columns`, so a measurement right after the click
+ * sees the old proportions.
+ */
+async function expectDominant(panel: "chat" | "notebook"): Promise<void> {
+	await expect
+		.poll(async () => {
+			const widths = await panelWidths();
+			return panel === "chat"
+				? widths.chat > widths.notebook * 2
+				: widths.notebook > widths.chat * 2;
+		})
+		.toBe(true);
+}
+
 test("a new chat opens Chat-first with Chat wider than the Notebook", async () => {
 	await page.goto("/#/chat");
 	await page
@@ -86,8 +107,7 @@ test("a new chat opens Chat-first with Chat wider than the Notebook", async () =
 	await expect(
 		page.getByRole("heading", { level: 3, name: "What would you like to research?" }),
 	).toBeVisible();
-	const widths = await panelWidths();
-	expect(widths.chat).toBeGreaterThan(widths.notebook * 2);
+	await expectDominant("chat");
 });
 
 test("the scripted runner backend registers", async () => {
@@ -174,8 +194,7 @@ test("Focus Notebook switches to Notebook-first with thread and draft intact", a
 	const composer = page.getByRole("form", { name: "Research composer" });
 	await composer.getByRole("textbox", { name: "Question" }).fill("draft that must survive");
 	await page.getByRole("button", { name: "Focus Notebook" }).first().click();
-	const widths = await panelWidths();
-	expect(widths.notebook).toBeGreaterThan(widths.chat * 2);
+	await expectDominant("notebook");
 	await expect(page.getByRole("button", { name: "Focus Notebook" }).first()).toHaveAttribute(
 		"aria-pressed",
 		"true",
@@ -185,22 +204,24 @@ test("Focus Notebook switches to Notebook-first with thread and draft intact", a
 	await expect(thread.getByRole("article", { name: "Your message" })).toContainText(
 		"Which storage products will see demand growth?",
 	);
-	await expect(composer.getByRole("textbox", { name: "Question" })).toHaveValue(
-		"draft that must survive",
-	);
+	// Notebook-first targets the notebook assistant by default; the draft moves with it.
+	await expect(
+		page
+			.getByRole("form", { name: "Notebook composer" })
+			.getByRole("textbox", { name: "Instruction" }),
+	).toHaveValue("draft that must survive");
 });
 
 test("a reload keeps Notebook-first", async () => {
 	await page.reload();
 	await expect(page.getByRole("region", { name: "Notebook" })).toBeVisible();
-	const widths = await panelWidths();
-	expect(widths.notebook).toBeGreaterThan(widths.chat * 2);
+	await expectDominant("notebook");
 	const thread = page.getByRole("list", { name: "Messages" });
 	await expect(thread.getByRole("article", { name: "Your message" }).first()).toBeVisible();
 });
 
 test("a dragged widget keeps its new position across a reload", async () => {
-	const widgets = page.locator("article[data-widget-id]");
+	const widgets = notebookWidgets();
 	await expect(widgets).toHaveCount(2, { timeout: 15_000 });
 	const before = await widgets.evaluateAll((nodes) =>
 		nodes.map((node) => node.getAttribute("data-widget-id")),
@@ -222,29 +243,26 @@ test("a dragged widget keeps its new position across a reload", async () => {
 	);
 	expect(moved).not.toEqual(before);
 	await page.reload();
-	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
+	await expect(notebookWidgets().first()).toBeVisible();
 	await expect(
-		page
-			.locator("article[data-widget-id]")
-			.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-widget-id"))),
+		notebookWidgets().evaluateAll((nodes) =>
+			nodes.map((node) => node.getAttribute("data-widget-id")),
+		),
 	).resolves.toEqual(moved);
 });
 
 test("a size change through the menu persists", async () => {
-	const chart = page.locator("article[data-widget-id]").first();
+	const chart = notebookWidgets().first();
 	await chart.locator("button[data-widget-actions]").click();
-	await page.getByRole("menuitem", { name: "Large" }).click();
-	await expect(chart).toHaveAttribute("data-widget-size", "large");
+	await page.getByRole("menuitem", { name: "Small" }).click();
+	await expect(chart).toHaveAttribute("data-widget-size", "small");
 	await page.reload();
-	await expect(page.locator("article[data-widget-id]").first()).toHaveAttribute(
-		"data-widget-size",
-		"large",
-	);
+	await expect(notebookWidgets().first()).toHaveAttribute("data-widget-size", "small");
 });
 
 test("selecting the chart targets the notebook assistant; larger resizes with Undo", async () => {
 	// A click on the header strip (not the actions button) selects the widget alone.
-	const chart = page.locator("article[data-widget-id]").first();
+	const chart = notebookWidgets().first();
 	await chart.locator(".wg-title").click();
 	const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
 	await expect(notebookComposer).toBeVisible();
@@ -254,7 +272,7 @@ test("selecting the chart targets the notebook assistant; larger resizes with Un
 
 	// The assistant resized the selection: the turn card says so.
 	const turn = page.locator("[data-notebook-turn]");
-	await expect(turn).toContainText("resized", { timeout: 60_000 });
+	await expect(turn).toContainText(/resized/i, { timeout: 60_000 });
 	await expect(chart).toHaveAttribute("data-widget-size", "large");
 	// Undo restores the size.
 	await turn.getByRole("button", { name: "Undo" }).click();
@@ -265,7 +283,7 @@ test("explain adds a text widget after the selection; remove proposes and Remove
 	const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
 	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("explain this");
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
-	const widgets = page.locator("article[data-widget-id]");
+	const widgets = notebookWidgets();
 	await expect(widgets).toHaveCount(3, { timeout: 60_000 });
 	await expect(widgets.nth(1)).toContainText("Explanation");
 
@@ -279,20 +297,16 @@ test("explain adds a text widget after the selection; remove proposes and Remove
 
 test("Focus Chat returns to Chat-first with all history intact", async () => {
 	await page.getByRole("button", { name: "Focus Chat" }).first().click();
-	const widths = await panelWidths();
-	expect(widths.chat).toBeGreaterThan(widths.notebook * 2);
+	await expectDominant("chat");
 	const thread = page.getByRole("list", { name: "Messages" });
-	await expect(thread.getByRole("article", { name: "Your message" })).toContainText(
+	await expect(thread.getByRole("article", { name: "Your message" }).first()).toContainText(
 		"Which storage products will see demand growth?",
 	);
-	await expect(thread.getByRole("article", { name: "Assistant message" })).toContainText(
+	await expect(thread.getByRole("article", { name: "Assistant message" }).first()).toContainText(
 		"1 of 2 claim(s) are supported",
 	);
-	// Console errors exclude the expected error paths (422/403, plus the
-	// notebook 404s until the parallel server task lands its endpoints).
-	expect(
-		consoleErrors.filter(
-			(text) => !text.includes("422") && !text.includes("403") && !text.includes("404"),
-		),
-	).toEqual([]);
+	// Console errors exclude the expected error paths (422/403).
+	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
+		[],
+	);
 });

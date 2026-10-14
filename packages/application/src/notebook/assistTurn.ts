@@ -263,6 +263,12 @@ export async function runNotebookAssistTurn(
 		return { ok: true, value: { reply, commands, proposedRemovals } };
 	}
 
+	// The job state machine (proved in Lean) only moves forward one stage at a
+	// time, so every stage is reported even where a notebook turn has little
+	// to do in it: collecting = reading the claimed notebook into a prompt,
+	// analyzing = the model turn, verifying = pre-checking its commands (and
+	// the one repair turn), publishing = handing the result to the API.
+	await deps.reporter.state("collecting");
 	const promptInput = {
 		notebook: input.notebook,
 		selectedWidgetIds: input.selectedWidgetIds,
@@ -283,6 +289,7 @@ export async function runNotebookAssistTurn(
 	if (!first.ok) {
 		return first.cancelled ? { kind: "cancelled", usage } : failed(first.code, first.retryable);
 	}
+	await deps.reporter.state("verifying");
 	const checked = await checkTurn(first.text);
 	if (checked.ok) {
 		await deps.reporter.state("publishing");
