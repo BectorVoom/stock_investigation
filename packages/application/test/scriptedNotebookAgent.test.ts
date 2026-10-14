@@ -51,6 +51,22 @@ async function notebookReply(prompt: string): Promise<{ reply: unknown; commands
 }
 
 describe("scripted agent: notebook-assistant contract", () => {
+	it("gold adds a gold price line chart before the chart rule", async () => {
+		const { reply, commands } = await notebookReply(
+			promptFor("Create a chart of gold prices over the past year.", []),
+		);
+		expect(reply).toBe("Added a gold price chart.");
+		expect(commands).toEqual([
+			{
+				kind: "add",
+				type: "line-chart",
+				title: "Gold price, past year",
+				size: "medium",
+				config: { seriesIds: ["twelve-data:XAU/USD"], range: "1y" },
+			},
+		]);
+	});
+
 	it("chart adds a revenue line chart", async () => {
 		const { reply, commands } = await notebookReply(promptFor("Please add a chart.", []));
 		expect(reply).toBe("Added a revenue chart.");

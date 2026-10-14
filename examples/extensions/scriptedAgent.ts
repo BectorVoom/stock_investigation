@@ -89,6 +89,7 @@ function notebookPositions(prompt: string): Map<string, number> {
  * rule whose phrase the (lower-cased) instruction contains wins:
  *
  * | instruction contains | reply | commands |
+ * | `gold` | `Added a gold price chart.` | `add` a `line-chart` titled `Gold price, past year` |
  * | `chart` | `Added a revenue chart.` | `add` a line `chart` titled `Revenue` |
  * | `larger` | `Made it larger.` | `resize` every selected id to `large` |
  * | `explain` | `Added an explanation.` | `add` a `text` explanation after the first selected widget |
@@ -103,6 +104,17 @@ function scriptedNotebookAssistReply(prompt: string): string {
 	const positions = notebookPositions(prompt);
 	const answer = (reply: string, commands: readonly unknown[]): string =>
 		JSON.stringify({ reply, commands });
+	if (instruction.includes("gold")) {
+		return answer("Added a gold price chart.", [
+			{
+				kind: "add",
+				type: "line-chart",
+				title: "Gold price, past year",
+				size: "medium",
+				config: { seriesIds: ["twelve-data:XAU/USD"], range: "1y" },
+			},
+		]);
+	}
 	if (instruction.includes("chart")) {
 		return answer("Added a revenue chart.", [
 			{
