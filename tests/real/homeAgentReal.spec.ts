@@ -138,6 +138,10 @@ async function startMcpServer(apiOrigin: string, env: Record<string, string>): P
 	child.stderr?.on("data", (chunk: Buffer) => {
 		stderr += chunk.toString("utf8");
 	});
+	// Registered at spawn, so `stop` settles even when the process has
+	// already exited (it is called from the test's `finally` and again by the
+	// resource registry: a listener added after the exit would never fire).
+	const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
 	if (child.stdout === null || child.stdin === null) {
 		child.kill("SIGKILL");
 		throw new Error("the MCP server has no piped stdio");
@@ -160,7 +164,6 @@ async function startMcpServer(apiOrigin: string, env: Record<string, string>): P
 		stderr: () => stderr,
 		stop: async () => {
 			child.stdin?.end();
-			const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
 			const done = await Promise.race([
 				exited.then(() => true),
 				new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5_000)),
