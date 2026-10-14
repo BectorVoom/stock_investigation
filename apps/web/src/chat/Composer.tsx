@@ -1,6 +1,7 @@
 import type {
 	AgentSettingsResponse,
 	AgentsResponse,
+	NotebookAssistResponse,
 	ResearchRequest,
 	ResearchRun,
 } from "@research/contracts";
@@ -24,9 +25,31 @@ import { type ComposerDraft, defaultComposerDraft, evaluateComposer } from "./co
 
 const HORIZONS = [3, 4, 5] as const;
 
+/** Where the composer's text goes: today's research run, or the notebook assistant. */
+export type ComposerTarget = "research" | "notebook";
+
 /** Configuration problems show immediately; question problems wait for input. WHY: the owner cannot fix what they have not typed yet, but a missing backend blocks everything. */
 function isConfigurationProblem(problem: string): boolean {
 	return problem.includes("Settings → AI agent") || problem.includes("still loading");
+}
+
+/**
+ * Notebook-assistant failures in the owner's words. `AGENT_NOT_CONFIGURED`
+ * points at the control that fixes it; `NOTEBOOK_ASSIST_ACTIVE` says one
+ * request runs at a time; anything else falls back to the generic notice.
+ * (The codes arrive from the server, so they are read as plain strings.)
+ */
+export function notebookFailureText(failure: { readonly code: string }): string | null {
+	const code: string = failure.code;
+	if (code === "AGENT_NOT_CONFIGURED") return "The notebook assistant needs an agent backend.";
+	if (code === "NOTEBOOK_ASSIST_ACTIVE")
+		return "One notebook request runs at a time. Wait for it to finish and try again.";
+	return null;
+}
+
+export function notebookFailureLink(failure: { readonly code: string }): boolean {
+	const code: string = failure.code;
+	return code === "AGENT_NOT_CONFIGURED";
 }
 
 /**
@@ -52,6 +75,16 @@ export function Composer(props: {
 	readonly suggestion?: () => { readonly text: string; readonly nonce: number } | null;
 	/** All runs the session holds, so the queued note can follow the run it belongs to (finding 12). */
 	readonly runs?: readonly ResearchRun[];
+	/** "Research" sends a question; "Notebook" sends the text to the notebook assistant. */
+	readonly target?: ComposerTarget;
+	readonly onTargetChange?: (target: ComposerTarget) => void;
+	/** Widgets the instruction is about, in notebook order (empty: the whole notebook). */
+	readonly selection?: readonly { readonly widgetId: string; readonly title: string }[];
+	readonly onRemoveSelection?: (widgetId: string) => void;
+	readonly onSubmitNotebook?: (
+		instruction: string,
+		idempotencyKey: string,
+	) => Promise<ApiResult<NotebookAssistResponse>>;
 }): JSX.Element {
 	const [draft, setDraft] = createSignal<ComposerDraft>(defaultComposerDraft());
 	const [submitting, setSubmitting] = createSignal(false);
@@ -63,8 +96,12 @@ export function Composer(props: {
 	const [tried, setTried] = createSignal(false);
 	/** Reused when the identical request is re-sent, so a retry cannot create a second run. */
 	let pendingKey: { readonly fingerprint: string; readonly key: string } | null = null;
+	/** Same reuse guard for the notebook assistant's idempotency key. */
+	let notebookKey: { readonly fingerprint: string; readonly key: string } | null = null;
 	let form: HTMLFormElement | undefined;
 	let questionBox: HTMLTextAreaElement | undefined;
+
+	const isNotebook = () => (props.target ?? "research") === "notebook";
 
 	const agents = createMemo(() => (props.agents.status === "ready" ? props.agents.value : null));
 	const settings = createMemo(() =>
@@ -119,6 +156,10 @@ export function Composer(props: {
 
 	const submit = async (event: SubmitEvent) => {
 		event.preventDefault();
+		if (isNotebook()) {
+			await submitNotebook();
+			return;
+		}
 		setTried(true);
 		if (submitting()) return;
 		// The live request, or — when consent was already consumed by a
@@ -186,6 +227,78 @@ export function Composer(props: {
 		}
 	};
 
+	// Configuration problems block everything, so they are announced directly
+	// above the input with a way to fix them; per-question problems stay in
+	// the list under the input. Declared before the notebook helpers: the
+	// notebook target reuses the same gate (a missing backend blocks it too).
+	const configProblems = createMemo(() =>
+		evaluation().problems.filter((problem) => isConfigurationProblem(problem)),
+	);
+
+	/** Instruction problems: configuration blocks everything, text problems wait for input. */
+	const notebookProblems = createMemo(() => {
+		const problems = [...configProblems()];
+		const instruction = draft().question.trim();
+		if (typed() || tried()) {
+			if (instruction.length === 0)
+				problems.push("Enter an instruction for the notebook assistant.");
+			else if (instruction.length > 2000)
+				problems.push("The instruction must be at most 2000 characters.");
+		}
+		return problems;
+	});
+
+	const notebookCanSend = () => {
+		if (submitting() || props.onSubmitNotebook === undefined) return false;
+		if (configProblems().length > 0) return false;
+		const instruction = draft().question.trim();
+		return instruction.length > 0 && instruction.length <= 2000;
+	};
+
+	const submitNotebook = async () => {
+		setTried(true);
+		if (submitting() || props.onSubmitNotebook === undefined) return;
+		const instruction = draft().question.trim();
+		if (instruction.length === 0 || instruction.length > 2000) return;
+		if (configProblems().length > 0) return;
+		const fingerprint = JSON.stringify(instruction);
+		if (notebookKey === null || notebookKey.fingerprint !== fingerprint) {
+			notebookKey = { fingerprint, key: props.newIdempotencyKey() };
+		}
+		const key = notebookKey.key;
+		setSubmitting(true);
+		setFailure(null);
+		setQueuedNote(null);
+		setQueuedRunId(null);
+		const result = await props.onSubmitNotebook(instruction, key);
+		setSubmitting(false);
+		if (result.ok) {
+			notebookKey = null;
+			if (result.value.run.state === "pending") {
+				setQueuedRunId(result.value.run.runId);
+				setQueuedNote("Instruction queued. The notebook assistant starts when a runner claims it.");
+			} else {
+				setQueuedNote(`Instruction submitted (run is ${result.value.run.state}).`);
+			}
+			setTyped(false);
+			setTried(false);
+			// The cleared text is only the instruction that was sent: text
+			// typed while the request was in flight is the next draft.
+			setDraft((current) => ({
+				...current,
+				question: current.question.trim() === instruction ? "" : current.question,
+			}));
+		} else {
+			setFailure(result.error);
+		}
+	};
+
+	/** Notebook-assistant failures, shown like composer failures (stable code plus one sentence). */
+	const notebookFailure = () => {
+		if (!isNotebook()) return null;
+		return failure();
+	};
+
 	const summary = () => {
 		const selected = evaluation().selectedAgent;
 		const stored = settings();
@@ -219,12 +332,6 @@ export function Composer(props: {
 		const interacted = typed() || tried();
 		return evaluation().problems.filter((problem) => isConfigurationProblem(problem) || interacted);
 	});
-	// Configuration problems block everything, so they are announced directly
-	// above the input with a way to fix them; per-question problems stay in
-	// the list under the input.
-	const configProblems = createMemo(() =>
-		evaluation().problems.filter((problem) => isConfigurationProblem(problem)),
-	);
 	// The queued note describes the run it belongs to (finding 12): as soon as
 	// that run leaves `pending` the note disappears — the run's current state
 	// is announced through the conversation status region instead.
@@ -239,6 +346,7 @@ export function Composer(props: {
 	});
 
 	const canSend = () => {
+		if (isNotebook()) return notebookCanSend();
 		if (submitting()) return false;
 		if (evaluation().request !== null) return true;
 		// The identical resend of a dispatched request stays enabled without
@@ -252,7 +360,10 @@ export function Composer(props: {
 		).request;
 		return candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint;
 	};
-	const sendLabel = () => (submitting() ? "Sending…" : "Send question");
+	const sendLabel = () => {
+		if (submitting()) return "Sending…";
+		return isNotebook() ? "Send instruction" : "Send question";
+	};
 
 	// noValidate: the rules in composerModel are the single source of validation and messages.
 	return (
@@ -260,7 +371,7 @@ export function Composer(props: {
 			ref={(element) => {
 				form = element;
 			}}
-			aria-label="Research composer"
+			aria-label={isNotebook() ? "Notebook composer" : "Research composer"}
 			class="space-y-1 bg-white"
 			noValidate
 			onSubmit={submit}
@@ -278,9 +389,61 @@ export function Composer(props: {
 					</a>
 				</Notice>
 			</Show>
+			<fieldset class="flex gap-1">
+				<legend class="sr-only">Composer target</legend>
+				<button
+					type="button"
+					aria-pressed={!isNotebook()}
+					onClick={() => props.onTargetChange?.("research")}
+					class="min-h-6 rounded px-2 py-0.5 text-xs font-medium"
+					classList={{
+						"bg-blue-700 text-white": !isNotebook(),
+						"bg-slate-200 text-slate-900 hover:bg-slate-300": isNotebook(),
+					}}
+				>
+					Research
+				</button>
+				<button
+					type="button"
+					aria-pressed={isNotebook()}
+					onClick={() => props.onTargetChange?.("notebook")}
+					class="min-h-6 rounded px-2 py-0.5 text-xs font-medium"
+					classList={{
+						"bg-blue-700 text-white": isNotebook(),
+						"bg-slate-200 text-slate-900 hover:bg-slate-300": !isNotebook(),
+					}}
+				>
+					Notebook
+				</button>
+			</fieldset>
+			<Show when={isNotebook()}>
+				<Show
+					when={(props.selection ?? []).length > 0}
+					fallback={<p class="text-xs text-slate-600">About the whole notebook</p>}
+				>
+					<ul aria-label="Selected widgets" class="flex flex-wrap gap-1">
+						<For each={props.selection ?? []}>
+							{(item) => (
+								<li class="inline-flex min-h-6 items-center gap-1 rounded bg-slate-200 py-0.5 pl-2 pr-1 text-xs text-slate-900">
+									<span>{item.title}</span>
+									<button
+										type="button"
+										aria-label={`Remove ${item.title} from selection`}
+										title={`Remove ${item.title} from selection`}
+										onClick={() => props.onRemoveSelection?.(item.widgetId)}
+										class="flex min-h-6 min-w-6 items-center justify-center rounded-full hover:bg-slate-300"
+									>
+										<span aria-hidden="true">×</span>
+									</button>
+								</li>
+							)}
+						</For>
+					</ul>
+				</Show>
+			</Show>
 			<div class="flex items-end gap-2 rounded-2xl bg-slate-100 p-2 focus-within:ring-2 focus-within:ring-blue-700">
 				<label for={questionId} class="sr-only">
-					Question
+					{isNotebook() ? "Instruction" : "Question"}
 				</label>
 				<textarea
 					ref={(element) => {
@@ -290,7 +453,7 @@ export function Composer(props: {
 					class="max-h-48 w-full resize-none border-0 bg-slate-100 px-1 py-1 text-sm text-slate-900 field-sizing-content focus:outline-none"
 					rows="1"
 					maxLength={2000}
-					placeholder="Ask a research question…"
+					placeholder={isNotebook() ? "Ask the notebook assistant…" : "Ask a research question…"}
 					value={draft().question}
 					onInput={(event) => {
 						setTyped(true);
@@ -307,7 +470,11 @@ export function Composer(props: {
 				<button
 					type="submit"
 					aria-label={sendLabel()}
-					aria-describedby={visibleProblems().length > 0 ? problemsId : undefined}
+					aria-describedby={
+						(isNotebook() ? notebookProblems().length : visibleProblems().length) > 0
+							? problemsId
+							: undefined
+					}
 					disabled={!canSend()}
 					class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full disabled:cursor-not-allowed"
 					classList={{
@@ -385,108 +552,142 @@ export function Composer(props: {
 					)}
 				</Show>
 
-				<Show when={summaryLine()}>
-					{(line) => (
+				<Show when={!isNotebook()}>
+					<Show when={summaryLine()}>
+						{(line) => (
+							<p class="break-words text-xs text-slate-700">
+								{line()}{" "}
+								<a href="#/settings/agent" class="text-blue-800 underline">
+									Change in Settings → AI agent
+								</a>
+							</p>
+						)}
+					</Show>
+					<Show when={carriedOver() && summaryLine() !== null}>
 						<p class="break-words text-xs text-slate-700">
-							{line()}{" "}
+							Using the backend of your last question —{" "}
 							<a href="#/settings/agent" class="text-blue-800 underline">
-								Change in Settings → AI agent
+								review in Settings → AI agent
 							</a>
 						</p>
-					)}
-				</Show>
-				<Show when={carriedOver() && summaryLine() !== null}>
-					<p class="break-words text-xs text-slate-700">
-						Using the backend of your last question —{" "}
-						<a href="#/settings/agent" class="text-blue-800 underline">
-							review in Settings → AI agent
-						</a>
-					</p>
-				</Show>
+					</Show>
 
-				<details class="group break-words text-xs text-slate-700">
-					<DisclosureSummary>Options: {optionsSummary()}</DisclosureSummary>
-					<div class="max-h-32 overflow-y-auto">
-						<div class="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<label for={horizonId} class="block text-xs font-medium text-slate-700">
-									Horizon
-								</label>
-								<Select
-									id={horizonId}
-									onChange={(event) => {
-										const horizonYears = HORIZONS.find(
-											(candidate) => String(candidate) === event.currentTarget.value,
-										);
-										if (horizonYears !== undefined) patch({ horizonYears });
-									}}
-								>
-									<For each={HORIZONS}>
-										{(years) => (
-											<option value={String(years)} selected={draft().horizonYears === years}>
-												{years} years
-											</option>
-										)}
-									</For>
-								</Select>
+					<details class="group break-words text-xs text-slate-700">
+						<DisclosureSummary>Options: {optionsSummary()}</DisclosureSummary>
+						<div class="max-h-32 overflow-y-auto">
+							<div class="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+								<div>
+									<label for={horizonId} class="block text-xs font-medium text-slate-700">
+										Horizon
+									</label>
+									<Select
+										id={horizonId}
+										onChange={(event) => {
+											const horizonYears = HORIZONS.find(
+												(candidate) => String(candidate) === event.currentTarget.value,
+											);
+											if (horizonYears !== undefined) patch({ horizonYears });
+										}}
+									>
+										<For each={HORIZONS}>
+											{(years) => (
+												<option value={String(years)} selected={draft().horizonYears === years}>
+													{years} years
+												</option>
+											)}
+										</For>
+									</Select>
+								</div>
 							</div>
+							<fieldset class="mt-1 flex flex-wrap gap-4 text-xs text-slate-900">
+								<legend class="block text-xs font-medium text-slate-700">Markets</legend>
+								<label class="flex items-center gap-1">
+									<input
+										type="checkbox"
+										checked={draft().markets.JP}
+										onChange={(event) =>
+											patch({ markets: { ...draft().markets, JP: event.currentTarget.checked } })
+										}
+									/>
+									Japan (JP)
+								</label>
+								<label class="flex items-center gap-1">
+									<input
+										type="checkbox"
+										checked={draft().markets.US}
+										onChange={(event) =>
+											patch({ markets: { ...draft().markets, US: event.currentTarget.checked } })
+										}
+									/>
+									United States (US)
+								</label>
+							</fieldset>
 						</div>
-						<fieldset class="mt-1 flex flex-wrap gap-4 text-xs text-slate-900">
-							<legend class="block text-xs font-medium text-slate-700">Markets</legend>
-							<label class="flex items-center gap-1">
-								<input
-									type="checkbox"
-									checked={draft().markets.JP}
-									onChange={(event) =>
-										patch({ markets: { ...draft().markets, JP: event.currentTarget.checked } })
-									}
-								/>
-								Japan (JP)
-							</label>
-							<label class="flex items-center gap-1">
-								<input
-									type="checkbox"
-									checked={draft().markets.US}
-									onChange={(event) =>
-										patch({ markets: { ...draft().markets, US: event.currentTarget.checked } })
-									}
-								/>
-								United States (US)
-							</label>
-						</fieldset>
-					</div>
-				</details>
+					</details>
 
-				<Show when={evaluation().spendConsentRequired}>
-					<div>
-						<label for={consentId} class="flex items-start gap-2 text-xs text-slate-900">
-							<input
-								id={consentId}
-								type="checkbox"
-								class="mt-0.5"
-								checked={draft().spendConsent}
-								onChange={(event) => patch({ spendConsent: event.currentTarget.checked })}
-							/>
-							<span>{consentLabel()}</span>
-						</label>
-					</div>
+					<Show when={evaluation().spendConsentRequired}>
+						<div>
+							<label for={consentId} class="flex items-start gap-2 text-xs text-slate-900">
+								<input
+									id={consentId}
+									type="checkbox"
+									class="mt-0.5"
+									checked={draft().spendConsent}
+									onChange={(event) => patch({ spendConsent: event.currentTarget.checked })}
+								/>
+								<span>{consentLabel()}</span>
+							</label>
+						</div>
+					</Show>
+
+					<Show when={visibleProblems().length > 0}>
+						<ul
+							id={problemsId}
+							aria-label="Before you can submit"
+							class="list-disc pl-5 text-xs text-slate-700"
+						>
+							<For each={visibleProblems()}>{(problem) => <li>{problem}</li>}</For>
+						</ul>
+					</Show>
 				</Show>
 
-				<Show when={visibleProblems().length > 0}>
+				<Show when={isNotebook() && notebookProblems().length > 0}>
 					<ul
 						id={problemsId}
 						aria-label="Before you can submit"
 						class="list-disc pl-5 text-xs text-slate-700"
 					>
-						<For each={visibleProblems()}>{(problem) => <li>{problem}</li>}</For>
+						<For each={notebookProblems()}>{(problem) => <li>{problem}</li>}</For>
 					</ul>
 				</Show>
 
 				<Show when={queuedNote()}>
 					{(note) => <output class="block text-xs text-emerald-900">{note()}</output>}
 				</Show>
-				<Show when={failure()}>
+				<Show when={!isNotebook() && failure()}>
 					{(error) => <ErrorNotice failure={error()} title="The question was not submitted." />}
+				</Show>
+				<Show when={notebookFailure()}>
+					{(error) => (
+						<Show
+							when={notebookFailureText(error()) !== null}
+							fallback={<ErrorNotice failure={error()} title="The instruction was not sent." />}
+						>
+							{(text) => (
+								<Notice tone="warning">
+									<span class="block wrap-anywhere">{text()}</span>
+									<Show when={notebookFailureLink(error())}>
+										<a
+											href="#/settings/agent"
+											class="inline-flex min-h-6 items-center text-blue-800 underline"
+										>
+											Open Settings → AI agent
+										</a>
+									</Show>
+								</Notice>
+							)}
+						</Show>
+					)}
 				</Show>
 			</div>
 		</form>

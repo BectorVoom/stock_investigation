@@ -45,7 +45,7 @@ const SETTINGS_SECTIONS = new Set(["agent"]);
  * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/settings`
  * and `#/settings/agent`; the legacy `#/canvas`, `#/canvas/<id>`,
  * `#/workspace/<id>` and `#/workspace` aliases parse as the chat view
- * (bookmarks from before Chat and Canvas merged into one page).
+ * (bookmarks from before the Canvas panel moved into the thread).
  * `#/watchlist/calendar` and `#/watchlist/calendar/YYYY-MM-DD` open the
  * Watchlist page on its calendar (an invalid or missing date is the
  * default month). Anything else (unknown or empty hash) is the default

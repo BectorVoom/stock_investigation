@@ -353,7 +353,7 @@ export function DeleteChatDialog(props: {
 			onConfirm={props.onConfirm}
 			onCancel={props.onCancel}
 		>
-			<p>This removes its messages, canvas and research records. This cannot be undone.</p>
+			<p>This removes its messages, notebook and research records. This cannot be undone.</p>
 		</ConfirmDialog>
 	);
 }

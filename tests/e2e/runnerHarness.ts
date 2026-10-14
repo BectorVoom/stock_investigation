@@ -49,13 +49,32 @@ import { fixtureMarketSources } from "./marketFixtures.ts";
 /** Live backend for `tests/e2e/opencodeLive.spec.ts`; unset everywhere else. */
 const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
 
+/**
+ * Optional second-runner owner (`notebook.spec.ts`): when set, every API
+ * call of this harness carries `X-E2E-Owner`, so its credential, agent
+ * report and claimed jobs all belong to that owner — isolated from the
+ * default owner's suite state. Unset: the harness behaves exactly as before.
+ */
+const RUNNER_OWNER =
+	process.env.E2E_RUNNER_OWNER === undefined || process.env.E2E_RUNNER_OWNER === ""
+		? null
+		: process.env.E2E_RUNNER_OWNER;
+
 const logger = createEventLogger((line) => process.stderr.write(line));
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** The harness `fetch`, routing to the runner owner when one is configured. */
+const runnerFetch: typeof fetch = (input, init) => {
+	if (RUNNER_OWNER === null) return fetch(input, init);
+	const headers = new Headers(init?.headers);
+	headers.set("X-E2E-Owner", RUNNER_OWNER);
+	return fetch(input, { ...init, headers });
+};
 
 async function issueToken(): Promise<string> {
 	for (let attempt = 0; attempt < 120; attempt += 1) {
 		try {
-			const response = await fetch(`${E2E_ORIGIN}/api/v1/runner-credentials`, {
+			const response = await runnerFetch(`${E2E_ORIGIN}/api/v1/runner-credentials`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -209,7 +228,7 @@ const exit = await runRunnerLoop(
 			runnerToken: await issueToken(),
 			accessClientId: null,
 			accessClientSecret: null,
-			fetch,
+			fetch: runnerFetch,
 			sleep,
 		}),
 		agents,

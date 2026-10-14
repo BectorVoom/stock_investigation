@@ -42,7 +42,7 @@ What the test cannot check is listed in section 11 and remains a review item.
 | Warning, unverified, stale | amber | Offline/queued notices, unverified listings and notes, missing as-of dates, withheld series |
 | Success, verified, supported | emerald | Saved confirmations, verified listings, supported claims, successful imports |
 | Surface | white | Panel and card backgrounds (`bg-white`); app background is `bg-slate-100`, tinted notice backgrounds are the 50 step |
-| Surface fills (Chat) | slate-100/200/300, blue-100, red-100/200 | Borderless Chat fills: grey run/canvas cards (`bg-slate-100`) and menus/dialog/composer on white; default buttons (`bg-slate-200`, `hover:bg-slate-300`) on white and on grey cards; blue source cards and citation chips (`bg-blue-100`, chip `hover:bg-blue-200`); destructive buttons (`bg-red-100`, `hover:bg-red-200`); approval form (grey `bg-slate-200`) on its grey run card |
+| Surface fills (Chat) | slate-100/200/300, blue-100, red-100/200 | Borderless Chat fills: grey run/result cards (`bg-slate-100`) and menus/dialog/composer on white; default buttons (`bg-slate-200`, `hover:bg-slate-300`) on white and on grey cards; blue source cards and citation chips (`bg-blue-100`, chip `hover:bg-blue-200`); destructive buttons (`bg-red-100`, `hover:bg-red-200`); approval form (grey `bg-slate-200`) on its grey run card |
 
 No other family. In particular there is no gray/green/yellow/purple/orange;
 white and black exist only as bare utilities (`bg-white`, `text-white`) for
@@ -66,11 +66,11 @@ allowed foreground/background pairs all pass with margin:
 | slate-900 on slate-200 (default buttons, suggestion chips) | 14.5 |
 | slate-900 on blue-100 (source card body) | 14.6 |
 | amber-950 on slate-200 (approval title on its grey form) | 12.2 |
-| slate-700 on slate-100 (run card progress, canvas labels) | 9.5 |
+| slate-700 on slate-100 (run card progress, result labels) | 9.5 |
 | blue-900 on blue-100 (citation chips, source card titles) | 8.5 |
 | red-900 on red-100 (destructive buttons) | 8.2 |
 | blue-800 on blue-100 (source card link) | 7.1 |
-| slate-600 on slate-100 (canvas type labels) | 6.9 |
+| slate-600 on slate-100 (result type labels) | 6.9 |
 
 For comparison, `text-slate-400` on white is 2.6:1 and `text-slate-300` is
 1.5:1, which is why section 4 of the test forbids them. Any pair not in this
@@ -113,8 +113,8 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   Tailwind `rounded-*` class. No other `rounded-*` step.
 - Background tone, not shadows or outlines, separates the Chat page's panels,
   cards, buttons, chips, menus and dialog from their surfaces (section 5):
-  white panels on the grey page, light grey (`bg-slate-100`) run and canvas
-  cards on white, grey (`bg-slate-200`, `hover:bg-slate-300`) default buttons
+  white panels on the grey page, light grey (`bg-slate-100`) run and
+  result-preview cards on white, grey (`bg-slate-200`, `hover:bg-slate-300`) default buttons
   on white and on grey cards, blue (`bg-blue-700`) primary buttons, light red
   (`bg-red-100`, `hover:bg-red-200`) destructive buttons, blue-tinted
   (`bg-blue-100`, `hover:bg-blue-200`) citation chips and source cards,
@@ -141,18 +141,22 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
   with a small header holding its title and a collapse/expand button
   (`PanelHeader` in `components/ui.tsx`).
 - One column by default; three columns from the large breakpoint: Chat uses
-  `lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_minmax(18rem,26rem)]`
-  (Chats, Chat, Canvas); a collapsed side panel shrinks its column to a
+  the Chats rail plus Chat and Notebook in one grid whose template follows
+  the workspace state — Chat-first `lg:grid-cols-[minmax(14rem,18rem)_minmax(0,3fr)_minmax(0,1fr)]`
+  (Chats, Chat, Notebook), Notebook-first the `1fr`/`3fr` pair reversed —
+  with a short `grid-template-columns` transition disabled under
+  `prefers-reduced-motion`; a collapsed panel shrinks its column to a
   narrow rail (`3rem`), and a collapsed panel mounts none of its heavy
-  content. The canvas component grid is always one column (`grid-cols-1`);
-  the stored `layout.columns` value is preserved but never switches it.
-- Chat layout: chats navigation on the left, the open conversation (thread,
-  question form, run status) in the centre, the canvas on the right; the
+  content. Switching states changes only the template: both panels stay
+  mounted in the same DOM order.
+- Chat layout: chats navigation on the left, the open conversation (thread
+  with its result previews, question form, run status) and the Notebook side
+  by side; the
   evidence drawer and the delete-chat confirmation overlay with focus trapped
   and returned on close. Below the large breakpoint the page scrolls as a
   normal document, the chats history is a collapsed `Chats (<n>)` disclosure
-  (open when empty), a two-tab switch (`Chat` / `Canvas` with tab semantics)
-  shows one of the two at a time, and the composer stays `sticky` at the
+  (open when empty), a two-tab switch (`Chat` / `Notebook` with tab semantics,
+  the two workspace states) shows one of the two at a time, and the composer stays `sticky` at the
   bottom over its own opaque background (`bg-slate-100` on the page,
   `bg-white` inside the centre panel).
 
@@ -176,16 +180,17 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Dialogs / drawers | The evidence drawer; approval and creation forms; the delete-chat confirmation | — | `RecordsDrawer` (modal `dialog`, labelled by its heading, `Close records` button, focus trapped while open and returned on close); `ApprovalForm`; `ConfirmDialog` in `components/ui.tsx` (native `dialog`, `bg-slate-100` fill with no outline, labelled by its heading, `Cancel` focused on open, Escape/Cancel closes and returns focus to the explicit opener, failures stay in the dialog via `ErrorNotice`); dialog state stays local (UI-003). The drawer opens over a semi-transparent slate backdrop (`bg-slate-900/50`) that closes it on click, as does Escape. |
 | Panel header | The small header of each Chat page panel: `h3` title plus count and an icon-only collapse/expand button | expanded / collapsed rail | `PanelHeader` in `components/ui.tsx` (one shared `PanelCollapseButton` for all four buttons: side-panel glyph with no visible text, accessible collapse/expand name, `aria-expanded`, same words in the `title` tooltip, filled borderless button tone, visible focus ring, 24 px floor; the divider side mirrors for the left and right panels; collapsed panels render only the rail) |
 | Chats panel | Past chats (title-only rows) and the full-width pill "New chat" button | panel / rail (icon-only new-chat action); disclosure below `lg` (compact button) | `ChatsPanel` in `chat/ChatsPanel.tsx` (borderless `CHAT_PANEL` surface; `nav[aria-label="Chats"]`, `Chats (<n>)` disclosure, `NewChatButton` pill/compact/icon variants, all borderless grey fills) |
-| Canvas panel | The stored tables, charts and reports of the open conversation, always in one column; each component is a borderless grey card holding only its rendered content | panel / rail; tab below `lg` | `Canvas` in `canvas/Canvas.tsx` inside a borderless `CHAT_PANEL` section (`section[aria-label="Canvas"]`, title only in the header — no component count, short empty state; not mounted when collapsed). Each component card is a light grey (`bg-slate-100`) fill with no outline and no toolbar (no id, type label, move, focus or remove controls: the agent arranges the canvas); a component the agent focused keeps its ring (an outline, so a shape as well as a colour) plus `aria-current`/`data-focused`, with no text label. |
-| Chat / Canvas tabs | The narrow-screen switch showing one of the two at a time | Chat / Canvas | `role="tablist"` with `role="tab"` (`aria-selected`, `aria-controls`) and `role="tabpanel"`; arrows move between tabs |
+| Notebook panel | The widgets of the open conversation with the notebook assistant one instruction away | dominant / secondary panel / rail; tab below `lg` | `NotebookPanel` in `notebook/NotebookPanel.tsx` inside a borderless `CHAT_PANEL` container (`div[data-panel="notebook"]`; not mounted when its rail shows). The host's header actions hold the workspace focus control and, while secondary, the collapse button. |
+| Focus control | The manual Chat-first ↔ Notebook-first switch in both panels' headers | Chat-first / Notebook-first | `ModeSwitch` in `chat/ModeSwitch.tsx` (two icon-only buttons, "Focus Chat" / "Focus Notebook", accessible names with the same words in the `title` tooltip, `aria-pressed` on the active state) |
+| Chat / Notebook tabs | The narrow-screen switch showing one state at a time | Chat / Notebook | `role="tablist"` with `role="tab"` (`aria-selected`, `aria-controls`) and `role="tabpanel"`; arrows move between tabs; the selected tab is the workspace state |
 | Action menu | Row actions for one chat ("More actions for <title>") | closed / open | `ActionMenu` in `components/ui.tsx` (borderless filled kebab button; `bg-slate-100` menu surface with no outline, items darken to `bg-slate-200` on hover; button with `aria-haspopup="menu"` and `aria-expanded`; menu-button keyboard pattern: Enter/Space/ArrowDown opens, arrows/Home/End move, Escape closes and returns focus, click outside closes; `role="menu"` / `role="menuitem"`) |
 | Rename input | The in-place chat title editor in the Chats list (the open conversation header has no Rename button; renaming lives in each row's "More actions" menu) | — | `RenameInput` in `chat/ChatsPanel.tsx` (text input holding the current title, `maxLength={300}`; Enter/blur saves, Escape cancels, empty/unchanged sends nothing; failures via `ErrorNotice` with the old title kept) |
 | Message thread | The centred conversation column on the Chat page | — | `Conversation` in `chat/Conversation.tsx` (`ol[aria-label="Messages"]`, `max-w-3xl`) |
 | Owner bubble | Right-aligned owner message | — | `OwnerMessage` in `chat/Conversation.tsx` (`rounded-2xl`, `bg-blue-700`, `text-white`) |
 | Assistant message | Left-aligned answer with claims, copy and evidence actions | — | `AssistantMessage` in `chat/Conversation.tsx` (no box; claims with numbered citation chips plus an `N sources` row; `Copy answer` / `Evidence`) |
 | Run card | Inline agent activity after its question | compact, no disclosure; hidden once the run is completed | `RunCard` in `chat/RunCard.tsx` (light grey `bg-slate-100` fill, no outline; `data-run-state`; a state badge for every state except completed and failed, latest progress line, `Stop`, `role="alert"` failure line, `Retry run`, approval form on a darker grey `bg-slate-200` fill with no outline; no `Evidence` button — the records drawer opens from the answer) |
-| Citation chip | Numbered evidence reference after a claim sentence or a canvas finding | `button` named `Source N: title` (grey-blue fill `bg-blue-100`, darker `hover:bg-blue-200`, no border; solid `bg-blue-700` with white text when its card is open) | `CitationChip` in `@research/ui-registry` (`parts/citations.tsx`, per-scope numbering in `citationModel.ts`): one shared part used by chat answers and every canvas component |
-| Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey canvas cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and canvas — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt on canvas, the relation word is chat-only |
+| Citation chip | Numbered evidence reference after a claim sentence or a result finding | `button` named `Source N: title` (grey-blue fill `bg-blue-100`, darker `hover:bg-blue-200`, no border; solid `bg-blue-700` with white text when its card is open) | `CitationChip` in `@research/ui-registry` (`parts/citations.tsx`, per-scope numbering in `citationModel.ts`): one shared part used by chat answers and every result component |
+| Source card | Hover/focus/click detail for one cited source | card floating below its anchor (anchored to the claim or finding, never wider than it; blue-tinted `bg-blue-100` fill that reads against both the white thread and the grey result cards, no border, no shadow): number, title, publisher or host, published, retrieved and data-as-of dates each labelled, cited passage clamped to four lines, relation word when not support, `Open source` | `SourceCard` in `@research/ui-registry` (`parts/citations.tsx`): one shared part used by chat and results — pinned on click, `Escape`/outside click closes, one open per answer or component; the passage is the claim link's quote in chat and the stored excerpt in a result, the relation word is chat-only |
 | Suggestion chips | Starter questions on an empty conversation: above the composer below `lg`, centred below it at `lg` and up | — | `SUGGESTIONS` in `chat/suggestions.ts`, rendered by `Conversation` (`rounded-2xl`, grey `bg-slate-200` fill with no outline, darker `hover:bg-slate-300`) |
 | Research composer | The one rounded question input: pinned to the bottom, except centred with the greeting and suggestions on an empty conversation at `lg` and up | idle / sending | `Composer` in `chat/Composer.tsx` (`rounded-2xl` grey `bg-slate-100` container with no outline, white textarea inside, `rounded-full` send button; focus ring stays via `focus-within:ring-2`) |
 | Widget frame | One market widget: title `h3`, one actions button, scrolling body, provenance footer | small 1 × 1 / medium 2 × 2 / large full width × 2 (section 13) | `WidgetFrame` in `@research/widget-grid` (`packages/widget-grid/src/solid/WidgetFrame.tsx`, styled by `packages/widget-grid/src/solid/styles.css`): a native `article` labelled by its title (white surface, 1 px border in `--wg-border` mapped to `slate-200` in `apps/web/src/styles.css`, no shadow, 1rem radius, 1rem padding) holding a single header strip (leading grip glyph + title + one `IconButton`; the whole strip is the drag handle) and a scrollable body group (`tabindex="0"`, labelled by the title) that scrolls inside the frame. This app's `HomeFrame` in `home/HomeFrame.tsx` puts its own `ActionMenu` in the frame's actions slot. Provenance is rendered by each widget at the end of its own output (`WidgetProvenance`), never as a frame prop: prop elements snapshot once while children stay live |
@@ -236,7 +241,7 @@ allowlist.
 - Every input has a label (`Field` owns the `for`/`id` link); every group has
   a name (`aria-label` on sections, fieldsets with `legend`, tables with
   `<caption>`).
-- Regions are labelled (`aria-label` on nav, canvas, conversation, drawer);
+- Regions are labelled (`aria-label` on nav, notebook, conversation, drawer);
   the open conversation and focused component use `aria-current`.
 - Status changes are announced: notices are `<output>` (implicit `status`
   role), load failures are `role="alert"`, retry buttons keep the name

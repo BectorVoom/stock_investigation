@@ -5,6 +5,7 @@ import type {
 	HomeDashboard,
 	MarketCatalogEntry,
 	MarketSeries,
+	NotebookResponse,
 	ResearchRun,
 	WatchlistResponse,
 	WorkspaceView,
@@ -46,6 +47,7 @@ export interface ServerState {
 	secondConversation: Conversation;
 	secondRuns: ResearchRun[];
 	agentSettings: AgentSettingsResponse;
+	notebook: NotebookResponse;
 }
 
 export function initialServerState(): ServerState {
@@ -57,6 +59,14 @@ export function initialServerState(): ServerState {
 		secondConversation: structuredClone(CONVERSATION_2),
 		secondRuns: [],
 		agentSettings: structuredClone(AGENT_SETTINGS_RESPONSE),
+		notebook: {
+			workspaceId: "ws_1",
+			notebook: { widgets: [] },
+			version: 0,
+			updatedAt: null,
+			undoAvailable: false,
+			turns: [],
+		},
 	};
 }
 
@@ -331,6 +341,48 @@ export function installWorkspaceRoutes(backend: FakeBackend, server: ServerState
 		jsonResponse({ runs: [] }),
 	);
 	backend.on("GET", /^\/api\/v1\/agents$/, () => jsonResponse(AGENTS));
+	backend.on("GET", /^\/api\/v1\/settings\/agent$/, () => jsonResponse(server.agentSettings));
+	/* ----- notebook of one conversation (ADR-0020): compare-and-set save, undo, assist ----- */
+	backend.on("GET", /^\/api\/v1\/workspaces\/([^/?]+)\/notebook$/, (_request, match) => {
+		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		return jsonResponse({ ...server.notebook, workspaceId: id });
+	});
+	backend.on("PUT", /^\/api\/v1\/workspaces\/([^/?]+)\/notebook$/, (request, match) => {
+		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		const body = request.body as { notebook?: unknown; expectedVersion?: unknown } | undefined;
+		if (
+			typeof body?.notebook !== "object" ||
+			body.notebook === null ||
+			body.expectedVersion !== server.notebook.version
+		) {
+			if (body?.expectedVersion !== server.notebook.version) {
+				return errorResponse(409, "VERSION_CONFLICT", "The notebook changed elsewhere.");
+			}
+			return errorResponse(400, "VALIDATION_FAILED", "notebook is required");
+		}
+		server.notebook = {
+			workspaceId: id,
+			notebook: body.notebook as NotebookResponse["notebook"],
+			version: server.notebook.version + 1,
+			updatedAt: "2026-10-07T00:00:00Z",
+			undoAvailable: true,
+			turns: server.notebook.turns,
+		};
+		return jsonResponse(server.notebook);
+	});
+	backend.on("POST", /^\/api\/v1\/workspaces\/([^/?]+)\/notebook\/undo$/, (_request, match) => {
+		const id = match[1] ?? "";
+		if (deletedWorkspaces.has(id)) return errorResponse(404, "NOT_FOUND", "no such workspace");
+		server.notebook = {
+			...server.notebook,
+			workspaceId: id,
+			version: server.notebook.version + 1,
+			updatedAt: "2026-10-07T00:00:00Z",
+		};
+		return jsonResponse(server.notebook);
+	});
 	backend.on("GET", /^\/api\/v1\/settings\/agent$/, () => jsonResponse(server.agentSettings));
 	backend.on("PUT", /^\/api\/v1\/settings\/agent$/, (request) => {
 		const parsed = agentSettingsSchema.safeParse(request.body);

@@ -38,11 +38,13 @@ beforeEach(() => {
 	server = initialServerState();
 	installWorkspaceRoutes(backend, server);
 	window.location.hash = `#/chat/${WORKSPACE_ID}`;
+	window.localStorage.clear();
 });
 
 afterEach(() => {
 	cleanup();
 	window.location.hash = "";
+	window.localStorage.clear();
 });
 
 describe("shared button and panel styles", () => {
@@ -101,8 +103,8 @@ describe("chat page without outlines", () => {
 		await chatReady();
 		const chat = document.querySelector('[data-panel="chat"]');
 		const chats = document.querySelector('section[aria-label="Chats"]');
-		const canvas = document.querySelector('section[aria-label="Canvas"]');
-		for (const panel of [chat, chats, canvas]) {
+		const notebook = document.querySelector('div[data-panel="notebook"]');
+		for (const panel of [chat, chats, notebook]) {
 			if (!(panel instanceof HTMLElement)) throw new Error("expected every chat panel");
 			expect(hasBorderToken(panel.className)).toBe(false);
 			expect(panel.className).toContain("bg-white");
@@ -112,8 +114,8 @@ describe("chat page without outlines", () => {
 	it("renders the collapsed rails with fills and no outlines", async () => {
 		await chatReady();
 		fireEvent.click(screen.getByRole("button", { name: "Collapse Chats panel" }));
-		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
-		const rails = [...document.querySelectorAll("[data-panel='canvas-rail']")];
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Notebook panel" }));
+		const rails = [...document.querySelectorAll("[data-panel='notebook-rail']")];
 		// The chats rail is the collapsed panel's own div: the parent of its expand button.
 		const chatsExpand = screen.getByRole("button", { name: "Expand Chats panel" });
 		const chatsRail = chatsExpand.closest("div");
@@ -126,7 +128,7 @@ describe("chat page without outlines", () => {
 			expect(rail.className).toContain("bg-white");
 		}
 		// The rail buttons are filled, not outlined.
-		for (const name of ["Expand Chats panel", "Expand Canvas panel", "New chat"]) {
+		for (const name of ["Expand Chats panel", "Expand Notebook panel", "New chat"]) {
 			const button = screen.getByRole("button", { name });
 			expect(hasBorderToken(button.className)).toBe(false);
 		}
@@ -168,13 +170,12 @@ describe("chat page without outlines", () => {
 		expect(box.className).toContain("focus-within:ring-2");
 	});
 
-	it("renders canvas cards with fills and no outlines", async () => {
+	it("renders result previews with fills and no outlines", async () => {
 		await chatReady();
-		const list = screen.getByRole("list", { name: "Workspace components" });
-		const cards = [...list.querySelectorAll(":scope > li")];
+		const cards = [...document.querySelectorAll("li[data-preview-component]")];
 		expect(cards.length).toBeGreaterThan(0);
 		for (const card of cards) {
-			if (!(card instanceof HTMLElement)) throw new Error("expected canvas cards");
+			if (!(card instanceof HTMLElement)) throw new Error("expected preview cards");
 			expect(hasBorderToken(card.className)).toBe(false);
 			expect(card.className).toContain("bg-slate-100");
 		}
