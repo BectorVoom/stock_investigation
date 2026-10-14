@@ -10,6 +10,7 @@ const BODY_DEFAULTS = {
 	market: null,
 	editingDisabled: false,
 	onSaveText: () => Promise.resolve(true),
+	onSaveMarketWidget: () => {},
 } as const;
 
 afterEach(() => {

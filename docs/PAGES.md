@@ -234,7 +234,15 @@ Ask research questions and read the answers, with their sources and run progress
   evidence records drawer for one run, session notices and load errors.
 - The Notebook panel: the widgets saved from this conversation and made here,
   with the notebook assistant one instruction away; a collapsed secondary
-  panel mounts none of it.
+  panel mounts none of it. The five market widget types (market metric, line
+  chart, stock table, indicator table, earnings calendar) name market series
+  by id and render live data through the same Home widget components (same
+  numbers, units, as-of dates, sources and unavailable states); they are
+  added from the Add menu through Home's form (series, range, days ahead),
+  edited in the same form, and reloaded only when the named series change —
+  a series never refreshed queues one market-data refresh by itself. The
+  earnings calendar reads the Watchlist page's stocks with its own refresh
+  button. Titles stay in the data but the frames hide them.
 
 **Not here**
 
