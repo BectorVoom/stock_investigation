@@ -14,6 +14,7 @@ import { DEFAULT_CONVERSATION_TITLE, MARKET_LIMITS } from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	enqueueOutcome,
+	googleLinkStatements,
 	insertCommandsStatement,
 	insertJobStatement,
 	JOB_GUARD_SQL,
@@ -712,6 +713,9 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			}
 			statements.push(...marketStatements(db, ownerId, effects.marketSeries ?? [], guard));
 			statements.push(...earningsStatements(db, ownerId, effects.earnings ?? [], guard));
+			if (effects.google !== null) {
+				statements.push(...googleLinkStatements(db, ownerId, effects.google, jobWrite.at, guard));
+			}
 
 			const results = await db.batch(statements);
 			if (results[0]?.meta.changes === 1) {

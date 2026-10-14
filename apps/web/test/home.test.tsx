@@ -1125,14 +1125,56 @@ describe("home view", () => {
 		expect(backend.requestsTo("GET", /\/watchlist$/)).toHaveLength(0);
 	});
 
+	it("queues one automatic Google sync for a connected out-of-sync calendar, and never loops", async () => {
+		withCalendarWidget();
+		watch.stocks = [watchStock()];
+		watch.google = {
+			...watch.google,
+			status: "connected",
+			calendarId: "cal_1",
+			connectedAt: "2026-10-12T11:55:00Z",
+			inSync: false,
+		};
+		mountApp(backend);
+		await waitFor(() => expect(watch.syncCount).toBe(1), { timeout: 10_000 });
+		// The dates are fresh: no earnings refresh was queued beside the sync.
+		expect(watch.refreshCount).toBe(0);
+		// The queued run is active: the widget says syncing.
+		await waitFor(
+			() => expect(widgetById("w-cal").textContent).toContain("Google Calendar: syncing…"),
+			{ timeout: 10_000 },
+		);
+		// The run fails server-side: the failure moves the ETag, but no second sync follows.
+		watch.google = {
+			...watch.google,
+			activeRunId: null,
+			activeRunState: null,
+			activeAction: null,
+			lastFailure: {
+				code: "GOOGLE_REQUEST_FAILED",
+				reason: "The Google Calendar request failed.",
+				at: "2026-10-12T12:00:00Z",
+			},
+		};
+		await waitFor(
+			() =>
+				expect(widgetById("w-cal").textContent).toContain(
+					"Google Calendar: connected, not synced yet.",
+				),
+			{ timeout: 30_000 },
+		);
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		expect(watch.syncCount).toBe(1);
+		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
+	}, 60_000);
+
 	it("queues no earnings refresh for a calendar widget with fresh dates", async () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(
-			() => expect(widgetById("w-cal").textContent).toContain("Download calendar file"),
-			{ timeout: 10_000 },
-		);
+		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open calendar"), {
+			timeout: 10_000,
+		});
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		expect(watch.refreshCount).toBe(0);
 	});
@@ -1141,10 +1183,9 @@ describe("home view", () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(
-			() => expect(widgetById("w-cal").textContent).toContain("Download calendar file"),
-			{ timeout: 10_000 },
-		);
+		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open calendar"), {
+			timeout: 10_000,
+		});
 		const button = () =>
 			within(widgetById("w-cal")).getByRole("button", { name: "Refresh earnings dates" });
 		fireEvent.click(button());

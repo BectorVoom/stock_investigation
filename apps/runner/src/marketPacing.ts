@@ -37,12 +37,14 @@ export const FRED_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 100, windowMs: 6
 export const FINNHUB_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 30, windowMs: 60_000 };
 /** JPX asks callers to avoid high-frequency access: one paced batch per 10 s (FR-018). */
 export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_000 };
+/** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
+export const GOOGLE_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 5, windowMs: 1_000 };
 
 export function twelveDataRateLimit(requestsPerMinute: number): MarketRateLimit {
 	return { maxPerWindow: requestsPerMinute, windowMs: TWELVE_DATA_WINDOW_MS };
 }
 
-export type PacerKey = MarketProviderId | EarningsSourceId;
+export type PacerKey = MarketProviderId | EarningsSourceId | "google";
 
 export interface MarketPacerDeps {
 	readonly clock: Clock;

@@ -6,12 +6,14 @@ exactly one page, and every primary journey step has a page. A "chat" and a
 says "chat" for a conversation everywhere.
 
 Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
-`#/settings`. The old `#/canvas`, `#/canvas/<workspaceId>`,
+`#/settings`, `#/watchlist` and `#/watchlist/calendar[/YYYY-MM-DD]`. The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
 that conversation so old bookmarks keep working. `#/settings/agent`
 scrolls the AI agent section into view and moves focus to its Default backend
 select, so a notice in Chat can link straight to the control that fixes it.
-An empty or unknown hash opens Home.
+`#/watchlist/calendar` (or with a `YYYY-MM-DD` day) opens the Watchlist page,
+scrolls to and focuses its Calendar section, and selects that day (an invalid
+or missing date is the default month). An empty or unknown hash opens Home.
 
 Page layout (frame, panels, headings, shared parts) follows
 [docs/DESIGN_GUIDELINE.md](DESIGN_GUIDELINE.md).
@@ -36,12 +38,18 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - The arranged widgets (metric, line-chart, stock-table, indicator-table):
   latest values with unit, as-of date, change and source link, or
   "unavailable (reason)" when a series has no usable data.
-- The earnings-calendar widget, when arranged: the upcoming dated announcements
-  within its days-ahead window with per-date calendar links, a "Refresh earnings
-  dates" button beside the `.ics` download, a "Fetching earnings dates…" status
-  while a run is active, "Earnings dates have not been fetched yet." when a stock
-  was never looked up ("No announcement in the next N days." only when every
-  stock was refreshed), and the count of stocks with no upcoming date with reasons.
+- The earnings-calendar widget, when arranged — glanceable, after the Apple
+  widget guidelines (see `DESIGN_GUIDELINE.md`): a compact month grid whose
+  announcement days deep-link to the Watchlist calendar
+  (`#/watchlist/calendar/YYYY-MM-DD`), a "Next" list of at most 3 upcoming
+  announcements, one status line (earnings fetch status plus the Google
+  Calendar status), a "Refresh earnings dates" button and an "Open calendar"
+  link; "Earnings dates have not been fetched yet." when a stock was never
+  looked up ("No announcement in the next N days." only when every stock was
+  refreshed), and one sentence for the stocks with no upcoming date. The full
+  calendar — grid details, per-date links, the `.ics` download, the
+  subscription feed and the Google Calendar card — lives on the Watchlist
+  page, never in the widget.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
@@ -75,6 +83,12 @@ Register the stocks you follow and keep their earnings announcement dates in you
 - Queue an earnings-date refresh for the local runner (manual button; opening
   the page with dates never fetched or more than a day old queues one refresh,
   once per visit).
+- Open the month calendar on any day (`#/watchlist/calendar/YYYY-MM-DD`) and
+  select a day for its announcements with their calendar links.
+- Connect, sync (manually, or automatically once after connecting and whenever
+  the dates drift — automatic syncing pauses after a failed step until a
+  manual sync succeeds) and disconnect Google Calendar; cancel a sign-in that
+  is waiting or still being prepared. One Google step runs at a time.
 - Download the earnings calendar file (.ics).
 - Add one announcement date to Google Calendar or Outlook.
 - Create, replace or revoke the calendar subscription link.
@@ -90,7 +104,17 @@ Register the stocks you follow and keep their earnings announcement dates in you
   success; a note that the refresh waits for the local runner when it is queued but
   nothing executes it. A queued notice ("…are being fetched…", "…was queued") clears
   when the run ends; the status line then tells the outcome.
-- The calendar section: the `.ics` download and the subscription link block (created
+- The Calendar section: the full month grid (month navigation, today marked,
+  announcement days as buttons naming their count and symbols, the selected
+  day's announcements with company, fiscal period, timing and calendar links —
+  never a link for a past date or an unstamped event) above the Google
+  Calendar card (disconnected explanation; preparing, with Cancel and the
+  note that it waits for the local runner; the sign-in link with its wait
+  note and Cancel; connected with last-sync counts, "syncing" or
+  "disconnecting" while a step runs, and a sentence when the calendar is
+  behind the dates; needs-reconnect with the reason; the last failure as its
+  fixed sentence, with the note that automatic syncing is paused) above the `.ics`
+  download and the subscription link block (created
   date, replace and revoke with confirmation; the link is shown once and is a secret).
 
 **Not here**
@@ -240,7 +264,7 @@ Configure how the workspace runs: the AI agent, the runner and data export.
 | 6. Manipulate research UI | Chat (Canvas panel: select items; arranging and removing are agent-driven since 2026-10-13) |
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
-| 9. Track earnings announcement dates | Watchlist (register stocks — each add queues its own earnings-date refresh — export the calendar) and Home (earnings-calendar widget with its own refresh button) |
+| 9. Track earnings announcement dates | Watchlist (register stocks — each add queues its own earnings-date refresh — browse the month calendar, keep Google Calendar in step, export the calendar) and Home (glanceable earnings-calendar widget with its own refresh button and an "Open calendar" deep link) |
 
 ## How the split was checked
 

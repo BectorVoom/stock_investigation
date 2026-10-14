@@ -27,20 +27,33 @@ import {
 	checkLease,
 	decideClaim,
 	distinctDashboardSeriesIds,
+	err,
+	isLeasedJobState,
 	isTerminalJobState,
 	type JobLeaseView,
 	type JobState,
 	leaseExpiryIso,
 	ok,
 	type ResourceUsage,
+	type Result,
 	transitionJob,
 } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
+import {
+	applyGoogleTerminalOutcome,
+	assembleDesiredEvents,
+	googleSuccessPatch,
+	googleTerminalPatch,
+} from "./googleCalendar.ts";
 import type {
+	AuditLog,
 	ChatRepository,
 	Clock,
 	CompletionEffects,
 	EarningsCompletionStock,
+	EarningsRepository,
+	GoogleCalendarRepository,
+	Hasher,
 	HomeDashboardRepository,
 	IdGenerator,
 	JobPatch,
@@ -114,6 +127,12 @@ export interface RunnerJobServiceDeps {
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
 	readonly watchlist: WatchlistRepository;
+	/** Sync-payload assembly at claim time (FR-019). */
+	readonly earnings: EarningsRepository;
+	readonly hasher: Hasher;
+	/** `google-auth-url` events and terminal bookkeeping (FR-019). */
+	readonly googleCalendar: GoogleCalendarRepository;
+	readonly audit: AuditLog;
 }
 
 /**
@@ -139,6 +158,19 @@ function leaseView(job: JobRecord): JobLeaseView {
 function staleLease(detail: string): UseCaseResult<never> {
 	return fail("STALE_LEASE", "This runner no longer holds the lease for the run.", detail);
 }
+
+/** Why a google-calendar job is failed at claim time instead of leased. */
+interface GoogleClaimRefusal {
+	/** Audit reason (fixed text, never provider data). */
+	readonly reason: string;
+	readonly failureCode: "GOOGLE_REQUEST_FAILED" | "GOOGLE_AUTH_TIMEOUT";
+}
+
+/** The per-action fields of a claimed google-calendar job (FR-019 section 2.4). */
+type GoogleClaimPayload = Pick<
+	Extract<ClaimedJob, { kind: "google-calendar" }>,
+	"action" | "calendarId" | "desiredDigest" | "events"
+>;
 
 /** Deterministic id, so re-submitting the same article is a no-op rather than a second row. */
 function toArticle(article: IngestedArticle): Article {
@@ -272,6 +304,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			assistantMessage: null,
 			marketSeries,
 			earnings: [],
+			google: null,
 		});
 	}
 
@@ -303,6 +336,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			assistantMessage: null,
 			marketSeries: [],
 			earnings: stocks,
+			google: null,
 		});
 	}
 
@@ -333,6 +367,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				assistantMessage: null,
 				marketSeries: [],
 				earnings: [],
+				google: null,
 			});
 
 		const external = await deps.records.resolve(
@@ -361,6 +396,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			...base,
 			marketSeries: [],
 			earnings: [],
+			google: null,
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -377,6 +413,52 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				text: `${request.bundle.answerText}${rejectedNote}`.slice(0, 6000),
 				claimIds: request.bundle.answerClaimIds,
 			},
+		});
+	}
+
+	/**
+	 * The action-specific part of a google-calendar claim (FR-019 section
+	 * 2.4), or the audit reason it can never run. The sync payload is read
+	 * at CLAIM time: the calendar id from the link row, the desired set
+	 * assembled from the current watchlist.
+	 */
+	async function prepareGoogleClaim(
+		ownerId: string,
+		job: JobRecord,
+		leaseExpired: boolean,
+	): Promise<Result<GoogleClaimPayload, GoogleClaimRefusal>> {
+		const action = job.request !== null && "action" in job.request ? job.request.action : null;
+		// Fail closed: a google job without its action can never run.
+		if (action === null) {
+			return err({ reason: "google job without an action", failureCode: "GOOGLE_REQUEST_FAILED" });
+		}
+		if (action === "connect" && leaseExpired) {
+			// The runner that opened the sign-in is gone and its link points
+			// at a port nobody listens on. Starting the sign-in again on its
+			// own — possibly hours later, with nobody at the browser — would
+			// only time out; the owner connects again when they are there.
+			return err({
+				reason: "sign-in abandoned: the lease expired",
+				failureCode: "GOOGLE_AUTH_TIMEOUT",
+			});
+		}
+		if (action !== "sync") return ok({ action });
+		const link = await deps.googleCalendar.get(ownerId);
+		const desired = await assembleDesiredEvents(
+			{ watchlist: deps.watchlist, earnings: deps.earnings, hasher: deps.hasher },
+			ownerId,
+		);
+		if (!desired.ok) {
+			return err({
+				reason: "google desired set undecidable",
+				failureCode: "GOOGLE_REQUEST_FAILED",
+			});
+		}
+		return ok({
+			action: "sync",
+			calendarId: link?.calendarId ?? null,
+			desiredDigest: desired.value.digest,
+			events: [...desired.value.bodies],
 		});
 	}
 
@@ -417,6 +499,9 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					await write({ state: "cancelled", cancelRequested: false, leaseExpiresAt: null }, [
 						auditFor(runner, job.state, "cancelled", "cancel requested; lease expired"),
 					]);
+					// A cancelled google-calendar run restores its link row
+					// even though it never completes (FR-019 section 2.5).
+					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, now);
 					continue;
 				}
 				const decision = decideClaim(leaseView(job), nowMs);
@@ -430,10 +515,59 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						},
 						[auditFor(runner, job.state, "failed", "retry ceiling reached")],
 					);
+					await applyGoogleTerminalOutcome(
+						deps,
+						runner.ownerId,
+						job,
+						"failed",
+						"RETRY_CEILING_REACHED",
+						now,
+					);
 					continue;
 				}
 				if (decision.kind === "not-eligible") continue;
-				if (job.request !== null && !available.has(job.request.agentId)) continue;
+				// Only research requests name an agent; google-calendar jobs
+				// carry `{ action }` and need none.
+				if (job.request !== null && "agentId" in job.request && !available.has(job.request.agentId))
+					continue;
+
+				// FR-019: everything a google-calendar claim can refuse is
+				// decided BEFORE the lease is granted, while `job.version`
+				// is still current — a refusal written after the grant would
+				// lose its compare-and-set and leave the job leased to nobody.
+				let googleClaim: GoogleClaimPayload | null = null;
+				if (job.kind === "google-calendar") {
+					const prepared = await prepareGoogleClaim(
+						runner.ownerId,
+						job,
+						decision.reason === "lease-expired",
+					);
+					if (!prepared.ok) {
+						const refused = await write(
+							{
+								state: "failed",
+								failureCode: prepared.error.failureCode,
+								failureDetail: null,
+								leaseExpiresAt: null,
+							},
+							[auditFor(runner, job.state, "failed", prepared.error.reason)],
+						);
+						// Only the request that won the write does the
+						// bookkeeping (another claim may have got there first).
+						if (refused) {
+							await applyGoogleTerminalOutcome(
+								deps,
+								runner.ownerId,
+								job,
+								"failed",
+								prepared.error.failureCode,
+								now,
+							);
+						}
+						continue;
+					}
+					googleClaim = prepared.value;
+				}
 
 				const audits =
 					decision.reason === "lease-expired"
@@ -504,6 +638,19 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					};
 					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
+				if (googleClaim !== null) {
+					const claimedGoogle: ClaimedJob = {
+						kind: "google-calendar",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						...googleClaim,
+					};
+					return ok({ job: claimedGoogle, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
 				const lease = {
 					runId: job.runId,
 					leaseGeneration: decision.nextLeaseGeneration,
@@ -512,21 +659,27 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
 					sources: [...(await activeSources(runner.ownerId))],
 				};
-				const claimed: ClaimedJob =
-					job.kind === "news-ingest" || job.request === null
-						? { kind: "news-ingest", ...lease }
-						: {
-								kind: "research",
-								...lease,
-								request: job.request,
-								priorUsage: job.usage,
-								workspaceComponents: await componentSummaries(runner.ownerId, job.workspaceId),
-								conversationContext: await conversationContext(
-									runner.ownerId,
-									job.workspaceId,
-									job.contextAnchorSeq,
-								),
-							};
+				let claimed: ClaimedJob;
+				if (job.kind === "news-ingest" || job.request === null) {
+					claimed = { kind: "news-ingest", ...lease };
+				} else if (job.request !== null && "agentId" in job.request) {
+					claimed = {
+						kind: "research",
+						...lease,
+						request: job.request,
+						priorUsage: job.usage,
+						workspaceComponents: await componentSummaries(runner.ownerId, job.workspaceId),
+						conversationContext: await conversationContext(
+							runner.ownerId,
+							job.workspaceId,
+							job.contextAnchorSeq,
+						),
+					};
+				} else {
+					// A research-kind job without a research request is a
+					// storage fault: fail closed instead of claiming it.
+					return fail("INTERNAL", "Internal error.");
+				}
 				return ok({ job: claimed, pollAfterMs: POLL_AFTER_CLAIM_MS });
 			}
 			return ok({
@@ -583,13 +736,39 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					.filter((entry) => entry.seq > job.lastEventSeq)
 					.sort((a, b) => a.seq - b.seq);
 				const last = fresh.at(-1);
-				if (last === undefined) return ok({ cancelRequested: job.cancelRequested });
+				if (last === undefined) {
+					// A resend of events already recorded. The sign-in link is
+					// stored AFTER the job write, so a failure in between left
+					// the events recorded and the link not: store it again
+					// here (idempotent), or the runner would be told the link
+					// was delivered while the owner never sees it.
+					let resentUrl: string | null = null;
+					for (const { event } of request.events) {
+						if (event.type === "google-auth-url") resentUrl = event.url;
+					}
+					if (
+						resentUrl !== null &&
+						job.kind === "google-calendar" &&
+						job.request !== null &&
+						"action" in job.request &&
+						job.request.action === "connect" &&
+						isLeasedJobState(job.state)
+					) {
+						await deps.googleCalendar.setPendingAuthUrl(
+							runner.ownerId,
+							resentUrl,
+							deps.clock.nowIso(),
+						);
+					}
+					return ok({ cancelRequested: job.cancelRequested });
+				}
 
 				let state = job.state;
 				const audits: TransitionAudit[] = [];
 				const patch: {
 					-readonly [K in keyof JobPatch]: JobPatch[K];
 				} = { lastEventSeq: last.seq };
+				let authUrl: string | undefined;
 				for (const { event } of fresh) {
 					if (event.type === "state" && event.state !== state) {
 						const next = transitionJob(state, event.state);
@@ -606,6 +785,26 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						patch.usage = cumulativeUsage(patch.usage ?? job.usage, event.usage);
 					} else if (event.type === "provider-session") {
 						patch.providerSessionRef = event.sessionRef;
+					} else if (event.type === "google-auth-url") {
+						authUrl = event.url;
+					}
+				}
+				if (authUrl !== undefined) {
+					// The sign-in URL is accepted only for a leased
+					// google-calendar connect job of this lease generation
+					// (the generation was already fenced by `checkLease`
+					// above; the URL prefix by the request schema). Anything
+					// else is rejected, never stored.
+					if (job.kind !== "google-calendar") {
+						return fail("VALIDATION_FAILED", "This event does not apply to this kind of job.");
+					}
+					const action =
+						job.request !== null && "action" in job.request ? job.request.action : null;
+					if (action !== "connect") {
+						return fail("VALIDATION_FAILED", "This event does not apply to this kind of job.");
+					}
+					if (!isLeasedJobState(state)) {
+						return fail("VALIDATION_FAILED", "The run is not leased.");
 					}
 				}
 				patch.state = state;
@@ -615,7 +814,21 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					request.leaseGeneration,
 					fresh,
 				);
-				if (written) return ok({ cancelRequested: job.cancelRequested });
+				if (written) {
+					// Stored only after the compare-and-set won, so a lost
+					// race never records a URL for a superseded write. The
+					// URL is idempotent: a resend stores the same value.
+					// (`toProgressRows` drops this event type, so it never
+					// reaches the progress table either.)
+					if (authUrl !== undefined) {
+						await deps.googleCalendar.setPendingAuthUrl(
+							runner.ownerId,
+							authUrl,
+							deps.clock.nowIso(),
+						);
+					}
+					return ok({ cancelRequested: job.cancelRequested });
+				}
 			}
 			return fail("CONFLICT", "The run changed concurrently; retry the request.");
 		},
@@ -650,11 +863,16 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isMarket = job.kind === "market-refresh";
 				const isEarnings = job.kind === "earnings-refresh";
 				const isResearch = job.kind === "research";
+				const isGoogle = job.kind === "google-calendar";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
+				const googleOnly =
+					request.outcome === "google-calendar-connected" ||
+					request.outcome === "google-calendar-synced" ||
+					request.outcome === "google-calendar-disconnected";
 				if (
-					(isIngest && (researchOnly || marketOnly || earningsOnly)) ||
+					(isIngest && (researchOnly || marketOnly || earningsOnly || googleOnly)) ||
 					(isMarket &&
 						!marketOnly &&
 						request.outcome !== "failed" &&
@@ -663,9 +881,32 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!earningsOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
-					(isResearch && (request.outcome === "ingested" || marketOnly || earningsOnly))
+					(isResearch &&
+						(request.outcome === "ingested" || marketOnly || earningsOnly || googleOnly)) ||
+					(isGoogle &&
+						!googleOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled")
 				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
+				}
+				if (isGoogle && googleOnly) {
+					// Each step has exactly one success outcome: a connect
+					// answered as `synced` would complete the run and leave the
+					// link row `connecting`.
+					const action =
+						job.request !== null && "action" in job.request ? job.request.action : null;
+					const expected =
+						action === "connect"
+							? "google-calendar-connected"
+							: action === "sync"
+								? "google-calendar-synced"
+								: action === "disconnect"
+									? "google-calendar-disconnected"
+									: null;
+					if (request.outcome !== expected) {
+						return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
+					}
 				}
 
 				const now = deps.clock.nowIso();
@@ -682,6 +923,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					assistantMessage: null,
 					marketSeries: [],
 					earnings: [],
+					google: null,
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -699,7 +941,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.failureDetail = null;
 					patch.approvalRequest = null;
 				} else if (request.outcome === "failed") {
-					const retry = request.retryable && job.attempt < job.maxAttempts;
+					// A google-calendar step is never retried on its own: a
+					// retried connect would wait on a sign-in link the restored
+					// link row no longer shows, and a failed sync is reported
+					// and started again from the calendar controls (FR-019).
+					const retry = request.retryable && job.attempt < job.maxAttempts && !isGoogle;
 					target = retry ? "pending" : "failed";
 					patch.failureCode = request.failureCode;
 					patch.failureDetail = request.failureDetail ?? null;
@@ -766,8 +1012,40 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						patch.failureDetail = null;
 					}
 					patch.approvalRequest = null;
+				} else if (
+					request.outcome === "google-calendar-connected" ||
+					request.outcome === "google-calendar-synced" ||
+					request.outcome === "google-calendar-disconnected"
+				) {
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					effects = { ...effects, google: googleSuccessPatch(request, now) };
 				} else {
 					return fail("VALIDATION_FAILED", "Unknown completion outcome.");
+				}
+				if (isGoogle && (outcome === "cancelled" || request.outcome === "failed")) {
+					// Terminal bookkeeping for runs that end without a
+					// google success outcome: a failed/cancelled connect
+					// restores the previous status; AUTH_EXPIRED on sync
+					// moves to needs-reconnect (FR-019 section 2.5).
+					const action =
+						job.request !== null && "action" in job.request ? job.request.action : null;
+					const link = await deps.googleCalendar.get(runner.ownerId);
+					effects = {
+						...effects,
+						google:
+							action === null
+								? null
+								: googleTerminalPatch(
+										link,
+										action,
+										outcome === "cancelled" ? "cancelled" : "failed",
+										request.outcome === "failed" ? request.failureCode : null,
+										now,
+									),
+					};
 				}
 
 				const transition = transitionJob(job.state, target);
@@ -779,6 +1057,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					);
 				}
 				patch.state = target;
+				// FR-019: sync counts travel in the transition detail (counts only, never tokens).
+				const googleDetail =
+					isGoogle && outcome !== "cancelled" && request.outcome === "google-calendar-synced"
+						? `completion: ${outcome}, inserted=${request.inserted} updated=${request.updated} deleted=${request.deleted} unchanged=${request.unchanged}`
+						: null;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,
 					{
@@ -790,11 +1073,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								runner,
 								job.state,
 								target,
-								// S4a / FR-018: dropped off-dashboard/off-watchlist
-								// counts travel in the audit detail.
-								droppedMarketSeries > 0 || droppedEarningsStocks > 0
-									? `completion: ${outcome}, dropped ${droppedMarketSeries} off-dashboard series, dropped ${droppedEarningsStocks} off-watchlist stocks`
-									: `completion: ${outcome}`,
+								googleDetail ??
+									// S4a / FR-018: dropped off-dashboard/off-watchlist
+									// counts travel in the audit detail.
+									(droppedMarketSeries > 0 || droppedEarningsStocks > 0
+										? `completion: ${outcome}, dropped ${droppedMarketSeries} off-dashboard series, dropped ${droppedEarningsStocks} off-watchlist stocks`
+										: `completion: ${outcome}`),
 							),
 						],
 						at: now,
@@ -802,6 +1086,37 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects,
 				);
 				if (committed.kind === "committed") {
+					// Owner-visible audit rows for the three google outcomes
+					// (detail = counts / codes only, never tokens).
+					if (isGoogle && outcome !== "cancelled") {
+						const entry =
+							request.outcome === "google-calendar-connected"
+								? {
+										action: "google_calendar.connected",
+										detail: `calendar=${request.calendarId}`,
+									}
+								: request.outcome === "google-calendar-synced"
+									? {
+											action: "google_calendar.synced",
+											detail: `inserted=${request.inserted} updated=${request.updated} deleted=${request.deleted} unchanged=${request.unchanged}`,
+										}
+									: request.outcome === "google-calendar-disconnected"
+										? {
+												action: "google_calendar.disconnected",
+												detail: `revoked=${request.revoked}`,
+											}
+										: null;
+						if (entry !== null) {
+							await deps.audit.record({
+								ownerId: runner.ownerId,
+								actor: `runner:${runner.credentialId}`,
+								action: entry.action,
+								resource: runId,
+								detail: entry.detail,
+								at: now,
+							});
+						}
+					}
 					return ok({ state: target, replayed: false, newArticleCount: committed.newArticleCount });
 				}
 				// A concurrent heartbeat or an owner edit moved a version; recompute once.

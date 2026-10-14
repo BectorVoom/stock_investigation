@@ -98,6 +98,33 @@ describe("googleEventId", () => {
 });
 
 describe("googleEventBody", () => {
+	it("builds the same body whenever the data was retrieved (a refresh alone changes nothing)", () => {
+		const monday = googleEventBody(EVENT, DIGEST_20);
+		const tuesday = googleEventBody(
+			{ ...EVENT, retrievedAt: "2026-10-12T03:00:00.000Z" },
+			DIGEST_20,
+		);
+		expect(monday.ok).toBe(true);
+		expect(tuesday).toEqual(monday);
+		if (!monday.ok) return;
+		expect(monday.value.description).toContain("Source: Finnhub.");
+		expect(monday.value.description).not.toContain("retrieved");
+		// So a second sync after a refresh that moved no date plans no write.
+		const stored = {
+			id: monday.value.id,
+			status: "confirmed" as const,
+			startDate: monday.value.startDate,
+			endDate: monday.value.endDate,
+			summary: monday.value.summary,
+			description: monday.value.description,
+		};
+		if (!tuesday.ok) return;
+		expect(planGoogleSync([tuesday.value], [stored])).toEqual({
+			ok: true,
+			value: { inserts: [], updates: [], deletes: [], unchanged: [monday.value.id] },
+		});
+	});
+
 	it("shares the ICS summary/description text and sets the next-day end date", () => {
 		const result = googleEventBody(EVENT, DIGEST_20);
 		expect(result.ok).toBe(true);

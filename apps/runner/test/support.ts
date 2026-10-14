@@ -222,6 +222,16 @@ export function createDeps(
 		// pacing build their own pacer with a fake clock and sleep.
 		marketPacer: createMarketPacer({ clock: time.clock, sleep: async () => {}, limits: new Map() }),
 		earningsSources: new Map(),
+		// Google sync is unconfigured by default: every google-calendar job
+		// fails honestly with GOOGLE_NOT_CONFIGURED. Tests that cover the
+		// flows override this bag with a fake server and a temp token file.
+		google: {
+			config: { clientId: null, clientSecret: null, tokenFile: "/scratch/google-token.json" },
+			http: async () => {
+				throw new Error("no Google HTTP in this test");
+			},
+			sleep: async () => {},
+		},
 	};
 	return {
 		deps,

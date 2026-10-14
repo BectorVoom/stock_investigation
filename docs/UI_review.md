@@ -184,3 +184,52 @@ The Watchlist page and the Home "Earnings calendar" widget (FR-018) were driven 
 - On a phone-width screen the registered-stocks table is wider than its panel and scrolls sideways inside it; symbol, market and the next announcement are visible without scrolling.
 - The confirmation dialogs are the shared `ConfirmDialog` and open where it opens everywhere (top left).
 - No calendar application was used: the `.ics` content and the subscription feed were checked by tests, not by importing them into Google Calendar, Apple Calendar or Outlook.
+
+# UI review — Earnings month calendar and the Google Calendar card (FR-019)
+
+**Date:** 2026-10-14 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Widget guideline:** Apple Human Interface Guidelines for widgets (owner's standing instruction; [DESIGN_GUIDELINE.md](DESIGN_GUIDELINE.md) section 14) · **Tool:** `REVIEW_BROWSER=firefox bun run review:ui` (`tests/ui-review/watchlistReview.spec.ts`)
+
+## How it was reviewed
+
+The Home "Earnings calendar" widget and the Watchlist page's Calendar section were driven in Firefox against the E2E server and runner with fixture earnings sources and a scripted Google step (no browser consent, no Google), and every screenshot below was read: `W7-home-widget-desktop`, `W7-home-widget-phone`, `W8-google-disconnected`, `W8-google-connecting`, `W8-google-connected`. They were also looked at with real data: the real-environment runs save Home and the Watchlist page at 1440×900 and 390×844 after the real runner fetched JPX and Finnhub (`test-results-real/watchlist-real-*.png`, `watchlist-upgrade-home-1440x900.png`), and those were read too.
+
+**States:** widget month grid with an announcement day (desktop, phone) · Watchlist calendar with a day's announcements · Google card disconnected · connecting with the sign-in link and Cancel · connected while syncing.
+
+## How the widget follows the widget guideline
+
+| Guideline point | What the widget does |
+|---|---|
+| Glanceable, uncluttered | One compact month grid with a dot on announcement days, at most three "Next" announcements, one status line. The per-row calendar links, the `.ics` download, the five-column table and the per-stock reasons moved to the Watchlist page |
+| Simple functions; depth belongs to the app | Two actions only ("Refresh earnings dates", "Open calendar") beside month navigation. Day details, calendar links and the Google card are on the Watchlist page |
+| A tap opens the right place | An announcement day links to `#/watchlist/calendar/YYYY-MM-DD`, which opens the calendar on that month with the day selected |
+| Confident targets | Day links, month buttons and the actions are at least 44×44 px under a coarse pointer, at least 24 px otherwise |
+
+The other Home widgets were **not** redesigned against this guideline; that is stated in the design guideline and remains open.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Automated | No finding on the Watchlist states, the widget states or the Google card states | — |
+| Screenshots | Today was not marked on the month grid (only `aria-current`, nothing for the eye), although the design guideline says "today emphasised" | Fixed: today's number is an outlined, bold pill; re-reviewed in both variants |
+| Real-environment run (upgraded state) | When the dates arrived after the widget was already on screen, the grid stayed on the current month while "Next" listed a date in the following month; a reload showed the other month | Fixed: until the owner navigates, the grid follows the first upcoming announcement |
+| Code review | The widget's Google line showed the sync time as a raw ISO stamp | Fixed: formatted like every other time |
+| Code review | The card offered no Cancel while the sign-in was still being prepared (runner offline), and Disconnect stayed enabled while another Google step ran | Fixed: Cancel in both sub-states; one step at a time |
+| Code review | After a failed sync the card did not say the calendar was behind, nor that automatic syncing had stopped | Fixed: both are stated, with "Sync now" as the way forward |
+| Code review | "Reconnect needed" stated its reason twice (sentence and error notice) | Fixed: once |
+| Screenshots | The month name appears twice (the heading beside the buttons and the table caption) | Kept: the caption is the table's accessible name and the guideline asks for a visible caption |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Firefox | Reviewed (scripted review and real-data screenshots) |
+| Chromium (Playwright's bundled build) | **Not run** for this change |
+| Chrome (Chrome channel) | **Not run.** Google Chrome is not installed on the development machine |
+| Safari engine (Playwright WebKit) | **Not run.** WebKit cannot start on the development machine |
+
+## Known limits
+
+- The 44 px targets apply under a coarse pointer; the review ran with a mouse pointer, so they are covered by class assertions in the component tests, not by a touch-device screenshot.
+- The Google card was reviewed with a scripted Google step. The real sign-in page, the "connected" page the runner serves after sign-in, and the calendar as it appears in Google Calendar have not been seen: they need the owner's OAuth client and an interactive sign-in.
+- Home's default stock table is still titled "Watchlist" although it is unrelated to the stocks registered on the Watchlist page (open naming question from the FR-018 review).

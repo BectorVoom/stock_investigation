@@ -136,6 +136,11 @@ describe("planLaunch: production", () => {
 		expect(runner?.args.join(" ")).toContain("release/runner/main.mjs");
 		expect(runner?.args.join(" ")).not.toContain("--watch");
 		expect(runner?.extraEnv.RESEARCH_API_URL).toBe(plan.origin);
+		// FR-019: the refresh-token file lives beside the credential file
+		// (mode 0600); the plan names it so dev and prod never share a grant.
+		expect(plan.credentialFile).toBe("data/runner-credential.json");
+		expect(plan.googleTokenFile).toBe("data/google-token.json");
+		expect(runner?.extraEnv.GOOGLE_TOKEN_FILE).toBe("data/google-token.json");
 	});
 
 	it("refuses to run against the development data directory", () => {
@@ -268,6 +273,9 @@ describe("planLaunch: development", () => {
 		expect(runner?.args).toContain(`${DEFAULT_DEV_DATA_DIR}/runner/main.mjs`);
 		expect(runner?.args.join(" ")).not.toContain("apps/runner/src/main.ts");
 		expect(runner?.extraEnv.RESEARCH_API_URL).toBe(plan.apiOrigin);
+		// FR-019: the dev plan names its own token file inside data-dev/.
+		expect(plan.googleTokenFile).toBe(`${DEFAULT_DEV_DATA_DIR}/google-token.json`);
+		expect(runner?.extraEnv.GOOGLE_TOKEN_FILE).toBe(`${DEFAULT_DEV_DATA_DIR}/google-token.json`);
 	});
 
 	it("refuses to run against the production data directory", () => {

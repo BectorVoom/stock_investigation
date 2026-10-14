@@ -125,11 +125,51 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED sends 2 per series (metadata + observations), Twelve Data 1. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0017): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
+| `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect on the Watchlist page) to forget the grant. |
 | `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` | Opt in to backends whose tool isolation is unverified (Codex). Default: refused. |
 | `RUNNER_SCRATCH_ROOT` | Parent of per-job scratch directories. Must not sit under a directory containing `opencode.json(c)` or `.opencode/`. |
 | `RUNNER_PAGES_DIR` | Where retrieved public pages are archived as Markdown (the launcher sets this to `data/pages` in production, `data-dev/pages` in development). Unset it and the web page tool is disabled (the runner logs `web_pages_disabled`). |
 
-If the runner stops mid-job nothing is completed; the lease expires after 90 s and the job is handed out again (at most three attempts).
+If the runner stops mid-job nothing is completed; the lease expires after 90 s and the job is handed out again (at most three attempts). The exception is a Google Calendar sign-in, which is failed rather than handed out again (see below).
+
+### Google Calendar sync (FR-019, ADR-0017)
+
+Owner setup, once:
+
+1. Create a Google Cloud project and enable the Google Calendar API.
+2. Configure the OAuth consent screen as External with yourself as a test
+   user. A "Testing"-mode app's refresh token expires after 7 days, so
+   publish the project to "In production" for personal use.
+3. Create an OAuth client of type "Desktop app" and copy its client id and
+   client secret.
+4. Put both values in `apps/runner/.env` (`GOOGLE_OAUTH_CLIENT_ID`,
+   `GOOGLE_OAUTH_CLIENT_SECRET`) and restart the runner.
+5. On the Watchlist page, "Connect Google Calendar", finish the sign-in in
+   Google, and "Sync now" (or let the automatic sync run once after
+   connecting). The app asks for exactly one scope and can only ever see and
+   change calendars it created itself.
+
+What to expect while it runs:
+
+- The sign-in opens in your browser on this PC (the link returns to
+  `http://127.0.0.1:<port>/` on the runner's machine) and waits 5 minutes.
+  The runner does one job at a time, so news, market and earnings refreshes
+  wait while a sign-in is open; "Cancel" on the card ends the wait at once.
+- A Google step is never retried by itself. A failed sync is shown on the
+  card with its reason, and automatic syncing stays paused until a "Sync
+  now" succeeds.
+- If the runner stops during a sign-in, that sign-in is recorded as timed
+  out when the runner next polls; connect again when you are at the browser.
+- A sign-in that is cancelled, or fails after Google granted access, revokes
+  that grant and leaves no token file.
+- A daily earnings refresh that moves no date changes nothing in Google.
+
+To disconnect: "Disconnect" on the Watchlist page (confirm: the calendar
+itself stays in Google — delete it in Google Calendar settings if it is no
+longer wanted), or delete `<dataDir>/google-token.json` and restart. The
+refresh token file is mode 0600 and lives beside `runner-credential.json`;
+back it up (or rather, delete it) with the same care as that credential.
 
 ### Launcher supervision
 
@@ -367,6 +407,16 @@ start with its data intact (`tests/real/homeUpgrade.spec.ts`). Market observatio
 personal-use vendor data (ADR-0014): they are not part of workspace
 export/import, but a directory copy of `data/` carries them — include that
 in what "back up by copying that directory" means.
+
+Migration `0008_google_calendar.sql` (FR-019) adds `google_calendar_links`
+(one row per owner: status, the pending auth URL while connecting, calendar
+id, stamps, the synced digest with its counts, and the last failure code —
+never a token column). Its header comment is the rollback: after a `wrangler
+d1 export`, `DELETE` the owner's link row and `DROP TABLE` the table. To
+forget the grant without the UI: disconnect on the Watchlist page, or delete
+the runner-side token file (`<dataDir>/google-token.json`); deleting the
+owner's link row alone answers "disconnected" at once but leaves the local
+grant file behind, so prefer the page or the file.
 
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,

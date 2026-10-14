@@ -206,7 +206,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		type: "earnings-calendar",
 		label: "Earnings calendar",
 		description:
-			"Upcoming earnings announcement dates of the stocks on the Watchlist page, with calendar links.",
+			"A glanceable month grid of the Watchlist page's upcoming earnings announcement dates, with a short next list; the full calendar lives on the Watchlist page.",
 		defaultSize: "large",
 		minSeries: 0,
 		maxSeries: 0,

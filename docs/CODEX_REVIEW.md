@@ -161,3 +161,50 @@ regression test that fails before the fix. The other nine are fixed in task
 | 14 | — | **Fixed.** Opt-in `bun run test:real:live` (`tests/real/live.spec.ts`: `RUN_LIVE_OPENCODE=1` + `OPENCODE_MODEL`, the same switches the existing live tests use) runs the positive path against `bun run dev` started for real on test ports with throwaway directories and the real network: fresh state (Chat notice → Settings selectors → save with public web access → real recommended source subscribed → question → completed run with claim + source link), a second question naming a public page (`RESEARCH_REAL_PAGE_URL`, default `https://example.com/`) completing with a heading-first Markdown file in the development pages directory, and an upgraded state (fresh database with an API-created run, no saved settings) sending without visiting Settings. A model reply that fails the protocol fails the test (a finding, never asserted around). `docs/rule/test_guideline.md` now states `test:real` alone is PARTIAL coverage (network path only) and `test:real:live` is the positive path; a real run is recorded in `docs/REQUIREMENTS_STATUS.md` with every attempt's outcome. |
 | 15 | — | **Fixed.** The modification-time comparison is removed: it blamed the tests for the owner's own activity while an owner instance kept writing to its database. Isolation is enforced directly instead — finding 5 makes every path explicit and throwaway — and `tests/e2e/globalSetup.ts` asserts THAT: every directory a test process was configured with (recorded by `buildChildEnv` in `TEST_ISOLATION_RECORD`) canonicalises outside the repository's operational directories with the task-23a canonical-path validation, plus a check that none of `data/`, `data-dev/`, `release/`, `release.previous/` was CREATED by the suite when it did not exist before. |
 
+
+## Google Calendar sync backend (13) — 2026-10-13
+
+An eighth run, scoped to the FR-019 backend (ADR-0017): `packages/adapters/src/google/`,
+`apps/runner/src/googleCalendar.ts`, `packages/application/src/googleCalendar.ts`,
+`runnerJobs.ts`, the SQL adapter, migration `0008_google_calendar.sql`, the three
+routes and `packages/domain/src/calendar/googleSync.ts`. **The reviewer this time was a
+separate Claude code-review agent, not Codex**; like the earlier runs it was given the
+specification and the code but not the implementer's or the orchestrator's conclusions,
+and it worked read-only. It reproduced nine findings by driving the real services
+against in-memory `node:sqlite` and the real runner code with a fake Google HTTP
+function (no network). It reported no defect in secrecy (no token, secret, code or
+verifier in a log, event, completion, audit row or error), the loopback listener's
+rejections, host pinning, the token file, event fencing or the migration.
+
+Thirteen findings: twelve fixed, each with a test; one deliberately not done.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 (HIGH) | An owner cancel of a connect with no live lease (pending, or the runner gone) left the link row `connecting` with a dead sign-in link and no way out from the page. | **Fixed.** `researchRuns.cancel` applies the link patch when it is the call that cancels; the state projection shows a `connecting` row with no run as its restore status; the card offers Cancel while the sign-in is still being prepared. Test: "restores the link when the owner cancels a connect nobody holds a live lease on". |
+| 2 (HIGH) | A failing automatic sync re-queued itself — each failure records `lastFailure`, which changes the ETag the rule was keyed on — until the hourly job allowance was gone (reproduced: 29 jobs). | **Fixed.** Automatic sync stops while any failure is on record, until a sync the owner starts succeeds; the ETag rule remains only for outcomes that record nothing. Test: "stops after any recorded failure, whatever the ETag". |
+| 3 (MEDIUM) | A connect that ended cancelled after the code exchange left a live refresh token on disk while the app said "disconnected"; failures after the exchange dropped the grant without revoking it. | **Fixed.** A grant that is not kept is revoked and no token file stays (`discardStoredGoogleGrant`, `giveBack`). Tests: describe "a grant that is not kept is given back". |
+| 4 (MEDIUM) | A Google request that hit the port's own 30 s limit was reported as "sign-in timed out". | **Fixed.** `ABORTED` only when the job's signal fired; otherwise `GOOGLE_REQUEST_FAILED`. Test: "reports a Calendar request that hit the port's own time limit as a request failure". |
+| 5 (MEDIUM) | A connect whose lease expired was handed out again, so a restarted runner opened a new sign-in window by itself hours later. | **Fixed.** Failed at claim time with `GOOGLE_AUTH_TIMEOUT` and the link restored. Test: "fails a connect whose lease expired instead of opening a new sign-in on its own". |
+| 6 (MEDIUM) | The event description carried "retrieved <date>", so every daily refresh would update every Google event. | **Fixed.** The Google text omits the retrieval date (the `.ics` keeps it). Test: "builds the same body whenever the data was retrieved". |
+| 7 (MEDIUM) | The sign-in link was validated by prefix and length only: a non-ASCII link made the ETag header unusable, and a compromised runner could substitute another scope or redirect. | **Fixed.** `isGoogleSignInUrl` pins the whole shape; calendar ids are printable ASCII; both are escaped before they enter the ETag. Tests: "accepts only the runner's own sign-in link", `headerSafe`. |
+| 8 (LOW) | Disconnect left a token file that did not parse. | **Fixed.** Always deleted. Test: "still deletes the file (it may hold a token)". |
+| 9 (LOW) | The default token path was not git-ignored. | **Fixed.** `.gitignore`. |
+| 10 (LOW) | Any Google success outcome was accepted for any Google step. | **Fixed.** Test: "accepts only the success outcome of the job's own step". |
+| 11 (LOW) | A sign-in link whose store failed after the event write was never stored on the resend. | **Fixed.** A resend stores it again. |
+| 12 (LOW) | Per-poll work on `GET /watchlist` for a connected owner; a new TLS connection per Calendar request. | **Partly done.** The daily-rewrite fix (6) removes most Calendar requests. A keep-alive connection is not done: requests are paced at five per second, so a handshake each costs little. The desired digest is still computed on every poll of a connected owner. |
+| 13 (LOW) | The managed-event listing returned a partial result after ten pages. | **Fixed.** It fails instead. Test: "fails rather than plan from a listing that never ends". |
+
+Also changed after the reviewer's questions: a sync that succeeds from `needs-reconnect`
+sets the status back to `connected`; a different Google step requested while one runs is
+refused with `CONFLICT` instead of being answered with the other step's run; event bodies
+state `status: "confirmed"`.
+
+The orchestrator's own reading before this run had already fixed: a request target that
+is not a URL crashing the runner through the loopback listener; the listener closing
+before its page was sent; a sign-in link that never reached the API waiting out the five
+minutes; an automatic retry of a failed Google step; a claim-time refusal written after
+the lease grant (lost compare-and-set); a stuck `connecting` status when the connect job
+could not be queued; and Calendar's `error.errors[].reason` rate-limit body.
+
+Limits: nothing was exercised against Google. The Web files were read only to see how
+the backend contract is consumed.

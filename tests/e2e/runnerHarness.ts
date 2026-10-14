@@ -16,15 +16,24 @@
  * OpenCode adapter writes its deny-all config there. Without the switch the
  * scripted agent is used and no live backend is ever started.
  */
+
+import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFeedParser } from "@research/adapters/feed";
+import { createGoogleHttp } from "@research/adapters/google";
 import { createBaselineAgentRuntimes, createNodeProcessRunner } from "@research/adapters/providers";
 import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
 import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
-import { CSRF_HEADER, CSRF_HEADER_VALUE, issuedRunnerCredentialSchema } from "@research/contracts";
+import {
+	CSRF_HEADER,
+	CSRF_HEADER_VALUE,
+	GOOGLE_AUTH_URL_PREFIX,
+	issuedRunnerCredentialSchema,
+} from "@research/contracts";
+import { EMPTY_USAGE } from "@research/domain";
 import { createEventLogger } from "@research/effects";
 import {
 	createHttpRunnerApi,
@@ -38,6 +47,14 @@ import { fixtureMarketSources } from "./marketFixtures.ts";
 
 /** Live backend for `tests/e2e/opencodeLive.spec.ts`; unset everywhere else. */
 const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
+
+/**
+ * While this file exists, the scripted Google handler fails every
+ * `google-calendar` job with `GOOGLE_NOT_CONFIGURED` (the unconfigured
+ * runner, honestly). A test creates it to cover the fixed failure sentence,
+ * then removes it. E2E-only: production never reads it.
+ */
+export const E2E_GOOGLE_UNCONFIGURED_FLAG = join(tmpdir(), "research-e2e-google-unconfigured");
 
 const logger = createEventLogger((line) => process.stderr.write(line));
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -249,6 +266,127 @@ const exit = await runRunnerLoop(
 		// Stocks without a recorded answer fail with the fixed unavailable
 		// wording, so the browser only ever shows fixture dates.
 		earningsSources: fixtureEarningsSources(),
+		// Google Calendar is out of scope for the browser suite: no
+		// credentials, so any google-calendar job fails honestly with
+		// GOOGLE_NOT_CONFIGURED (FR-019 section 2.6 wiring only).
+		google: {
+			config: {
+				clientId: null,
+				clientSecret: null,
+				tokenFile: join(tmpdir(), "research-e2e-google-token.json"),
+			},
+			http: createGoogleHttp(),
+			sleep: (ms, signal) =>
+				new Promise<void>((resolve) => {
+					const timer = setTimeout(resolve, Math.min(ms, 500));
+					signal.addEventListener("abort", () => {
+						clearTimeout(timer);
+						resolve();
+					});
+				}),
+		},
+		// FR-019 section 2.7: the browser suite scripts the Google OAuth
+		// dance instead of performing it (no browser consent, no Google).
+		// Connect sends one fixture sign-in URL, waits so the test can see
+		// it, then completes as connected; sync completes with fixture
+		// counts; disconnect completes unrevoked. While the flag file below
+		// exists (a test creates it to cover the failure sentence, then
+		// removes it) every google-calendar job fails honestly with
+		// GOOGLE_NOT_CONFIGURED, exactly like the unconfigured runner.
+		executeGoogleCalendar: async (job, env, signal, reporter, sendAuthUrl) => {
+			if (existsSync(E2E_GOOGLE_UNCONFIGURED_FLAG)) {
+				env.logger.warn("google_not_configured", { runId: job.runId });
+				return {
+					outcome: "failed",
+					leaseGeneration: job.leaseGeneration,
+					usage: EMPTY_USAGE,
+					failureCode: "GOOGLE_NOT_CONFIGURED",
+					retryable: false,
+				};
+			}
+			if (job.action === "connect") {
+				await reporter.state("planning");
+				const delivered = await sendAuthUrl(
+					`${GOOGLE_AUTH_URL_PREFIX}response_type=code&client_id=e2e-harness&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4`,
+				);
+				if (!delivered) {
+					env.logger.warn("google_auth_timeout", { runId: job.runId });
+					return {
+						outcome: "failed",
+						leaseGeneration: job.leaseGeneration,
+						usage: EMPTY_USAGE,
+						failureCode: "GOOGLE_AUTH_TIMEOUT",
+						retryable: false,
+					};
+				}
+				await reporter.state("collecting");
+				// The owner "signs in": hold the URL visible across at least
+				// one queued-cadence poll (10 s), then connect.
+				for (let waited = 0; waited < 24 && !signal.aborted; waited += 1) {
+					await env.google.sleep(500, signal);
+				}
+				if (signal.aborted) {
+					return {
+						outcome: "failed",
+						leaseGeneration: job.leaseGeneration,
+						usage: EMPTY_USAGE,
+						failureCode: "GOOGLE_AUTH_TIMEOUT",
+						retryable: false,
+					};
+				}
+				// The full pipeline chain (the transition matrix rejects
+				// jumps like collecting straight to publishing).
+				await reporter.state("analyzing");
+				await reporter.state("verifying");
+				env.logger.info("google_connected", { runId: job.runId, calendarId: "e2e-calendar" });
+				await reporter.state("publishing");
+				return {
+					outcome: "google-calendar-connected",
+					leaseGeneration: job.leaseGeneration,
+					usage: EMPTY_USAGE,
+					calendarId: "e2e-calendar",
+				};
+			}
+			if (job.action === "sync") {
+				await reporter.state("planning");
+				await reporter.state("collecting");
+				const events = job.events ?? [];
+				env.logger.info("google_synced", {
+					runId: job.runId,
+					calendarId: "e2e-calendar",
+					inserted: events.length,
+					updated: 0,
+					deleted: 0,
+					unchanged: 0,
+				});
+				await reporter.state("analyzing");
+				await reporter.state("verifying");
+				await reporter.state("publishing");
+				return {
+					outcome: "google-calendar-synced",
+					leaseGeneration: job.leaseGeneration,
+					usage: EMPTY_USAGE,
+					calendarId: "e2e-calendar",
+					desiredDigest: job.desiredDigest ?? "0".repeat(64),
+					inserted: events.length,
+					updated: 0,
+					deleted: 0,
+					unchanged: 0,
+				};
+			}
+			await reporter.state("planning");
+			await reporter.state("collecting");
+			await reporter.state("analyzing");
+			await reporter.state("verifying");
+			env.logger.info("google_disconnected", { runId: job.runId, revoked: false });
+			await reporter.state("publishing");
+			return {
+				outcome: "google-calendar-disconnected",
+				leaseGeneration: job.leaseGeneration,
+				usage: EMPTY_USAGE,
+				revoked: false,
+			};
+		},
 		// Poll quickly so the browser test does not wait on the production idle interval.
 		sleep: (ms, signal) =>
 			new Promise<void>((resolve) => {

@@ -33,6 +33,12 @@ import {
 } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import type { RunnerApi, RunnerApiResult } from "./apiClient.ts";
+import {
+	discardStoredGoogleGrant,
+	executeGoogleCalendar,
+	type GoogleExecutionEnv,
+	type GoogleRunnerDeps,
+} from "./googleCalendar.ts";
 import type { MarketPacer } from "./marketPacing.ts";
 
 /** Per-job scratch directories (AGT-004): created empty, removed when the job ends. */
@@ -59,6 +65,20 @@ export interface JobExecutionDeps {
 	readonly earningsSources: EarningsSourceRegistry;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketPacer;
+	/** Google Calendar sync (FR-019): OAuth credentials, token file, narrow HTTP, sleep. */
+	readonly google: GoogleRunnerDeps;
+	/**
+	 * Test seam for `google-calendar` jobs (the E2E harness scripts the
+	 * OAuth dance: no browser, no Google). Absent in production, where the
+	 * real `executeGoogleCalendar` below always runs.
+	 */
+	readonly executeGoogleCalendar?: (
+		job: Extract<ClaimedJob, { kind: "google-calendar" }>,
+		env: GoogleExecutionEnv,
+		signal: AbortSignal,
+		reporter: PipelineReporter,
+		sendAuthUrl: (url: string) => Promise<boolean>,
+	) => Promise<CompleteJobRequest>;
 }
 
 /** Why work on a job stopped before it finished on its own. */
@@ -265,6 +285,10 @@ export async function executeJob(
 	try {
 		scratchDirectory = await deps.scratch.create(job.runId);
 		let completion: CompleteJobRequest;
+		// Captured before the dispatch narrows `job`: the final else is
+		// unreachable today (every known kind has a branch) but must still
+		// build a completion if a new kind arrives.
+		const generation = job.leaseGeneration;
 		if (job.kind === "market-refresh") {
 			completion = await executeMarketRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "earnings-refresh") {
@@ -320,12 +344,30 @@ export async function executeJob(
 						);
 			usage = outcome.usage;
 			completion = toCompletion(job.leaseGeneration, outcome);
+		} else if (job.kind === "google-calendar") {
+			// Queued once; a repeat call only re-sends what is undelivered.
+			// Delivered means the whole queue went out (events are ordered).
+			let authUrlQueued = false;
+			const sendAuthUrl = async (url: string): Promise<boolean> => {
+				if (!authUrlQueued) {
+					enqueue({ type: "google-auth-url", url });
+					authUrlQueued = true;
+				}
+				await flush();
+				return queue.length === 0;
+			};
+			completion = await (deps.executeGoogleCalendar ?? executeGoogleCalendar)(
+				job,
+				deps,
+				abort.signal,
+				reporter,
+				sendAuthUrl,
+			);
 		} else {
-			// FR-019 phase G1: google-calendar execution lands in a later
-			// phase; fail closed instead of running an unknown job kind.
+			// Unknown job kind: fail closed instead of running it.
 			completion = {
 				outcome: "failed",
-				leaseGeneration: job.leaseGeneration,
+				leaseGeneration: generation,
 				usage,
 				failureCode: "UNKNOWN_JOB_KIND",
 				retryable: false,
@@ -333,8 +375,13 @@ export async function executeJob(
 		}
 		await flush();
 
+		// FR-019: a connect that stored its grant must end `completed`, or
+		// the stored refresh token is given back — the API will report "not
+		// connected", and the app could never disconnect a grant it denies.
+		const storedGrant = completion.outcome === "google-calendar-connected";
 		const reason = currentStopReason();
 		if (reason === "lease-lost" || reason === "shutdown") {
+			if (storedGrant) await discardStoredGoogleGrant(deps, job.runId);
 			logger.info("job_abandoned", { runId: job.runId, reason });
 			return;
 		}
@@ -342,6 +389,8 @@ export async function executeJob(
 			completion = { outcome: "cancelled", leaseGeneration: job.leaseGeneration, usage };
 		}
 		const submitted = await api.complete(job.runId, completion);
+		const kept = reason !== "cancelled" && submitted.ok && submitted.value.state === "completed";
+		if (storedGrant && !kept) await discardStoredGoogleGrant(deps, job.runId);
 		if (submitted.ok) {
 			logger.info(
 				"job_finished",

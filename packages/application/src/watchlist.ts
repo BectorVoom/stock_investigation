@@ -2,7 +2,6 @@ import {
 	type AddWatchlistStockRequest,
 	addWatchlistStockRequestSchema,
 	type CalendarFeedIssued,
-	DISCONNECTED_GOOGLE_CALENDAR_STATE,
 	EARNINGS_LIMITS,
 	earningsUnavailable,
 	formatStockId,
@@ -20,11 +19,17 @@ import {
 	ok,
 } from "@research/domain";
 import { fail, type UseCaseError, type UseCaseResult } from "./errors.ts";
+import {
+	assembleDesiredEvents,
+	type GoogleActiveRun,
+	toGoogleCalendarState,
+} from "./googleCalendar.ts";
 import type {
 	AuditLog,
 	CalendarFeedRepository,
 	Clock,
 	EarningsRepository,
+	GoogleCalendarRepository,
 	Hasher,
 	IdGenerator,
 	JobRecord,
@@ -42,6 +47,7 @@ export interface WatchlistServiceDeps {
 	readonly watchlist: WatchlistRepository;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
+	readonly googleCalendar: GoogleCalendarRepository;
 	readonly jobs: JobRepository;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
@@ -71,11 +77,28 @@ export interface WatchlistDigest {
 	readonly lastFailure: WatchlistResponse["refresh"]["lastFailure"];
 	readonly feedCreatedAt: string | null;
 	/**
-	 * Google Calendar state (FR-019). Phase G1 is always the constant
-	 * disconnected placeholder; the next phase fills it from the repository.
-	 * It is part of the digest so the ETag covers every field of it.
+	 * Repository-backed Google Calendar state (FR-019 section 2.5). It is
+	 * part of the digest so the ETag covers every field of it: both views
+	 * see link, run and freshness changes through the poll they already run.
 	 */
 	readonly googleCalendar: GoogleCalendarState;
+}
+
+/**
+ * Runner-supplied text made safe inside a quoted header value: printable
+ * ASCII passes through, everything else (and the quote, percent and
+ * backslash characters) becomes
+ * `%<hex code unit>;`. Injective, so two different values never share an
+ * ETag, and total — it cannot throw on any string.
+ */
+export function headerSafe(value: string): string {
+	let safe = "";
+	for (let index = 0; index < value.length; index += 1) {
+		const code = value.charCodeAt(index);
+		const plain = code > 0x20 && code < 0x7f && code !== 0x22 && code !== 0x25 && code !== 0x5c;
+		safe += plain ? value.charAt(index) : `%${code.toString(16)};`;
+	}
+	return safe;
 }
 
 /**
@@ -102,9 +125,14 @@ export function watchlistDigestEtag(digest: WatchlistDigest): string {
 		digest.googleCalendar.lastFailure === null
 			? "no-gfailure"
 			: `${digest.googleCalendar.lastFailure.code}:${digest.googleCalendar.lastFailure.at}`;
+	// The sign-in link and the calendar id come from the runner: they are
+	// percent-encoded so nothing in them (a quote, a non-ASCII character)
+	// can make this string unusable as a header value.
+	const authUrl = digest.googleCalendar.authUrl;
+	const calendarId = digest.googleCalendar.calendarId;
 	const google =
-		`gcal.${digest.googleCalendar.status}.${digest.googleCalendar.authUrl ?? "no-url"}.` +
-		`${digest.googleCalendar.calendarId ?? "no-cal"}.${digest.googleCalendar.connectedAt ?? "never"}.` +
+		`gcal.${digest.googleCalendar.status}.${authUrl === null ? "no-url" : headerSafe(authUrl)}.` +
+		`${calendarId === null ? "no-cal" : headerSafe(calendarId)}.${digest.googleCalendar.connectedAt ?? "never"}.` +
 		`${digest.googleCalendar.lastSyncedAt ?? "never"}.${sync}.` +
 		`${digest.googleCalendar.inSync ?? "na"}.${digest.googleCalendar.activeRunId ?? "idle"}.` +
 		`${digest.googleCalendar.activeRunState ?? "idle"}.${digest.googleCalendar.activeAction ?? "none"}.${googleFailure}`;
@@ -208,10 +236,43 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				lastFailure: header.lastFailure,
 			},
 			feed: { enabled: feed !== null, createdAt: feed?.createdAt ?? null },
-			// Phase-G1 placeholder (FR-019 section 2.4): the next phase
-			// replaces this constant with repository-backed state.
-			googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+			googleCalendar: await googleState(ownerId),
 		};
+	}
+
+	/**
+	 * Repository-backed Google Calendar state. The current desired digest
+	 * is computed only for a connected calendar with a stored digest —
+	 * otherwise `inSync` is decided without loading any event row, so the
+	 * cheap digest path stays cheap for everyone else.
+	 */
+	async function googleState(ownerId: string): Promise<GoogleCalendarState> {
+		const [link, activeJob] = await Promise.all([
+			deps.googleCalendar.get(ownerId),
+			deps.jobs.findActiveByKind(ownerId, "google-calendar"),
+		]);
+		const active: GoogleActiveRun | null =
+			activeJob === null
+				? null
+				: {
+						runId: activeJob.runId,
+						state: activeJob.state,
+						action:
+							activeJob.request !== null && "action" in activeJob.request
+								? activeJob.request.action
+								: null,
+					};
+		let currentDigest: string | null = null;
+		if (link !== null && link.status === "connected" && link.syncedDigest !== null) {
+			const desired = await assembleDesiredEvents(
+				{ watchlist: deps.watchlist, earnings: deps.earnings, hasher: deps.hasher },
+				ownerId,
+			);
+			// An undecidable set reports out-of-sync rather than failing
+			// the whole read; the claim fails closed when it matters.
+			currentDigest = desired.ok ? desired.value.digest : null;
+		}
+		return toGoogleCalendarState(link, active, currentDigest);
 	}
 
 	/** The owner's calendar document: every dated event, deterministic bytes. */
@@ -267,8 +328,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				})),
 				...header,
 				feedCreatedAt: feed?.createdAt ?? null,
-				// Phase-G1 placeholder: constant disconnected state (see `assemble`).
-				googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				googleCalendar: await googleState(ownerId),
 			});
 		},
 

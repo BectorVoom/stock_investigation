@@ -78,6 +78,7 @@ export function App(props: AppProps): JSX.Element {
 												view: page.view,
 												workspaceId: page.view === "chat" ? router.route().workspaceId : null,
 												section: null,
+												calendarDate: null,
 											})}
 											aria-current={view() === page.view ? "page" : undefined}
 											class="rounded px-2 py-1 text-sm font-medium"
@@ -147,7 +148,7 @@ export function App(props: AppProps): JSX.Element {
 							visibility={props.visibility}
 							workspaceId={router.route().workspaceId}
 							onSelectConversation={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null })
+								router.navigate({ view: "chat", workspaceId, section: null, calendarDate: null })
 							}
 						/>
 					</Match>
@@ -155,7 +156,13 @@ export function App(props: AppProps): JSX.Element {
 						<SourcesView api={props.api} />
 					</Match>
 					<Match when={view() === "watchlist"}>
-						<WatchlistView api={props.api} visibility={props.visibility} />
+						<WatchlistView
+							api={props.api}
+							visibility={props.visibility}
+							calendarDate={router.route().calendarDate}
+							calendarLinked={router.route().section === "calendar"}
+							window={props.window}
+						/>
 					</Match>
 					<Match when={view() === "settings"}>
 						<SettingsView
@@ -165,7 +172,7 @@ export function App(props: AppProps): JSX.Element {
 							visibility={props.visibility}
 							onReloadSession={() => void session.reload()}
 							onOpenWorkspace={(workspaceId) =>
-								router.navigate({ view: "chat", workspaceId, section: null })
+								router.navigate({ view: "chat", workspaceId, section: null, calendarDate: null })
 							}
 						/>
 					</Match>

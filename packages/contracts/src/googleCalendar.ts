@@ -67,13 +67,79 @@ export type GoogleCalendarAction = z.infer<typeof googleCalendarActionSchema>;
 
 /** Authorization URL: only ever the Google OAuth endpoint prefix below. */
 export const GOOGLE_AUTH_URL_PREFIX = "https://accounts.google.com/o/oauth2/v2/auth?";
+
+/** The ONE OAuth scope a sign-in link may ask for: calendars this app created. */
+export const GOOGLE_CALENDAR_OAUTH_SCOPE = "https://www.googleapis.com/auth/calendar.app.created";
+
+/** Printable ASCII without spaces: safe in a header, a log line and a link. */
+const PRINTABLE_ASCII = /^[\x21-\x7e]+$/;
+
+const AUTH_URL_PARAMETERS: ReadonlySet<string> = new Set([
+	"response_type",
+	"client_id",
+	"redirect_uri",
+	"scope",
+	"access_type",
+	"prompt",
+	"code_challenge",
+	"code_challenge_method",
+	"state",
+]);
+
+/**
+ * True only for the sign-in link the runner is meant to build: the Google
+ * endpoint, the authorization-code flow with PKCE S256, the single
+ * app-created-calendars scope, and a redirect to the loopback address of the
+ * machine the runner runs on. The prefix alone would let a compromised
+ * runner put a genuine Google consent screen for ANOTHER scope, or a
+ * redirect to another host, behind the app's own "Open Google sign-in"
+ * link; this pins everything a link can vary on. Every parameter appears at
+ * most once and nothing unlisted is accepted.
+ */
+export function isGoogleSignInUrl(value: string): boolean {
+	if (!value.startsWith(GOOGLE_AUTH_URL_PREFIX) || !PRINTABLE_ASCII.test(value)) return false;
+	if (!URL.canParse(value)) return false;
+	const url = new URL(value);
+	if (url.hash !== "" || url.username !== "" || url.password !== "") return false;
+	const seen = new Map<string, string>();
+	for (const [name, parameter] of url.searchParams) {
+		if (!AUTH_URL_PARAMETERS.has(name) || seen.has(name)) return false;
+		seen.set(name, parameter);
+	}
+	const clientId = seen.get("client_id") ?? "";
+	return (
+		seen.get("response_type") === "code" &&
+		seen.get("scope") === GOOGLE_CALENDAR_OAUTH_SCOPE &&
+		seen.get("code_challenge_method") === "S256" &&
+		/^[A-Za-z0-9_-]{43}$/.test(seen.get("code_challenge") ?? "") &&
+		/^[A-Za-z0-9_-]{16,128}$/.test(seen.get("state") ?? "") &&
+		/^http:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}\/$/.test(seen.get("redirect_uri") ?? "") &&
+		clientId.length > 0 &&
+		clientId.length <= 200 &&
+		(seen.get("access_type") ?? "offline") === "offline" &&
+		(seen.get("prompt") ?? "consent") === "consent"
+	);
+}
+
+/**
+ * The sign-in link as the API returns it. The strict check ran when the
+ * runner's event was accepted; here the value only has to be the Google
+ * endpoint in printable ASCII.
+ */
 export const googleCalendarAuthUrlSchema = z
 	.string()
 	.max(2000)
-	.refine((value) => value.startsWith(GOOGLE_AUTH_URL_PREFIX), {
+	.refine((value) => value.startsWith(GOOGLE_AUTH_URL_PREFIX) && PRINTABLE_ASCII.test(value), {
 		message: "auth URL must be the Google OAuth endpoint",
 	})
 	.nullable();
+
+/** A Google calendar id (printable ASCII; it travels in an ETag and a URL path). */
+export const googleCalendarIdSchema = z
+	.string()
+	.min(1)
+	.max(256)
+	.regex(PRINTABLE_ASCII, "calendar id must be printable ASCII");
 
 export const googleCalendarSyncCountsSchema = z.strictObject({
 	inserted: z.number().int().nonnegative(),
@@ -87,7 +153,7 @@ export const googleCalendarStateSchema = z.strictObject({
 	status: googleCalendarStatusSchema,
 	/** Only while connecting; never a credential (client id, port, state and PKCE challenge only). */
 	authUrl: googleCalendarAuthUrlSchema,
-	calendarId: z.string().min(1).max(256).nullable(),
+	calendarId: googleCalendarIdSchema.nullable(),
 	connectedAt: isoDateTimeSchema.nullable(),
 	lastSyncedAt: isoDateTimeSchema.nullable(),
 	lastSync: googleCalendarSyncCountsSchema.nullable(),
@@ -157,7 +223,7 @@ export const googleCalendarConnectPayloadSchema = z.strictObject({
 });
 export const googleCalendarSyncPayloadSchema = z.strictObject({
 	action: z.literal("sync"),
-	calendarId: z.string().min(1).max(256).nullable(),
+	calendarId: googleCalendarIdSchema.nullable(),
 	desiredDigest: z.string().regex(/^[0-9a-f]{64}$/, "desired digest must be sha256 hex"),
 	events: z.array(googleEventBodySchema).max(GOOGLE_SYNC_MAX_EVENTS),
 });
@@ -171,12 +237,9 @@ export type GoogleCalendarDisconnectPayload = z.infer<typeof googleCalendarDisco
 /** Runner → API event carrying the sign-in URL (schema-pinned to the OAuth prefix). */
 export const googleAuthUrlEventSchema = z.strictObject({
 	type: z.literal("google-auth-url"),
-	url: z
-		.string()
-		.max(2000)
-		.refine((value) => value.startsWith(GOOGLE_AUTH_URL_PREFIX), {
-			message: "auth URL must be the Google OAuth endpoint",
-		}),
+	url: z.string().max(2000).refine(isGoogleSignInUrl, {
+		message: "auth URL must be the runner's Google sign-in link",
+	}),
 });
 export type GoogleAuthUrlEvent = z.infer<typeof googleAuthUrlEventSchema>;
 
@@ -190,7 +253,7 @@ export const googleCalendarConnectedSchema = z.strictObject({
 		knownCostUsd: z.number().nonnegative(),
 		hasUnmeteredUsage: z.boolean(),
 	}),
-	calendarId: z.string().min(1).max(256),
+	calendarId: googleCalendarIdSchema,
 });
 export const googleCalendarSyncedSchema = z.strictObject({
 	outcome: z.literal("google-calendar-synced"),
@@ -202,7 +265,7 @@ export const googleCalendarSyncedSchema = z.strictObject({
 		knownCostUsd: z.number().nonnegative(),
 		hasUnmeteredUsage: z.boolean(),
 	}),
-	calendarId: z.string().min(1).max(256),
+	calendarId: googleCalendarIdSchema,
 	desiredDigest: z.string().regex(/^[0-9a-f]{64}$/, "desired digest must be sha256 hex"),
 	inserted: z.number().int().nonnegative(),
 	updated: z.number().int().nonnegative(),

@@ -290,6 +290,8 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		await widget.getByRole("button", { name: "Refresh earnings dates" }).waitFor({
 			timeout: 60_000,
 		});
+		// The glanceable widget: a compact month grid (not a table of rows).
+		await expect(widget.getByRole("table")).toContainText("earnings announcements");
 		await widget.scrollIntoViewIfNeeded();
 		await page.waitForTimeout(1200);
 		await shot(page, `W7-home-widget-${name}`);
@@ -301,6 +303,39 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		headers: WRITE_HEADERS,
 		data: { dashboard: original.dashboard, expectedVersion: savedVersion },
 	});
+
+	/* ---------- W8. The Google Calendar card: disconnected and connected ---------- */
+	await page.goto("/#/watchlist");
+	await expect(page.locator('[data-field="watchlist-status"]')).toContainText(
+		"Last successful refresh:",
+		{ timeout: 30_000 },
+	);
+	const card = page.locator("[data-calendar-section]");
+	await card.getByRole("button", { name: "Connect Google Calendar" }).waitFor({
+		timeout: 30_000,
+	});
+	await card.scrollIntoViewIfNeeded();
+	await page.waitForTimeout(600);
+	await shot(page, "W8-google-disconnected");
+	await audit(page, "W google disconnected");
+	await card.getByRole("button", { name: "Connect Google Calendar" }).click();
+	const signIn = card.getByRole("link", { name: "Open Google sign-in" });
+	await signIn.waitFor({ timeout: 60_000 });
+	await expect(signIn).toHaveAttribute(
+		"href",
+		/^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/,
+	);
+	await card.scrollIntoViewIfNeeded();
+	await page.waitForTimeout(400);
+	await shot(page, "W8-google-connecting");
+	await audit(page, "W google connecting");
+	// The scripted runner completes the sign-in: the card lands connected
+	// (and the automatic sync follows on its own).
+	await card.getByText(/Connected since/).waitFor({ timeout: 120_000 });
+	await card.scrollIntoViewIfNeeded();
+	await page.waitForTimeout(600);
+	await shot(page, "W8-google-connected");
+	await audit(page, "W google connected");
 
 	const pageStyles = await page.evaluate(() =>
 		[...document.querySelectorAll("style")].map((node) => (node.textContent ?? "").trim()),

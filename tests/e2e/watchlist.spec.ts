@@ -1,11 +1,20 @@
+import { rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { E2E_ORIGIN } from "./fixtures.ts";
 
+/** Mirrors `E2E_GOOGLE_UNCONFIGURED_FLAG` in `runnerHarness.ts` (importing it would start a runner). */
+const GOOGLE_UNCONFIGURED_FLAG = join(tmpdir(), "research-e2e-google-unconfigured");
+
 /**
- * Watchlist and earnings-date calendar end to end (FR-018): registering a US
- * and a JP stock, an earnings-date refresh through the REAL runner loop with
- * the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` — canned
- * dates, never live data), the Home earnings-calendar widget, the .ics
+ * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
+ * a US and a JP stock, an earnings-date refresh through the REAL runner loop
+ * with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
+ * canned dates, never live data), the Home earnings-calendar widget (compact
+ * month grid, day deep links, month navigation), the Watchlist month calendar
+ * with day selection, the Google Calendar card (scripted connect → automatic
+ * sync → disconnect, plus the not-configured failure sentence), the .ics
  * download, and the secret-token subscription feed (fetch without cookies,
  * rotation, revocation). CSP stays clean.
  */
@@ -124,7 +133,7 @@ test("adding a US and a JP stock fetches the fixture earnings dates with no manu
 	await expect(toyota).toContainText("Second quarter");
 });
 
-test("the Home earnings-calendar widget shows the dates after it is added", async () => {
+test("the Home earnings-calendar widget shows a compact grid with day deep links", async () => {
 	test.setTimeout(180_000);
 	const title = `E2E earnings ${Date.now()}`;
 	await page.goto("/#/home");
@@ -141,23 +150,81 @@ test("the Home earnings-calendar widget shows the dates after it is added", asyn
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
-	await expect(added).toContainText(appleDate, { timeout: 30_000 });
+	// The compact grid links the announcement day to the Watchlist calendar…
+	const appleDay = added.locator(`a[href="#/watchlist/calendar/${appleDate}"]`);
+	await expect(appleDay).toBeVisible({ timeout: 30_000 });
+	const toyotaDay = added.locator(`a[href="#/watchlist/calendar/${toyotaDate}"]`);
+	// …navigating forward when the date falls in a later month…
+	for (let step = 0; step < 3 && (await toyotaDay.count()) === 0; step += 1) {
+		await added.getByRole("button", { name: "Next month" }).click();
+	}
+	await expect(toyotaDay).toBeVisible({ timeout: 10_000 });
+	// …and back to the opening month for the rest of the test.
+	for (let step = 0; step < 3 && (await appleDay.count()) === 0; step += 1) {
+		await added.getByRole("button", { name: "Previous month" }).click();
+	}
+	await expect(appleDay).toBeVisible({ timeout: 10_000 });
+	// …the Next list names the same dates with no per-row calendar links…
+	await expect(added).toContainText(appleDate);
 	await expect(added).toContainText(toyotaDate);
 	await expect(added).toContainText("Apple Inc");
-	await expect(added.getByRole("link", { name: "Manage watchlist" })).toHaveAttribute(
-		"href",
-		"#/watchlist",
-	);
+	expect(await added.getByRole("link", { name: "Add to Google Calendar" }).count()).toBe(0);
+	expect(await added.getByRole("link", { name: "Add to Outlook" }).count()).toBe(0);
+	// …and the widget keeps one provenance line plus its two actions.
 	await expect(added).toContainText("Finnhub");
+	await expect(added.getByRole("link", { name: "Open calendar" })).toHaveAttribute(
+		"href",
+		"#/watchlist/calendar",
+	);
 
-	// The widget's own Refresh button queues a run (the one manual-button step).
-	await added.getByRole("button", { name: "Refresh earnings dates" }).click();
-	await expect(added).toContainText("Fetching earnings dates", { timeout: 30_000 });
+	// Month navigation is local: the caption moves and returns.
+	const grid = added.getByRole("table");
+	const caption = grid.locator("caption");
+	const first = await caption.textContent();
+	await added.getByRole("button", { name: "Next month" }).click();
+	await expect.poll(() => caption.textContent(), { timeout: 10_000 }).not.toBe(first);
+	await added.getByRole("button", { name: "Previous month" }).click();
+	await expect.poll(() => caption.textContent(), { timeout: 10_000 }).toBe(first);
+
+	// A day deep link opens the Watchlist calendar on that date, selected,
+	// with its details and calendar links.
+	await appleDay.click();
+	await expect(page).toHaveURL(`#/watchlist/calendar/${appleDate}`);
+	const appleCompact = appleDate.replaceAll("-", "");
+	const appleNextCompact = nextDay(appleDate).replaceAll("-", "");
+	const section = page.locator("[data-calendar-section]");
+	await expect(section.getByRole("button", { name: /AAPL/ })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await expect(section.getByText("Apple Inc")).toBeVisible();
+	await expect(
+		section.getByRole("link", { name: "Add to Google Calendar" }).first(),
+	).toHaveAttribute(
+		"href",
+		new RegExp(`calendar\\.google\\.com.*dates=${appleCompact}/${appleNextCompact}`),
+	);
+	// Selecting the other day moves the details there (navigating to its
+	// month first when the two fixture dates span months).
+	const toyotaButton = section.getByRole("button", { name: /7203/ });
+	for (let step = 0; step < 3 && (await toyotaButton.count()) === 0; step += 1) {
+		await section.getByRole("button", { name: "Next month" }).click();
+	}
+	await toyotaButton.click();
+	await expect(section.getByText("Toyota Motor Corp.")).toBeVisible();
+
+	// Back on Home: the widget's own Refresh button queues a run (the one manual-button step).
+	await page.goto("/#/home");
+	const again = page.getByRole("article", {
+		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+	});
+	await again.getByRole("button", { name: "Refresh earnings dates" }).click();
+	await expect(again).toContainText("Fetching earnings dates", { timeout: 30_000 });
 
 	// The widget is removed so later runs start clean.
-	await added.getByRole("button", { name: "Actions" }).click();
+	await again.getByRole("button", { name: "Actions" }).click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
-	await expect(added).toHaveCount(0);
+	await expect(again).toHaveCount(0);
 });
 
 test("the calendar file downloads with deterministic earnings content", async () => {
@@ -251,6 +318,50 @@ test("an unknown feed token answers the same uniform 404", async () => {
 	expect(await malformed.json()).toEqual({
 		error: { code: "NOT_FOUND", message: "Resource not found." },
 	});
+});
+
+test("Google Calendar connects, syncs automatically, then disconnects", async () => {
+	test.setTimeout(240_000);
+	await page.goto("/#/watchlist");
+	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+
+	await page.getByRole("button", { name: "Connect Google Calendar" }).click();
+	await expect(page.getByText(/Preparing Google sign-in…/)).toBeVisible({ timeout: 30_000 });
+	const signIn = page.getByRole("link", { name: "Open Google sign-in" });
+	await expect(signIn).toBeVisible({ timeout: 30_000 });
+	await expect(signIn).toHaveAttribute(
+		"href",
+		/^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/,
+	);
+	await expect(page.getByText(/Connected since/)).toBeVisible({ timeout: 60_000 });
+	// No click: the automatic sync queues itself once the connection lands.
+	await expect(page.getByText(/Last synced/)).toBeVisible({ timeout: 120_000 });
+	await expect(page.getByText("2 added, 0 changed, 0 removed.")).toBeVisible();
+
+	await page.getByRole("button", { name: "Disconnect" }).click();
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toContainText("The calendar stays in your Google account");
+	await dialog.getByRole("button", { name: "Disconnect" }).click();
+	await expect(page.getByRole("button", { name: "Connect Google Calendar" })).toBeVisible({
+		timeout: 60_000,
+	});
+});
+
+test("a Google connect without credentials ends in the fixed not-configured sentence", async () => {
+	test.setTimeout(120_000);
+	writeFileSync(GOOGLE_UNCONFIGURED_FLAG, "unconfigured\n");
+	try {
+		await page.goto("/#/watchlist");
+		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+		await page.getByRole("button", { name: "Connect Google Calendar" }).click();
+		await expect(
+			page.getByText(
+				"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
+			),
+		).toBeVisible({ timeout: 60_000 });
+	} finally {
+		rmSync(GOOGLE_UNCONFIGURED_FLAG, { force: true });
+	}
 });
 
 test("the Watchlist page ran under its Content-Security-Policy without errors", async () => {

@@ -109,14 +109,24 @@ const TIMING_LABELS: { readonly [T in Exclude<EarningsTiming, "unknown">]: strin
  * The description states the date is scheduled and can change, names the
  * timing when known, and cites the publisher with the retrieved date.
  */
-export function earningsCalendarTexts(event: {
-	readonly symbol: string;
-	readonly name: string | null;
-	readonly fiscalPeriodLabel: string;
-	readonly timing: EarningsTiming;
-	readonly publisher: string;
-	readonly retrievedAt: string;
-}): { readonly summary: string; readonly description: string } {
+export function earningsCalendarTexts(
+	event: {
+		readonly symbol: string;
+		readonly name: string | null;
+		readonly fiscalPeriodLabel: string;
+		readonly timing: EarningsTiming;
+		readonly publisher: string;
+		readonly retrievedAt: string;
+	},
+	/**
+	 * `stampRetrieved: false` leaves the retrieval date out of the source
+	 * line. A calendar document is a snapshot, so it states when its data was
+	 * retrieved; text that is COMPARED against a stored copy (the Google
+	 * sync) must not, or every event would count as changed after each daily
+	 * refresh although no date moved.
+	 */
+	options: { readonly stampRetrieved: boolean } = { stampRetrieved: true },
+): { readonly summary: string; readonly description: string } {
 	const displayName =
 		event.name === null || event.name.trim() === "" ? event.symbol : event.name.trim();
 	const summary = `${event.symbol} ${displayName} earnings (${event.fiscalPeriodLabel})`;
@@ -127,7 +137,11 @@ export function earningsCalendarTexts(event: {
 	if (event.timing !== "unknown") {
 		lines.push(`Expected timing: ${TIMING_LABELS[event.timing]}.`);
 	}
-	lines.push(`Source: ${event.publisher}, retrieved ${event.retrievedAt.slice(0, 10)}.`);
+	lines.push(
+		options.stampRetrieved
+			? `Source: ${event.publisher}, retrieved ${event.retrievedAt.slice(0, 10)}.`
+			: `Source: ${event.publisher}.`,
+	);
 	return { summary, description: lines.join("\n") };
 }
 

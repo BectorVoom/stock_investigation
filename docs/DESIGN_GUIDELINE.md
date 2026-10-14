@@ -188,7 +188,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Widget controls | Buttons, selects, inputs and loading blocks on Home | — | `sl-button` / `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL / BUTTON (0.875rem control text, 0.75rem medium slate-700 labels, card padding `p-3`); controls carry their own `label` prop instead of `Field` |
 | Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
-| Earnings calendar widget | The Home widget over the watchlist's upcoming dated announcements within its days-ahead window | windowed table / no announcement in range / empty watchlist | `EarningsCalendarWidget` in `home/widgets/EarningsCalendarWidget.tsx` (semantic `<table>` with `<caption>` like `Market tables`: date, stock (symbol `font-mono` + name), fiscal period, timing, per-date calendar links; below it the count of stocks with no upcoming date with each reason in a disclosure; `.ics` download button, "Manage watchlist" link, publisher/retrieved provenance line; no series picker in the dialog — the registry marks the type `seriesKind: "none"`) |
+| Earnings calendar widget | The Home widget over the watchlist's earnings dates: a glanceable month grid plus a short next list (section 14) | compact grid + next list / no announcement in range / empty watchlist | `EarningsMonthCalendar` in `watchlist/EarningsMonthCalendar.tsx` (`compact` variant: semantic `<table>` with `<caption>`, day numbers with a dot marker plus the count past one, today emphasised, announcement days as deep links to the Watchlist calendar) composed by `EarningsCalendarWidget` in `home/widgets/EarningsCalendarWidget.tsx` with the "Next" list (at most 3, date + symbol + name + fiscal period, no per-row links), one status line, "Refresh earnings dates" and the "Open calendar" deep link, one no-upcoming sentence linking to the Watchlist page, and one short provenance line; the full calendar (grid with day details, links, `.ics`, feed, Google card) lives on the Watchlist page, never in the widget |
 | Registered stocks table | The Watchlist page table: one row per registered stock with its next announcement | dated next announcement / undecided / unavailable / passed dates | `WatchlistView` in `watchlist/WatchlistView.tsx` (semantic `<table>` with `<caption>` and scopes: symbol `font-mono`, company name or "unavailable (not retrieved yet)", market, next date with fiscal period and timing, further dates in a disclosure, as-of date, source `SafeLink`, per-row "unavailable (reason)", `Remove` with `ConfirmDialog`; passed stored dates are stated as text with no date and no calendar links) |
 | Add-a-stock form | Market select + symbol input with guideline-way problem list | valid / problems listed | `WatchlistView` (shared `Select` + `INPUT` + `BUTTON_PRIMARY`; `ul[aria-label="Before you can add this stock"]` the submit points at via `aria-describedby`) |
 | Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | `WatchlistView` (read-only field with Copy button and "will not be shown again" text on issue; created date with "Replace link" and "Revoke link" confirmations when a feed exists; the secrecy + localhost/HTTPS reachability note always visible) |
@@ -379,3 +379,39 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   Content-Security-Policy violation by strict engines, and the SPA's small
   payloads never need JIT parsing — at the cost of slower schema parsing in
   the browser. The Worker and Node paths keep their own configuration.
+
+## 14. Widgets (Apple Human Interface Guidelines)
+
+Widget design guideline (owner's rule of 2026-10-13): the Apple Human
+Interface Guidelines for widgets on iOS and macOS. In the HIG's terms a widget
+is glanceable and uncluttered; it offers simple, relevant functionality and
+reserves complexity for the app; a tap opens the app at the right location (a
+deep link); widget layouts stay clear of app-like density; margins stay
+standard; targets stay large enough to hit with confidence (44 × 44 pt on
+touch); corner radii stay concentric with the container; the system font keeps
+a clear hierarchy. Applied to this app's Home:
+
+- The FULL earnings calendar (grid with day details panel and calendar links,
+  the `.ics` download, the subscription feed, the Google Calendar card) lives
+  on the Watchlist page. That is "the app".
+- The Home `earnings-calendar` widget is glanceable: the month grid in a
+  compact variant (day numbers, a dot marker plus the count past one, today
+  emphasised, month navigation), a "Next" list of at most 3 upcoming
+  announcements, one status line, and at most two actions ("Refresh earnings
+  dates", the "Open calendar" deep link). An announcement day is a link to
+  `#/watchlist/calendar/YYYY-MM-DD` — the tap opens the app at the date —
+  never an in-widget details panel.
+- Removed from the widget (kept on the Watchlist page): per-row calendar
+  links, the `.ics` button, the five-column list table, the per-reason
+  disclosure (one sentence remains, linking to the Watchlist page), the long
+  provenance block (one short line remains).
+- Sizing: every interactive target in the widget is at least 44 × 44 CSS px
+  under `@media (pointer: coarse)` and at least 24 × 24 otherwise (the shared
+  24 px floor of section 9); consistent inner padding with the other Home
+  widgets; no nested cards; type stays within the widget's existing sizes.
+- All existing widget states stay expressible (loading, load error with retry,
+  empty watchlist, not-fetched-yet, fetching).
+
+The other Home widgets (metric, line-chart, stock-table, indicator-table) are
+NOT redesigned by this change: they keep their tables, controls and provenance
+exactly as sections 6 and 13 state them.

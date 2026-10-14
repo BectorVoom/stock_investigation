@@ -7,6 +7,7 @@ import {
 	GOOGLE_AUTH_URL_PREFIX,
 	GOOGLE_CALENDAR_FAILURE_CODES,
 	GOOGLE_CALENDAR_FAILURE_REASONS,
+	GOOGLE_CALENDAR_OAUTH_SCOPE,
 	GOOGLE_SYNC_MAX_EVENTS,
 	googleAuthUrlEventSchema,
 	googleCalendarActionSchema,
@@ -15,6 +16,7 @@ import {
 	googleCalendarStateSchema,
 	googleCalendarSyncPayloadSchema,
 	googleEventBodySchema,
+	isGoogleSignInUrl,
 	jobKindSchema,
 	runnerEventSchema,
 	watchlistResponseSchema,
@@ -24,7 +26,7 @@ import { expectAccepted, expectRejected, repeat, without } from "./support.ts";
 
 const T0 = "2026-10-11T03:00:00.000Z";
 const AUTH_URL =
-	"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&state=s&code_challenge=c&code_challenge_method=S256&access_type=offline&prompt=consent";
+	"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4";
 
 const EVENT_BODY = {
 	id: "a".repeat(32),
@@ -232,6 +234,66 @@ describe("google-calendar jobs (additive)", () => {
 			seq: 0,
 			at: T0,
 			event: { type: "google-auth-url", url: `${AUTH_URL}${"x".repeat(2000)}` },
+		});
+	});
+
+	it("accepts only the runner's own sign-in link: one scope, PKCE, a loopback redirect", () => {
+		const event = (url: string) => ({ type: "google-auth-url", url });
+		const swap = (name: string, replacement: string | null): string => {
+			const url = new URL(AUTH_URL);
+			if (replacement === null) url.searchParams.delete(name);
+			else url.searchParams.set(name, replacement);
+			return url.toString();
+		};
+		expect(isGoogleSignInUrl(AUTH_URL)).toBe(true);
+		// Round-tripping through URL keeps a valid link valid (the helper is sound).
+		expectAccepted(googleAuthUrlEventSchema, event(swap("client_id", "another-client")));
+		const tampered: readonly string[] = [
+			// A broader scope behind the app's own button.
+			swap("scope", "https://www.googleapis.com/auth/calendar"),
+			swap("scope", `${GOOGLE_CALENDAR_OAUTH_SCOPE} https://www.googleapis.com/auth/drive`),
+			swap("scope", null),
+			// The code sent somewhere other than this machine.
+			swap("redirect_uri", "https://evil.example.com/"),
+			swap("redirect_uri", "http://127.0.0.1.evil.example.com:8080/"),
+			swap("redirect_uri", "http://localhost:8080/"),
+			swap("redirect_uri", "http://127.0.0.1/"),
+			swap("redirect_uri", "http://127.0.0.1:8080/steal"),
+			// No PKCE, or the plain method.
+			swap("code_challenge", null),
+			swap("code_challenge_method", "plain"),
+			swap("response_type", "token"),
+			swap("state", null),
+			swap("state", "short"),
+			swap("client_id", null),
+			// Anything unlisted, or a parameter given twice.
+			`${AUTH_URL}&login_hint=owner%40example.com`,
+			`${AUTH_URL}&scope=openid`,
+			`${AUTH_URL}#fragment`,
+			// Not printable ASCII (it would also break the ETag header).
+			`${AUTH_URL}&x=\u3042`,
+			`${AUTH_URL} `,
+			"https://accounts.google.com/o/oauth2/v2/auth?",
+			"https://accounts.google.com.evil.example.com/o/oauth2/v2/auth?response_type=code",
+		];
+		for (const url of tampered) {
+			expect(isGoogleSignInUrl(url), url).toBe(false);
+			expectRejected(googleAuthUrlEventSchema, event(url));
+		}
+	});
+
+	it("keeps calendar ids to printable ASCII (they travel in a header and a path)", () => {
+		const base = { outcome: "google-calendar-connected", leaseGeneration: 1, usage: resourceUsage };
+		expectAccepted(completeJobRequestSchema, {
+			...base,
+			calendarId: "c_1a2b3c@group.calendar.google.com",
+		});
+		for (const calendarId of ["cal\nid", "cal id", "cal\u3042", ""]) {
+			expectRejected(completeJobRequestSchema, { ...base, calendarId });
+		}
+		expectRejected(googleCalendarStateSchema, {
+			...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+			calendarId: "cal\r\nX-Injected: 1",
 		});
 	});
 

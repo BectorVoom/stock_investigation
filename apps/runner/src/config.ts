@@ -39,6 +39,15 @@ const configSchema = z.object({
 	twelveDataApiKey: z.string().min(1).nullable(),
 	/** Finnhub API key for earnings dates (FR-018); without it US stocks are unavailable. */
 	finnhubApiKey: z.string().min(1).nullable(),
+	/**
+	 * Google OAuth "Desktop app" client (FR-019). Without both, every
+	 * google-calendar job fails honestly with GOOGLE_NOT_CONFIGURED; the
+	 * values never leave this object (never logged, never sent to the API).
+	 */
+	googleOAuthClientId: z.string().min(1).nullable(),
+	googleOAuthClientSecret: z.string().min(1).nullable(),
+	/** Runner-side refresh-token file (mode 0600, beside runner-credential.json; the plan sets it). */
+	googleTokenFile: z.string().min(1),
 	/** Twelve Data request starts per minute (free plan: 8); FRED is paced at 100 per minute. */
 	twelveDataRequestsPerMinute: z
 		.number()
@@ -78,6 +87,12 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 		fredApiKey: blankToNull(env.FRED_API_KEY),
 		twelveDataApiKey: blankToNull(env.TWELVE_DATA_API_KEY),
 		finnhubApiKey: blankToNull(env.FINNHUB_API_KEY),
+		googleOAuthClientId: blankToNull(env.GOOGLE_OAUTH_CLIENT_ID),
+		googleOAuthClientSecret: blankToNull(env.GOOGLE_OAUTH_CLIENT_SECRET),
+		googleTokenFile:
+			env.GOOGLE_TOKEN_FILE?.trim() === "" || env.GOOGLE_TOKEN_FILE === undefined
+				? "google-token.json"
+				: env.GOOGLE_TOKEN_FILE.trim(),
 		twelveDataRequestsPerMinute: requestsPerMinute(env.TWELVE_DATA_REQUESTS_PER_MINUTE),
 	});
 	if (parsed.success) return { ok: true, value: parsed.data };

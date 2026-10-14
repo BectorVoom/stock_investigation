@@ -81,7 +81,7 @@ export interface GoogleEventBody {
 /**
  * Full Google event body for one dated earnings announcement. The id comes
  * from `digest20` (see `googleEventId`); summary/description are the shared
- * ICS text builder's output. Undecided or malformed dates fail instead of
+ * ICS text builder's output without its retrieval date. Undecided or malformed dates fail instead of
  * guessing.
  */
 export function googleEventBody(
@@ -97,7 +97,10 @@ export function googleEventBody(
 	}
 	const end = addDaysIso(event.announcementDate, 1);
 	if (!end.ok) return err("INVALID_DATE");
-	const { summary, description } = earningsCalendarTexts(event);
+	// No retrieval date in the text: the plan compares it with what Google
+	// holds, and a date that moves with every refresh would turn each daily
+	// refresh into an update of every event.
+	const { summary, description } = earningsCalendarTexts(event, { stampRetrieved: false });
 	return ok({
 		id: id.value,
 		summary,

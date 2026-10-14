@@ -849,3 +849,49 @@ describe("watchlist and earnings-date calendar", () => {
 		expect((await api.revokeCalendarFeed()).ok).toBe(true);
 	});
 });
+
+describe("google calendar sync", () => {
+	function googleRoutes(backend: ReturnType<typeof createFakeBackend>) {
+		for (const action of ["connect", "sync", "disconnect"] as const) {
+			backend.on("POST", new RegExp(`google-calendar\\/${action}$`), () =>
+				jsonResponse(
+					{ run: makeRun({ runId: `run_google_${action}`, kind: "google-calendar" }) },
+					{ status: 202 },
+				),
+			);
+		}
+	}
+
+	it("queues connect, sync and disconnect with an idempotency key", async () => {
+		const { backend, api } = setup();
+		googleRoutes(backend);
+		const connected = await api.connectGoogleCalendar("idem-connect-0001");
+		expect(connected.ok).toBe(true);
+		if (!connected.ok) return;
+		expect(connected.value.kind).toBe("google-calendar");
+		const synced = await api.syncGoogleCalendar("idem-sync-0001");
+		expect(synced.ok).toBe(true);
+		const gone = await api.disconnectGoogleCalendar("idem-disconnect-0001");
+		expect(gone.ok).toBe(true);
+		expect(backend.requests.map((request) => request.path)).toEqual([
+			"/api/v1/google-calendar/connect",
+			"/api/v1/google-calendar/sync",
+			"/api/v1/google-calendar/disconnect",
+		]);
+		expect(backend.requests.map((request) => request.headers["idempotency-key"])).toEqual([
+			"idem-connect-0001",
+			"idem-sync-0001",
+			"idem-disconnect-0001",
+		]);
+	});
+
+	it("refuses a malformed idempotency key before any request is made", async () => {
+		const { backend, api } = setup();
+		googleRoutes(backend);
+		const result = await api.syncGoogleCalendar("short");
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.error.code).toBe("INVALID_REQUEST");
+		expect(backend.requests).toHaveLength(0);
+	});
+});

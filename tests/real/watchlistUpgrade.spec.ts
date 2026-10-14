@@ -16,7 +16,9 @@ import {
 /**
  * Watchlist tables on an upgraded installation (`bun run test:real` only).
  * An installation whose database predates migration 0007 must get the
- * Watchlist tables on the next start and keep its data: from a pristine
+ * Watchlist tables — and, with migration 0008 moved out and back exactly
+ * like it, the Google Calendar link table — on the next start and keep its
+ * data: from a pristine
  * copy, first start `dev` with `0007_watchlist_earnings.sql` moved out of
  * the copy's `infra/migrations` (a database at schema version 6), create a
  * conversation and save a Home dashboard through the API, stop; restore the
@@ -41,6 +43,7 @@ const API_PORT = 8907;
 const VITE_ORIGIN = `http://localhost:${VITE_PORT}`;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const MIGRATION = "0007_watchlist_earnings.sql";
+const MIGRATION_GOOGLE = "0008_google_calendar.sql";
 
 interface WatchlistApiEvent {
 	readonly announcementDate: string | null;
@@ -71,6 +74,7 @@ let extraRoot = "";
 let dataDir = "";
 let runnerEnvFile = "";
 let stashedMigration = "";
+let stashedGoogleMigration = "";
 const resources = new TestResources();
 
 test.beforeAll(() => {
@@ -82,13 +86,26 @@ test.beforeAll(() => {
 	extraRoot = mkdtempSync(join(tmpdir(), "research-real-watchlist-upgrade-extra-"));
 	resources.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 	if (pristine === null) throw new Error("the pristine copy was not created");
-	// A database at schema version 6: the copy starts without the Watchlist migration.
+	// A database at schema version 6: the copy starts without the Watchlist
+	// migration — and without the Google Calendar migration, moved out and
+	// back exactly like it.
 	stashedMigration = join(extraRoot, MIGRATION);
 	renameSync(join(pristine.root, "infra", "migrations", MIGRATION), stashedMigration);
+	stashedGoogleMigration = join(extraRoot, MIGRATION_GOOGLE);
+	renameSync(join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE), stashedGoogleMigration);
 	resources.add(() => {
 		try {
 			if (pristine !== null)
 				renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
+		} catch {
+			// The spec body restores it first; only a setup failure lands here.
+		}
+		try {
+			if (pristine !== null)
+				renameSync(
+					stashedGoogleMigration,
+					join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE),
+				);
 		} catch {
 			// The spec body restores it first; only a setup failure lands here.
 		}
@@ -175,8 +192,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await before.stop();
 	}
 
-	// Phase 2: the migration returns; the SAME data directory restarts at schema version 7.
+	// Phase 2: the migrations return; the SAME data directory restarts at the
+	// Watchlist + Google Calendar schema.
 	renameSync(stashedMigration, join(pristine.root, "infra", "migrations", MIGRATION));
+	renameSync(stashedGoogleMigration, join(pristine.root, "infra", "migrations", MIGRATION_GOOGLE));
 	const after = await startLauncher({ cwd: pristine.root, args: ["dev"], env: watchlistEnv() });
 	resources.add(async () => {
 		await after.stop();
@@ -199,6 +218,13 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 
 		const empty = await api<WatchlistApiResponse>("GET", "/api/v1/watchlist");
 		expect(empty.stocks).toEqual([]);
+		// The Google Calendar link table arrives with the migrations too: a
+		// fresh link row reads disconnected.
+		const withGoogle = await api<{ googleCalendar: { status: string } }>(
+			"GET",
+			"/api/v1/watchlist",
+		);
+		expect(withGoogle.googleCalendar.status).toBe("disconnected");
 
 		// The Watchlist page loads empty on the upgraded database.
 		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
@@ -272,7 +298,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(homeWidget).toContainText("7203");
 		if (widgetNext !== undefined && widgetNext.announcementDate !== null) {
 			await expect(homeWidget).toContainText(widgetNext.announcementDate, { timeout: 120_000 });
-			await expect(homeWidget.getByRole("link", { name: "Add to Google Calendar" })).toBeVisible();
+			// The compact widget marks the day with a deep link, not a calendar link.
+			await expect(
+				homeWidget.locator(`a[href="#/watchlist/calendar/${widgetNext.announcementDate}"]`),
+			).toBeVisible();
 		}
 		const shotsDir = join(REPO_ROOT, "test-results-real");
 		mkdirSync(shotsDir, { recursive: true });

@@ -1,4 +1,10 @@
-import type { AppliedCommand, JobRecord, WorkspaceRecord } from "@research/application";
+import type {
+	AppliedCommand,
+	GoogleCalendarLink,
+	GoogleCalendarLinkStatus,
+	JobRecord,
+	WorkspaceRecord,
+} from "@research/application";
 import {
 	type AgentSettings,
 	type Article,
@@ -13,6 +19,7 @@ import {
 	type EarningsUnavailableCode,
 	earningsTimingSchema,
 	earningsUnavailableCodeSchema,
+	googleCalendarRequestSchema,
 	type HomeDashboard,
 	homeDashboardSchema,
 	type NewsSource,
@@ -133,7 +140,13 @@ export function toArticle(row: unknown): Article {
 const jobRowSchema = z.object({
 	owner_id: z.string(),
 	run_id: z.string(),
-	kind: z.enum(["research", "news-ingest", "market-refresh", "earnings-refresh"]),
+	kind: z.enum([
+		"research",
+		"news-ingest",
+		"market-refresh",
+		"earnings-refresh",
+		"google-calendar",
+	]),
 	state: z.string(),
 	request_json: nullableText,
 	workspace_id: nullableText,
@@ -165,6 +178,9 @@ const jobRowSchema = z.object({
 
 const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.string() });
 
+/** A stored job request: research requests predate FR-019; `{ action }` is a google-calendar job. */
+const jobRequestSchema = z.union([researchRequestSchema, googleCalendarRequestSchema]);
+
 export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerprint: string } {
 	const r = decode("research_jobs", jobRowSchema, row);
 	if (!isJobState(r.state)) throw new StoredDataError("research_jobs", "state");
@@ -186,7 +202,7 @@ export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerp
 		request:
 			r.request_json === null
 				? null
-				: parseJsonColumn("research_jobs", researchRequestSchema, r.request_json),
+				: parseJsonColumn("research_jobs", jobRequestSchema, r.request_json),
 		workspaceId: r.workspace_id,
 		usage: parseJsonColumn("research_jobs", resourceUsageSchema, r.usage_json),
 		attempt: r.attempt,
@@ -504,6 +520,65 @@ export function toCalendarFeedRecord(row: unknown): {
 } {
 	const r = decode("calendar_feeds", calendarFeedRowSchema, row);
 	return { tokenHash: r.token_hash, createdAt: r.created_at };
+}
+
+const googleCalendarLinkRowSchema = z.object({
+	status: z.string(),
+	connect_from: z.string().nullable(),
+	pending_auth_url: z.string().nullable(),
+	calendar_id: z.string().nullable(),
+	connected_at: z.string().nullable(),
+	last_synced_at: z.string().nullable(),
+	synced_digest: z.string().nullable(),
+	last_inserted: z.number().nullable(),
+	last_updated: z.number().nullable(),
+	last_deleted: z.number().nullable(),
+	last_unchanged: z.number().nullable(),
+	last_failure_code: z.string().nullable(),
+	last_failure_at: z.string().nullable(),
+	updated_at: z.string(),
+});
+
+const googleCalendarLinkStatusSchema = z.enum([
+	"disconnected",
+	"connecting",
+	"connected",
+	"needs-reconnect",
+]);
+
+/** Decodes a `google_calendar_links` row; unknown statuses are a storage fault, never a guess. */
+export function toGoogleCalendarLink(row: unknown): GoogleCalendarLink {
+	const r = decode("google_calendar_links", googleCalendarLinkRowSchema, row);
+	const status = decode("google_calendar_links", googleCalendarLinkStatusSchema, r.status);
+	const connectFrom: GoogleCalendarLinkStatus | null =
+		r.connect_from === null
+			? null
+			: decode("google_calendar_links", googleCalendarLinkStatusSchema, r.connect_from);
+	const counts =
+		r.last_inserted === null ||
+		r.last_updated === null ||
+		r.last_deleted === null ||
+		r.last_unchanged === null
+			? null
+			: {
+					inserted: r.last_inserted,
+					updated: r.last_updated,
+					deleted: r.last_deleted,
+					unchanged: r.last_unchanged,
+				};
+	return {
+		status,
+		connectFrom,
+		pendingAuthUrl: r.pending_auth_url,
+		calendarId: r.calendar_id,
+		connectedAt: r.connected_at,
+		lastSyncedAt: r.last_synced_at,
+		syncedDigest: r.synced_digest,
+		lastSync: counts,
+		lastFailureCode: r.last_failure_code,
+		lastFailureAt: r.last_failure_at,
+		updatedAt: r.updated_at,
+	};
 }
 
 const marketSeriesRowSchema = z.object({

@@ -214,7 +214,17 @@ export function Field(props: {
 
 /** An API failure always shows its stable code and message; never a blank area. */
 export function ErrorNotice(props: {
-	readonly failure: ApiFailure;
+	/**
+	 * The failure to state. `ApiFailure` fits, and so does any other stable
+	 * code + message pair (e.g. the Google Calendar step's fixed reason
+	 * sentence for its code) — the notice only reads these four fields.
+	 */
+	readonly failure: {
+		readonly code: string;
+		readonly message: string;
+		readonly detail: string | null;
+		readonly issues: readonly string[];
+	};
 	readonly title?: string;
 	readonly onRetry?: () => void;
 }): JSX.Element {

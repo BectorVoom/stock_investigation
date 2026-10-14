@@ -1,45 +1,42 @@
 import type { HomeWidget, WatchlistResponse, WatchlistStock } from "@research/contracts";
-import {
-	type EarningsCalendarEvent,
-	googleCalendarUrl,
-	outlookCalendarUrl,
-	selectUpcomingEarnings,
-} from "@research/domain";
+import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
+import { selectUpcomingEarnings } from "@research/domain";
 import { SafeLink } from "@research/ui-registry";
-import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
+import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
-import { BUTTON, DisclosureSummary, Empty, ErrorNotice } from "../../components/ui.tsx";
-import { downloadTextFile } from "../../lib/download.ts";
+import { BUTTON, Empty, ErrorNotice } from "../../components/ui.tsx";
+import { formatInstant } from "../../lib/format.ts";
+import { watchlistCalendarHash } from "../../router.ts";
 import {
+	type CalendarDayEvent,
+	EarningsMonthCalendar,
+} from "../../watchlist/EarningsMonthCalendar.tsx";
+import {
+	googleWidgetStatus,
 	hasNeverRefreshedStock,
-	timingText,
 	utcTodayIso,
-	withoutUpcomingReason,
 } from "../../watchlist/watchlistModel.ts";
 
-/** One watchlist event with its stock's context, for the window selection and links. */
-type UpcomingRow = Omit<EarningsCalendarEvent, "retrievedAt"> & {
-	readonly retrievedAt: string | null;
-};
+/** One watchlist event with its stock's context, for the window selection. */
+type UpcomingRow = CalendarDayEvent;
 
 function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
 	const rows: UpcomingRow[] = [];
 	for (const stock of watchlist.stocks) {
 		for (const event of stock.events) {
+			if (event.announcementDate === null) continue;
 			rows.push({
 				stockId: stock.stockId,
+				announcementDate: event.announcementDate,
 				symbol: stock.symbol,
 				name: stock.name,
-				announcementDate: event.announcementDate,
 				fiscalPeriodLabel: event.fiscalPeriodLabel,
 				timing: event.timing,
 				periodKey: event.periodKey,
 				fiscalPeriodEnd: event.fiscalPeriodEnd,
 				publisher: stock.publisher,
 				sourceUrl: stock.sourceUrl,
-				// Never substitutes the added date: without a retrieved stamp
-				// there is no calendar link for the event.
 				retrievedAt: stock.retrievedAt,
 			});
 		}
@@ -47,52 +44,15 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
 	return rows;
 }
 
-/** A dated event stamped by a successful refresh, or null when there is no link. */
-function linkableEvent(row: UpcomingRow): EarningsCalendarEvent | null {
-	if (row.retrievedAt === null) return null;
-	return { ...row, retrievedAt: row.retrievedAt };
-}
-
-function UpcomingRowView(props: { readonly row: UpcomingRow }): JSX.Element {
-	// Past dates never get calendar links; neither do unstamped events.
-	const google = () => {
-		const dated = linkableEvent(props.row);
-		return dated === null ? null : googleCalendarUrl(dated);
-	};
-	const outlook = () => {
-		const dated = linkableEvent(props.row);
-		return dated === null ? null : outlookCalendarUrl(dated);
-	};
-	return (
-		<tr class="border-b border-slate-200 align-top">
-			<td class="py-1 pr-3 whitespace-nowrap">
-				<time dateTime={props.row.announcementDate ?? undefined}>{props.row.announcementDate}</time>
-			</td>
-			<th scope="row" class="py-1 pr-3 font-medium">
-				<span class="block font-mono">{props.row.symbol}</span>
-				<span class="block text-xs font-normal text-slate-600">
-					{props.row.name ?? props.row.symbol}
-				</span>
-			</th>
-			<td class="py-1 pr-3">{props.row.fiscalPeriodLabel}</td>
-			<td class="py-1 pr-3">
-				{timingText(props.row.timing) ?? <span class="italic">not stated</span>}
-			</td>
-			<td class="py-1 text-xs">
-				<Show when={google()}>
-					{(url) => <SafeLink url={url()}>Add to Google Calendar</SafeLink>}
-				</Show>{" "}
-				<Show when={outlook()}>{(url) => <SafeLink url={url()}>Add to Outlook</SafeLink>}</Show>
-			</td>
-		</tr>
-	);
-}
-
 /**
- * The earnings-calendar widget: upcoming dated announcements of the
- * watchlist's stocks within `daysAhead` from the browser's current UTC date.
- * Reads the watchlist through an accessor (never a snapshot) so it stays
- * reactive across reloads like the other widgets.
+ * The earnings-calendar widget, glanceable (FR-019, Apple HIG): the month
+ * grid in its compact variant (announcement days deep-link to the Watchlist
+ * calendar — no in-widget details), a "Next" list of at most 3 upcoming
+ * announcements, one status line, and at most two actions ("Refresh earnings
+ * dates", "Open calendar"). The full calendar — grid, day details, calendar
+ * links, the `.ics` download and the subscription feed — lives on the
+ * Watchlist page. Reads the watchlist through an accessor (never a
+ * snapshot) so it stays reactive across reloads like the other widgets.
  */
 export function EarningsCalendarWidget(props: {
 	readonly widget: Extract<HomeWidget, { readonly type: "earnings-calendar" }>;
@@ -103,9 +63,6 @@ export function EarningsCalendarWidget(props: {
 	readonly earningsRefreshBusy: Accessor<boolean>;
 	readonly api: ApiClient;
 }): JSX.Element {
-	const [downloadBusy, setDownloadBusy] = createSignal(false);
-	const [downloadError, setDownloadError] = createSignal<ApiFailure | null>(null);
-
 	const today = () => utcTodayIso(Date.now());
 	const daysAhead = () => props.widget.daysAhead;
 	/** The active earnings run, if any: the status line below names it. */
@@ -122,24 +79,31 @@ export function EarningsCalendarWidget(props: {
 		const current = props.watchlist();
 		return current !== null && hasNeverRefreshedStock(current);
 	};
-	const upcoming = createMemo(() => {
+	const datedRows = createMemo(() => {
 		const current = props.watchlist();
 		if (current === null) return null;
-		const rows = rowsOf(current);
-		return selectUpcomingEarnings(rows, today(), daysAhead(), rows.length);
+		return rowsOf(current);
+	});
+	/** At most 3 upcoming announcements inside `daysAhead`: the "Next" list. */
+	const nextThree = createMemo(() => {
+		const rows = datedRows();
+		if (rows === null) return null;
+		return selectUpcomingEarnings(rows, today(), daysAhead(), 3);
 	});
 	const withoutUpcoming = createMemo((): readonly WatchlistStock[] => {
 		const current = props.watchlist();
-		const shown = upcoming();
-		if (current === null || shown === null) return [];
-		const withDate = new Set(shown.map((row) => row.stockId));
-		return current.stocks.filter((stock) => !withDate.has(stock.stockId));
+		const rows = datedRows();
+		if (current === null || rows === null) return [];
+		const shown = new Set(
+			selectUpcomingEarnings(rows, today(), daysAhead(), rows.length).map((row) => row.stockId),
+		);
+		return current.stocks.filter((stock) => !shown.has(stock.stockId));
 	});
 	const provenance = createMemo(() => {
-		const shown = upcoming();
-		if (shown === null) return [];
+		const rows = nextThree();
+		if (rows === null) return [];
 		const byPublisher = new Map<string, { sourceUrl: string; retrievedAt: string | null }>();
-		for (const row of shown) {
+		for (const row of rows) {
 			const existing = byPublisher.get(row.publisher);
 			if (existing === undefined) {
 				byPublisher.set(row.publisher, { sourceUrl: row.sourceUrl, retrievedAt: row.retrievedAt });
@@ -152,24 +116,23 @@ export function EarningsCalendarWidget(props: {
 		}
 		return [...byPublisher.entries()].map(([publisher, info]) => ({ publisher, ...info }));
 	});
-
-	const downloadIcs = async (): Promise<void> => {
-		if (downloadBusy()) return;
-		setDownloadBusy(true);
-		setDownloadError(null);
-		const result = await props.api.downloadWatchlistIcs();
-		setDownloadBusy(false);
-		if (!result.ok) {
-			setDownloadError(result.error);
-			return;
+	const earningsStatus = createMemo((): string => {
+		const current = props.watchlist();
+		const active = activeRefresh();
+		if (active !== null) return `Fetching earnings dates… (${active.state}).`;
+		if (current === null) return "Loading earnings dates…";
+		if (neverFetched()) return "Earnings dates have not been fetched yet.";
+		if (current.refresh.lastSucceededAt !== null) {
+			return `Earnings dates last refreshed ${formatInstant(current.refresh.lastSucceededAt)}.`;
 		}
-		downloadTextFile(
-			document,
-			"earnings-calendar.ics",
-			"text/calendar; charset=utf-8",
-			result.value,
-		);
-	};
+		return "No earnings-date refresh has completed yet.";
+	});
+	const googleStatus = createMemo((): string => {
+		const current = props.watchlist();
+		if (current === null) return googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE);
+		return googleWidgetStatus(current.googleCalendar);
+	});
+	const googleDisconnected = () => props.watchlist()?.googleCalendar.status === "disconnected";
 
 	return (
 		<Show
@@ -205,113 +168,87 @@ export function EarningsCalendarWidget(props: {
 						</Empty>
 					}
 				>
+					<EarningsMonthCalendar
+						events={datedRows() ?? []}
+						variant="compact"
+						selectedDate={null}
+						onSelectDate={() => {}}
+					/>
 					<Show
-						when={(upcoming() ?? []).length > 0}
+						when={(nextThree() ?? []).length > 0}
 						fallback={
 							<Show
 								when={!neverFetched()}
 								fallback={
-									<p class="text-sm text-slate-700">Earnings dates have not been fetched yet.</p>
+									<p class="mt-2 text-sm text-slate-700">
+										Earnings dates have not been fetched yet.
+									</p>
 								}
 							>
-								<p class="text-sm text-slate-700">
+								<p class="mt-2 text-sm text-slate-700">
 									No announcement in the next {daysAhead()} days.
 								</p>
 							</Show>
 						}
 					>
-						<div class="overflow-x-auto">
-							<table class="w-full border-collapse text-left text-sm">
-								<caption class="caption-top pb-1 text-left text-xs text-slate-600">
-									{props.widget.title}: upcoming earnings announcements
-								</caption>
-								<thead>
-									<tr class="whitespace-nowrap border-b border-slate-300 text-xs text-slate-700">
-										<th scope="col" class="py-1 pr-3 font-semibold">
-											Date
-										</th>
-										<th scope="col" class="py-1 pr-3 font-semibold">
-											Stock
-										</th>
-										<th scope="col" class="py-1 pr-3 font-semibold">
-											Fiscal period
-										</th>
-										<th scope="col" class="py-1 pr-3 font-semibold">
-											Timing
-										</th>
-										<th scope="col" class="py-1 font-semibold">
-											Add to calendar
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									<For each={upcoming() ?? []}>{(row) => <UpcomingRowView row={row} />}</For>
-								</tbody>
-							</table>
-						</div>
+						<h4 class="mt-2 text-xs font-semibold text-slate-900">Next</h4>
+						<ul class="mt-0.5 space-y-1">
+							<For each={nextThree() ?? []}>
+								{(row) => (
+									<li class="text-sm text-slate-800">
+										<time dateTime={row.announcementDate} class="whitespace-nowrap">
+											{row.announcementDate}
+										</time>{" "}
+										<span class="font-mono font-medium">{row.symbol}</span>{" "}
+										<span class="text-slate-600">{row.name ?? row.symbol}</span>{" "}
+										<span class="text-xs text-slate-600">({row.fiscalPeriodLabel})</span>
+									</li>
+								)}
+							</For>
+						</ul>
 					</Show>
 					<Show when={withoutUpcoming().length > 0}>
 						<p class="mt-2 text-xs text-slate-700">
-							{withoutUpcoming().length} stock{withoutUpcoming().length === 1 ? "" : "s"} with no
-							upcoming date.
+							{withoutUpcoming().length === 1
+								? "1 stock has no upcoming date."
+								: `${withoutUpcoming().length} stocks have no upcoming date.`}{" "}
+							<a
+								href="#/watchlist"
+								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+							>
+								See them on the Watchlist page
+							</a>
+							.
 						</p>
-						<details class="group text-xs">
-							<DisclosureSummary>Stocks without an upcoming date</DisclosureSummary>
-							<ul class="mt-1 space-y-0.5">
-								<For each={withoutUpcoming()}>
-									{(stock) => (
-										<li>
-											<span class="font-mono">{stock.symbol}</span>:{" "}
-											{withoutUpcomingReason(stock, daysAhead(), today())}
-										</li>
-									)}
-								</For>
-							</ul>
-						</details>
 					</Show>
-					<Show when={activeRefresh()}>
-						{(active) => (
-							<output class="mt-2 block text-xs text-slate-700">
-								Fetching earnings dates… ({active().state}). The local runner fetches them; if it is
-								offline this stays queued until it reconnects.
-							</output>
-						)}
-					</Show>
+					<output class="mt-2 block text-xs text-slate-700">
+						{earningsStatus()} {googleStatus()}{" "}
+						<Show when={googleDisconnected()}>
+							<a
+								href="#/watchlist"
+								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+							>
+								Connect it on the Watchlist page
+							</a>
+							.
+						</Show>
+					</output>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
 						<button
 							type="button"
-							class={BUTTON}
+							class={`${BUTTON} pointer-coarse:min-h-11 pointer-coarse:min-w-11`}
 							disabled={props.earningsRefreshBusy() || activeRefresh() !== null}
 							onClick={() => props.onRefreshEarnings()}
 						>
 							Refresh earnings dates
 						</button>
-						<button
-							type="button"
-							class={BUTTON}
-							disabled={downloadBusy()}
-							onClick={() => void downloadIcs()}
-						>
-							{downloadBusy() ? "Preparing file…" : "Download calendar file (.ics)"}
-						</button>
 						<a
-							href="#/watchlist"
-							class="inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+							href={watchlistCalendarHash(null)}
+							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 						>
-							Manage watchlist
+							Open calendar
 						</a>
 					</div>
-					<Show when={downloadError()}>
-						{(error) => (
-							<div class="mt-1">
-								<ErrorNotice
-									failure={error()}
-									title="The calendar file was not downloaded."
-									onRetry={() => void downloadIcs()}
-								/>
-							</div>
-						)}
-					</Show>
 					<Show when={provenance().length > 0}>
 						<p class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
 							Sources:{" "}

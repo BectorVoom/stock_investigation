@@ -2,6 +2,7 @@ export * from "./agentSettings.ts";
 export * from "./credentials.ts";
 export * from "./errors.ts";
 export * from "./exportImport.ts";
+export * from "./googleCalendar.ts";
 export * from "./home.ts";
 export * from "./ingest.ts";
 export * from "./marketCatalog.ts";

@@ -8,6 +8,7 @@ import {
 	createJpxEarningsSource,
 	createTwelveDataSeriesSource,
 } from "@research/adapters/finance";
+import { createGoogleHttp } from "@research/adapters/google";
 import {
 	createFilePageArchive,
 	createNodeSafeBinaryFetcher,
@@ -38,6 +39,7 @@ import {
 	createMarketPacer,
 	FINNHUB_RATE_LIMIT,
 	FRED_RATE_LIMIT,
+	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
 	twelveDataRateLimit,
 } from "./marketPacing.ts";
@@ -213,6 +215,7 @@ function runnerProgram(
 							["twelve-data", twelveDataRateLimit(value.twelveDataRequestsPerMinute)],
 							["finnhub", FINNHUB_RATE_LIMIT],
 							["jpx", JPX_RATE_LIMIT],
+							["google", GOOGLE_RATE_LIMIT],
 						]),
 					}),
 					// Keyed earnings-date adapters (FR-018): Finnhub without a
@@ -235,6 +238,18 @@ function runnerProgram(
 						],
 					]),
 					scratch: createScratchDirectories(value.scratchRoot ?? join(tmpdir(), "research-runner")),
+					// Google Calendar sync (FR-019): Desktop-app OAuth over
+					// the narrow pinned port; the token file path comes from
+					// the launch plan (`GOOGLE_TOKEN_FILE`).
+					google: {
+						config: {
+							clientId: value.googleOAuthClientId,
+							clientSecret: value.googleOAuthClientSecret,
+							tokenFile: value.googleTokenFile,
+						},
+						http: createGoogleHttp(),
+						sleep,
+					},
 					every: (ms, task) => {
 						const timer = setInterval(task, ms);
 						return () => clearInterval(timer);
