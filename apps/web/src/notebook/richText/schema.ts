@@ -75,11 +75,34 @@ export const richTextSchema = new Schema({
 		todo_item: {
 			attrs: { checked: { default: false } },
 			content: "paragraph",
-			toDOM: (node): DOMOutputSpec => [
-				"li",
-				{ "data-todo-item": node.attrs.checked === true ? "checked" : "open" },
-				0,
-			],
+			toDOM: (node): DOMOutputSpec => {
+				const checked = node.attrs.checked === true;
+				return [
+					"li",
+					{
+						class: "flex items-start gap-2",
+						"data-todo-item": checked ? "checked" : "open",
+					},
+					[
+						"input",
+						{
+							type: "checkbox",
+							class: "rich-text-todo mt-0.5 shrink-0",
+							contenteditable: "false",
+							tabindex: "0",
+							"aria-label": "Toggle to-do",
+							...(checked ? { checked: "" } : {}),
+						},
+					],
+					[
+						"div",
+						{
+							class: checked ? "min-w-0 flex-1 text-slate-600 line-through" : "min-w-0 flex-1",
+						},
+						0,
+					],
+				];
+			},
 			parseDOM: [{ tag: "li[data-todo-item]" }],
 		},
 		blockquote: {

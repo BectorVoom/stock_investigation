@@ -1,10 +1,5 @@
 import type { Mark, Node as PmNode } from "prosemirror-model";
-import {
-	type BlockNode,
-	type InlineNode,
-	isAllowedLinkTarget,
-	type RichTextDoc,
-} from "./model.ts";
+import { type BlockNode, type InlineNode, isAllowedLinkTarget, type RichTextDoc } from "./model.ts";
 import { richTextSchema } from "./schema.ts";
 
 /**
@@ -76,19 +71,14 @@ function blockToPm(block: BlockNode): PmNode {
 			const list = block.kind === "bullet" ? types.bullet_list : types.ordered_list;
 			return list.create(
 				null,
-				block.items.map((entry) =>
-					types.list_item.create(null, linesToParagraph([entry.inline])),
-				),
+				block.items.map((entry) => types.list_item.create(null, linesToParagraph([entry.inline]))),
 			);
 		}
 		case "todo": {
 			return types.todo_list.create(
 				null,
 				block.items.map((entry) =>
-					types.todo_item.create(
-						{ checked: entry.checked },
-						linesToParagraph([entry.inline]),
-					),
+					types.todo_item.create({ checked: entry.checked }, linesToParagraph([entry.inline])),
 				),
 			);
 		}
@@ -115,9 +105,9 @@ export function modelToPm(doc: RichTextDoc): PmNode {
 	return richTextSchema.topNodeType.create(null, blocks);
 }
 
-/** Outermost first: link, strong, em, strike, code innermost. */
-function markRank(mark: Mark): number {
-	switch (mark.type.name) {
+/** Canonical order, outermost first: link spans its label, then strong, em, strike; code is always the leaf. */
+function canonicalRank(typeName: string): number {
+	switch (typeName) {
 		case "link":
 			return 0;
 		case "strong":
@@ -131,38 +121,141 @@ function markRank(mark: Mark): number {
 	}
 }
 
-function wrapText(text: string, marks: readonly Mark[]): InlineNode {
-	const sorted = [...marks].sort((a, b) => markRank(a) - markRank(b));
-	let node: InlineNode = { kind: "text", text };
-	for (let index = sorted.length - 1; index >= 0; index -= 1) {
-		const mark = sorted[index];
-		if (mark === undefined) continue;
-		if (mark.type.name === "link") {
+function markKey(mark: Mark): string | null {
+	switch (mark.type.name) {
+		case "strong":
+		case "em":
+		case "strike":
+		case "code":
+			return mark.type.name;
+		case "link": {
 			const href = mark.attrs.href;
-			if (typeof href !== "string" || !isAllowedLinkTarget(href)) continue;
-			node = { kind: "link", label: [node], href };
-		} else if (mark.type.name === "strong") {
-			node = { kind: "strong", children: [node] };
-		} else if (mark.type.name === "em") {
-			node = { kind: "em", children: [node] };
-		} else if (mark.type.name === "strike") {
-			node = { kind: "strike", children: [node] };
-		} else if (mark.type.name === "code") {
-			// Code is a leaf in the model; a mark stack above it (bold `x`)
-			// wraps outside, exactly as the parser nests it.
-			if (node.kind === "text") node = { kind: "code", text: node.text };
-			else node = { kind: "strong", children: [node] };
+			if (typeof href !== "string" || !isAllowedLinkTarget(href)) return null;
+			return `link:${href}`;
 		}
+		default:
+			return null;
 	}
-	return node;
+}
+
+interface Segment {
+	readonly text: string;
+	/** Non-code marks, as keys, in no particular order. */
+	readonly keys: readonly string[];
+	readonly byKey: ReadonlyMap<string, Mark>;
+	readonly hasCode: boolean;
+}
+
+function segmentOf(text: string, marks: readonly Mark[]): Segment | null {
+	if (text === "") return null;
+	const byKey = new Map<string, Mark>();
+	let hasCode = false;
+	for (const mark of marks) {
+		const key = markKey(mark);
+		if (key === null) continue;
+		if (key === "code") {
+			hasCode = true;
+			continue;
+		}
+		if (!byKey.has(key)) byKey.set(key, mark);
+	}
+	return { text, keys: [...byKey.keys()], byKey, hasCode };
+}
+
+function keyRank(key: string): number {
+	if (key.startsWith("link:")) return 0;
+	return canonicalRank(key);
+}
+
+interface OpenFrame {
+	readonly key: string;
+	readonly mark: Mark;
+	readonly children: InlineNode[];
+}
+
+function pushLeaf(into: InlineNode[], leaf: InlineNode): void {
+	const last = into[into.length - 1];
+	if (leaf.kind === "text" && last?.kind === "text") {
+		into[into.length - 1] = { kind: "text", text: `${last.text}${leaf.text}` };
+		return;
+	}
+	if (leaf.kind === "code" && last?.kind === "code") {
+		into[into.length - 1] = { kind: "code", text: `${last.text}${leaf.text}` };
+		return;
+	}
+	into.push(leaf);
+}
+
+function closeFrame(stack: OpenFrame[], topChildren: InlineNode[]): void {
+	const frame = stack.pop();
+	if (frame === undefined) return;
+	const target = stack.length === 0 ? topChildren : stack[stack.length - 1]?.children;
+	if (target === undefined) return;
+	const children: readonly InlineNode[] = frame.children;
+	let node: InlineNode;
+	if (frame.mark.type.name === "link") {
+		const href = frame.mark.attrs.href;
+		node = {
+			kind: "link",
+			label: children,
+			href: typeof href === "string" ? href : "",
+		};
+	} else if (frame.mark.type.name === "strong") {
+		node = { kind: "strong", children };
+	} else if (frame.mark.type.name === "em") {
+		node = { kind: "em", children };
+	} else {
+		node = { kind: "strike", children };
+	}
+	// An empty wrapper carries no range (a bare caret or a split point):
+	// drop it rather than serializing `****` for nothing.
+	if (children.length === 0) return;
+	pushLeaf(target, node);
+}
+
+/**
+ * Rebuilds one line's inline tree from flat marked segments. Marks already
+ * open stay open (so a mark spanning several segments — a link around
+ * `[**label** text]` — stays one parent); newly appearing marks open
+ * inside, in canonical order (the tie-break for a truly same-range
+ * overlap, matching the serializer). Adjacent leaves merge, so arbitrary
+ * ProseMirror text splits never surface as `**a****b**`.
+ */
+function buildLine(segments: readonly Segment[]): InlineNode[] {
+	const top: InlineNode[] = [];
+	const stack: OpenFrame[] = [];
+	for (const segment of segments) {
+		const present = new Set(segment.keys);
+		let keep = 0;
+		while (keep < stack.length && present.has(stack[keep]?.key ?? "")) keep += 1;
+		while (stack.length > keep) closeFrame(stack, top);
+		const fresh = segment.keys.filter((key) => {
+			for (const frame of stack) if (frame.key === key) return false;
+			return true;
+		});
+		fresh.sort((a, b) => keyRank(a) - keyRank(b) || (a < b ? -1 : a > b ? 1 : 0));
+		for (const key of fresh) {
+			const mark = segment.byKey.get(key);
+			if (mark === undefined) continue;
+			stack.push({ key, mark, children: [] });
+		}
+		const target = stack.length === 0 ? top : stack[stack.length - 1]?.children;
+		if (target === undefined) continue;
+		pushLeaf(
+			target,
+			segment.hasCode ? { kind: "code", text: segment.text } : { kind: "text", text: segment.text },
+		);
+	}
+	while (stack.length > 0) closeFrame(stack, top);
+	return top;
 }
 
 /**
  * Inline content of one textblock: hard breaks split paragraph lines (they
  * are dropped inside headings, whose model form is a single run).
  */
-function pmLinesToModel(node: PmNode, keepBreaks: boolean): readonly (readonly InlineNode[])[] {
-	const lines: InlineNode[][] = [[]];
+function pmLinesToModel(node: PmNode, keepBreaks: boolean): InlineNode[][] {
+	const lines: Segment[][] = [[]];
 	node.forEach((child) => {
 		if (child.type.name === "hard_break") {
 			if (keepBreaks) lines.push([]);
@@ -171,17 +264,17 @@ function pmLinesToModel(node: PmNode, keepBreaks: boolean): readonly (readonly I
 		if (!child.isText || child.text === undefined || child.text === "") return;
 		const current = lines[lines.length - 1];
 		if (current === undefined) return;
-		current.push(wrapText(child.text, child.marks));
+		const segment = segmentOf(child.text, child.marks);
+		if (segment !== null) current.push(segment);
 	});
-	return lines;
+	return lines.map(buildLine);
 }
 
 function pmBlockToModel(node: PmNode): BlockNode | null {
 	switch (node.type.name) {
 		case "paragraph": {
 			const lines = pmLinesToModel(node, true);
-			while (lines.length > 1 && (lines[lines.length - 1]?.length ?? 1) === 0)
-				lines.pop();
+			while (lines.length > 1 && (lines[lines.length - 1]?.length ?? 1) === 0) lines.pop();
 			if (lines.every((line) => line.length === 0)) return null;
 			return { kind: "paragraph", lines };
 		}
@@ -210,7 +303,11 @@ function pmBlockToModel(node: PmNode): BlockNode | null {
 				: { kind: "ordered", items };
 		}
 		case "todo_list": {
-			const items: { readonly inline: readonly InlineNode[]; readonly line: number; readonly checked: boolean }[] = [];
+			const items: {
+				readonly inline: readonly InlineNode[];
+				readonly line: number;
+				readonly checked: boolean;
+			}[] = [];
 			node.forEach((item) => {
 				if (item.type.name !== "todo_item") return;
 				const first = item.firstChild;
@@ -229,8 +326,7 @@ function pmBlockToModel(node: PmNode): BlockNode | null {
 				if (child.type.name !== "paragraph") return;
 				for (const line of pmLinesToModel(child, true)) lines.push([...line]);
 			});
-			while (lines.length > 1 && (lines[lines.length - 1]?.length ?? 1) === 0)
-				lines.pop();
+			while (lines.length > 1 && (lines[lines.length - 1]?.length ?? 1) === 0) lines.pop();
 			if (lines.every((line) => line.length === 0)) return null;
 			return { kind: "quote", lines };
 		}

@@ -1,8 +1,11 @@
 import type { NotebookWidget } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { TextSelection } from "prosemirror-state";
+import type { EditorView } from "prosemirror-view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseRichText } from "../../src/notebook/richText/parser.ts";
 import { RichTextView } from "../../src/notebook/richText/RichTextView.tsx";
+import { wysiwygViewFor } from "../../src/notebook/richText/WysiwygEditor.tsx";
 import { TextWidget } from "../../src/notebook/widgets/TextWidget.tsx";
 
 afterEach(() => {
@@ -98,23 +101,92 @@ describe("rich-text renderer", () => {
 });
 
 describe("text widget in place", () => {
+	/** The live ProseMirror view behind the open editor. */
+	function pmView(): EditorView {
+		const mount = document.querySelector("[data-wysiwyg-mount]");
+		if (!(mount instanceof HTMLDivElement)) throw new Error("no wysiwyg mount");
+		const view = wysiwygViewFor(mount);
+		if (view === undefined) throw new Error("no pm view");
+		return view;
+	}
+
+	async function openEditor(): Promise<HTMLElement> {
+		return await screen.findByRole("textbox", { name: "Edit note" });
+	}
+
+	/** Puts the cursor at the very end of the document. */
+	function cursorToEnd(view: EditorView): void {
+		view.dispatch(view.state.tr.setSelection(TextSelection.atEnd(view.state.doc)));
+	}
+
+	/** Types through the real input-rules plugin, the way keystrokes land. */
+	function typeText(view: EditorView, text: string): void {
+		for (const char of text) {
+			const { $cursor } = view.state.selection;
+			const pos = $cursor === null ? view.state.selection.to : $cursor.pos;
+			const handled = view.someProp("handleTextInput", (handler) => {
+				if (typeof handler !== "function") return false;
+				return handler(view, pos, pos, char);
+			});
+			if (handled !== true) view.dispatch(view.state.tr.insertText(char, pos, pos));
+		}
+	}
+
+	function docRange(
+		view: EditorView,
+		wanted: string,
+	): { readonly from: number; readonly to: number } {
+		let found: { readonly from: number; readonly to: number } | null = null;
+		view.state.doc.descendants((node, pos) => {
+			if (found !== null || !node.isText || node.text === undefined) return true;
+			const at = node.text.indexOf(wanted);
+			if (at >= 0) found = { from: pos + at, to: pos + at + wanted.length };
+			return true;
+		});
+		if (found === null) throw new Error(`missing ${wanted}`);
+		return found;
+	}
+
+	function selectText(view: EditorView, wanted: string): void {
+		const range = docRange(view, wanted);
+		view.dispatch(
+			view.state.tr.setSelection(TextSelection.create(view.state.doc, range.from, range.to)),
+		);
+	}
+
+	function pressKey(view: EditorView, init: KeyboardEventInit & { readonly key: string }): void {
+		view.dom.dispatchEvent(
+			new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }),
+		);
+	}
+
 	it("opens the editor on body click and saves on Escape", async () => {
 		const onSaveText = vi.fn(() => Promise.resolve(true));
 		render(() => (
 			<TextWidget
-				widget={textWidget("Hello **world**.")}
+				widget={textWidget("Hello **world**")}
 				editingDisabled={false}
 				onSaveText={onSaveText}
 			/>
 		));
 		expect(document.querySelector("strong")?.textContent).toBe("world");
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		fireEvent.input(area, { target: { value: "Hello **world**!" } });
-		fireEvent.keyDown(area, { key: "Escape" });
-		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "Hello **world**!"));
-		await waitFor(() => expect(screen.queryByLabelText("Edit text as Markdown")).toBeNull());
+		const editor = await openEditor();
+		// WYSIWYG: the formatted text is inside the editor, no raw `**`.
+		expect(within(editor).getByText("world").tagName).toBe("STRONG");
+		expect(editor.textContent).not.toContain("**");
+		const view = pmView();
+		cursorToEnd(view);
+		typeText(view, "!");
+		pressKey(view, { key: "Escape" });
+		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "Hello **world!**"));
+		await waitFor(() => expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull());
+		// Focus returns to the body the editor came from.
+		await waitFor(() => {
+			const active = document.activeElement;
+			if (!(active instanceof HTMLElement) || active.getAttribute("data-text-view") === null)
+				throw new Error("focus did not return to the body");
+		});
 	});
 
 	it("opens the editor on Enter and saves on blur", async () => {
@@ -123,30 +195,30 @@ describe("text widget in place", () => {
 			<TextWidget widget={textWidget("Notes.")} editingDisabled={false} onSaveText={onSaveText} />
 		));
 		fireEvent.keyDown(screen.getByRole("button", { name: "Edit note" }), { key: "Enter" });
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		fireEvent.input(area, { target: { value: "Notes, revised." } });
-		fireEvent.focusOut(area);
-		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "Notes, revised."));
-		await waitFor(() => expect(screen.queryByLabelText("Edit text as Markdown")).toBeNull());
+		await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		typeText(view, " revised");
+		fireEvent.focusOut(view.dom);
+		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "Notes. revised"));
+		await waitFor(() => expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull());
 	});
 
 	it("keeps the editor open with the text intact when the save fails", async () => {
 		const onSaveText = vi.fn(() => Promise.resolve(false));
 		render(() => (
-			<TextWidget widget={textWidget("Keep me.")} editingDisabled={false} onSaveText={onSaveText} />
+			<TextWidget widget={textWidget("Keep me")} editingDisabled={false} onSaveText={onSaveText} />
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		fireEvent.input(area, { target: { value: "Keep me, longer." } });
-		fireEvent.keyDown(area, { key: "Escape" });
+		await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		typeText(view, ", longer");
+		pressKey(view, { key: "Escape" });
 		await waitFor(() => expect(onSaveText).toHaveBeenCalled());
 		// Still open, nothing lost.
-		expect(screen.getByLabelText("Edit text as Markdown")).not.toBeNull();
-		expect((screen.getByLabelText("Edit text as Markdown") as HTMLTextAreaElement).value).toBe(
-			"Keep me, longer.",
-		);
+		expect(screen.getByRole("textbox", { name: "Edit note" })).not.toBeNull();
+		expect(pmView().dom.textContent).toBe("Keep me, longer");
 	});
 
 	it("saves debounced while typing: one save for fast keystrokes", async () => {
@@ -155,17 +227,16 @@ describe("text widget in place", () => {
 			<TextWidget widget={textWidget("a")} editingDisabled={false} onSaveText={onSaveText} />
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		fireEvent.input(area, { target: { value: "ab" } });
-		fireEvent.input(area, { target: { value: "abc" } });
-		fireEvent.input(area, { target: { value: "abcd" } });
+		await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		typeText(view, "bcd");
 		expect(onSaveText).not.toHaveBeenCalled();
 		await waitFor(() => expect(onSaveText).toHaveBeenCalledTimes(1), { timeout: 3000 });
 		expect(onSaveText).toHaveBeenCalledWith("nb-text", "abcd");
 	});
 
-	it("stays read-only while editing is disabled", () => {
+	it("stays read-only while editing is disabled", async () => {
 		render(() => (
 			<TextWidget
 				widget={textWidget("Locked.")}
@@ -175,7 +246,7 @@ describe("text widget in place", () => {
 		));
 		expect(screen.queryByRole("button", { name: "Edit note" })).toBeNull();
 		fireEvent.click(document.querySelector("[data-text-view]") as HTMLElement);
-		expect(screen.queryByLabelText("Edit text as Markdown")).toBeNull();
+		expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull();
 	});
 
 	it("toggles a to-do without opening the editor", async () => {
@@ -189,10 +260,10 @@ describe("text widget in place", () => {
 		));
 		fireEvent.click(screen.getByRole("checkbox", { name: "To-do: buy milk" }));
 		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "- [x] buy milk"));
-		expect(screen.queryByLabelText("Edit text as Markdown")).toBeNull();
+		expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull();
 	});
 
-	it("bolds the selection from the toolbar", () => {
+	it("bolds the selection from the toolbar", async () => {
 		render(() => (
 			<TextWidget
 				widget={textWidget("make this bold")}
@@ -201,12 +272,11 @@ describe("text widget in place", () => {
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		area.setSelectionRange(5, 9);
-		fireEvent.mouseUp(area);
-		fireEvent.click(screen.getByRole("button", { name: "Bold" }));
-		expect(area.value).toBe("make **this** bold");
+		const editor = await openEditor();
+		const view = pmView();
+		selectText(view, "this");
+		fireEvent.click(await screen.findByRole("button", { name: "Bold" }));
+		expect(editor.querySelector("strong")?.textContent).toBe("this");
 	});
 
 	it("bolds with Ctrl+B and links with Ctrl+K plus a validated URL", async () => {
@@ -218,24 +288,25 @@ describe("text widget in place", () => {
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		area.setSelectionRange(9, 13);
-		fireEvent.keyDown(area, { key: "b", ctrlKey: true });
-		expect(area.value).toBe("read the **docs**");
+		const editor = await openEditor();
+		const view = pmView();
+		selectText(view, "docs");
+		pressKey(view, { key: "b", ctrlKey: true });
+		expect(editor.querySelector("strong")?.textContent).toBe("docs");
 		// Bold kept the word selected, so the link applies to it directly.
-		fireEvent.keyDown(area, { key: "k", ctrlKey: true });
-		const url = screen.getByLabelText("Link URL (http, https or mailto)");
+		pressKey(view, { key: "k", ctrlKey: true });
+		const url = await screen.findByLabelText("Link URL (http, https or mailto)");
 		if (!(url instanceof HTMLInputElement)) throw new Error("no url field");
 		fireEvent.input(url, { target: { value: "javascript:evil()" } });
 		fireEvent.click(screen.getByRole("button", { name: "Save link" }));
 		expect(screen.getByRole("alert").textContent).toContain("http(s) or mailto");
 		fireEvent.input(url, { target: { value: "https://example.com" } });
 		fireEvent.click(screen.getByRole("button", { name: "Save link" }));
-		expect(area.value).toBe("read the **[docs](https://example.com)**");
+		const link = editor.querySelector('a[href="https://example.com"]');
+		expect(link?.textContent).toBe("docs");
 	});
 
-	it("opens the slash menu on an empty line and inserts a to-do", () => {
+	it("opens the slash menu on an empty block and inserts a to-do", async () => {
 		render(() => (
 			<TextWidget
 				widget={textWidget("Title")}
@@ -244,20 +315,40 @@ describe("text widget in place", () => {
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		fireEvent.input(area, { target: { value: "Title\n/" } });
-		const menu = screen.getByRole("listbox", { name: "Insert block" });
-		expect(menu).toBeDefined();
-		fireEvent.input(area, { target: { value: "Title\n/to" } });
+		await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		pressKey(view, { key: "Enter" });
+		typeText(view, "/to");
+		const menu = await screen.findByRole("listbox", { name: "Insert block" });
 		const todo = within(menu).getByRole("option", { name: /To-do/ });
 		expect(todo.getAttribute("aria-selected")).toBe("true");
-		fireEvent.keyDown(area, { key: "Enter" });
-		expect(area.value).toBe("Title\n- [ ] ");
+		pressKey(view, { key: "Enter" });
+		await waitFor(() => {
+			if (pmView().dom.querySelector('input[type="checkbox"]') === null)
+				throw new Error("no todo checkbox in the editor");
+		});
 		expect(screen.queryByRole("listbox")).toBeNull();
 	});
 
-	it("continues a bullet on Enter and leaves the list on an empty item", () => {
+	it("turns `# ` into a heading while typing, with no raw marker", async () => {
+		render(() => (
+			<TextWidget
+				widget={textWidget("")}
+				editingDisabled={false}
+				onSaveText={() => Promise.resolve(true)}
+			/>
+		));
+		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
+		const editor = await openEditor();
+		const view = pmView();
+		typeText(view, "# Plan");
+		const heading = editor.querySelector("h1");
+		expect(heading?.textContent).toBe("Plan");
+		expect(editor.textContent).not.toContain("#");
+	});
+
+	it("continues a bullet on Enter and leaves the list on an empty item", async () => {
 		render(() => (
 			<TextWidget
 				widget={textWidget("- item")}
@@ -266,48 +357,51 @@ describe("text widget in place", () => {
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		area.setSelectionRange(6, 6);
-		fireEvent.keyDown(area, { key: "Enter" });
-		expect(area.value).toBe("- item\n- ");
-		fireEvent.keyDown(area, { key: "Enter" });
-		expect(area.value).toBe("- item\n");
+		const editor = await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		pressKey(view, { key: "Enter" });
+		expect(editor.querySelectorAll("li")).toHaveLength(2);
+		pressKey(view, { key: "Enter" });
+		expect(editor.querySelectorAll("li")).toHaveLength(1);
 	});
 
-	it("numbers the next ordered item", () => {
+	it("numbers the next ordered item", async () => {
 		render(() => (
 			<TextWidget
-				widget={textWidget("2. second")}
+				widget={textWidget("1. first")}
 				editingDisabled={false}
 				onSaveText={() => Promise.resolve(true)}
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		area.setSelectionRange(9, 9);
-		fireEvent.keyDown(area, { key: "Enter" });
-		expect(area.value).toBe("2. second\n3. ");
+		const editor = await openEditor();
+		const view = pmView();
+		cursorToEnd(view);
+		pressKey(view, { key: "Enter" });
+		const items = editor.querySelectorAll("li");
+		expect(items).toHaveLength(2);
+		expect(items[1]?.textContent).toBe("");
 	});
 
-	it("shows a quiet counter near the limit and caps the source", () => {
-		const { unmount } = render(() => (
+	it("shows a quiet counter near the limit and caps the source", async () => {
+		render(() => (
 			<TextWidget
-				widget={textWidget("Short.")}
+				widget={textWidget("x".repeat(7600))}
 				editingDisabled={false}
 				onSaveText={() => Promise.resolve(true)}
 			/>
 		));
 		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
-		const area = screen.getByLabelText("Edit text as Markdown");
-		if (!(area instanceof HTMLTextAreaElement)) throw new Error("no editor");
-		expect(document.body.textContent).not.toContain("characters");
-		fireEvent.input(area, { target: { value: `x`.repeat(7600) } });
+		await openEditor();
 		expect(document.body.textContent).toContain("7600 / 8000 characters");
-		fireEvent.input(area, { target: { value: `x`.repeat(9000) } });
-		expect(area.value.length).toBe(8000);
-		unmount();
+		const view = pmView();
+		// Growth past the cap is dropped like `maxLength`; shrinks still apply.
+		view.dispatch(view.state.tr.insertText("y".repeat(9000), 1, 1));
+		expect(view.state.doc.textContent.length).toBe(7600);
+		cursorToEnd(view);
+		typeText(view, "!");
+		expect(view.state.doc.textContent.length).toBe(7601);
 	});
 
 	it("keeps the clamped preview with a fade for small widgets", () => {

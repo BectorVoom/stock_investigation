@@ -9,8 +9,9 @@ import { toggleTodoLine } from "../richText/serializer.ts";
 /**
  * A Text widget: the `NOTEBOOK_TEXT_MARKDOWN` source rendered without
  * `innerHTML`, edited in place Notion-style. Clicking the body (or Enter
- * on the focused body) swaps the read view for the editor; the editor
- * saves through `onSaveText` and closes itself when the save lands.
+ * on the focused body) swaps the read view for the WYSIWYG editor; the
+ * editor saves through `onSaveText` and closes itself when the save lands.
+ * Focus moves into the editor on open and back to the body on leave.
  */
 export function TextWidget(props: {
 	readonly widget: Extract<NotebookWidget, { readonly type: "text" }>;
@@ -20,11 +21,24 @@ export function TextWidget(props: {
 	readonly onSaveText: (widgetId: string, text: string) => Promise<boolean>;
 }): JSX.Element {
 	const [editing, setEditing] = createSignal(false);
+	let body: HTMLDivElement | undefined;
 	const size = () => props.widget.size;
 	const doc = () => parseRichText(props.widget.text);
 
 	const open = (): void => {
 		if (!props.editingDisabled) setEditing(true);
+	};
+
+	const close = (): void => {
+		setEditing(false);
+		// The editor leaves first (Escape stops propagation, so the panel
+		// keeps its selection); return focus to the body it came from.
+		const element = body;
+		if (element !== undefined) {
+			setTimeout(() => {
+				element.focus({ preventScroll: true });
+			}, 0);
+		}
 	};
 
 	const openFromBody = (event: MouseEvent): void => {
@@ -73,6 +87,9 @@ export function TextWidget(props: {
 			{/* biome-ignore lint/a11y/useSemanticElements: the rendered note (headings, lists, links) forbids a real button */}
 			<div
 				data-text-view
+				ref={(element) => {
+					body = element;
+				}}
 				tabIndex={0}
 				role="button"
 				aria-label="Edit note"
@@ -111,8 +128,9 @@ export function TextWidget(props: {
 				<RichTextEditor
 					initialText={props.widget.text}
 					readOnly={props.editingDisabled}
+					size={size()}
 					onSaveText={(text) => props.onSaveText(props.widget.widgetId, text)}
-					onDone={() => setEditing(false)}
+					onDone={close}
 				/>
 			</Show>
 		</div>

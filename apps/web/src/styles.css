@@ -150,6 +150,41 @@ html:root {
 	outline-offset: 1px;
 }
 
+/*
+ * Notebook WYSIWYG editor (ADR-0021 task W4b): the ProseMirror surface.
+ * Classes only — ProseMirror core sets no `style=` attributes (no
+ * dropcursor/gapcursor plugins) and injects no `<style>`, so the app's
+ * `style-src 'self'` Content-Security-Policy holds. Block and mark classes
+ * come from the schema's `toDOM` specs, identical to the read view, so a
+ * block looks the same while reading and while editing.
+ */
+.ProseMirror {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	caret-color: var(--color-slate-900);
+}
+
+.ProseMirror:focus {
+	outline: none;
+}
+
+/* While editing a small widget the surface scrolls inside the frame body
+   (capped by the `max-h-*` class on its mount) instead of growing the frame. */
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror li,
+.ProseMirror blockquote,
+.ProseMirror pre {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.ProseMirror pre {
+	white-space: pre-wrap;
+}
+
 .rich-text-todo {
 	width: 1rem;
 	height: 1rem;
