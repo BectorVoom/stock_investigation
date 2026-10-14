@@ -7,6 +7,7 @@
  *
  * Each case reports the median time of one call at a realistic worst-case size.
  */
+
 import { extractJsonObject } from "@research/agent-core";
 import {
 	applyNotebookCommands,
@@ -61,6 +62,9 @@ import {
 	ok,
 	type WidgetSize,
 } from "@research/widget-grid/core";
+import { modelToPm, pmToModel } from "../apps/web/src/notebook/richText/docConvert.ts";
+import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
+import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
@@ -664,6 +668,29 @@ const notebookGridSlots = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_,
 	bottom: Math.floor(index / 4) * 160 + 150,
 }));
 
+/**
+ * A Text widget note at the length cap, mixing every construct of the
+ * Markdown subset. The read view parses it on every change, and the editor
+ * converts its whole document back to Markdown on every keystroke.
+ */
+const richTextBenchSource = (() => {
+	const blocks: string[] = [];
+	for (
+		let section = 0;
+		blocks.join("\n\n").length < NOTEBOOK_LIMITS.maxTextChars - 400;
+		section += 1
+	) {
+		blocks.push(
+			`## Section ${section}`,
+			`Pack **light** and *travel* far, see [notes](https://example.com/${section}) and \`code\` ~~gone~~.`,
+			`- [ ] Book item ${section}\n- [x] Paid ${section}\n- Plain bullet`,
+			`> A quoted remark ${section}`,
+		);
+	}
+	return blocks.join("\n\n").slice(0, NOTEBOOK_LIMITS.maxTextChars);
+})();
+const richTextBenchPm = modelToPm(parseRichText(richTextBenchSource));
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -795,6 +822,16 @@ const cases: Case[] = [
 				fenceToken: "bench-fence",
 				repairNote: null,
 			}),
+	},
+	{
+		name: "parse an 8,000-character rich-text note (Text widget read view)",
+		budgetMs: 2,
+		run: () => parseRichText(richTextBenchSource),
+	},
+	{
+		name: "editor keystroke: 8,000-character ProseMirror doc back to Markdown",
+		budgetMs: 4,
+		run: () => serializeRichText(pmToModel(richTextBenchPm)),
 	},
 	{
 		name: "nextDropTarget over 200 notebook slots",
