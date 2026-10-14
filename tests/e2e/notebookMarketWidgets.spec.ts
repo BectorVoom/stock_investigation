@@ -183,8 +183,12 @@ test("a reload keeps the notebook market widget with its range", async () => {
 	await expect(chart.getByRole("img", { name: /Line chart:/ })).toBeVisible({ timeout: 120_000 });
 	await expect(chart).toContainText("4,168.44");
 	const rangeValue = await page.evaluate(() => {
-		const sel: unknown = document.querySelector('div[data-panel="notebook"] sl-select[label="Range"]');
-		return sel !== null && typeof sel === "object" && "value" in sel ? String(sel.value) : "missing";
+		const sel: unknown = document.querySelector(
+			'div[data-panel="notebook"] sl-select[label="Range"]',
+		);
+		return sel !== null && typeof sel === "object" && "value" in sel
+			? String(sel.value)
+			: "missing";
 	});
 	expect(rangeValue).toBe("3m");
 });
@@ -226,7 +230,11 @@ test("an earnings calendar shows the fixture announcement", async () => {
 test("a reload keeps both market widgets, with no console errors", async () => {
 	await page.reload();
 	await expect(notebookWidgets()).toHaveCount(2, { timeout: 60_000 });
-	await expect(notebookWidgets().first().getByRole("img", { name: /Line chart:/ })).toBeVisible({
+	await expect(
+		notebookWidgets()
+			.first()
+			.getByRole("img", { name: /Line chart:/ }),
+	).toBeVisible({
 		timeout: 120_000,
 	});
 	await expect(notebookWidgets().nth(1)).toContainText("AAPL");
