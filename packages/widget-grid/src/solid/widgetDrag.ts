@@ -61,9 +61,9 @@ export interface WidgetDragOptions<W extends WidgetBase = WidgetBase> {
 	 */
 	readonly onDrop: (drop: WidgetDragDrop) => void;
 	/**
-	 * The host's extra selector for controls that never start a drag
-	 * (appended to the native list above). This app passes
-	 * `sl-dialog,sl-select,sl-input,sl-option`.
+	 * Extra selector for controls that never start a drag (appended to the
+	 * native list above). Read lazily on every press through the options
+	 * object, so a host-supplied selector is always current.
 	 */
 	readonly extraIgnoreSelector?: string;
 }
@@ -248,10 +248,13 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 	let drag: ActiveDrag | null = null;
 	let disposed = false;
 
-	const noDragSelector =
-		options.extraIgnoreSelector === undefined || options.extraIgnoreSelector === ""
+	/** The full no-drag selector, read lazily so a host update applies. */
+	const noDragSelector = (): string => {
+		const extra = options.extraIgnoreSelector;
+		return extra === undefined || extra === ""
 			? NATIVE_NO_DRAG_SELECTOR
-			: `${NATIVE_NO_DRAG_SELECTOR},${options.extraIgnoreSelector}`;
+			: `${NATIVE_NO_DRAG_SELECTOR},${extra}`;
+	};
 
 	const scheduleFrame = (): void => {
 		if (drag === null || drag.raf !== 0 || disposed) return;
@@ -454,7 +457,7 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 		if (!(target instanceof Element)) return;
 		// A press on the actions button (or any interactive control) never
 		// starts a drag; a click on it still opens the menu.
-		if (target.closest(noDragSelector) !== null) {
+		if (target.closest(noDragSelector()) !== null) {
 			return;
 		}
 		const handle = target.closest("[data-widget-drag-handle]");

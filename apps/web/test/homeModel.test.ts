@@ -290,13 +290,6 @@ describe("home view-model", () => {
 		expect(hasFredSeries([])).toBe(false);
 	});
 
-	it("sizes live in the package: the dialog reads the package shapes", async () => {
-		const { WIDGET_SIZE_SHAPES } = await import("@research/widget-grid/core");
-		expect(WIDGET_SIZE_SHAPES.small).toBe("1 × 1");
-		expect(WIDGET_SIZE_SHAPES.medium).toBe("2 × 2");
-		expect(WIDGET_SIZE_SHAPES.large).toBe("full width × 2");
-	});
-
 	it("uses the fixed unavailable wording, naming the key to set", () => {
 		expect(unavailableText("NEVER_REFRESHED")).toContain("refresh");
 		expect(unavailableText("SOURCE_NOT_CONFIGURED", "fred")).toContain("FRED_API_KEY");

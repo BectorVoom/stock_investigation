@@ -619,6 +619,26 @@ test("a tall widget body scrolls inside its frame and is keyboard-focusable", as
 	expect(Math.round(after?.height ?? 0)).toBe(Math.round(before?.height ?? -1));
 });
 
+test("widget frames and bodies inherit the page font size (no shrink from the frame)", async () => {
+	await page.goto("/#/home");
+	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
+	const sizes = await page.evaluate(() => {
+		const main = document.querySelector("main");
+		const body = document.querySelector("article[data-widget-id] .wg-body");
+		if (!(main instanceof HTMLElement)) throw new Error("no main content");
+		if (!(body instanceof HTMLElement)) throw new Error("no widget body");
+		const article = body.closest("article");
+		if (!(article instanceof HTMLElement)) throw new Error("no widget article");
+		return {
+			mainFont: getComputedStyle(main).fontSize,
+			articleFont: getComputedStyle(article).fontSize,
+			bodyFont: getComputedStyle(body).fontSize,
+		};
+	});
+	expect(sizes.articleFont).toBe(sizes.mainFont);
+	expect(sizes.bodyFont).toBe(sizes.mainFont);
+});
+
 /**
  * Drag and drop repositioning (HIG Drag and drop): every widget header is the
  * handle, the others reflow around the dragged widget, and the drop saves
