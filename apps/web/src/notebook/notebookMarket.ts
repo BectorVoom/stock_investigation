@@ -153,7 +153,7 @@ export function createNotebookMarketContext(options: {
 	let loadedKey: string | null = null;
 	createEffect(() => {
 		const key = seriesKey();
-		if (!hasMarket()) {
+		if (!hasMarket() || options.workspaceId() === null) {
 			dataPoller.stop();
 			return;
 		}
