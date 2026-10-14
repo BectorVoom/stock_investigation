@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+	HOME_WIDGET_CONFIG_SHAPES,
+	HOME_WIDGET_TYPE_META,
+	type HomeWidget,
+	type HomeWidgetType,
+	homeWidgetSeriesIds,
+	MARKET_LIMITS,
+} from "./market.ts";
 import { idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
 
 /**
@@ -26,7 +34,10 @@ export const NOTEBOOK_LIMITS = {
 	 */
 	maxContentBytes: 850_000,
 	maxTitleChars: 120,
+	/** Characters of a text widget's Markdown source (`NOTEBOOK_TEXT_MARKDOWN`). */
 	maxTextChars: 8_000,
+	/** Distinct market series one notebook's market widgets may name (ADR-0021). */
+	maxMarketSeries: MARKET_LIMITS.maxSeries,
 	maxCaptionChars: 200,
 	maxUnitChars: 24,
 	maxChartSeries: 6,
@@ -51,7 +62,41 @@ export const NOTEBOOK_LIMITS = {
 export const notebookWidgetSizeSchema = z.enum(["small", "medium", "large"]);
 export type NotebookWidgetSize = z.infer<typeof notebookWidgetSizeSchema>;
 
-export const NOTEBOOK_WIDGET_TYPES = ["text", "metric", "chart", "table", "research"] as const;
+/**
+ * The Home dashboard's widget types, usable in a notebook (ADR-0021). They
+ * carry no data of their own: like on Home they name market series (or, for
+ * the earnings calendar, read the watchlist) and render live, refreshed data
+ * through the same Home widget components. `market-metric` is Home's
+ * `metric`, renamed because the notebook's own `metric` is a static number.
+ */
+export const NOTEBOOK_MARKET_WIDGET_TYPES = [
+	"market-metric",
+	"line-chart",
+	"stock-table",
+	"indicator-table",
+	"earnings-calendar",
+] as const;
+export type NotebookMarketWidgetType = (typeof NOTEBOOK_MARKET_WIDGET_TYPES)[number];
+
+/** The Home widget type each notebook market widget type renders as. */
+export const NOTEBOOK_MARKET_HOME_TYPE: {
+	readonly [T in NotebookMarketWidgetType]: HomeWidgetType;
+} = {
+	"market-metric": "metric",
+	"line-chart": "line-chart",
+	"stock-table": "stock-table",
+	"indicator-table": "indicator-table",
+	"earnings-calendar": "earnings-calendar",
+};
+
+export const NOTEBOOK_WIDGET_TYPES = [
+	"text",
+	"metric",
+	"chart",
+	"table",
+	"research",
+	...NOTEBOOK_MARKET_WIDGET_TYPES,
+] as const;
 export const notebookWidgetTypeSchema = z.enum(NOTEBOOK_WIDGET_TYPES);
 export type NotebookWidgetType = z.infer<typeof notebookWidgetTypeSchema>;
 
@@ -89,7 +134,27 @@ const widgetMetaShape = {
 	origin: notebookWidgetOriginSchema,
 };
 
-/** Editable plain text (paragraphs separated by blank lines). */
+/**
+ * The rich-text format of a `text` widget (ADR-0021): a Markdown subset,
+ * stored as the source string. Owner edits (the in-place editor) and the
+ * notebook assistant both write it; the renderer shows exactly this subset
+ * and prints anything else as literal text. A single newline inside a
+ * paragraph is a line break, so plain text written before this format
+ * renders as it did.
+ *
+ * - Headings: `# `, `## `, `### ` at the start of a line.
+ * - Inline: `**bold**`, `*italic*`, `~~strike~~`, `` `code` ``,
+ *   `[label](https://…)` links (only `https:`, `http:` and `mailto:`
+ *   targets are links; any other target renders as plain text).
+ * - Blocks: `- ` bullet lists, `1. ` numbered lists, `- [ ] ` / `- [x] `
+ *   to-do items, `> ` quotes, fenced ``` code blocks, `---` dividers;
+ *   paragraphs are separated by a blank line.
+ * - No raw HTML, no images, no tables (use a `table` widget).
+ */
+export const NOTEBOOK_TEXT_MARKDOWN =
+	"Markdown subset: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`, [label](https://…) links, - bullet lists, 1. numbered lists, - [ ] / - [x] to-dos, > quotes, ``` code blocks, --- dividers; blank line between paragraphs. No HTML, images or tables.";
+
+/** Rich text: a Markdown source in the `NOTEBOOK_TEXT_MARKDOWN` subset. */
 const textContentShape = {
 	type: z.literal("text"),
 	text: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxTextChars),
@@ -154,6 +219,70 @@ const researchContentShape = {
 	componentId: idSchema,
 };
 
+/** Market widgets: exactly the Home widget fields (`HOME_WIDGET_CONFIG_SHAPES`). */
+const marketMetricContentShape = {
+	type: z.literal("market-metric"),
+	...HOME_WIDGET_CONFIG_SHAPES.metric,
+};
+const lineChartContentShape = {
+	type: z.literal("line-chart"),
+	...HOME_WIDGET_CONFIG_SHAPES["line-chart"],
+};
+const stockTableContentShape = {
+	type: z.literal("stock-table"),
+	...HOME_WIDGET_CONFIG_SHAPES["stock-table"],
+};
+const indicatorTableContentShape = {
+	type: z.literal("indicator-table"),
+	...HOME_WIDGET_CONFIG_SHAPES["indicator-table"],
+};
+const earningsCalendarContentShape = {
+	type: z.literal("earnings-calendar"),
+	...HOME_WIDGET_CONFIG_SHAPES["earnings-calendar"],
+};
+
+/** Market series one notebook widget names, in its own order (none for other types). */
+export function notebookWidgetSeriesIds(widget: {
+	readonly type: string;
+	readonly seriesId?: string;
+	readonly seriesIds?: readonly string[];
+}): readonly string[] {
+	if (widget.type === "market-metric")
+		return widget.seriesId === undefined ? [] : [widget.seriesId];
+	if (
+		widget.type === "line-chart" ||
+		widget.type === "stock-table" ||
+		widget.type === "indicator-table"
+	) {
+		return widget.seriesIds ?? [];
+	}
+	return [];
+}
+
+/** Distinct market series of a notebook's widgets, first appearance first. */
+export function notebookMarketSeriesIds(
+	widgets: readonly Parameters<typeof notebookWidgetSeriesIds>[0][],
+): readonly string[] {
+	const seen = new Set<string>();
+	for (const widget of widgets) {
+		for (const seriesId of notebookWidgetSeriesIds(widget)) seen.add(seriesId);
+	}
+	return [...seen];
+}
+
+const seriesNotRepeated = (widget: {
+	readonly type: string;
+	readonly seriesId?: string;
+	readonly seriesIds?: readonly string[];
+}): boolean => {
+	const ids = notebookWidgetSeriesIds(widget);
+	return new Set(ids).size === ids.length;
+};
+const seriesNotRepeatedIssue = {
+	message: "a widget must not repeat a series",
+	path: ["seriesIds"],
+};
+
 const rowsMatchColumns = (widget: {
 	readonly type: string;
 	readonly columns?: readonly string[];
@@ -177,8 +306,14 @@ export const notebookWidgetCoreSchema = z
 		z.strictObject({ ...widgetCoreShape, ...chartContentShape }),
 		z.strictObject({ ...widgetCoreShape, ...tableContentShape }),
 		z.strictObject({ ...widgetCoreShape, ...researchContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...marketMetricContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...lineChartContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...stockTableContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...indicatorTableContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...earningsCalendarContentShape }),
 	])
-	.refine(rowsMatchColumns, rowsMatchColumnsIssue);
+	.refine(rowsMatchColumns, rowsMatchColumnsIssue)
+	.refine(seriesNotRepeated, seriesNotRepeatedIssue);
 export type NotebookWidgetCore = z.infer<typeof notebookWidgetCoreSchema>;
 
 /** A stored widget: the core plus the metadata the server stamps. */
@@ -189,8 +324,14 @@ export const notebookWidgetSchema = z
 		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...chartContentShape }),
 		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...tableContentShape }),
 		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...researchContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...marketMetricContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...lineChartContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...stockTableContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...indicatorTableContentShape }),
+		z.strictObject({ ...widgetCoreShape, ...widgetMetaShape, ...earningsCalendarContentShape }),
 	])
-	.refine(rowsMatchColumns, rowsMatchColumnsIssue);
+	.refine(rowsMatchColumns, rowsMatchColumnsIssue)
+	.refine(seriesNotRepeated, seriesNotRepeatedIssue);
 export type NotebookWidget = z.infer<typeof notebookWidgetSchema>;
 
 /** Type-specific content fields per type (everything except core and meta). */
@@ -200,7 +341,71 @@ export const NOTEBOOK_CONTENT_SHAPES = {
 	chart: chartContentShape,
 	table: tableContentShape,
 	research: researchContentShape,
+	"market-metric": marketMetricContentShape,
+	"line-chart": lineChartContentShape,
+	"stock-table": stockTableContentShape,
+	"indicator-table": indicatorTableContentShape,
+	"earnings-calendar": earningsCalendarContentShape,
 } as const;
+
+/** A notebook widget of one of the market types (ADR-0021). */
+export type NotebookMarketWidgetCore = Extract<
+	NotebookWidgetCore,
+	{ readonly type: NotebookMarketWidgetType }
+>;
+
+export function isNotebookMarketWidget(
+	widget: NotebookWidgetCore,
+): widget is NotebookMarketWidgetCore {
+	return (NOTEBOOK_MARKET_WIDGET_TYPES as readonly string[]).includes(widget.type);
+}
+
+/**
+ * The Home widget a notebook market widget renders as: same id, size and
+ * fields, Home's type name, and the title cut to Home's title limit (the
+ * Home components use it only as an accessible name).
+ */
+export function notebookWidgetAsHomeWidget(widget: NotebookMarketWidgetCore): HomeWidget {
+	const base = {
+		widgetId: widget.widgetId,
+		title: widget.title.slice(0, MARKET_LIMITS.maxWidgetTitle),
+		size: widget.size,
+	};
+	switch (widget.type) {
+		case "market-metric":
+			return { ...base, type: "metric", seriesId: widget.seriesId };
+		case "line-chart":
+			return { ...base, type: "line-chart", seriesIds: widget.seriesIds, range: widget.range };
+		case "stock-table":
+			return { ...base, type: "stock-table", seriesIds: widget.seriesIds };
+		case "indicator-table":
+			return { ...base, type: "indicator-table", seriesIds: widget.seriesIds };
+		case "earnings-calendar":
+			return { ...base, type: "earnings-calendar", daysAhead: widget.daysAhead };
+	}
+}
+
+/** The inverse of `notebookWidgetAsHomeWidget`: a Home widget edit back as notebook content. */
+export function homeWidgetAsNotebookWidget(widget: HomeWidget): NotebookMarketWidgetCore {
+	const base = { widgetId: widget.widgetId, title: widget.title, size: widget.size };
+	switch (widget.type) {
+		case "metric":
+			return { ...base, type: "market-metric", seriesId: widget.seriesId };
+		case "line-chart":
+			return { ...base, type: "line-chart", seriesIds: [...widget.seriesIds], range: widget.range };
+		case "stock-table":
+			return { ...base, type: "stock-table", seriesIds: [...widget.seriesIds] };
+		case "indicator-table":
+			return { ...base, type: "indicator-table", seriesIds: [...widget.seriesIds] };
+		case "earnings-calendar":
+			return { ...base, type: "earnings-calendar", daysAhead: widget.daysAhead };
+	}
+}
+
+/** Same as `homeWidgetSeriesIds` for the Home widget a notebook widget renders as. */
+export function notebookHomeWidgetSeriesIds(widget: NotebookMarketWidgetCore): readonly string[] {
+	return homeWidgetSeriesIds(notebookWidgetAsHomeWidget(widget));
+}
 
 export const notebookSchema = z
 	.strictObject({
@@ -238,7 +443,7 @@ export function notebookContentBytes(widgets: readonly NotebookWidgetCore[]): nu
 }
 
 export interface NotebookCapacityProblem {
-	readonly code: "TOO_MANY_WIDGETS" | "NOTEBOOK_TOO_LARGE";
+	readonly code: "TOO_MANY_WIDGETS" | "NOTEBOOK_TOO_LARGE" | "TOO_MANY_SERIES";
 	readonly message: string;
 }
 
@@ -257,6 +462,16 @@ export function notebookCapacityProblem(
 			message: `A notebook holds at most ${NOTEBOOK_LIMITS.maxWidgets} widgets. Remove one before adding another.`,
 		};
 	}
+	const series = notebookMarketSeriesIds(next).length;
+	if (
+		series > NOTEBOOK_LIMITS.maxMarketSeries &&
+		series > notebookMarketSeriesIds(previous).length
+	) {
+		return {
+			code: "TOO_MANY_SERIES",
+			message: `A notebook's market widgets name at most ${NOTEBOOK_LIMITS.maxMarketSeries} distinct series. Remove a series before adding another.`,
+		};
+	}
 	const bytes = notebookContentBytes(next);
 	if (bytes > NOTEBOOK_LIMITS.maxContentBytes && bytes > notebookContentBytes(previous)) {
 		return {
@@ -265,6 +480,31 @@ export function notebookCapacityProblem(
 		};
 	}
 	return null;
+}
+
+const LIVE_DATA_NOTE =
+	"Live data: names market series by id and is refreshed from the provider, like the Home widget of the same kind; it never carries numbers of its own.";
+
+/** Notebook metadata of a market widget type, read from Home's one table. */
+function marketMeta(
+	homeType: HomeWidgetType,
+	label?: string,
+): {
+	readonly label: string;
+	readonly description: string;
+	readonly defaultSize: NotebookWidgetSize;
+	readonly sizes: readonly NotebookWidgetSize[];
+} {
+	const meta = HOME_WIDGET_TYPE_META[homeType];
+	return {
+		label: label ?? meta.label,
+		description:
+			homeType === "earnings-calendar"
+				? `${meta.description} Live data from the Watchlist page.`
+				: `${meta.description} ${LIVE_DATA_NOTE}`,
+		defaultSize: meta.defaultSize,
+		sizes: meta.sizes,
+	};
 }
 
 /** Label, description and allowed sizes per type: one table for the UI and the agent layer. */
@@ -278,7 +518,7 @@ export const NOTEBOOK_WIDGET_TYPE_META: {
 } = {
 	text: {
 		label: "Text",
-		description: "Editable plain text: notes, explanations, summaries.",
+		description: `Editable rich text: notes, explanations, summaries. ${NOTEBOOK_TEXT_MARKDOWN}`,
 		defaultSize: "medium",
 		sizes: ["small", "medium", "large"],
 	},
@@ -307,6 +547,11 @@ export const NOTEBOOK_WIDGET_TYPE_META: {
 		defaultSize: "large",
 		sizes: ["medium", "large"],
 	},
+	"market-metric": marketMeta("metric", "Market metric"),
+	"line-chart": marketMeta("line-chart"),
+	"stock-table": marketMeta("stock-table"),
+	"indicator-table": marketMeta("indicator-table"),
+	"earnings-calendar": marketMeta("earnings-calendar"),
 };
 
 /* ---------- Owner API ---------- */

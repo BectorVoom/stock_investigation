@@ -13,6 +13,13 @@ export interface WidgetFrameProps<W extends WidgetBase = WidgetBase> {
 	 * in a multiple selection (`"toggle"`). Omitted: the frame is not selectable.
 	 */
 	readonly onSelectChange?: (widgetId: string, mode: "replace" | "toggle") => void;
+	/**
+	 * Hides the title visually (ADR-0021): it stays the accessible name of the
+	 * frame and its body, the header shrinks to its controls (grip, select
+	 * toggle, actions) and the body starts at the top of the frame. The
+	 * frame carries `data-widget-title-hidden`.
+	 */
+	readonly titleHidden?: boolean;
 }
 
 /** Interactive controls a header click must never select through. */
@@ -52,6 +59,7 @@ export function WidgetFrame<W extends WidgetBase>(props: WidgetFrameProps<W>): J
 			data-widget-type={props.widget.type}
 			data-widget-size={props.widget.size}
 			data-widget-selected={props.selected === true ? "" : undefined}
+			data-widget-title-hidden={props.titleHidden === true ? "" : undefined}
 			class="wg-frame"
 		>
 			{/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: the header strip is the drag handle; its click selects only when the host offers onSelectChange, and the same selection is always keyboard-reachable through the select toggle button. */}
@@ -70,7 +78,7 @@ export function WidgetFrame<W extends WidgetBase>(props: WidgetFrameProps<W>): J
 				>
 					<path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
 				</svg>
-				<h3 id={titleId} class="wg-title">
+				<h3 id={titleId} class={props.titleHidden === true ? "wg-visually-hidden" : "wg-title"}>
 					{props.widget.title}
 				</h3>
 				<Show when={props.onSelectChange !== undefined}>

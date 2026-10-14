@@ -1,10 +1,12 @@
 import type { ChatMessage, WorkspaceView } from "@research/contracts";
 import {
+	homeWidgetAsNotebookWidget,
 	NOTEBOOK_LIMITS,
 	NOTEBOOK_WIDGET_TYPE_META,
 	type NotebookWidget,
 	type NotebookWidgetCore,
 	type NotebookWidgetSize,
+	notebookWidgetAsHomeWidget,
 } from "@research/contracts";
 import { applyWidgetLayoutEdit } from "@research/widget-grid/core";
 
@@ -293,6 +295,18 @@ export function duplicateNotebookWidget(widget: NotebookWidget): NotebookWidgetC
 				size: widget.size,
 				componentId: widget.componentId,
 			};
+		case "market-metric":
+		case "line-chart":
+		case "stock-table":
+		case "indicator-table":
+		case "earnings-calendar":
+			// Market widgets hold only series ids and options: a copy of the
+			// Home form under the new id.
+			return homeWidgetAsNotebookWidget({
+				...notebookWidgetAsHomeWidget(widget),
+				widgetId,
+				title: widget.title,
+			});
 	}
 }
 

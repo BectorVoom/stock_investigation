@@ -2,6 +2,7 @@ import type { NotebookWidget, WorkspaceView } from "@research/contracts";
 import type { UiRegistry } from "@research/ui-registry";
 import type { JSX } from "solid-js";
 import { Match, Show, Switch } from "solid-js";
+import type { NotebookMarketContext } from "../marketContext.ts";
 import { ChartWidget } from "./ChartWidget.tsx";
 import { MetricWidget } from "./MetricWidget.tsx";
 import { ResearchWidget } from "./ResearchWidget.tsx";
@@ -17,6 +18,12 @@ export function WidgetBody(props: {
 	readonly widget: NotebookWidget;
 	readonly view: WorkspaceView | null;
 	readonly registry: UiRegistry;
+	/** Live data for market widgets; null until the notebook's market data is wired. */
+	readonly market: NotebookMarketContext | null;
+	/** True while the notebook saves: in-place editors stay read-only. */
+	readonly editingDisabled: boolean;
+	/** Saves a text widget's new Markdown source; resolves false when the save failed. */
+	readonly onSaveText: (widgetId: string, text: string) => Promise<boolean>;
 }): JSX.Element {
 	return (
 		<div>

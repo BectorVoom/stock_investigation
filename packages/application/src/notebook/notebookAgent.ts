@@ -6,12 +6,14 @@ import {
 	type Notebook,
 	type NotebookCapacityProblem,
 	type NotebookChange,
+	type NotebookMarketWidgetCore,
 	type NotebookWidget,
 	type NotebookWidgetCore,
 	type NotebookWidgetOrigin,
 	type NotebookWidgetType,
 	notebookCapacityProblem,
 	notebookWidgetCoreSchema,
+	notebookWidgetSeriesIds,
 } from "@research/contracts";
 import {
 	createWidgetAgentHost,
@@ -210,8 +212,20 @@ function preview(widget: NotebookWidgetCore | undefined): string | null {
 					? `${widget.chartType} chart, ${widget.series.length} series`
 					: widget.type === "table"
 						? `${widget.columns.length} columns, ${widget.rows.length} rows`
-						: `research component ${widget.componentId}`;
+						: widget.type === "research"
+							? `research component ${widget.componentId}`
+							: marketPreview(widget);
 	return text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS - 1)}…` : text;
+}
+
+/** A market widget's live content in one line: its type label and what it shows. */
+function marketPreview(widget: NotebookMarketWidgetCore): string {
+	const label = NOTEBOOK_WIDGET_TYPE_META[widget.type].label;
+	if (widget.type === "earnings-calendar") return `${label}, next ${widget.daysAhead} days`;
+	const series = notebookWidgetSeriesIds(widget).join(", ");
+	return widget.type === "line-chart"
+		? `${label} of ${series}, ${widget.range}`
+		: `${label} of ${series}`;
 }
 
 /** True when anything but the size differs (the size has its own change kind). */

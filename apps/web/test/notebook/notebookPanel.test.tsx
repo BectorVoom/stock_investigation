@@ -41,6 +41,7 @@ function createSession(): void {
 	render(() => (
 		<NotebookPanel
 			session={session}
+			api={api}
 			registry={registry}
 			view={WORKSPACE_VIEW}
 			mode="notebook"
@@ -383,6 +384,7 @@ describe("notebook panel", () => {
 		render(() => (
 			<NotebookPanel
 				session={session}
+				api={api}
 				registry={registry}
 				view={WORKSPACE_VIEW}
 				mode="chat"

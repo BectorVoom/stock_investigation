@@ -477,6 +477,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 				<NotebookPanel
 					session={notebookSession}
+					api={props.api}
 					registry={props.registry}
 					view={session.view()}
 					mode={props.mode}

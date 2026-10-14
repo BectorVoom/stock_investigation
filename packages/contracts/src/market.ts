@@ -16,6 +16,11 @@ export const MARKET_LIMITS = {
 	maxSeries: DASHBOARD_LIMITS.maxSeries,
 	maxLineChartSeries: DASHBOARD_LIMITS.maxLineChartSeries,
 	maxTableSeries: DASHBOARD_LIMITS.maxTableSeries,
+	/**
+	 * Distinct series one market refresh fetches: the Home dashboard's first,
+	 * then those of the conversation notebooks' market widgets (ADR-0021).
+	 */
+	maxTrackedSeries: 60,
 	maxObservationsPerResponse: 800,
 	maxStoredObservations: 1500,
 	minWidgetTitle: DASHBOARD_LIMITS.minWidgetTitle,
@@ -168,37 +173,52 @@ const widgetBase = {
 	size: marketWidgetSizeSchema,
 };
 
-export const homeWidgetSchema = z.discriminatedUnion("type", [
-	z.strictObject({
-		...widgetBase,
-		type: z.literal("metric"),
-		seriesId: marketSeriesIdSchema,
-	}),
-	z.strictObject({
-		...widgetBase,
-		type: z.literal("line-chart"),
+/**
+ * The type-specific fields of each Home widget type, written once: the Home
+ * dashboard schema below and the Notebook's market widget types (ADR-0021)
+ * are both built from these shapes, so the two can never drift.
+ */
+export const HOME_WIDGET_CONFIG_SHAPES = {
+	metric: { seriesId: marketSeriesIdSchema },
+	"line-chart": {
 		seriesIds: z.array(marketSeriesIdSchema).min(1).max(MARKET_LIMITS.maxLineChartSeries),
 		range: marketRangeSchema,
-	}),
-	z.strictObject({
-		...widgetBase,
-		type: z.literal("stock-table"),
+	},
+	"stock-table": {
 		seriesIds: z.array(marketSeriesIdSchema).min(1).max(MARKET_LIMITS.maxTableSeries),
-	}),
-	z.strictObject({
-		...widgetBase,
-		type: z.literal("indicator-table"),
+	},
+	"indicator-table": {
 		seriesIds: z.array(marketSeriesIdSchema).min(1).max(MARKET_LIMITS.maxTableSeries),
-	}),
+	},
 	/**
 	 * Earnings-date calendar (FR-018): the watchlist's upcoming announcements
 	 * within `daysAhead`. No market series — every series walk treats it as
 	 * zero series. Additive: stored `schemaVersion: 1` dashboards stay valid.
 	 */
+	"earnings-calendar": { daysAhead: earningsCalendarDaysAheadSchema },
+} as const;
+
+export const homeWidgetSchema = z.discriminatedUnion("type", [
+	z.strictObject({ ...widgetBase, type: z.literal("metric"), ...HOME_WIDGET_CONFIG_SHAPES.metric }),
+	z.strictObject({
+		...widgetBase,
+		type: z.literal("line-chart"),
+		...HOME_WIDGET_CONFIG_SHAPES["line-chart"],
+	}),
+	z.strictObject({
+		...widgetBase,
+		type: z.literal("stock-table"),
+		...HOME_WIDGET_CONFIG_SHAPES["stock-table"],
+	}),
+	z.strictObject({
+		...widgetBase,
+		type: z.literal("indicator-table"),
+		...HOME_WIDGET_CONFIG_SHAPES["indicator-table"],
+	}),
 	z.strictObject({
 		...widgetBase,
 		type: z.literal("earnings-calendar"),
-		daysAhead: earningsCalendarDaysAheadSchema,
+		...HOME_WIDGET_CONFIG_SHAPES["earnings-calendar"],
 	}),
 ]);
 export type HomeWidget = z.infer<typeof homeWidgetSchema>;

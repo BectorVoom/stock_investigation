@@ -7,6 +7,7 @@
  */
 import {
 	NOTEBOOK_LIMITS,
+	NOTEBOOK_WIDGET_TYPES,
 	type Notebook,
 	type NotebookWidget,
 	type NotebookWidgetCore,
@@ -59,13 +60,9 @@ describe("describeNotebook", () => {
 		const described = await describeNotebook(notebookOf([textWidget("w-1")]), context());
 		if (!described.ok) throw new Error("expected a snapshot");
 		expect(described.value.widgets.map((widget) => widget.widgetId)).toEqual(["w-1"]);
-		expect(described.value.widgetTypes.map((entry) => entry.type).sort()).toEqual([
-			"chart",
-			"metric",
-			"research",
-			"table",
-			"text",
-		]);
+		expect(described.value.widgetTypes.map((entry) => entry.type).sort()).toEqual(
+			[...NOTEBOOK_WIDGET_TYPES].sort(),
+		);
 	});
 });
 
@@ -501,6 +498,6 @@ describe("stampNotebook", () => {
 			notebookWidgetAgentTypes(context())
 				.map((entry) => entry.type)
 				.sort(),
-		).toEqual(["chart", "metric", "research", "table", "text"]);
+		).toEqual([...NOTEBOOK_WIDGET_TYPES].sort());
 	});
 });
