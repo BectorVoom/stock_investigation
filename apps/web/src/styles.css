@@ -103,7 +103,8 @@ html:root {
  * Widget grid mapping (ADR-0019): the package stylesheet reads `--wg-*`
  * custom properties, so Home looks exactly as before. Same pattern as the
  * Shoelace token mapping above: every value references this app's own theme
- * variables; no hex is invented.
+ * variables; no hex is invented. The app overrides colours only; the grid
+ * metrics live in the package (`core/sizes.ts` and its stylesheet).
  */
 html:root {
 	--wg-surface: var(--color-white);
@@ -113,9 +114,6 @@ html:root {
 	--wg-accent: var(--color-blue-600);
 	--wg-focus: var(--color-blue-700);
 	--wg-placeholder-border: var(--color-slate-300);
-	--wg-radius: 1rem;
-	--wg-gap: 1rem;
-	--wg-row-height: 17rem;
 }
 
 /*

@@ -70,8 +70,9 @@
 }
 
 /* Frame: fills its cell, white surface, 1px border, 1rem radius, 1rem
- * padding, no shadow. Explicit box-sizing, margin, font and shadow so no
- * host reset is needed. */
+ * padding, no shadow. Explicit box-sizing, margin and shadow so no host
+ * reset is needed. The frame sets no font size: widget content without its
+ * own text class inherits the page size. */
 .wg-frame {
 	box-sizing: border-box;
 	display: flex;
@@ -85,7 +86,6 @@
 	border: 1px solid var(--wg-border, #e2e8f0);
 	border-radius: var(--wg-radius, 1rem);
 	box-shadow: none;
-	font-size: 0.875rem;
 }
 
 /* Header strip: the drag handle. Single row, centred, 0.5rem gap,
@@ -135,7 +135,7 @@
 }
 
 /* Body: scrolls inside the frame, keyboard-focusable, labelled by the
- * widget title. */
+ * widget title. Sets no font size: content inherits the page size. */
 .wg-body {
 	box-sizing: border-box;
 	margin: 0.5rem 0 0 0;
@@ -143,7 +143,6 @@
 	min-height: 0;
 	flex: 1;
 	overflow-y: auto;
-	font-size: 0.875rem;
 }
 
 .wg-body:focus-visible {

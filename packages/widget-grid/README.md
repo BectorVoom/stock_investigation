@@ -39,6 +39,7 @@ import {
 	MoveAnnouncerView,
 	WidgetFrame,
 	WidgetGrid,
+	WIDGET_GRID_CLASS,
 	createMoveAnnouncer,
 } from "@research/widget-grid";
 import "@research/widget-grid/styles.css";
@@ -49,23 +50,40 @@ const onSave = (widgetId: string, toIndex: number) =>
 		announcer.announceMove(saved.title, toIndex + 1, saved.total);
 	});
 
-<WidgetGrid widgets={widgets()} canDrag={!saving()} onReorder={(drop) => onSave(drop.widgetId, drop.toIndex)}>
-	{(widget) => (
+<WidgetGrid
+	widgets={widgets()}
+	ignoreDragFrom="my-dialog,my-select,my-input,my-option"
+	onReorder={(drop) => onSave(drop.widgetId, drop.toIndex)}
+>
+	{(widget, index) => (
 		<WidgetFrame widget={widget} actions={<MyMenu widget={widget} />}>
-			<MyWidgetBody widget={widget} />
+			<MyWidgetBody widget={widget} position={index()} />
 		</WidgetFrame>
 	)}
 </WidgetGrid>;
 <MoveAnnouncerView message={announcer.message()} />;
+
+// A skeleton grid while loading reuses the package class, never a literal:
+<div class={WIDGET_GRID_CLASS}>…</div>;
 ```
 
 - `WidgetGrid<W extends WidgetBase>` props: `widgets` (server order),
-  `canDrag` (the host's own condition, for example `!busy()`), `onReorder`
-  receiving `{ widgetId, fromIndex, toIndex, preview }`, and `children` as a
-  render function for one widget. Props are read lazily; the list is keyed by
-  widget reference. When `onReorder` returns a promise, the previewed order
-  stays on screen and no new drag starts until it settles, then the preview
-  `order` values are cleared.
+  `canDrag` (optional, defaults to `true`; the host's own condition, for
+  example `!busy()`), `ignoreDragFrom` (optional extra selector for controls
+  that never start a drag, read lazily on every press),
+  `onReorder` receiving `{ widgetId, fromIndex, toIndex, preview }`, and
+  `children` as a render function for one widget with `<For>`'s index
+  accessor: `(widget, index) => …`, so a reorder updates every child's
+  reported position without re-creating it. When `onReorder` returns a
+  promise, the previewed order stays on screen and no new drag starts until
+  it settles, then the preview `order` values are cleared. A synchronous
+  throw clears the preview and propagates to the host; a rejected promise
+  only clears the preview (the host owns its own failure handling).
+- Class names hosts need are exported as constants
+  (`WIDGET_GRID_CLASS`, `WIDGET_FRAME_CLASS`, `WIDGET_BODY_CLASS`,
+  `WIDGET_HEADER_CLASS`, `WIDGET_PLACEHOLDER_CLASS`): hosts that render
+  their own grid markup (for example loading skeletons) use the constants
+  instead of repeating the literals.
 - `WidgetFrame<W extends WidgetBase>` props: `widget`, an `actions` slot for
   the host's menu, and `children` for the body. Both stay live. The frame is
   an `article` with `data-widget-id`, `data-widget-type` and
@@ -75,7 +93,7 @@ const onSave = (widgetId: string, toIndex: number) =>
   header strip after 4 px of movement; a press on a button, link or form
   control never starts one (`button,a,input,select,textarea,summary`,
   `[role="menu"]`, `[role="menuitem"]` plus the host's `extraIgnoreSelector`,
-  for example `sl-dialog,sl-select,sl-input,sl-option`). `Escape`,
+  passed through the grid's `ignoreDragFrom` prop). `Escape`,
   `pointercancel` or the window losing focus cancels it. The lifted widget is
   marked with `data-widget-dragging` and the slot with
   `data-widget-placeholder` plus `data-widget-size`.

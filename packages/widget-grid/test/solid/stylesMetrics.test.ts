@@ -1,9 +1,6 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { WIDGET_GRID_METRICS, WIDGET_SIZE_SPANS } from "../../src/core/sizes.ts";
-
-const css = readFileSync(join(process.cwd(), "packages/widget-grid/src/solid/styles.css"), "utf8");
+import css from "../../src/solid/styles.css?raw";
 
 /** First `repeat(N, …)` column count in the grid rule and in the wide media rule. */
 function narrowAndWideColumns(text: string): { narrow: number; wide: number } {

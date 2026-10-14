@@ -32,6 +32,9 @@ export default defineConfig({
 				test: {
 					name: "web",
 					environment: "happy-dom",
+					// stylesMetrics reads the package stylesheet through `?raw`;
+					// only that file is processed, every other stylesheet stays mocked.
+					css: { include: [/packages\/widget-grid\/src\/solid\/styles\.css/] },
 					setupFiles: ["apps/web/test/setup.ts"],
 					include: [
 						"apps/web/test/**/*.test.{ts,tsx}",

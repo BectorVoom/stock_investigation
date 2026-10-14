@@ -564,6 +564,7 @@ describe("home view", () => {
 	});
 
 	it("names sizes Small / Medium / Large and states each shape in the size help", async () => {
+		const { WIDGET_SIZE_SHAPES } = await import("@research/widget-grid/core");
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const dialog = await openAddDialog();
@@ -572,9 +573,9 @@ describe("home view", () => {
 			[...size.querySelectorAll("sl-option")].map((option) => option.textContent?.trim()),
 		).toEqual(["Small", "Medium", "Large"]);
 		const help = size.getAttribute("help-text") ?? "";
-		expect(help).toContain("1 × 1");
-		expect(help).toContain("2 × 2");
-		expect(help).toContain("full width × 2");
+		expect(help).toContain(WIDGET_SIZE_SHAPES.small);
+		expect(help).toContain(WIDGET_SIZE_SHAPES.medium);
+		expect(help).toContain(WIDGET_SIZE_SHAPES.large);
 	});
 
 	it("F3: an untouched dialog explains itself in neutral tones, turning red after the first edit", async () => {
