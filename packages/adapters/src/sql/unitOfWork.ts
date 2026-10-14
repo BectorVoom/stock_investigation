@@ -9,8 +9,20 @@ import type {
 	WorkspaceWrite,
 } from "@research/application";
 import { deriveConversationTitle } from "@research/application";
-import type { ChatMessage, Dataset, ResearchBundle, RunRecords } from "@research/contracts";
-import { DEFAULT_CONVERSATION_TITLE, MARKET_LIMITS } from "@research/contracts";
+import type {
+	ChatMessage,
+	Dataset,
+	NotebookTurn,
+	ResearchBundle,
+	RunRecords,
+} from "@research/contracts";
+import {
+	DEFAULT_CONVERSATION_TITLE,
+	MARKET_LIMITS,
+	NOTEBOOK_LIMITS,
+	notebookSchema,
+	notebookTurnSchema,
+} from "@research/contracts";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
 	enqueueOutcome,
@@ -532,6 +544,125 @@ function earningsStatements(
 	return statements;
 }
 
+/**
+ * Statements storing one `notebook-assisted` completion's notebook write
+ * (ADR-0020): the current row (compare-and-set on `expectedVersion`, inserted
+ * when the base is 0 and no row exists yet), the revision row for the new
+ * version, and the set-based prune to the last `maxRevisions` bodies — one
+ * guarded batch with the job compare-and-set, so a concurrent owner edit
+ * either wins first (and this completion reports `notebook-conflict`) or
+ * loses (and the write lands once).
+ */
+function notebookStatements(
+	db: SqlDatabase,
+	ownerId: string,
+	write: NonNullable<CompletionEffects["notebook"]>,
+	guard: Guard,
+): SqlStatement[] {
+	const validated = notebookSchema.parse(write.notebook);
+	const body = JSON.stringify(validated);
+	const nextVersion = write.expectedVersion + 1;
+	const notebookMutationId = crypto.randomUUID();
+	const notebookGuard: Guard = {
+		sql: `EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)`,
+		values: [ownerId, write.workspaceId, notebookMutationId],
+	};
+	const both: Guard = {
+		sql: `${guard.sql} AND ${notebookGuard.sql}`,
+		values: [...guard.values, ...notebookGuard.values],
+	};
+	const current =
+		write.expectedVersion === 0
+			? db
+					.prepare(
+						`INSERT INTO workspace_notebooks (owner_id, workspace_id, body_json, version, last_mutation_id, updated_at)
+						SELECT ?, ?, ?, 1, ?, ? WHERE NOT EXISTS
+							(SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?)
+							AND ${guard.sql}`,
+					)
+					.bind(
+						ownerId,
+						write.workspaceId,
+						body,
+						notebookMutationId,
+						write.updatedAt,
+						ownerId,
+						write.workspaceId,
+						...guard.values,
+					)
+			: db
+					.prepare(
+						`UPDATE workspace_notebooks SET body_json = ?, version = version + 1,
+						last_mutation_id = ?, updated_at = ?
+						WHERE owner_id = ? AND workspace_id = ? AND version = ? AND ${guard.sql}`,
+					)
+					.bind(
+						body,
+						notebookMutationId,
+						write.updatedAt,
+						ownerId,
+						write.workspaceId,
+						write.expectedVersion,
+						...guard.values,
+					);
+	return [
+		current,
+		db
+			.prepare(
+				`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
+				SELECT ?, ?, ?, ? WHERE ${both.sql}`,
+			)
+			.bind(ownerId, write.workspaceId, nextVersion, body, ...both.values),
+		db
+			.prepare(
+				`DELETE FROM workspace_notebook_revisions
+				WHERE owner_id = ? AND workspace_id = ?
+					AND version NOT IN (SELECT version FROM workspace_notebook_revisions
+						WHERE owner_id = ? AND workspace_id = ? ORDER BY version DESC LIMIT ?)
+					AND ${both.sql}`,
+			)
+			.bind(
+				ownerId,
+				write.workspaceId,
+				ownerId,
+				write.workspaceId,
+				NOTEBOOK_LIMITS.maxRevisions,
+				...both.values,
+			),
+	];
+}
+
+/**
+ * Statement recording one assistant turn, guarded on the job compare-and-set
+ * having won. `OR IGNORE` on the run makes a replayed completion a no-op
+ * rather than a second row.
+ */
+function notebookTurnStatement(
+	db: SqlDatabase,
+	ownerId: string,
+	runId: string,
+	write: NonNullable<CompletionEffects["notebookTurn"]>,
+	guard: Guard,
+): SqlStatement {
+	const turn: NotebookTurn = notebookTurnSchema.parse(write.turn);
+	return db
+		.prepare(
+			`INSERT OR IGNORE INTO notebook_turns
+				(owner_id, run_id, workspace_id, base_version, applied_version, body_json, created_at)
+			SELECT ?, ?, ?, ?, ?, ?, ? WHERE ${guard.sql}`,
+		)
+		.bind(
+			ownerId,
+			runId,
+			write.workspaceId,
+			turn.baseVersion,
+			turn.appliedVersion,
+			JSON.stringify(turn),
+			turn.createdAt,
+			...guard.values,
+		);
+}
+
 export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 	return {
 		async enqueueResearch({
@@ -626,16 +757,41 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			const mutationId = crypto.randomUUID();
 			const guard: Guard = { sql: JOB_GUARD_SQL, values: [ownerId, jobWrite.runId, mutationId] };
 			const workspace = effects.workspace;
+			const notebook = effects.notebook;
+			const conditions: { readonly sql: string; readonly values: readonly SqlValue[] }[] = [];
+			if (workspace !== null) {
+				conditions.push({
+					sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND version = ?)",
+					values: [ownerId, workspace.workspaceId, workspace.expectedVersion],
+				});
+			}
+			if (notebook !== null) {
+				// The notebook must still be at the base version the turn was
+				// computed against (compare-and-set, like the workspace): a
+				// concurrent owner edit fails this condition and the whole
+				// completion reports `notebook-conflict` with nothing written.
+				conditions.push(
+					notebook.expectedVersion === 0
+						? {
+								sql: "NOT EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?)",
+								values: [ownerId, notebook.workspaceId],
+							}
+						: {
+								sql: "EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND version = ?)",
+								values: [ownerId, notebook.workspaceId, notebook.expectedVersion],
+							},
+				);
+			}
 			const statements = jobWriteStatements(
 				db,
 				ownerId,
 				jobWrite,
 				mutationId,
-				workspace === null
+				conditions.length === 0
 					? undefined
 					: {
-							sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND version = ?)",
-							values: [ownerId, workspace.workspaceId, workspace.expectedVersion],
+							sql: conditions.map((condition) => condition.sql).join(" AND "),
+							values: conditions.flatMap((condition) => condition.values),
 						},
 			);
 			if (workspace !== null) {
@@ -716,6 +872,14 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 			if (effects.google !== null) {
 				statements.push(...googleLinkStatements(db, ownerId, effects.google, jobWrite.at, guard));
 			}
+			if (notebook !== null) {
+				statements.push(...notebookStatements(db, ownerId, notebook, guard));
+			}
+			if (effects.notebookTurn !== null) {
+				statements.push(
+					notebookTurnStatement(db, ownerId, jobWrite.runId, effects.notebookTurn, guard),
+				);
+			}
 
 			const results = await db.batch(statements);
 			if (results[0]?.meta.changes === 1) {
@@ -725,15 +889,21 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 						articleStatementIndex === -1 ? 0 : (results[articleStatementIndex]?.meta.changes ?? 0),
 				};
 			}
-			if (workspace === null) return { kind: "job-conflict" };
+			if (workspace === null && notebook === null) return { kind: "job-conflict" };
 			const current = await db
 				.prepare("SELECT version FROM research_jobs WHERE owner_id = ? AND run_id = ?")
 				.bind(ownerId, jobWrite.runId)
 				.first();
-			return current !== null &&
-				numberColumn("research_jobs", "version", current) === jobWrite.expectedVersion
-				? { kind: "workspace-conflict" }
-				: { kind: "job-conflict" };
+			if (
+				current === null ||
+				numberColumn("research_jobs", "version", current) !== jobWrite.expectedVersion
+			) {
+				return { kind: "job-conflict" };
+			}
+			// The job compare-and-set won, so the guarded condition that
+			// failed names the conflict: the canvas moved, or the notebook
+			// moved past the turn's base version.
+			return workspace !== null ? { kind: "workspace-conflict" } : { kind: "notebook-conflict" };
 		},
 
 		async importWorkspace(input) {
@@ -900,6 +1070,18 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					workspaceId,
 				]),
 				prep(`DELETE FROM chat_messages WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM notebook_turns WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM workspace_notebook_revisions WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
+				prep(`DELETE FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?`, [
 					ownerId,
 					workspaceId,
 				]),

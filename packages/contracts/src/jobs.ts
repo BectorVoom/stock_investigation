@@ -344,6 +344,25 @@ export const subscribedSourceRefSchema = z.strictObject({
 });
 export type SubscribedSourceRef = z.infer<typeof subscribedSourceRefSchema>;
 
+/**
+ * The stored request for a `notebook-assist` job (ADR-0020): the owner's
+ * instruction, the explicit selection, the notebook version the owner saw,
+ * and the agent choices saved in Settings → AI agent at that moment. Stored
+ * in `request_json` like every other job input; the claim carries the live
+ * notebook instead of a copy.
+ */
+export const notebookAssistJobRequestSchema = z.strictObject({
+	instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
+	selectedWidgetIds: z.array(idSchema).max(NOTEBOOK_LIMITS.maxSelectedWidgets),
+	notebookVersion: z.number().int().nonnegative(),
+	agent: z.strictObject({
+		agentId: agentIdSchema,
+		model: z.string().min(1).max(100).nullable(),
+		effort: effortSchema,
+	}),
+});
+export type NotebookAssistJobRequest = z.infer<typeof notebookAssistJobRequestSchema>;
+
 export const claimJobRequestSchema = z.strictObject({
 	runnerVersion: z.string().min(1).max(40),
 	/** Every backend the runner knows, including unavailable ones, so the UI can say why. */

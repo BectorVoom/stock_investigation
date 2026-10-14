@@ -14,6 +14,7 @@ import type {
 	HomeDashboardRepository,
 	JobRepository,
 	MarketRepository,
+	NotebookRepository,
 	Persistence,
 	RateLimiter,
 	ResearchRecordRepository,
@@ -36,6 +37,7 @@ import {
 	createHomeDashboardRepository,
 	createJobRepository,
 	createMarketRepository,
+	createNotebookRepository,
 	createRateLimiter,
 	createResearchRecordRepository,
 	createRunnerCredentialRepository,
@@ -63,6 +65,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const settings: SettingsRepository = createSettingsRepository(db);
 	const homeDashboard: HomeDashboardRepository = createHomeDashboardRepository(db);
 	const market: MarketRepository = createMarketRepository(db);
+	const notebooks: NotebookRepository = createNotebookRepository(db);
 	const watchlist: WatchlistRepository = createWatchlistRepository(db);
 	const earnings: EarningsRepository = createEarningsRepository(db);
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
@@ -82,6 +85,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		settings,
 		homeDashboard,
 		market,
+		notebooks,
 		watchlist,
 		earnings,
 		calendarFeed,

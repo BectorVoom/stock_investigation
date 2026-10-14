@@ -23,7 +23,12 @@ import {
 	type HomeDashboard,
 	homeDashboardSchema,
 	type NewsSource,
+	type Notebook,
+	type NotebookTurn,
 	newsSourceSchema,
+	notebookAssistJobRequestSchema,
+	notebookSchema,
+	notebookTurnSchema,
 	type RunnerCredential,
 	researchRequestSchema,
 	resourceUsageSchema,
@@ -146,6 +151,7 @@ const jobRowSchema = z.object({
 		"market-refresh",
 		"earnings-refresh",
 		"google-calendar",
+		"notebook-assist",
 	]),
 	state: z.string(),
 	request_json: nullableText,
@@ -178,8 +184,12 @@ const jobRowSchema = z.object({
 
 const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.string() });
 
-/** A stored job request: research requests predate FR-019; `{ action }` is a google-calendar job. */
-const jobRequestSchema = z.union([researchRequestSchema, googleCalendarRequestSchema]);
+/** A stored job request: research predates FR-019; `{ action }` is google-calendar; the notebook shape is a notebook-assist job. */
+const jobRequestSchema = z.union([
+	researchRequestSchema,
+	googleCalendarRequestSchema,
+	notebookAssistJobRequestSchema,
+]);
 
 export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerprint: string } {
 	const r = decode("research_jobs", jobRowSchema, row);
@@ -657,4 +667,44 @@ export function toStoredMarketSeries(row: unknown): {
 				? null
 				: decode("market_series", marketUnavailableCodeSchema, r.unavailable_code),
 	};
+}
+
+const notebookRowSchema = z.object({
+	body_json: z.string(),
+	version: z.number(),
+	updated_at: z.string(),
+});
+
+/**
+ * A stored notebook that no longer parses is a typed failure (fail closed,
+ * like the dashboard): the repository reports "unreadable" and the service
+ * maps it to STORED_NOTEBOOK_UNREADABLE.
+ */
+export function toNotebookRecord(row: unknown): {
+	readonly notebook: Notebook;
+	readonly version: number;
+	readonly updatedAt: string;
+} {
+	const r = decode("workspace_notebooks", notebookRowSchema, row);
+	return {
+		notebook: parseJsonColumn("workspace_notebooks", notebookSchema, r.body_json),
+		version: r.version,
+		updatedAt: r.updated_at,
+	};
+}
+
+const notebookRevisionRowSchema = z.object({ body_json: z.string() });
+
+/** One kept body for undo; an unreadable body is a storage fault, never a guess. */
+export function toNotebookRevision(row: unknown): Notebook {
+	const r = decode("workspace_notebook_revisions", notebookRevisionRowSchema, row);
+	return parseJsonColumn("workspace_notebook_revisions", notebookSchema, r.body_json);
+}
+
+const notebookTurnRowSchema = z.object({ body_json: z.string() });
+
+/** One recorded assistant turn; the JSON column is the source of truth. */
+export function toNotebookTurn(row: unknown): NotebookTurn {
+	const r = decode("notebook_turns", notebookTurnRowSchema, row);
+	return parseJsonColumn("notebook_turns", notebookTurnSchema, r.body_json);
 }

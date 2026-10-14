@@ -28,6 +28,7 @@ function stubJobs(): JobRepository {
 		writeWithEvents: unused,
 		listProgress: unused,
 		findActiveByKind: async () => null,
+		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
 	};
@@ -224,6 +225,7 @@ describe("home getData (FR-017)", () => {
 		const jobs: JobRepository = {
 			...stubJobs(),
 			findActiveByKind: async () => null,
+			findActiveNotebookAssist: async () => null,
 			findLatestSuccessAtByKind: async () => "2026-10-11T00:00:00.000Z",
 			findLatestFailureByKind: async () => ({
 				state: "failed",

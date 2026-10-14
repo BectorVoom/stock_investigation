@@ -15,6 +15,7 @@ import type {
 	JobRepository,
 	JobWrite,
 	MarketRepository,
+	NotebookRepository,
 	RateLimiter,
 	ReferenceLookup,
 	ResearchRecordRepository,
@@ -38,6 +39,8 @@ import {
 	financialObservationSchema,
 	homeDashboardSchema,
 	investorFilingSchema,
+	NOTEBOOK_LIMITS,
+	notebookSchema,
 	positionObservationSchema,
 	pricingPowerRecordSchema,
 	type RunRecords,
@@ -64,6 +67,9 @@ import {
 	toHomeDashboardRecord,
 	toJobRecord,
 	toNewsSource,
+	toNotebookRecord,
+	toNotebookRevision,
+	toNotebookTurn,
 	toRunnerCredential,
 	toStoredAgentSettings,
 	toStoredEarningsEvent,
@@ -225,6 +231,11 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * `google-calendar`) exists for the owner, no matter which idempotency key
  * the concurrent request used. `enqueueOutcome` maps that no-op back to the
  * active run, so the loser of the race answers with the winner's run id.
+ *
+ * ADR-0020: "at most one active notebook-assist job per conversation" is
+ * enforced the same way, scoped to the workspace instead of the owner — the
+ * INSERT is a no-op while an unfinished `notebook-assist` job of the same
+ * workspace exists.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -247,6 +258,8 @@ export function insertJobStatement(
 				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
 				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar') AND EXISTS (SELECT 1 FROM research_jobs
 					WHERE owner_id = ? AND kind = ? AND state NOT IN (${TERMINAL_SQL})))
+				AND NOT (? = 'notebook-assist' AND ? IS NOT NULL AND EXISTS (SELECT 1 FROM research_jobs
+					WHERE owner_id = ? AND workspace_id = ? AND kind = 'notebook-assist' AND state NOT IN (${TERMINAL_SQL})))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -288,6 +301,10 @@ export function insertJobStatement(
 			job.kind,
 			job.ownerId,
 			job.kind,
+			job.kind,
+			job.workspaceId,
+			job.ownerId,
+			job.workspaceId,
 		);
 }
 
@@ -336,6 +353,25 @@ export async function enqueueOutcome(
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind);
 		if (active !== null) {
 			const { requestFingerprint: _fingerprint, ...record } = active;
+			return { kind: "kind-active", job: record };
+		}
+	}
+	if (job.kind === "notebook-assist" && job.workspaceId !== null) {
+		// ADR-0020: the INSERT itself refused a second active assistant turn
+		// for this conversation, so map the no-op back to that run instead of
+		// reporting capacity.
+		const { results } = await db
+			.prepare(
+				`SELECT * FROM research_jobs
+				WHERE owner_id = ?1 AND workspace_id = ?2 AND kind = 'notebook-assist'
+					AND state NOT IN (${TERMINAL_SQL})
+				ORDER BY created_at DESC, run_id DESC LIMIT 1`,
+			)
+			.bind(job.ownerId, job.workspaceId)
+			.all();
+		const row = results[0];
+		if (row !== undefined) {
+			const { requestFingerprint: _fingerprint, ...record } = toJobRecord(row);
 			return { kind: "kind-active", job: record };
 		}
 	}
@@ -590,6 +626,21 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			const active = await findActiveJobByKind(db, ownerId, kind);
 			if (active === null) return null;
 			const { requestFingerprint: _fingerprint, ...record } = active;
+			return record;
+		},
+		async findActiveNotebookAssist(ownerId, workspaceId) {
+			const { results } = await db
+				.prepare(
+					`SELECT * FROM research_jobs
+					WHERE owner_id = ?1 AND workspace_id = ?2 AND kind = 'notebook-assist'
+						AND state NOT IN (${TERMINAL_SQL})
+					ORDER BY created_at DESC, run_id DESC LIMIT 1`,
+				)
+				.bind(ownerId, workspaceId)
+				.all();
+			const row = results[0];
+			if (row === undefined) return null;
+			const { requestFingerprint: _fingerprint, ...record } = toJobRecord(row);
 			return record;
 		},
 		async findLatestSuccessAtByKind(ownerId, kind) {
@@ -918,6 +969,15 @@ export function createChatRepository(db: SqlDatabase): ChatRepository {
 				.bind(ownerId, workspaceId, query.beforeSeq, query.beforeSeq, query.limit)
 				.all();
 			return results.map(toChatMessage);
+		},
+		async findByRunId(ownerId, workspaceId, runId) {
+			const row = await db
+				.prepare(
+					"SELECT * FROM chat_messages WHERE owner_id = ? AND workspace_id = ? AND run_id = ? LIMIT 1",
+				)
+				.bind(ownerId, workspaceId, runId)
+				.first();
+			return row === null ? null : toChatMessage(row);
 		},
 		async listConversations(ownerId, limit) {
 			// One statement over both tables (ARCH-014): the per-workspace aggregate
@@ -1267,6 +1327,121 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 					.bind(ownerId, keep),
 			]);
 			return results[1]?.meta.changes ?? 0;
+		},
+	};
+}
+
+/* ---------- Notebook of one conversation (ADR-0020) ---------- */
+
+export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
+	return {
+		async get(ownerId, workspaceId) {
+			const row = await db
+				.prepare(
+					"SELECT body_json, version, updated_at FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ?",
+				)
+				.bind(ownerId, workspaceId)
+				.first();
+			if (row === null) return null;
+			// Fail closed: a stored notebook that no longer parses is reported
+			// as "unreadable" (never silently replaced by the defaults) — the
+			// service maps it to STORED_NOTEBOOK_UNREADABLE.
+			try {
+				const record = toNotebookRecord(row);
+				return {
+					notebook: record.notebook,
+					version: record.version,
+					updatedAt: record.updatedAt,
+				};
+			} catch (error) {
+				if (error instanceof StoredDataError) return "unreadable";
+				throw error;
+			}
+		},
+		async put(ownerId, workspaceId, notebook, expectedVersion, updatedAt) {
+			const validated = notebookSchema.parse(notebook);
+			const body = JSON.stringify(validated);
+			const mutationId = crypto.randomUUID();
+			// Guard for the revision and prune statements of this batch: true
+			// only when this call's current-row write just won.
+			const guard =
+				"EXISTS (SELECT 1 FROM workspace_notebooks WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ? AND version = ?)";
+			const guardValues = [ownerId, workspaceId, mutationId, expectedVersion + 1] as const;
+			const current =
+				expectedVersion === 0
+					? db
+							.prepare(
+								`INSERT INTO workspace_notebooks (owner_id, workspace_id, body_json, version, last_mutation_id, updated_at)
+							VALUES (?, ?, ?, 1, ?, ?)
+							ON CONFLICT (owner_id, workspace_id) DO UPDATE SET
+								body_json = excluded.body_json,
+								version = version + 1,
+								last_mutation_id = excluded.last_mutation_id,
+								updated_at = excluded.updated_at
+							WHERE version = ?`,
+							)
+							.bind(ownerId, workspaceId, body, mutationId, updatedAt, expectedVersion)
+					: db
+							.prepare(
+								`UPDATE workspace_notebooks SET body_json = ?, version = version + 1,
+								last_mutation_id = ?, updated_at = ?
+							WHERE owner_id = ? AND workspace_id = ? AND version = ?`,
+							)
+							.bind(body, mutationId, updatedAt, ownerId, workspaceId, expectedVersion);
+			const results = await db.batch([
+				current,
+				db
+					.prepare(
+						`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
+						SELECT ?, ?, ?, ? WHERE ${guard}`,
+					)
+					.bind(ownerId, workspaceId, expectedVersion + 1, body, ...guardValues),
+				db
+					.prepare(
+						`DELETE FROM workspace_notebook_revisions
+						WHERE owner_id = ? AND workspace_id = ?
+							AND version NOT IN (SELECT version FROM workspace_notebook_revisions
+								WHERE owner_id = ? AND workspace_id = ? ORDER BY version DESC LIMIT ?)
+							AND ${guard}`,
+					)
+					.bind(
+						ownerId,
+						workspaceId,
+						ownerId,
+						workspaceId,
+						NOTEBOOK_LIMITS.maxRevisions,
+						...guardValues,
+					),
+			]);
+			return results[0]?.meta.changes === 1 ? "written" : "version-conflict";
+		},
+		async getRevision(ownerId, workspaceId, version) {
+			const row = await db
+				.prepare(
+					"SELECT body_json FROM workspace_notebook_revisions WHERE owner_id = ? AND workspace_id = ? AND version = ?",
+				)
+				.bind(ownerId, workspaceId, version)
+				.first();
+			if (row === null) return null;
+			try {
+				return toNotebookRevision(row);
+			} catch (error) {
+				// An unreadable kept body restores nothing: report it as not
+				// kept rather than writing a guess.
+				if (error instanceof StoredDataError) return null;
+				throw error;
+			}
+		},
+		async listTurns(ownerId, workspaceId, limit) {
+			const { results } = await db
+				.prepare(
+					`SELECT body_json FROM notebook_turns WHERE owner_id = ? AND workspace_id = ?
+					ORDER BY created_at DESC, run_id DESC LIMIT ?`,
+				)
+				.bind(ownerId, workspaceId, limit)
+				.all();
+			// Newest first in SQL for the bound; oldest first for the response.
+			return results.map(toNotebookTurn).reverse();
 		},
 	};
 }
