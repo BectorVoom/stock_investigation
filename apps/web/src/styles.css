@@ -128,6 +128,35 @@ html:root {
 }
 
 /*
+ * Notebook rich text (ADR-0021): the in-place editor and its read view.
+ * Everything is classes, never `style=` attributes or injected `<style>`,
+ * so the app's `style-src 'self'` Content-Security-Policy holds.
+ */
+.rich-text-view:focus-visible {
+	outline: 2px solid var(--color-blue-700);
+	outline-offset: 2px;
+}
+
+.rich-text-view {
+	cursor: text;
+}
+
+.rich-text-input {
+	resize: vertical;
+}
+
+.rich-text-input:focus {
+	outline: 2px solid var(--color-blue-700);
+	outline-offset: 1px;
+}
+
+.rich-text-todo {
+	width: 1rem;
+	height: 1rem;
+	accent-color: var(--color-blue-700);
+}
+
+/*
  * Research components inside a widget frame (thread previews, research
  * widgets): a table never gets narrower than a readable 32rem — in a wide
  * frame its cells wrap as before, in a narrow panel the frame body scrolls

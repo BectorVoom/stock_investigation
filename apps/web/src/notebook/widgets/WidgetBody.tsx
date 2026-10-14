@@ -29,7 +29,13 @@ export function WidgetBody(props: {
 		<div>
 			<Switch>
 				<Match when={props.widget.type === "text" ? props.widget : null}>
-					{(text) => <TextWidget widget={text()} />}
+					{(text) => (
+						<TextWidget
+							widget={text()}
+							editingDisabled={props.editingDisabled}
+							onSaveText={props.onSaveText}
+						/>
+					)}
 				</Match>
 				<Match when={props.widget.type === "metric" ? props.widget : null}>
 					{(metric) => <MetricWidget widget={metric()} />}

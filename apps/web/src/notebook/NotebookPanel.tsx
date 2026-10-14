@@ -210,6 +210,9 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		if (event.key !== "Escape") return;
 		if (editorId() !== null || removeIds() !== null) return;
 		const target = event.target;
+		// The in-place text editor leaves itself on Escape first (it stops
+		// propagation); anything from inside it never reaches for selection.
+		if (target instanceof HTMLElement && target.closest("[data-rich-text-editor]") !== null) return;
 		if (target instanceof HTMLElement && target.closest('[role="menu"],dialog') !== null) return;
 		if (selection().length > 0) props.session.select(null, "replace");
 	};
@@ -335,7 +338,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 							columnsFrom="container"
 							variant="quiet"
 							canDrag={!pending()}
-							ignoreDragFrom="dialog,input,select,textarea"
+							ignoreDragFrom="dialog,input,select,textarea,[data-rich-text-editor]"
 							onReorder={onDrop}
 						>
 							{(widget, index) => (
