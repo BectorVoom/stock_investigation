@@ -28,7 +28,7 @@ import { serializeRichText } from "./serializer.ts";
  * bold, links are links, to-dos are checkboxes. ProseMirror ships in a
  * lazily imported chunk (see `RichTextEditor.tsx`), converts through the
  * typed tree on every edit (Markdown → parser model → doc on open, doc →
- * model → serializer for saves), and sets no `style=` attributes and no
+ * model → serializer for saves), and sets no inline style attributes and no
  * injected `<style>` (needed ProseMirror CSS lives in `styles.css`), so
  * the app's `style-src 'self'` CSP holds.
  */
@@ -135,7 +135,7 @@ export function WysiwygEditor(props: {
 		syncMenuAria();
 	};
 
-	/** The active-descendant wiring lives on the editable element (no `style=`). */
+	/** The active-descendant wiring lives on the editable element (classes only). */
 	const syncMenuAria = (): void => {
 		const dom = view?.dom;
 		if (dom === undefined) return;
@@ -152,6 +152,9 @@ export function WysiwygEditor(props: {
 	};
 
 	const closeOverlay = (): void => {
+		// Focus home BEFORE unmounting the popover/menu: removing the
+		// focused input moves focus to the body, which reads as "leave".
+		view?.focus();
 		setMenuFilter(null);
 		setLinkOpen(false);
 		setLinkError(null);
@@ -205,10 +208,11 @@ export function WysiwygEditor(props: {
 			setLinkError("Use an http(s) or mailto link, without spaces.");
 			return;
 		}
+		// Focus home before the popover unmounts (see `closeOverlay`).
+		current.focus();
 		const tr = current.state.tr.addMark(range.from, range.to, markTypes.link.create({ href: url }));
 		current.dispatch(tr);
 		setLinkOpen(false);
-		current.focus();
 	};
 
 	const removeLink = (): void => {
@@ -218,9 +222,10 @@ export function WysiwygEditor(props: {
 			setLinkOpen(false);
 			return;
 		}
+		// Focus home before the popover unmounts (see `closeOverlay`).
+		current.focus();
 		current.dispatch(current.state.tr.removeMark(range.from, range.to, markTypes.link));
 		setLinkOpen(false);
-		current.focus();
 	};
 
 	/** Lifts an in-quote/in-list paragraph to the document level (one dispatch per level). */
@@ -430,6 +435,10 @@ export function WysiwygEditor(props: {
 				const target = event.target;
 				if (!(target instanceof HTMLInputElement) || target.type !== "checkbox") return false;
 				event.preventDefault();
+				// Focus home before the toggle re-renders the checkbox away:
+				// removing the focused input moves focus to the body, which
+				// reads as "leave the editor".
+				targetView.focus();
 				const $pos = targetView.state.doc.resolve(pos);
 				for (let depth = $pos.depth; depth >= 0; depth -= 1) {
 					const node = $pos.node(depth);
@@ -448,6 +457,20 @@ export function WysiwygEditor(props: {
 				const remaining = MAX_CHARS - lastMarkdown.length;
 				if (remaining <= 0) return "";
 				return text.length > remaining ? text.slice(0, remaining) : text;
+			},
+			handleDOMEvents: {
+				// A checkbox mousedown must not move focus (nor the caret):
+				// the toggle re-renders the input, and losing it to the body
+				// reads as "leave the editor". The click still fires, so
+				// `handleClickOn` toggles through the document.
+				mousedown: (_view, event) => {
+					const target = event.target;
+					if (target instanceof HTMLInputElement && target.type === "checkbox") {
+						event.preventDefault();
+						return true;
+					}
+					return false;
+				},
 			},
 		});
 		view = next;
@@ -612,8 +635,7 @@ export function WysiwygEditor(props: {
 							}
 							if (event.key === "Escape") {
 								event.stopPropagation();
-								setLinkOpen(false);
-								view?.focus();
+								closeOverlay();
 							}
 						}}
 					/>
@@ -646,8 +668,8 @@ export function WysiwygEditor(props: {
 							class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-800"
 							onMouseDown={(event) => event.preventDefault()}
 							onClick={() => {
-								setLinkOpen(false);
 								view?.focus();
+								setLinkOpen(false);
 							}}
 						>
 							Cancel

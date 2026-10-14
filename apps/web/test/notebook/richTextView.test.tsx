@@ -122,12 +122,12 @@ describe("text widget in place", () => {
 	/** Types through the real input-rules plugin, the way keystrokes land. */
 	function typeText(view: EditorView, text: string): void {
 		for (const char of text) {
-			const { $cursor } = view.state.selection;
-			const pos = $cursor === null ? view.state.selection.to : $cursor.pos;
-			const handled = view.someProp("handleTextInput", (handler) => {
-				if (typeof handler !== "function") return false;
-				return handler(view, pos, pos, char);
-			});
+			const cursor =
+				view.state.selection instanceof TextSelection ? view.state.selection.$cursor : null;
+			const pos = cursor === null ? view.state.selection.to : cursor.pos;
+			const handled = view.someProp("handleTextInput", (handler) =>
+				handler(view, pos, pos, char, () => view.state.tr),
+			);
 			if (handled !== true) view.dispatch(view.state.tr.insertText(char, pos, pos));
 		}
 	}
@@ -402,6 +402,37 @@ describe("text widget in place", () => {
 		cursorToEnd(view);
 		typeText(view, "!");
 		expect(view.state.doc.textContent.length).toBe(7601);
+	});
+
+	it("toggles a to-do checkbox while editing and saves it on leave", async () => {
+		// happy-dom clicks carry no coordinates, so ProseMirror's click
+		// wiring (covered in E2E) cannot fire here: dispatch the same
+		// toggle transaction the checkbox handler builds and check the
+		// save flow end to end.
+		const onSaveText = vi.fn(() => Promise.resolve(true));
+		render(() => (
+			<TextWidget
+				widget={textWidget("- [ ] buy milk")}
+				editingDisabled={false}
+				onSaveText={onSaveText}
+			/>
+		));
+		fireEvent.click(screen.getByRole("button", { name: "Edit note" }));
+		await openEditor();
+		const view = pmView();
+		let itemPos = -1;
+		view.state.doc.descendants((node, pos) => {
+			if (node.type.name === "todo_item") {
+				itemPos = pos;
+				return false;
+			}
+			return true;
+		});
+		if (itemPos < 0) throw new Error("no todo item");
+		view.dispatch(view.state.tr.setNodeMarkup(itemPos, undefined, { checked: true }));
+		pressKey(view, { key: "Escape" });
+		await waitFor(() => expect(onSaveText).toHaveBeenCalledWith("nb-text", "- [x] buy milk"));
+		await waitFor(() => expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull());
 	});
 
 	it("keeps the clamped preview with a fade for small widgets", () => {

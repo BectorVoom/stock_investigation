@@ -15,7 +15,7 @@ import { Schema } from "prosemirror-model";
  *
  * The rendered classes match `RichTextView`, so a block looks identical
  * while reading and while editing. Positioning and ornament stay in
- * `apps/web/src/styles.css`: the editor sets no `style=` attributes and
+ * `apps/web/src/styles.css`: the editor sets no inline style attributes and
  * injects no `<style>`, keeping the app's `style-src 'self'` CSP intact.
  */
 export const richTextSchema = new Schema({
@@ -89,7 +89,11 @@ export const richTextSchema = new Schema({
 							type: "checkbox",
 							class: "rich-text-todo mt-0.5 shrink-0",
 							contenteditable: "false",
-							tabindex: "0",
+							// Mouse-only inside the editor: keyboard toggling
+							// lives in the read view (a focused checkbox that
+							// ProseMirror re-renders would drop focus to the
+							// body, which reads as "leave the editor").
+							tabindex: "-1",
 							"aria-label": "Toggle to-do",
 							...(checked ? { checked: "" } : {}),
 						},

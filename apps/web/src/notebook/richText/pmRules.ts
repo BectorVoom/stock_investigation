@@ -1,4 +1,4 @@
-import { baseKeymap, lift, setBlockType, toggleMark } from "prosemirror-commands";
+import { baseKeymap, lift, setBlockType, splitBlock, toggleMark } from "prosemirror-commands";
 import { history, redo, undo } from "prosemirror-history";
 import {
 	InputRule,
@@ -15,17 +15,28 @@ import { richTextSchema } from "./schema.ts";
 const nodes = richTextSchema.nodes;
 const markTypes = richTextSchema.marks;
 
-/** Marks `**x**`, `*x*`, `~~x~~` and `` `x` `` as the closing delimiter lands. */
+/**
+ * Marks `**x**`, `*x*`, `~~x~~` and `` `x` `` as the closing delimiter
+ * lands. Each pattern requires the opener not to touch the same delimiter
+ * character (`**bold**` must not match `*bold*` early), like the reference
+ * ProseMirror markdown rules do.
+ */
 function markRule(pattern: RegExp, markType: MarkType): InputRule {
 	return new InputRule(
 		pattern,
 		(state, match, start, end) => {
 			const inner = match[1] ?? "";
 			if (inner === "") return null;
+			// The typed closer is not in the document yet: anchor on the
+			// inner text (whose delimiters contain no such characters, so
+			// the first occurrence is the opener's end).
 			const textStart = start + match[0].indexOf(inner);
 			const textEnd = textStart + inner.length;
 			const tr = state.tr.delete(textEnd, end).delete(start, textStart);
 			tr.addMark(start, start + inner.length, markType.create());
+			// Keep typing plain afterwards: without this the next
+			// keystroke inherits the just-applied mark at the boundary.
+			tr.removeStoredMark(markType);
 			return tr;
 		},
 		{ inCodeMark: false },
@@ -34,11 +45,19 @@ function markRule(pattern: RegExp, markType: MarkType): InputRule {
 
 function dividerRule(): InputRule {
 	return new InputRule(/^--- $/, (state, _match, start, end) => {
+		void end;
+		// The whole block is exactly `--- `: swap the block itself for a
+		// divider plus a fresh paragraph (offsets inside the old textblock
+		// cannot host blocks, so resolve the block range instead).
+		const $start = state.doc.resolve(start);
+		if ($start.parent.type !== nodes.paragraph) return null;
+		if ($start.depth < 1 || $start.node(-1).type !== state.doc.type) return null;
+		const blockStart = $start.before();
+		const blockEnd = $start.after();
 		const hr = nodes.horizontal_rule.create();
 		const paragraph = nodes.paragraph.create();
-		const tr = state.tr.delete(start, end);
-		tr.replaceWith(start, start, Fragment.from([hr, paragraph]));
-		tr.setSelection(TextSelection.create(tr.doc, start + hr.nodeSize + 1));
+		const tr = state.tr.replaceWith(blockStart, blockEnd, Fragment.from([hr, paragraph]));
+		tr.setSelection(TextSelection.create(tr.doc, blockStart + hr.nodeSize + 1));
 		return tr;
 	});
 }
@@ -46,7 +65,7 @@ function dividerRule(): InputRule {
 /**
  * Block markdown shortcuts at the start of a block (`# `, `- `, `1. `,
  * `[] ` / `- [ ] `, `> `, ` ``` `, `--- `) plus the inline mark rules.
- * ProseMirror core sets no `style=` attributes and none of these rules do:
+ * ProseMirror core sets no inline style attributes and none of these rules do:
  * the app's `style-src 'self'` CSP holds.
  */
 export function richTextInputRules(): InputRule[] {
@@ -61,10 +80,10 @@ export function richTextInputRules(): InputRule[] {
 		wrappingInputRule(/^> $/, nodes.blockquote),
 		textblockTypeInputRule(/^``` $/, nodes.code_block),
 		dividerRule(),
-		markRule(/\*\*([^*]+)\*\*$/, markTypes.strong),
-		markRule(/\*([^*]+)\*$/, markTypes.em),
-		markRule(/~~([^~]+)~~$/, markTypes.strike),
-		markRule(/`([^`]+)`$/, markTypes.code),
+		markRule(/(?<![*])\*\*([^*]+)\*\*$/, markTypes.strong),
+		markRule(/(?<![*])\*([^*]+)\*$/, markTypes.em),
+		markRule(/(?<![~])~~([^~]+)~~$/, markTypes.strike),
+		markRule(/(?<![`])`([^`]+)`$/, markTypes.code),
 	];
 }
 
@@ -142,7 +161,7 @@ export function richTextKeymap(callbacks: WysiwygKeyCallbacks) {
 			callbacks.menuMove(1);
 			return true;
 		},
-		Enter: (state, dispatch) => {
+		Enter: (state, dispatch, view) => {
 			if (callbacks.isMenuOpen()) {
 				callbacks.menuConfirm();
 				return true;
@@ -150,9 +169,11 @@ export function richTextKeymap(callbacks: WysiwygKeyCallbacks) {
 			const { $from } = state.selection;
 			if ($from.parent.type === nodes.code_block) return false;
 			if ($from.parent.type === nodes.heading) {
-				if (dispatch === undefined) return true;
-				const tr = state.tr.split($from.pos, 1, [{ type: nodes.paragraph }]);
-				dispatch(tr.scrollIntoView());
+				// Enter after a heading starts a paragraph, not another
+				// heading: split first, then turn the trailing half into one.
+				if (dispatch === undefined || view === undefined) return true;
+				if (!splitBlock(state, dispatch)) return false;
+				setBlockType(nodes.paragraph)(view.state, view.dispatch);
 				return true;
 			}
 			if (enterInListItem(state, dispatch, nodes.list_item)) return true;

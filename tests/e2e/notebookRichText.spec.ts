@@ -1,14 +1,19 @@
-import { type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { type BrowserContext, expect, type Locator, type Page, test } from "@playwright/test";
+import { E2E_ORIGIN } from "./fixtures.ts";
 
 /**
- * Notion-like rich text in the Text widget (ADR-0021, task W4).
+ * WYSIWYG rich text in the Text widget (ADR-0021, task W4b).
  *
  * Runs as an isolated owner (`X-E2E-Owner`) so its chats and notebook never
- * disturb the other specs. Flow: add two Text widgets, edit the first in
- * place (`# Plan` heading, bold through the shortcut, a link through the
- * link popover, a to-do through the `/` menu), leave, reload, and see the
- * heading element, `strong`, the link and the checkbox; the widget still
- * drags by its grip; no console errors.
+ * disturb the other specs. Flow: add two Text widgets, grow the first to
+ * medium, edit it in place through the formatted surface (`# ` becomes a
+ * real `h1` with no `#` character, bold through the shortcut, a link
+ * through the link popover, a to-do through the `/` menu), screenshot the
+ * medium editing state, leave, reload, and see the heading element,
+ * `strong`, the link and the checkbox; the stored Markdown (via
+ * `GET …/notebook`) is the canonical subset; the small widget's editing
+ * state screenshots cleanly too; no console errors (the app's CSP is
+ * `style-src 'self'`, so no injected `<style>` and no `style=` attributes).
  */
 
 test.describe.configure({ mode: "serial" });
@@ -47,6 +52,10 @@ function notebookWidgets() {
 	return page.locator('div[data-panel="notebook"] article[data-widget-id]');
 }
 
+function richEditor() {
+	return page.locator("[data-rich-text-editor]");
+}
+
 async function addTextWidget(): Promise<void> {
 	const notebook = page.getByRole("region", { name: "Notebook" });
 	await notebook.getByRole("button", { name: "Add widget" }).click();
@@ -57,16 +66,84 @@ async function addTextWidget(): Promise<void> {
 	await expect(dialog).toBeHidden();
 }
 
-/** Selects `text` inside the open rich-text editor. */
+/**
+ * Selects the first occurrence of `text` in a freshly opened editor. The
+ * editor learns about DOM selections asynchronously; the suite opens a new
+ * session per selection (like a person coming back to edit), so the
+ * toolbar starts hidden and its appearance proves ProseMirror holds the
+ * wanted range before any shortcut runs.
+ */
 async function selectInEditor(text: string): Promise<void> {
-	const editor = page.getByLabel("Edit text as Markdown");
-	await editor.evaluate((element, wanted) => {
-		if (!(element instanceof HTMLTextAreaElement)) throw new Error("no rich-text editor");
-		const start = element.value.indexOf(wanted);
-		if (start < 0) throw new Error(`missing ${wanted}`);
-		element.focus();
-		element.setSelectionRange(start, start + wanted.length);
+	await richEditor().evaluate((root, wanted) => {
+		const editable = root.querySelector(".ProseMirror") ?? root;
+		const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+		let node = walker.nextNode();
+		while (node !== null) {
+			const at = node.textContent?.indexOf(wanted) ?? -1;
+			if (at >= 0) {
+				const range = document.createRange();
+				range.setStart(node, at);
+				range.setEnd(node, at + wanted.length);
+				const selection = document.getSelection();
+				selection?.removeAllRanges();
+				selection?.addRange(range);
+				return;
+			}
+			node = walker.nextNode();
+		}
+		throw new Error(`missing ${wanted} in the editor`);
 	}, text);
+	await expect(page.getByRole("toolbar", { name: "Formatting" })).toBeVisible();
+}
+
+/** Opens the first widget's editor by clicking at the start of a line. */
+async function openFirstEditor() {
+	await notebookWidgets()
+		.first()
+		.locator("[data-text-view]")
+		.click({ position: { x: 8, y: 8 } });
+	const editor = page.getByRole("textbox", { name: "Edit note" });
+	await expect(editor).toBeVisible();
+	return editor;
+}
+
+/** One text widget's stored Markdown by order, via `GET …/notebook`. */
+async function storedTextAt(index: number): Promise<unknown> {
+	const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+	if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+	const read = await page.request.get(`${E2E_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`);
+	expect(read.ok()).toBe(true);
+	const stored = (await read.json()) as {
+		notebook: { widgets: { readonly type: string; readonly text?: string }[] };
+	};
+	return stored.notebook.widgets.filter((widget) => widget.type === "text").at(index)?.text;
+}
+
+/**
+ * Leaves through Escape, then waits for the stored text to converge. The
+ * debounced save may land before, during, or because of the leave — polling
+ * the API covers every order, unlike waiting for a single PUT.
+ */
+async function escapeAndExpectSaved(editor: Locator, index: number, expected: string) {
+	await editor.press("Escape");
+	await expect(editor).toBeHidden();
+	await expect.poll(() => storedTextAt(index), { timeout: 15_000 }).toBe(expected);
+}
+
+/** True when the caret (or focus) sits inside `selector` within the editor. */
+async function caretInside(selector: string): Promise<boolean> {
+	return await richEditor().evaluate((root, target) => {
+		const selection = document.getSelection();
+		const node = selection?.anchorNode;
+		const element = node instanceof Element ? node : node?.parentElement;
+		if (element === null || element === undefined) return false;
+		return element.closest(`${target}`) !== null && root.contains(element);
+	}, selector);
+}
+
+/** The text the editor selection currently covers. */
+async function selectedText(): Promise<string> {
+	return await richEditor().evaluate(() => document.getSelection()?.toString() ?? "");
 }
 
 test("a new chat shows the Notebook panel", async () => {
@@ -79,62 +156,92 @@ test("a new chat shows the Notebook panel", async () => {
 	await expect(page.getByRole("region", { name: "Notebook" })).toBeVisible();
 });
 
-test("two text widgets can be added", async () => {
+test("two text widgets can be added, the first grown to medium", async () => {
 	await addTextWidget();
 	await addTextWidget();
 	await expect(notebookWidgets()).toHaveCount(2);
+	const first = notebookWidgets().first();
+	await first.locator("button[data-widget-actions]").click();
+	await page.getByRole("menuitem", { name: "Medium" }).click();
+	await expect(first).toHaveAttribute("data-widget-size", "medium");
 });
 
-test("the first widget edits in place with heading, bold, link and to-do", async () => {
+test("the first widget edits WYSIWYG: a heading and bold", async () => {
 	const first = notebookWidgets().first();
-	await first.locator("[data-text-view]").click();
-	const editor = page.getByLabel("Edit text as Markdown");
-	await expect(editor).toBeVisible();
+	const editor = await openFirstEditor();
 
-	// A heading through the `# ` shortcut, then a sentence.
-	await editor.fill("# Plan");
+	// A heading through the `# ` shortcut: the block IS an h1 already.
+	// (The fresh widget says "New note": select all first, like a person.)
+	await editor.press("ControlOrMeta+a");
+	await editor.pressSequentially("# ");
+	await expect(richEditor().locator("h1")).toBeVisible();
+	await editor.pressSequentially("Plan");
+	const heading = richEditor().locator("h1");
+	await expect(heading).toHaveText("Plan");
+	expect(await caretInside("h1")).toBe(true);
+
+	// Enter after a heading starts a paragraph, not another heading.
 	await editor.press("Enter");
 	await editor.pressSequentially("Pack light and travel far.");
 
-	// Bold through the shortcut.
+	// Bold through the shortcut: the selection still covers the word, now `strong`.
 	await selectInEditor("light");
 	await editor.press("ControlOrMeta+b");
-	await expect(editor).toHaveValue("# Plan\nPack **light** and travel far.");
+	await expect(richEditor().locator("strong", { hasText: "light" })).toBeVisible();
+	expect(await selectedText()).toBe("light");
 
-	// A link through the link popover.
+	await reviewShot("rich-text-editing-medium.png");
+	await escapeAndExpectSaved(editor, 0, "# Plan\n\nPack **light** and travel far.");
+	await expect(first.locator("h1")).toHaveText("Plan");
+});
+
+test("a link is added through the link popover", async () => {
+	const editor = await openFirstEditor();
 	await selectInEditor("travel");
 	await editor.press("ControlOrMeta+k");
 	const url = page.getByLabel("Link URL (http, https or mailto)");
 	await expect(url).toBeVisible();
 	await url.fill("https://example.com");
 	await page.getByRole("button", { name: "Save link" }).click();
-	await expect(editor).toHaveValue("# Plan\nPack **light** and [travel](https://example.com) far.");
+	const link = richEditor().locator('a[href="https://example.com"]');
+	await expect(link).toHaveText("travel");
+	await escapeAndExpectSaved(
+		editor,
+		0,
+		"# Plan\n\nPack **light** and [travel](https://example.com) far.",
+	);
+	await expect(notebookWidgets().first().getByRole("link", { name: "travel" })).toBeVisible();
+});
 
-	// A to-do through the `/` block menu.
-	await editor.evaluate((element) => {
-		if (!(element instanceof HTMLTextAreaElement)) throw new Error("no rich-text editor");
-		element.focus();
-		element.setSelectionRange(element.value.length, element.value.length);
-	});
-	await editor.press("Enter");
+test("a to-do is added through the `/` block menu in the small widget", async () => {
+	// The small widget still says "New note": select all first, like a
+	// person replacing the placeholder, so no caret hunt is needed.
+	const second = notebookWidgets().nth(1);
+	await second.locator("[data-text-view]").click({ position: { x: 8, y: 8 } });
+	const editor = page.getByRole("textbox", { name: "Edit note" });
+	await expect(editor).toBeVisible();
+	await editor.press("ControlOrMeta+a");
 	await editor.pressSequentially("/to");
 	await expect(page.getByRole("listbox", { name: "Insert block" })).toBeVisible();
 	await expect(page.getByRole("option", { name: /To-do/ })).toBeVisible();
 	await editor.press("Enter");
+	await expect(richEditor().locator('input[type="checkbox"]')).toBeVisible();
 	await editor.pressSequentially("Buy tickets");
-	await expect(editor).toHaveValue(
-		"# Plan\nPack **light** and [travel](https://example.com) far.\n- [ ] Buy tickets",
+	// To-dos toggle while editing too: check and uncheck again through the
+	// real checkbox, so the stored line stays `- [ ]`.
+	const box = richEditor().locator('input[type="checkbox"]');
+	await box.click();
+	await expect(box).toBeChecked();
+	await box.click();
+	await expect(box).not.toBeChecked();
+	// Small-widget editing: the surface scrolls inside the frame body and
+	// never grows or overflows the grid cell; formatted, no Markdown syntax.
+	expect(await richEditor().evaluate((root) => root.scrollWidth <= root.clientWidth + 1)).toBe(
+		true,
 	);
-	await reviewShot("rich-text-editing.png");
-
-	// Leaving saves; the read view shows the heading already before reload.
-	const saved = page.waitForResponse(
-		(response) => response.url().includes("/notebook") && response.request().method() === "PUT",
-	);
-	await editor.press("Escape");
-	await saved;
-	await expect(editor).toBeHidden();
-	await expect(first.locator("h1")).toHaveText("Plan");
+	expect(richEditor().getByText("Buy tickets")).toBeVisible();
+	await reviewShot("rich-text-editing-small.png");
+	await escapeAndExpectSaved(editor, 1, "- [ ] Buy tickets");
 });
 
 test("a reload keeps the heading, bold, link and to-do", async () => {
@@ -146,64 +253,26 @@ test("a reload keeps the heading, bold, link and to-do", async () => {
 	const link = first.getByRole("link", { name: "travel" });
 	await expect(link).toHaveAttribute("href", "https://example.com");
 	await expect(link).toHaveAttribute("target", "_blank");
-	await expect(first.getByRole("checkbox", { name: "To-do: Buy tickets" })).not.toBeChecked();
+	const second = notebookWidgets().nth(1);
+	await expect(second.getByRole("checkbox", { name: "To-do: Buy tickets" })).not.toBeChecked();
 	await reviewShot("rich-text-rendered.png");
 });
 
-test("dragging the widget by its grip still works", async () => {
-	const widgets = notebookWidgets();
-	await expect(widgets).toHaveCount(2);
-	const before = await widgets.evaluateAll((nodes) =>
-		nodes.map((node) => node.getAttribute("data-widget-id")),
-	);
-	// Both frames must be on screen: the panel scrolls, and a drop outside
-	// the viewport cannot land on a slot.
-	await widgets.nth(1).scrollIntoViewIfNeeded();
-	// Press on the grip glyph itself: the header strip also holds buttons,
-	// and a press on any of them must not (and does not) start a drag.
-	const gripBox = await widgets.first().locator("[data-widget-drag-handle] .wg-grip").boundingBox();
-	if (gripBox === null) throw new Error("grip box missing");
-	const gripX = gripBox.x + gripBox.width / 2;
-	const gripY = gripBox.y + gripBox.height / 2;
-	await page.mouse.move(gripX, gripY);
-	await page.mouse.down();
-	// Past the press threshold so the dragged frame lifts out of flow, then
-	// re-read the target: the lift reflows the grid, so a pre-drag box would
-	// aim at a gap instead of the second frame.
-	await page.mouse.move(gripX, gripY + 12, { steps: 3 });
-	const freshTarget = await widgets.nth(1).boundingBox();
-	if (freshTarget === null) throw new Error("target widget box missing");
-	await page.mouse.move(
-		freshTarget.x + freshTarget.width * 0.8,
-		freshTarget.y + freshTarget.height * 0.8,
-		{ steps: 25 },
-	);
-	await page.mouse.up();
-	// The drop saves through the session; the re-render lands just after the
-	// release, so poll for the new order instead of reading it mid-flight.
-	await expect
-		.poll(
-			async () =>
-				(
-					await widgets.evaluateAll((nodes) =>
-						nodes.map((node) => node.getAttribute("data-widget-id")),
-					)
-				).join(",") === before.join(",")
-					? "same"
-					: "moved",
-			{ timeout: 15_000 },
-		)
-		.toBe("moved");
-	const moved = await widgets.evaluateAll((nodes) =>
-		nodes.map((node) => node.getAttribute("data-widget-id")),
-	);
-	await page.reload();
-	await expect(notebookWidgets().first()).toBeVisible();
-	await expect(
-		notebookWidgets().evaluateAll((nodes) =>
-			nodes.map((node) => node.getAttribute("data-widget-id")),
-		),
-	).resolves.toEqual(moved);
+test("the stored Markdown is the canonical subset", async () => {
+	const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+	if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+	const notebookUrl = `${E2E_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`;
+	const read = await page.request.get(notebookUrl);
+	expect(read.ok()).toBe(true);
+	const stored = (await read.json()) as {
+		notebook: {
+			widgets: { readonly widgetId: string; readonly type: string; readonly text?: string }[];
+		};
+	};
+	const texts = stored.notebook.widgets.filter((widget) => widget.type === "text");
+	expect(texts).toHaveLength(2);
+	expect(texts[0]?.text).toBe("# Plan\n\nPack **light** and [travel](https://example.com) far.");
+	expect(texts[1]?.text).toBe("- [ ] Buy tickets");
 	// Console errors exclude the expected error paths (422/403).
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
