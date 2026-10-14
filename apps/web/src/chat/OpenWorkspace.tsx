@@ -325,10 +325,9 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 
 	// Below `lg` only the active state shows; at `lg` and up both panels show
 	// side by side. Both stay mounted either way: only classes change, so a
-	// state switch re-creates nothing. A collapsed secondary panel hides at
-	// every width (at `lg` its rail shows instead); the flag only applies
-	// while that panel is secondary, so switching states can never strand a
-	// hidden panel.
+	// state switch re-creates nothing. A collapsed secondary panel unmounts
+	// to its rail (at `lg`); the flag only applies while that panel is
+	// secondary, so switching states can never strand a hidden panel.
 	const chatVisible = () => props.mode === "chat" || !props.secondaryCollapsed();
 	const notebookVisible = () => props.mode === "notebook" || !props.secondaryCollapsed();
 
@@ -347,7 +346,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			classList={{
 				flex: props.mode === "chat",
 				"hidden lg:flex": props.mode === "notebook",
-				"lg:hidden": props.mode === "notebook" && props.secondaryCollapsed(),
 			}}
 		>
 			{notices()}
@@ -448,7 +446,6 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			classList={{
 				flex: props.mode === "notebook",
 				"hidden lg:flex": props.mode === "chat",
-				"lg:hidden": props.mode === "chat" && props.secondaryCollapsed(),
 			}}
 		>
 			{notebookStates()}
