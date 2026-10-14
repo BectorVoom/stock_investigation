@@ -118,6 +118,7 @@ describe("createMcpToolServer", () => {
 			"widgets_describe",
 			"widgets_add",
 			"widgets_remove",
+			"widgets_duplicate",
 			"widgets_move",
 			"widgets_reorder",
 			"widgets_resize",
@@ -174,6 +175,33 @@ describe("createMcpToolServer", () => {
 			ids.push(widgetId);
 		}
 		expect(ids).toEqual(["b", "a"]);
+	});
+
+	it("duplicates through widgets_duplicate", async () => {
+		const response = await call({
+			jsonrpc: "2.0",
+			id: 5,
+			method: "tools/call",
+			params: { name: "widgets_duplicate", arguments: { widgetId: "a" } },
+		});
+		const { text, isError } = callText(response);
+		expect(isError).toBe(false);
+		const body: unknown = JSON.parse(text);
+		if (typeof body !== "object" || body === null || !("widgets" in body)) {
+			throw new Error("snapshot misses widgets");
+		}
+		const widgets: unknown = body.widgets;
+		if (!Array.isArray(widgets)) throw new Error("widgets is not an array");
+		const titles: string[] = [];
+		for (const widget of widgets) {
+			if (typeof widget !== "object" || widget === null || !("title" in widget)) {
+				throw new Error("malformed snapshot widget");
+			}
+			const title: unknown = widget.title;
+			if (typeof title !== "string") throw new Error("malformed snapshot widget");
+			titles.push(title);
+		}
+		expect(titles).toEqual(["Title a", "Title a (copy)", "Title b"]);
 	});
 
 	it("returns a failed tool as a normal result with isError", async () => {

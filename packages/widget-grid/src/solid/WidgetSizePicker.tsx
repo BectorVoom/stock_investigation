@@ -16,12 +16,60 @@ const SHORT: { readonly [S in WidgetSize]: string } = { small: "S", medium: "M",
 
 /**
  * The standard S / M / L size control: one compact segmented group, the same
- * for every widget type, so resizing looks and works alike everywhere.
+ * for every widget type, so resizing looks and works alike everywhere. A
+ * radiogroup with roving tabindex (only the checked option is in the tab
+ * order), Arrow keys, Home and End; disabled sizes are skipped.
  */
 export function WidgetSizePicker(props: WidgetSizePickerProps): JSX.Element {
 	const allowed = () => props.sizes ?? WIDGET_SIZES;
+	const isDisabled = (size: WidgetSize): boolean =>
+		props.disabled === true || !allowed().includes(size);
+	/** Live option buttons by size, for moving focus on Arrow/Home/End. */
+	const buttons = new Map<WidgetSize, HTMLButtonElement>();
+
+	const enabledSizes = (): WidgetSize[] => WIDGET_SIZES.filter((size) => !isDisabled(size));
+
+	const choose = (size: WidgetSize): void => {
+		buttons.get(size)?.focus();
+		if (props.value !== size) props.onChange(size);
+	};
+
+	const onKeyDown = (event: KeyboardEvent): void => {
+		const options = enabledSizes();
+		if (options.length === 0) return;
+		const current = options.indexOf(props.value);
+		switch (event.key) {
+			case "ArrowRight":
+			case "ArrowDown": {
+				event.preventDefault();
+				const next = options[(current + 1 + options.length) % options.length];
+				if (next !== undefined) choose(next);
+				break;
+			}
+			case "ArrowLeft":
+			case "ArrowUp": {
+				event.preventDefault();
+				const previous = options[(current - 1 + options.length) % options.length];
+				if (previous !== undefined) choose(previous);
+				break;
+			}
+			case "Home": {
+				event.preventDefault();
+				const first = options[0];
+				if (first !== undefined) choose(first);
+				break;
+			}
+			case "End": {
+				event.preventDefault();
+				const last = options[options.length - 1];
+				if (last !== undefined) choose(last);
+				break;
+			}
+		}
+	};
+
 	return (
-		<div role="radiogroup" aria-label={props.label} class="wg-size-picker">
+		<div role="radiogroup" aria-label={props.label} class="wg-size-picker" onKeyDown={onKeyDown}>
 			<For each={WIDGET_SIZES}>
 				{(size) => (
 					// biome-ignore lint/a11y/useSemanticElements: a segmented control of buttons with radio semantics.
@@ -31,11 +79,15 @@ export function WidgetSizePicker(props: WidgetSizePickerProps): JSX.Element {
 						aria-checked={props.value === size}
 						aria-label={`${size} (${WIDGET_SIZE_SHAPES[size]})`}
 						title={`${size} (${WIDGET_SIZE_SHAPES[size]})`}
-						disabled={props.disabled === true || !allowed().includes(size)}
+						tabindex={props.value === size ? 0 : -1}
+						disabled={isDisabled(size)}
 						data-widget-size-option={size}
 						class="wg-size-option"
+						ref={(element) => {
+							buttons.set(size, element);
+						}}
 						onClick={() => {
-							if (props.value !== size) props.onChange(size);
+							if (!isDisabled(size) && props.value !== size) props.onChange(size);
 						}}
 					>
 						{SHORT[size]}

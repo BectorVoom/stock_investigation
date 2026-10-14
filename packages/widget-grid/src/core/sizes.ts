@@ -19,6 +19,12 @@ export interface WidgetGridMetrics {
 	readonly wideColumns: number;
 	/** Viewport width (rem) at which the grid switches to `wideColumns`. */
 	readonly wideMinWidthRem: number;
+	/**
+	 * Container width (rem) at which a `columnsFrom="container"` grid switches
+	 * to `wideColumns`. A panel beside chat is much narrower than the viewport,
+	 * so the container breakpoint is lower than the viewport one.
+	 */
+	readonly containerWideMinWidthRem: number;
 	/** Fixed height of one grid row (rem). */
 	readonly rowHeightRem: number;
 	/** Gap between cells, both axes (rem). */
@@ -29,6 +35,7 @@ export const WIDGET_GRID_METRICS: WidgetGridMetrics = {
 	narrowColumns: 2,
 	wideColumns: 4,
 	wideMinWidthRem: 64,
+	containerWideMinWidthRem: 40,
 	rowHeightRem: 17,
 	gapRem: 1,
 };

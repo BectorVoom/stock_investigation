@@ -30,6 +30,7 @@ describe("createWidgetAgentTools", () => {
 			"widgets_describe",
 			"widgets_add",
 			"widgets_remove",
+			"widgets_duplicate",
 			"widgets_move",
 			"widgets_reorder",
 			"widgets_resize",
@@ -101,6 +102,14 @@ describe("createWidgetAgentTools", () => {
 		const bad = await take("widgets_remove").execute({ widgetId: "missing" });
 		if (bad.ok) throw new Error("expected a failure");
 		expect(bad.error.code).toBe("WIDGET_NOT_FOUND");
+
+		const copied = await take("widgets_duplicate").execute({ widgetId: "a" });
+		if (!copied.ok) throw new Error(JSON.stringify(copied.error));
+		expect(copied.snapshot.widgets.map((widget) => widget.title)).toEqual([
+			"Title a",
+			"Title a (copy)",
+			"Second",
+		]);
 
 		const invalid = await take("widgets_add").execute({ title: "No type" });
 		if (invalid.ok) throw new Error("expected a failure");

@@ -6,6 +6,8 @@
 
 /** The grid element (`data-widget-grid`). */
 export const WIDGET_GRID_CLASS = "wg-grid";
+/** The container-query wrapper around the grid in `columnsFrom="container"` mode. */
+export const WIDGET_GRID_CONTAINER_CLASS = "wg-grid-container";
 /** One widget frame (`article`). */
 export const WIDGET_FRAME_CLASS = "wg-frame";
 /** The scrollable widget body. */

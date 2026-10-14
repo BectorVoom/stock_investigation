@@ -246,7 +246,7 @@ describe("createHomeMcpServer", () => {
 		expect(result.serverInfo.version).toBe(manifest.version);
 	});
 
-	it("lists all seven tools", async () => {
+	it("lists all eight tools", async () => {
 		const api = fakeHomeApi(DEFAULT_HOME_DASHBOARD, 0);
 		const server = createHomeMcpServer({ apiOrigin: API_ORIGIN, fetch: api.fetch });
 		const response = await server.handle({ jsonrpc: "2.0", id: 1, method: "tools/list" });
@@ -257,6 +257,7 @@ describe("createHomeMcpServer", () => {
 			"widgets_describe",
 			"widgets_add",
 			"widgets_remove",
+			"widgets_duplicate",
 			"widgets_move",
 			"widgets_reorder",
 			"widgets_resize",
@@ -322,6 +323,34 @@ describe("createHomeMcpServer", () => {
 		);
 		expect(api.version()).toBe(5);
 		expect(api.puts()).toBe(5);
+	});
+
+	it("duplicates a widget right after the original through the API", async () => {
+		const api = fakeHomeApi(DEFAULT_HOME_DASHBOARD, 0);
+		const server = createHomeMcpServer({ apiOrigin: API_ORIGIN, fetch: api.fetch });
+
+		const before = snapshotWidgets(await callTool(server, 1, "widgets_describe", {}));
+		const source = before.find((widget) => widget.widgetId === "w-gold");
+		if (source === undefined) throw new Error("the gold widget is missing");
+
+		const duplicated = snapshotWidgets(
+			await callTool(server, 2, "widgets_duplicate", { widgetId: "w-gold" }),
+		);
+		expect(duplicated).toHaveLength(before.length + 1);
+		const at = duplicated.findIndex((widget) => widget.widgetId === "w-gold");
+		const copy = duplicated[at + 1];
+		if (copy === undefined) throw new Error("the duplicate did not land after the original");
+		expect(copy.widgetId).not.toBe("w-gold");
+		expect(copy.title).toBe(`${source.title} (copy)`);
+		expect(copy.type).toBe(source.type);
+		expect(copy.config).toEqual(source.config);
+		// What the snapshot shows is what the API stored: the copy went
+		// through the versioned PUT.
+		expect(api.dashboard().widgets.map((widget) => widget.widgetId)).toEqual(
+			duplicated.map((widget) => widget.widgetId),
+		);
+		expect(api.version()).toBe(1);
+		expect(api.puts()).toBe(1);
 	});
 
 	it("refuses a 31st distinct series before any PUT", async () => {

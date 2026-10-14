@@ -18,6 +18,7 @@ describe("widget grid sizes", () => {
 			narrowColumns: 2,
 			wideColumns: 4,
 			wideMinWidthRem: 64,
+			containerWideMinWidthRem: 40,
 			rowHeightRem: 17,
 			gapRem: 1,
 		});

@@ -388,3 +388,108 @@ describe("createWidgetAgentHost apply", () => {
 		expect(controls.snapshot()).toEqual(before);
 	});
 });
+
+describe("createWidgetAgentHost duplicate", () => {
+	it("copies through the widget's type with a fresh id right after the original", async () => {
+		const controls = createToyStore([toy("a"), toy("b")]);
+		const host = hostOf(controls);
+		const duplicated = expectSnapshot(await host.apply({ kind: "duplicate", widgetId: "a" }));
+		expect(duplicated.widgets).toHaveLength(3);
+		expect(duplicated.widgets.map((widget) => widget.title)).toEqual([
+			"Title a",
+			"Title a (copy)",
+			"Title b",
+		]);
+		const copy = duplicated.widgets[1];
+		if (copy === undefined) throw new Error("the duplicate is missing");
+		expect(copy.widgetId).not.toBe("a");
+		expect(copy.widgetId).not.toBe("b");
+		expect(copy).toMatchObject({
+			type: "note",
+			title: "Title a (copy)",
+			size: "small",
+			config: { text: "Text a" },
+		});
+		// The copy is a stored widget like any added one: it can be resized.
+		const resized = expectSnapshot(
+			await host.apply({ kind: "resize", widgetId: copy.widgetId, size: "medium" }),
+		);
+		expect(resized.widgets[1]).toMatchObject({ size: "medium" });
+	});
+
+	it("duplicates the last widget last and honours an explicit title and position", async () => {
+		const controls = createToyStore([toy("a"), toy("b")]);
+		const host = hostOf(controls);
+		const atEnd = expectSnapshot(await host.apply({ kind: "duplicate", widgetId: "b" }));
+		expect(atEnd.widgets.map((widget) => widget.title)).toEqual([
+			"Title a",
+			"Title b",
+			"Title b (copy)",
+		]);
+
+		const placed = expectSnapshot(
+			await host.apply({ kind: "duplicate", widgetId: "b", title: "Backed up", toIndex: 0 }),
+		);
+		expect(placed.widgets.map((widget) => widget.title)).toEqual([
+			"Backed up",
+			"Title a",
+			"Title b",
+			"Title b (copy)",
+		]);
+	});
+
+	it("trims a long default copy title to the 200-character title limit", async () => {
+		const long = toy("a");
+		const renamed: typeof long = { ...long, title: "t".repeat(200) };
+		const controls = createToyStore([renamed, toy("b")]);
+		const duplicated = expectSnapshot(
+			await hostOf(controls).apply({ kind: "duplicate", widgetId: "a" }),
+		);
+		const title = duplicated.widgets[1]?.title;
+		if (typeof title !== "string") throw new Error("the duplicate is missing");
+		expect(title.length).toBe(200);
+	});
+
+	it("reports the add failure codes for a duplicate", async () => {
+		const controls = createToyStore([toy("a"), toy("b")]);
+		const host = hostOf(controls);
+		expect(
+			expectFailureCode(await host.apply({ kind: "duplicate", widgetId: "missing" })).code,
+		).toBe("WIDGET_NOT_FOUND");
+		expect(
+			expectFailureCode(await host.apply({ kind: "duplicate", widgetId: "a", toIndex: 99 })).code,
+		).toBe("POSITION_OUT_OF_RANGE");
+		expect(
+			expectFailureCode(await host.apply({ kind: "duplicate", widgetId: "a", title: 42 })).code,
+		).toBe("INVALID_COMMAND");
+		// The failed duplicates changed nothing.
+		expect(controls.snapshot().widgets.map((widget) => widget.widgetId)).toEqual(["a", "b"]);
+	});
+
+	it("refuses a duplicate whose type is no longer registered", async () => {
+		const ghost: ToyWidget = {
+			widgetId: "g1",
+			type: "ghost",
+			title: "Ghost",
+			size: "small",
+			text: "boo",
+		};
+		const controls = createToyStore([toy("a"), ghost]);
+		const failure = expectFailureCode(
+			await hostOf(controls).apply({ kind: "duplicate", widgetId: "g1" }),
+		);
+		expect(failure.code).toBe("UNKNOWN_WIDGET_TYPE");
+		expect(controls.snapshot().widgets.map((widget) => widget.widgetId)).toEqual(["a", "g1"]);
+	});
+
+	it("enforces the widget limit for a duplicate", async () => {
+		const controls = createToyStore();
+		const failure = expectFailureCode(
+			await hostOf(controls, { limits: { maxWidgets: 2 } }).apply({
+				kind: "duplicate",
+				widgetId: "a",
+			}),
+		);
+		expect(failure.code).toBe("TOO_MANY_WIDGETS");
+	});
+});
