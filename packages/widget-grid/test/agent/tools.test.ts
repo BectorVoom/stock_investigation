@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isJsonObject } from "../../src/agent/commands.ts";
 import { createWidgetAgentHost } from "../../src/agent/host.ts";
 import { createWidgetAgentTools } from "../../src/agent/tools.ts";
 import type { JsonObject, WidgetAgentTool } from "../../src/agent/types.ts";
@@ -59,6 +60,22 @@ describe("createWidgetAgentTools", () => {
 		const reorder = byName.get("widgets_reorder");
 		if (reorder === undefined) throw new Error("missing widgets_reorder");
 		expect(propertiesOf(reorder).sort()).toEqual(["toIndex", "widgetId"]);
+	});
+
+	it("describes the config field as an object pointing at the describe tool", () => {
+		const byName = new Map(toolsWith().map((tool) => [tool.name, tool]));
+		for (const name of ["widgets_add", "widgets_update"]) {
+			const tool = byName.get(name);
+			if (tool === undefined) throw new Error(`missing ${name}`);
+			const properties: unknown = tool.inputSchema.properties;
+			if (!isJsonObject(properties)) throw new Error(`${name} has no input properties`);
+			const config: unknown = properties.config;
+			if (!isJsonObject(config)) throw new Error(`${name} has no config field`);
+			expect(config.type).toBe("object");
+			const description: unknown = config.description;
+			if (typeof description !== "string") throw new Error(`${name} config has no description`);
+			expect(description).toContain("configSchema of the widget type in widgets_describe");
+		}
 	});
 
 	it("round-trips describe and the command tools through execute", async () => {

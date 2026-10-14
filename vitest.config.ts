@@ -21,6 +21,7 @@ export default defineConfig({
 						"packages/widget-grid/test/{core,agent}/**/*.test.ts",
 						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite,google}/**/*.test.ts",
 						"apps/runner/test/**/*.test.ts",
+						"apps/mcp/test/**/*.test.ts",
 						"tests/{architecture,security,formal,local,live,ui-review}/**/*.test.ts",
 					],
 				},

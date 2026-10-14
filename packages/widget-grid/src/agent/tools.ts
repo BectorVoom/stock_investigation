@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
 	addWidgetCommandSchema,
+	configSchema,
 	isJsonObject,
 	moveWidgetCommandSchema,
 	removeWidgetCommandSchema,
@@ -29,8 +30,23 @@ export interface CreateWidgetAgentToolsOptions {
 }
 
 /** A JSON Schema (an object schema) as plain JSON. */
-function jsonSchemaOf<T>(schema: z.ZodType<T>): JsonObject {
-	const generated: unknown = z.toJSONSchema(schema, { unrepresentable: "any" });
+function jsonSchemaOf<T>(schema: z.ZodType<T>, configDescription?: string): JsonObject {
+	const generated: unknown = z.toJSONSchema(schema, {
+		unrepresentable: "any",
+		override:
+			configDescription === undefined
+				? undefined
+				: (ctx) => {
+						// The `config` field is a `z.custom` (any JSON object), so it
+						// would generate as `{}`. Describe it at the schema — by
+						// identity, through `z.toJSONSchema`'s `override` — so the
+						// model learns where the shape is defined.
+						if (ctx.zodSchema === configSchema) {
+							ctx.jsonSchema.type = "object";
+							ctx.jsonSchema.description = configDescription;
+						}
+					},
+	});
 	if (isJsonObject(generated)) return generated;
 	return { type: "object" };
 }
@@ -44,6 +60,7 @@ export function createWidgetAgentTools(
 	const prefix = options?.prefix ?? "widgets_";
 	const describeName = `${prefix}describe`;
 	const callFirst = `Call ${describeName} first to learn ids, types and config schemas.`;
+	const configDescription = `Type-specific configuration; its JSON Schema is the configSchema of the widget type in ${describeName}.`;
 
 	const commandExecute =
 		(kind: WidgetCommandKind) =>
@@ -66,11 +83,12 @@ export function createWidgetAgentTools(
 		title: string,
 		description: string,
 		schema: z.ZodType<unknown>,
+		configDescription?: string,
 	): WidgetAgentTool => ({
 		name: `${prefix}${kind}`,
 		title,
 		description: `${description} ${callFirst}`,
-		inputSchema: jsonSchemaOf(schema),
+		inputSchema: jsonSchemaOf(schema, configDescription),
 		readOnly: false,
 		execute: commandExecute(kind),
 	});
@@ -100,6 +118,7 @@ export function createWidgetAgentTools(
 			"Add widget",
 			"Add a widget of a registered type. The size defaults to the type's default; toIndex is the 0-based position it should end at (default: last).",
 			addWidgetCommandSchema.omit({ kind: true }),
+			configDescription,
 		),
 		commandTool(
 			"remove",
@@ -130,6 +149,7 @@ export function createWidgetAgentTools(
 			"Update widget",
 			"Rename a widget and/or reconfigure it: config keys replace the widget's current values key by key, keys not given are kept.",
 			updateWidgetCommandSchema.omit({ kind: true }),
+			configDescription,
 		),
 	];
 }

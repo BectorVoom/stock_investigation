@@ -1,23 +1,16 @@
 import type { HomeWidget, MarketSeries, WatchlistResponse } from "@research/contracts";
+import { HOME_WIDGET_TYPE_META, HOME_WIDGET_TYPES, type HomeWidgetType } from "@research/contracts";
 import { type Accessor, type Component, type JSX, Show } from "solid-js";
+import type { ApiClient } from "../api/client.ts";
+import type { ApiFailure } from "../api/http.ts";
 import { EarningsCalendarWidget } from "./widgets/EarningsCalendarWidget.tsx";
 import { IndicatorTableWidget } from "./widgets/IndicatorTableWidget.tsx";
 import { LineChartWidget } from "./widgets/LineChartWidget.tsx";
 import { MetricWidget } from "./widgets/MetricWidget.tsx";
 import { StockTableWidget } from "./widgets/StockTableWidget.tsx";
 
-export type HomeWidgetType = HomeWidget["type"];
-
-export const HOME_WIDGET_TYPES: readonly HomeWidgetType[] = [
-	"metric",
-	"line-chart",
-	"stock-table",
-	"indicator-table",
-	"earnings-calendar",
-];
-
-import type { ApiClient } from "../api/client.ts";
-import type { ApiFailure } from "../api/http.ts";
+/** Re-exported so dialog code keeps importing the type list from the registry. */
+export { HOME_WIDGET_TYPES, type HomeWidgetType };
 
 export interface WidgetRendererProps {
 	readonly widget: HomeWidget;
@@ -153,12 +146,22 @@ function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
 	);
 }
 
+/**
+ * Label, description and default size from the one shared table
+ * (`HOME_WIDGET_TYPE_META` in `@research/contracts`), so they are written
+ * once for the web registry and the MCP agent types alike.
+ */
+function sharedMeta(
+	type: HomeWidgetType,
+): Pick<WidgetTypeInfo, "label" | "description" | "defaultSize"> {
+	const meta = HOME_WIDGET_TYPE_META[type];
+	return { label: meta.label, description: meta.description, defaultSize: meta.defaultSize };
+}
+
 export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo } = {
 	metric: {
 		type: "metric",
-		label: "Metric",
-		description: "One series: latest value, change, one-year change and a sparkline.",
-		defaultSize: "small",
+		...sharedMeta("metric"),
 		minSeries: 1,
 		maxSeries: 1,
 		seriesKind: "single",
@@ -168,9 +171,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 	},
 	"line-chart": {
 		type: "line-chart",
-		label: "Line chart",
-		description: "One to four series that share one unit, over a range, with a data table.",
-		defaultSize: "medium",
+		...sharedMeta("line-chart"),
 		minSeries: 1,
 		maxSeries: 4,
 		seriesKind: "multi-same-unit",
@@ -180,9 +181,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 	},
 	"stock-table": {
 		type: "stock-table",
-		label: "Stock table",
-		description: "One row per series: last close, change and as-of date.",
-		defaultSize: "medium",
+		...sharedMeta("stock-table"),
 		minSeries: 1,
 		maxSeries: 12,
 		seriesKind: "multi",
@@ -192,9 +191,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 	},
 	"indicator-table": {
 		type: "indicator-table",
-		label: "Indicator table",
-		description: "One row per series: latest, unit, previous, change and one-year change.",
-		defaultSize: "large",
+		...sharedMeta("indicator-table"),
 		minSeries: 1,
 		maxSeries: 12,
 		seriesKind: "multi",
@@ -204,10 +201,7 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 	},
 	"earnings-calendar": {
 		type: "earnings-calendar",
-		label: "Earnings calendar",
-		description:
-			"A glanceable month grid of the Watchlist page's upcoming earnings announcement dates, with a short next list; the full calendar lives on the Watchlist page.",
-		defaultSize: "large",
+		...sharedMeta("earnings-calendar"),
 		minSeries: 0,
 		maxSeries: 0,
 		seriesKind: "none",

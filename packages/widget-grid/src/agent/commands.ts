@@ -52,7 +52,13 @@ const titleSchema = z.string().trim().min(1).max(200);
 const toIndexSchema = z.number().int().min(0).max(1000);
 const sizeSchema = z.enum(["small", "medium", "large"]);
 const directionSchema = z.enum(["earlier", "later"]);
-const configSchema: z.ZodType<JsonObject> = z.custom<JsonObject>(isJsonObject, {
+/**
+ * Type-specific configuration: any JSON object at the command boundary; the
+ * widget type's `build` validates it. Exported so tool schemas can describe
+ * it at the schema (by identity in `z.toJSONSchema`'s `override`) instead of
+ * patching the generated object.
+ */
+export const configSchema = z.custom<JsonObject>(isJsonObject, {
 	message: "must be a JSON object",
 });
 
