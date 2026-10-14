@@ -25,6 +25,41 @@ export const DEFAULT_PLOT: PlotArea = { left: 64, right: 624, top: 14, bottom: 2
 /** Plot area that leaves a right-hand gutter for direct end-of-line labels. */
 export const LABELLED_PLOT: PlotArea = { ...DEFAULT_PLOT, right: 520 };
 
+/** Smallest type an axis title may shrink to before it is shortened instead. */
+const MIN_AXIS_TITLE_FONT_SIZE = 10;
+
+export interface FittedAxisTitle {
+	readonly text: string;
+	readonly fontSize: number;
+	/** True when `text` is shortened; the full title then goes in a tooltip. */
+	readonly truncated: boolean;
+}
+
+/**
+ * Fits an axis title along `available` viewBox units (the rotated y title
+ * runs along the plot height): first at `FONT_SIZE`, then in smaller type
+ * down to `MIN_AXIS_TITLE_FONT_SIZE`, and only then shortened with an
+ * ellipsis — never drawn past the plot, where it would be cut by the chart
+ * edge.
+ */
+export function fitAxisTitle(title: string, available: number): FittedAxisTitle {
+	const widthAt = (fontSize: number, chars: number) =>
+		chars * APPROX_CHAR_WIDTH * (fontSize / FONT_SIZE);
+	if (widthAt(FONT_SIZE, title.length) <= available) {
+		return { text: title, fontSize: FONT_SIZE, truncated: false };
+	}
+	const shrunk = Math.floor((available / widthAt(FONT_SIZE, title.length)) * FONT_SIZE);
+	if (shrunk >= MIN_AXIS_TITLE_FONT_SIZE) {
+		return { text: title, fontSize: shrunk, truncated: false };
+	}
+	const maxChars = Math.max(1, Math.floor(available / widthAt(MIN_AXIS_TITLE_FONT_SIZE, 1)));
+	return {
+		text: truncateLabel(title, maxChars),
+		fontSize: MIN_AXIS_TITLE_FONT_SIZE,
+		truncated: true,
+	};
+}
+
 /**
  * Categorical series colors in fixed slot order (never cycled; the props schema
  * caps a chart at 8 series). Validated for adjacent-pair CVD separation on the

@@ -129,13 +129,13 @@ html:root {
 
 /*
  * Research components inside a widget frame (thread previews, research
- * widgets) keep their tables at natural width and the frame body scrolls
- * sideways, instead of squeezing a column header to one letter per line in a
- * narrow panel.
+ * widgets): a table never gets narrower than a readable 32rem — in a wide
+ * frame its cells wrap as before, in a narrow panel the frame body scrolls
+ * sideways instead of squeezing a column header to one letter per line.
  */
 [data-preview-component] table,
 [data-widget-body="research"] table {
-	min-width: max-content;
+	min-width: 32rem;
 }
 
 /*

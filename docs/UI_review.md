@@ -261,3 +261,50 @@ The widget sits in the fixed-size frame of the Home rework (ADR-0017): its butto
 - The 44 px targets apply under a coarse pointer; the review ran with a mouse pointer, so they are covered by class assertions in the component tests, not by a touch-device screenshot.
 - The Google card was reviewed with a scripted Google step. The real sign-in page, the "connected" page the runner serves after sign-in, and the calendar as it appears in Google Calendar have not been seen: they need the owner's OAuth client and an interactive sign-in.
 - Home's default stock table is still titled "Watchlist" although it is unrelated to the stocks registered on the Watchlist page (open naming question from the FR-018 review).
+
+# UI review — Chat-first to Notebook-first workspace (FR-020, ADR-0020)
+
+**Date:** 2026-10-14
+
+## How it was reviewed
+
+The scripted Chat review (`REVIEW_BROWSER=chrome bun run review:ui`) on the
+new two-state page, compared with the same review run on the commit before
+the change (`b6e43f0`); screenshots of both states from the notebook E2E spec
+and from the real-environment run (`tests/real/notebook.live.spec.ts`, real
+OpenCode backend); and a read-only look at the owner's running `bun run dev`
+(port 3000) in both states.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Real-environment screenshots | The Notebook and the thread previews were unstyled markup: only the lazy Home chunk loaded the widget-grid stylesheet, and DOM tests do not evaluate CSS | Fixed: the Chat page imports it; the notebook E2E spec asserts the computed grid and frame layout |
+| Screenshots | In Notebook-first the narrow chat squeezed preview tables to one letter per line | Fixed: tables in frames keep a readable 32rem minimum and scroll sideways in a narrow panel |
+| Automated (35 beyond-right-edge) | Natural-width tables overran the preview frame | Fixed by the 32rem minimum (wrap when there is room) |
+| Screenshots | Fixed-height previews cut charts and left blank space under short components | Fixed: previews take their natural height up to the body of a Large widget |
+| Screenshots / automated | A long y-axis title ran past the plot and was cut | Fixed: `fitAxisTitle` sets smaller type, then shortens with the full title as a tooltip |
+| Automated (small-target) | The chart's "Data table" disclosure was 16 px tall | Fixed: 24 px |
+| Automated (new-answer-not-in-view) | Result previews settle their height after the answer, and a question sent while reading further up did not bring the thread down | Fixed: the thread stays pinned while its items grow, and the owner's own new message re-pins it |
+| Screenshots | With the composer on Notebook, the empty chat still offered research starter questions | Fixed: hidden for the Notebook target |
+| Review tooling | The Chat review measured rotated SVG chart titles as CSS boxes (false "content-wider-than-box") | The rule now checks HTML boxes only, as the Home review already did |
+
+Result: 23 findings, all of kinds present before the change
+(`covered-by-pinned-area`, `obscured`: content behind the pinned input or a
+drawer backdrop; `heading-skip` in the records drawer and
+`input-not-at-bottom` for the centred empty state, both also in the
+baseline), against 103 on the baseline commit.
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (scripted review, E2E incl. `notebook.spec.ts`, real-environment run) |
+| Safari engine (Playwright WebKit) | E2E passed (58); the scripted review was not run |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine; the owner runs `bun run test:e2e:firefox` |
+
+## Known limits
+
+- The Chats panel stays open in Notebook-first unless collapsed, so the
+  Notebook takes three quarters of the space beside it, not of the window.
+- The chosen state is remembered per browser (local storage), not per account.

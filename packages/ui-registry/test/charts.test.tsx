@@ -8,6 +8,8 @@ import {
 	DEFAULT_PLOT,
 	extractCandles,
 	extractSeries,
+	FONT_SIZE,
+	fitAxisTitle,
 	linearScale,
 	MAX_TICKS,
 	nearestIndex,
@@ -22,6 +24,27 @@ import { renderComponent, texts } from "./helpers.tsx";
 afterEach(cleanup);
 
 describe("chart math", () => {
+	it("fits an axis title along the plot: full size, then smaller type, then shortened", () => {
+		const plotHeight = DEFAULT_PLOT.bottom - DEFAULT_PLOT.top;
+		expect(fitAxisTitle("Price (USD)", plotHeight)).toEqual({
+			text: "Price (USD)",
+			fontSize: FONT_SIZE,
+			truncated: false,
+		});
+		// 35 characters overrun the 248-unit plot at full size: smaller type, same words.
+		const longer = fitAxisTitle("Compound annual growth (% per year)", plotHeight);
+		expect(longer.text).toBe("Compound annual growth (% per year)");
+		expect(longer.fontSize).toBeLessThan(FONT_SIZE);
+		expect(longer.fontSize).toBeGreaterThanOrEqual(10);
+		expect(longer.truncated).toBe(false);
+		// Too long even at the smallest type: shortened with an ellipsis, never past the plot.
+		const longest = fitAxisTitle("x".repeat(120), plotHeight);
+		expect(longest.truncated).toBe(true);
+		expect(longest.fontSize).toBe(10);
+		expect(longest.text.endsWith("…")).toBe(true);
+		expect(longest.text.length * 7.5 * (10 / FONT_SIZE)).toBeLessThanOrEqual(plotHeight);
+	});
+
 	it("treats only finite numbers as plottable", () => {
 		expect(numericCell({ v: 0 })).toBe(0);
 		expect(numericCell({ v: -3.5 })).toBe(-3.5);

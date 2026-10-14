@@ -202,6 +202,32 @@ function isAtBottom(element: HTMLOListElement): boolean {
 	return element.scrollHeight - element.scrollTop - element.clientHeight < 32;
 }
 
+/**
+ * Keeps the thread at its bottom while its items grow, as long as the owner
+ * was at the bottom: result previews and notebook turn cards arrive after
+ * their answer and settle their height after mounting (tables, charts), which
+ * a count-based scroll cannot see — the newest item would end below the
+ * input. Growth fires no scroll event, so `stickToBottom` still holds the
+ * owner's last position. Disconnected with the owning component.
+ */
+function keepPinnedWhileGrowing(element: HTMLOListElement, stickToBottom: () => boolean): void {
+	if (typeof ResizeObserver === "undefined" || typeof MutationObserver === "undefined") return;
+	const pin = () => {
+		if (stickToBottom()) element.scrollTop = element.scrollHeight;
+	};
+	const resize = new ResizeObserver(pin);
+	const observeItems = () => {
+		for (const item of Array.from(element.children)) resize.observe(item);
+	};
+	observeItems();
+	const added = new MutationObserver(observeItems);
+	added.observe(element, { childList: true });
+	onCleanup(() => {
+		resize.disconnect();
+		added.disconnect();
+	});
+}
+
 /** Concise spoken form of a run's state for the conversation status region (finding 9). */
 function describeRunAnnouncement(run: ResearchRun): string {
 	switch (run.state) {
@@ -453,6 +479,8 @@ export function Conversation(props: {
 		props.hasEarlier !== true;
 	let list: HTMLOListElement | undefined;
 	const [stickToBottom, setStickToBottom] = createSignal(true);
+	/** The newest message seen by the scroll effect (null before the first load). */
+	let lastNewestId: string | null = null;
 
 	// ONE persistent polite status region for the conversation (finding 9): it
 	// announces concise state changes of the newest unfinished run — not the
@@ -490,6 +518,14 @@ export function Conversation(props: {
 		const count = messages().length + listedRuns().length;
 		const element = list;
 		if (count === 0 || element === undefined) return;
+		// The owner's own new message always brings the thread to its end,
+		// even when they were reading further up (chat convention).
+		const newest = messages().at(-1);
+		if (newest !== undefined && newest.messageId !== lastNewestId) {
+			const firstLoad = lastNewestId === null;
+			lastNewestId = newest.messageId;
+			if (!firstLoad && newest.role === "owner") setStickToBottom(true);
+		}
 		if (stickToBottom()) element.scrollTop = element.scrollHeight;
 	});
 
@@ -617,6 +653,7 @@ export function Conversation(props: {
 					<ol
 						ref={(element) => {
 							list = element;
+							keepPinnedWhileGrowing(element, stickToBottom);
 						}}
 						aria-label="Messages"
 						class="mx-auto w-full max-w-3xl space-y-4 wrap-anywhere px-1 py-2 pb-56 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-2"

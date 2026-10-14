@@ -125,7 +125,9 @@ export function ComponentPreview(props: {
 					</Show>
 				}
 			>
-				<div class="h-72 overflow-y-auto">
+				{/* At most the body of a Large notebook widget (2 rows): a chart gets
+				    its natural height and a short component leaves no blank frame. */}
+				<div class="max-h-[33rem] overflow-y-auto">
 					<WorkspaceComponentView
 						component={props.component}
 						context={props.context}

@@ -237,6 +237,10 @@ async function audit(page: Page, state: string): Promise<void> {
 			document.querySelectorAll('[aria-label="Messages"] *, [aria-label="Chats"] *'),
 		)) {
 			if (!visible(el)) continue;
+			// Only CSS boxes can overflow (as the Home review checks): chart SVG
+			// in the thread's result previews has no such box, and a rotated axis
+			// title's unrotated scrollWidth says nothing about what is drawn.
+			if (!(el instanceof HTMLElement)) continue;
 			const style = getComputedStyle(el);
 			if (style.overflowX === "auto" || style.overflowX === "scroll") continue;
 			if (style.textOverflow === "ellipsis") continue;

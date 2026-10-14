@@ -8,6 +8,7 @@ import { DataUnavailable, EmptyState } from "../parts/states.tsx";
 import {
 	CHART_INK,
 	FONT_SIZE,
+	fitAxisTitle,
 	nearestIndex,
 	type PlotArea,
 	type Scale,
@@ -37,6 +38,9 @@ export function ChartFrame(props: {
 	readonly onHoverRow: (rowIndex: number | null) => void;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const yTitle = createMemo(() =>
+		fitAxisTitle(props.yAxisTitle, props.plot.bottom - props.plot.top),
+	);
 	const crosshairX = () =>
 		props.hoveredRow === null ? null : (props.rowXs[props.hoveredRow] ?? null);
 	const handlePointerMove = (event: PointerEvent & { currentTarget: SVGSVGElement }) => {
@@ -89,9 +93,13 @@ export function ChartFrame(props: {
 					y={(props.plot.top + props.plot.bottom) / 2}
 					text-anchor="middle"
 					fill={CHART_INK.secondary}
+					font-size={String(yTitle().fontSize)}
 					data-axis-title="y"
 				>
-					{props.yAxisTitle}
+					<Show when={yTitle().truncated}>
+						<title>{props.yAxisTitle}</title>
+					</Show>
+					{yTitle().text}
 				</text>
 			</g>
 			<g data-chart-part="x-axis">
@@ -287,7 +295,9 @@ export function ChartShell(props: {
 								)}
 							</Show>
 							<details class="mt-1 text-xs">
-								<summary class="cursor-pointer text-slate-700">Data table: {props.title}</summary>
+								<summary class="cursor-pointer py-1 text-slate-700">
+									Data table: {props.title}
+								</summary>
 								<DatasetTable
 									data={data()}
 									caption={`Values plotted in "${props.title}"`}
