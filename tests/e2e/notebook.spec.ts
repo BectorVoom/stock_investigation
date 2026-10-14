@@ -261,7 +261,10 @@ test("a dragged widget keeps its new position across a reload", async () => {
 	);
 	// The whole header strip is the drag handle (the actions button never
 	// starts a drag): press, move past the second widget, drop.
-	const handle = widgets.first().locator("[data-widget-drag-handle]");
+	// The untitled frame's header is an overlay where only the controls
+	// take the pointer (ADR-0021): the grip is what a mouse presses.
+	await widgets.first().hover();
+	const handle = widgets.first().locator(".wg-grip");
 	const handleBox = await handle.boundingBox();
 	const targetBox = await widgets.nth(1).boundingBox();
 	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
@@ -296,9 +299,11 @@ test("a size change through the menu persists", async () => {
 });
 
 test("selecting the chart targets the notebook assistant; larger resizes with Undo", async () => {
-	// A click on the header strip (not the actions button) selects the widget alone.
+	// A click on the grip (the untitled frame's drag handle, not a drag)
+	// selects the widget alone (ADR-0021).
 	const chart = notebookWidgets().first();
-	await chart.locator(".wg-title").click();
+	await chart.hover();
+	await chart.locator(".wg-grip").click();
 	const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
 	await expect(notebookComposer).toBeVisible();
 	await expect(notebookComposer.getByRole("list", { name: "Selected widgets" })).toBeVisible();
@@ -430,7 +435,8 @@ test("a full notebook of 200 widgets renders, switches, reorders and refuses one
 	const before = await widgets.evaluateAll((nodes) =>
 		nodes.map((node) => node.getAttribute("data-widget-id")),
 	);
-	const handleBox = await widgets.first().locator("[data-widget-drag-handle]").boundingBox();
+	await widgets.first().hover();
+	const handleBox = await widgets.first().locator(".wg-grip").boundingBox();
 	const targetBox = await widgets.nth(1).boundingBox();
 	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
 	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
