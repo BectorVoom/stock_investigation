@@ -125,6 +125,82 @@ describe("market properties", () => {
 		);
 	});
 
+	it("a reorder lands at the requested index and keeps the other widgets in order", () => {
+		fc.assert(
+			fc.property(
+				fc.array(widgetId, { minLength: 1, maxLength: 8 }),
+				fc.nat(),
+				fc.nat(),
+				(ids, fromRaw, toRaw) => {
+					const unique = [...new Set(ids)];
+					const from = fromRaw % unique.length;
+					const to = toRaw % unique.length;
+					const moved = unique[from];
+					if (moved === undefined) return;
+					const dashboard: Dashboard = {
+						schemaVersion: 1,
+						widgets: unique.map((candidate) => metricWidget(candidate, "fred:SP500")),
+					};
+					const result = applyDashboardEdit(dashboard, {
+						kind: "reorder",
+						widgetId: moved,
+						toIndex: to,
+					});
+					expect(result.ok).toBe(true);
+					if (!result.ok) return;
+					const out = result.value.widgets.map((widget) => widget.widgetId);
+					// A permutation of the input ids ...
+					expect([...out].sort()).toEqual([...unique].sort());
+					expect(out).toHaveLength(unique.length);
+					// ... with the moved widget at the requested index ...
+					expect(out[to]).toBe(moved);
+					// ... and every other widget in its original relative order.
+					expect(out.filter((candidate) => candidate !== moved)).toEqual(
+						unique.filter((candidate) => candidate !== moved),
+					);
+					// A single-step move agrees with a reorder to the neighbouring index.
+					if (from > 0) {
+						const stepped = applyDashboardEdit(dashboard, {
+							kind: "move",
+							widgetId: moved,
+							direction: "earlier",
+						});
+						const reordered = applyDashboardEdit(dashboard, {
+							kind: "reorder",
+							widgetId: moved,
+							toIndex: from - 1,
+						});
+						expect(stepped.ok && reordered.ok).toBe(true);
+						if (stepped.ok && reordered.ok) {
+							expect(stepped.value.widgets.map((widget) => widget.widgetId)).toEqual(
+								reordered.value.widgets.map((widget) => widget.widgetId),
+							);
+						}
+					}
+					if (from < unique.length - 1) {
+						const stepped = applyDashboardEdit(dashboard, {
+							kind: "move",
+							widgetId: moved,
+							direction: "later",
+						});
+						const reordered = applyDashboardEdit(dashboard, {
+							kind: "reorder",
+							widgetId: moved,
+							toIndex: from + 1,
+						});
+						expect(stepped.ok && reordered.ok).toBe(true);
+						if (stepped.ok && reordered.ok) {
+							expect(stepped.value.widgets.map((widget) => widget.widgetId)).toEqual(
+								reordered.value.widgets.map((widget) => widget.widgetId),
+							);
+						}
+					}
+				},
+			),
+			{ numRuns: 300 },
+		);
+	});
+
 	it("rateWindowPermit allows at most maxPerWindow grants in any window", () => {
 		fc.assert(
 			fc.property(

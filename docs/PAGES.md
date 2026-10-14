@@ -29,25 +29,40 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - Add a widget.
 - Edit a widget (title, series, range, size).
 - Move a widget earlier/later.
+- Drag a widget to a new position (the header strip is the handle; Move
+  earlier/later in the menu is the keyboard and assistive-technology path,
+  announced with the position; the page auto-scrolls while the pointer rests
+  near the top or bottom edge of the viewport; the pointer engine lives in
+  `apps/web/src/home/widgetDrag.ts`).
 - Remove a widget.
 - Reset to the default arrangement.
 - Queue a market-data refresh for the local runner.
+
+Every action is an icon-only button (accessible name and tooltip carry the
+former label); the per-widget actions open a text menu with leading icons.
 
 **Shows**
 
 - The arranged widgets (metric, line-chart, stock-table, indicator-table):
   latest values with unit, as-of date, change and source link, or
-  "unavailable (reason)" when a series has no usable data.
+  "unavailable (reason)" when a series has no usable data. Widgets come in
+  three fixed sizes on equal grid cells with a fixed row height — Small
+  1 × 1 (17rem, 272 px), Medium 2 × 2 (35rem, 560 px), Large full width × 2
+  (35rem, 560 px) — as white cards with a faint
+  hairline on the grey page; a body taller than its frame scrolls inside
+  the frame. Every widget header is a drag handle (grip, title, actions);
+  a completed move is announced with its new position.
 - The earnings-calendar widget, when arranged — glanceable, after the Apple
-  widget guidelines (see `DESIGN_GUIDELINE.md`): a compact month grid whose
+  widget guidelines (see `DESIGN_GUIDELINE.md`): a compact month grid
+  (icon buttons for the previous and next month, today marked) whose
   announcement days deep-link to the Watchlist calendar
   (`#/watchlist/calendar/YYYY-MM-DD`), a "Next" list of at most 3 upcoming
   announcements, one status line (earnings fetch status plus the Google
-  Calendar status), a "Refresh earnings dates" button and an "Open calendar"
-  link; "Earnings dates have not been fetched yet." when a stock was never
-  looked up ("No announcement in the next N days." only when every stock was
-  refreshed), and one sentence for the stocks with no upcoming date. The full
-  calendar — grid details, per-date links, the `.ics` download, the
+  Calendar status), a "Refresh earnings dates" icon button and an "Open
+  calendar" link; "Earnings dates have not been fetched yet." when a stock was
+  never looked up ("No announcement in the next N days." only when every stock
+  was refreshed), and one sentence for the stocks with no upcoming date. The
+  full calendar — grid details, per-date links, the `.ics` download, the
   subscription feed and the Google Calendar card — lives on the Watchlist
   page, never in the widget.
 - The market-data refresh status: last successful refresh time, the active

@@ -66,11 +66,18 @@ export const HOME_RANGE_LABELS: { readonly [R in MarketRange]: string } = {
 	max: "All data",
 };
 
-/** Grid column spans: 1 column below md; small 1 / medium 2 / large full at md; 1 / 2 / 4 at xl. */
+/**
+ * Fixed widget sizes on a grid of equal cells with a fixed row height
+ * (HIG Widgets: fixed sizes, "make each size distinct"). The grid is
+ * `grid-cols-2 lg:grid-cols-4` with `auto-rows-[17rem]` and a 16 px gap;
+ * Small is 1 × 1 (17rem), Medium and Large are 2 rows (35rem); Large spans
+ * the full width (4 columns at `lg`, 2 below it). Static class strings so
+ * Tailwind sees them.
+ */
 export const HOME_SIZE_SPAN: { readonly [S in HomeWidget["size"]]: string } = {
-	small: "",
-	medium: "md:col-span-2",
-	large: "md:col-span-2 xl:col-span-4",
+	small: "col-span-1 row-span-1",
+	medium: "col-span-2 row-span-2",
+	large: "col-span-2 row-span-2 lg:col-span-4",
 };
 
 export function seriesById(series: readonly MarketSeries[]): ReadonlyMap<string, MarketSeries> {

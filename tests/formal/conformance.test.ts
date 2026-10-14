@@ -115,7 +115,7 @@ const vectorsSchema = z.object({
 	dashboard: z.array(
 		z.object({
 			dashboard: z.array(z.number()),
-			edit: z.object({ kind: z.string(), id: z.number() }),
+			edit: z.object({ kind: z.string(), id: z.number(), toIndex: z.number().optional() }),
 			accepted: z.boolean(),
 			ids: z.array(z.number()),
 		}),
@@ -451,36 +451,41 @@ describe("Lean model conformance: home dashboard edits", () => {
 	});
 
 	it(`reaches the model's accept/reject and final ids on all ${vectors.dashboard.length} vectors`, () => {
-		expect(vectors.dashboard.length).toBe(272);
+		expect(vectors.dashboard.length).toBe(612);
 		for (const vector of vectors.dashboard) {
 			const dashboard = toDashboard(vector.dashboard);
-			const edit =
-				vector.edit.kind === "add"
-					? {
+			const label = JSON.stringify(vector);
+			const id = widgetId(vector.edit.id);
+			const edit = (() => {
+				switch (vector.edit.kind) {
+					case "add":
+						return {
 							kind: "add" as const,
 							widget: {
-								widgetId: widgetId(vector.edit.id),
+								widgetId: id,
 								title: `Widget ${vector.edit.id}`,
 								size: "small" as const,
 								type: "metric" as const,
 								seriesId: "fred:VIXCLS",
 							},
+						};
+					case "remove":
+						return { kind: "remove" as const, widgetId: id };
+					case "moveEarlier":
+						return { kind: "move" as const, widgetId: id, direction: "earlier" as const };
+					case "moveLater":
+						return { kind: "move" as const, widgetId: id, direction: "later" as const };
+					case "reorder": {
+						if (vector.edit.toIndex === undefined) {
+							throw new Error(`reorder vector without toIndex: ${label}`);
 						}
-					: vector.edit.kind === "remove"
-						? { kind: "remove" as const, widgetId: widgetId(vector.edit.id) }
-						: vector.edit.kind === "moveEarlier"
-							? {
-									kind: "move" as const,
-									widgetId: widgetId(vector.edit.id),
-									direction: "earlier" as const,
-								}
-							: {
-									kind: "move" as const,
-									widgetId: widgetId(vector.edit.id),
-									direction: "later" as const,
-								};
+						return { kind: "reorder" as const, widgetId: id, toIndex: vector.edit.toIndex };
+					}
+					default:
+						throw new Error(`unknown dashboard edit kind: ${label}`);
+				}
+			})();
 			const result = applyDashboardEdit(dashboard, edit);
-			const label = JSON.stringify(vector);
 			expect(result.ok, label).toBe(vector.accepted);
 			const ids = result.ok
 				? result.value.widgets.map((widget) => widget.widgetId)

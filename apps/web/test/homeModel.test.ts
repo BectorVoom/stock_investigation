@@ -292,9 +292,9 @@ describe("home view-model", () => {
 	});
 
 	it("maps sizes to static grid spans", () => {
-		expect(HOME_SIZE_SPAN.small).toBe("");
-		expect(HOME_SIZE_SPAN.medium).toBe("md:col-span-2");
-		expect(HOME_SIZE_SPAN.large).toBe("md:col-span-2 xl:col-span-4");
+		expect(HOME_SIZE_SPAN.small).toBe("col-span-1 row-span-1");
+		expect(HOME_SIZE_SPAN.medium).toBe("col-span-2 row-span-2");
+		expect(HOME_SIZE_SPAN.large).toBe("col-span-2 row-span-2 lg:col-span-4");
 	});
 
 	it("uses the fixed unavailable wording, naming the key to set", () => {

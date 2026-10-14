@@ -1,4 +1,4 @@
-# ADR-0017: Google Calendar sync (runner-side loopback OAuth + dedicated calendar)
+# ADR-0018: Google Calendar sync (runner-side loopback OAuth + dedicated calendar)
 
 **Status:** Accepted · **Date:** 2026-10-14
 

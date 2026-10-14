@@ -384,7 +384,7 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await page.locator('sl-dialog sl-input[label="Title"] input').fill("Earnings calendar");
 		await setSlValue(page, 'sl-dialog sl-select[label="Widget type"]', "earnings-calendar");
 		await setSlValue(page, 'sl-dialog sl-select[label="Days ahead"]', "180");
-		await dialog.locator("sl-button", { hasText: "Add widget" }).click();
+		await dialog.getByRole("button", { name: "Add widget" }).click();
 		const added = page.getByRole("article", { name: /Earnings calendar/ });
 		if (next !== undefined && next.announcementDate !== null) {
 			const horizon = new Date(Date.parse(`${today}T00:00:00.000Z`) + 180 * 86_400_000)

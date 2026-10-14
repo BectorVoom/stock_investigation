@@ -8,7 +8,7 @@ import {
 } from "@research/domain";
 import { SafeLink } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
-import { BUTTON } from "../components/ui.tsx";
+import { BUTTON, IconButton } from "../components/ui.tsx";
 import { watchlistCalendarHash } from "../router.ts";
 import { timingText, utcTodayIso } from "./watchlistModel.ts";
 
@@ -250,25 +250,34 @@ export function EarningsMonthCalendar(props: {
 		return `${formatLongDayDate(date)}: ${dayEvents.length} announcement${dayEvents.length === 1 ? "" : "s"}, ${symbols}`;
 	};
 
-	const navButtonClass =
-		props.variant === "compact"
-			? `${BUTTON} pointer-coarse:min-h-11 pointer-coarse:min-w-11`
-			: BUTTON;
-
 	return (
 		<div>
-			<div class="flex flex-wrap items-center gap-2">
-				<button type="button" class={navButtonClass} onClick={() => move(-1)}>
-					Previous month
-				</button>
-				<Show when={props.variant === "full"}>
-					<button type="button" class={navButtonClass} onClick={goToday}>
+			<div
+				class="flex flex-wrap items-center"
+				classList={{ "gap-2": props.variant === "full", "gap-1": props.variant === "compact" }}
+			>
+				{/* The compact variant lives on Home, where every button is
+				    icon-only (guideline section 13): the words are the accessible
+				    name and the tooltip. The Watchlist page keeps text buttons. */}
+				<Show
+					when={props.variant === "full"}
+					fallback={
+						<>
+							<IconButton label="Previous month" icon="arrow-left" onClick={() => move(-1)} />
+							<IconButton label="Next month" icon="arrow-right" onClick={() => move(1)} />
+						</>
+					}
+				>
+					<button type="button" class={BUTTON} onClick={() => move(-1)}>
+						Previous month
+					</button>
+					<button type="button" class={BUTTON} onClick={goToday}>
 						Today
 					</button>
+					<button type="button" class={BUTTON} onClick={() => move(1)}>
+						Next month
+					</button>
 				</Show>
-				<button type="button" class={navButtonClass} onClick={() => move(1)}>
-					Next month
-				</button>
 				<p aria-live="off" class="text-sm font-medium text-slate-900">
 					{monthLabel()}
 				</p>

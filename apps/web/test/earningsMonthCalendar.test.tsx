@@ -294,11 +294,16 @@ describe("EarningsMonthCalendar (compact)", () => {
 		});
 		expect(day.className).toContain("min-h-6");
 		expect(day.className).toContain("pointer-coarse:min-h-11");
+		// Month navigation on Home is the shared icon-only button (28 px, 44 px
+		// under a coarse pointer): no visible text, the words as name and tooltip.
 		for (const name of ["Previous month", "Next month"]) {
 			const button = screen.getByRole("button", { name });
-			expect(button.className).toContain("min-h-6");
+			expect(button.className).toContain("min-h-7");
 			expect(button.className).toContain("pointer-coarse:min-h-11");
+			expect(button.textContent).toBe("");
+			expect(button.getAttribute("title")).toBe(name);
 		}
+		expect(screen.queryByRole("button", { name: "Today" })).toBe(null);
 	});
 });
 

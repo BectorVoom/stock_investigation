@@ -7,7 +7,7 @@
 
 **Change note (1.3 → 1.4):** FR-019 (earnings month calendar and Google
 Calendar sync) is a new Must requirement with its journey step, endpoints and
-vendor decision (ADR-0017); the Home earnings-calendar widget is glanceable
+vendor decision (ADR-0018); the Home earnings-calendar widget is glanceable
 after the Apple widget guidelines and deep-links to the Watchlist calendar;
 the endpoint list gains the three Google Calendar routes; the references gain
 the Google Calendar and OAuth documentation. That decision changed no other

@@ -221,6 +221,7 @@ def dashboardEditJson : DashboardEdit → String
   | .remove id => jsonObj [("kind", jsonStr "remove"), ("id", jsonNat id)]
   | .moveEarlier id => jsonObj [("kind", jsonStr "moveEarlier"), ("id", jsonNat id)]
   | .moveLater id => jsonObj [("kind", jsonStr "moveLater"), ("id", jsonNat id)]
+  | .reorder id k => jsonObj [("kind", jsonStr "reorder"), ("id", jsonNat id), ("toIndex", jsonNat k)]
 
 /-- Every id list of length 0..3 over {0, 1, 2} without duplicates, plus one
     full 24-widget dashboard for the maximum rule. -/
@@ -233,6 +234,7 @@ def dashboardGrid : List (List Nat) :=
 def dashboardEdits : List DashboardEdit :=
   ([0, 1, 2, 3].map DashboardEdit.add) ++ ([0, 1, 2, 3].map DashboardEdit.remove)
   ++ ([0, 1, 2, 3].map DashboardEdit.moveEarlier) ++ ([0, 1, 2, 3].map DashboardEdit.moveLater)
+  ++ ((List.range 5).flatMap fun k => [0, 1, 2, 3].map fun id => DashboardEdit.reorder id k)
 
 def dashboardVec (ids : List Nat) (e : DashboardEdit) : String :=
   let result := applyDashboardEdit ⟨ids⟩ e

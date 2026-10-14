@@ -158,6 +158,33 @@ function dialogControl(dialog: HTMLElement, tag: string, label: string): HTMLEle
 	return found;
 }
 
+/** The widget's icon-only actions button ("<title> actions"). */
+function widgetActionsButton(article: HTMLElement): HTMLElement {
+	const button = article.querySelector("button[data-widget-actions]");
+	if (!(button instanceof HTMLElement)) throw new Error("no widget actions button");
+	return button;
+}
+
+/** Opens the widget menu and clicks the named menuitem. */
+async function chooseWidgetMenuItem(widgetId: string, itemName: string): Promise<void> {
+	const article = widgetById(widgetId);
+	fireEvent.click(widgetActionsButton(article));
+	const item = await waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+	fireEvent.click(item);
+}
+
+/** Opens the widget menu and returns the named menuitem without clicking it. */
+async function openWidgetMenuItem(widgetId: string, itemName: string): Promise<HTMLElement> {
+	const article = widgetById(widgetId);
+	fireEvent.click(widgetActionsButton(article));
+	return waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+}
+
+/** A native footer button of the widget dialog, found by its accessible name. */
+function dialogButton(dialog: HTMLElement, name: string): HTMLElement {
+	return within(dialog).getByRole("button", { name });
+}
+
 async function openAddDialog(): Promise<HTMLElement> {
 	fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
 	await waitFor(() => {
@@ -522,11 +549,7 @@ describe("home view", () => {
 				throw new Error("problems are still listed");
 			}
 		});
-		const save = [...dialog.querySelectorAll("sl-button")].find(
-			(button) => button.textContent === "Save widget" || button.textContent === "Add widget",
-		);
-		if (!(save instanceof HTMLElement)) throw new Error("no save button");
-		fireEvent.click(save);
+		fireEvent.click(dialogButton(dialog, "Add widget"));
 
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		expect(homePuts()[0]?.body).toEqual({
@@ -538,6 +561,20 @@ describe("home view", () => {
 			"Apple watch",
 		);
 		await waitFor(() => expect(document.querySelector("sl-dialog")).toBeNull());
+	});
+
+	it("names sizes Small / Medium / Large and states each shape in the size help", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const dialog = await openAddDialog();
+		const size = dialogControl(dialog, "sl-select", "Size");
+		expect(
+			[...size.querySelectorAll("sl-option")].map((option) => option.textContent?.trim()),
+		).toEqual(["Small", "Medium", "Large"]);
+		const help = size.getAttribute("help-text") ?? "";
+		expect(help).toContain("1 × 1");
+		expect(help).toContain("2 × 2");
+		expect(help).toContain("full width × 2");
 	});
 
 	it("F3: an untouched dialog explains itself in neutral tones, turning red after the first edit", async () => {
@@ -555,17 +592,15 @@ describe("home view", () => {
 		expect(box.className).toContain("bg-slate-50");
 		expect(box.className).not.toContain("bg-red-50");
 		// The save button still points at the list.
-		const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-			(button.textContent ?? "").includes("Add widget"),
-		);
-		expect(save?.getAttribute("aria-describedby")).toBe(list.id);
+		const save = dialogButton(dialog, "Add widget");
+		expect(save.getAttribute("aria-describedby")).toBe(list.id);
 		// After the first edit the remaining problems turn red with the "Fix" lead.
 		setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Almost", "sl-input");
 		await waitFor(() => expect(box.textContent).toContain("Fix before saving:"));
 		expect(box.textContent).toContain("Choose a series.");
 		expect(box.className).toContain("bg-red-50");
 		expect(box.className).not.toContain("bg-slate-50");
-		expect(save?.getAttribute("aria-describedby")).toBe(list.id);
+		expect(save.getAttribute("aria-describedby")).toBe(list.id);
 	});
 
 	it("H1: a bubbling sl-after-hide from a nested select does not close the dialog", async () => {
@@ -605,11 +640,7 @@ describe("home view", () => {
 				throw new Error("problems are still listed");
 			}
 		});
-		const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-			(button.textContent ?? "").includes("Add widget"),
-		);
-		if (!(save instanceof HTMLElement)) throw new Error("no save button");
-		fireEvent.click(save);
+		fireEvent.click(dialogButton(dialog, "Add widget"));
 		await waitFor(() => expect(widgets()).toHaveLength(8));
 		const chart = widgetById(home.dashboard.widgets[7]?.widgetId ?? "");
 		const legend = chart.querySelector('ul[aria-label="Legend"]');
@@ -631,29 +662,18 @@ describe("home view", () => {
 			"sl-change",
 		);
 		await screen.findByText(/must share one unit \(found: Index, Percent\)/);
-		const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-			(button.textContent ?? "").includes("Add widget"),
-		);
-		expect(save?.hasAttribute("disabled")).toBe(true);
+		expect(dialogButton(dialog, "Add widget").hasAttribute("disabled")).toBe(true);
 		expect(homePuts()).toHaveLength(0);
 	});
 
 	it("edits a widget title through the dialog", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		const menu = widgetById("w-vix").querySelector("sl-menu");
-		if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-		const item = menu.querySelector('sl-menu-item[value="edit"]');
-		if (!(item instanceof HTMLElement)) throw new Error("no edit item");
-		menu.dispatchEvent(new CustomEvent("sl-select", { bubbles: true, detail: { item } }));
+		await chooseWidgetMenuItem("w-vix", "Edit widget");
 		const dialog = await waitFor(() => dialogOrThrow());
 		const title = dialogControl(dialog, "sl-input", "Title");
 		setShoelaceValue(title, "Volatility gauge", "sl-input");
-		const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-			(button.textContent ?? "").includes("Save widget"),
-		);
-		if (!(save instanceof HTMLElement)) throw new Error("no save button");
-		fireEvent.click(save);
+		fireEvent.click(dialogButton(dialog, "Save widget"));
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		await waitFor(() => expect(widgetById("w-vix").textContent).toContain("Volatility gauge"));
 	});
@@ -663,14 +683,8 @@ describe("home view", () => {
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const order = () => widgets().map((article) => article.getAttribute("data-widget-id"));
 		expect(order()[0]).toBe("w-vix");
-		const menu = widgetById("w-gold").querySelector("sl-menu");
-		if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-		expect(
-			widgetById("w-vix").querySelector('sl-menu-item[value="earlier"]')?.hasAttribute("disabled"),
-		).toBe(true);
-		const earlier = widgetById("w-gold").querySelector('sl-menu-item[value="earlier"]');
-		if (!(earlier instanceof HTMLElement)) throw new Error("no earlier item");
-		menu.dispatchEvent(new CustomEvent("sl-select", { bubbles: true, detail: { item: earlier } }));
+		expect(await openWidgetMenuItem("w-vix", "Move earlier")).toHaveProperty("disabled", true);
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		await waitFor(() => expect(order()[0]).toBe("w-gold"));
 		expect(order()[1]).toBe("w-vix");
@@ -679,11 +693,7 @@ describe("home view", () => {
 	it("removes a widget and persists it", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		const menu = widgetById("w-gold").querySelector("sl-menu");
-		if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-		const remove = widgetById("w-gold").querySelector('sl-menu-item[value="remove"]');
-		if (!(remove instanceof HTMLElement)) throw new Error("no remove item");
-		menu.dispatchEvent(new CustomEvent("sl-select", { bubbles: true, detail: { item: remove } }));
+		await chooseWidgetMenuItem("w-gold", "Remove widget");
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		await waitFor(() => expect(widgets()).toHaveLength(6));
 		expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull();
@@ -703,11 +713,7 @@ describe("home view", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Reset to default arrangement" }));
 		const dialog = await waitFor(() => dialogOrThrow());
 		expect(dialog.textContent).toContain("cannot be undone");
-		const confirm = [...dialog.querySelectorAll("sl-button")].find((button) =>
-			(button.textContent ?? "").includes("Reset widgets"),
-		);
-		if (!(confirm instanceof HTMLElement)) throw new Error("no confirm button");
-		fireEvent.click(confirm);
+		fireEvent.click(dialogButton(dialog, "Reset widgets"));
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		expect(homePuts()[0]?.body).toMatchObject({ expectedVersion: 3 });
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
@@ -719,11 +725,7 @@ describe("home view", () => {
 		);
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		const menu = widgetById("w-gold").querySelector("sl-menu");
-		if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-		const remove = widgetById("w-gold").querySelector('sl-menu-item[value="remove"]');
-		if (!(remove instanceof HTMLElement)) throw new Error("no remove item");
-		menu.dispatchEvent(new CustomEvent("sl-select", { bubbles: true, detail: { item: remove } }));
+		await chooseWidgetMenuItem("w-gold", "Remove widget");
 		await screen.findByText(/changed elsewhere; it was reloaded/);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 	});
@@ -779,6 +781,44 @@ describe("home view", () => {
 		expect(cpiHeader.querySelector(".font-mono")?.textContent).toBe("CPIAUCSL");
 	});
 
+	it("renders icon-only buttons: every button in Home main has an accessible name and no visible text", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const main = document.querySelector("main");
+		if (!(main instanceof HTMLElement)) throw new Error("no main content");
+		const buttons = [...main.querySelectorAll("button")].filter(
+			(button): button is HTMLButtonElement => button instanceof HTMLButtonElement,
+		);
+		expect(buttons.length).toBeGreaterThan(0);
+		for (const button of buttons) {
+			expect(button.getAttribute("aria-label") ?? "").not.toBe("");
+			expect(button.textContent?.trim() ?? "").toBe("");
+		}
+		// The former visible labels survive as accessible names.
+		for (const name of [
+			"Add widget",
+			"Refresh market data",
+			"Reset to default arrangement",
+			"VIX actions",
+		]) {
+			expect(main.querySelector(`button[aria-label="${name}"]`)).not.toBeNull();
+		}
+	});
+
+	it("scrolls tall bodies inside the frame in a keyboard-focusable container labelled by the widget title", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		for (const article of widgets()) {
+			const title = article.querySelector("h3");
+			if (!(title instanceof HTMLElement)) throw new Error("a widget has no title");
+			expect(title.id).not.toBe("");
+			const scroller = article.querySelector('div[tabindex="0"]');
+			if (!(scroller instanceof HTMLElement)) throw new Error("a widget body is not focusable");
+			expect(scroller.getAttribute("aria-labelledby")).toBe(title.id);
+			expect(scroller.className).toContain("overflow-y-auto");
+		}
+	});
+
 	it("V4: a saved edit reloads data, so new observations appear", async () => {
 		usePollTimers();
 		try {
@@ -789,13 +829,7 @@ describe("home view", () => {
 			if (vix === undefined) throw new Error("no VIX series");
 			vix.observations = [...vix.observations, ["2026-10-09", 16.02]];
 			// Any save (here: moving a widget) reloads /home/data afterwards.
-			const menu = widgetById("w-gold").querySelector("sl-menu");
-			if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-			const earlier = widgetById("w-gold").querySelector('sl-menu-item[value="earlier"]');
-			if (!(earlier instanceof HTMLElement)) throw new Error("no earlier item");
-			menu.dispatchEvent(
-				new CustomEvent("sl-select", { bubbles: true, detail: { item: earlier } }),
-			);
+			await chooseWidgetMenuItem("w-gold", "Move earlier");
 			await settleUntil(() => homePuts().length === 1, "PUT went out");
 			const putIndex = backend.requests.length;
 			await settleUntil(
@@ -826,11 +860,7 @@ describe("home view", () => {
 			})();
 			setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Extra", "sl-input");
 			setShoelaceValue(dialogControl(dialog, "sl-select", "Series"), "fred:NEWFRED1", "sl-change");
-			const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-				(button.textContent ?? "").includes("Add widget"),
-			);
-			if (!(save instanceof HTMLElement)) throw new Error("no save button");
-			fireEvent.click(save);
+			fireEvent.click(dialogButton(dialog, "Add widget"));
 			// Let the save finish first (dialog closes, data reloads, still
 			// mid-run so nothing queues yet)…
 			await settleUntil(() => document.querySelector("sl-dialog") === null, "dialog saved");
@@ -890,17 +920,13 @@ describe("home view", () => {
 				"sl-change",
 			);
 			// …then a save from a widget menu holds the busy flag…
-			const menu = widgetById("w-gold").querySelector("sl-menu");
-			if (!(menu instanceof HTMLElement)) throw new Error("no widget menu");
-			const remove = widgetById("w-gold").querySelector('sl-menu-item[value="remove"]');
-			if (!(remove instanceof HTMLElement)) throw new Error("no remove item");
-			menu.dispatchEvent(new CustomEvent("sl-select", { bubbles: true, detail: { item: remove } }));
+			await chooseWidgetMenuItem("w-gold", "Remove widget");
 			await settleUntil(
 				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
 				"PUT in flight",
 			);
 			// …and every other action is impossible: menus, range select, toolbar.
-			expect(remove.hasAttribute("disabled")).toBe(true);
+			expect(widgetActionsButton(widgetById("w-gold")).hasAttribute("disabled")).toBe(true);
 			expect(
 				widgetById("w-vix-chart")
 					.querySelector('sl-select[label="Range"]')
@@ -910,11 +936,7 @@ describe("home view", () => {
 				screen.getByRole("button", { name: "Refresh market data" }).hasAttribute("disabled"),
 			).toBe(true);
 			// A dialog save attempted meanwhile says why instead of vanishing.
-			const save = [...dialog.querySelectorAll("sl-button")].find((button) =>
-				(button.textContent ?? "").includes("Add widget"),
-			);
-			if (!(save instanceof HTMLElement)) throw new Error("no save button");
-			fireEvent.click(save);
+			fireEvent.click(dialogButton(dialog, "Add widget"));
 			await settleUntil(
 				() => (document.body.textContent ?? "").includes("being saved"),
 				"busy notice",
@@ -1099,6 +1121,105 @@ describe("home view", () => {
 		expect(within(table).getByRole("row", { name: /NVDA/ }).textContent).toContain(
 			"unavailable (The provider has no data for this symbol on the configured plan.)",
 		);
+	});
+
+	it("announces a completed menu move in the polite live region", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(() =>
+			expect(widgets().map((article) => article.getAttribute("data-widget-id"))[0]).toBe("w-gold"),
+		);
+		const live = document.querySelector("output.sr-only");
+		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
+		// The announcement clears first and sets on a later task (so a
+		// repeated sentence announces again): wait for the message.
+		await waitFor(() => expect(live.textContent).toBe("Moved “Gold” to position 1 of 7."));
+	});
+
+	it("announces a repeated sentence again: the same position twice still announces", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const live = (): string =>
+			document.querySelector("output.sr-only")?.textContent ?? "missing live region";
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
+		await chooseWidgetMenuItem("w-gold", "Move later");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 2 of 7."));
+		// The same sentence as the first move: a live region set to the
+		// identical text twice in a row announces nothing, so the move
+		// clears first and sets on a later task.
+		await chooseWidgetMenuItem("w-gold", "Move earlier");
+		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
+	});
+
+	it("saves a drag reorder with exactly one PUT and announces it", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const serverIds = widgets().map((article) => article.getAttribute("data-widget-id"));
+		// Dynamic layout: each position stacks vertically (300×100 with a
+		// 20 px gap), reading the CSS `order` the drag preview writes, so the
+		// mocked boxes track reflows like a real grid.
+		const boxFor = (element: HTMLElement, fallback: number): DOMRect => {
+			const raw = element.style.order;
+			const parsed = raw === "" ? Number.NaN : Number.parseInt(raw, 10);
+			const position = Number.isInteger(parsed) ? parsed : fallback;
+			return new DOMRect(0, position * 120, 300, 100);
+		};
+		for (const [index, article] of widgets().entries()) {
+			article.getBoundingClientRect = () => boxFor(article, index);
+		}
+		const first = widgetById("w-vix");
+		const handle = first.querySelector("[data-widget-drag-handle]");
+		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
+		// Press on the header (150,50), drag past the midpoint of the third
+		// widget (center 150,290) to (150,320), then release.
+		handle.dispatchEvent(
+			new PointerEvent("pointerdown", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 50,
+				button: 0,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		window.dispatchEvent(
+			new PointerEvent("pointermove", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		const placeholder = document.querySelector("[data-widget-placeholder]");
+		if (!(placeholder instanceof HTMLElement)) throw new Error("no drag placeholder");
+		placeholder.getBoundingClientRect = () => boxFor(placeholder, 0);
+		await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		const body = homePuts()[0]?.body as {
+			dashboard: HomeDashboard;
+			expectedVersion: number;
+		};
+		expect(body.dashboard.widgets.map((entry) => entry.widgetId)).toEqual([
+			...serverIds.filter((id) => id !== "w-vix").slice(0, 2),
+			"w-vix",
+			...serverIds.filter((id) => id !== "w-vix").slice(2),
+		]);
+		const live = document.querySelector("output.sr-only");
+		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
+		await waitFor(() => expect(live.textContent).toBe("Moved “VIX” to position 3 of 7."));
 	});
 
 	it("queues one automatic earnings refresh for a calendar widget with never-fetched dates", async () => {

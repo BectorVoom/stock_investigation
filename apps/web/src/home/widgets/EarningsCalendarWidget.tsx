@@ -5,7 +5,7 @@ import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
-import { BUTTON, Empty, ErrorNotice } from "../../components/ui.tsx";
+import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
 import { watchlistCalendarHash } from "../../router.ts";
 import {
@@ -234,14 +234,14 @@ export function EarningsCalendarWidget(props: {
 						</Show>
 					</output>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
-						<button
-							type="button"
-							class={`${BUTTON} pointer-coarse:min-h-11 pointer-coarse:min-w-11`}
+						{/* Icon-only like every Home button (guideline section 13): the
+						    former text is the accessible name and the tooltip. */}
+						<IconButton
+							label="Refresh earnings dates"
+							icon="arrow-clockwise"
 							disabled={props.earningsRefreshBusy() || activeRefresh() !== null}
 							onClick={() => props.onRefreshEarnings()}
-						>
-							Refresh earnings dates
-						</button>
+						/>
 						<a
 							href={watchlistCalendarHash(null)}
 							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"

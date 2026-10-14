@@ -146,6 +146,34 @@ Two E2E tests passed on Firefox and timed out on Chromium after that fix: they c
 - On a phone-width screen the two tables are wider than the card and scroll sideways inside it; the first columns (name, latest value) are visible without scrolling.
 - The review data is a small fixture (five observations per series); dense charts were only seen in the real-data screenshots.
 
+## 2026-10-14 — Home widgets after the Apple HIG rework (ADR-0017)
+
+Reviewed on the merged tree with `bun run review:ui` on Chrome (Home states: populated,
+add dialog, widget menu, unavailable, stale, loading, tablet, phone, and a mid-drag shot)
+and with the real-data screenshots of `tests/real/homeReal.spec.ts`.
+
+| What was looked at | Result |
+|---|---|
+| Three sizes | Small 1 × 1 (272 px tall), Medium 2 × 2 and Large full width × 2 (560 px tall); every widget of a size measures the same (asserted in `tests/e2e/home.spec.ts` at 1440 × 900 and 390 × 844) |
+| Borders | White frames with a `slate-200` hairline, no shadow, no header rule; table rules and the provenance divider are the same hairline |
+| Buttons | Every Home button is icon-only with its former text as accessible name and tooltip; the app header keeps its text navigation |
+| Drag | The lifted widget follows the pointer with the blue ring at 90 % opacity, a dashed placeholder marks the drop slot, the others reflow; no snap-back between drop and save (sampled per frame) |
+
+Findings that remain, all advisory:
+
+- Inline provenance links are 16 px tall (links in running text are exempt, section 9).
+- At 390 px a Small widget is about 163 px wide, so long titles are truncated with an
+  ellipsis ("US 10-ye…") and metric text wraps; the full title is the frame's accessible
+  name. Content taller than the frame scrolls inside it.
+- A Medium widget with little content (a three-row watchlist) leaves empty space below it:
+  the height is fixed per size by design.
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed; browser suite 53 passed, 1 skipped |
+| Safari engine (Playwright WebKit) | Browser suite 35 passed, 1 skipped; `review:ui` not run on WebKit |
+| Firefox | **Not run** — it cannot be launched from the agent shell on this machine; the owner runs `bun run test:e2e:firefox` and `REVIEW_BROWSER=firefox bun run review:ui` |
+
 # UI review — Watchlist page and the Home earnings-calendar widget
 
 **Date:** 2026-10-13 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `REVIEW_BROWSER=firefox bun run review:ui` (`tests/ui-review/watchlistReview.spec.ts`)
@@ -204,7 +232,7 @@ The Home "Earnings calendar" widget and the Watchlist page's Calendar section we
 | A tap opens the right place | An announcement day links to `#/watchlist/calendar/YYYY-MM-DD`, which opens the calendar on that month with the day selected |
 | Confident targets | Day links, month buttons and the actions are at least 44×44 px under a coarse pointer, at least 24 px otherwise |
 
-The other Home widgets were **not** redesigned against this guideline; that is stated in the design guideline and remains open.
+The widget sits in the fixed-size frame of the Home rework (ADR-0017): its buttons are the shared icon-only button, and a body taller than the frame scrolls inside it. The other Home widgets were reworked against the same guideline there (see "Home widgets after the Apple HIG rework").
 
 ## Findings and what was done
 

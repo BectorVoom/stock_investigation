@@ -164,7 +164,7 @@ regression test that fails before the fix. The other nine are fixed in task
 
 ## Google Calendar sync backend (13) — 2026-10-13
 
-An eighth run, scoped to the FR-019 backend (ADR-0017): `packages/adapters/src/google/`,
+An eighth run, scoped to the FR-019 backend (ADR-0018): `packages/adapters/src/google/`,
 `apps/runner/src/googleCalendar.ts`, `packages/application/src/googleCalendar.ts`,
 `runnerJobs.ts`, the SQL adapter, migration `0008_google_calendar.sql`, the three
 routes and `packages/domain/src/calendar/googleSync.ts`. **The reviewer this time was a

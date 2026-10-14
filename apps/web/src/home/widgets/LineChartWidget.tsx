@@ -251,7 +251,7 @@ function DataTwin(props: {
 						Values plotted in "{props.title}" ({props.unit})
 					</caption>
 					<thead>
-						<tr class="border-b border-slate-300">
+						<tr class="border-b border-slate-200">
 							<th scope="col" class="py-1 pr-3 font-semibold">
 								Date
 							</th>

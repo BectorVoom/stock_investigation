@@ -125,7 +125,7 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED sends 2 per series (metadata + observations), Twelve Data 1. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
-| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0017): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0018): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
 | `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect on the Watchlist page) to forget the grant. |
 | `ALLOW_UNVERIFIED_TOOL_ISOLATION=1` | Opt in to backends whose tool isolation is unverified (Codex). Default: refused. |
 | `RUNNER_SCRATCH_ROOT` | Parent of per-job scratch directories. Must not sit under a directory containing `opencode.json(c)` or `.opencode/`. |
@@ -133,7 +133,7 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 
 If the runner stops mid-job nothing is completed; the lease expires after 90 s and the job is handed out again (at most three attempts). The exception is a Google Calendar sign-in, which is failed rather than handed out again (see below).
 
-### Google Calendar sync (FR-019, ADR-0017)
+### Google Calendar sync (FR-019, ADR-0018)
 
 Owner setup, once:
 

@@ -76,6 +76,72 @@ describe("applyDashboardEdit", () => {
 		).toBe("WIDGET_NOT_FOUND");
 	});
 
+	it("reorders a widget to an absolute index", () => {
+		const four: Dashboard = {
+			schemaVersion: 1,
+			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
+		};
+		const ids = (dashboard: Dashboard) => dashboard.widgets.map((widget) => widget.widgetId);
+		// First to last.
+		expect(
+			ids(expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "a", toIndex: 3 }))),
+		).toEqual(["b", "c", "d", "a"]);
+		// Last to first.
+		expect(
+			ids(expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "d", toIndex: 0 }))),
+		).toEqual(["d", "a", "b", "c"]);
+		// Middle to middle, both directions.
+		expect(
+			ids(expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "b", toIndex: 2 }))),
+		).toEqual(["a", "c", "b", "d"]);
+		expect(
+			ids(expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "c", toIndex: 1 }))),
+		).toEqual(["a", "c", "b", "d"]);
+	});
+
+	it("treats a reorder to the current index as a no-op copy", () => {
+		const four: Dashboard = {
+			schemaVersion: 1,
+			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
+		};
+		const next = expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "b", toIndex: 1 }));
+		expect(next.widgets.map((widget) => widget.widgetId)).toEqual(["a", "b", "c", "d"]);
+		expect(next.widgets).not.toBe(four.widgets);
+		expect(four.widgets.map((widget) => widget.widgetId)).toEqual(["a", "b", "c", "d"]);
+	});
+
+	it("rejects a reorder with an unknown id or an out-of-range index", () => {
+		const four: Dashboard = {
+			schemaVersion: 1,
+			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
+		};
+		expect(
+			expectErr(applyDashboardEdit(four, { kind: "reorder", widgetId: "missing", toIndex: 0 })),
+		).toBe("WIDGET_NOT_FOUND");
+		// The id check runs first: unknown id plus a bad index still reports the id.
+		expect(
+			expectErr(applyDashboardEdit(four, { kind: "reorder", widgetId: "missing", toIndex: 99 })),
+		).toBe("WIDGET_NOT_FOUND");
+		for (const toIndex of [-1, 4, 1.5, Number.NaN]) {
+			expect(
+				expectErr(applyDashboardEdit(four, { kind: "reorder", widgetId: "a", toIndex })),
+				`toIndex ${String(toIndex)}`,
+			).toBe("POSITION_OUT_OF_RANGE");
+		}
+	});
+
+	it("reorders a single-widget dashboard", () => {
+		const next = expectOk(applyDashboardEdit(one, { kind: "reorder", widgetId: "a", toIndex: 0 }));
+		expect(next.widgets.map((widget) => widget.widgetId)).toEqual(["a"]);
+		expect(next.widgets).not.toBe(one.widgets);
+		expect(expectErr(applyDashboardEdit(one, { kind: "reorder", widgetId: "a", toIndex: 1 }))).toBe(
+			"POSITION_OUT_OF_RANGE",
+		);
+		expect(
+			expectErr(applyDashboardEdit(empty, { kind: "reorder", widgetId: "a", toIndex: 0 })),
+		).toBe("WIDGET_NOT_FOUND");
+	});
+
 	it("replaces a widget under the same id", () => {
 		const next = expectOk(
 			applyDashboardEdit(one, {
@@ -158,6 +224,7 @@ describe("applyDashboardEdit", () => {
 		expectOk(applyDashboardEdit(two, { kind: "add", widget: metric("c", "fred:SP500") }));
 		expectOk(applyDashboardEdit(two, { kind: "remove", widgetId: "a" }));
 		expectOk(applyDashboardEdit(two, { kind: "move", widgetId: "a", direction: "later" }));
+		expectOk(applyDashboardEdit(two, { kind: "reorder", widgetId: "a", toIndex: 1 }));
 		expect(two).toEqual(before);
 		expect(empty.widgets).toEqual([]);
 	});

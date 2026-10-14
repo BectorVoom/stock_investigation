@@ -145,7 +145,7 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
 	await setSlValue('sl-dialog sl-select[label="Widget type"]', "earnings-calendar");
 	await setSlValue('sl-dialog sl-select[label="Days ahead"]', "180");
-	await dialog.locator("sl-button", { hasText: "Add widget" }).click();
+	await dialog.getByRole("button", { name: "Add widget" }).click();
 
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
@@ -222,7 +222,7 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 	await expect(again).toContainText("Fetching earnings dates", { timeout: 30_000 });
 
 	// The widget is removed so later runs start clean.
-	await again.getByRole("button", { name: "Actions" }).click();
+	await again.getByRole("button", { name: `${title} actions` }).click();
 	await page.getByRole("menuitem", { name: "Remove widget" }).click();
 	await expect(again).toHaveCount(0);
 });
