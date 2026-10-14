@@ -139,7 +139,7 @@ export function RichTextView(props: {
 												aria-label={`To-do: ${plainText(item.inline)}`}
 												onChange={() => props.onToggleTodo?.(item.line)}
 											/>
-											<span classList={{ "text-slate-500 line-through": item.checked }}>
+											<span classList={{ "text-slate-600 line-through": item.checked }}>
 												<RichTextInline nodes={item.inline} />
 											</span>
 										</li>

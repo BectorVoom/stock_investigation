@@ -6,7 +6,7 @@ import { isAllowedLinkTarget } from "./model.ts";
  * In-place Markdown editor for a Text widget (ADR-0021): a plain textarea
  * over the stored Markdown source, so no editor library ships in the
  * Notebook's initial chunk and the app's `style-src 'self'` CSP holds
- * (positioning is classes only, never `style=` attributes). Notion
+ * (positioning is classes only, never inline style attributes). Notion
  * behaviours on top: Enter continues lists and quotes, `/` on an empty
  * line opens the block menu, a selection shows the formatting toolbar with
  * link editing, and to-do toggling lives in the read view.
@@ -528,7 +528,7 @@ export function RichTextEditor(props: {
 					class="rich-text-menu absolute right-2 left-2 z-10 max-h-56 overflow-y-auto rounded border border-slate-300 bg-white py-1 shadow-none"
 				>
 					<Show when={options().length === 0} fallback={null}>
-						<div class="px-3 py-1 text-xs text-slate-500">No matching blocks</div>
+						<div class="px-3 py-1 text-xs text-slate-600">No matching blocks</div>
 					</Show>
 					<For each={options()}>
 						{(option, index) => (
@@ -549,7 +549,7 @@ export function RichTextEditor(props: {
 								onMouseMove={() => setMenuActive(index())}
 							>
 								<span class="font-medium text-slate-900">{option.label}</span>
-								<span class="text-xs text-slate-500">{option.hint}</span>
+								<span class="text-xs text-slate-600">{option.hint}</span>
 							</div>
 						)}
 					</For>
@@ -601,6 +601,7 @@ export function RichTextEditor(props: {
 						<button
 							type="button"
 							class="rounded bg-blue-700 px-2 py-1 text-xs font-medium text-white"
+							onMouseDown={(event) => event.preventDefault()}
 							onClick={applyLink}
 						>
 							Save link
@@ -609,6 +610,7 @@ export function RichTextEditor(props: {
 							<button
 								type="button"
 								class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-800"
+								onMouseDown={(event) => event.preventDefault()}
 								onClick={removeLink}
 							>
 								Remove link
@@ -617,6 +619,7 @@ export function RichTextEditor(props: {
 						<button
 							type="button"
 							class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-800"
+							onMouseDown={(event) => event.preventDefault()}
 							onClick={() => {
 								setLinkOpen(false);
 								area?.focus();
@@ -628,7 +631,7 @@ export function RichTextEditor(props: {
 				</div>
 			</Show>
 			<div class="mt-1 flex items-baseline justify-between gap-2">
-				<p class="text-2xs text-slate-500">
+				<p class="text-2xs text-slate-600">
 					<Show
 						when={saving()}
 						fallback={"Markdown: # headings, **bold**, [label](https://…) links"}
@@ -637,7 +640,7 @@ export function RichTextEditor(props: {
 					</Show>
 				</p>
 				<Show when={counterVisible()}>
-					<p class="text-2xs text-slate-500">
+					<p class="text-2xs text-slate-600">
 						{draft().length} / {MAX_CHARS} characters
 					</p>
 				</Show>
