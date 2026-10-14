@@ -86,23 +86,39 @@ ancestor of the grid, not only the window.
 
 ### Rich-text editor
 
-No editor library: the in-place editor is a hand-written textarea over the
-stored Markdown source (`apps/web/src/notebook/richText/RichTextEditor.tsx`),
-with the subset parser/serializer (`parser.ts`, `serializer.ts`) as the only
-conversion, so the stored text is always `NOTEBOOK_TEXT_MARKDOWN`. No
-dependency was added (`apps/web/package.json` and `bun.lock` are untouched,
-hence no versions to pin and no lazy chunk to measure): the whole rich-text
-layer (parser, serializer, Solid renderer, editor) ships in the Notebook's
-existing chunk. `bun run build:web` output with it included:
+WYSIWYG on ProseMirror (task W4b): what the owner edits IS the formatted
+text — a heading looks like a heading while typing, bold is bold, a link is
+a link, a to-do is a checkbox. The Markdown subset stays the stored format:
+Markdown → `parser.ts` model → ProseMirror doc on open, and doc → model
+(`docConvert.ts`) → `serializer.ts` on every edit. Same-range mark overlaps
+(`~~[a](url)~~` vs `[~~a~~](url)`) cannot survive ProseMirror's flat mark
+sets, so both sides agree on one canonical order (link > strong > em >
+strike, code innermost): `pmToModel` rebuilds same-range stacks in that
+order and the serializer reorders single-child chains to it.
 
-- `index-B7f5d6AI.js` 522.53 kB (gzip 151.54 kB)
-- `index-COE5r6GN.css` 41.72 kB (gzip 8.64 kB)
-- `HomeView-DpRvJT_T.js` 195.22 kB (lazy Home chunk, unchanged)
+ProseMirror over TipTap: the subset schema is custom and flat, the
+conversion must be exact, and raw ProseMirror avoids TipTap's injected CSS
+(`injectCSS`) and extra extensions. Pinned exact versions
+(`apps/web/package.json`, `bun.lock`): `prosemirror-model` 1.25.12,
+`-state` 1.4.4, `-view` 1.42.6, `-commands` 1.7.2, `-keymap` 1.2.3,
+`-history` 1.5.1, `-inputrules` 1.5.1, `-schema-list` 1.5.1.
+`RichTextEditor.tsx` is only the lazy boundary (save rules, cap counter);
+`WysiwygEditor.tsx` (toolbar, `/` menu, link popover, input rules, Enter /
+Backspace / shortcuts, history, subset-only paste) loads with the editor
+chunk on the first edit. `bun run build:web` before → after:
 
-Positioning in the editor (toolbar, `/` menu, link popover) is classes only,
-never `style=` attributes or injected `<style>`, so the app's
-`style-src 'self'` policy holds (checked via the Chromium and WebKit E2E
-console assertions).
+- before: `index-Bhy3jcB_.js` 712.85 kB (gzip 203.22 kB), no editor chunk
+- after: `index-BVBahC9M.js` 527.98 kB + shared `src-DLMg37YQ.js` 180.29 kB
+  (gzip 147.94 + 54.61 kB) initially — the initial load shrinks slightly —
+  plus lazy `WysiwygEditor-CV_pETPV.js` 236.44 kB (gzip 72.97 kB), the only
+  chunk containing ProseMirror code
+
+Positioning in the editor (toolbar, `/` menu, link popover) is classes
+only, never `style=` attributes or injected `<style>` (no
+dropcursor/gapcursor plugins), so the app's `style-src 'self'` policy holds
+(checked via the Chromium and WebKit E2E console assertions). The dialog
+editor (`NotebookEditor.tsx` text branch) stays a Markdown source textarea
+as the escape hatch.
 
 ## Consequences
 

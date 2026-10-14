@@ -183,6 +183,17 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 			pkg("solid-js"),
 			pkg("zod"),
 			pkg("@shoelace-style/shoelace"),
+			// WYSIWYG rich-text editor (ADR-0021 task W4b): only
+			// apps/web/src/notebook/richText imports these, and the lazy
+			// editor chunk keeps them out of the initial load.
+			pkg("prosemirror-model"),
+			pkg("prosemirror-state"),
+			pkg("prosemirror-view"),
+			pkg("prosemirror-commands"),
+			pkg("prosemirror-keymap"),
+			pkg("prosemirror-history"),
+			pkg("prosemirror-inputrules"),
+			pkg("prosemirror-schema-list"),
 		],
 		forbidden: [
 			pkg("hono"),

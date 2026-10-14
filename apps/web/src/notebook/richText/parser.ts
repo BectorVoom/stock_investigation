@@ -35,20 +35,25 @@ export function parseInline(text: string): readonly InlineNode[] {
 		const two = text.slice(i, i + 2);
 		if (two === "**" || two === "~~") {
 			const closer = text.indexOf(two, i + 2);
-			if (closer < 0) {
+			if (closer < 0 || closer === i + 2) {
 				current += two;
 				i += 2;
 				continue;
 			}
 			flush();
 			const inner = parseInline(text.slice(i + 2, closer));
+			if (inner.length === 0) {
+				current += two;
+				i += 2;
+				continue;
+			}
 			nodes.push({ kind: two === "**" ? "strong" : "strike", children: inner });
 			i = closer + 2;
 			continue;
 		}
 		if (text[i] === "`") {
 			const closer = text.indexOf("`", i + 1);
-			if (closer < 0) {
+			if (closer < 0 || closer === i + 1) {
 				current += "`";
 				i += 1;
 				continue;
@@ -66,13 +71,19 @@ export function parseInline(text: string): readonly InlineNode[] {
 					break;
 				}
 			}
-			if (closer < 0) {
+			if (closer < 0 || closer === i + 1) {
 				current += "*";
 				i += 1;
 				continue;
 			}
 			flush();
-			nodes.push({ kind: "em", children: parseInline(text.slice(i + 1, closer)) });
+			const inner = parseInline(text.slice(i + 1, closer));
+			if (inner.length === 0) {
+				current += `*${text.slice(i + 1, closer)}*`;
+				i = closer + 1;
+				continue;
+			}
+			nodes.push({ kind: "em", children: inner });
 			i = closer + 1;
 			continue;
 		}
@@ -207,7 +218,8 @@ export function parseRichText(source: string): RichTextDoc {
 				quoted.push(parseInline(next === ">" ? "" : next.slice(2)));
 				i += 1;
 			}
-			blocks.push({ kind: "quote", lines: quoted });
+			while (quoted.length > 1 && (quoted[quoted.length - 1]?.length ?? 1) === 0) quoted.pop();
+			if (!quoted.every((line) => line.length === 0)) blocks.push({ kind: "quote", lines: quoted });
 			continue;
 		}
 		const listLine = parseListLine(trimmed, i);

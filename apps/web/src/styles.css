@@ -141,13 +141,47 @@ html:root {
 	cursor: text;
 }
 
-.rich-text-input {
-	resize: vertical;
+/*
+ * Notebook WYSIWYG editor (ADR-0021 task W4b): the ProseMirror surface.
+ * Classes only — ProseMirror core sets no `style=` attributes (no
+ * dropcursor/gapcursor plugins) and injects no `<style>`, so the app's
+ * `style-src 'self'` Content-Security-Policy holds. Block and mark classes
+ * come from the schema's `toDOM` specs, identical to the read view, so a
+ * block looks the same while reading and while editing.
+ */
+/* While a Text widget is edited, the untitled frame's control cluster steps
+ * aside (as Notion hides block handles while typing): in a small widget it
+ * would cover the end of the first line. Escape or clicking away leaves the
+ * editor and brings the controls back. */
+.wg-frame[data-widget-title-hidden]:has([data-rich-text-editor]) .wg-header {
+	visibility: hidden;
 }
 
-.rich-text-input:focus {
-	outline: 2px solid var(--color-blue-700);
-	outline-offset: 1px;
+.ProseMirror {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	caret-color: var(--color-slate-900);
+}
+
+.ProseMirror:focus {
+	outline: none;
+}
+
+/* While editing a small widget the surface scrolls inside the frame body
+   (capped by the `max-h-*` class on its mount) instead of growing the frame. */
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror li,
+.ProseMirror blockquote,
+.ProseMirror pre {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.ProseMirror pre {
+	white-space: pre-wrap;
 }
 
 .rich-text-todo {
