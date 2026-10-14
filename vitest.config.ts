@@ -18,7 +18,7 @@ export default defineConfig({
 					environment: "node",
 					include: [
 						"packages/{domain,contracts,agent-core,application,effects}/test/**/*.test.ts",
-						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite}/**/*.test.ts",
+						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite,google}/**/*.test.ts",
 						"apps/runner/test/**/*.test.ts",
 						"tests/{architecture,security,formal,local,live,ui-review}/**/*.test.ts",
 					],

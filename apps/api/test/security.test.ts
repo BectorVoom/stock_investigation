@@ -224,6 +224,9 @@ describe("owner authentication (section 9.1)", () => {
 			["GET", "/runner-credentials"],
 			["POST", "/runner-credentials"],
 			["DELETE", "/runner-credentials/rc_x"],
+			["POST", "/google-calendar/connect"],
+			["POST", "/google-calendar/sync"],
+			["POST", "/google-calendar/disconnect"],
 		];
 		for (const [method, path] of routes) {
 			const response = await harness.raw(method, path, {

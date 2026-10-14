@@ -7,6 +7,9 @@ import type {
 	ChatRepository,
 	EarningsRepository,
 	EnqueueResult,
+	GoogleCalendarLink,
+	GoogleCalendarLinkPatch,
+	GoogleCalendarRepository,
 	HomeDashboardRepository,
 	JobRecord,
 	JobRepository,
@@ -57,6 +60,7 @@ import {
 	toCalendarFeedRecord,
 	toChatMessage,
 	toConversationSummary,
+	toGoogleCalendarLink,
 	toHomeDashboardRecord,
 	toJobRecord,
 	toNewsSource,
@@ -217,10 +221,10 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  *
  * S1: "at most one active refresh job per owner, per refresh kind" is
  * enforced the same way — the INSERT is a no-op while an unfinished job of
- * the same refresh kind (`market-refresh` or `earnings-refresh`) exists for
- * the owner, no matter which idempotency key the concurrent request used.
- * `enqueueOutcome` maps that no-op back to the active run, so the loser of
- * the race answers with the winner's run id.
+ * the same refresh kind (`market-refresh`, `earnings-refresh` or
+ * `google-calendar`) exists for the owner, no matter which idempotency key
+ * the concurrent request used. `enqueueOutcome` maps that no-op back to the
+ * active run, so the loser of the race answers with the winner's run id.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -241,7 +245,7 @@ export function insertJobStatement(
 			WHERE (SELECT COUNT(*) FROM research_jobs
 				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
 				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
-				AND NOT (? IN ('market-refresh', 'earnings-refresh') AND EXISTS (SELECT 1 FROM research_jobs
+				AND NOT (? IN ('market-refresh', 'earnings-refresh', 'google-calendar') AND EXISTS (SELECT 1 FROM research_jobs
 					WHERE owner_id = ? AND kind = ? AND state NOT IN (${TERMINAL_SQL})))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
@@ -305,7 +309,7 @@ async function findActiveJobByKind(db: SqlDatabase, ownerId: string, kind: strin
  * Why an enqueue INSERT changed no row: the idempotency key already names a
  * job (a replay or a key reuse), the named workspace is gone, the owner is
  * at the unfinished-job cap, or — for a refresh kind (`market-refresh`,
- * `earnings-refresh`) — an unfinished job of that kind already exists (S1:
+ * `earnings-refresh`, `google-calendar`) — an unfinished job of that kind already exists (S1:
  * the INSERT itself refused the second active job, so map the no-op back to
  * the active run instead of reporting capacity). The key is checked first so
  * a replay still answers from the stored job.
@@ -324,7 +328,11 @@ export async function enqueueOutcome(
 			sameRequest: existing.requestFingerprint === requestFingerprint,
 		};
 	}
-	if (job.kind === "market-refresh" || job.kind === "earnings-refresh") {
+	if (
+		job.kind === "market-refresh" ||
+		job.kind === "earnings-refresh" ||
+		job.kind === "google-calendar"
+	) {
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind);
 		if (active !== null) {
 			const { requestFingerprint: _fingerprint, ...record } = active;
@@ -527,7 +535,10 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 				.bind(ownerId)
 				.first();
 			if (row === null) return null;
-			return toJobRecord(row).request;
+			const request = toJobRecord(row).request;
+			// Research rows carry research requests; anything else is a
+			// storage fault, answered as absent (fail closed).
+			return request !== null && "agentId" in request ? request : null;
 		},
 		async write(ownerId, write) {
 			const results = await db.batch(jobWriteStatements(db, ownerId, write, crypto.randomUUID()));
@@ -1384,6 +1395,209 @@ export function createCalendarFeedRepository(db: SqlDatabase): CalendarFeedRepos
 				.first();
 			if (row === null) return null;
 			return decode("calendar_feeds", z.object({ owner_id: z.string() }), row).owner_id;
+		},
+	};
+}
+
+/* ---------- Google Calendar sync link (FR-019 section 2.5) ---------- */
+
+const GOOGLE_LINK_COLUMNS = [
+	"status",
+	"connect_from",
+	"pending_auth_url",
+	"calendar_id",
+	"connected_at",
+	"last_synced_at",
+	"synced_digest",
+	"last_inserted",
+	"last_updated",
+	"last_deleted",
+	"last_unchanged",
+	"last_failure_code",
+	"last_failure_at",
+] as const;
+
+function googleLinkValues(link: GoogleCalendarLink): SqlValue[] {
+	return [
+		link.status,
+		link.connectFrom,
+		link.pendingAuthUrl,
+		link.calendarId,
+		link.connectedAt,
+		link.lastSyncedAt,
+		link.syncedDigest,
+		link.lastSync?.inserted ?? null,
+		link.lastSync?.updated ?? null,
+		link.lastSync?.deleted ?? null,
+		link.lastSync?.unchanged ?? null,
+		link.lastFailureCode,
+		link.lastFailureAt,
+	];
+}
+
+function applyGoogleLinkPatch(
+	link: GoogleCalendarLink,
+	patch: GoogleCalendarLinkPatch,
+): GoogleCalendarLink {
+	// Explicit null clears a column; an absent field keeps it. `??` alone
+	// cannot tell those apart, so presence is tested per field.
+	return {
+		status: patch.status ?? link.status,
+		connectFrom: "connectFrom" in patch ? (patch.connectFrom ?? null) : link.connectFrom,
+		pendingAuthUrl:
+			"pendingAuthUrl" in patch ? (patch.pendingAuthUrl ?? null) : link.pendingAuthUrl,
+		calendarId: "calendarId" in patch ? (patch.calendarId ?? null) : link.calendarId,
+		connectedAt: "connectedAt" in patch ? (patch.connectedAt ?? null) : link.connectedAt,
+		lastSyncedAt: "lastSyncedAt" in patch ? (patch.lastSyncedAt ?? null) : link.lastSyncedAt,
+		syncedDigest: "syncedDigest" in patch ? (patch.syncedDigest ?? null) : link.syncedDigest,
+		lastSync: "lastSync" in patch ? (patch.lastSync ?? null) : link.lastSync,
+		lastFailureCode:
+			"lastFailureCode" in patch ? (patch.lastFailureCode ?? null) : link.lastFailureCode,
+		lastFailureAt: "lastFailureAt" in patch ? (patch.lastFailureAt ?? null) : link.lastFailureAt,
+		updatedAt: link.updatedAt,
+	};
+}
+
+/** A disconnected link row: every column null except the status and stamp. */
+function disconnectedGoogleLink(at: string): GoogleCalendarLink {
+	return {
+		status: "disconnected",
+		connectFrom: null,
+		pendingAuthUrl: null,
+		calendarId: null,
+		connectedAt: null,
+		lastSyncedAt: null,
+		syncedDigest: null,
+		lastSync: null,
+		lastFailureCode: null,
+		lastFailureAt: null,
+		updatedAt: at,
+	};
+}
+
+/**
+ * Statements storing one google-calendar completion's link patch (FR-019).
+ * One guarded UPDATE: the row always exists (the queue created it before
+ * the job was inserted), so a missing row writes nothing rather than
+ * inventing state. The whole completion stays one guarded batch through the
+ * caller's `JOB_GUARD_SQL`.
+ */
+export function googleLinkStatements(
+	db: SqlDatabase,
+	ownerId: string,
+	patch: GoogleCalendarLinkPatch,
+	at: string,
+	guard: { readonly sql: string; readonly values: readonly SqlValue[] },
+): SqlStatement[] {
+	const assignments: string[] = [];
+	const values: SqlValue[] = [];
+	const set = (column: string, value: SqlValue): void => {
+		assignments.push(`${column} = ?`);
+		values.push(value);
+	};
+	if (patch.status !== undefined) set("status", patch.status);
+	if (patch.connectFrom !== undefined) set("connect_from", patch.connectFrom);
+	if (patch.pendingAuthUrl !== undefined) set("pending_auth_url", patch.pendingAuthUrl);
+	if (patch.calendarId !== undefined) set("calendar_id", patch.calendarId);
+	if (patch.connectedAt !== undefined) set("connected_at", patch.connectedAt);
+	if (patch.lastSyncedAt !== undefined) set("last_synced_at", patch.lastSyncedAt);
+	if (patch.syncedDigest !== undefined) set("synced_digest", patch.syncedDigest);
+	if (patch.lastSync !== undefined) {
+		set("last_inserted", patch.lastSync?.inserted ?? null);
+		set("last_updated", patch.lastSync?.updated ?? null);
+		set("last_deleted", patch.lastSync?.deleted ?? null);
+		set("last_unchanged", patch.lastSync?.unchanged ?? null);
+	}
+	if (patch.lastFailureCode !== undefined) set("last_failure_code", patch.lastFailureCode);
+	if (patch.lastFailureAt !== undefined) set("last_failure_at", patch.lastFailureAt);
+	if (assignments.length === 0) return [];
+	return [
+		db
+			.prepare(
+				`UPDATE google_calendar_links SET ${[...assignments, "updated_at = ?"].join(", ")}
+				WHERE owner_id = ? AND ${guard.sql}`,
+			)
+			.bind(...values, at, ownerId, ...guard.values),
+	];
+}
+
+export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarRepository {
+	async function upsert(ownerId: string, link: GoogleCalendarLink): Promise<void> {
+		await db
+			.prepare(
+				`INSERT INTO google_calendar_links (owner_id, ${GOOGLE_LINK_COLUMNS.join(", ")}, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT (owner_id) DO UPDATE SET
+					status = excluded.status, connect_from = excluded.connect_from,
+					pending_auth_url = excluded.pending_auth_url, calendar_id = excluded.calendar_id,
+					connected_at = excluded.connected_at, last_synced_at = excluded.last_synced_at,
+					synced_digest = excluded.synced_digest, last_inserted = excluded.last_inserted,
+					last_updated = excluded.last_updated, last_deleted = excluded.last_deleted,
+					last_unchanged = excluded.last_unchanged,
+					last_failure_code = excluded.last_failure_code,
+					last_failure_at = excluded.last_failure_at, updated_at = excluded.updated_at`,
+			)
+			.bind(ownerId, ...googleLinkValues(link), link.updatedAt)
+			.run();
+	}
+
+	return {
+		async get(ownerId) {
+			const row = await db
+				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			return row === null ? null : toGoogleCalendarLink(row);
+		},
+		async setConnecting(ownerId, input) {
+			const current = await db
+				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			const previous: GoogleCalendarLink =
+				current === null
+					? {
+							status: "disconnected",
+							connectFrom: null,
+							pendingAuthUrl: null,
+							calendarId: null,
+							connectedAt: null,
+							lastSyncedAt: null,
+							syncedDigest: null,
+							lastSync: null,
+							lastFailureCode: null,
+							lastFailureAt: null,
+							updatedAt: input.at,
+						}
+					: toGoogleCalendarLink(current);
+			await upsert(ownerId, {
+				...previous,
+				status: "connecting",
+				connectFrom: input.connectFrom,
+				pendingAuthUrl: null,
+				updatedAt: input.at,
+			});
+		},
+		async setPendingAuthUrl(ownerId, url, at) {
+			const current = await db
+				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			if (current === null) return;
+			const link = toGoogleCalendarLink(current);
+			// Only while connecting: a URL for any other status is a stale
+			// runner message and is dropped, never stored.
+			if (link.status !== "connecting") return;
+			await upsert(ownerId, { ...link, pendingAuthUrl: url, updatedAt: at });
+		},
+		async apply(ownerId, patch, at) {
+			const current = await db
+				.prepare(`SELECT * FROM google_calendar_links WHERE owner_id = ?`)
+				.bind(ownerId)
+				.first();
+			const previous: GoogleCalendarLink =
+				current === null ? disconnectedGoogleLink(at) : toGoogleCalendarLink(current);
+			await upsert(ownerId, { ...applyGoogleLinkPatch(previous, patch), updatedAt: at });
 		},
 	};
 }

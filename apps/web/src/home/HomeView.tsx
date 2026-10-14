@@ -25,9 +25,12 @@ import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
+import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import {
 	EARNINGS_AUTO_REFRESH_NOTICE,
 	earningsAutoRefreshReason,
+	googleAutoSyncWanted,
+	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
 	watchlistRefreshSignal,
 } from "../watchlist/watchlistModel.ts";
@@ -118,6 +121,9 @@ export function HomeView(props: {
 	const earningsQueue = createEarningsRefreshQueue(props.api);
 	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
 	let earningsAutoTried = false;
+	/** Google Calendar auto-sync (FR-019): at most one attempt per watchlist ETag. */
+	const googleQueue = createGoogleSyncQueue(props.api);
+	let googleSyncAttemptedEtag: string | null = null;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
@@ -193,7 +199,11 @@ export function HomeView(props: {
 		setWatchlistEtag(result.value.etag);
 		setWatchlistError(null);
 		const current = result.value.value;
-		return current.refresh.activeRunId !== null ? watchlistRefreshSignal(current) : "changed";
+		// A Google Calendar step keeps the poll alive too (its URL and counts
+		// arrive through this poll); only a run-free change settles it.
+		return current.refresh.activeRunId !== null || current.googleCalendar.activeRunId !== null
+			? watchlistRefreshSignal(current)
+			: "changed";
 	};
 
 	const watchlistPoller = createPoller({
@@ -207,11 +217,20 @@ export function HomeView(props: {
 				// run already covered every stock the reason is null and
 				// nothing more is queued.
 				maybeEarningsAutoRefresh();
+				maybeGoogleAutoSync();
 			}
 			return signal;
 		},
 		visibility: props.visibility,
 	});
+
+	/** A poll-worthy watchlist run: an earnings refresh or a Google Calendar step. */
+	const isWatchlistPollActive = (): boolean => {
+		const current = watchlist();
+		return (
+			current !== null && (isWatchlistRefreshActive(current) || isGoogleCalendarRunActive(current))
+		);
+	};
 
 	/** Starts the watchlist load once the dashboard shows a calendar widget needs it. */
 	const maybeLoadWatchlist = () => {
@@ -219,8 +238,11 @@ export function HomeView(props: {
 		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
 		void loadWatchlist().then(() => {
 			if (disposed) return;
-			if (isWatchlistRefreshActive(watchlist())) watchlistPoller.start();
-			else maybeEarningsAutoRefresh();
+			if (isWatchlistPollActive()) watchlistPoller.start();
+			else {
+				maybeEarningsAutoRefresh();
+				maybeGoogleAutoSync();
+			}
 		});
 	};
 	createEffect(() => {
@@ -228,7 +250,10 @@ export function HomeView(props: {
 		// or, when the watchlist already loaded, the once-per-mount auto-refresh.
 		if (dashboard.value() !== null) {
 			if (watchlist() === null) maybeLoadWatchlist();
-			else maybeEarningsAutoRefresh();
+			else {
+				maybeEarningsAutoRefresh();
+				maybeGoogleAutoSync();
+			}
 		}
 	});
 
@@ -282,6 +307,37 @@ export function HomeView(props: {
 	};
 	/** True while an earnings queue request is in flight (the widget button reads this). */
 	const earningsRefreshBusy = (): boolean => earningsQueueBusy() || earningsQueue.busy();
+
+	/**
+	 * Once per watchlist ETag, when a calendar widget is shown: queue one
+	 * Google Calendar sync (the pure `googleAutoSyncWanted` rule shared with
+	 * the Watchlist page, which also stops after any recorded failure). A
+	 * queue request that fails is reported and not repeated: the ETag is
+	 * recorded before the request.
+	 */
+	const maybeGoogleAutoSync = (): void => {
+		if (disposed) return;
+		const current = watchlist();
+		const tag = watchlistEtag();
+		if (current === null || tag === null) return;
+		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
+		if (!googleAutoSyncWanted(current, tag, googleSyncAttemptedEtag)) return;
+		googleSyncAttemptedEtag = tag;
+		void googleQueue.queue("sync").then((result) => {
+			if (disposed) return;
+			if (result.kind === "failed") {
+				setNotice({
+					tone: "error",
+					text: `The Google Calendar sync was not queued: ${result.error.message}`,
+				});
+				return;
+			}
+			if (result.kind === "queued") {
+				watchlistPoller.start();
+				void loadWatchlist();
+			}
+		});
+	};
 
 	/** The calendar widget's "Try again": clears the error and reloads. */
 	const retryWatchlist = () => {

@@ -572,6 +572,46 @@ export function createApiClient(options: ApiClientOptions = {}) {
 		revokeCalendarFeed: (): Promise<ApiResult<null>> =>
 			requestEmpty({ method: "DELETE", path: `${API_PREFIX}/watchlist/feed` }),
 
+		/* ----- Google Calendar sync (FR-019): one queued run per action ----- */
+		/** Queues a Google Calendar connect job for the local runner. */
+		connectGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await requestJson(
+				{
+					method: "POST",
+					path: `${API_PREFIX}/google-calendar/connect`,
+					idempotencyKey: key.value,
+				},
+				researchRunResponseSchema,
+			);
+			return result.ok ? ok(result.value.run) : result;
+		},
+		/** Queues a Google Calendar sync job for the local runner. */
+		syncGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await requestJson(
+				{ method: "POST", path: `${API_PREFIX}/google-calendar/sync`, idempotencyKey: key.value },
+				researchRunResponseSchema,
+			);
+			return result.ok ? ok(result.value.run) : result;
+		},
+		/** Queues a Google Calendar disconnect job for the local runner. */
+		disconnectGoogleCalendar: async (idempotencyKey: string): Promise<ApiResult<ResearchRun>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await requestJson(
+				{
+					method: "POST",
+					path: `${API_PREFIX}/google-calendar/disconnect`,
+					idempotencyKey: key.value,
+				},
+				researchRunResponseSchema,
+			);
+			return result.ok ? ok(result.value.run) : result;
+		},
+
 		/* ----- runner credentials ----- */
 		listRunnerCredentials: async (): Promise<ApiResult<readonly RunnerCredential[]>> => {
 			const result = await requestJson(

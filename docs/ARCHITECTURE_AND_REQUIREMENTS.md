@@ -1,9 +1,17 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.3
-**Date:** 2026-10-13
+**Version:** 1.4
+**Date:** 2026-10-14
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.3 → 1.4):** FR-019 (earnings month calendar and Google
+Calendar sync) is a new Must requirement with its journey step, endpoints and
+vendor decision (ADR-0018); the Home earnings-calendar widget is glanceable
+after the Apple widget guidelines and deep-links to the Watchlist calendar;
+the endpoint list gains the three Google Calendar routes; the references gain
+the Google Calendar and OAuth documentation. That decision changed no other
+requirement.
 
 **Change note (1.2 → 1.3):** FR-018 (watchlist + earnings-date calendar) is
 a new Must requirement with its journey, endpoints and vendor decision
@@ -58,7 +66,7 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 6. **Manipulate research UI:** ask the agent to create/update/remove tables, graphs and timelines. Reopen an existing workspace without rerunning research.
 7. **Continue without local compute:** when the local runner is offline, browse prior findings and queue research; pending jobs resume when a valid runner reconnects.
 8. **Check market prices at a glance:** arrange Home widgets over market series and queue a market-data refresh for the local runner; every number shows its unit, as-of date and source link.
-9. **Follow earnings dates:** register US and Japanese stocks on the Watchlist — each add queues its own earnings-date refresh, and opening Watchlist or Home with dates never fetched or more than a day old queues one refresh (once per visit) — keep the dates in your own calendar (`.ics` download, per-date links, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
+9. **Follow earnings dates:** register US and Japanese stocks on the Watchlist — each add queues its own earnings-date refresh, and opening Watchlist or Home with dates never fetched or more than a day old queues one refresh (once per visit) — browse the month calendar, keep a dedicated Google calendar in step (connect once, then sync on request or automatically when the dates drift), keep the dates in your own calendar (`.ics` download, per-date links, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
 
 The page for each journey step is mapped in [PAGES.md](PAGES.md).
 
@@ -84,6 +92,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-016 | Explain cost and show current job resource limits | Must | Max calls/time/spend visible; no paid fallback without consent |
 | FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
 | FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Watchlist page (`#/watchlist`) with add/remove/refresh, `.ics` download, per-date Google/Outlook links and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
+| FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Watchlist page Calendar section (`#/watchlist/calendar[/YYYY-MM-DD]`) with the full month grid (navigation, today, day selection with details and calendar links) above the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines (compact grid with day deep links, at most 3 next announcements, one status line, Refresh + Open calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
 
 ## 4. Deployment and component architecture
 
@@ -316,6 +325,9 @@ POST   /api/v1/watchlist/refresh
 GET    /api/v1/watchlist/calendar.ics
 POST   /api/v1/watchlist/feed
 DELETE /api/v1/watchlist/feed
+POST   /api/v1/google-calendar/connect
+POST   /api/v1/google-calendar/sync
+POST   /api/v1/google-calendar/disconnect
 GET    /api/v1/calendar-feed/:token/earnings.ics
 GET    /api/v1/runner/credential
 POST   /api/v1/runner/credentials/renew
@@ -415,5 +427,8 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 17. Twelve Data API credits and limits: https://support.twelvedata.com/en/articles/5194820-api-credits-limits
 18. Finnhub stock fundamentals (earnings calendar, company profile): https://finnhub.io/
 19. JPX scheduled dates for earnings announcements (index linking the quarterly workbooks): https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html
+20. Google Calendar API (calendars and events): https://developers.google.com/calendar/api/v3/reference/
+21. Google OAuth 2.0 for native/desktop apps (loopback redirect, PKCE): https://developers.google.com/identity/protocols/oauth2/native-app
+22. Google Calendar API auth scopes: https://developers.google.com/calendar/api/auth
 
 **Reference URLs are starting points, not an assertion that every vendor's pricing, SDK version, CLI subscription rights, or financial-data license remains unchanged. Verify before implementing each adapter.**

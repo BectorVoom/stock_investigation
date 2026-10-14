@@ -104,3 +104,28 @@ describe("market data configuration (FR-017)", () => {
 		}
 	});
 });
+
+describe("Google Calendar configuration (FR-019 section 2.6)", () => {
+	const base = {
+		RESEARCH_API_URL: "https://research.example.test",
+		RUNNER_TOKEN: "token_with_enough_characters_01",
+	};
+
+	it("leaves the OAuth pair unset and defaults the token file, accepting all three when given", () => {
+		const blank = loadConfig(base);
+		if (!blank.ok) throw new Error(`expected a valid config: ${blank.problems.join("; ")}`);
+		expect(blank.value.googleOAuthClientId).toBeNull();
+		expect(blank.value.googleOAuthClientSecret).toBeNull();
+		expect(blank.value.googleTokenFile).toBe("google-token.json");
+		const keyed = loadConfig({
+			...base,
+			GOOGLE_OAUTH_CLIENT_ID: "google-client-id",
+			GOOGLE_OAUTH_CLIENT_SECRET: "google-client-secret",
+			GOOGLE_TOKEN_FILE: "data/google-token.json",
+		});
+		if (!keyed.ok) throw new Error(`expected a valid config: ${keyed.problems.join("; ")}`);
+		expect(keyed.value.googleOAuthClientId).toBe("google-client-id");
+		expect(keyed.value.googleOAuthClientSecret).toBe("google-client-secret");
+		expect(keyed.value.googleTokenFile).toBe("data/google-token.json");
+	});
+});

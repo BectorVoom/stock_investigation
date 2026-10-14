@@ -15,10 +15,12 @@ import {
 	type ResearchBudget,
 } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
+import { applyGoogleTerminalOutcome } from "./googleCalendarLink.ts";
 import type {
 	AuditLog,
 	Clock,
 	EnqueueResult,
+	GoogleCalendarRepository,
 	Hasher,
 	IdGenerator,
 	JobRecord,
@@ -50,6 +52,8 @@ export interface ResearchRunServiceDeps {
 	readonly hasher: Hasher;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
+	/** Link-row bookkeeping when the owner cancels a google-calendar run (FR-019). */
+	readonly googleCalendar: GoogleCalendarRepository;
 }
 
 export interface CreatedRun {
@@ -350,7 +354,11 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		 */
 		async cancel(ownerId: string, runId: string): Promise<UseCaseResult<ResearchRun>> {
 			const nowMs = deps.clock.nowMs();
+			// True only when THIS call moved the run to `cancelled` (the
+			// mutation may be re-run after a lost compare-and-set).
+			let cancelledHere = false;
 			const result = await mutate(ownerId, runId, (job) => {
+				cancelledHere = false;
 				if (isTerminalJobState(job.state) || job.cancelRequested) return ok(null);
 				const leaseLive =
 					isLeasedJobState(job.state) &&
@@ -358,6 +366,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					(isoToEpochMs(job.leaseExpiresAt) ?? 0) > nowMs;
 				if (leaseLive) return ok({ patch: { cancelRequested: true }, audits: [] });
 				const cancelled: JobState = "cancelled";
+				cancelledHere = true;
 				return ok({
 					patch: { state: cancelled, leaseExpiresAt: null, cancelRequested: false },
 					audits: [
@@ -371,6 +380,19 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 				});
 			});
 			if (!result.ok) return result;
+			if (cancelledHere) {
+				// No runner will complete this run, so the Google link row is
+				// restored here (FR-019 section 2.5): a cancelled connect must
+				// not stay `connecting` on a sign-in link nobody listens for.
+				await applyGoogleTerminalOutcome(
+					deps,
+					ownerId,
+					result.value,
+					"cancelled",
+					null,
+					deps.clock.nowIso(),
+				);
+			}
 			await deps.audit.record({
 				ownerId,
 				actor: "owner",
@@ -394,6 +416,12 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 
 			const original = await deps.jobs.get(ownerId, runId);
 			if (original === null) return fail("NOT_FOUND", "Run not found.");
+			if (original.kind === "google-calendar") {
+				return fail(
+					"VALIDATION_FAILED",
+					"Google Calendar runs are started again from the calendar controls, not retried.",
+				);
+			}
 			if (!isTerminalJobState(original.state) || original.state === "completed") {
 				return fail(
 					"ILLEGAL_TRANSITION",
@@ -401,7 +429,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					original.state,
 				);
 			}
-			if (original.request !== null) {
+			if (original.request !== null && "agentId" in original.request) {
 				const agent = await checkAgentAndConsent(
 					ownerId,
 					original.request.agentId,
@@ -434,7 +462,10 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		): Promise<UseCaseResult<ResearchRun>> {
 			const current = await deps.jobs.get(ownerId, runId);
 			if (current === null) return fail("NOT_FOUND", "Run not found.");
-			if (current.request !== null) {
+			if (current.kind === "google-calendar") {
+				return fail("VALIDATION_FAILED", "This run does not wait for approval.");
+			}
+			if (current.request !== null && "agentId" in current.request) {
 				const agent = await checkAgentAndConsent(ownerId, current.request.agentId, budget);
 				if (!agent.ok) return agent;
 			}
@@ -447,7 +478,10 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					patch: {
 						state: pending,
 						approvalRequest: null,
-						request: job.request === null ? null : { ...job.request, budget },
+						request:
+							job.request !== null && "agentId" in job.request
+								? { ...job.request, budget }
+								: job.request,
 						// An approved continuation is not a failed attempt: it gets the full retry
 						// allowance again, so repeated approvals never exhaust the failure ceiling.
 						attempt: 0,

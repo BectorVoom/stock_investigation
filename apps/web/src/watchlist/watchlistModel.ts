@@ -5,7 +5,12 @@ import type {
 	WatchlistStock,
 	WatchMarket,
 } from "@research/contracts";
-import { parseStockId } from "@research/contracts";
+import {
+	GOOGLE_CALENDAR_FAILURE_REASONS,
+	type GoogleCalendarState,
+	googleCalendarFailureCodeSchema,
+	parseStockId,
+} from "@research/contracts";
 import type { ApiFailure } from "../api/http.ts";
 import { formatInstant } from "../lib/format.ts";
 
@@ -142,7 +147,10 @@ export function isWatchlistRefreshActive(current: WatchlistResponse | null | und
 
 /**
  * The run signal carried by the watchlist response itself (like Home's V7):
- * "pending" polls at the slow cadence; a leased run polls fast.
+ * "pending" polls at the slow cadence; a leased run polls fast. An active
+ * `google-calendar` run (connect or sync) keeps the poll alive too (FR-019):
+ * both the sign-in URL and the sync counts arrive through the poll the views
+ * already run.
  */
 export function watchlistRefreshSignal(
 	current: WatchlistResponse | null,
@@ -150,7 +158,15 @@ export function watchlistRefreshSignal(
 	if (current !== null && current.refresh.activeRunId !== null) {
 		return current.refresh.activeRunState === "pending" ? "queued" : "active";
 	}
+	if (current !== null && current.googleCalendar.activeRunId !== null) {
+		return current.googleCalendar.activeRunState === "pending" ? "queued" : "active";
+	}
 	return "unchanged";
+}
+
+/** True when a `google-calendar` run (connect, sync or disconnect) is active. */
+export function isGoogleCalendarRunActive(current: WatchlistResponse | null | undefined): boolean {
+	return current !== null && current !== undefined && current.googleCalendar.activeRunId !== null;
 }
 
 /**
@@ -179,6 +195,69 @@ export function watchlistStatusText(current: WatchlistResponse): string {
 /** True when the failure means the request never reached the server (safe to retry with the key). */
 export function isNetworkFailure(failure: ApiFailure): boolean {
 	return failure.kind === "network";
+}
+
+/**
+ * The fixed human reason sentence for a Google Calendar failure code
+ * (FR-019 section 2.2): the contract's sentence per code, the generic
+ * reason for a code the contract does not know (a runner that sent a
+ * non-GOOGLE code) — provider text never reaches the UI.
+ */
+export function googleFailureReason(code: string): string {
+	const known = googleCalendarFailureCodeSchema.safeParse(code);
+	return GOOGLE_CALENDAR_FAILURE_REASONS[known.success ? known.data : "GOOGLE_REQUEST_FAILED"];
+}
+
+/**
+ * Whether the view should queue one automatic Google Calendar sync (FR-019
+ * section 2.7), used by BOTH `WatchlistView` and `HomeView` when a calendar
+ * widget is shown. Pure: every input arrives as an argument.
+ *
+ * Two things keep this from ever looping:
+ *   - a recorded failure stops automatic syncing altogether, until a sync
+ *     the owner starts ("Sync now") succeeds and clears it. The failure is
+ *     stored by the API, so the stop holds across reloads and tabs. (A rule
+ *     keyed on the ETag alone would loop: every failed run records a new
+ *     `lastFailure`, which is itself an ETag change.)
+ *   - within one mount, at most one attempt per watchlist ETag — the caller
+ *     records the ETag it attempted for and passes it back — which covers
+ *     the outcomes that record nothing (a queue request that failed, a run
+ *     the owner cancelled).
+ */
+export function googleAutoSyncWanted(
+	current: WatchlistResponse,
+	currentEtag: string,
+	attemptedEtag: string | null,
+): boolean {
+	if (current.googleCalendar.status !== "connected") return false;
+	if (current.googleCalendar.inSync !== false) return false;
+	if (current.googleCalendar.lastFailure !== null) return false;
+	if (current.googleCalendar.activeRunId !== null) return false;
+	if (current.refresh.activeRunId !== null) return false;
+	if (attemptedEtag === currentEtag) return false;
+	return true;
+}
+
+/** The Google part of the Home widget's single status line (FR-019 section 2.7). */
+export function googleWidgetStatus(state: GoogleCalendarState): string {
+	switch (state.status) {
+		case "connected":
+			if (state.activeRunId !== null) {
+				return state.activeAction === "disconnect"
+					? "Google Calendar: disconnecting…"
+					: "Google Calendar: syncing…";
+			}
+			if (state.lastSyncedAt !== null) {
+				return `Google Calendar: synced ${formatInstant(state.lastSyncedAt)}.`;
+			}
+			return "Google Calendar: connected, not synced yet.";
+		case "connecting":
+			return "Google Calendar: connecting…";
+		case "needs-reconnect":
+			return "Google Calendar: reconnect needed.";
+		default:
+			return "Google Calendar: not connected.";
+	}
 }
 
 /**

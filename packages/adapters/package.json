@@ -13,6 +13,7 @@
 		"./node": "./src/node/index.ts",
 		"./providers": "./src/providers/index.ts",
 		"./finance": "./src/finance/index.ts",
+		"./google": "./src/google/index.ts",
 		"./tools": "./src/tools/index.ts"
 	},
 	"dependencies": {

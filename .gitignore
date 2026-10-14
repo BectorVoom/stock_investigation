@@ -18,3 +18,7 @@ apps/web/public/__e2e_hot_*
 playwright-report
 test-results
 test-results-real
+# Runner-side Google refresh token (FR-019). The launch plans keep it under
+# data/ or data-dev/; this covers a hand run with the default path.
+google-token.json
+google-token.json.*.tmp

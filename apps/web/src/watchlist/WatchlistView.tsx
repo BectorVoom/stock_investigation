@@ -10,7 +10,16 @@ import {
 	outlookCalendarUrl,
 } from "@research/domain";
 import { SafeLink } from "@research/ui-registry";
-import { createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import {
+	createEffect,
+	createMemo,
+	createSignal,
+	For,
+	type JSX,
+	onCleanup,
+	onMount,
+	Show,
+} from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
@@ -30,10 +39,15 @@ import {
 import { downloadTextFile } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
+import { parseHash } from "../router.ts";
+import { type CalendarDayEvent, EarningsMonthCalendar } from "./EarningsMonthCalendar.tsx";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
+import { GoogleCalendarCard } from "./GoogleCalendarCard.tsx";
+import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
 import {
 	EARNINGS_AUTO_REFRESH_NOTICE,
 	earningsAutoRefreshReason,
+	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
 	isWatchlistRefreshActive,
 	MARKET_LABELS,
@@ -230,6 +244,11 @@ function StockRow(props: {
 export function WatchlistView(props: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
+	/** Deep-linked calendar day (`#/watchlist/calendar/YYYY-MM-DD`); null elsewhere. */
+	readonly calendarDate?: string | null;
+	/** True for `#/watchlist/calendar[…]`: scroll to and focus the Calendar section. */
+	readonly calendarLinked?: boolean;
+	readonly window?: Window;
 }): JSX.Element {
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
@@ -248,8 +267,20 @@ export function WatchlistView(props: {
 	const [downloadBusy, setDownloadBusy] = createSignal(false);
 	let disposed = false;
 	const refreshQueue = createEarningsRefreshQueue(props.api);
+	const googleQueue = createGoogleSyncQueue(props.api);
 	let autoRefreshTried = false;
 	let followUpArmed = false;
+	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
+	let googleSyncAttemptedEtag: string | null = null;
+	/**
+	 * The deep-linked calendar day: the route prop at mount, then every later
+	 * `hashchange` while mounted (a widget day link navigates without a reload).
+	 */
+	const [deepDate, setDeepDate] = createSignal<string | null>(props.calendarDate ?? null);
+	const [selectedDate, setSelectedDate] = createSignal<string | null>(props.calendarDate ?? null);
+	/** True once a `#/watchlist/calendar[…]` link arrived (mount or later hash change). */
+	const [calendarLinked, setCalendarLinked] = createSignal<boolean>(props.calendarLinked ?? false);
+	let calendarSection: HTMLDivElement | undefined;
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
@@ -294,7 +325,17 @@ export function WatchlistView(props: {
 		setFailure(null);
 		setLoading(false);
 		const current = result.value.value;
-		return current.refresh.activeRunId !== null ? watchlistRefreshSignal(current) : "changed";
+		return isPollActiveFor(current) ? watchlistRefreshSignal(current) : "changed";
+	};
+
+	/** A poll-worthy run: an earnings refresh or a Google Calendar step. */
+	function isPollActiveFor(current: WatchlistResponse): boolean {
+		return current.refresh.activeRunId !== null || current.googleCalendar.activeRunId !== null;
+	}
+
+	const isPollActive = (): boolean => {
+		const current = data();
+		return current !== null && isPollActiveFor(current);
 	};
 
 	const poller = createPoller({
@@ -309,7 +350,10 @@ export function WatchlistView(props: {
 				// When the first load found an active run the load rule below
 				// never ran: evaluate it now, unless a follow-up was just
 				// queued (a no-op once the rule has fired).
-				if (!(await maybeFollowUpRefresh())) maybeAutoRefresh();
+				if (!(await maybeFollowUpRefresh())) {
+					maybeAutoRefresh();
+					maybeAutoGoogleSync();
+				}
 			}
 			return signal;
 		},
@@ -332,6 +376,32 @@ export function WatchlistView(props: {
 	};
 
 	/**
+	 * After a load: queue one Google Calendar sync when the pure
+	 * `googleAutoSyncWanted` rule says so (connected, out of sync, no failure
+	 * on record, no run of either kind active, not already attempted for
+	 * this ETag). The ETag is recorded before the request, so a queue
+	 * request that fails is reported and not repeated.
+	 */
+	const maybeAutoGoogleSync = (): void => {
+		if (disposed) return;
+		const current = data();
+		const tag = etag();
+		if (current === null || tag === null) return;
+		if (!googleAutoSyncWanted(current, tag, googleSyncAttemptedEtag)) return;
+		googleSyncAttemptedEtag = tag;
+		void googleQueue.queue("sync").then((result) => {
+			if (disposed) return;
+			if (result.kind === "failed") {
+				setNotice(`The Google Calendar sync was not queued: ${result.error.message}`);
+				return;
+			}
+			if (result.kind === "queued") {
+				poller.start();
+				void loadWatchlist();
+			}
+		});
+	};
+	/**
 	 * One follow-up per ended run that a stock was added during, when that
 	 * run left a stock never refreshed. A run that was still pending at the
 	 * add claims the current watchlist — the new stock included — so when it
@@ -353,15 +423,49 @@ export function WatchlistView(props: {
 	onMount(() => {
 		void loadWatchlist().then(() => {
 			if (disposed) return;
-			if (isWatchlistRefreshActive(data())) poller.start();
-			else maybeAutoRefresh();
+			if (isPollActive()) poller.start();
+			else {
+				maybeAutoRefresh();
+				maybeAutoGoogleSync();
+			}
+		});
+		const win = props.window ?? globalThis.window;
+		const onHashChange = () => {
+			const route = parseHash(win.location.hash);
+			if (route.view !== "watchlist") return;
+			setDeepDate(route.calendarDate);
+			setSelectedDate(route.calendarDate);
+			if (route.section === "calendar") setCalendarLinked(true);
+		};
+		win.addEventListener("hashchange", onHashChange);
+		onCleanup(() => win.removeEventListener("hashchange", onHashChange));
+	});
+
+	/** Scrolls to and focuses the Calendar section for a deep link (`#/watchlist/calendar[…]`). */
+	createEffect(() => {
+		if (!calendarLinked()) return;
+		const section = calendarSection;
+		if (section === undefined) return;
+		queueMicrotask(() => {
+			if (disposed) return;
+			const heading = section.querySelector("h3");
+			if (heading instanceof HTMLElement) {
+				heading.setAttribute("tabindex", "-1");
+				if (typeof heading.scrollIntoView === "function") {
+					heading.scrollIntoView({ block: "start" });
+				}
+				if (typeof heading.focus === "function") heading.focus({ preventScroll: true });
+			} else if (typeof section.scrollIntoView === "function") {
+				section.scrollIntoView({ block: "start" });
+			}
 		});
 	});
 
 	const reloadAfterWrite = async (): Promise<void> => {
 		await loadWatchlist();
 		if (disposed) return;
-		if (isWatchlistRefreshActive(data())) poller.start();
+		if (isPollActive()) poller.start();
+		else maybeAutoGoogleSync();
 	};
 
 	const queueRefresh = async (announce?: string): Promise<void> => {
@@ -404,7 +508,7 @@ export function WatchlistView(props: {
 		setSymbol("");
 		await reloadAfterWrite();
 		if (disposed) return;
-		if (isWatchlistRefreshActive(data())) {
+		if (isPollActive()) {
 			// A run is already underway: remember that a follow-up may be
 			// needed, and say the dates are being fetched.
 			followUpArmed = true;
@@ -510,6 +614,31 @@ export function WatchlistView(props: {
 	const problemsId = "watchlist-add-problems";
 	const stocks = () => data()?.stocks ?? [];
 	const feedCreatedAt = () => data()?.feed.createdAt ?? null;
+	/** Every dated announcement as a calendar day event (past dates included: the grid navigates). */
+	const calendarEvents = createMemo((): readonly CalendarDayEvent[] => {
+		const current = data();
+		if (current === null) return [];
+		const rows: CalendarDayEvent[] = [];
+		for (const stock of current.stocks) {
+			for (const event of stock.events) {
+				if (event.announcementDate === null) continue;
+				rows.push({
+					stockId: stock.stockId,
+					announcementDate: event.announcementDate,
+					symbol: stock.symbol,
+					name: stock.name,
+					fiscalPeriodLabel: event.fiscalPeriodLabel,
+					timing: event.timing,
+					periodKey: event.periodKey,
+					fiscalPeriodEnd: event.fiscalPeriodEnd,
+					publisher: stock.publisher,
+					sourceUrl: stock.sourceUrl,
+					retrievedAt: stock.retrievedAt,
+				});
+			}
+		}
+		return rows;
+	});
 
 	const openRemove = (stock: WatchlistStock, opener: HTMLElement) => {
 		setOpener(opener);
@@ -684,101 +813,123 @@ export function WatchlistView(props: {
 				</Show>
 			</Section>
 
-			<Section title="Calendar" label="Calendar export">
-				<p class="text-xs text-slate-700">
-					Keep the announcement dates in your own calendar: download them as a file, add one date at
-					a time from the table above, or subscribe to the whole calendar.
-				</p>
-				<div class="mt-2">
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={downloadBusy() || stocks().length === 0}
-						onClick={() => void downloadIcs()}
-					>
-						{downloadBusy() ? "Preparing file…" : "Download calendar file (.ics)"}
-					</button>
-				</div>
-				<div class="mt-3 rounded border border-slate-200 p-2">
-					<h4 class="text-xs font-semibold text-slate-900">Subscription link</h4>
-					<Show when={issuedUrl()} fallback={null}>
-						{(url) => (
-							<div class="mt-1 space-y-1">
-								<p class="text-xs text-slate-700">
-									This is the only time this link is shown. Copy it now; replacing or revoking it
-									stops this link from working.
-								</p>
-								<div class="flex flex-wrap items-center gap-2">
-									<input
-										type="text"
-										readonly
-										aria-label="Subscription link (shown once)"
-										class={`${INPUT} font-mono`}
-										value={url()}
-										onFocus={(event) => event.currentTarget.select()}
-									/>
-									<button type="button" class={BUTTON} onClick={() => void copyIssuedUrl()}>
-										Copy
-									</button>
-								</div>
-								<Show when={copied()}>
-									<output class="block text-xs text-slate-700">Copied to the clipboard.</output>
-								</Show>
-							</div>
+			<div data-calendar-section ref={calendarSection}>
+				<Section title="Calendar" label="Calendar">
+					<Show when={data()}>
+						{(current) => (
+							<>
+								<EarningsMonthCalendar
+									events={calendarEvents()}
+									variant="full"
+									selectedDate={selectedDate()}
+									onSelectDate={setSelectedDate}
+									initialMonth={deepDate()?.slice(0, 7) ?? null}
+								/>
+								<GoogleCalendarCard
+									state={current().googleCalendar}
+									api={props.api}
+									busy={busy()}
+									onQueued={() => void reloadAfterWrite()}
+									onQueueFailed={(title, error) => setFailure({ title, error })}
+								/>
+							</>
 						)}
 					</Show>
-					<Show when={feedCreatedAt()}>
-						{(createdAt) => (
-							<div class="mt-1 space-y-1">
-								<p class="text-xs text-slate-700">
-									A subscription link was created{" "}
-									<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>. The link itself
-									is not shown again.
-								</p>
-								<div class="flex flex-wrap gap-2">
-									<button
-										type="button"
-										class={BUTTON}
-										disabled={busy()}
-										onClick={(event) => openFeedConfirm("replace", event.currentTarget)}
-									>
-										Replace link
-									</button>
-									<button
-										type="button"
-										class={BUTTON_DANGER}
-										disabled={busy()}
-										onClick={(event) => openFeedConfirm("revoke", event.currentTarget)}
-									>
-										Revoke link
-									</button>
-								</div>
-							</div>
-						)}
-					</Show>
-					<Show when={feedCreatedAt() === null && issuedUrl() === null}>
-						<div class="mt-1 space-y-1">
-							<p class="text-xs text-slate-700">
-								No subscription link exists yet. A calendar app can poll it for new dates.
-							</p>
-							<button
-								type="button"
-								class={BUTTON_PRIMARY}
-								disabled={busy()}
-								onClick={() => void issueFeed()}
-							>
-								Create subscription link
-							</button>
-						</div>
-					</Show>
-					<p class="mt-2 text-xs text-slate-700">
-						The link is a secret: anyone with it can read the calendar. Google Calendar can only
-						subscribe to it when this app is reachable from the internet over HTTPS (a localhost
-						address works with calendar apps on this computer only). The .ics download and the
-						per-date links work everywhere.
+					<p class="mt-3 text-xs text-slate-700">
+						Keep the announcement dates in your own calendar: download them as a file, add one date
+						at a time from the table above, or subscribe to the whole calendar.
 					</p>
-				</div>
-			</Section>
+					<div class="mt-2">
+						<button
+							type="button"
+							class={BUTTON}
+							disabled={downloadBusy() || stocks().length === 0}
+							onClick={() => void downloadIcs()}
+						>
+							{downloadBusy() ? "Preparing file…" : "Download calendar file (.ics)"}
+						</button>
+					</div>
+					<div class="mt-3 rounded border border-slate-200 p-2">
+						<h4 class="text-xs font-semibold text-slate-900">Subscription link</h4>
+						<Show when={issuedUrl()} fallback={null}>
+							{(url) => (
+								<div class="mt-1 space-y-1">
+									<p class="text-xs text-slate-700">
+										This is the only time this link is shown. Copy it now; replacing or revoking it
+										stops this link from working.
+									</p>
+									<div class="flex flex-wrap items-center gap-2">
+										<input
+											type="text"
+											readonly
+											aria-label="Subscription link (shown once)"
+											class={`${INPUT} font-mono`}
+											value={url()}
+											onFocus={(event) => event.currentTarget.select()}
+										/>
+										<button type="button" class={BUTTON} onClick={() => void copyIssuedUrl()}>
+											Copy
+										</button>
+									</div>
+									<Show when={copied()}>
+										<output class="block text-xs text-slate-700">Copied to the clipboard.</output>
+									</Show>
+								</div>
+							)}
+						</Show>
+						<Show when={feedCreatedAt()}>
+							{(createdAt) => (
+								<div class="mt-1 space-y-1">
+									<p class="text-xs text-slate-700">
+										A subscription link was created{" "}
+										<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>. The link
+										itself is not shown again.
+									</p>
+									<div class="flex flex-wrap gap-2">
+										<button
+											type="button"
+											class={BUTTON}
+											disabled={busy()}
+											onClick={(event) => openFeedConfirm("replace", event.currentTarget)}
+										>
+											Replace link
+										</button>
+										<button
+											type="button"
+											class={BUTTON_DANGER}
+											disabled={busy()}
+											onClick={(event) => openFeedConfirm("revoke", event.currentTarget)}
+										>
+											Revoke link
+										</button>
+									</div>
+								</div>
+							)}
+						</Show>
+						<Show when={feedCreatedAt() === null && issuedUrl() === null}>
+							<div class="mt-1 space-y-1">
+								<p class="text-xs text-slate-700">
+									No subscription link exists yet. A calendar app can poll it for new dates.
+								</p>
+								<button
+									type="button"
+									class={BUTTON_PRIMARY}
+									disabled={busy()}
+									onClick={() => void issueFeed()}
+								>
+									Create subscription link
+								</button>
+							</div>
+						</Show>
+						<p class="mt-2 text-xs text-slate-700">
+							The link is a secret: anyone with it can read the calendar. Google Calendar can only
+							subscribe to it when this app is reachable from the internet over HTTPS (a localhost
+							address works with calendar apps on this computer only). The .ics download and the
+							per-date links work everywhere.
+						</p>
+					</div>
+				</Section>
+			</div>
 
 			<Show when={removing()}>
 				{(stock) => (

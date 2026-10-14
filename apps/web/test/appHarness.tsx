@@ -719,6 +719,25 @@ export interface WatchlistServerState {
 	lastSucceededAt: string | null;
 	lastFailure: { readonly state: string; readonly code: string; readonly at: string } | null;
 	refreshCount: number;
+	google: {
+		status: "disconnected" | "connecting" | "connected" | "needs-reconnect";
+		authUrl: string | null;
+		calendarId: string | null;
+		connectedAt: string | null;
+		lastSyncedAt: string | null;
+		lastSync: {
+			readonly inserted: number;
+			readonly updated: number;
+			readonly deleted: number;
+			readonly unchanged: number;
+		} | null;
+		inSync: boolean | null;
+		activeRunId: string | null;
+		activeRunState: string | null;
+		activeAction: "connect" | "sync" | "disconnect" | null;
+		lastFailure: { readonly code: string; readonly reason: string; readonly at: string } | null;
+	};
+	syncCount: number;
 }
 
 export function initialWatchlistServerState(): WatchlistServerState {
@@ -729,6 +748,20 @@ export function initialWatchlistServerState(): WatchlistServerState {
 		lastSucceededAt: null,
 		lastFailure: null,
 		refreshCount: 0,
+		google: {
+			status: "disconnected",
+			authUrl: null,
+			calendarId: null,
+			connectedAt: null,
+			lastSyncedAt: null,
+			lastSync: null,
+			inSync: null,
+			activeRunId: null,
+			activeRunState: null,
+			activeAction: null,
+			lastFailure: null,
+		},
+		syncCount: 0,
 	};
 }
 
@@ -736,7 +769,7 @@ function watchlistEtag(watch: WatchlistServerState): string {
 	const stamp = watch.stocks
 		.map((entry) => `${entry.stockId}:${entry.lastRefreshedAt ?? "never"}`)
 		.join(",");
-	return `"watch-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}"`;
+	return `"watch-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
 }
 
 /** Registers the `/watchlist` + `/watchlist/refresh` routes Home's calendar widget needs. */
@@ -755,17 +788,9 @@ export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistSer
 				},
 				feed: { enabled: false, createdAt: null },
 				googleCalendar: {
-					status: "disconnected",
-					authUrl: null,
-					calendarId: null,
-					connectedAt: null,
-					lastSyncedAt: null,
-					lastSync: null,
-					inSync: null,
-					activeRunId: null,
-					activeRunState: null,
-					activeAction: null,
-					lastFailure: null,
+					...watch.google,
+					activeRunState:
+						watch.google.activeRunId === null ? null : (watch.google.activeRunState ?? "pending"),
 				},
 			},
 			{ headers: { ETag: etag } },
@@ -785,6 +810,30 @@ export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistSer
 					request: null,
 					workspaceId: null,
 					state: watch.runState as ResearchRun["state"],
+				}),
+			},
+			{ status: 202 },
+		);
+	});
+	backend.on("POST", /^\/api\/v1\/google-calendar\/sync$/, () => {
+		if (watch.google.status !== "connected") {
+			return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
+		}
+		watch.syncCount += 1;
+		watch.google = {
+			...watch.google,
+			activeRunId: `run_google_sync_${watch.syncCount}`,
+			activeRunState: "pending",
+			activeAction: "sync",
+		};
+		return jsonResponse(
+			{
+				run: makeRun({
+					runId: watch.google.activeRunId ?? "run_google_sync",
+					kind: "google-calendar",
+					request: null,
+					workspaceId: null,
+					state: "pending",
 				}),
 			},
 			{ status: 202 },

@@ -26,7 +26,7 @@ const EFFECTS = exact("@research/effects");
 
 /** Adapter entry points by the runtime they can load in. */
 const WORKER_ONLY_ADAPTERS = ["d1", "worker"] as const;
-const NODE_ONLY_ADAPTERS = ["node", "providers", "tools", "finance", "sqlite"] as const;
+const NODE_ONLY_ADAPTERS = ["node", "providers", "tools", "finance", "sqlite", "google"] as const;
 const RUNTIME_NEUTRAL_ADAPTERS = ["feed", "runtime", "sql"] as const;
 
 const adapterEntry = (name: string) => exact(`@research/adapters/${name}`);

@@ -34,7 +34,8 @@ import {
  * .ics download (VEVENT count equals the dated-event count), the
  * subscription link (fetched from Node with no cookies, then revoked to a
  * 404), and the "Earnings calendar" widget on Home showing the same 7203
- * row or its stated reason. Full-page screenshots at 1440×900 and 390×844
+ * date (or its stated reason) with its month grid marking the day. Full-page
+ * screenshots at 1440×900 and 390×844
  * land under `test-results-real/`, and no file under the launcher's log
  * directory may contain the feed token.
  *
@@ -358,7 +359,20 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		const revoked = await fetch(feedUrl);
 		expect(revoked.status).toBe(404);
 
-		// The Home earnings-calendar widget shows the same 7203 row or its
+		// No Google credentials in the runner env file: connecting ends in the
+		// fixed not-configured sentence (never a guess, never provider text).
+		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
+		await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible({
+			timeout: 60_000,
+		});
+		await page.getByRole("button", { name: "Connect Google Calendar" }).click();
+		await expect(
+			page.getByText(
+				"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
+			),
+		).toBeVisible({ timeout: 120_000 });
+
+		// The Home earnings-calendar widget shows the same 7203 date or its
 		// stated reason.
 		await page.goto(`${VITE_ORIGIN}/#/home`);
 		await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({
@@ -372,14 +386,39 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		await setSlValue(page, 'sl-dialog sl-select[label="Days ahead"]', "180");
 		await dialog.getByRole("button", { name: "Add widget" }).click();
 		const added = page.getByRole("article", { name: /Earnings calendar/ });
-		await expect(added).toContainText("7203", { timeout: 120_000 });
 		if (next !== undefined && next.announcementDate !== null) {
 			const horizon = new Date(Date.parse(`${today}T00:00:00.000Z`) + 180 * 86_400_000)
 				.toISOString()
 				.slice(0, 10);
 			if (next.announcementDate <= horizon) {
-				await expect(added).toContainText(next.announcementDate);
+				await expect(added).toContainText(next.announcementDate, { timeout: 120_000 });
+				await expect(added).toContainText("7203", { timeout: 120_000 });
 			}
+			// The month grid marks the 7203 date: navigate from the opening
+			// month when it is not there yet…
+			const dayLink = added.locator(`a[href="#/watchlist/calendar/${next.announcementDate}"]`);
+			for (let step = 0; step < 12 && (await dayLink.count()) === 0; step += 1) {
+				await added.getByRole("button", { name: "Next month" }).click();
+			}
+			await expect(dayLink).toBeVisible({ timeout: 30_000 });
+			// …following that day's link lands on the Watchlist calendar with
+			// the day selected and its details showing the Google link.
+			await dayLink.click();
+			const section = page.locator("[data-calendar-section]");
+			await expect(section.getByRole("button", { name: /7203/ })).toHaveAttribute(
+				"aria-pressed",
+				"true",
+			);
+			await expect(
+				section.getByRole("link", { name: "Add to Google Calendar" }).first(),
+			).toHaveAttribute("href", /calendar\.google\.com/);
+			// Back on Home for the screenshots below.
+			await page.goto(`${VITE_ORIGIN}/#/home`);
+			await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible({
+				timeout: 60_000,
+			});
+		} else {
+			await expect(added).toContainText("no upcoming date", { timeout: 120_000 });
 		}
 
 		await page.setViewportSize({ width: 1440, height: 900 });

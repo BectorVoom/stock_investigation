@@ -146,6 +146,12 @@ export interface LaunchPlan {
 	readonly logDir: string;
 	readonly credentialFile: string;
 	readonly credentialLabel: string;
+	/**
+	 * Runner-side Google refresh-token file (FR-019, mode 0600, beside the
+	 * credential file). Passed to the runner as `GOOGLE_TOKEN_FILE` in both
+	 * modes, so dev and prod never share a grant.
+	 */
+	readonly googleTokenFile: string;
 	readonly serverLog: string;
 	readonly runnerLog: string;
 	readonly buildLog: string;
@@ -330,6 +336,7 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 			extraEnv: {
 				RESEARCH_API_URL: origin,
 				RUNNER_PAGES_DIR: joinPath(dataDir, "pages"),
+				GOOGLE_TOKEN_FILE: joinPath(dataDir, "google-token.json"),
 			},
 		},
 	];
@@ -342,6 +349,7 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 		stateDir,
 		logDir,
 		credentialFile: joinPath(dataDir, "runner-credential.json"),
+		googleTokenFile: joinPath(dataDir, "google-token.json"),
 		credentialLabel: "Local runner (bun run prod)",
 		serverLog: joinPath(logDir, "server.log"),
 		runnerLog: joinPath(logDir, "runner.log"),
@@ -392,6 +400,7 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 	const runnerEnv = {
 		RESEARCH_API_URL: apiOrigin,
 		RUNNER_PAGES_DIR: joinPath(dataDir, "pages"),
+		GOOGLE_TOKEN_FILE: joinPath(dataDir, "google-token.json"),
 	};
 	const processes: readonly PlannedProcess[] = [
 		{
@@ -465,6 +474,7 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 		stateDir,
 		logDir,
 		credentialFile: joinPath(dataDir, "runner-credential.json"),
+		googleTokenFile: joinPath(dataDir, "google-token.json"),
 		credentialLabel: "Local runner (bun run dev)",
 		serverLog: joinPath(logDir, "server.log"),
 		runnerLog: joinPath(logDir, "runner.log"),

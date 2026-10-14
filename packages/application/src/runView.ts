@@ -9,7 +9,9 @@ export function toRunView(job: JobRecord, progress: readonly ProgressEntry[]): R
 		kind: job.kind,
 		workspaceId: job.workspaceId,
 		state: job.state,
-		request: job.request,
+		// Only research requests reach the view: google-calendar jobs carry
+		// `{ action }`, which the run schema does not accept.
+		request: job.request !== null && "agentId" in job.request ? job.request : null,
 		usage: job.usage,
 		cost: summarizeCost(job.usage),
 		attempt: job.attempt,

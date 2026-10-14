@@ -1,11 +1,10 @@
 import type { WatchlistResponse } from "@research/contracts";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { type Accessor, createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../src/api/client.ts";
 import type { ApiFailure } from "../src/api/http.ts";
 import { EarningsCalendarWidget } from "../src/home/widgets/EarningsCalendarWidget.tsx";
-import { createFakeBackend, type FakeBackend } from "./fakeBackend.ts";
 
 const NOW_MS = Date.now();
 /** A UTC date `days` from today, so fixtures stay upcoming on any day. */
@@ -14,8 +13,6 @@ function isoInDays(days: number): string {
 }
 /** The fixture's upcoming announcement date (the widget compares it to today). */
 const AAPL_DATE = isoInDays(16);
-const AAPL_COMPACT = AAPL_DATE.replaceAll("-", "");
-const AAPL_NEXT_COMPACT = isoInDays(17).replaceAll("-", "");
 
 const WATCHLIST: WatchlistResponse = {
 	stocks: [
@@ -85,8 +82,6 @@ const WATCHLIST: WatchlistResponse = {
 	},
 };
 
-let backend: FakeBackend;
-
 function mount(
 	watchlist: WatchlistResponse | null,
 	daysAhead: 30 | 60 | 90 | 180 = 90,
@@ -103,25 +98,7 @@ function mount(
 		});
 	const [busy, setBusy] = createSignal(false);
 	const earningsRefreshBusy = hooks.earningsRefreshBusy ?? busy;
-	const client = {
-		downloadWatchlistIcs: async () => {
-			const response = await backend.fetch("/api/v1/watchlist/calendar.ics", { method: "GET" });
-			if (!response.ok) {
-				return {
-					ok: false as const,
-					error: {
-						kind: "api" as const,
-						code: "INTERNAL" as const,
-						status: response.status,
-						message: "boom",
-						detail: null,
-						issues: [],
-					},
-				};
-			}
-			return { ok: true as const, value: await response.text() };
-		},
-	} as unknown as ApiClient;
+	const client = {} as unknown as ApiClient;
 	const [current, setCurrent] = createSignal(watchlist);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(
 		error === null
@@ -158,70 +135,134 @@ function mount(
 afterEach(cleanup);
 
 describe("EarningsCalendarWidget", () => {
-	it("tables the upcoming dates with calendar links and the provenance line", () => {
-		backend = createFakeBackend();
+	it("shows the compact month grid with day links to the Watchlist calendar", () => {
 		mount(WATCHLIST);
-		const table = screen.getByRole("table", { name: "Earnings: upcoming earnings announcements" });
-		const row = within(table).getByRole("row", { name: /AAPL/ });
-		expect(row.textContent).toContain(AAPL_DATE);
-		expect(row.textContent).toContain("Q4 2026");
-		expect(row.textContent).toContain("after market close");
-		expect(
-			within(row).getByRole("link", { name: "Add to Google Calendar" }).getAttribute("href"),
-		).toContain(`${AAPL_COMPACT}/${AAPL_NEXT_COMPACT}`);
-		expect(
-			within(row).getByRole("link", { name: "Add to Outlook" }).getAttribute("href"),
-		).toContain(`startdt=${AAPL_DATE}`);
-		expect(screen.getByText(/1 stock with no upcoming date/)).toBeTruthy();
-		expect(screen.getByText(/7203/)).toBeTruthy();
-		expect(screen.getByText(/The source lists no upcoming date/)).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Finnhub" }).getAttribute("href")).toBe(
-			"https://finnhub.io/",
-		);
-		expect(screen.getByText(/retrieved/)).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Manage watchlist" }).getAttribute("href")).toBe(
-			"#/watchlist",
-		);
+		const table = screen.getByRole("table");
+		expect(table.textContent).toContain("earnings announcements");
+		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
+		expect(day.getAttribute("href")).toBe(`#/watchlist/calendar/${AAPL_DATE}`);
 	});
 
-	it("keeps only the window: past the fixture date the table is empty", () => {
-		backend = createFakeBackend();
-		vi.useFakeTimers();
-		try {
-			// 44 days past the fixture date: outside the 30-day window and
-			// stated as passed, on any day the suite runs.
-			vi.setSystemTime(new Date(NOW_MS + 60 * 86_400_000));
-			mount(WATCHLIST, 30);
-			expect(screen.queryByRole("table")).toBe(null);
-			expect(screen.getByText("No announcement in the next 30 days.")).toBeTruthy();
-			expect(screen.getByText(/2 stocks with no upcoming date/)).toBeTruthy();
-			// The stored date has passed: stated as text, with no calendar links.
-			expect(screen.getByText(/the stored dates have passed/)).toBeTruthy();
-			expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
-			expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);
-		} finally {
-			vi.useRealTimers();
-		}
-	});
-
-	it("offers no calendar links for events without a retrieved stamp", () => {
-		backend = createFakeBackend();
-		const first = WATCHLIST.stocks[0];
-		if (first === undefined) throw new Error("expected the fixture stock");
-		mount({
-			...WATCHLIST,
-			stocks: [{ ...first, retrievedAt: null, lastRefreshedAt: null }],
-		});
-		const table = screen.getByRole("table", {
-			name: "Earnings: upcoming earnings announcements",
-		});
-		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain(AAPL_DATE);
+	it("lists at most 3 upcoming announcements with no per-row links", () => {
+		mount(WATCHLIST);
+		const next = screen.getByRole("heading", { name: "Next" });
+		expect(next).toBeTruthy();
+		const items = next.parentElement?.querySelectorAll("ul > li") ?? [];
+		expect(items.length).toBeLessThanOrEqual(3);
 		expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
 		expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);
 	});
 
+	it("caps the Next list at 3 when more dates fall in the window", () => {
+		const first = WATCHLIST.stocks[0];
+		if (first === undefined) throw new Error("expected the fixture stock");
+		const stocks = [0, 1, 2, 3, 4].map((index) => ({
+			...first,
+			stockId: `us:SYM${index}`,
+			symbol: `SYM${index}`,
+			events: [
+				{
+					periodKey: `2026-q${index}`,
+					announcementDate: isoInDays(10 + index),
+					fiscalPeriodLabel: `Q${index} 2026`,
+					fiscalPeriodEnd: null,
+					timing: "after-close" as const,
+				},
+			],
+		}));
+		mount({ ...WATCHLIST, stocks });
+		const next = screen.getByRole("heading", { name: "Next" });
+		const items = next.parentElement?.querySelectorAll("ul > li") ?? [];
+		expect(items).toHaveLength(3);
+	});
+
+	it("keeps one no-upcoming sentence linking to the Watchlist page, not a disclosure", () => {
+		mount(WATCHLIST);
+		expect(screen.getByText(/1 stock has no upcoming date/)).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "See them on the Watchlist page" }).getAttribute("href"),
+		).toBe("#/watchlist");
+		expect(screen.queryByText(/The source lists no upcoming date/)).toBe(null);
+	});
+
+	it("keeps one short provenance line with the publisher links and the retrieved date", () => {
+		mount(WATCHLIST);
+		expect(screen.getByText(/Sources:/)).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Finnhub" }).getAttribute("href")).toBe(
+			"https://finnhub.io/",
+		);
+		expect(screen.getByText(/retrieved/)).toBeTruthy();
+	});
+
+	it("offers Refresh and Open calendar, and nothing else", () => {
+		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
+		expect(screen.getByRole("button", { name: "Refresh earnings dates" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Open calendar" }).getAttribute("href")).toBe(
+			"#/watchlist/calendar",
+		);
+		expect(screen.queryByRole("button", { name: "Download calendar file (.ics)" })).toBe(null);
+		expect(screen.queryByRole("table", { name: /upcoming earnings announcements/ })).toBe(null);
+	});
+
+	it("tells the Google status on its single status line, never the auth URL", () => {
+		mount({
+			...WATCHLIST,
+			googleCalendar: {
+				...WATCHLIST.googleCalendar,
+				status: "connecting",
+				authUrl: "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x",
+				activeRunId: "run_google_1",
+				activeRunState: "claimed",
+				activeAction: "connect",
+			},
+		});
+		expect(screen.getByText(/Google Calendar: connecting/)).toBeTruthy();
+		expect(screen.queryByText(/accounts\.google\.com/)).toBe(null);
+		expect(screen.queryByRole("link", { name: "Open Google sign-in" })).toBe(null);
+	});
+
+	it("names the Google sync time when connected and synced", () => {
+		mount({
+			...WATCHLIST,
+			googleCalendar: {
+				...WATCHLIST.googleCalendar,
+				status: "connected",
+				calendarId: "cal_1",
+				connectedAt: "2026-10-12T10:00:00Z",
+				lastSyncedAt: "2026-10-12T11:00:00Z",
+				lastSync: { inserted: 1, updated: 0, deleted: 0, unchanged: 0 },
+				inSync: true,
+			},
+		});
+		expect(screen.getByText(/Google Calendar: synced/)).toBeTruthy();
+	});
+
+	it("points at the Watchlist page when Google is not connected", () => {
+		mount(WATCHLIST);
+		expect(screen.getByText(/Google Calendar: not connected/)).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Connect it on the Watchlist page" }).getAttribute("href"),
+		).toBe("#/watchlist");
+	});
+
+	it("keeps only the window: past the fixture date the Next list is empty", () => {
+		// 44 days past the fixture date: outside the 30-day window and
+		// stated as passed, on any day the suite runs.
+		const realNow = Date.now;
+		try {
+			Date.now = () => NOW_MS + 60 * 86_400_000;
+			mount(WATCHLIST, 30);
+			expect(screen.getByText("No announcement in the next 30 days.")).toBeTruthy();
+			expect(screen.getByText(/2 stocks have no upcoming date/)).toBeTruthy();
+			// The stored date has passed: stated as text, with no calendar links.
+			expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
+			expect(screen.queryByRole("link", { name: "Add to Outlook" })).toBe(null);
+		} finally {
+			Date.now = realNow;
+		}
+	});
+
 	it("shows an empty state pointing at the Watchlist page when no stock is registered", () => {
-		backend = createFakeBackend();
 		mount({ ...WATCHLIST, stocks: [] });
 		expect(screen.getByText(/No stocks on the watchlist yet/)).toBeTruthy();
 		expect(
@@ -231,7 +272,6 @@ describe("EarningsCalendarWidget", () => {
 	});
 
 	it("shows the load error with Try again when the watchlist read failed", () => {
-		backend = createFakeBackend();
 		const retry = vi.fn();
 		const [current, setCurrent] = createSignal<WatchlistResponse | null>(null);
 		const [failure, setFailure] = createSignal<ApiFailure | null>({
@@ -242,7 +282,7 @@ describe("EarningsCalendarWidget", () => {
 			detail: null,
 			issues: [],
 		});
-		const client = { downloadWatchlistIcs: async () => ({ ok: true as const, value: "" }) };
+		const client = {};
 		render(() => (
 			<EarningsCalendarWidget
 				widget={{
@@ -271,39 +311,9 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByRole("table")).toBeTruthy();
 	});
 
-	it("downloads the .ics through the API client", async () => {
-		backend = createFakeBackend();
-		backend.on(
-			"GET",
-			/^\/api\/v1\/watchlist\/calendar\.ics$/,
-			() =>
-				new Response("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n", {
-					status: 200,
-					headers: { "Content-Type": "text/calendar; charset=utf-8" },
-				}),
-		);
-		Object.defineProperty(URL, "createObjectURL", {
-			value: () => "blob:fake",
-			configurable: true,
-		});
-		Object.defineProperty(URL, "revokeObjectURL", { value: () => {}, configurable: true });
-		const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-		try {
-			mount(WATCHLIST);
-			fireEvent.click(screen.getByRole("button", { name: "Download calendar file (.ics)" }));
-			await waitFor(() => {
-				expect(click).toHaveBeenCalled();
-			});
-			expect(backend.requestsTo("GET", /^\/api\/v1\/watchlist\/calendar\.ics$/)).toHaveLength(1);
-		} finally {
-			click.mockRestore();
-		}
-	});
-
-	it("stays reactive: replacing the watchlist value updates the rows", async () => {
-		backend = createFakeBackend();
+	it("stays reactive: replacing the watchlist value updates the grid", async () => {
 		const { setCurrent } = mount(WATCHLIST);
-		expect(screen.getByRole("table").textContent).toContain(AAPL_DATE);
+		expect(screen.getByRole("table").textContent).toContain("earnings announcements");
 		setCurrent({ ...WATCHLIST, stocks: [] });
 		await waitFor(() => {
 			expect(screen.queryByRole("table")).toBe(null);
@@ -312,7 +322,6 @@ describe("EarningsCalendarWidget", () => {
 	});
 
 	it("offers a Refresh button that calls back, disabled while busy or while a run is active", () => {
-		backend = createFakeBackend();
 		const refreshed = vi.fn();
 		mount(WATCHLIST, 90, null, { onRefreshEarnings: refreshed });
 		const button = screen.getByRole("button", { name: "Refresh earnings dates" });
@@ -322,7 +331,6 @@ describe("EarningsCalendarWidget", () => {
 	});
 
 	it("disables the Refresh button while a queue request is in flight", () => {
-		backend = createFakeBackend();
 		const { setBusy } = mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
 		const button = screen.getByRole("button", { name: "Refresh earnings dates" });
 		expect(button.hasAttribute("disabled")).toBe(false);
@@ -333,7 +341,6 @@ describe("EarningsCalendarWidget", () => {
 	});
 
 	it("shows the fetching status line and disables Refresh while a run is active", () => {
-		backend = createFakeBackend();
 		mount({
 			...WATCHLIST,
 			refresh: {
@@ -345,14 +352,12 @@ describe("EarningsCalendarWidget", () => {
 		});
 		expect(screen.getByText(/Fetching earnings dates…/)).toBeTruthy();
 		expect(screen.getByText(/claimed/)).toBeTruthy();
-		expect(screen.getByText(/stays queued until it reconnects/)).toBeTruthy();
 		expect(
 			screen.getByRole("button", { name: "Refresh earnings dates" }).hasAttribute("disabled"),
 		).toBe(true);
 	});
 
 	it("says not fetched yet for never-refreshed stocks, never no announcement", () => {
-		backend = createFakeBackend();
 		const first = WATCHLIST.stocks[0];
 		if (first === undefined) throw new Error("expected the fixture stock");
 		mount({
@@ -367,17 +372,26 @@ describe("EarningsCalendarWidget", () => {
 				},
 			],
 		});
-		expect(screen.queryByRole("table")).toBe(null);
+		expect(screen.queryByRole("heading", { name: "Next" })).toBe(null);
 		expect(screen.getByText("Earnings dates have not been fetched yet.")).toBeTruthy();
 		expect(screen.queryByText(/No announcement in the next/)).toBe(null);
 	});
 
 	it("says no announcement only when every stock was refreshed at least once", () => {
-		backend = createFakeBackend();
 		const first = WATCHLIST.stocks[0];
 		if (first === undefined) throw new Error("expected the fixture stock");
 		mount({ ...WATCHLIST, stocks: [{ ...first, events: [] }] });
-		expect(screen.queryByRole("table")).toBe(null);
+		expect(screen.queryByRole("heading", { name: "Next" })).toBe(null);
 		expect(screen.getByText("No announcement in the next 90 days.")).toBeTruthy();
+	});
+
+	it("keeps widget targets large enough to hit with confidence", () => {
+		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
+		const refresh = screen.getByRole("button", { name: "Refresh earnings dates" });
+		expect(refresh.className).toContain("pointer-coarse:min-h-11");
+		const open = screen.getByRole("link", { name: "Open calendar" });
+		expect(open.className).toContain("pointer-coarse:min-h-11");
+		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
+		expect(day.className).toContain("pointer-coarse:min-h-11");
 	});
 });

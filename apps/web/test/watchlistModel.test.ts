@@ -1,12 +1,17 @@
 import type { WatchlistResponse, WatchlistStock } from "@research/contracts";
 import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { formatInstant } from "../src/lib/format.ts";
 import {
 	EARNINGS_AUTO_REFRESH_NOTICE,
 	EARNINGS_AUTO_REFRESH_STALE_MS,
 	earningsAutoRefreshReason,
+	googleAutoSyncWanted,
+	googleFailureReason,
+	googleWidgetStatus,
 	hasNeverRefreshedStock,
 	hasUndecidedEvent,
+	isGoogleCalendarRunActive,
 	isNetworkFailure,
 	isWatchlistRefreshActive,
 	nextDatedEvent,
@@ -180,6 +185,40 @@ describe("refresh status", () => {
 		).toBe("active");
 	});
 
+	it("keeps polling while a google-calendar run is active, even with no earnings run", () => {
+		const base = {
+			stocks: [],
+			refresh: {
+				activeRunId: null,
+				activeRunState: null,
+				lastSucceededAt: null,
+				lastFailure: null,
+			},
+			feed: { enabled: false, createdAt: null },
+			googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+		};
+		const connecting = {
+			...base,
+			googleCalendar: {
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connecting" as const,
+				activeRunId: "run_google_1",
+				activeRunState: "pending" as const,
+				activeAction: "connect" as const,
+			},
+		};
+		expect(watchlistRefreshSignal(connecting)).toBe("queued");
+		expect(isGoogleCalendarRunActive(connecting)).toBe(true);
+		expect(isGoogleCalendarRunActive(base)).toBe(false);
+		expect(isGoogleCalendarRunActive(null)).toBe(false);
+		expect(isGoogleCalendarRunActive(undefined)).toBe(false);
+		const syncing = {
+			...connecting,
+			googleCalendar: { ...connecting.googleCalendar, activeRunState: "claimed" as const },
+		};
+		expect(watchlistRefreshSignal(syncing)).toBe("active");
+	});
+
 	it("tells success and failure apart like Home does", () => {
 		const text = watchlistStatusText({
 			stocks: [],
@@ -342,5 +381,141 @@ describe("earnings auto-refresh reason", () => {
 		expect(EARNINGS_AUTO_REFRESH_NOTICE.stale).toBe(
 			"Earnings dates were more than a day old, so one refresh was queued.",
 		);
+	});
+});
+
+describe("google auto-sync rule", () => {
+	function response(
+		overrides: Partial<WatchlistResponse["googleCalendar"]> = {},
+		refreshActive: string | null = null,
+	): WatchlistResponse {
+		return {
+			stocks: [stock()],
+			refresh: {
+				activeRunId: refreshActive,
+				activeRunState: refreshActive === null ? null : "pending",
+				lastSucceededAt: null,
+				lastFailure: null,
+			},
+			feed: { enabled: false, createdAt: null },
+			googleCalendar: {
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connected",
+				calendarId: "cal_1",
+				connectedAt: "2026-11-02T10:00:00Z",
+				inSync: false,
+				...overrides,
+			},
+		};
+	}
+
+	it("wants one sync when connected, out of sync, and nothing runs", () => {
+		expect(googleAutoSyncWanted(response(), '"etag-1"', null)).toBe(true);
+	});
+
+	it("wants nothing unless connected and out of sync", () => {
+		expect(
+			googleAutoSyncWanted(response({ status: "disconnected", inSync: null }), '"etag-1"', null),
+		).toBe(false);
+		expect(googleAutoSyncWanted(response({ status: "needs-reconnect" }), '"etag-1"', null)).toBe(
+			false,
+		);
+		expect(googleAutoSyncWanted(response({ inSync: true }), '"etag-1"', null)).toBe(false);
+		expect(googleAutoSyncWanted(response({ inSync: null }), '"etag-1"', null)).toBe(false);
+	});
+
+	it("wants nothing while a google or earnings run is active", () => {
+		expect(
+			googleAutoSyncWanted(
+				response({ activeRunId: "run_google_1", activeRunState: "claimed" }),
+				'"etag-1"',
+				null,
+			),
+		).toBe(false);
+		expect(googleAutoSyncWanted(response({}, "run_earnings_1"), '"etag-1"', null)).toBe(false);
+	});
+
+	it("stops after any recorded failure, whatever the ETag — a failed run can never queue the next", () => {
+		const failed = response({
+			lastFailure: {
+				code: "GOOGLE_RATE_LIMITED",
+				reason: "Google is limiting requests right now; try again later.",
+				at: "2026-11-02T11:00:00Z",
+			},
+		});
+		// Every failed run moves the ETag (a new `lastFailure`): replaying the
+		// rule over thirty such ETags queues nothing, with or without a
+		// recorded attempt.
+		let attempted: string | null = null;
+		let queued = 0;
+		for (let run = 0; run < 30; run += 1) {
+			const tag = `"etag-after-failure-${run}"`;
+			if (googleAutoSyncWanted(failed, tag, attempted)) {
+				queued += 1;
+				attempted = tag;
+			}
+		}
+		expect(queued).toBe(0);
+		expect(googleAutoSyncWanted(failed, '"fresh-mount"', null)).toBe(false);
+	});
+
+	it("attempts at most once per watchlist ETag: a recorded attempt never retries", () => {
+		expect(googleAutoSyncWanted(response(), '"etag-1"', '"etag-1"')).toBe(false);
+		// A changed watchlist (a new ETag) re-arms the rule once.
+		expect(googleAutoSyncWanted(response(), '"etag-2"', '"etag-1"')).toBe(true);
+	});
+});
+
+describe("google status text", () => {
+	it("states the widget fragment for every status", () => {
+		expect(googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE)).toBe(
+			"Google Calendar: not connected.",
+		);
+		expect(
+			googleWidgetStatus({ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "connecting" }),
+		).toBe("Google Calendar: connecting…");
+		expect(
+			googleWidgetStatus({ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "needs-reconnect" }),
+		).toBe("Google Calendar: reconnect needed.");
+		expect(
+			googleWidgetStatus({
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connected",
+				activeRunId: "run_google_1",
+				activeRunState: "claimed",
+			}),
+		).toBe("Google Calendar: syncing…");
+		expect(
+			googleWidgetStatus({
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connected",
+				lastSyncedAt: "2026-11-02T11:00:00Z",
+			}),
+		).toBe(`Google Calendar: synced ${formatInstant("2026-11-02T11:00:00Z")}.`);
+		expect(
+			googleWidgetStatus({
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connected",
+				activeRunId: "run_google_2",
+				activeRunState: "claimed",
+				activeAction: "disconnect",
+			}),
+		).toBe("Google Calendar: disconnecting…");
+		expect(
+			googleWidgetStatus({
+				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				status: "connected",
+			}),
+		).toBe("Google Calendar: connected, not synced yet.");
+	});
+
+	it("states the fixed reason sentence per code, generic for unknown codes", () => {
+		expect(googleFailureReason("GOOGLE_NOT_CONFIGURED")).toBe(
+			"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
+		);
+		expect(googleFailureReason("GOOGLE_AUTH_EXPIRED")).toBe(
+			"The Google connection expired; reconnect Google Calendar.",
+		);
+		expect(googleFailureReason("SOMETHING_ELSE")).toBe("The Google Calendar request failed.");
 	});
 });

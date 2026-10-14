@@ -11,6 +11,7 @@ import type {
 	EarningsTiming,
 	EarningsUnavailableCode,
 	Evidence,
+	GoogleCalendarRequest,
 	HomeDashboard,
 	JobKind,
 	JobState,
@@ -185,7 +186,13 @@ export interface JobRecord {
 	readonly ownerId: string;
 	readonly kind: JobKind;
 	readonly state: JobState;
-	readonly request: ResearchRequest | null;
+	/**
+	 * The stored request: a research request for research jobs, `{ action }`
+	 * for `google-calendar` jobs (FR-019 section 2.4), null for the refresh
+	 * kinds. Only research requests carry an `agentId` — narrow with
+	 * `"agentId" in request` before touching agent fields.
+	 */
+	readonly request: ResearchRequest | GoogleCalendarRequest | null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
 	readonly attempt: number;
@@ -466,6 +473,12 @@ export interface CompletionEffects {
 	} | null;
 	readonly marketSeries: readonly MarketCompletionSeries[];
 	readonly earnings: readonly EarningsCompletionStock[];
+	/**
+	 * Google Calendar link patch committed with the job (FR-019): null for
+	 * every other kind. Computed by the service from the current link row,
+	 * so the SQL stays a dumb guarded upsert.
+	 */
+	readonly google: GoogleCalendarLinkPatch | null;
 }
 
 export type CompletionCommitResult =
@@ -759,6 +772,73 @@ export interface CalendarFeedRepository {
 	findOwnerByTokenHash(tokenHash: string): Promise<string | null>;
 }
 
+/* ---------- Google Calendar sync link (FR-019 section 2.5) ---------- */
+
+export type GoogleCalendarLinkStatus =
+	| "disconnected"
+	| "connecting"
+	| "connected"
+	| "needs-reconnect";
+
+/**
+ * The owner's Google Calendar sync state. There is deliberately NO token
+ * field — ever: the refresh token lives only in the runner-side 0600 file.
+ * `pendingAuthUrl` is the sign-in URL (client id, redirect port, state and
+ * PKCE challenge only — none of them a credential), present only while
+ * connecting. Failure fields carry a stable `GOOGLE_*` code, never provider
+ * text.
+ */
+export interface GoogleCalendarLink {
+	readonly status: GoogleCalendarLinkStatus;
+	/** Status a connect run started from; restored when it fails or is cancelled. */
+	readonly connectFrom: GoogleCalendarLinkStatus | null;
+	readonly pendingAuthUrl: string | null;
+	readonly calendarId: string | null;
+	readonly connectedAt: string | null;
+	readonly lastSyncedAt: string | null;
+	readonly syncedDigest: string | null;
+	readonly lastSync: {
+		readonly inserted: number;
+		readonly updated: number;
+		readonly deleted: number;
+		readonly unchanged: number;
+	} | null;
+	readonly lastFailureCode: string | null;
+	readonly lastFailureAt: string | null;
+	readonly updatedAt: string;
+}
+
+/** Column patch for the link row; absent fields are left untouched. */
+export interface GoogleCalendarLinkPatch {
+	readonly status?: GoogleCalendarLinkStatus;
+	readonly connectFrom?: GoogleCalendarLinkStatus | null;
+	readonly pendingAuthUrl?: string | null;
+	readonly calendarId?: string | null;
+	readonly connectedAt?: string | null;
+	readonly lastSyncedAt?: string | null;
+	readonly syncedDigest?: string | null;
+	readonly lastSync?: GoogleCalendarLink["lastSync"];
+	readonly lastFailureCode?: string | null;
+	readonly lastFailureAt?: string | null;
+}
+
+export interface GoogleCalendarRepository {
+	/** The owner's link row, null when never connected (disconnected). */
+	get(ownerId: string): Promise<GoogleCalendarLink | null>;
+	/**
+	 * Starts a connect: upserts the row as `connecting`, remembering the
+	 * previous status and clearing any pending URL.
+	 */
+	setConnecting(
+		ownerId: string,
+		input: { readonly connectFrom: GoogleCalendarLinkStatus; readonly at: string },
+	): Promise<void>;
+	/** Stores the runner-reported sign-in URL (only while connecting). */
+	setPendingAuthUrl(ownerId: string, url: string, at: string): Promise<void>;
+	/** Applies a completion's patch (upsert; absent fields stay as they are). */
+	apply(ownerId: string, patch: GoogleCalendarLinkPatch, at: string): Promise<void>;
+}
+
 /* ---------- Market data source (section 4.1; Phase A wires "unconfigured" only) ---------- */
 
 export interface MarketSeriesMeta {
@@ -940,6 +1020,7 @@ export interface Persistence {
 	readonly watchlist: WatchlistRepository;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
+	readonly googleCalendar: GoogleCalendarRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;

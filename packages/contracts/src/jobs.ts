@@ -13,6 +13,7 @@ import {
 	googleCalendarActionSchema,
 	googleCalendarConnectedSchema,
 	googleCalendarDisconnectedSchema,
+	googleCalendarIdSchema,
 	googleCalendarSyncedSchema,
 	googleEventBodySchema,
 } from "./googleCalendar.ts";
@@ -456,7 +457,7 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			kind: z.literal("google-calendar"),
 			...leaseShape,
 			action: googleCalendarActionSchema,
-			calendarId: z.string().min(1).max(256).nullable().optional(),
+			calendarId: googleCalendarIdSchema.nullable().optional(),
 			desiredDigest: z
 				.string()
 				.regex(/^[0-9a-f]{64}$/, "desired digest must be sha256 hex")

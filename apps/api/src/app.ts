@@ -1041,6 +1041,28 @@ export function createApp(options: AppOptions = {}) {
 		),
 	);
 
+	/* Google Calendar sync (FR-019 section 2.5): each queues one
+	 * `google-calendar` step (at most one active per owner; a request while
+	 * one runs answers with that run). Like `/watchlist/refresh`: CSRF
+	 * through the middleware, idempotency through the key, no request body.
+	 * State is read through `GET /watchlist` (`googleCalendar` field).
+	 */
+	for (const action of ["connect", "sync", "disconnect"] as const) {
+		api.post(`/google-calendar/${action}`, (c) =>
+			respond(
+				c,
+				logger,
+				Effect.gen(function* () {
+					const key = yield* idempotencyKey(c);
+					const created = yield* useCase(`runs.create_google_calendar_${action}`, () =>
+						c.var.services.googleCalendar.queue(owner(c), action, key),
+					);
+					return c.json({ run: created.run }, 202);
+				}),
+			),
+		);
+	}
+
 	/* Token-authenticated calendar subscription feed (FR-018).
 	 *
 	 * OUTSIDE the owner session on purpose: calendar apps cannot send the

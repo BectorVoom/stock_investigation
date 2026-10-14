@@ -1,4 +1,5 @@
 import type { WatchlistStock } from "@research/contracts";
+import { GOOGLE_AUTH_URL_PREFIX } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
@@ -61,7 +62,34 @@ interface WatchServer {
 	runState: string;
 	lastSucceededAt: string | null;
 	feedCreatedAt: string | null;
+	google: {
+		status: "disconnected" | "connecting" | "connected" | "needs-reconnect";
+		authUrl: string | null;
+		calendarId: string | null;
+		connectedAt: string | null;
+		lastSyncedAt: string | null;
+		lastSync: { inserted: number; updated: number; deleted: number; unchanged: number } | null;
+		inSync: boolean | null;
+		activeRunId: string | null;
+		activeRunState: string | null;
+		activeAction: "connect" | "sync" | "disconnect" | null;
+		lastFailure: { code: string; reason: string; at: string } | null;
+	};
 }
+
+const DISCONNECTED_GOOGLE = (): WatchServer["google"] => ({
+	status: "disconnected",
+	authUrl: null,
+	calendarId: null,
+	connectedAt: null,
+	lastSyncedAt: null,
+	lastSync: null,
+	inSync: null,
+	activeRunId: null,
+	activeRunState: null,
+	activeAction: null,
+	lastFailure: null,
+});
 
 let backend: FakeBackend;
 let server: WatchServer;
@@ -77,23 +105,15 @@ function responseBody() {
 		},
 		feed: { enabled: server.feedCreatedAt !== null, createdAt: server.feedCreatedAt },
 		googleCalendar: {
-			status: "disconnected",
-			authUrl: null,
-			calendarId: null,
-			connectedAt: null,
-			lastSyncedAt: null,
-			lastSync: null,
-			inSync: null,
-			activeRunId: null,
-			activeRunState: null,
-			activeAction: null,
-			lastFailure: null,
+			...server.google,
+			activeRunState:
+				server.google.activeRunId === null ? null : (server.google.activeRunState ?? "pending"),
 		},
 	};
 }
 
 function etag() {
-	return `"w-${server.stocks.length}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}"`;
+	return `"w-${server.stocks.length}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
 }
 
 beforeEach(() => {
@@ -104,6 +124,7 @@ beforeEach(() => {
 		runState: "pending",
 		lastSucceededAt: FRESH_STAMP,
 		feedCreatedAt: null,
+		google: DISCONNECTED_GOOGLE(),
 	};
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
@@ -189,13 +210,56 @@ beforeEach(() => {
 		server.feedCreatedAt = null;
 		return new Response(null, { status: 204 });
 	});
+	backend.on(
+		"POST",
+		/^\/api\/v1\/google-calendar\/(connect|sync|disconnect)$/,
+		(_request, match) => {
+			const action = match[1] as "connect" | "sync" | "disconnect";
+			if (action !== "connect" && server.google.status !== "connected") {
+				return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
+			}
+			server.google = {
+				...server.google,
+				status: action === "connect" ? "connecting" : server.google.status,
+				activeRunId: `run_google_${action}`,
+				activeRunState: "pending",
+				activeAction: action,
+			};
+			return jsonResponse(
+				{
+					run: makeRun({
+						runId: `run_google_${action}`,
+						kind: "google-calendar",
+						state: "pending",
+					}),
+				},
+				{ status: 202 },
+			);
+		},
+	);
+	backend.on("POST", /^\/api\/v1\/research-runs\/.+\/cancel$/, () => {
+		server.google = {
+			...server.google,
+			activeRunId: null,
+			activeRunState: null,
+			activeAction: null,
+		};
+		return jsonResponse({ run: makeRun({ state: "cancelled" }) });
+	});
 });
 
 afterEach(cleanup);
 
-function mount() {
+function mount(
+	props: { readonly calendarDate?: string | null; readonly calendarLinked?: boolean } = {},
+) {
 	render(() => (
-		<WatchlistView api={createApiClient({ fetch: backend.fetch })} visibility={ALWAYS_VISIBLE} />
+		<WatchlistView
+			api={createApiClient({ fetch: backend.fetch })}
+			visibility={ALWAYS_VISIBLE}
+			calendarDate={props.calendarDate ?? null}
+			calendarLinked={props.calendarLinked ?? false}
+		/>
 	));
 }
 
@@ -249,7 +313,9 @@ describe("Watchlist view", () => {
 			}),
 		];
 		mount();
-		const table = await screen.findByRole("table");
+		const table = await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		const row = within(table).getByRole("row", { name: /7203/ });
 		expect(row.textContent).toContain("unavailable (not retrieved yet)");
 		expect(row.textContent).toContain("date undecided");
@@ -258,7 +324,9 @@ describe("Watchlist view", () => {
 
 	it("adds a stock through the form and lists problems the guideline way", async () => {
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		fireEvent.change(screen.getByLabelText("Market"), { target: { value: "JP" } });
 		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "720" } });
 		const problems = screen.getByRole("list", { name: "Before you can add this stock" });
@@ -271,7 +339,11 @@ describe("Watchlist view", () => {
 		expect(screen.queryByRole("list", { name: "Before you can add this stock" })).toBe(null);
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		await waitFor(() => {
-			expect(screen.getByRole("table").textContent).toContain("7203");
+			expect(
+				screen.getByRole("table", {
+					name: "Stocks you follow, with their next earnings announcement date",
+				}).textContent,
+			).toContain("7203");
 		});
 		// The add queues its own refresh: no click on "Refresh earnings dates".
 		expect(
@@ -286,20 +358,28 @@ describe("Watchlist view", () => {
 
 	it("removes a stock only after confirmation", async () => {
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Remove AAPL" }));
 		const dialog = await screen.findByRole("dialog");
 		expect(dialog.textContent).toContain("Remove AAPL?");
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove stock" }));
 		await waitFor(() => {
-			expect(screen.queryByRole("table")).toBe(null);
+			expect(
+				screen.queryByRole("table", {
+					name: "Stocks you follow, with their next earnings announcement date",
+				}),
+			).toBe(null);
 		});
 		expect(await screen.findByText("Removed AAPL.")).toBeTruthy();
 	});
 
 	it("queues an earnings-date refresh and shows the active run", async () => {
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
 		await waitFor(() => {
 			expect(screen.getByText(/run run_earnings_1/)).toBeTruthy();
@@ -313,7 +393,11 @@ describe("Watchlist view", () => {
 		server.stocks = [];
 		mount();
 		expect(await screen.findByText(/No stocks registered yet/)).toBeTruthy();
-		expect(screen.queryByRole("table")).toBe(null);
+		expect(
+			screen.queryByRole("table", {
+				name: "Stocks you follow, with their next earnings announcement date",
+			}),
+		).toBe(null);
 	});
 
 	it("shows the load error with Try again when the first read fails", async () => {
@@ -354,7 +438,9 @@ describe("Watchlist view", () => {
 			}),
 		];
 		mount();
-		const table = await screen.findByRole("table");
+		const table = await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		expect(row.textContent).toContain(
 			"unavailable (the stored dates have passed; refresh to update)",
@@ -367,7 +453,9 @@ describe("Watchlist view", () => {
 	it("shows the date but no calendar links when nothing was retrieved yet", async () => {
 		server.stocks = [makeStock({ retrievedAt: null, lastRefreshedAt: null })];
 		mount();
-		const table = await screen.findByRole("table");
+		const table = await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		const row = within(table).getByRole("row", { name: /AAPL/ });
 		// The stored date is still shown…
 		expect(row.textContent).toContain(UPCOMING_DATE);
@@ -390,7 +478,9 @@ describe("Watchlist view", () => {
 		const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 		try {
 			mount();
-			await screen.findByRole("table");
+			await screen.findByRole("table", {
+				name: "Stocks you follow, with their next earnings announcement date",
+			});
 			fireEvent.click(screen.getByRole("button", { name: "Download calendar file (.ics)" }));
 			await waitFor(() => {
 				expect(click).toHaveBeenCalled();
@@ -447,7 +537,9 @@ describe("Watchlist view", () => {
 			configurable: true,
 		});
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Create subscription link" }));
 		const field = (await screen.findByLabelText(
 			"Subscription link (shown once)",
@@ -483,7 +575,9 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		expect(
 			await screen.findByText(
 				"Earnings dates had not been fetched yet, so one refresh was queued.",
@@ -501,7 +595,9 @@ describe("Watchlist view", () => {
 		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
 		server.stocks = [makeStock({ lastRefreshedAt: stale, retrievedAt: stale })];
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		expect(
 			await screen.findByText(
 				"Earnings dates were more than a day old, so one refresh was queued.",
@@ -514,7 +610,9 @@ describe("Watchlist view", () => {
 
 	it("queues nothing on load when the dates are fresh", async () => {
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		await new Promise((resolve) => setTimeout(resolve, 500));
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(0);
 	});
@@ -526,7 +624,9 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("The earnings-date refresh was not queued.");
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -535,7 +635,9 @@ describe("Watchlist view", () => {
 
 	it("queues exactly one follow-up when a stock is added mid-run and stays unfetched", async () => {
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		// One manual refresh starts the run…
 		fireEvent.click(screen.getByRole("button", { name: "Refresh earnings dates" }));
 		await waitFor(() => {
@@ -588,7 +690,9 @@ describe("Watchlist view", () => {
 		server.activeRunId = "run_earnings_0";
 		server.runState = "pending";
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
 		fireEvent.click(screen.getByRole("button", { name: "Add stock" }));
 		expect(
@@ -617,7 +721,9 @@ describe("Watchlist view", () => {
 		server.stocks = [makeStock({ lastRefreshedAt: null, retrievedAt: null })];
 		server.lastSucceededAt = null;
 		mount();
-		await screen.findByRole("table");
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
 		await screen.findByText(/so one refresh was queued/);
 		server.activeRunId = null;
 		server.lastSucceededAt = FRESH_STAMP;
@@ -633,4 +739,125 @@ describe("Watchlist view", () => {
 		);
 		expect(screen.getByText(/Last successful refresh:/)).toBeTruthy();
 	}, 60_000);
+
+	it("shows the month calendar and selects a day with its details and links", async () => {
+		mount();
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		const calendar = await screen.findByRole("table", { name: /earnings announcements/ });
+		expect(calendar.textContent).toContain("earnings announcements");
+		const day = within(calendar).getByRole("button", { name: /1 announcement, AAPL/ });
+		fireEvent.click(day);
+		expect(day.getAttribute("aria-pressed")).toBe("true");
+		const panel = await screen.findByRole("region", { name: /Announcements on/ });
+		expect(panel.textContent).toContain("Apple Inc");
+		expect(panel.textContent).toContain("Q4 2026");
+		expect(
+			within(panel).getByRole("link", { name: "Add to Google Calendar" }).getAttribute("href"),
+		).toContain("calendar.google.com");
+	});
+
+	it("opens on the deep-linked day with its details", async () => {
+		mount({ calendarDate: UPCOMING_DATE, calendarLinked: true });
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		const panel = await screen.findByRole("region", { name: /Announcements on/ });
+		expect(panel.textContent).toContain("AAPL");
+	});
+
+	it("queues a Google Calendar connect and shows the preparing state", async () => {
+		mount();
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Connect Google Calendar" }));
+		await waitFor(() => {
+			expect(backend.requestsTo("POST", /google-calendar\/connect$/)).toHaveLength(1);
+		});
+		expect(await screen.findByText(/Preparing Google sign-in…/)).toBeTruthy();
+	});
+
+	it("shows the sign-in link while connecting with a URL", async () => {
+		const authUrl = `${GOOGLE_AUTH_URL_PREFIX}response_type=code&client_id=e2e`;
+		server.google = {
+			...DISCONNECTED_GOOGLE(),
+			status: "connecting",
+			authUrl,
+			activeRunId: "run_google_connect",
+			activeRunState: "claimed",
+			activeAction: "connect",
+		};
+		mount();
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		const link = await screen.findByRole("link", { name: "Open Google sign-in" });
+		expect(link.getAttribute("href")).toBe(authUrl);
+		expect(await screen.findByText(/Waiting for you to finish in Google/)).toBeTruthy();
+	});
+
+	it("states needs-reconnect with the fixed failure sentence", async () => {
+		server.google = {
+			...DISCONNECTED_GOOGLE(),
+			status: "needs-reconnect",
+			lastFailure: {
+				code: "GOOGLE_AUTH_EXPIRED",
+				reason: "The Google connection expired; reconnect Google Calendar.",
+				at: FRESH_STAMP,
+			},
+		};
+		mount();
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		expect(await screen.findByRole("button", { name: "Reconnect Google Calendar" })).toBeTruthy();
+		expect((await screen.findAllByText(/The Google connection expired/)).length).toBeGreaterThan(0);
+	});
+
+	it("queues one automatic sync when connected and out of sync, and never loops after a failed run", async () => {
+		server.google = {
+			...DISCONNECTED_GOOGLE(),
+			status: "connected",
+			calendarId: "cal_1",
+			connectedAt: FRESH_STAMP,
+			inSync: false,
+		};
+		mount();
+		await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		await waitFor(
+			() => {
+				expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
+			},
+			{ timeout: 30_000 },
+		);
+		// The queued run is active: the card says syncing.
+		expect(await screen.findByText(/Syncing…/)).toBeTruthy();
+		// The run fails server-side: the active run clears and the failure moves the ETag.
+		server.google = {
+			...server.google,
+			activeRunId: null,
+			activeRunState: null,
+			activeAction: null,
+			lastFailure: {
+				code: "GOOGLE_REQUEST_FAILED",
+				reason: "The Google Calendar request failed.",
+				at: FRESH_STAMP,
+			},
+		};
+		await waitFor(
+			() => {
+				expect(screen.queryByText(/Syncing…/)).toBe(null);
+			},
+			{ timeout: 30_000 },
+		);
+		// No second sync is queued even though the ETag moved: no loops.
+		await new Promise((resolve) => setTimeout(resolve, 3000));
+		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("The Google Calendar request failed.");
+	}, 90_000);
 });
