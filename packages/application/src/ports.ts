@@ -752,6 +752,15 @@ export interface NotebookRepository {
 	getRevision(ownerId: string, workspaceId: string, version: number): Promise<Notebook | null>;
 	/** The latest assistant turns, oldest first, at most `limit`. */
 	listTurns(ownerId: string, workspaceId: string, limit: number): Promise<readonly NotebookTurn[]>;
+	/**
+	 * Distinct market series ids named by the owner's notebooks' market
+	 * widgets (all conversations), read from the stored notebook bodies in
+	 * one set-based statement (no N+1), sorted, invalid ids dropped
+	 * (ADR-0021: stored data is parsed at the boundary). Unreadable bodies
+	 * are skipped, never fatal: the refresh keeps working while the single
+	 * notebook read still reports them.
+	 */
+	listMarketSeriesIds(ownerId: string): Promise<readonly string[]>;
 }
 
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */

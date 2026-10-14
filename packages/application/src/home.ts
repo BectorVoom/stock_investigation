@@ -5,12 +5,16 @@ import {
 	type HomeDataResponse,
 	homeDashboardSchema,
 	MARKET_LIMITS,
-	marketUnavailable,
-	parseMarketSeriesId,
 } from "@research/contracts";
 import { distinctDashboardSeriesIds, err, ok } from "@research/domain";
 import { fail, type UseCaseError, type UseCaseResult } from "./errors.ts";
 import { MARKET_CATALOG } from "./marketCatalog.ts";
+import {
+	assembleMarketSeries,
+	fetchMarketRefreshStatus,
+	type MarketSeriesStamp,
+	seriesStampsFor,
+} from "./marketData.ts";
 import type {
 	AuditLog,
 	Clock,
@@ -18,12 +22,15 @@ import type {
 	HomeDashboardRepository,
 	JobRepository,
 	MarketRepository,
+	NotebookRepository,
 } from "./ports.ts";
 
 export interface HomeServiceDeps {
 	readonly dashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
 	readonly jobs: JobRepository;
+	/** The notebooks' series a Home save must keep (ADR-0021). */
+	readonly notebooks: NotebookRepository;
 	readonly clock: Clock;
 	readonly audit: AuditLog;
 }
@@ -43,12 +50,7 @@ export interface HomeDataDigest {
 	readonly activeRunState: string | null;
 	readonly lastSucceededAt: string | null;
 	readonly lastFailure: HomeDataResponse["refresh"]["lastFailure"];
-	readonly seriesStamps: readonly {
-		readonly seriesId: string;
-		readonly lastRefreshedAt: string | null;
-		readonly retrievedAt: string | null;
-		readonly unavailableCode: string | null;
-	}[];
+	readonly seriesStamps: readonly MarketSeriesStamp[];
 }
 
 /**
@@ -85,6 +87,16 @@ export function createHomeService(deps: HomeServiceDeps) {
 		return ok(stored);
 	}
 
+	/**
+	 * Series a Home save must keep: the dashboard's series plus every series
+	 * a notebook still names (ADR-0021). Only series named by neither are
+	 * deleted with the save.
+	 */
+	async function keepSeriesIds(ownerId: string, dashboard: HomeDashboard): Promise<string[]> {
+		const notebookIds = await deps.notebooks.listMarketSeriesIds(ownerId);
+		return [...new Set([...distinctDashboardSeriesIds(dashboard.widgets), ...notebookIds])];
+	}
+
 	return {
 		async getDashboard(ownerId: string): Promise<UseCaseResult<HomeDashboardResponse>> {
 			const stored = await readableRecord(ownerId);
@@ -115,9 +127,10 @@ export function createHomeService(deps: HomeServiceDeps) {
 			if (result === "version-conflict") {
 				return fail("VERSION_CONFLICT", "The dashboard changed; reload and try again.");
 			}
-			// S4b: series (and their observations) that the new dashboard no
-			// longer references are deleted in the same save, set-based.
-			await deps.market.deleteSeriesNotIn(ownerId, distinctDashboardSeriesIds(dashboard.widgets));
+			// S4b: series (and their observations) that neither the new
+			// dashboard nor any notebook still references are deleted in the
+			// same save, set-based.
+			await deps.market.deleteSeriesNotIn(ownerId, await keepSeriesIds(ownerId, dashboard));
 			await deps.audit.record({
 				ownerId,
 				actor: "owner",
@@ -149,10 +162,7 @@ export function createHomeService(deps: HomeServiceDeps) {
 				widgets: [...DEFAULT_HOME_DASHBOARD.widgets],
 			};
 			const stored = await deps.dashboard.reset(ownerId, dashboard, now);
-			await deps.market.deleteSeriesNotIn(
-				ownerId,
-				distinctDashboardSeriesIds(stored.dashboard.widgets),
-			);
+			await deps.market.deleteSeriesNotIn(ownerId, await keepSeriesIds(ownerId, stored.dashboard));
 			await deps.audit.record({
 				ownerId,
 				actor: "owner",
@@ -179,36 +189,18 @@ export function createHomeService(deps: HomeServiceDeps) {
 			if (!stored.ok) return stored;
 			const dashboard = stored.value?.dashboard ?? DEFAULT_HOME_DASHBOARD;
 			const ids = distinctDashboardSeriesIds(dashboard.widgets).slice(0, MARKET_LIMITS.maxSeries);
-			const [active, lastSucceededAt, lastFailureRow, metas] = await Promise.all([
-				deps.jobs.findActiveByKind(ownerId, "market-refresh"),
-				deps.jobs.findLatestSuccessAtByKind(ownerId, "market-refresh"),
-				deps.jobs.findLatestFailureByKind(ownerId, "market-refresh"),
+			const [status, metas] = await Promise.all([
+				fetchMarketRefreshStatus(deps.jobs, ownerId),
 				deps.market.getSeriesMeta(ownerId, ids),
 			]);
-			const metaById = new Map(metas.map((meta) => [meta.seriesId, meta]));
 			return ok({
 				dashboardVersion: stored.value?.version ?? 0,
 				seriesIds: ids,
-				activeRunId: active?.runId ?? null,
-				activeRunState: active?.state ?? null,
-				lastSucceededAt,
-				lastFailure:
-					lastFailureRow === null || lastFailureRow.failureCode === null
-						? null
-						: {
-								state: lastFailureRow.state,
-								code: lastFailureRow.failureCode,
-								at: lastFailureRow.at,
-							},
-				seriesStamps: ids.map((seriesId) => {
-					const meta = metaById.get(seriesId);
-					return {
-						seriesId,
-						lastRefreshedAt: meta?.lastRefreshedAt ?? null,
-						retrievedAt: meta?.retrievedAt ?? null,
-						unavailableCode: meta?.unavailableCode ?? null,
-					};
-				}),
+				activeRunId: status.activeRunId,
+				activeRunState: status.activeRunState,
+				lastSucceededAt: status.lastSucceededAt,
+				lastFailure: status.lastFailure,
+				seriesStamps: seriesStampsFor(ids, metas),
 			});
 		},
 
@@ -237,76 +229,8 @@ export function createHomeService(deps: HomeServiceDeps) {
 					MARKET_LIMITS.maxObservationsPerResponse,
 				),
 			]);
-			const metaById = new Map(metas.map((meta) => [meta.seriesId, meta]));
-			const obsById = new Map<string, { observedOn: string; value: number }[]>();
-			for (const obs of observations) {
-				const list = obsById.get(obs.seriesId) ?? [];
-				list.push({ observedOn: obs.observedOn, value: obs.value });
-				obsById.set(obs.seriesId, list);
-			}
-			const catalogLabel = new Map(MARKET_CATALOG.map((entry) => [entry.seriesId, entry.label]));
-			const series = header.seriesIds.map((seriesId) => {
-				const meta = metaById.get(seriesId);
-				// Already ascending and bounded by the repository: map to the
-				// tuple wire format without re-sorting.
-				const obs = (obsById.get(seriesId) ?? []).map((point): [string, number] => [
-					point.observedOn,
-					point.value,
-				]);
-				if (meta === undefined) {
-					// Fail closed: a stored series id that does not parse is a
-					// storage fault, never silently served as another provider.
-					const parsed = parseMarketSeriesId(seriesId);
-					if (parsed === null) {
-						throw new Error(`stored market series id failed validation: ${seriesId}`);
-					}
-					const { provider, symbol } = parsed;
-					return {
-						seriesId,
-						provider,
-						symbol,
-						title: catalogLabel.get(seriesId) ?? symbol,
-						unit: "",
-						frequency: "unknown" as const,
-						publisher: "",
-						sourceUrl:
-							provider === "fred"
-								? (`https://fred.stlouisfed.org/series/${symbol}` as string)
-								: ("https://twelvedata.com/" as string),
-						lastRefreshedAt: null,
-						retrievedAt: null,
-						unavailable: marketUnavailable("NEVER_REFRESHED"),
-						observations: obs,
-					};
-				}
-				// The stored placeholder of a series with no provider metadata
-				// (never refreshed, or only failed so far) carries its symbol
-				// as the title — not provider metadata. Show the catalog label
-				// when there is one, else the symbol. A series that succeeded
-				// at least once always has retrievedAt set, so a null
-				// retrievedAt marks exactly the no-metadata rows.
-				const title =
-					meta.retrievedAt === null ? (catalogLabel.get(seriesId) ?? meta.symbol) : meta.title;
-				return {
-					seriesId: meta.seriesId,
-					provider: meta.provider,
-					symbol: meta.symbol,
-					title,
-					unit: meta.unit,
-					frequency: meta.frequency,
-					publisher: meta.publisher,
-					sourceUrl: meta.sourceUrl,
-					lastRefreshedAt: meta.lastRefreshedAt,
-					retrievedAt: meta.retrievedAt,
-					unavailable:
-						meta.unavailableCode === null
-							? null
-							: marketUnavailable(meta.unavailableCode, meta.provider),
-					observations: obs,
-				};
-			});
 			return ok({
-				series,
+				series: assembleMarketSeries(header.seriesIds, metas, observations),
 				refresh: {
 					activeRunId: header.activeRunId,
 					activeRunState: header.activeRunState,

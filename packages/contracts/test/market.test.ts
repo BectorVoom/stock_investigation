@@ -308,7 +308,19 @@ describe("market-refresh jobs", () => {
 			attempt: 1,
 			heartbeatIntervalMs: 20_000,
 			sources: [],
-			series: repeat({ seriesId: "fred:VIXCLS", latestObservedOn: null }, 31),
+			// ADR-0021: the claim carries the dashboard union notebooks'
+			// series, at most maxTrackedSeries (60).
+			series: repeat({ seriesId: "fred:VIXCLS", latestObservedOn: null }, 61),
+		});
+		expectAccepted(claimedJobSchema, {
+			kind: "market-refresh",
+			runId: "run_1",
+			leaseGeneration: 1,
+			leaseExpiresAt: "2026-10-11T00:01:30.000Z",
+			attempt: 1,
+			heartbeatIntervalMs: 20_000,
+			sources: [],
+			series: repeat({ seriesId: "fred:VIXCLS", latestObservedOn: null }, 60),
 		});
 	});
 
@@ -399,6 +411,22 @@ describe("market-refresh jobs", () => {
 					errorCode: null,
 				},
 			],
+		});
+		// More than 60 series in one completion is rejected (ADR-0021).
+		const failedSeries = {
+			seriesId: "fred:VIXCLS",
+			fetchedAt: "2026-10-11T00:00:00.000Z",
+			meta: null,
+			observations: [],
+			errorCode: "SOURCE_NOT_CONFIGURED",
+		} as const;
+		expectRejected(completeJobRequestSchema, {
+			...base,
+			series: repeat(failedSeries, 61),
+		});
+		expectAccepted(completeJobRequestSchema, {
+			...base,
+			series: repeat(failedSeries, 60),
 		});
 	});
 });
