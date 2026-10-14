@@ -193,14 +193,21 @@ export function ChatView(props: {
 
 	// One grid whose column template changes with the state: Chat-first is
 	// Chat ≈ 75–80 % / Notebook ≈ 20–25 % of the space right of the Chats
-	// panel (`3fr`/`1fr`), Notebook-first the reverse. The transition is
-	// disabled under `prefers-reduced-motion`.
+	// panel (`3fr`/`1fr`), Notebook-first the reverse. Every template is a
+	// complete literal: Tailwind generates grid rules from the class names it
+	// finds in source, so an interpolated template would style nothing. The
+	// transition is disabled under `prefers-reduced-motion`.
 	const gridColumns = () => {
-		const chats = chatsCollapsed() ? "3rem" : "minmax(14rem,18rem)";
-		const secondary = secondaryCollapsed() ? "3rem" : "minmax(0,1fr)";
-		const dominant = "minmax(0,3fr)";
-		const pair = mode() === "chat" ? `${dominant}_${secondary}` : `${secondary}_${dominant}`;
-		return `lg:grid-cols-[${chats}_${pair}]`;
+		if (mode() === "chat") {
+			if (chatsCollapsed() && secondaryCollapsed()) return "lg:grid-cols-[3rem_minmax(0,3fr)_3rem]";
+			if (chatsCollapsed()) return "lg:grid-cols-[3rem_minmax(0,3fr)_minmax(0,1fr)]";
+			if (secondaryCollapsed()) return "lg:grid-cols-[minmax(14rem,18rem)_minmax(0,3fr)_3rem]";
+			return "lg:grid-cols-[minmax(14rem,18rem)_minmax(0,3fr)_minmax(0,1fr)]";
+		}
+		if (chatsCollapsed() && secondaryCollapsed()) return "lg:grid-cols-[3rem_3rem_minmax(0,3fr)]";
+		if (chatsCollapsed()) return "lg:grid-cols-[3rem_minmax(0,1fr)_minmax(0,3fr)]";
+		if (secondaryCollapsed()) return "lg:grid-cols-[minmax(14rem,18rem)_3rem_minmax(0,3fr)]";
+		return "lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_minmax(0,3fr)]";
 	};
 
 	const onMobileTabKeyDown = (event: KeyboardEvent) => {

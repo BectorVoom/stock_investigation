@@ -4,10 +4,10 @@ import type {
 	NotebookWidgetCore,
 	NotebookWidgetOrigin,
 } from "@research/contracts";
+import type { WorkspaceComponent } from "@research/ui-registry";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { groupThreadComponents } from "../../src/chat/ThreadPreviews.tsx";
-import type { WorkspaceComponent } from "@research/ui-registry";
 import {
 	initialServerState,
 	installWorkspaceRoutes,
@@ -16,7 +16,7 @@ import {
 } from "../appHarness.tsx";
 import { createFakeBackend, type FakeBackend } from "../fakeBackend.ts";
 import { CONVERSATION, WORKSPACE_ID, WORKSPACE_VIEW } from "../fixtures.ts";
-import { makeNotebookResponse, makeNotebookTurn, makeNotebookWidget } from "./notebookFixtures.ts";
+import { makeNotebookTurn, makeNotebookWidget } from "./notebookFixtures.ts";
 
 const notebookControl = vi.hoisted(() => ({
 	seedWidgets: [] as NotebookWidget[],
@@ -29,22 +29,21 @@ const notebookControl = vi.hoisted(() => ({
 
 vi.mock("../../src/notebook/notebookSession.ts", async () => {
 	const { createSignal } = await import("solid-js");
-	const contracts = await import("@research/contracts");
-	const { makeNotebookResponse } = await import("./notebookFixtures.ts");
-	type NotebookResponse = contracts.NotebookResponse;
-	type NotebookWidget = contracts.NotebookWidget;
-	type NotebookWidgetCore = contracts.NotebookWidgetCore;
-	type NotebookWidgetOrigin = contracts.NotebookWidgetOrigin;
-	type NotebookTurn = contracts.NotebookTurn;
+	const contractsModule = await import("@research/contracts");
+	const { makeNotebookResponse: seedNotebook } = await import("./notebookFixtures.ts");
+	type SeededResponse = import("@research/contracts").NotebookResponse;
+	type SeededWidget = import("@research/contracts").NotebookWidget;
+	type SeededCore = import("@research/contracts").NotebookWidgetCore;
+	type SeededOrigin = import("@research/contracts").NotebookWidgetOrigin;
 	return {
 		createNotebookSession: () => {
 			notebookControl.created += 1;
-			const seed: NotebookResponse = makeNotebookResponse({
+			const seed: SeededResponse = seedNotebook({
 				notebook: { widgets: [...notebookControl.seedWidgets] },
 				version: notebookControl.seedVersion,
 				turns: [...notebookControl.seedTurns],
 			});
-			const [state, setState] = createSignal<NotebookResponse>(seed);
+			const [state, setState] = createSignal<SeededResponse>(seed);
 			const [selection, setSelection] = createSignal<readonly string[]>([]);
 			return {
 				state,
@@ -68,9 +67,9 @@ vi.mock("../../src/notebook/notebookSession.ts", async () => {
 					notebookControl.reloadCalls += 1;
 				},
 				edit: async () => false,
-				addWidget: async (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => {
+				addWidget: async (core: SeededCore, origin: SeededOrigin) => {
 					notebookControl.addCalls.push({ core, origin });
-					const widget: NotebookWidget = contracts.notebookWidgetSchema.parse({
+					const widget: SeededWidget = contractsModule.notebookWidgetSchema.parse({
 						...core,
 						createdAt: "2026-10-07T00:00:00Z",
 						updatedAt: "2026-10-07T00:00:00Z",
@@ -126,7 +125,12 @@ afterEach(() => {
 });
 
 function component(id: string): WorkspaceComponent {
-	return { componentId: id, componentType: "data-table", schemaVersion: 1, props: {} } as WorkspaceComponent;
+	return {
+		componentId: id,
+		componentType: "data-table",
+		schemaVersion: 1,
+		props: {},
+	} as WorkspaceComponent;
 }
 
 describe("groupThreadComponents", () => {
@@ -174,9 +178,9 @@ describe("thread previews (integration)", () => {
 		expect(screen.getByRole("article", { name: "Component news_1" })).toBeDefined();
 		expect(screen.getByRole("table", { name: "Grid storage demand by year" })).toBeDefined();
 		// Every preview offers one save into the Notebook.
-		expect(screen.getAllByRole("button", { name: "Add to Notebook" }).length).toBeGreaterThanOrEqual(
-			4,
-		);
+		expect(
+			screen.getAllByRole("button", { name: "Add to Notebook" }).length,
+		).toBeGreaterThanOrEqual(4);
 	});
 
 	it("renders owned components after their assistant answer, not under Other results", async () => {
@@ -220,9 +224,7 @@ describe("thread previews (integration)", () => {
 		// An owned preview carries the producing run and answer in its origin…
 		const owned = document.querySelector('[data-preview-component="run_1_extra"]');
 		expect(owned).not.toBeNull();
-		fireEvent.click(
-			within(owned as HTMLElement).getByRole("button", { name: "Add to Notebook" }),
-		);
+		fireEvent.click(within(owned as HTMLElement).getByRole("button", { name: "Add to Notebook" }));
 		await waitFor(() => expect(notebookControl.addCalls).toHaveLength(1));
 		const call = notebookControl.addCalls[0];
 		expect(call?.origin).toEqual({
@@ -235,9 +237,7 @@ describe("thread previews (integration)", () => {
 		expect(typeof call?.core.widgetId).toBe("string");
 		// …while an orphan (no visible run owns it) carries no run or message.
 		const orphan = document.querySelector('[data-preview-component="table_1"]');
-		fireEvent.click(
-			within(orphan as HTMLElement).getByRole("button", { name: "Add to Notebook" }),
-		);
+		fireEvent.click(within(orphan as HTMLElement).getByRole("button", { name: "Add to Notebook" }));
 		await waitFor(() => expect(notebookControl.addCalls).toHaveLength(2));
 		expect(notebookControl.addCalls[1]?.origin).toEqual({
 			kind: "chat",
@@ -275,9 +275,7 @@ describe("thread previews (integration)", () => {
 		mountApp(backend);
 		const conversation = await threadReady();
 		const reply = within(conversation).getByRole("article", { name: "Assistant message" });
-		fireEvent.click(
-			within(reply).getByRole("button", { name: "Add to Notebook" }),
-		);
+		fireEvent.click(within(reply).getByRole("button", { name: "Add to Notebook" }));
 		await waitFor(() => expect(notebookControl.addCalls).toHaveLength(1));
 		expect(notebookControl.addCalls[0]?.origin).toEqual({
 			kind: "chat",

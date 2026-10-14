@@ -1,25 +1,36 @@
-import type { NotebookAssistResponse } from "@research/contracts";
+import type {
+	AgentSettingsResponse,
+	AgentsResponse,
+	NotebookAssistResponse,
+} from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiResult } from "../../src/api/http.ts";
 import {
 	Composer,
+	type ComposerTarget,
 	notebookFailureLink,
 	notebookFailureText,
-	type ComposerTarget,
 } from "../../src/chat/Composer.tsx";
 import type { Remote } from "../../src/lib/remote.ts";
-import type { AgentSettingsResponse, AgentsResponse } from "@research/contracts";
 import {
 	initialServerState,
 	installWorkspaceRoutes,
 	mountApp,
 	type ServerState,
 } from "../appHarness.tsx";
-import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "../fakeBackend.ts";
+import {
+	createFakeBackend,
+	errorResponse,
+	type FakeBackend,
+	jsonResponse,
+} from "../fakeBackend.ts";
 import { AGENT_SETTINGS_RESPONSE, AGENTS, WORKSPACE_ID } from "../fixtures.ts";
-import { makeNotebookAssistRun, makeNotebookWidget } from "./notebookFixtures.ts";
-import { makeNotebookResponse } from "./notebookFixtures.ts";
+import {
+	makeNotebookAssistRun,
+	makeNotebookResponse,
+	makeNotebookWidget,
+} from "./notebookFixtures.ts";
 
 let backend: FakeBackend;
 let server: ServerState;
@@ -77,9 +88,7 @@ describe("composer target (integration)", () => {
 		expect(within(notebook).queryByText(/Options:/)).toBeNull();
 		expect(within(notebook).queryByText(/Change in Settings/)).toBeNull();
 		expect(within(notebook).getByText("About the whole notebook")).toBeDefined();
-		expect(
-			within(notebook).getByRole("button", { name: "Send instruction" }),
-		).toBeDefined();
+		expect(within(notebook).getByRole("button", { name: "Send instruction" })).toBeDefined();
 	});
 
 	it("defaults to Notebook in Notebook-first and keeps the draft across the switch", async () => {
@@ -120,9 +129,7 @@ describe("composer target (integration)", () => {
 			target: { value: "make it larger" },
 		});
 		fireEvent.click(within(notebook).getByRole("button", { name: "Send instruction" }));
-		await waitFor(() =>
-			expect(backend.requestsTo("POST", /notebook\/assist$/)).toHaveLength(1),
-		);
+		await waitFor(() => expect(backend.requestsTo("POST", /notebook\/assist$/)).toHaveLength(1));
 		const sent = backend.requestsTo("POST", /notebook\/assist$/)[0];
 		expect(sent?.body).toEqual({
 			instruction: "make it larger",
@@ -133,9 +140,9 @@ describe("composer target (integration)", () => {
 		await within(notebook).findByText(/starts when a runner claims it/);
 		// The sent instruction clears; the composer stays on the Notebook target.
 		await waitFor(() =>
-			expect(
-				(within(notebook).getByLabelText("Instruction") as HTMLTextAreaElement).value,
-			).toBe(""),
+			expect((within(notebook).getByLabelText("Instruction") as HTMLTextAreaElement).value).toBe(
+				"",
+			),
 		);
 	});
 

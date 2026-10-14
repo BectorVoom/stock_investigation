@@ -9,7 +9,11 @@ import {
 } from "../appHarness.tsx";
 import { createFakeBackend, type FakeBackend, jsonResponse } from "../fakeBackend.ts";
 import { CONVERSATION, WORKSPACE_ID } from "../fixtures.ts";
-import { makeNotebookAssistRun, makeNotebookResponse, makeNotebookTurn } from "./notebookFixtures.ts";
+import {
+	makeNotebookAssistRun,
+	makeNotebookResponse,
+	makeNotebookTurn,
+} from "./notebookFixtures.ts";
 
 let backend: FakeBackend;
 let server: ServerState;
@@ -29,9 +33,7 @@ afterEach(() => {
 });
 
 describe("NotebookTurnCard (unit)", () => {
-	function mountCard(
-		props: Partial<Parameters<typeof NotebookTurnCard>[0]> = {},
-	) {
+	function mountCard(props: Partial<Parameters<typeof NotebookTurnCard>[0]> = {}) {
 		const onUndo = vi.fn();
 		const onRemove = vi.fn();
 		const onKeep = vi.fn();
@@ -140,18 +142,14 @@ describe("NotebookTurnCard (unit)", () => {
 		cleanup();
 
 		mountCard({ notebookVersion: 5 });
-		expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(
-			true,
-		);
+		expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(true);
 		cleanup();
 
 		mountCard({
 			turn: makeNotebookTurn({ appliedVersion: null, changes: [] }),
 			notebookVersion: 2,
 		});
-		expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(
-			true,
-		);
+		expect((screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(true);
 	});
 
 	it("confirms proposed removals with Remove / Keep, hiding kept ones", () => {
@@ -232,7 +230,9 @@ describe("notebook-assist runs in the thread (integration)", () => {
 		// The finished run mounts no card; the turn card speaks for it.
 		expect(screen.queryByRole("article", { name: "Run run_assist_1" })).toBeNull();
 		expect(screen.queryByRole("article", { name: "Run run_assist_1", hidden: true })).toBeNull();
-		const card = await screen.findByRole("article", { name: "Notebook changes for run run_assist_1" });
+		const card = await screen.findByRole("article", {
+			name: "Notebook changes for run run_assist_1",
+		});
 		expect(card.textContent).toContain("Resized “Revenue”");
 		expect((within(card).getByRole("button", { name: "Undo" }) as HTMLButtonElement).disabled).toBe(
 			false,

@@ -87,18 +87,14 @@ describe("two-state workspace layout", () => {
 			mountApp(backend);
 			await workspaceReady();
 			fireEvent.click(screen.getAllByRole("button", { name: "Focus Notebook" })[0] as HTMLElement);
-			await waitFor(() =>
-				expect(gridTemplate()).toContain("minmax(0,1fr)_minmax(0,3fr)"),
-			);
+			await waitFor(() => expect(gridTemplate()).toContain("minmax(0,1fr)_minmax(0,3fr)"));
 			expect(window.localStorage.getItem(`research.workspace-mode.${WORKSPACE_ID}`)).toBe(
 				"notebook",
 			);
 			const chat = document.querySelector('section[data-panel="chat"]');
 			expect(chat?.className).toContain("hidden");
 			fireEvent.click(screen.getAllByRole("button", { name: "Focus Chat" })[0] as HTMLElement);
-			await waitFor(() =>
-				expect(gridTemplate()).toContain("minmax(0,3fr)_minmax(0,1fr)"),
-			);
+			await waitFor(() => expect(gridTemplate()).toContain("minmax(0,3fr)_minmax(0,1fr)"));
 			expect(window.localStorage.getItem(`research.workspace-mode.${WORKSPACE_ID}`)).toBe("chat");
 		} finally {
 			restore();
@@ -279,9 +275,9 @@ describe("two-tab switcher below lg", () => {
 			mountApp(backend);
 			await screen.findByRole("region", { name: "Notebook" });
 			const tablist = await screen.findByRole("tablist", { name: "Chat or Notebook" });
-			expect(within(tablist).getByRole("tab", { name: "Notebook" }).getAttribute("aria-selected")).toBe(
-				"true",
-			);
+			expect(
+				within(tablist).getByRole("tab", { name: "Notebook" }).getAttribute("aria-selected"),
+			).toBe("true");
 		} finally {
 			restore();
 		}

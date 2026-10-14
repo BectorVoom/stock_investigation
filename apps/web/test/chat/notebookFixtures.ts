@@ -1,9 +1,9 @@
 import {
 	type NotebookResponse,
-	notebookResponseSchema,
 	type NotebookTurn,
-	notebookTurnSchema,
 	type NotebookWidget,
+	notebookResponseSchema,
+	notebookTurnSchema,
 	notebookWidgetSchema,
 	type ResearchRun,
 } from "@research/contracts";
@@ -47,9 +47,7 @@ export function makeNotebookTurn(overrides: Partial<NotebookTurn> = {}): Noteboo
 	});
 }
 
-export function makeNotebookResponse(
-	overrides: Partial<NotebookResponse> = {},
-): NotebookResponse {
+export function makeNotebookResponse(overrides: Partial<NotebookResponse> = {}): NotebookResponse {
 	return notebookResponseSchema.parse({
 		workspaceId: WORKSPACE_ID,
 		notebook: { widgets: [] },

@@ -95,7 +95,10 @@ export function ComponentPreview(props: {
 		});
 	};
 	return (
-		<li data-preview-component={props.component.componentId} class="min-w-0 rounded bg-slate-100 p-2">
+		<li
+			data-preview-component={props.component.componentId}
+			class="min-w-0 rounded bg-slate-100 p-2"
+		>
 			<WidgetFrame
 				widget={{
 					widgetId: props.component.componentId,
