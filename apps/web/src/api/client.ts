@@ -29,9 +29,17 @@ import {
 	type MarketCatalogEntry,
 	marketCatalogResponseSchema,
 	type NewsSource,
+	type Notebook,
+	type NotebookAssistRequest,
+	type NotebookAssistResponse,
+	type NotebookResponse,
 	newsSourceSchema,
+	notebookAssistRequestSchema,
+	notebookAssistResponseSchema,
+	notebookResponseSchema,
 	previewSourceRequestSchema,
 	putHomeDashboardRequestSchema,
+	putNotebookRequestSchema,
 	type RecommendedSource,
 	type RegisterSourceRequest,
 	type ResearchExport,
@@ -54,6 +62,7 @@ import {
 	submitCommandResponseSchema,
 	type UpdateSourceRequest,
 	uiCommandSchema,
+	undoNotebookRequestSchema,
 	updateSourceRequestSchema,
 	type WatchlistResponse,
 	type WorkspaceSummary,
@@ -466,6 +475,55 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				dropLegacyEmptyAssets(payload),
 				workspaceSummarySchema,
 			),
+
+		/* ----- notebook of one conversation (ADR-0020) ----- */
+		getNotebook: (workspaceId: string): Promise<ApiResult<NotebookResponse>> =>
+			requestJson(
+				{ method: "GET", path: `${workspaces}/${segment(workspaceId)}/notebook` },
+				notebookResponseSchema,
+			),
+		/** Compare-and-set save: a 409 `VERSION_CONFLICT` means the notebook changed elsewhere. */
+		saveNotebook: (
+			workspaceId: string,
+			notebook: Notebook,
+			expectedVersion: number,
+		): Promise<ApiResult<NotebookResponse>> =>
+			write(
+				{ method: "PUT", path: `${workspaces}/${segment(workspaceId)}/notebook` },
+				putNotebookRequestSchema,
+				{ notebook, expectedVersion },
+				notebookResponseSchema,
+			),
+		/** Restores the body kept before `expectedVersion` (the version on screen). */
+		undoNotebook: (
+			workspaceId: string,
+			expectedVersion: number,
+		): Promise<ApiResult<NotebookResponse>> =>
+			write(
+				{ method: "POST", path: `${workspaces}/${segment(workspaceId)}/notebook/undo` },
+				undoNotebookRequestSchema,
+				{ expectedVersion },
+				notebookResponseSchema,
+			),
+		/** Stores the instruction as the owner's chat message and queues a notebook-assistant job. */
+		assistNotebook: async (
+			workspaceId: string,
+			request: NotebookAssistRequest,
+			idempotencyKey: string,
+		): Promise<ApiResult<NotebookAssistResponse>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			return write(
+				{
+					method: "POST",
+					path: `${workspaces}/${segment(workspaceId)}/notebook/assist`,
+					idempotencyKey: key.value,
+				},
+				notebookAssistRequestSchema,
+				request,
+				notebookAssistResponseSchema,
+			);
+		},
 
 		/* ----- home dashboard (FR-017) ----- */
 		getHomeDashboard: (): Promise<ApiResult<HomeDashboardResponse>> =>

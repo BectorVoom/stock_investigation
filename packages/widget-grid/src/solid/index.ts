@@ -3,4 +3,5 @@ export * from "./announcer.tsx";
 export * from "./classNames.ts";
 export * from "./WidgetFrame.tsx";
 export * from "./WidgetGrid.tsx";
+export * from "./WidgetSizePicker.tsx";
 export * from "./widgetDrag.ts";

@@ -226,6 +226,13 @@ export const chatMessageSchema = z.strictObject({
 });
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
+/** The owner message and the queued notebook-assistant job (ADR-0020). */
+export const notebookAssistResponseSchema = z.strictObject({
+	message: chatMessageSchema,
+	run: researchRunSchema,
+});
+export type NotebookAssistResponse = z.infer<typeof notebookAssistResponseSchema>;
+
 export const conversationResponseSchema = z.strictObject({
 	messages: z.array(chatMessageSchema),
 	/** Claims and evidence referenced by the messages, for linked citations. */

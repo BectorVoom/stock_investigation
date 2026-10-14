@@ -24,7 +24,14 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailableCodeSchema,
 } from "./market.ts";
-import { idSchema, isoDateSchema, isoDateTimeSchema, marketSchema } from "./primitives.ts";
+import { NOTEBOOK_LIMITS, notebookSchema } from "./notebook.ts";
+import {
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	jsonObjectSchema,
+	marketSchema,
+} from "./primitives.ts";
 import {
 	articleSchema,
 	claimSchema,
@@ -69,6 +76,7 @@ export const jobKindSchema = z.enum([
 	"market-refresh",
 	"earnings-refresh",
 	"google-calendar",
+	"notebook-assist",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -409,6 +417,27 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 		conversationContext: conversationContextSchema,
 	}),
 	z.strictObject({ kind: z.literal("news-ingest"), ...leaseShape }),
+	/**
+	 * One notebook-assistant turn (ADR-0020): the owner's instruction, the
+	 * explicit selection, the notebook as it was when the owner asked, and the
+	 * agent choices saved in Settings at that moment. No tools, no network:
+	 * the runner asks the model for widget commands and a short reply.
+	 */
+	z.strictObject({
+		kind: z.literal("notebook-assist"),
+		...leaseShape,
+		workspaceId: idSchema,
+		agent: z.strictObject({
+			agentId: agentIdSchema,
+			model: z.string().min(1).max(100).nullable(),
+			effort: effortSchema,
+		}),
+		instruction: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxInstructionChars),
+		selectedWidgetIds: z.array(idSchema).max(NOTEBOOK_LIMITS.maxSelectedWidgets),
+		notebook: notebookSchema,
+		notebookVersion: z.number().int().nonnegative(),
+		conversationContext: conversationContextSchema,
+	}),
 	z.strictObject({
 		kind: z.literal("market-refresh"),
 		...leaseShape,
@@ -627,6 +656,21 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		),
 	failedCompletionSchema,
 	z.strictObject({ outcome: z.literal("cancelled"), ...completionBase }),
+	/**
+	 * A notebook-assistant result (ADR-0020). `commands` are widget-grid agent
+	 * commands (`@research/widget-grid/agent`), already applied by the runner
+	 * to its copy; the API parses and applies them again against the stored
+	 * notebook at `baseVersion`, all or nothing. Removals travel separately
+	 * and are never applied: the owner confirms them.
+	 */
+	z.strictObject({
+		outcome: z.literal("notebook-assisted"),
+		...completionBase,
+		baseVersion: z.number().int().nonnegative(),
+		reply: z.string().trim().min(1).max(NOTEBOOK_LIMITS.maxReplyChars),
+		commands: z.array(jsonObjectSchema).max(NOTEBOOK_LIMITS.maxCommandsPerTurn),
+		proposedRemovals: z.array(idSchema).max(NOTEBOOK_LIMITS.maxCommandsPerTurn),
+	}),
 	z.strictObject({
 		outcome: z.literal("waiting_approval"),
 		...completionBase,

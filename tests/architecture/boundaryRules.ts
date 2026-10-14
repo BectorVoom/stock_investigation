@@ -57,9 +57,11 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 		zones: [],
 	},
 	{
+		// The notebook assistant (ADR-0020) applies widget commands through the
+		// widget-grid agent layer; the Solid entry stays out of reach.
 		root: "packages/application",
-		allowed: [DOMAIN, CONTRACTS, AGENT_CORE, pkg("zod")],
-		forbidden: [],
+		allowed: [DOMAIN, CONTRACTS, AGENT_CORE, WIDGET_GRID_CORE, WIDGET_GRID_AGENT, pkg("zod")],
+		forbidden: [WIDGET_GRID, WIDGET_GRID_STYLES],
 		zones: [],
 	},
 	{

@@ -43,6 +43,19 @@ export interface WidgetGridProps<W extends WidgetBase = WidgetBase> {
 	 * updates every child's reported position without re-creating it.
 	 */
 	readonly children: (widget: W, index: Accessor<number>) => JSX.Element;
+	/**
+	 * What decides the column count. `"viewport"` (default): 4 columns from
+	 * the wide breakpoint of the viewport, as on a full-width page.
+	 * `"container"`: the grid's own width decides, so a grid inside a side
+	 * panel lays out by the space it actually has.
+	 */
+	readonly columnsFrom?: "viewport" | "container";
+	/**
+	 * `"card"` (default): every frame shows its hairline. `"quiet"`: frames
+	 * are separated by tone and space only; the boundary appears on hover,
+	 * focus and selection.
+	 */
+	readonly variant?: "card" | "quiet";
 }
 
 /**
@@ -100,6 +113,8 @@ export function WidgetGrid<W extends WidgetBase>(props: WidgetGridProps<W>): JSX
 	return (
 		<div
 			data-widget-grid
+			data-widget-columns-from={props.columnsFrom ?? "viewport"}
+			data-widget-variant={props.variant ?? "card"}
 			class={WIDGET_GRID_CLASS}
 			ref={(element) => {
 				gridEl = element;

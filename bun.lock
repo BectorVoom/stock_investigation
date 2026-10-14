@@ -123,6 +123,7 @@
         "@research/agent-core": "workspace:*",
         "@research/contracts": "workspace:*",
         "@research/domain": "workspace:*",
+        "@research/widget-grid": "workspace:*",
         "zod": "^4.6.5",
       },
     },

@@ -6,6 +6,7 @@ export * from "./googleCalendar.ts";
 export * from "./home.ts";
 export * from "./ingest.ts";
 export * from "./marketCatalog.ts";
+export * from "./notebook/notebookAgent.ts";
 export * from "./ports.ts";
 export * from "./recommendedCatalog.ts";
 export * from "./recordIntegrity.ts";

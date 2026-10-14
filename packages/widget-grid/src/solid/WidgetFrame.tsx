@@ -5,6 +5,14 @@ export interface WidgetFrameProps<W extends WidgetBase = WidgetBase> {
 	readonly widget: W;
 	readonly actions?: JSX.Element;
 	readonly children: JSX.Element;
+	/** Whether the host has this widget selected (marked with `data-widget-selected`). */
+	readonly selected?: boolean;
+	/**
+	 * Offers selection: a click on the header strip that is not a drag selects
+	 * this widget alone (`"replace"`); with Shift, Ctrl or Meta it toggles it
+	 * in a multiple selection (`"toggle"`). Omitted: the frame is not selectable.
+	 */
+	readonly onSelectChange?: (widgetId: string, mode: "replace" | "toggle") => void;
 }
 
 /**
@@ -25,6 +33,7 @@ export function WidgetFrame<W extends WidgetBase>(props: WidgetFrameProps<W>): J
 			data-widget-id={props.widget.widgetId}
 			data-widget-type={props.widget.type}
 			data-widget-size={props.widget.size}
+			data-widget-selected={props.selected === true ? "" : undefined}
 			class="wg-frame"
 		>
 			<div class="wg-header" data-widget-drag-handle={props.widget.widgetId}>
