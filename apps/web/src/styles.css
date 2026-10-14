@@ -141,15 +141,6 @@ html:root {
 	cursor: text;
 }
 
-.rich-text-input {
-	resize: vertical;
-}
-
-.rich-text-input:focus {
-	outline: 2px solid var(--color-blue-700);
-	outline-offset: 1px;
-}
-
 /*
  * Notebook WYSIWYG editor (ADR-0021 task W4b): the ProseMirror surface.
  * Classes only — ProseMirror core sets no `style=` attributes (no
