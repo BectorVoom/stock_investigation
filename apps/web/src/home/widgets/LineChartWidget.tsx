@@ -14,7 +14,7 @@ import {
 } from "../homeModel.ts";
 import type { SlSelectElement } from "../sl-elements.d.ts";
 import "../shoelace.ts";
-import { WidgetProvenance } from "../WidgetFrame.tsx";
+import { WidgetProvenance } from "../HomeFrame.tsx";
 
 /**
  * One to four series that share one unit, over a range, with a legend and a

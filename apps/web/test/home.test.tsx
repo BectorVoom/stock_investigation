@@ -815,7 +815,10 @@ describe("home view", () => {
 			const scroller = article.querySelector('div[tabindex="0"]');
 			if (!(scroller instanceof HTMLElement)) throw new Error("a widget body is not focusable");
 			expect(scroller.getAttribute("aria-labelledby")).toBe(title.id);
-			expect(scroller.className).toContain("overflow-y-auto");
+			// The scroll container is now styled by the package stylesheet
+			// (`wg-body`), not the Tailwind `overflow-y-auto` utility: assert
+			// the package class instead of the removed class name.
+			expect(scroller.className).toContain("wg-body");
 		}
 	});
 
@@ -1131,7 +1134,10 @@ describe("home view", () => {
 		await waitFor(() =>
 			expect(widgets().map((article) => article.getAttribute("data-widget-id"))[0]).toBe("w-gold"),
 		);
-		const live = document.querySelector("output.sr-only");
+		// The live region is now styled by the package stylesheet
+		// (`wg-visually-hidden`), not the Tailwind `sr-only` utility: assert
+		// the observable polite region instead of the class name.
+		const live = document.querySelector("output[aria-live='polite']");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		// The announcement clears first and sets on a later task (so a
 		// repeated sentence announces again): wait for the message.
@@ -1142,7 +1148,7 @@ describe("home view", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const live = (): string =>
-			document.querySelector("output.sr-only")?.textContent ?? "missing live region";
+			document.querySelector("output[aria-live='polite']")?.textContent ?? "missing live region";
 		await chooseWidgetMenuItem("w-gold", "Move earlier");
 		await waitFor(() => expect(live()).toBe("Moved “Gold” to position 1 of 7."));
 		await chooseWidgetMenuItem("w-gold", "Move later");
@@ -1217,7 +1223,7 @@ describe("home view", () => {
 			"w-vix",
 			...serverIds.filter((id) => id !== "w-vix").slice(2),
 		]);
-		const live = document.querySelector("output.sr-only");
+		const live = document.querySelector("output[aria-live='polite']");
 		if (!(live instanceof HTMLElement)) throw new Error("no polite live region");
 		await waitFor(() => expect(live.textContent).toBe("Moved “VIX” to position 3 of 7."));
 	});

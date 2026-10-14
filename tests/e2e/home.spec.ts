@@ -831,7 +831,9 @@ test("the actions button still opens its menu, and Move later works and is annou
 	expect(puts).toBe(1);
 	const after = await widgetIds();
 	expect(after.indexOf(first)).toBe(1);
-	const live = page.locator("output.sr-only");
+	// The live region is now styled by the package (`wg-visually-hidden`),
+	// not the Tailwind `sr-only` utility: assert the polite region.
+	const live = page.locator("output[aria-live='polite']");
 	await expect(live).toContainText(/Moved “.+” to position 2 of /);
 });
 
