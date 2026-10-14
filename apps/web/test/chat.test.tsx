@@ -815,6 +815,22 @@ describe("borderless chat surfaces (background tone, not outlines)", () => {
 		}
 		window.location.hash = "";
 	});
+
+	it("hides the research starter questions while the composer targets the Notebook", async () => {
+		cleanup();
+		window.location.hash = "#/chat/ws_new";
+		mountApp(backend);
+		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
+		expect((await screen.findAllByRole("list", { name: "Suggestions" })).length).toBeGreaterThan(0);
+		const research = screen.getByRole("form", { name: "Research composer" });
+		fireEvent.click(within(research).getByRole("button", { name: "Notebook" }));
+		await screen.findByRole("form", { name: "Notebook composer" });
+		expect(screen.queryAllByRole("list", { name: "Suggestions" })).toHaveLength(0);
+		const notebook = screen.getByRole("form", { name: "Notebook composer" });
+		fireEvent.click(within(notebook).getByRole("button", { name: "Research" }));
+		expect((await screen.findAllByRole("list", { name: "Suggestions" })).length).toBeGreaterThan(0);
+		window.location.hash = "";
+	});
 });
 
 describe("chat thread", () => {

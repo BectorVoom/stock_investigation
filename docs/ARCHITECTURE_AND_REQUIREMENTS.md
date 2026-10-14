@@ -1,9 +1,17 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.4
+**Version:** 1.5
 **Date:** 2026-10-14
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.4 → 1.5):** FR-020 (Chat-first to Notebook-first
+workspace) is a new Must requirement (ADR-0020): every conversation keeps a
+versioned Notebook of widgets built on `@research/widget-grid`, the Chat page
+has exactly two states, and a notebook assistant — a new job kind that reads
+no fetched text — edits that one notebook through validated widget commands.
+The endpoint list gains the four notebook routes. ADR-0003 §6 and ADR-0019
+are amended for that job kind only; research runs are unchanged.
 
 **Change note (1.3 → 1.4):** FR-019 (earnings month calendar and Google
 Calendar sync) is a new Must requirement with its journey step, endpoints and
@@ -93,6 +101,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
 | FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Watchlist page (`#/watchlist`) with add/remove/refresh, `.ics` download, per-date Google/Outlook links and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
 | FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Watchlist page Calendar section (`#/watchlist/calendar[/YYYY-MM-DD]`) with the full month grid (navigation, today, day selection with details and calendar links) above the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines (compact grid with day deep links, at most 3 next announcements, one status line, Refresh + Open calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
+| FR-020 | Chat-first to Notebook-first workspace: think in Chat, keep results as widgets, organise them in a Notebook the AI can also edit | Must | Chat page (`#/chat/<id>`) in exactly two states — Chat-first and Notebook-first, switched directly, remembered per conversation; a per-conversation Notebook (text, metric, chart, table and research widgets; S/M/L sizes; drag to reorder; edit, duplicate, remove with confirmation; 20-step undo) persisted with compare-and-set; "Add to Notebook" on answers and research results; a notebook assistant that creates, edits, moves, resizes and duplicates widgets of the selected context through validated commands, proposes removals for the owner to confirm, and shows every change with Undo (ADR-0020) |
 
 ## 4. Deployment and component architecture
 

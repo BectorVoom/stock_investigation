@@ -474,9 +474,9 @@ set-based in the same write) and `notebook_turns` (one row per assistant
 turn for the chat card), plus an index for looking up one run's chat message
 (idempotent assist replays). Its header comment is the rollback: after a
 `wrangler d1 export`, `DELETE` all three tables' rows and `DROP TABLE` them
-(and the index), restoring the version-8 schema. Notebooks are owner content
-like the canvas: they are not part of workspace export/import yet (ADR-0020),
-but a directory copy of `data/` carries them.
+(and the index), restoring the version-8 schema. Unlike the canvas, notebooks
+are not part of workspace export/import yet (ADR-0020); a directory copy of
+`data/` carries them.
 
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,

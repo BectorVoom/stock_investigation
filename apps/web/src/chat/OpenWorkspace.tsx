@@ -376,6 +376,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 					onRetry={session.retryRun}
 					onApprove={session.approveRun}
 					onOpenRecords={openRecords}
+					showSuggestions={target() === "research"}
 					onSelectSuggestion={(text) => {
 						suggestionNonce += 1;
 						setSuggestion({ text, nonce: suggestionNonce });

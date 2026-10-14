@@ -294,6 +294,11 @@ export function Conversation(props: {
 	readonly onApprove?: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
 	readonly onOpenRecords?: (runId: string, opener: HTMLElement | null) => void;
 	readonly onSelectSuggestion?: (text: string) => void;
+	/**
+	 * False while the composer targets the notebook assistant: the starter
+	 * chips are research questions and would fill the instruction box.
+	 */
+	readonly showSuggestions?: boolean;
 	readonly clipboard?: ClipboardLike | null;
 	/** The workspace view, for the result previews rendered inside the thread (null while loading). */
 	readonly view?: WorkspaceView | null;
@@ -599,11 +604,13 @@ export function Conversation(props: {
 								Ask about demand growth, suppliers or pricing power — answers arrive with their
 								sources.
 							</p>
-							<SuggestionList
-								placement="above-composer"
-								hiddenAtLarge={isCenteredEmpty}
-								onSelect={(text) => props.onSelectSuggestion?.(text)}
-							/>
+							<Show when={props.showSuggestions !== false}>
+								<SuggestionList
+									placement="above-composer"
+									hiddenAtLarge={isCenteredEmpty}
+									onSelect={(text) => props.onSelectSuggestion?.(text)}
+								/>
+							</Show>
 						</div>
 					}
 				>
@@ -769,7 +776,7 @@ export function Conversation(props: {
 					{props.composer}
 				</div>
 			) : null}
-			<Show when={isCenteredEmpty()}>
+			<Show when={isCenteredEmpty() && props.showSuggestions !== false}>
 				<SuggestionList
 					placement="below-composer"
 					displayClass="mx-auto hidden w-full max-w-3xl lg:flex"
