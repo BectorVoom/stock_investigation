@@ -104,9 +104,6 @@ export function App(props: AppProps): JSX.Element {
 						</Show>
 					</p>
 				</div>
-				<p class="mx-auto max-w-[110rem] px-4 pb-1 text-2xs text-slate-600">
-					A research instrument: it does not place trades and is not investment advice.
-				</p>
 			</header>
 			<main
 				class="mx-auto w-full max-w-[110rem] px-4 py-3"

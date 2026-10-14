@@ -130,7 +130,7 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 ## 5. Layout
 
 - Page frame: the `App` header (app name `h1`, view navigation, session
-  summary, instrument disclaimer) then `PageHeader` (page title `h2` plus the
+  summary) then `PageHeader` (page title `h2` plus the
   purpose sentence from `PAGES`; the Chat page shows the title only), then content at most `110rem` wide
   (`max-w-[110rem]`, `px-4`).
 - The panel (`PANEL`: white, bordered, `p-3`) is the unit of a page; related
@@ -227,9 +227,7 @@ allowlist.
   2026-01-15"); counts say what was counted ("3 messages", "Attempt 1 of 3").
 - Unavailable is "unavailable (reason)" — "N/A — reason not stated" at worst —
   never a blank and never zero (DATA-011).
-- No investment-advice wording: the header states the instrument "does not
-  place trades and is not investment advice", and reports carry their
-  disclaimer.
+- No investment-advice wording: reports carry their disclaimer.
 
 ## 9. Accessibility
 
