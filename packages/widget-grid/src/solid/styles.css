@@ -353,18 +353,17 @@
 	position: relative;
 }
 
+/* The controls gather in a compact cluster in the top-right corner, never
+ * across the frame: content starts at the top-left (text is left-aligned),
+ * so the first line stays readable and clickable under a hovered frame. */
 .wg-frame[data-widget-title-hidden] .wg-header {
 	position: absolute;
 	top: 0.5rem;
 	right: 0.5rem;
-	left: 0.5rem;
 	z-index: 1;
+	gap: 0.25rem;
 	min-height: 0;
 	pointer-events: none;
-}
-
-.wg-frame[data-widget-title-hidden] .wg-header-actions {
-	margin-left: auto;
 }
 
 /* Legible on top of content: the controls carry the frame surface behind
@@ -375,6 +374,21 @@
 	pointer-events: auto;
 	background-color: var(--wg-surface, #ffffff);
 	border-radius: 0.5rem;
+}
+
+/* The cluster stays two controls wide (grip and actions), so even a small
+ * frame keeps most of its first line free: a pointer selects with the grip
+ * (a click that is not a drag), and the select toggle — the keyboard path —
+ * appears only when focused from the keyboard or when the frame is selected.
+ * It stays in the tab order and the accessibility tree throughout. */
+.wg-frame[data-widget-title-hidden]
+.wg-select-toggle:not(:focus-visible):not([aria-pressed="true"]) {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	pointer-events: none;
 }
 
 /* A 28 px desktop hit target around the 16 px grip glyph (HIG). */
