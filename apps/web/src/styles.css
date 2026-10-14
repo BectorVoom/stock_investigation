@@ -117,12 +117,26 @@ html:root {
 }
 
 /*
- * Notebook quiet variant (ADR-0020): the package's `variant="quiet"` adds no
- * new `--wg-*` property today (its stylesheet reads the same tokens), so the
- * quiet frames are separated by tone and space through the mapping above.
- * When the package gains quiet-only tokens, they are mapped here, beside the
- * Home mapping, which stays unchanged.
+ * Notebook (ADR-0020): the quiet variant shows a widget's boundary only on
+ * hover/focus (`--wg-border-hover`) and when selected (`--wg-selected`) —
+ * neutral greys, never a colourful outline. Home uses the card variant and
+ * never reads them.
  */
+:root {
+	--wg-border-hover: var(--color-slate-300);
+	--wg-selected: var(--color-slate-400);
+}
+
+/*
+ * Research components inside a widget frame (thread previews, research
+ * widgets) keep their tables at natural width and the frame body scrolls
+ * sideways, instead of squeezing a column header to one letter per line in a
+ * narrow panel.
+ */
+[data-preview-component] table,
+[data-widget-body="research"] table {
+	min-width: max-content;
+}
 
 /*
  * Home surface density: every Shoelace form control on Home carries

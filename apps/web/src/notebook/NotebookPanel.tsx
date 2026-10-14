@@ -16,6 +16,9 @@ import {
 	WidgetGrid,
 	WidgetSizePicker,
 } from "@research/widget-grid";
+// The package stylesheet: without it the grid and the frames are unstyled
+// markup. Home loads it in its own lazy chunk, so the Chat page imports it too.
+import "@research/widget-grid/styles.css";
 import {
 	createSignal,
 	createUniqueId,

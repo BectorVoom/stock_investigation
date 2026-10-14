@@ -188,6 +188,29 @@ test("Add to Notebook saves one chart and the answer", async () => {
 
 	const notebook = page.getByRole("region", { name: "Notebook" });
 	await expect(notebook).toContainText(HEADLINE);
+	// The package stylesheet is loaded on this page: the Notebook is a real
+	// grid and its frames and the thread previews are styled frames.
+	const layout = await page.evaluate(() => {
+		const grid = document.querySelector('div[data-panel="notebook"] [data-widget-grid]');
+		const frame = document.querySelector('div[data-panel="notebook"] article[data-widget-id]');
+		const header = frame?.querySelector("[data-widget-drag-handle]") ?? null;
+		const preview = document.querySelector("[data-preview-component] article[data-widget-id]");
+		const style = (element: Element | null) =>
+			element === null ? null : getComputedStyle(element);
+		return {
+			grid: style(grid)?.display ?? null,
+			header: style(header)?.display ?? null,
+			frame: style(frame)?.flexDirection ?? null,
+			preview: style(preview)?.flexDirection ?? null,
+		};
+	});
+	await page.screenshot({ path: test.info().outputPath("chat-first.png") });
+	expect(layout).toEqual({
+		grid: "grid",
+		header: "flex",
+		frame: "column",
+		preview: "column",
+	});
 });
 
 test("Focus Notebook switches to Notebook-first with thread and draft intact", async () => {
@@ -234,7 +257,9 @@ test("a dragged widget keeps its new position across a reload", async () => {
 	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
 	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
 	await page.mouse.down();
-	await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height + 20, {
+	// Onto the far half of the second widget, whether the grid places it
+	// beside the first (wide container) or below it (narrow container).
+	await page.mouse.move(targetBox.x + targetBox.width * 0.8, targetBox.y + targetBox.height * 0.8, {
 		steps: 25,
 	});
 	await page.mouse.up();
@@ -286,6 +311,7 @@ test("explain adds a text widget after the selection; remove proposes and Remove
 	const widgets = notebookWidgets();
 	await expect(widgets).toHaveCount(3, { timeout: 60_000 });
 	await expect(widgets.nth(1)).toContainText("Explanation");
+	await page.screenshot({ path: test.info().outputPath("notebook-first.png") });
 
 	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("remove it");
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
