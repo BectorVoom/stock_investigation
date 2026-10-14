@@ -60,6 +60,13 @@ describe("parseWidgetCommand", () => {
 			widgetId: "a",
 			config: { text: "x" },
 		});
+		expect(expectCommand({ kind: "duplicate", widgetId: "a" })).toEqual({
+			kind: "duplicate",
+			widgetId: "a",
+		});
+		expect(
+			expectCommand({ kind: "duplicate", widgetId: "a", title: "Copy", toIndex: 0 }),
+		).toMatchObject({ kind: "duplicate", title: "Copy", toIndex: 0 });
 	});
 
 	it("trims the title", () => {
@@ -69,12 +76,19 @@ describe("parseWidgetCommand", () => {
 	});
 
 	it("rejects unknown kinds and unknown fields, naming them", () => {
-		const kind = expectFailure({ kind: "duplicate", widgetId: "a" });
+		const kind = expectFailure({ kind: "explode", widgetId: "a" });
 		expect(kind.code).toBe("INVALID_COMMAND");
 		expect(kind.message).toContain("kind");
 		const field = expectFailure({ kind: "remove", widgetId: "a", force: true });
 		expect(field.code).toBe("INVALID_COMMAND");
 		expect(field.message).toContain("force");
+		const duplicateField = expectFailure({
+			kind: "duplicate",
+			widgetId: "a",
+			config: { text: "x" },
+		});
+		expect(duplicateField.code).toBe("INVALID_COMMAND");
+		expect(duplicateField.message).toContain("config");
 	});
 
 	it("rejects out-of-bounds fields, naming them", () => {
@@ -91,8 +105,16 @@ describe("parseWidgetCommand", () => {
 			const failure = expectFailure({ kind: "add", type: "note", title });
 			expect(failure.message).toContain("title");
 		}
+		for (const title of ["", "   ", "t".repeat(201)]) {
+			const failure = expectFailure({ kind: "duplicate", widgetId: "a", title });
+			expect(failure.message).toContain("title");
+		}
 		for (const toIndex of [-1, 1.5, 1001, Number.NaN]) {
 			const failure = expectFailure({ kind: "reorder", widgetId: "a", toIndex });
+			expect(failure.message).toContain("toIndex");
+		}
+		for (const toIndex of [-1, 1.5, 1001, Number.NaN]) {
+			const failure = expectFailure({ kind: "duplicate", widgetId: "a", toIndex });
 			expect(failure.message).toContain("toIndex");
 		}
 		for (const config of ["text", 42, ["text"], null]) {

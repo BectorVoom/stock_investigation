@@ -42,6 +42,10 @@ export type JsonObject = { readonly [key: string]: JsonValue };
  * - `resize`: change the size to one the widget's type allows.
  * - `update`: rename and/or reconfigure. `config` keys replace the widget's
  *   current values key by key (a shallow merge); keys not given are kept.
+ * - `duplicate`: copy a widget through its own type (`configOf` into `build`)
+ *   with a fresh id. `title` defaults to `"<title> (copy)"`; `toIndex` is the
+ *   0-based position the copy should end at (default: right after the
+ *   original).
  */
 export type WidgetCommand =
 	| {
@@ -65,6 +69,12 @@ export type WidgetCommand =
 			readonly widgetId: string;
 			readonly title?: string;
 			readonly config?: JsonObject;
+	  }
+	| {
+			readonly kind: "duplicate";
+			readonly widgetId: string;
+			readonly title?: string;
+			readonly toIndex?: number;
 	  };
 
 export type WidgetCommandKind = WidgetCommand["kind"];

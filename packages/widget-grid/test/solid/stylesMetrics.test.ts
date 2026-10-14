@@ -17,6 +17,12 @@ function wideBreakpointRem(text: string): number {
 	return Number(match[1]);
 }
 
+function containerBreakpointRem(text: string): number {
+	const match = /@container\s*\(\s*min-width:\s*([\d.]+)rem\s*\)/.exec(text);
+	if (match === null) throw new Error("expected a min-width container query in rem");
+	return Number(match[1]);
+}
+
 function singleRem(text: string, property: string): number {
 	const match = new RegExp(`${property}:\\s*(?:var\\([^,]+,\\s*)?([\\d.]+)rem`).exec(text);
 	if (match === null) throw new Error(`expected ${property} in rem`);
@@ -76,6 +82,25 @@ describe("stylesheet metrics match core/sizes.ts", () => {
 			const pattern = new RegExp(`\\.wg-placeholder\\[data-widget-size="${size}"\\]`);
 			expect(pattern.test(css)).toBe(true);
 		}
+	});
+
+	it("uses the container breakpoint for container-sized columns", () => {
+		expect(containerBreakpointRem(css)).toBe(WIDGET_GRID_METRICS.containerWideMinWidthRem);
+		expect(css).toMatch(/\.wg-grid-container\s*\{[^}]*container-type:\s*inline-size/);
+		expect(css).toContain(".wg-grid-container");
+	});
+
+	it("themes the quiet variant and selection through custom properties", () => {
+		expect(css).toContain("--wg-border-hover");
+		expect(css).toContain("--wg-selected");
+		expect(css).toContain('[data-widget-variant="quiet"]');
+		expect(css).toContain("[data-widget-selected]");
+		// The viewport breakpoint never restyles a container-sized grid.
+		expect(css).toContain(':not([data-widget-columns-from="container"])');
+		// The quiet reveal stays in the accessibility tree and honours motion
+		// and hover capabilities.
+		expect(css).toMatch(/prefers-reduced-motion/);
+		expect(css).toMatch(/@media\s*\(\s*hover:\s*none\s*\)/);
 	});
 
 	it("never uses dense flow", () => {

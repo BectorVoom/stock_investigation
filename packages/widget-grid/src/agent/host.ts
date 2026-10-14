@@ -235,6 +235,74 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 				}
 				return ok({ kind: "replace", widget });
 			}
+			case "duplicate": {
+				const index = widgets.findIndex((widget) => widget.widgetId === command.widgetId);
+				const current = index === -1 ? undefined : widgets[index];
+				if (current === undefined) {
+					return err({
+						code: "WIDGET_NOT_FOUND",
+						message: `no widget with id "${command.widgetId}".`,
+					});
+				}
+				const agentType = typeOf(current.type);
+				if (agentType === undefined) {
+					return err({
+						code: "UNKNOWN_WIDGET_TYPE",
+						message: `widget "${command.widgetId}" has unknown type "${current.type}".`,
+					});
+				}
+				if (!agentType.sizes.includes(current.size)) {
+					return err({
+						code: "SIZE_NOT_ALLOWED",
+						message: `size "${current.size}" is not allowed for widget type "${current.type}".`,
+					});
+				}
+				// The default copy title can exceed the 200-character title
+				// limit when the original is already long; trim it the same way
+				// the command schema trims titles.
+				const title = (command.title ?? `${current.title} (copy)`).trim().slice(0, 200);
+				if (title.length === 0) {
+					return err({ code: "INVALID_WIDGET", message: "the duplicate title is empty." });
+				}
+				let config: JsonObject;
+				try {
+					config = agentType.configOf(current);
+				} catch {
+					return err(unreadableWidget(current.widgetId, current.type));
+				}
+				let widgetId: string;
+				try {
+					widgetId = newWidgetId();
+				} catch {
+					return err({
+						code: "STORE_UNAVAILABLE",
+						message: "a new widget id could not be allocated.",
+					});
+				}
+				if (widgetId.length === 0) {
+					return err({ code: "INVALID_WIDGET", message: "the new widget id is empty." });
+				}
+				let widget: W;
+				try {
+					const built = agentType.build({
+						widgetId,
+						title,
+						size: current.size,
+						config,
+					});
+					if (!built.ok) return err({ code: "INVALID_WIDGET", message: built.error });
+					widget = built.value;
+				} catch {
+					return err({
+						code: "INVALID_WIDGET",
+						message: `widget type "${current.type}" rejected the widget.`,
+					});
+				}
+				// A duplicate is an `add` of a copy right after the original —
+				// no new layout edit kind, so the proved Lean dashboard model
+				// still covers it.
+				return ok({ kind: "add", widget, toIndex: command.toIndex ?? index + 1 });
+			}
 		}
 	};
 
@@ -260,7 +328,7 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 				return { code: error, message: "the widget is already at that end." };
 			case "POSITION_OUT_OF_RANGE": {
 				const toIndex =
-					command.kind === "add"
+					command.kind === "add" || command.kind === "duplicate"
 						? (command.toIndex ?? count)
 						: command.kind === "reorder"
 							? command.toIndex

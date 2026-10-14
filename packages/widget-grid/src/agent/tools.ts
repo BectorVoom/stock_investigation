@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
 	addWidgetCommandSchema,
 	configSchema,
+	duplicateWidgetCommandSchema,
 	isJsonObject,
 	moveWidgetCommandSchema,
 	removeWidgetCommandSchema,
@@ -125,6 +126,12 @@ export function createWidgetAgentTools(
 			"Remove widget",
 			"Delete one widget by its id.",
 			removeWidgetCommandSchema.omit({ kind: true }),
+		),
+		commandTool(
+			"duplicate",
+			"Duplicate widget",
+			"Copy a widget through its own type with a fresh id. The title defaults to “<title> (copy)”; toIndex is the 0-based position the copy should end at (default: right after the original).",
+			duplicateWidgetCommandSchema.omit({ kind: true }),
 		),
 		commandTool(
 			"move",

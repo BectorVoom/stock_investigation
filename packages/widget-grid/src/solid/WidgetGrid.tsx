@@ -1,6 +1,6 @@
-import { type Accessor, For, type JSX, onCleanup } from "solid-js";
+import { type Accessor, For, type JSX, onCleanup, Show } from "solid-js";
 import type { WidgetBase } from "../core/types.ts";
-import { WIDGET_GRID_CLASS } from "./classNames.ts";
+import { WIDGET_GRID_CLASS, WIDGET_GRID_CONTAINER_CLASS } from "./classNames.ts";
 import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 
 export type { WidgetDragDrop };
@@ -110,7 +110,7 @@ export function WidgetGrid<W extends WidgetBase>(props: WidgetGridProps<W>): JSX
 		savingPreview = false;
 	});
 
-	return (
+	const grid = (
 		<div
 			data-widget-grid
 			data-widget-columns-from={props.columnsFrom ?? "viewport"}
@@ -123,5 +123,14 @@ export function WidgetGrid<W extends WidgetBase>(props: WidgetGridProps<W>): JSX
 		>
 			<For each={props.widgets}>{(widget, index) => props.children(widget, index)}</For>
 		</div>
+	);
+
+	// Container mode wraps the same grid element (same attributes, ref and
+	// pointer handler, so the drag engine is untouched) in the
+	// container-query ancestor the CSS needs.
+	return (
+		<Show when={props.columnsFrom === "container"} fallback={grid}>
+			<div class={WIDGET_GRID_CONTAINER_CLASS}>{grid}</div>
+		</Show>
 	);
 }

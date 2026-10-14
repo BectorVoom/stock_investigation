@@ -510,4 +510,57 @@ describe("WidgetGrid", () => {
 		expect(positions.get("w-c")?.()).toBe(1);
 		expect([...creations.values()]).toEqual([1, 1, 1]);
 	});
+
+	it("sizes columns from the viewport by default, with no wrapper", () => {
+		const { container } = render(() => (
+			<WidgetGrid widgets={widgets()} onReorder={() => undefined}>
+				{(item) => (
+					<WidgetFrame widget={item}>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		const grid = container.querySelector("[data-widget-grid]");
+		if (!(grid instanceof HTMLElement)) throw new Error("no grid element");
+		expect(grid.getAttribute("data-widget-columns-from")).toBe("viewport");
+		expect(grid.getAttribute("data-widget-variant")).toBe("card");
+		expect(grid.parentElement).toBe(container);
+		expect(container.querySelector(".wg-grid-container")).toBeNull();
+		expect(orderOf(container)).toEqual(["w-a", "w-b", "w-c"]);
+	});
+
+	it("wraps the same grid element in a container ancestor in container mode", async () => {
+		const seen: { drop: WidgetDragDrop | null } = { drop: null };
+		const { container } = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				columnsFrom="container"
+				variant="quiet"
+				onReorder={(next) => {
+					seen.drop = next;
+				}}
+			>
+				{(item) => (
+					<WidgetFrame widget={item}>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		const wrapper = container.querySelector(".wg-grid-container");
+		if (!(wrapper instanceof HTMLElement)) throw new Error("no container wrapper");
+		const grid = container.querySelector("[data-widget-grid]");
+		if (!(grid instanceof HTMLElement)) throw new Error("no grid element");
+		expect(grid.parentElement).toBe(wrapper);
+		expect(grid.getAttribute("data-widget-columns-from")).toBe("container");
+		expect(grid.getAttribute("data-widget-variant")).toBe("quiet");
+		expect(orderOf(container)).toEqual(["w-a", "w-b", "w-c"]);
+		// The drag engine still works through the wrapper: the grid element
+		// keeps its ref and pointer handler.
+		mockLayout(container);
+		await dragFromTo(container, "w-a", 150, 50, 150, 320);
+		await waitFor(() => expect(seen.drop).not.toBeNull());
+		expect(seen.drop?.toIndex).toBe(2);
+	});
 });

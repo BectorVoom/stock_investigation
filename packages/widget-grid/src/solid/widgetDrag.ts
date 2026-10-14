@@ -247,6 +247,43 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 ): WidgetDragController {
 	let drag: ActiveDrag | null = null;
 	let disposed = false;
+	/**
+	 * Swallows the click a completed drag fires on release, so the frame's
+	 * header click never also selects. One-shot: the next click belongs to a
+	 * new gesture, and a new press disarms it even when no click ever comes
+	 * (for example after an Escape cancel followed by keyboard use).
+	 */
+	let clickGuard: { readonly release: () => void } | null = null;
+
+	const disarmClickGuard = (): void => {
+		const guard = clickGuard;
+		clickGuard = null;
+		guard?.release();
+	};
+
+	const armClickGuard = (grid: HTMLElement): void => {
+		disarmClickGuard();
+		const onClick = (event: Event): void => {
+			const target = event.target;
+			const inside = target instanceof Element && grid.contains(target);
+			disarmClickGuard();
+			if (inside) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+		};
+		const onPress = (): void => {
+			disarmClickGuard();
+		};
+		window.addEventListener("click", onClick, true);
+		window.addEventListener("pointerdown", onPress, true);
+		clickGuard = {
+			release: () => {
+				window.removeEventListener("click", onClick, true);
+				window.removeEventListener("pointerdown", onPress, true);
+			},
+		};
+	};
 
 	/** The full no-drag selector, read lazily so a host update applies. */
 	const noDragSelector = (): string => {
@@ -286,9 +323,13 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 	/** Cancels the active press/drag: the widget returns, nothing is saved. */
 	function cancel(): void {
 		if (drag === null) return;
+		const wasStarted = drag.started;
+		const grid = drag.grid;
 		removeListeners();
 		resetDom();
 		drag = null;
+		// A cancelled drag still ends with a click on release; it must not select.
+		if (wasStarted) armClickGuard(grid);
 	}
 
 	function onFrame(): void {
@@ -407,6 +448,8 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 		const toIndex = finished.target;
 		const fromIndex = finished.fromIndex;
 		const preview = [...finished.preview];
+		// A completed drag ends with a click on release; it must not also select.
+		armClickGuard(finished.grid);
 		// Settle the lifted widget back into flow before deciding.
 		unliftDragged(finished.article);
 		finished.placeholder?.remove();
@@ -507,6 +550,7 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 
 	function dispose(): void {
 		disposed = true;
+		disarmClickGuard();
 		removeListeners();
 		if (drag !== null) {
 			resetDom();

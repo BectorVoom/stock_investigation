@@ -101,6 +101,13 @@ export const updateWidgetCommandSchema = z.strictObject({
 	config: configSchema.optional(),
 });
 
+export const duplicateWidgetCommandSchema = z.strictObject({
+	kind: z.literal("duplicate"),
+	widgetId: widgetIdSchema,
+	title: titleSchema.optional(),
+	toIndex: toIndexSchema.optional(),
+});
+
 /**
  * The command protocol. `z.infer` of this schema is `WidgetCommand`. The
  * members stay plain `z.strictObject`s so tools can derive their input
@@ -116,6 +123,7 @@ export const widgetCommandSchema = z
 		reorderWidgetCommandSchema,
 		resizeWidgetCommandSchema,
 		updateWidgetCommandSchema,
+		duplicateWidgetCommandSchema,
 	])
 	.refine(
 		(value) => value.kind !== "update" || value.title !== undefined || value.config !== undefined,
