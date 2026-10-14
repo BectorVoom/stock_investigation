@@ -553,6 +553,13 @@ const homeBenchService = createHomeService({
 		findLatestSuccessAtByKind: async () => "2026-10-12T12:00:00Z",
 		findLatestFailureByKind: async () => null,
 	} as never,
+	notebooks: {
+		get: async () => null,
+		put: async () => "written" as const,
+		getRevision: async () => null,
+		listTurns: async () => [],
+		listMarketSeriesIds: async () => [],
+	},
 	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
 	audit: { record: async () => undefined },
 });

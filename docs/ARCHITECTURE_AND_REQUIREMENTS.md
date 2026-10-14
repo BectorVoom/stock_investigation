@@ -318,6 +318,7 @@ GET    /api/v1/workspaces/:id/notebook
 PUT    /api/v1/workspaces/:id/notebook
 POST   /api/v1/workspaces/:id/notebook/undo
 POST   /api/v1/workspaces/:id/notebook/assist
+GET    /api/v1/workspaces/:id/notebook/market-data
 GET    /api/v1/conversations
 GET    /api/v1/workspaces/:id/export
 GET    /api/v1/runner-credentials
@@ -369,7 +370,13 @@ stale tab or a concurrent assistant turn answers 409 instead of overwriting;
 as a new version (the last 20 bodies are kept); `POST …/notebook/assist`
 stores the instruction as the owner's chat message and queues one
 `notebook-assist` job (at most one active per conversation, `Idempotency-Key`
-required). Deleting a conversation deletes its notebook, revisions and turns
+required). `GET …/notebook/market-data` serves the live series of that
+conversation's notebook market widgets (`market-metric`, `line-chart`,
+`stock-table`, `indicator-table`) in the Home data shape with the same
+conditional ETag as `/home/data`; the market refresh fetches the union of the
+Home dashboard's series (first) and every notebook's series, at most 60, and
+a Home save keeps stored series a notebook still names. Deleting a
+conversation deletes its notebook, revisions and turns
 with everything else it solely owns.
 
 All inputs and stored JSON are runtime-validated. Browser calls do not expose runner endpoints. Runner authentication is separately scoped, renewable and revocable. Maintain uniqueness constraints on canonical article IDs, command IDs, and job idempotency keys, and use conditional updates for leases/workspace versions.

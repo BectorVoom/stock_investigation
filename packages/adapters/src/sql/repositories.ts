@@ -42,6 +42,7 @@ import {
 	investorFilingSchema,
 	NOTEBOOK_LIMITS,
 	notebookSchema,
+	parseMarketSeriesId,
 	positionObservationSchema,
 	pricingPowerRecordSchema,
 	type RunRecords,
@@ -1456,6 +1457,42 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 				.all();
 			// Newest first in SQL for the bound; oldest first for the response.
 			return results.map(toNotebookTurn).reverse();
+		},
+		async listMarketSeriesIds(ownerId) {
+			// ADR-0021: one set-based statement over every stored notebook
+			// body (no N+1, no new table): `market-metric` names `seriesId`,
+			// the other market widget types name `seriesIds`; the earnings
+			// calendar names none. Unreadable bodies are skipped via
+			// `json_valid`, never fatal. Every id is parsed at this boundary
+			// and invalid ones are dropped.
+			const { results } = await db
+				.prepare(
+					`SELECT DISTINCT series_id AS series_id FROM (
+						SELECT json_extract(w.value, '$.seriesId') AS series_id
+						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w
+						WHERE n.owner_id = ?1 AND json_valid(n.body_json)
+							AND json_extract(w.value, '$.type') = 'market-metric'
+						UNION
+						SELECT s.value AS series_id
+						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w,
+							json_each(json_extract(w.value, '$.seriesIds')) AS s
+						WHERE n.owner_id = ?1 AND json_valid(n.body_json)
+							AND json_extract(w.value, '$.type') IN ('line-chart', 'stock-table', 'indicator-table')
+					) WHERE series_id IS NOT NULL AND series_id != ''
+					ORDER BY series_id`,
+				)
+				.bind(ownerId)
+				.all();
+			const ids: string[] = [];
+			for (const row of results) {
+				const record = row as Record<string, unknown>;
+				if (typeof record.series_id !== "string") continue;
+				// Stored data is parsed at the boundary: an id that no
+				// longer parses is dropped, never served as another provider.
+				if (parseMarketSeriesId(record.series_id) === null) continue;
+				ids.push(record.series_id);
+			}
+			return ids;
 		},
 	};
 }

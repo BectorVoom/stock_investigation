@@ -812,6 +812,31 @@ export function createApp(options: AppOptions = {}) {
 			}),
 		),
 	);
+	api.get("/workspaces/:id/notebook/market-data", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				// ADR-0021: live series of this conversation's notebook market
+				// widgets, in the Home data shape. Same conditional GET as
+				// `/home/data`: the ETag covers a cheap digest (notebook
+				// version, refresh state, per-series stamps), so a 304 is
+				// answered BEFORE any observation row is loaded.
+				const workspaceId = yield* pathId(c, "id");
+				const digest = yield* useCase("notebook.get_market_data_digest", () =>
+					c.var.services.notebook.getNotebookMarketDataDigest(owner(c), workspaceId),
+				);
+				const etag = homeDataDigestEtag(digest);
+				c.header("ETag", `"${etag}"`);
+				if (c.req.header("If-None-Match") === `"${etag}"`) return c.body(null, 304);
+				const data = yield* useCase("notebook.get_market_data", () =>
+					c.var.services.notebook.getNotebookMarketData(owner(c), workspaceId, digest),
+				);
+				const parsed = homeDataResponseSchema.parse(data);
+				return c.json(parsed);
+			}),
+		),
+	);
 	api.get("/conversations", (c) =>
 		respond(
 			c,
