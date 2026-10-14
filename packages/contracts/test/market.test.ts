@@ -5,6 +5,9 @@ import {
 	completeJobRequestSchema,
 	DEFAULT_HOME_DASHBOARD,
 	formatMarketSeriesId,
+	HOME_WIDGET_SIZES,
+	HOME_WIDGET_TYPE_META,
+	HOME_WIDGET_TYPES,
 	type HomeDashboard,
 	homeDashboardResponseSchema,
 	homeDashboardSchema,
@@ -257,6 +260,26 @@ describe("home dashboard", () => {
 		expect(marketCatalogResponseSchema.parse({ entries: [] }).entries).toEqual([]);
 		expect(MARKET_LIMITS.maxWidgets).toBe(24);
 		expect(without(metricWidget, "title")).toBeDefined();
+	});
+});
+
+describe("home widget type metadata", () => {
+	it("covers every widget type with a label, a description, a valid default size and all sizes", () => {
+		expect([...HOME_WIDGET_TYPES].sort()).toEqual([
+			"earnings-calendar",
+			"indicator-table",
+			"line-chart",
+			"metric",
+			"stock-table",
+		]);
+		expect([...HOME_WIDGET_SIZES].sort()).toEqual(["large", "medium", "small"]);
+		for (const type of HOME_WIDGET_TYPES) {
+			const meta = HOME_WIDGET_TYPE_META[type];
+			expect(meta.label.trim().length).toBeGreaterThan(0);
+			expect(meta.description.trim().length).toBeGreaterThan(0);
+			expect(HOME_WIDGET_SIZES).toContain(meta.defaultSize);
+			expect([...meta.sizes].sort()).toEqual(["large", "medium", "small"]);
+		}
 	});
 });
 

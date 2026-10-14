@@ -45,6 +45,15 @@
         "zod": "^4.6.5",
       },
     },
+    "apps/mcp": {
+      "name": "@app/mcp",
+      "version": "0.1.0",
+      "dependencies": {
+        "@research/contracts": "workspace:*",
+        "@research/widget-grid": "workspace:*",
+        "zod": "^4.6.5",
+      },
+    },
     "apps/runner": {
       "name": "@app/runner",
       "version": "0.1.0",
@@ -158,6 +167,8 @@
   },
   "packages": {
     "@app/api": ["@app/api@workspace:apps/api"],
+
+    "@app/mcp": ["@app/mcp@workspace:apps/mcp"],
 
     "@app/runner": ["@app/runner@workspace:apps/runner"],
 

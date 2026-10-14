@@ -19,6 +19,7 @@ const PROJECTS = [
 	"packages/adapters/tsconfig.worker.json",
 	"apps/api",
 	"apps/runner",
+	"apps/mcp",
 	"apps/web",
 	"tests",
 ];
