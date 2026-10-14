@@ -20,6 +20,7 @@ import {
 	type NotebookChange,
 	type NotebookResponse,
 	type NotebookTurn,
+	notebookCapacityProblem,
 	type ResearchRun,
 } from "@research/contracts";
 import { EMPTY_USAGE, err, ok, type Result } from "@research/domain";
@@ -161,6 +162,8 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 					return fail("INVALID_NOTEBOOK", invalidResearchWidget(widget.title));
 				}
 			}
+			const capacity = notebookCapacityProblem(notebook.widgets, previous.widgets);
+			if (capacity !== null) return fail("INVALID_NOTEBOOK", capacity.message);
 			const now = deps.clock.nowIso();
 			// New widgets keep the client's origin — except an `assistant`
 			// origin, which only the assistant path may claim (rewritten here).

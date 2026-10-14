@@ -1,9 +1,10 @@
-import type {
-	NotebookResponse,
-	NotebookTurn,
-	NotebookWidget,
-	NotebookWidgetCore,
-	NotebookWidgetOrigin,
+import {
+	type NotebookResponse,
+	type NotebookTurn,
+	type NotebookWidget,
+	type NotebookWidgetCore,
+	type NotebookWidgetOrigin,
+	notebookCapacityProblem,
 } from "@research/contracts";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -230,7 +231,15 @@ export function createNotebookSession(
 	const edit = (
 		change: (widgets: readonly NotebookWidget[]) => readonly NotebookWidget[],
 	): Promise<boolean> => {
-		const next = change(displayed());
+		const current = displayed();
+		const next = change(current);
+		// The server applies the same rule; refusing here says why at once
+		// instead of flashing the widget in and rolling it back.
+		const capacity = notebookCapacityProblem(next, current);
+		if (capacity !== null) {
+			setNotice({ text: capacity.message, failure: null });
+			return Promise.resolve(false);
+		}
 		setOptimistic(next);
 		pruneSelection(next);
 		return new Promise<boolean>((resolve) => {

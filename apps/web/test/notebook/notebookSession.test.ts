@@ -1,4 +1,4 @@
-import type { NotebookWidget } from "@research/contracts";
+import { NOTEBOOK_LIMITS, type NotebookWidget } from "@research/contracts";
 import { cleanup } from "@solidjs/testing-library";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
@@ -213,6 +213,38 @@ describe("notebook session", () => {
 			);
 			expect(id).toBe("nb-added");
 			expect(session.widgets().map((widget) => widget.widgetId)).toEqual(["nb-added", "nb-text"]);
+		} finally {
+			dispose();
+		}
+	});
+
+	it("refuses an add past the widget maximum with a notice and no save", async () => {
+		const fixtures = notebookFixtures();
+		const full = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) => ({
+			...fixtures.text,
+			widgetId: `nb-${index}`,
+		}));
+		const { backend, session, dispose } = setup(full);
+		try {
+			await waitForLoaded(session);
+			const id = await session.addWidget(
+				{ widgetId: "nb-over", type: "text", title: "One more", size: "small", text: "Hello" },
+				{ kind: "owner", messageId: null, runId: null, componentId: null },
+			);
+			expect(id).toBeNull();
+			expect(session.widgets()).toHaveLength(NOTEBOOK_LIMITS.maxWidgets);
+			expect(session.notice()?.text).toBe(
+				"A notebook holds at most 200 widgets. Remove one before adding another.",
+			);
+			expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toEqual([]);
+			// Removing one makes room again.
+			expect(await session.removeWidgets(["nb-0"])).toBe(true);
+			expect(
+				await session.addWidget(
+					{ widgetId: "nb-over", type: "text", title: "One more", size: "small", text: "Hello" },
+					{ kind: "owner", messageId: null, runId: null, componentId: null },
+				),
+			).toBe("nb-over");
 		} finally {
 			dispose();
 		}

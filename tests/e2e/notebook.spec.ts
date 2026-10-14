@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv } from "../../scripts/testEnv.ts";
-import { FEED_URL, HEADLINE } from "./fixtures.ts";
+import { E2E_ORIGIN, FEED_URL, HEADLINE } from "./fixtures.ts";
 
 /**
  * Two-state workspace and Chat ↔ Notebook integration (task D2, ADR-0020).
@@ -342,6 +342,128 @@ test("Focus Chat returns to Chat-first with all history intact", async () => {
 		"1 of 2 claim(s) are supported",
 	);
 	// Console errors exclude the expected error paths (422/403).
+	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
+		[],
+	);
+});
+
+test("a full notebook of 200 widgets renders, switches, reorders and refuses one more", async () => {
+	test.setTimeout(180_000);
+	const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+	if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+	const notebookUrl = `${E2E_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`;
+	const read = await page.request.get(notebookUrl);
+	expect(read.ok()).toBe(true);
+	const stored = (await read.json()) as {
+		notebook: { widgets: { widgetId: string }[] };
+		version: number;
+	};
+	// Fill up to the maximum with owner text widgets after the ones the spec made.
+	const now = new Date().toISOString();
+	const filler = Array.from({ length: 200 - stored.notebook.widgets.length }, (_, index) => ({
+		widgetId: `nb_fill_${index}`,
+		type: "text",
+		title: `Note ${index + 1}`,
+		size: index % 3 === 0 ? "large" : index % 3 === 1 ? "medium" : "small",
+		text: `Observation ${index + 1}: inventory days fell while the order book grew.`,
+		createdAt: now,
+		updatedAt: now,
+		revision: 1,
+		origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+	}));
+	const saved = await page.request.put(notebookUrl, {
+		headers: { Origin: E2E_ORIGIN, "X-Research-Csrf": "1", "Content-Type": "application/json" },
+		data: {
+			notebook: { widgets: [...stored.notebook.widgets, ...filler] },
+			expectedVersion: stored.version,
+		},
+	});
+	expect(saved.status()).toBe(200);
+
+	await page.reload();
+	await page.getByRole("button", { name: "Focus Notebook" }).first().click();
+	await expectDominant("notebook");
+	await expect(notebookWidgets()).toHaveCount(200, { timeout: 30_000 });
+	// Both states stay quick with every widget mounted (no remount on switch).
+	// Timed inside the page, from the click to the first frame that shows the
+	// other state, since Playwright's own role lookups over 200 widgets are
+	// slow in WebKit and would time the harness, not the app.
+	const firstId = await notebookWidgets().first().getAttribute("data-widget-id");
+	const timedSwitch = async (button: "Focus Chat" | "Focus Notebook"): Promise<number> => {
+		const switchedMs = await page.evaluate(async (name) => {
+			const target = [...document.querySelectorAll("button")].find(
+				(candidate) =>
+					candidate.getAttribute("aria-label") === name || candidate.textContent?.trim() === name,
+			);
+			if (target === undefined) throw new Error(`no ${name} button`);
+			const width = (selector: string) =>
+				document.querySelector(selector)?.getBoundingClientRect().width ?? 0;
+			const switched = () => {
+				const chat = width('section[data-panel="chat"]');
+				const notebook = width('div[data-panel="notebook"]');
+				return name === "Focus Chat" ? chat > notebook * 2 : notebook > chat * 2;
+			};
+			const started = performance.now();
+			target.click();
+			for (;;) {
+				const now = await new Promise<number>((resolve) =>
+					requestAnimationFrame(() => resolve(performance.now())),
+				);
+				if (switched() || now - started > 10_000) return now - started;
+			}
+		}, button);
+		await expectDominant(button === "Focus Chat" ? "chat" : "notebook");
+		return Math.round(switchedMs);
+	};
+	const toChat = await timedSwitch("Focus Chat");
+	await expect(notebookWidgets()).toHaveCount(200);
+	const toNotebook = await timedSwitch("Focus Notebook");
+	console.log(
+		`200-widget notebook: to Chat-first ${toChat} ms, to Notebook-first ${toNotebook} ms`,
+	);
+	expect(toChat).toBeLessThan(1_500);
+	expect(toNotebook).toBeLessThan(1_500);
+	expect(await notebookWidgets().first().getAttribute("data-widget-id")).toBe(firstId);
+
+	// Drag the first widget past the second, among 200 drop slots.
+	const widgets = notebookWidgets();
+	const before = await widgets.evaluateAll((nodes) =>
+		nodes.map((node) => node.getAttribute("data-widget-id")),
+	);
+	const handleBox = await widgets.first().locator("[data-widget-drag-handle]").boundingBox();
+	const targetBox = await widgets.nth(1).boundingBox();
+	if (handleBox === null || targetBox === null) throw new Error("widget boxes missing");
+	await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(targetBox.x + targetBox.width * 0.8, targetBox.y + targetBox.height * 0.8, {
+		steps: 25,
+	});
+	await page.mouse.up();
+	const moved = await widgets.evaluateAll((nodes) =>
+		nodes.map((node) => node.getAttribute("data-widget-id")),
+	);
+	expect(moved).not.toEqual(before);
+	expect(moved).toHaveLength(200);
+	// The save has landed once the Notebook's own Undo is available again.
+	await expect(
+		page.getByRole("region", { name: "Notebook" }).getByRole("button", { name: "Undo" }),
+	).toBeEnabled({ timeout: 15_000 });
+	await page.reload();
+	await expect(notebookWidgets()).toHaveCount(200, { timeout: 30_000 });
+	await expect(
+		notebookWidgets().evaluateAll((nodes) =>
+			nodes.map((node) => node.getAttribute("data-widget-id")),
+		),
+	).resolves.toEqual(moved);
+
+	// The 201st is refused with the reason, and nothing is saved.
+	const notebook = page.getByRole("region", { name: "Notebook" });
+	await notebook.getByRole("button", { name: "Add widget" }).click();
+	await page.getByRole("menuitem", { name: "Text" }).click();
+	await expect(notebook).toContainText(
+		"A notebook holds at most 200 widgets. Remove one before adding another.",
+	);
+	await expect(notebookWidgets()).toHaveCount(200);
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
 	);

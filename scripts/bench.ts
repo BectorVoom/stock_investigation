@@ -8,12 +8,24 @@
  * Each case reports the median time of one call at a realistic worst-case size.
  */
 import { extractJsonObject } from "@research/agent-core";
-import { checkBundleIntegrity, createHomeService, homeDataDigestEtag } from "@research/application";
+import {
+	applyNotebookCommands,
+	checkBundleIntegrity,
+	createHomeService,
+	homeDataDigestEtag,
+	notebookAssistPrompt,
+	stampNotebook,
+} from "@research/application";
 import {
 	BASELINE_COMPONENT_DEFINITIONS,
 	createComponentCatalog,
 	type HomeDashboard,
 	homeDataResponseSchema,
+	NOTEBOOK_LIMITS,
+	type Notebook,
+	type NotebookWidget,
+	notebookContentBytes,
+	notebookSchema,
 	type ResearchBundle,
 	researchBundleSchema,
 } from "@research/contracts";
@@ -545,6 +557,106 @@ const homeBenchService = createHomeService({
 	audit: { record: async () => undefined },
 });
 
+// A notebook at both maxima: 200 widgets, close to the content byte cap,
+// mixing long text, wide tables and multi-series charts.
+const NOTEBOOK_BENCH_META = {
+	createdAt: "2026-10-14T00:00:00.000Z",
+	updatedAt: "2026-10-14T00:00:00.000Z",
+	revision: 3,
+	origin: { kind: "chat", messageId: "msg_bench", runId: "run_bench", componentId: null },
+} as const;
+const notebookBenchWidgets: NotebookWidget[] = Array.from(
+	{ length: NOTEBOOK_LIMITS.maxWidgets },
+	(_, index): NotebookWidget => {
+		const base = {
+			widgetId: `nb_bench_${index}`,
+			title: `Bench widget ${index} with a realistic title`,
+			size: "medium",
+			...NOTEBOOK_BENCH_META,
+		} as const;
+		switch (index % 4) {
+			case 0:
+				return {
+					...base,
+					type: "text",
+					text: `${"Notes on margins and guidance. ".repeat(130)}${index}`,
+				};
+			case 1:
+				return {
+					...base,
+					type: "table",
+					columns: Array.from({ length: 12 }, (_, column) => `Column ${column}`),
+					rows: Array.from({ length: 30 }, (_, row) =>
+						Array.from({ length: 12 }, (_, column) =>
+							column % 2 === 0 ? `cell ${row}-${column} text` : row * column + 0.25,
+						),
+					),
+				};
+			case 2:
+				return {
+					...base,
+					type: "chart",
+					chartType: "line",
+					unit: "JPY bn",
+					series: Array.from({ length: 2 }, (_, series) => ({
+						name: `Series ${series}`,
+						points: Array.from({ length: 100 }, (_, point) => ({
+							x: `2026-Q${point}`,
+							y: point * 1.5,
+						})),
+					})),
+				};
+			default:
+				return {
+					...base,
+					type: "metric",
+					value: index * 10.5,
+					unit: "%",
+					change: 0.4,
+					caption: "Operating margin, trailing twelve months",
+					asOf: "2026-10-14",
+				};
+		}
+	},
+);
+const notebookBench: Notebook = notebookSchema.parse({ widgets: notebookBenchWidgets });
+const notebookBenchBytes = notebookContentBytes(notebookBench.widgets);
+if (notebookBenchBytes > NOTEBOOK_LIMITS.maxContentBytes) {
+	throw new Error(`the bench notebook (${notebookBenchBytes} bytes) is over the content cap`);
+}
+const notebookBenchKb = Math.round(notebookBenchBytes / 1000);
+/** The longest turn the assistant may return: 12 commands touching both ends of the notebook. */
+const notebookBenchCommands = [
+	{ kind: "update", widgetId: "nb_bench_0", config: { text: "Rewritten." } },
+	{ kind: "resize", widgetId: "nb_bench_1", size: "large" },
+	{ kind: "reorder", widgetId: "nb_bench_2", toIndex: 198 },
+	{ kind: "move", widgetId: "nb_bench_3", direction: "later" },
+	{ kind: "duplicate", widgetId: "nb_bench_5" },
+	{ kind: "update", widgetId: "nb_bench_9", title: "Renamed" },
+	{ kind: "resize", widgetId: "nb_bench_198", size: "small" },
+	{ kind: "reorder", widgetId: "nb_bench_197", toIndex: 0 },
+	{ kind: "update", widgetId: "nb_bench_4", config: { text: "Also rewritten." } },
+	{ kind: "move", widgetId: "nb_bench_100", direction: "earlier" },
+	{ kind: "resize", widgetId: "nb_bench_50", size: "large" },
+	{ kind: "reorder", widgetId: "nb_bench_60", toIndex: 120 },
+].slice(0, NOTEBOOK_LIMITS.maxCommandsPerTurn);
+// Remove one widget so the duplicate fits under the widget maximum.
+const notebookBenchRoom: Notebook = { widgets: notebookBench.widgets.slice(0, -1) };
+let notebookBenchId = 0;
+const notebookBenchContext = {
+	knownComponentIds: new Set<string>(),
+	newWidgetId: () => {
+		notebookBenchId += 1;
+		return `nb_new_${notebookBenchId}`;
+	},
+};
+const notebookGridSlots = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) => ({
+	left: (index % 4) * 200,
+	top: Math.floor(index / 4) * 160,
+	right: (index % 4) * 200 + 190,
+	bottom: Math.floor(index / 4) * 160 + 150,
+}));
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -630,6 +742,63 @@ const cases: Case[] = [
 		name: "host.apply reorder over an in-memory store of 24 widgets",
 		budgetMs: 1,
 		run: () => gridBenchHost.apply({ kind: "reorder", widgetId: "w-grid-0", toIndex: 23 }),
+	},
+	{
+		name: `measure the content bytes of a full notebook (200 widgets, ${notebookBenchKb} KB)`,
+		budgetMs: 8,
+		run: () => notebookContentBytes(notebookBench.widgets),
+	},
+	{
+		name: `validate a full notebook (200 widgets, ${notebookBenchKb} KB)`,
+		budgetMs: 15,
+		run: () => notebookSchema.parse(notebookBench),
+	},
+	{
+		name: "check 12 assistant commands against a full notebook, then stamp it (runner + API)",
+		budgetMs: 10,
+		run: async () => {
+			const applied = await applyNotebookCommands(
+				notebookBenchRoom,
+				notebookBenchCommands,
+				notebookBenchContext,
+			);
+			if (!applied.ok) throw new Error(`bench turn refused: ${applied.error.failure.message}`);
+			return stampNotebook(
+				notebookBenchRoom,
+				applied.value.widgets,
+				"2026-10-14T01:00:00.000Z",
+				() => ({
+					kind: "assistant",
+					messageId: null,
+					runId: "run_bench",
+					componentId: null,
+				}),
+			);
+		},
+	},
+	{
+		name: "build the no-selection assistant prompt for a full notebook",
+		budgetMs: 5,
+		run: () =>
+			notebookAssistPrompt({
+				notebook: notebookBench,
+				selectedWidgetIds: [],
+				instruction: "Tidy this notebook.",
+				conversationContext: [],
+				fenceToken: "bench-fence",
+				repairNote: null,
+			}),
+	},
+	{
+		name: "nextDropTarget over 200 notebook slots",
+		budgetMs: 0.5,
+		run: () =>
+			nextDropTarget({
+				slots: notebookGridSlots,
+				draggedIndex: 0,
+				pointer: { x: 700, y: 49 * 160 + 40 },
+				previous: gridBenchHistory,
+			}),
 	},
 	{
 		name: "extract JSON after 40 KB of brace-laden prose",

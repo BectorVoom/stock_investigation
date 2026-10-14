@@ -4,12 +4,15 @@
  * stay strict (unknown fields rejected).
  */
 import { describe, expect, it } from "vitest";
+import { MAX_REQUEST_BODY_BYTES } from "../src/api.ts";
 import {
 	EMPTY_NOTEBOOK,
 	NOTEBOOK_LIMITS,
 	NOTEBOOK_WIDGET_TYPE_META,
 	NOTEBOOK_WIDGET_TYPES,
 	notebookAssistRequestSchema,
+	notebookCapacityProblem,
+	notebookContentBytes,
 	notebookResponseSchema,
 	notebookSchema,
 	notebookTurnSchema,
@@ -127,6 +130,92 @@ describe("notebook widgets", () => {
 			},
 			["widgets"],
 		);
+	});
+
+	it("accepts a notebook at the widget maximum", () => {
+		expect(NOTEBOOK_LIMITS.maxWidgets).toBe(200);
+		expectAccepted(notebookSchema, {
+			widgets: Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) => ({
+				...TEXT_WIDGET,
+				widgetId: `w-${index}`,
+			})),
+		});
+	});
+});
+
+describe("notebook capacity", () => {
+	/** A text widget of about `bytes` content bytes. */
+	const textOfBytes = (widgetId: string, bytes: number) => ({
+		...TEXT_WIDGET,
+		widgetId,
+		text: "y".repeat(Math.min(bytes, NOTEBOOK_LIMITS.maxTextChars)),
+	});
+	/** Widgets whose content together is just over `total` bytes. */
+	const widgetsOver = (total: number) =>
+		Array.from({ length: Math.ceil(total / NOTEBOOK_LIMITS.maxTextChars) + 1 }, (_, index) =>
+			textOfBytes(`w-${index}`, NOTEBOOK_LIMITS.maxTextChars),
+		);
+
+	it("measures content without the server-stamped metadata", () => {
+		const coreBytes = new TextEncoder().encode(JSON.stringify(TEXT_CORE)).byteLength;
+		expect(notebookContentBytes([TEXT_CORE])).toBe(coreBytes);
+		expect(notebookContentBytes([TEXT_WIDGET])).toBe(coreBytes);
+		expect(notebookContentBytes([TEXT_WIDGET, { ...TEXT_WIDGET, widgetId: "w-2" }])).toBe(
+			coreBytes * 2,
+		);
+		// UTF-8 bytes, not UTF-16 code units.
+		expect(notebookContentBytes([{ ...TEXT_CORE, text: "円" }])).toBe(
+			notebookContentBytes([{ ...TEXT_CORE, text: "y" }]) + 2,
+		);
+		expect(notebookContentBytes([{ ...TEXT_WIDGET, text: "📈" }])).toBe(
+			notebookContentBytes([{ ...TEXT_CORE, text: "y" }]) + 3,
+		);
+		const fromChat = {
+			...TEXT_WIDGET,
+			origin: { kind: "chat", messageId: "msg_1", runId: "run_1", componentId: "comp_1" },
+		} as const;
+		expect(notebookContentBytes([fromChat])).toBe(coreBytes);
+	});
+
+	it("refuses more widgets than the maximum", () => {
+		const full = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) => ({
+			...TEXT_CORE,
+			widgetId: `w-${index}`,
+		}));
+		expect(notebookCapacityProblem(full, full.slice(1))).toBeNull();
+		expect(notebookCapacityProblem([...full, { ...TEXT_CORE, widgetId: "w-x" }], full)).toEqual({
+			code: "TOO_MANY_WIDGETS",
+			message: "A notebook holds at most 200 widgets. Remove one before adding another.",
+		});
+	});
+
+	it("refuses growing past the byte cap, but lets an over-cap notebook shrink", () => {
+		const over = widgetsOver(NOTEBOOK_LIMITS.maxContentBytes);
+		expect(notebookContentBytes(over)).toBeGreaterThan(NOTEBOOK_LIMITS.maxContentBytes);
+		expect(notebookCapacityProblem(over, over.slice(1))?.code).toBe("NOTEBOOK_TOO_LARGE");
+		expect(notebookCapacityProblem(over.slice(1), over)).toBeNull();
+		// Rearranging an over-cap notebook does not grow it.
+		expect(notebookCapacityProblem([...over].reverse(), over)).toBeNull();
+	});
+
+	it("keeps a notebook at the byte cap, metadata included, inside one request", () => {
+		const origin = {
+			kind: "chat",
+			messageId: "m".repeat(96),
+			runId: "r".repeat(96),
+			componentId: "c".repeat(96),
+		} as const;
+		const perWidget = Math.floor(NOTEBOOK_LIMITS.maxContentBytes / NOTEBOOK_LIMITS.maxWidgets);
+		const widgets = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) => ({
+			...TEXT_WIDGET,
+			widgetId: `w-${String(index).padStart(94, "0")}`,
+			origin,
+			revision: 999_999_999,
+			text: "y".repeat(perWidget - 200),
+		}));
+		expect(notebookContentBytes(widgets)).toBeLessThanOrEqual(NOTEBOOK_LIMITS.maxContentBytes);
+		const body = JSON.stringify({ notebook: { widgets }, expectedVersion: 999_999_999 });
+		expect(new TextEncoder().encode(body).byteLength).toBeLessThan(MAX_REQUEST_BODY_BYTES);
 	});
 });
 

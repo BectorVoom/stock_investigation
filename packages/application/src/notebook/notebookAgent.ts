@@ -4,11 +4,13 @@ import {
 	NOTEBOOK_WIDGET_TYPE_META,
 	NOTEBOOK_WIDGET_TYPES,
 	type Notebook,
+	type NotebookCapacityProblem,
 	type NotebookChange,
 	type NotebookWidget,
 	type NotebookWidgetCore,
 	type NotebookWidgetOrigin,
 	type NotebookWidgetType,
+	notebookCapacityProblem,
 	notebookWidgetCoreSchema,
 } from "@research/contracts";
 import {
@@ -18,6 +20,7 @@ import {
 	parseWidgetCommand,
 	type WidgetAgentFailure,
 	type WidgetAgentType,
+	type WidgetCommand,
 	type WidgetSnapshot,
 } from "@research/widget-grid/agent";
 import { err, ok, type Result } from "@research/widget-grid/core";
@@ -131,7 +134,7 @@ export function toNotebookWidgetCore(widget: NotebookWidget): NotebookWidgetCore
 export interface NotebookCommandFailure {
 	/** 0-based index of the command that failed. */
 	readonly index: number;
-	readonly failure: WidgetAgentFailure;
+	readonly failure: WidgetAgentFailure | NotebookCapacityProblem;
 }
 
 export interface AppliedNotebookCommands {
@@ -160,14 +163,38 @@ export async function describeNotebook(
 	return host.describe();
 }
 
-/** JSON with object keys sorted, so equal widgets compare equal whatever their key order. */
-function canonicalJson(value: unknown): string {
-	return JSON.stringify(value, (_key, current: unknown) => {
-		if (typeof current !== "object" || current === null || Array.isArray(current)) return current;
-		return Object.fromEntries(
-			Object.entries(current).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)),
-		);
-	});
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Equality of parsed JSON data, key order ignored and a key holding
+ * `undefined` counted as absent (as `JSON.stringify` drops it). Stops at the
+ * first difference and builds no strings: comparing every widget of a full
+ * notebook this way is several times cheaper than comparing serialisations.
+ * Widget data is schema-bounded, so the recursion is a few levels deep.
+ */
+function jsonEqual(left: unknown, right: unknown): boolean {
+	if (left === right) return true;
+	if (Array.isArray(left)) {
+		if (!Array.isArray(right) || left.length !== right.length) return false;
+		for (let index = 0; index < left.length; index += 1) {
+			if (!jsonEqual(left[index], right[index])) return false;
+		}
+		return true;
+	}
+	if (!isRecord(left) || !isRecord(right)) return false;
+	let leftKeys = 0;
+	for (const key of Object.keys(left)) {
+		if (left[key] === undefined) continue;
+		leftKeys += 1;
+		if (!jsonEqual(left[key], right[key])) return false;
+	}
+	let rightKeys = 0;
+	for (const key of Object.keys(right)) {
+		if (right[key] !== undefined) rightKeys += 1;
+	}
+	return leftKeys === rightKeys;
 }
 
 const PREVIEW_CHARS = 600;
@@ -187,19 +214,24 @@ function preview(widget: NotebookWidgetCore | undefined): string | null {
 	return text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS - 1)}…` : text;
 }
 
+/** True when anything but the size differs (the size has its own change kind). */
+function contentDiffers(old: NotebookWidgetCore, next: NotebookWidgetCore): boolean {
+	return !jsonEqual({ ...old, size: next.size }, next);
+}
+
 function changesOf(
-	kind: string,
+	command: WidgetCommand,
 	before: readonly NotebookWidgetCore[],
 	after: readonly NotebookWidgetCore[],
 ): NotebookChange[] {
 	const previous = new Map(before.map((widget) => [widget.widgetId, widget] as const));
 	const changes: NotebookChange[] = [];
-	for (const [position, widget] of after.entries()) {
+	for (const widget of after) {
 		const old = previous.get(widget.widgetId);
 		if (old === undefined) {
 			changes.push({
 				widgetId: widget.widgetId,
-				kind: kind === "duplicate" ? "duplicated" : "added",
+				kind: command.kind === "duplicate" ? "duplicated" : "added",
 				title: widget.title,
 				before: null,
 				after: preview(widget),
@@ -215,9 +247,9 @@ function changesOf(
 				after: widget.size,
 			});
 		}
-		const { size: _oldSize, ...oldRest } = old;
-		const { size: _newSize, ...newRest } = widget;
-		if (canonicalJson(oldRest) !== canonicalJson(newRest)) {
+		// Layout edits keep every widget they do not touch as the same object,
+		// so only the edited one is compared (a full notebook is ~1 MB).
+		if (old !== widget && contentDiffers(old, widget)) {
 			changes.push({
 				widgetId: widget.widgetId,
 				kind: "updated",
@@ -226,18 +258,21 @@ function changesOf(
 				after: preview(widget),
 			});
 		}
-		if ((kind === "move" || kind === "reorder") && before[position]?.widgetId !== widget.widgetId) {
-			const from = before.findIndex((candidate) => candidate.widgetId === widget.widgetId);
-			// Only the widget the command names is reported as moved, not every one it displaced.
-			if (changes.every((change) => change.kind !== "moved")) {
-				changes.push({
-					widgetId: widget.widgetId,
-					kind: "moved",
-					title: widget.title,
-					before: `position ${from + 1}`,
-					after: `position ${position + 1}`,
-				});
-			}
+	}
+	// The widget the command names is the one reported as moved, not the
+	// neighbours it displaced.
+	if (command.kind === "move" || command.kind === "reorder") {
+		const from = before.findIndex((widget) => widget.widgetId === command.widgetId);
+		const to = after.findIndex((widget) => widget.widgetId === command.widgetId);
+		const moved = after[to];
+		if (moved !== undefined && from !== to) {
+			changes.push({
+				widgetId: moved.widgetId,
+				kind: "moved",
+				title: moved.title,
+				before: `position ${from + 1}`,
+				after: `position ${to + 1}`,
+			});
 		}
 	}
 	return changes;
@@ -303,8 +338,12 @@ export async function applyNotebookCommands(
 		const applied = await host.apply(parsed.value);
 		if (!applied.ok) return err({ index, failure: applied.error });
 		snapshot = applied.value;
-		changes.push(...changesOf(parsed.value.kind, before, widgets));
+		changes.push(...changesOf(parsed.value, before, widgets));
 	}
+	// The widget count is the layout rule above; the byte cap is decided on
+	// the turn's result, since only the whole notebook can exceed it.
+	const capacity = notebookCapacityProblem(widgets, notebook.widgets);
+	if (capacity !== null) return err({ index: commands.length - 1, failure: capacity });
 	return ok({ widgets, snapshot, changes });
 }
 
@@ -327,7 +366,7 @@ export function stampNotebook(
 			if (old === undefined) {
 				return { ...core, createdAt: now, updatedAt: now, revision: 1, origin: originForNew(core) };
 			}
-			const unchanged = canonicalJson(toNotebookWidgetCore(old)) === canonicalJson(core);
+			const unchanged = jsonEqual(toNotebookWidgetCore(old), core);
 			return {
 				...core,
 				createdAt: old.createdAt,

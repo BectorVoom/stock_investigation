@@ -1,5 +1,5 @@
 import type { AgentProbe, AgentRunContext, AgentRuntime } from "@research/agent-core";
-import type { AgentEvent, AgentRequest } from "@research/contracts";
+import { type AgentEvent, type AgentRequest, NOTEBOOK_LIMITS } from "@research/contracts";
 import { type JobState, transitionJob } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
@@ -468,5 +468,48 @@ describe("notebook-assistant prompt budget", () => {
 		const bytes = new TextEncoder().encode(requests[0]?.prompt ?? "").byteLength;
 		expect(bytes).toBeGreaterThan(0);
 		expect(bytes).toBeLessThan(NOTEBOOK_PROMPT_BUDGET_BYTES);
+	});
+
+	it("shows a full notebook with nothing selected as previews within budget, the rest as summaries", async () => {
+		const widgets = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) =>
+			textWidget(`w-${index}`, `${"y".repeat(NOTEBOOK_LIMITS.maxTextChars - 10)} end-${index}`),
+		);
+		const { run, requests } = setup([replyWith([])], {
+			input: { notebook: notebookFixture(widgets), selectedWidgetIds: [] },
+		});
+		const outcome = await run();
+		expect(outcome.kind).toBe("assisted");
+		const prompt = requests[0]?.prompt ?? "";
+		expect(new TextEncoder().encode(prompt).byteLength).toBeLessThan(NOTEBOOK_PROMPT_BUDGET_BYTES);
+		// Every widget is still addressable by id and position.
+		for (const [position, widget] of widgets.entries()) {
+			expect(prompt).toContain(`position ${position}: {`);
+			expect(prompt).toContain(`"widgetId":"${widget.widgetId}"`);
+		}
+		const note = /(\d+) of 200 widgets carry their content/.exec(prompt);
+		const previewed = Number(note?.[1] ?? "0");
+		expect(previewed).toBeGreaterThan(0);
+		expect(previewed).toBeLessThan(200);
+		// The first widgets carry a (cut) body; the last one only its summary line.
+		expect(prompt).toMatch(/position 0: \{"position":0,"widgetId":"w-0"[^\n]*"text":"y/);
+		expect(prompt).toMatch(
+			/position 199: \{"widgetId":"w-199","type":"text","title":"[^"]*","size":"medium"\}\n/,
+		);
+	});
+
+	it("cuts chart series to the preview length when nothing is selected", async () => {
+		const points = Array.from({ length: NOTEBOOK_LIMITS.maxChartPoints }, (_, index) => ({
+			x: `p-${index}`,
+			y: index,
+		}));
+		const chart = { ...chartWidget("w-chart"), series: [{ name: "S", points }] };
+		const { run, requests } = setup([replyWith([])], {
+			input: { notebook: notebookFixture([chart]), selectedWidgetIds: [] },
+		});
+		expect((await run()).kind).toBe("assisted");
+		const prompt = requests[0]?.prompt ?? "";
+		expect(prompt).toContain('"x":"p-23"');
+		expect(prompt).not.toContain('"x":"p-24"');
+		expect(prompt).toContain("chart series to 24 points");
 	});
 });

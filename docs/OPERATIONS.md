@@ -476,7 +476,10 @@ turn for the chat card), plus an index for looking up one run's chat message
 `wrangler d1 export`, `DELETE` all three tables' rows and `DROP TABLE` them
 (and the index), restoring the version-8 schema. Unlike the canvas, notebooks
 are not part of workspace export/import yet (ADR-0020); a directory copy of
-`data/` carries them.
+`data/` carries them. Sizing: a notebook holds at most 200 widgets and 850 KB
+of widget content (under 1 MB with metadata, within D1's 2 MB row limit), so
+one conversation's notebook rows stay under about 21 MB (the body plus 20
+revisions); ordinary notebooks are a few KB per version.
 
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,

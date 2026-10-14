@@ -5,7 +5,13 @@
  * refusal, all-or-nothing application, metadata stamping and the research
  * component rule.
  */
-import type { Notebook, NotebookWidget, NotebookWidgetCore } from "@research/contracts";
+import {
+	NOTEBOOK_LIMITS,
+	type Notebook,
+	type NotebookWidget,
+	type NotebookWidgetCore,
+	notebookContentBytes,
+} from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	applyNotebookCommands,
@@ -30,13 +36,13 @@ function context(known: readonly string[] = ["comp-1", "comp-2"]): NotebookAgent
 	};
 }
 
-function textWidget(widgetId: string, title = "Notes"): NotebookWidget {
+function textWidget(widgetId: string, title = "Notes", text = "hello"): NotebookWidget {
 	return {
 		widgetId,
 		type: "text",
 		title,
 		size: "medium",
-		text: "hello",
+		text,
 		createdAt: EARLIER,
 		updatedAt: EARLIER,
 		revision: 1,
@@ -185,6 +191,97 @@ describe("applyNotebookCommands", () => {
 		expect(applied.value.widgets.find((widget) => widget.widgetId === "w-2")?.size).toBe("large");
 	});
 
+	it("reports the widget the command moved, not the neighbour it displaced", async () => {
+		const start = notebookOf([
+			textWidget("w-1", "First"),
+			textWidget("w-2", "Second"),
+			textWidget("w-3", "Third"),
+		]);
+		const applied = await applyNotebookCommands(
+			start,
+			[
+				{ kind: "move", widgetId: "w-1", direction: "later" },
+				{ kind: "reorder", widgetId: "w-1", toIndex: 2 },
+				{ kind: "move", widgetId: "w-1", direction: "earlier" },
+			],
+			context(),
+		);
+		if (!applied.ok) throw new Error(`expected success: ${applied.error.failure.message}`);
+		expect(applied.value.changes).toEqual([
+			expect.objectContaining({
+				widgetId: "w-1",
+				title: "First",
+				before: "position 1",
+				after: "position 2",
+			}),
+			expect.objectContaining({ widgetId: "w-1", before: "position 2", after: "position 3" }),
+			expect.objectContaining({ widgetId: "w-1", before: "position 3", after: "position 2" }),
+		]);
+		expect(applied.value.changes.every((change) => change.kind === "moved")).toBe(true);
+
+		// A reorder to the widget's own position moves nothing and reports nothing.
+		const stay = await applyNotebookCommands(
+			start,
+			[{ kind: "reorder", widgetId: "w-2", toIndex: 1 }],
+			context(),
+		);
+		if (!stay.ok) throw new Error(`expected success: ${stay.error.failure.message}`);
+		expect(stay.value.changes).toEqual([]);
+	});
+
+	it("adds up to the widget maximum and refuses the next one", async () => {
+		const full = notebookOf(
+			Array.from({ length: NOTEBOOK_LIMITS.maxWidgets - 1 }, (_, index) =>
+				textWidget(`w-${index}`),
+			),
+		);
+		const add = { kind: "add", type: "text", title: "Last", config: { text: "x" } };
+		const applied = await applyNotebookCommands(full, [add], context());
+		if (!applied.ok) throw new Error(`expected success: ${applied.error.failure.message}`);
+		expect(applied.value.widgets).toHaveLength(NOTEBOOK_LIMITS.maxWidgets);
+		const over = await applyNotebookCommands(
+			notebookOf([...full.widgets, textWidget("w-x")]),
+			[add],
+			context(),
+		);
+		if (over.ok) throw new Error("expected the widget maximum to refuse the add");
+		expect(over.error.failure.code).toBe("TOO_MANY_WIDGETS");
+	});
+
+	it("refuses a turn that grows the notebook past its byte cap, all or nothing", async () => {
+		const big = (widgetId: string): NotebookWidget =>
+			textWidget(widgetId, "Notes", "y".repeat(NOTEBOOK_LIMITS.maxTextChars));
+		// Just under the cap: one duplicate still fits, the second does not.
+		const perWidget = notebookContentBytes([big("w-0")]);
+		const count = Math.floor(NOTEBOOK_LIMITS.maxContentBytes / perWidget) - 1;
+		const start = notebookOf(Array.from({ length: count }, (_, index) => big(`w-${index}`)));
+		expect(notebookContentBytes(start.widgets) + perWidget).toBeLessThanOrEqual(
+			NOTEBOOK_LIMITS.maxContentBytes,
+		);
+		expect(notebookContentBytes(start.widgets) + 2 * perWidget).toBeGreaterThan(
+			NOTEBOOK_LIMITS.maxContentBytes,
+		);
+		const applied = await applyNotebookCommands(
+			start,
+			[
+				{ kind: "resize", widgetId: "w-0", size: "large" },
+				{ kind: "duplicate", widgetId: "w-1" },
+				{ kind: "duplicate", widgetId: "w-2" },
+			],
+			context(),
+		);
+		if (applied.ok) throw new Error("expected the byte cap to refuse the turn");
+		expect(applied.error.index).toBe(2);
+		expect(applied.error.failure.code).toBe("NOTEBOOK_TOO_LARGE");
+		// The same notebook still takes commands that do not grow it.
+		const rearranged = await applyNotebookCommands(
+			start,
+			[{ kind: "reorder", widgetId: "w-0", toIndex: count - 1 }],
+			context(),
+		);
+		expect(rearranged.ok).toBe(true);
+	});
+
 	it("refuses an update that changes nothing", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([textWidget("w-1")]),
@@ -294,6 +391,67 @@ describe("stampNotebook", () => {
 			revision: 1,
 			origin,
 		});
+	});
+
+	it("compares nested content cell by cell, whatever the key order", () => {
+		const table: NotebookWidget = {
+			widgetId: "w-t",
+			type: "table",
+			title: "Table",
+			size: "medium",
+			columns: ["Year", "Revenue"],
+			rows: [
+				["2025", 10],
+				["2026", null],
+			],
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 2,
+			origin,
+		};
+		const previous = notebookOf([table]);
+		// The same content with keys in another order, as a client may send it.
+		const reordered: NotebookWidgetCore = {
+			rows: [
+				["2025", 10],
+				["2026", null],
+			],
+			columns: ["Year", "Revenue"],
+			size: "medium",
+			title: "Table",
+			type: "table",
+			widgetId: "w-t",
+		};
+		expect(stampNotebook(previous, [reordered], NOW, () => origin).widgets[0]).toMatchObject({
+			updatedAt: EARLIER,
+			revision: 2,
+		});
+		for (const rows of [
+			[
+				["2025", 10],
+				["2026", 0],
+			],
+			[["2025", 10]],
+			[
+				["2025", "10"],
+				["2026", null],
+			],
+			[
+				["2025", 10],
+				["2026", null],
+				["2027", 1],
+			],
+		]) {
+			const edited: NotebookWidgetCore = { ...reordered, rows };
+			expect(stampNotebook(previous, [edited], NOW, () => origin).widgets[0]).toMatchObject({
+				updatedAt: NOW,
+				revision: 3,
+			});
+		}
+		// A field on one side only is a difference, whichever side has it.
+		const withExtra = { ...reordered, note: "x" };
+		const extraCore: NotebookWidgetCore = withExtra;
+		expect(stampNotebook(previous, [extraCore], NOW, () => origin).widgets[0]?.revision).toBe(3);
 	});
 
 	it("bumps revision and updatedAt only for changed widgets", () => {

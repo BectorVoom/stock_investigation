@@ -29,6 +29,11 @@ import {
  * the turn resizes it, Undo restores it, and Notebook-first survives a
  * reload. A model reply that fails the protocol is a finding: the turn card
  * and the runner log are printed.
+ *
+ * Then the same chat's notebook is filled to 199 widgets of long notes, too
+ * many to show in full: with nothing selected the prompt carries the first
+ * widgets' content and only summary lines for the rest, and the assistant
+ * still has to add an index naming the last three widgets.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -257,5 +262,59 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		const reloadedNotebook = await notebook.boundingBox();
 		expect((reloadedNotebook?.width ?? 0) > (reloadedChat?.width ?? 0) * 2).toBe(true);
 		await page.screenshot({ path: test.info().outputPath("3-after-reload.png") });
+	});
+
+	test("a large notebook with nothing selected: the assistant works from its summary index", async () => {
+		test.setTimeout(900_000);
+		const page = activePage();
+		const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+		if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+		const notebookUrl = `${API_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`;
+		const read = await fetch(notebookUrl, { headers: ownerHeaders(API_ORIGIN) });
+		expect(read.status).toBe(200);
+		const stored = (await read.json()) as {
+			notebook: { widgets: { widgetId: string }[] };
+			version: number;
+		};
+		const now = new Date().toISOString();
+		const fillerCount = 199 - stored.notebook.widgets.length;
+		const filler = Array.from({ length: fillerCount }, (_, index) => ({
+			widgetId: `nb_live_fill_${index}`,
+			type: "text",
+			title: `Note ${index + 1}`,
+			size: "small",
+			text: `Note ${index + 1}. ${"Inventory days fell while the order book grew. ".repeat(40)}`,
+			createdAt: now,
+			updatedAt: now,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		}));
+		const saved = await fetch(notebookUrl, {
+			method: "PUT",
+			headers: ownerHeaders(API_ORIGIN),
+			body: JSON.stringify({
+				notebook: { widgets: [...stored.notebook.widgets, ...filler] },
+				expectedVersion: stored.version,
+			}),
+		});
+		expect(saved.status).toBe(200);
+
+		// A reload clears the selection: the instruction is about the whole notebook.
+		await page.reload();
+		await expect(notebookWidgets(page)).toHaveCount(199, { timeout: 60_000 });
+		const composer = page.getByRole("form", { name: "Notebook composer" });
+		await expect(composer.getByText("About the whole notebook")).toBeVisible();
+		const lastTitles = [fillerCount - 2, fillerCount - 1, fillerCount].map((n) => `Note ${n}`);
+		await instruct(
+			page,
+			"Add one text widget titled Index at the end of the notebook. Its text lists the titles of the last three widgets currently in the notebook, one per line.",
+		);
+		await expect(notebookWidgets(page)).toHaveCount(200, { timeout: 30_000 });
+		const index = notebookWidgets(page).last();
+		await expect(index.locator(".wg-title")).toHaveText("Index");
+		const indexText = await index.innerText();
+		console.log(`index widget: ${indexText}`);
+		for (const title of lastTitles) expect(indexText).toContain(title);
+		await page.screenshot({ path: test.info().outputPath("4-large-notebook-index.png") });
 	});
 });

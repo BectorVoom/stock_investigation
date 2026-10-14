@@ -22,7 +22,8 @@ publish no model prose (ADR-0003 §6) because they read untrusted text.
 ### The Notebook is a document of its own, one per conversation
 
 `notebook` (contracts `notebook.ts`) is a versioned JSON document per
-workspace: an ordered list of at most 40 widgets. Each widget has the
+workspace: an ordered list of at most 200 widgets (raised from 40 on
+2026-10-14) holding at most 850 KB of widget content. Each widget has the
 package's four fields (`widgetId`, `type`, `title`, `size`), its content, and
 server-stamped metadata (`createdAt`, `updatedAt`, `revision`, `origin`).
 Types: `text` (editable text), `metric`, `chart` (line or bar, carrying its own
@@ -39,6 +40,15 @@ screenshot and never a live link to a mutable record. Chat messages, widget
 content, the layout (the widget order and sizes inside the notebook body) and
 the assistant's operation history (`notebook_turns`) are separate records
 joined by ids.
+
+The byte cap exists because the per-widget caps alone allow far more than
+one request may carry (`MAX_REQUEST_BODY_BYTES`, 1 MB): with metadata (under
+500 bytes per widget) a notebook at the cap still fits one owner save, so a
+notebook the assistant grew can always be saved again. One rule
+(`notebookCapacityProblem` in contracts) decides it for the owner's saves,
+the assistant's commands (runner and API) and the client, which refuses an
+add past the cap at once with the reason. A notebook already over the byte
+cap may shrink or be rearranged, never grow.
 
 Persistence mirrors the Home dashboard (ADR-0017/0019): `GET`/`PUT
 /workspaces/:id/notebook` with the version as compare-and-set revision, so a
@@ -82,8 +92,12 @@ the explicit selection, the notebook at the version the owner saw, and the
 saved agent choices. The runner asks the model once (one repair attempt)
 for `{ reply, commands }`, where commands are widget-grid agent commands.
 The prompt narrows context: selected widgets in full, the others by id,
-type, title, size and position only; with nothing selected every widget,
-text bodies truncated. No tools, no network, no evidence.
+type, title, size and position only; with nothing selected every widget
+with its bodies cut (text to 500 characters, tables to 8 rows, chart series
+to 24 points), as many as fit an 80 KB widget block in notebook order, the
+rest as summary lines, so a full notebook degrades to an index instead of
+failing the turn (the prompt ceiling is 120 KB). No tools, no network, no
+evidence.
 
 Every command is validated twice by the same code
 (`application/notebook/notebookAgent.ts` over `createWidgetAgentHost`):

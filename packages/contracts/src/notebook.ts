@@ -16,7 +16,15 @@ import { idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
  */
 
 export const NOTEBOOK_LIMITS = {
-	maxWidgets: 40,
+	maxWidgets: 200,
+	/**
+	 * UTF-8 bytes of all widgets' JSON without the server-stamped metadata.
+	 * The per-widget caps alone allow far more than one request may carry, so
+	 * this keeps a full notebook, metadata included (under 500 bytes per
+	 * widget), inside `MAX_REQUEST_BODY_BYTES`: a notebook the assistant
+	 * grew is always one the owner can still save.
+	 */
+	maxContentBytes: 850_000,
 	maxTitleChars: 120,
 	maxTextChars: 8_000,
 	maxCaptionChars: 200,
@@ -206,6 +214,58 @@ export const notebookSchema = z
 export type Notebook = z.infer<typeof notebookSchema>;
 
 export const EMPTY_NOTEBOOK: Notebook = { widgets: [] };
+
+const WIDGET_META_KEYS: readonly string[] = Object.keys(widgetMetaShape);
+const contentEncoder = new TextEncoder();
+
+/** UTF-8 bytes of the widgets' JSON, server-stamped metadata left out (what `maxContentBytes` bounds). */
+export function notebookContentBytes(widgets: readonly NotebookWidgetCore[]): number {
+	let bytes = 0;
+	for (const widget of widgets) {
+		const fields: Readonly<Record<string, unknown>> = widget;
+		// One native stringify per widget, minus each metadata member (`"key":value`
+		// and its comma; the widget's own fields always remain): about twice as
+		// fast as a replacer, which is called for every table cell.
+		bytes += contentEncoder.encode(JSON.stringify(widget)).byteLength;
+		for (const key of WIDGET_META_KEYS) {
+			const value = fields[key];
+			if (value === undefined) continue;
+			bytes -=
+				contentEncoder.encode(`${JSON.stringify(key)}:${JSON.stringify(value)}`).byteLength + 1;
+		}
+	}
+	return bytes;
+}
+
+export interface NotebookCapacityProblem {
+	readonly code: "TOO_MANY_WIDGETS" | "NOTEBOOK_TOO_LARGE";
+	readonly message: string;
+}
+
+/**
+ * Why `next` cannot be stored, or null. One rule for the owner's saves, the
+ * assistant's commands (runner and API) and the client. A notebook already
+ * over the byte cap may still shrink or be rearranged; it may not grow.
+ */
+export function notebookCapacityProblem(
+	next: readonly NotebookWidgetCore[],
+	previous: readonly NotebookWidgetCore[],
+): NotebookCapacityProblem | null {
+	if (next.length > NOTEBOOK_LIMITS.maxWidgets) {
+		return {
+			code: "TOO_MANY_WIDGETS",
+			message: `A notebook holds at most ${NOTEBOOK_LIMITS.maxWidgets} widgets. Remove one before adding another.`,
+		};
+	}
+	const bytes = notebookContentBytes(next);
+	if (bytes > NOTEBOOK_LIMITS.maxContentBytes && bytes > notebookContentBytes(previous)) {
+		return {
+			code: "NOTEBOOK_TOO_LARGE",
+			message: `A notebook holds at most ${Math.floor(NOTEBOOK_LIMITS.maxContentBytes / 1000)} KB of widget content. Remove a widget or shorten a large table, chart or text first.`,
+		};
+	}
+	return null;
+}
 
 /** Label, description and allowed sizes per type: one table for the UI and the agent layer. */
 export const NOTEBOOK_WIDGET_TYPE_META: {

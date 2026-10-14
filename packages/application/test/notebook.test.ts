@@ -12,7 +12,7 @@ import type {
 	NotebookTurn,
 	NotebookWidget,
 } from "@research/contracts";
-import { EMPTY_NOTEBOOK } from "@research/contracts";
+import { EMPTY_NOTEBOOK, NOTEBOOK_LIMITS } from "@research/contracts";
 import { emptyWorkspaceState, type WorkspaceState } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import type { UseCaseResult } from "../src/errors.ts";
@@ -40,13 +40,13 @@ const OWNER = "owner_1";
 const WORKSPACE = "ws_1";
 const NOW = "2026-10-14T00:00:00.000Z";
 
-function textWidget(widgetId: string, title = "Notes"): NotebookWidget {
+function textWidget(widgetId: string, title = "Notes", text = "hello"): NotebookWidget {
 	return {
 		widgetId,
 		type: "text",
 		title,
 		size: "medium",
-		text: "hello",
+		text,
 		createdAt: NOW,
 		updatedAt: NOW,
 		revision: 1,
@@ -381,6 +381,24 @@ describe("putNotebook", () => {
 			"VERSION_CONFLICT",
 		);
 		expect(f.auditEntries).toEqual([]);
+	});
+
+	it("saves a notebook at the widget maximum and refuses one past the byte cap", async () => {
+		const f = fakes();
+		const full = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) =>
+			textWidget(`w-${index}`),
+		);
+		unwrap(await service(f).putNotebook(OWNER, WORKSPACE, { widgets: full }, 0));
+		expect(f.notebookStore.putCalls).toHaveLength(1);
+
+		const heavy = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets }, (_, index) =>
+			textWidget(`w-${index}`, "Notes", "y".repeat(NOTEBOOK_LIMITS.maxTextChars)),
+		);
+		const message = expectFail(
+			await service(fakes()).putNotebook(OWNER, WORKSPACE, { widgets: heavy }, 0),
+			"INVALID_NOTEBOOK",
+		);
+		expect(message).toContain("850 KB");
 	});
 
 	it("rejects a research widget that names no canvas component, naming the widget", async () => {
@@ -869,6 +887,43 @@ describe("notebookAssistedEffects", () => {
 			text: "Done",
 			claimIds: [],
 		});
+	});
+
+	it("records a turn that would grow the notebook past its byte cap as failed, writing nothing", async () => {
+		const f = fakes();
+		const big = (widgetId: string): NotebookWidget =>
+			textWidget(widgetId, "Notes", "y".repeat(NOTEBOOK_LIMITS.maxTextChars));
+		const count = Math.floor(NOTEBOOK_LIMITS.maxContentBytes / NOTEBOOK_LIMITS.maxTextChars);
+		f.notebookStore.record = {
+			notebook: { widgets: Array.from({ length: count }, (_, index) => big(`w-${index}`)) },
+			version: 1,
+			updatedAt: NOW,
+		};
+		const effects = unwrap(
+			await notebookAssistedEffects(
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				job(),
+				{
+					outcome: "notebook-assisted",
+					leaseGeneration: 1,
+					usage: {
+						agentSteps: 1,
+						toolCalls: 0,
+						inputBytes: 10,
+						knownCostUsd: 0,
+						hasUnmeteredUsage: true,
+					},
+					baseVersion: 1,
+					reply: "Copied.",
+					commands: [{ kind: "duplicate", widgetId: "w-0" }],
+					proposedRemovals: [],
+				},
+				NOW,
+			),
+		);
+		expect(effects.notebook).toBeNull();
+		expect(effects.notebookTurn?.turn.appliedVersion).toBeNull();
+		expect(effects.notebookTurn?.turn.failure?.code).toBe("NOTEBOOK_TOO_LARGE");
 	});
 
 	it("writes no version for a turn whose commands change nothing", async () => {
