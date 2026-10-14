@@ -805,7 +805,10 @@ export function createApp(options: AppOptions = {}) {
 				const assisted = yield* useCase("notebook.assist", () =>
 					c.var.services.notebook.assistNotebook(owner(c), workspaceId, body, key),
 				);
-				return c.json(notebookAssistResponseSchema.parse(assisted), 202);
+				return c.json(
+					notebookAssistResponseSchema.parse({ message: assisted.message, run: assisted.run }),
+					202,
+				);
 			}),
 		),
 	);

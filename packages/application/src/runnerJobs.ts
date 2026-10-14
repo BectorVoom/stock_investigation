@@ -1253,9 +1253,10 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					return fail("CONFLICT", "The run or its workspace changed concurrently; resend.");
 				}
 			}
-			// Unreachable: the second attempt of a notebook turn always commits
-			// (it records NOTEBOOK_CHANGED with no notebook write), and every
-			// other conflict returns above. Fail closed if the loop ever ends.
+			// Only a second consecutive notebook-conflict lands here (the
+			// notebook moved again between the re-read and the commit): stop
+			// inside the request's query budget. The request is idempotent, so
+			// the runner simply sends it again.
 			return fail("CONFLICT", "The run or its workspace changed concurrently; resend.");
 		},
 

@@ -35,6 +35,7 @@ import {
 	claimSchema,
 	datasetSchema,
 	demandScenarioSchema,
+	EMPTY_NOTEBOOK,
 	evidenceSchema,
 	financialObservationSchema,
 	homeDashboardSchema,
@@ -1388,7 +1389,7 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 							WHERE owner_id = ? AND workspace_id = ? AND version = ?`,
 							)
 							.bind(body, mutationId, updatedAt, ownerId, workspaceId, expectedVersion);
-			const results = await db.batch([
+			const statements = [
 				current,
 				db
 					.prepare(
@@ -1412,7 +1413,20 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 						NOTEBOOK_LIMITS.maxRevisions,
 						...guardValues,
 					),
-			]);
+			];
+			if (expectedVersion === 0) {
+				// The first write keeps the empty body as revision 0 in the
+				// same batch, so undo at version 1 restores "no widgets yet".
+				statements.push(
+					db
+						.prepare(
+							`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
+							SELECT ?, ?, 0, ? WHERE ${guard}`,
+						)
+						.bind(ownerId, workspaceId, JSON.stringify(EMPTY_NOTEBOOK), ...guardValues),
+				);
+			}
+			const results = await db.batch(statements);
 			return results[0]?.meta.changes === 1 ? "written" : "version-conflict";
 		},
 		async getRevision(ownerId, workspaceId, version) {

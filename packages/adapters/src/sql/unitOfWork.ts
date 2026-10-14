@@ -18,6 +18,7 @@ import type {
 } from "@research/contracts";
 import {
 	DEFAULT_CONVERSATION_TITLE,
+	EMPTY_NOTEBOOK,
 	MARKET_LIMITS,
 	NOTEBOOK_LIMITS,
 	notebookSchema,
@@ -605,7 +606,7 @@ function notebookStatements(
 						write.expectedVersion,
 						...guard.values,
 					);
-	return [
+	const statements = [
 		current,
 		db
 			.prepare(
@@ -630,6 +631,19 @@ function notebookStatements(
 				...both.values,
 			),
 	];
+	if (write.expectedVersion === 0) {
+		// The first write keeps the empty body as revision 0 in the same
+		// batch, so undo at version 1 restores "no widgets yet".
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO workspace_notebook_revisions (owner_id, workspace_id, version, body_json)
+					SELECT ?, ?, 0, ? WHERE ${both.sql}`,
+				)
+				.bind(ownerId, write.workspaceId, JSON.stringify(EMPTY_NOTEBOOK), ...both.values),
+		);
+	}
+	return statements;
 }
 
 /**
