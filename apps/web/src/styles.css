@@ -117,6 +117,14 @@ html:root {
 }
 
 /*
+ * Notebook quiet variant (ADR-0020): the package's `variant="quiet"` adds no
+ * new `--wg-*` property today (its stylesheet reads the same tokens), so the
+ * quiet frames are separated by tone and space through the mapping above.
+ * When the package gains quiet-only tokens, they are mapped here, beside the
+ * Home mapping, which stays unchanged.
+ */
+
+/*
  * Home surface density: every Shoelace form control on Home carries
  * size="small" and is mapped here onto the app's INPUT / LABEL parts, so a
  * Shoelace control looks like its existing counterpart at the same scale
