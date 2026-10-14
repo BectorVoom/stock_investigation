@@ -1,7 +1,7 @@
 import { type AgentRuntime, extractJsonObject, parseAgentEvent } from "@research/agent-core";
 import { type ClaimedJob, NOTEBOOK_LIMITS } from "@research/contracts";
 import { addUsage, EMPTY_USAGE, type ResourceUsage } from "@research/domain";
-import { isJsonObject, type JsonObject, parseWidgetCommand } from "@research/widget-grid/agent";
+import { isJsonObject, type JsonObject } from "@research/widget-grid/agent";
 import { z } from "zod";
 import type { Clock } from "../ports.ts";
 import type { PipelineReporter } from "../research/pipeline.ts";
@@ -63,16 +63,6 @@ const notebookAssistReplySchema = z.strictObject({
 	commands: z.array(z.unknown()).max(NOTEBOOK_LIMITS.maxCommandsPerTurn),
 });
 
-/**
- * A `duplicate` command when the local command schema does not know the kind
- * yet (a parallel task adds it to the package): validated here so the turn
- * still pre-checks, and the API re-checks every command anyway.
- */
-const duplicateCommandSchema = z.strictObject({
-	kind: z.literal("duplicate"),
-	widgetId: z.string().min(1).max(120),
-});
-
 const MAX_MODEL_OUTPUT_CHARS = 400_000;
 
 type ModelTurnResult =
@@ -125,9 +115,6 @@ export async function runNotebookAssistTurn(
 
 	await deps.reporter.state("planning");
 
-	// Whether `duplicate` validates below is decided by the command schema, so
-	// a package that does not know the kind yet is detected, not assumed.
-	const duplicateSupported = parseWidgetCommand({ kind: "duplicate", widgetId: "probe" }).ok;
 	const byteLength = (text: string): number => new TextEncoder().encode(text).length;
 
 	/** One model turn under no budget (the turn is two short prompts, not a tool loop). Never throws. */
@@ -251,35 +238,8 @@ export async function runNotebookAssistTurn(
 			}
 			rest.push(command);
 		}
-		// Commands the turn returns, in the model's order (removals travel separately).
-		const commands: JsonObject[] = [];
-		const applyList: unknown[] = [];
-		const fallbackDuplicates = new Map<number, JsonObject>();
-		for (const [restIndex, command] of rest.entries()) {
-			if (!duplicateSupported && isJsonObject(command) && command.kind === "duplicate") {
-				const duplicate = duplicateCommandSchema.safeParse(command);
-				if (!duplicate.success) {
-					return fail(
-						"INVALID_COMMAND",
-						`invalid command at position ${restIndex + 1}: "widgetId" must be a non-empty string.`,
-					);
-				}
-				if (!existing.has(duplicate.data.widgetId)) {
-					return fail(
-						"WIDGET_NOT_FOUND",
-						`invalid command at position ${restIndex + 1}: no widget with id "${duplicate.data.widgetId}".`,
-					);
-				}
-				fallbackDuplicates.set(restIndex, {
-					kind: "duplicate",
-					widgetId: duplicate.data.widgetId,
-				});
-				continue;
-			}
-			applyList.push(command);
-		}
 		let counter = 0;
-		const applied = await applyNotebookCommands(input.notebook, applyList, {
+		const applied = await applyNotebookCommands(input.notebook, rest, {
 			knownComponentIds: notebookResearchComponentIds(input.notebook),
 			newWidgetId: () => {
 				counter += 1;
@@ -292,12 +252,9 @@ export async function runNotebookAssistTurn(
 				`command ${applied.error.index + 1}: ${applied.error.failure.message}`,
 			);
 		}
+		// Commands the turn returns, in the model's order (removals travel separately).
+		const commands: JsonObject[] = [];
 		for (const [restIndex, command] of rest.entries()) {
-			const fallback = fallbackDuplicates.get(restIndex);
-			if (fallback !== undefined) {
-				commands.push(fallback);
-				continue;
-			}
 			if (!isJsonObject(command)) {
 				return fail("INVALID_COMMAND", `command ${restIndex + 1} is not an object.`);
 			}
