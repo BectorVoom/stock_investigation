@@ -216,6 +216,61 @@ describe("WidgetFrame selection", () => {
 	});
 });
 
+describe("WidgetFrame titleHidden", () => {
+	it("keeps the accessible name while hiding the title and marking the frame", () => {
+		render(() => (
+			<WidgetFrame widget={widget()} titleHidden>
+				body text
+			</WidgetFrame>
+		));
+		const article = screen.getByRole("article", { name: "Notes" });
+		expect(article.hasAttribute("data-widget-title-hidden")).toBe(true);
+		const title = article.querySelector("h3");
+		if (!(title instanceof HTMLElement)) throw new Error("no title");
+		expect(title.className).toContain("wg-visually-hidden");
+		expect(title.className).not.toContain("wg-title");
+		expect(article.getAttribute("aria-labelledby")).toBe(title.id);
+		const body = article.querySelector("div[tabindex='0']");
+		if (!(body instanceof HTMLElement)) throw new Error("no scrollable body");
+		expect(body.getAttribute("aria-labelledby")).toBe(title.id);
+		expect(body.textContent).toContain("body text");
+	});
+
+	it("renders a visible title without the marker when omitted", () => {
+		render(() => <WidgetFrame widget={widget()}>body text</WidgetFrame>);
+		const article = screen.getByRole("article", { name: "Notes" });
+		expect(article.hasAttribute("data-widget-title-hidden")).toBe(false);
+		const title = article.querySelector("h3");
+		if (!(title instanceof HTMLElement)) throw new Error("no title");
+		expect(title.className).toContain("wg-title");
+		expect(title.className).not.toContain("wg-visually-hidden");
+	});
+
+	it("still selects on a grip click and never through a control", () => {
+		const calls: { readonly widgetId: string; readonly mode: "replace" | "toggle" }[] = [];
+		render(() => (
+			<WidgetFrame
+				widget={widget()}
+				titleHidden
+				onSelectChange={(widgetId, mode) => {
+					calls.push({ widgetId, mode });
+				}}
+				actions={<button type="button">menu</button>}
+			>
+				body
+			</WidgetFrame>
+		));
+		const article = screen.getByRole("article", { name: "Notes" });
+		const grip = article.querySelector(".wg-grip");
+		if (!(grip instanceof Element)) throw new Error("no grip");
+		grip.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		expect(calls).toEqual([{ widgetId: "w-1", mode: "replace" }]);
+		const menu = screen.getByRole("button", { name: "menu" });
+		menu.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		expect(calls).toHaveLength(1);
+	});
+});
+
 /**
  * Stacked boxes (300x100 with a 20px gap) like the grid test, so the drag
  * engine lifts and drops against measurable slots.

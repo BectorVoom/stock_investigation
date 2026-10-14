@@ -110,6 +110,16 @@ const onSave = (widgetId: string, toIndex: number) =>
   `pointercancel` or the window losing focus cancels it. The lifted widget is
   marked with `data-widget-dragging` and the slot with
   `data-widget-placeholder` plus `data-widget-size`.
+- Edge auto-scroll follows the grid's own panel: while a drag is active the
+  engine scrolls the nearest vertically scrollable ancestor of the grid
+  (computed `overflow-y` `auto` or `scroll` with taller content — the
+  Notebook's widget list, which scrolls inside its panel), falling back to
+  the window when the page itself scrolls (Home). The zones (80 px) and the
+  step (up to 16 px per frame) are the same either way, and slot rectangles
+  are re-measured every frame, so wheel, trackpad and auto-scroll movement
+  never stale the drop decision. `findScrollableAncestor`,
+  `isVerticallyScrollable` and `containerEdgeScrollStep` are exported for
+  hosts and tests.
 - `createMoveAnnouncer()` returns `{ message, announceMove }`;
   `MoveAnnouncerView` renders the polite live region. Every completed move
   announces `Moved “<title>” to position <i> of <n>.`, clearing first so a
@@ -181,6 +191,29 @@ assistive-technology path, revealed with the grip in the quiet variant.
 </WidgetGrid>;
 ```
 
+### Untitled frames
+
+`titleHidden` hides the frame's title without removing it (ADR-0021): the
+title stays the accessible name of the frame and its body (rendered
+visually-hidden, the frame carries `data-widget-title-hidden`), the body
+starts at the top of the frame, and the header becomes an overlay pinned to
+the top edge holding only the grip, the select toggle and the actions slot.
+Only the controls take pointer events, so text and charts under the overlay
+stay usable; the grip keeps a 28 px hit target and stays the drag handle
+(a grip click still selects). The controls fade exactly like the quiet
+reveal above (opacity only, so nothing shifts; always visible on devices
+without hover). The Notebook hides titles; Home keeps them.
+
+```tsx
+<WidgetGrid widgets={widgets()} variant="quiet" onReorder={onSave}>
+  {(widget) => (
+    <WidgetFrame widget={widget} titleHidden>
+      {body(widget)}
+    </WidgetFrame>
+  )}
+</WidgetGrid>;
+```
+
 ### Theming
 
 The stylesheet reads `--wg-*` custom properties and falls back to neutral
@@ -207,7 +240,8 @@ defaults. Set them on any ancestor of the grid (this app maps them in
 `data-widget-grid` on the grid; `data-widget-columns-from` (`viewport` or
 `container`) and `data-widget-variant` (`card` or `quiet`) beside it;
 `data-widget-id`, `data-widget-type` and `data-widget-size` on each widget
-`article`, plus `data-widget-selected` when the host selects it;
+`article`, plus `data-widget-selected` when the host selects it and
+`data-widget-title-hidden` with `titleHidden`;
 `data-widget-drag-handle` on the header strip; `data-widget-dragging` on the
 lifted widget while dragged; `data-widget-placeholder` (plus
 `data-widget-size`) on the slot shown during a drag.

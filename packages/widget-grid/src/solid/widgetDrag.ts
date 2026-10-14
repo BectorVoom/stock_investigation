@@ -12,21 +12,24 @@ import type { WidgetBase, WidgetSize } from "../core/types.ts";
  * `dragModel.ts` stays pure: this module converts DOM measurements to its
  * input and applies its output to the DOM, nothing more.
  *
- * Coordinates: slot rectangles are cached in PAGE coordinates
- * (`getBoundingClientRect` plus the scroll offset at measure time) and the
- * pointer is converted to page coordinates on every evaluation, so any
- * scrolling during a drag (auto-scroll, wheel, trackpad, scrollbar) never
- * stales the decision. A `scroll` listener schedules a re-evaluation frame;
- * pointer frames coalesce on `requestAnimationFrame` with at most one slot
- * re-read per frame (only when the target actually changed).
+ * Coordinates: slot rectangles are re-measured in PAGE coordinates
+ * (`getBoundingClientRect` plus the window scroll offset) on every animation
+ * frame, and the pointer is converted to page coordinates on every
+ * evaluation, so any scrolling during a drag (auto-scroll, wheel, trackpad,
+ * scrollbar — in the window or in a scroll container) never stales the
+ * decision. A `scroll` listener (capture, so container scrolls count)
+ * schedules a re-evaluation frame; pointer frames coalesce on
+ * `requestAnimationFrame`.
  *
  * Edge auto-scroll (HIG: scroll the destination when necessary): while a drag
- * is active and the pointer rests within 80 px of the top or bottom viewport
- * edge and the page can still scroll that way, every frame scrolls by an
+ * is active and the pointer rests within 80 px of the top or bottom edge of
+ * the nearest scrollable ancestor of the grid (the window when the page
+ * itself scrolls, for example Home; the Notebook's `[data-notebook-scroll]`
+ * panel there) and it can still scroll that way, every frame scrolls by an
  * amount proportional to how deep into the zone the pointer is (capped at
  * about 16 px) and re-evaluates the drop target as content passes under the
- * pointer. It stops when the pointer leaves the zone, the page reaches its
- * end, or the drag ends or is cancelled.
+ * pointer. It stops when the pointer leaves the zone, the scroller reaches
+ * its end, or the drag ends or is cancelled.
  */
 
 /** Within this distance of the top/bottom viewport edge, a drag auto-scrolls. */
@@ -39,6 +42,35 @@ const START_THRESHOLD_PX = 4;
 /** Interactive controls that never start a drag (native elements only). */
 const NATIVE_NO_DRAG_SELECTOR =
 	'button,a,input,select,textarea,summary,[role="menu"],[role="menuitem"]';
+
+/**
+ * Whether an element scrolls vertically on its own: clipping overflow
+ * (`auto` or `scroll`) with content taller than the box. Read from the
+ * computed style (never the inline style alone, so host stylesheets count)
+ * and the real overflow (an `auto` box that fits its content scrolls
+ * nothing).
+ */
+export function isVerticallyScrollable(element: Element): boolean {
+	if (!(element instanceof HTMLElement)) return false;
+	const overflowY = getComputedStyle(element).overflowY;
+	if (overflowY !== "auto" && overflowY !== "scroll") return false;
+	return element.scrollHeight > element.clientHeight;
+}
+
+/**
+ * The nearest vertically scrollable ancestor of the grid, or null when the
+ * page itself scrolls. The Notebook's widget list scrolls inside its panel
+ * (`[data-notebook-scroll]`), so a drag there auto-scrolls that panel;
+ * Home's grid sits in the window scroll and keeps the window behaviour.
+ */
+export function findScrollableAncestor(grid: HTMLElement): HTMLElement | null {
+	let node = grid.parentElement;
+	while (node !== null) {
+		if (isVerticallyScrollable(node)) return node;
+		node = node.parentElement;
+	}
+	return null;
+}
 
 export interface WidgetDragDrop {
 	readonly widgetId: string;
@@ -98,6 +130,11 @@ interface ActiveDrag {
 	banned: number | null;
 	/** Slot rectangles in PAGE coordinates, in preview order. */
 	slots: SlotRect[];
+	/**
+	 * Nearest scrollable ancestor at drag start (null: the window scrolls).
+	 * Resolved once per drag: the grid does not move panels mid-gesture.
+	 */
+	scroller: HTMLElement | null;
 	/** Latest pointer position in VIEWPORT (client) coordinates. */
 	lastClientX: number;
 	lastClientY: number;
@@ -222,6 +259,28 @@ const unliftDragged = (article: HTMLElement): void => {
 };
 
 /**
+ * Edge auto-scroll step inside a scroll container for one frame: 0 outside
+ * the 80 px zones at the container's own top and bottom edges (zones are in
+ * viewport coordinates, like the pointer) or when the container cannot
+ * scroll that way, otherwise the same depth-proportional step as the window,
+ * capped at about 16 px per frame.
+ */
+export function containerEdgeScrollStep(container: HTMLElement, clientY: number): number {
+	const box = container.getBoundingClientRect();
+	if (clientY < box.top + EDGE_ZONE_PX) {
+		if (container.scrollTop <= 0) return 0;
+		const depth = Math.min(1, (box.top + EDGE_ZONE_PX - clientY) / EDGE_ZONE_PX);
+		return -Math.min(MAX_SCROLL_STEP_PX, Math.max(1, Math.round(depth * MAX_SCROLL_STEP_PX)));
+	}
+	if (clientY > box.bottom - EDGE_ZONE_PX) {
+		if (container.scrollTop >= container.scrollHeight - container.clientHeight - 1) return 0;
+		const depth = Math.min(1, (clientY - (box.bottom - EDGE_ZONE_PX)) / EDGE_ZONE_PX);
+		return Math.min(MAX_SCROLL_STEP_PX, Math.max(1, Math.round(depth * MAX_SCROLL_STEP_PX)));
+	}
+	return 0;
+}
+
+/**
  * Edge auto-scroll step for one frame: 0 outside the 80 px zones (or when
  * the page cannot scroll that way), otherwise a step proportional to the
  * depth into the zone, capped at about 16 px per frame.
@@ -340,9 +399,20 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 		if (!state.started || placeholder === null) return;
 		// Edge auto-scroll first, so the target below is evaluated against
 		// the fresh scroll position as content passes under the pointer.
-		const step = edgeScrollStep(state.lastClientY);
-		if (step !== 0) window.scrollBy(0, step);
+		const scroller = state.scroller;
+		const autoStep =
+			scroller === null
+				? edgeScrollStep(state.lastClientY)
+				: containerEdgeScrollStep(scroller, state.lastClientY);
+		if (autoStep !== 0) {
+			if (scroller === null) window.scrollBy(0, autoStep);
+			else scroller.scrollTop += autoStep;
+		}
 		moveLifted(state.article, state.lastClientX - state.grabDX, state.lastClientY - state.grabDY);
+		// Slots are re-measured every frame: any scrolling during the drag
+		// (auto-scroll, wheel, trackpad, scrollbar — window or container)
+		// moves every box, so a cached rectangle would stale the decision.
+		state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
 		const next = nextDropTarget({
 			slots: state.slots,
 			draggedIndex: state.target,
@@ -360,20 +430,24 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			state.target = next.target;
 			state.banned = next.banned;
 			applyDuringDragOrders(state.grid, state.preview, state.widgetId, state.target, placeholder);
-			// The single layout read of this frame: slots are re-measured
-			// only when the target changed (scrolling alone never stales
-			// page-coordinate slots).
-			state.slots = readPreviewSlots(state.grid, state.preview, state.widgetId, placeholder);
 		} else {
 			state.banned = next.banned;
 		}
-		// Keep scrolling while the pointer rests in the zone and the page
-		// can still move that way; anything else stops until the next move.
-		if (edgeScrollStep(state.lastClientY) !== 0) scheduleFrame();
+		// Keep scrolling while the pointer rests in the zone and the
+		// scroller can still move that way; anything else stops until the
+		// next move.
+		const settled =
+			scroller === null
+				? edgeScrollStep(state.lastClientY)
+				: containerEdgeScrollStep(scroller, state.lastClientY);
+		if (settled !== 0) scheduleFrame();
 	}
 
 	function startDrag(state: ActiveDrag): void {
 		state.started = true;
+		// The drag auto-scrolls the grid's own panel when it has one (the
+		// Notebook), otherwise the window (Home).
+		state.scroller = findScrollableAncestor(state.grid);
 		const placeholder = document.createElement("div");
 		placeholder.setAttribute("data-widget-placeholder", "");
 		placeholder.setAttribute("data-widget-size", state.draggedSize);
@@ -535,6 +609,7 @@ export function createWidgetDrag<W extends WidgetBase = WidgetBase>(
 			target: fromIndex,
 			banned: null,
 			slots: [],
+			scroller: null,
 			lastClientX: event.clientX,
 			lastClientY: event.clientY,
 			raf: 0,
