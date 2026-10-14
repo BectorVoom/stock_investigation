@@ -1,4 +1,5 @@
 import type { HomeWidget } from "@research/contracts";
+import { HOME_WIDGET_TYPES } from "@research/contracts";
 import { isJsonObject, type JsonObject } from "@research/widget-grid/agent";
 import { describe, expect, it } from "vitest";
 import { HOME_WIDGET_AGENT_TYPES } from "../src/homeWidgetTypes.ts";
@@ -126,6 +127,13 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			});
 			if (!built.ok) throw new Error(`${type}: ${built.error}`);
 			expect(agentType.configOf(built.value)).toEqual(config);
+		}
+	});
+
+	it("has an agent type for every HOME_WIDGET_TYPES entry", () => {
+		expect(HOME_WIDGET_AGENT_TYPES).toHaveLength(HOME_WIDGET_TYPES.length);
+		for (const type of HOME_WIDGET_TYPES) {
+			expect(HOME_WIDGET_AGENT_TYPES.some((entry) => entry.type === type)).toBe(true);
 		}
 	});
 });

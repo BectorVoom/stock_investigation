@@ -442,9 +442,12 @@ export function HomeView(props: {
 		rereadInFlight = true;
 		try {
 			const result = await props.api.getHomeDashboard();
-			if (disposed) return;
+			if (disposed || busy() || dialog() !== null) return;
+			if (document.querySelector("[data-widget-dragging]") !== null) return;
 			if (!result.ok) return;
-			if (result.value.version === current.version) return;
+			const latest = currentDashboard();
+			if (latest === null) return;
+			if (result.value.version <= latest.version) return;
 			dashboard.set(result.value);
 			await reloadDataAfterSave();
 		} finally {

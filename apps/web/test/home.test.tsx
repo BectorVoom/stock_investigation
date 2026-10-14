@@ -1427,6 +1427,91 @@ describe("home follows edits made elsewhere", () => {
 		}
 	});
 
+	it("drops a re-read answer older than a save made while the GET was in flight", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const getsBefore = dashboardGets().length;
+		// Hold the re-read's GET open; the released answer will be older than
+		// the save made meanwhile (same version number, pre-save content).
+		const gate = deferred<Response>();
+		backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () => gate.promise);
+		const first = home.dashboard.widgets[0];
+		if (first === undefined) throw new Error("no widgets on the fake backend");
+		const staleDashboard = {
+			schemaVersion: 1 as const,
+			widgets: [...home.dashboard.widgets.slice(1), first],
+		};
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets()).toHaveLength(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		// The owner's own save lands while the GET is in flight.
+		await chooseWidgetMenuItem("w-gold", "Remove widget");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		await waitFor(
+			() => expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull(),
+			{ timeout: 10_000 },
+		);
+		const savedOrder = widgets().map((article) => article.getAttribute("data-widget-id"));
+		expect(savedOrder).toHaveLength(6);
+		// Release the GET with the older arrangement: it must be dropped, so
+		// the page still shows the saved arrangement.
+		gate.resolve(
+			jsonResponse({
+				dashboard: staleDashboard,
+				version: home.version,
+				updatedAt: home.updatedAt,
+				origin: "saved",
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(widgets().map((article) => article.getAttribute("data-widget-id"))).toEqual(savedOrder);
+		expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull();
+		// The version on screen still tracks the server, so the next save is
+		// not refused with "changed elsewhere".
+		await chooseWidgetMenuItem("w-vix", "Remove widget");
+		await waitFor(() => expect(homePuts()).toHaveLength(2));
+		await waitFor(
+			() => expect(document.querySelector('article[data-widget-id="w-vix"]')).toBeNull(),
+			{ timeout: 10_000 },
+		);
+		expect(document.body.textContent).not.toContain("changed elsewhere");
+	});
+
+	it("drops a re-read answer when a dialog was opened while the GET was in flight", async () => {
+		const visibility = createControllableVisibility();
+		mountApp(backend, visibility);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const getsBefore = dashboardGets().length;
+		const gate = deferred<Response>();
+		backend.on("GET", /^\/api\/v1\/home\/dashboard$/, () => gate.promise);
+		visibility.setVisible(false);
+		visibility.setVisible(true);
+		await waitFor(() => expect(dashboardGets()).toHaveLength(getsBefore + 1), {
+			timeout: 10_000,
+		});
+		// A dialog opens while the GET is in flight; the answer must not disturb it.
+		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+		await waitFor(() => expect(document.querySelector("sl-dialog")).not.toBeNull(), {
+			timeout: 10_000,
+		});
+		externalReorder();
+		gate.resolve(
+			jsonResponse({
+				dashboard: home.dashboard,
+				version: home.version,
+				updatedAt: "2026-10-12T12:00:00Z",
+				origin: "saved",
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(document.querySelector("sl-dialog")).not.toBeNull();
+		expect(widgets()).toHaveLength(7);
+		expect(widgets()[0]?.getAttribute("data-widget-id")).toBe("w-vix");
+	});
+
 	it("re-renders nothing when the version is unchanged", async () => {
 		const visibility = createControllableVisibility();
 		mountApp(backend, visibility);
