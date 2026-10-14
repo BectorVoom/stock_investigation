@@ -10,6 +10,7 @@ import {
 	type PipelineOutcome,
 	type PipelineReporter,
 	PROMPT_VERSION,
+	runNotebookAssistTurn,
 	runResearchPipeline,
 } from "@research/application";
 import {
@@ -344,6 +345,53 @@ export async function executeJob(
 						);
 			usage = outcome.usage;
 			completion = toCompletion(job.leaseGeneration, outcome);
+		} else if (job.kind === "notebook-assist") {
+			const agent = deps.agents.get(job.agent.agentId);
+			if (agent === undefined) {
+				completion = {
+					outcome: "failed",
+					leaseGeneration: job.leaseGeneration,
+					usage,
+					failureCode: "AGENT_NOT_REGISTERED",
+					retryable: false,
+				};
+			} else {
+				const assist = await runNotebookAssistTurn(
+					{
+						...job,
+						signal: abort.signal,
+						allowUnverifiedToolIsolation: deps.allowUnverifiedToolIsolation,
+					},
+					{
+						agent,
+						clock: deps.clock,
+						reporter,
+						newFenceToken: deps.newFenceToken,
+					},
+				);
+				usage = assist.usage;
+				if (assist.kind === "assisted") {
+					completion = {
+						outcome: "notebook-assisted",
+						leaseGeneration: job.leaseGeneration,
+						usage,
+						baseVersion: assist.baseVersion,
+						reply: assist.reply,
+						commands: [...assist.commands],
+						proposedRemovals: [...assist.proposedRemovals],
+					};
+				} else if (assist.kind === "failed") {
+					completion = {
+						outcome: "failed",
+						leaseGeneration: job.leaseGeneration,
+						usage,
+						failureCode: assist.failureCode.slice(0, 80),
+						retryable: assist.retryable,
+					};
+				} else {
+					completion = { outcome: "cancelled", leaseGeneration: job.leaseGeneration, usage };
+				}
+			}
 		} else if (job.kind === "google-calendar") {
 			// Queued once; a repeat call only re-sends what is undelivered.
 			// Delivered means the whole queue went out (events are ordered).

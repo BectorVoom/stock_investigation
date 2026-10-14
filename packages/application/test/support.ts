@@ -6,10 +6,16 @@ import {
 	type ToolDefinition,
 	type ToolRegistry,
 } from "@research/agent-core";
-import type { Evidence, ResearchRequest, SubscribedSourceRef } from "@research/contracts";
+import type {
+	Evidence,
+	Notebook,
+	NotebookWidget,
+	ResearchRequest,
+	SubscribedSourceRef,
+} from "@research/contracts";
 import { type JobState, ok, type ResourceUsage } from "@research/domain";
 import { z } from "zod";
-import type { Clock, PipelineReporter } from "../src/index.ts";
+import type { Clock, NotebookAssistTurnInput, PipelineReporter } from "../src/index.ts";
 
 export const RUN_ID = "run_test";
 
@@ -210,3 +216,114 @@ export function analysis(overrides: Record<string, unknown> = {}): string {
 export const VERDICT_SUPPORTED = JSON.stringify({
 	verdicts: [{ claimIndex: 0, verdict: "supported" }],
 });
+
+/* ---------- Notebook-assistant fixtures (ADR-0020) ---------- */
+
+const NOTEBOOK_STAMP = "2026-10-11T00:00:00.000Z";
+
+function notebookMeta() {
+	return {
+		createdAt: NOTEBOOK_STAMP,
+		updatedAt: NOTEBOOK_STAMP,
+		revision: 1,
+		origin: { kind: "owner" as const, messageId: null, runId: null, componentId: null },
+	};
+}
+
+export function textWidget(
+	widgetId: string,
+	text: string,
+	options: { readonly title?: string; readonly size?: NotebookWidget["size"] } = {},
+): NotebookWidget {
+	return {
+		widgetId,
+		title: options.title ?? `Title ${widgetId}`,
+		size: options.size ?? "medium",
+		...notebookMeta(),
+		type: "text",
+		text,
+	};
+}
+
+export function chartWidget(
+	widgetId: string,
+	options: { readonly title?: string; readonly size?: NotebookWidget["size"] } = {},
+): NotebookWidget {
+	return {
+		widgetId,
+		title: options.title ?? `Title ${widgetId}`,
+		size: options.size ?? "medium",
+		...notebookMeta(),
+		type: "chart",
+		chartType: "line",
+		unit: "USD",
+		series: [
+			{
+				name: "Revenue",
+				points: [
+					{ x: "2022", y: 10 },
+					{ x: "2023", y: 12 },
+				],
+			},
+		],
+	};
+}
+
+export function tableWidget(widgetId: string): NotebookWidget {
+	return {
+		widgetId,
+		title: `Title ${widgetId}`,
+		size: "medium",
+		...notebookMeta(),
+		type: "table",
+		columns: ["Year", "Revenue"],
+		rows: [
+			["2022", 10],
+			["2023", 12],
+		],
+	};
+}
+
+export function notebookFixture(widgets: readonly NotebookWidget[] = []): Notebook {
+	return {
+		widgets:
+			widgets.length > 0
+				? [...widgets]
+				: [textWidget("w-text", "Body of w-text."), chartWidget("w-chart")],
+	};
+}
+
+export function assistInput(
+	options: {
+		readonly runId?: string;
+		readonly workspaceId?: string;
+		readonly instruction?: string;
+		readonly selectedWidgetIds?: readonly string[];
+		readonly notebook?: Notebook;
+		readonly notebookVersion?: number;
+		readonly conversationContext?: NotebookAssistTurnInput["conversationContext"];
+		readonly agent?: NotebookAssistTurnInput["agent"];
+		readonly signal?: AbortSignal;
+		readonly allowUnverifiedToolIsolation?: boolean;
+	} = {},
+): NotebookAssistTurnInput {
+	const controller = new AbortController();
+	return {
+		kind: "notebook-assist",
+		runId: options.runId ?? "run_notebook",
+		leaseGeneration: 3,
+		leaseExpiresAt: "2026-10-11T00:01:30.000Z",
+		attempt: 1,
+		heartbeatIntervalMs: 20_000,
+		sources: [],
+		workspaceId: options.workspaceId ?? "ws_test",
+		agent: options.agent ?? { agentId: "scripted", model: null, effort: "medium" },
+		instruction: options.instruction ?? "Make it larger.",
+		selectedWidgetIds: [...(options.selectedWidgetIds ?? [])],
+		notebook: options.notebook ?? notebookFixture(),
+		notebookVersion: options.notebookVersion ?? 4,
+		conversationContext: options.conversationContext ?? [],
+		signal: options.signal ?? controller.signal,
+		allowUnverifiedToolIsolation: options.allowUnverifiedToolIsolation ?? false,
+	};
+}
