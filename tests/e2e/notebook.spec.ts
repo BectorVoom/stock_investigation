@@ -76,6 +76,16 @@ async function panelWidths(): Promise<{ readonly chat: number; readonly notebook
 	return { chat: chatBox.width, notebook: notebookBox.width };
 }
 
+/**
+ * A screenshot for reading the layout, taken on Chromium only: Playwright's
+ * WebKit screenshot injects a <style> the app's CSP refuses, which would be
+ * logged as a console error that this spec rightly fails on.
+ */
+async function reviewShot(name: string): Promise<void> {
+	if (page.context().browser()?.browserType().name() !== "chromium") return;
+	await page.screenshot({ path: test.info().outputPath(name) });
+}
+
 /** The Notebook's widgets only: thread previews use the same frame. */
 function notebookWidgets() {
 	return page.locator('div[data-panel="notebook"] article[data-widget-id]');
@@ -204,7 +214,7 @@ test("Add to Notebook saves one chart and the answer", async () => {
 			preview: style(preview)?.flexDirection ?? null,
 		};
 	});
-	await page.screenshot({ path: test.info().outputPath("chat-first.png") });
+	await reviewShot("chat-first.png");
 	expect(layout).toEqual({
 		grid: "grid",
 		header: "flex",
@@ -311,7 +321,7 @@ test("explain adds a text widget after the selection; remove proposes and Remove
 	const widgets = notebookWidgets();
 	await expect(widgets).toHaveCount(3, { timeout: 60_000 });
 	await expect(widgets.nth(1)).toContainText("Explanation");
-	await page.screenshot({ path: test.info().outputPath("notebook-first.png") });
+	await reviewShot("notebook-first.png");
 
 	await notebookComposer.getByRole("textbox", { name: "Instruction" }).fill("remove it");
 	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
