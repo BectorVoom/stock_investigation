@@ -25,13 +25,18 @@ import {
 	issueRunnerCredentialRequestSchema,
 	MAX_REQUEST_BODY_BYTES,
 	marketCatalogResponseSchema,
+	notebookAssistRequestSchema,
+	notebookAssistResponseSchema,
+	notebookResponseSchema,
 	previewSourceRequestSchema,
 	putHomeDashboardRequestSchema,
+	putNotebookRequestSchema,
 	type RunnerCredentialCheck,
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
 	uiCommandSchema,
+	undoNotebookRequestSchema,
 	updateSourceRequestSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
@@ -733,6 +738,76 @@ export function createApp(options: AppOptions = {}) {
 					c,
 					`${workspaceId}.${beforeSeq ?? "all"}.${pageLimit}.${conversation.messages.length}.${first?.seq ?? "none"}.${last?.messageId ?? "none"}.${conversation.hasEarlier}`,
 					conversation,
+				);
+			}),
+		),
+	);
+
+	/* Notebook of one conversation (ADR-0020): compare-and-set saves, undo,
+	 * and the assistant turn. Same auth, CSRF, body-size limits, error
+	 * mapping and logging as the dashboard routes; every response body is
+	 * parsed with its contract schema before sending.
+	 */
+	api.get("/workspaces/:id/notebook", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				const notebook = yield* useCase("notebook.get", () =>
+					c.var.services.notebook.getNotebook(owner(c), workspaceId),
+				);
+				return c.json(notebookResponseSchema.parse(notebook));
+			}),
+		),
+	);
+	api.put("/workspaces/:id/notebook", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				const body = yield* readJson(c, putNotebookRequestSchema);
+				const updated = yield* useCase("notebook.put", () =>
+					c.var.services.notebook.putNotebook(
+						owner(c),
+						workspaceId,
+						body.notebook,
+						body.expectedVersion,
+					),
+				);
+				return c.json(notebookResponseSchema.parse(updated));
+			}),
+		),
+	);
+	api.post("/workspaces/:id/notebook/undo", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				const body = yield* readJson(c, undoNotebookRequestSchema);
+				const undone = yield* useCase("notebook.undo", () =>
+					c.var.services.notebook.undoNotebook(owner(c), workspaceId, body.expectedVersion),
+				);
+				return c.json(notebookResponseSchema.parse(undone));
+			}),
+		),
+	);
+	api.post("/workspaces/:id/notebook/assist", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const workspaceId = yield* pathId(c, "id");
+				const key = yield* idempotencyKey(c);
+				const body = yield* readJson(c, notebookAssistRequestSchema);
+				const assisted = yield* useCase("notebook.assist", () =>
+					c.var.services.notebook.assistNotebook(owner(c), workspaceId, body, key),
+				);
+				return c.json(
+					notebookAssistResponseSchema.parse({ message: assisted.message, run: assisted.run }),
+					202,
 				);
 			}),
 		),

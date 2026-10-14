@@ -19,6 +19,9 @@ import type {
 	MarketProviderId,
 	MarketUnavailableCode,
 	NewsSource,
+	Notebook,
+	NotebookAssistJobRequest,
+	NotebookTurn,
 	ResearchBundle,
 	ResearchRequest,
 	RunnerCredential,
@@ -188,11 +191,12 @@ export interface JobRecord {
 	readonly state: JobState;
 	/**
 	 * The stored request: a research request for research jobs, `{ action }`
-	 * for `google-calendar` jobs (FR-019 section 2.4), null for the refresh
+	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
+	 * request for `notebook-assist` jobs (ADR-0020), null for the refresh
 	 * kinds. Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
-	readonly request: ResearchRequest | GoogleCalendarRequest | null;
+	readonly request: ResearchRequest | GoogleCalendarRequest | NotebookAssistJobRequest | null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
 	readonly attempt: number;
@@ -315,6 +319,12 @@ export interface JobRepository {
 	/** Newest non-terminal job of a kind, if any (market-refresh de-duplication). */
 	findActiveByKind(ownerId: string, kind: JobKind): Promise<JobRecord | null>;
 	/**
+	 * Newest non-terminal `notebook-assist` job of a conversation, if any
+	 * (ADR-0020: one active assistant turn per conversation — a second
+	 * instruction while one is queued or running answers 409).
+	 */
+	findActiveNotebookAssist(ownerId: string, workspaceId: string): Promise<JobRecord | null>;
+	/**
 	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a
 	 * failed or cancelled refresh is never presented as a success).
 	 */
@@ -421,6 +431,12 @@ export interface ChatQuery {
 export interface ChatRepository {
 	list(ownerId: string, workspaceId: string, query: ChatQuery): Promise<readonly ChatMessage[]>;
 	/**
+	 * The message of one run (an owner's question or an assistant answer),
+	 * null when none is stored. Used to answer an idempotent
+	 * `notebook-assist` replay with the same owner message.
+	 */
+	findByRunId(ownerId: string, workspaceId: string, runId: string): Promise<ChatMessage | null>;
+	/**
 	 * One row per workspace of this owner, newest activity first. Implemented as
 	 * a single SQL statement (no per-workspace query), so a large library still
 	 * costs one round trip.
@@ -479,12 +495,29 @@ export interface CompletionEffects {
 	 * so the SQL stays a dumb guarded upsert.
 	 */
 	readonly google: GoogleCalendarLinkPatch | null;
+	/**
+	 * Notebook write committed with a `notebook-assisted` completion
+	 * (ADR-0020): the stamped body stored at `expectedVersion`. Null when the
+	 * turn applied nothing (the notebook moved, the commands were invalid, or
+	 * the turn only proposes removals) — then only `notebookTurn` and the
+	 * assistant message commit.
+	 */
+	readonly notebook: {
+		readonly workspaceId: string;
+		readonly expectedVersion: number;
+		readonly notebook: Notebook;
+		readonly updatedAt: string;
+	} | null;
+	/** The recorded assistant turn of a `notebook-assisted` completion, if any. */
+	readonly notebookTurn: { readonly workspaceId: string; readonly turn: NotebookTurn } | null;
 }
 
 export type CompletionCommitResult =
 	| { readonly kind: "committed"; readonly newArticleCount: number }
 	| { readonly kind: "job-conflict" }
-	| { readonly kind: "workspace-conflict" };
+	| { readonly kind: "workspace-conflict" }
+	/** The job compare-and-set won but the notebook moved past `expectedVersion`. */
+	| { readonly kind: "notebook-conflict" };
 
 /**
  * Ownership rule for conversation deletion. A conversation owns directly: its
@@ -686,6 +719,39 @@ export interface MarketRepository {
 	 * Returns the number of deleted series rows.
 	 */
 	deleteSeriesNotIn(ownerId: string, keepSeriesIds: readonly string[]): Promise<number>;
+}
+
+/* ---------- Notebook of one conversation (ADR-0020) ---------- */
+
+export interface NotebookRecord {
+	readonly notebook: Notebook;
+	readonly version: number;
+	readonly updatedAt: string | null;
+}
+
+export interface NotebookRepository {
+	/**
+	 * The stored notebook, null when never saved, or "unreadable" when the
+	 * stored document no longer parses (fail closed — never the defaults).
+	 */
+	get(ownerId: string, workspaceId: string): Promise<NotebookRecord | null | "unreadable">;
+	/**
+	 * Compare-and-set on version; inserts when absent and expectedVersion is
+	 * 0. One write is one statement batch (current row + revision + prune)
+	 * with the version check in the WHERE clause, so two concurrent writers
+	 * cannot both succeed.
+	 */
+	put(
+		ownerId: string,
+		workspaceId: string,
+		notebook: Notebook,
+		expectedVersion: number,
+		updatedAt: string,
+	): Promise<"written" | "version-conflict">;
+	/** The body stored for one version, null when no body is kept for it. */
+	getRevision(ownerId: string, workspaceId: string, version: number): Promise<Notebook | null>;
+	/** The latest assistant turns, oldest first, at most `limit`. */
+	listTurns(ownerId: string, workspaceId: string, limit: number): Promise<readonly NotebookTurn[]>;
 }
 
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */
@@ -1017,6 +1083,7 @@ export interface Persistence {
 	readonly settings: SettingsRepository;
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
+	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;

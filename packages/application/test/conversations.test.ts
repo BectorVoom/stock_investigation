@@ -78,6 +78,7 @@ function stubChat(): ChatRepository {
 		list: async () => {
 			throw new Error("unused");
 		},
+		findByRunId: async () => null,
 		listConversations: async () => {
 			throw new Error("unused");
 		},

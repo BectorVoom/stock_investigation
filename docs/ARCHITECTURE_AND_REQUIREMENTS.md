@@ -305,6 +305,10 @@ GET    /api/v1/workspaces/:id
 GET    /api/v1/workspaces/:id/events?after=...
 POST   /api/v1/workspaces/:id/commands
 GET    /api/v1/workspaces/:id/messages?before=...&limit=...
+GET    /api/v1/workspaces/:id/notebook
+PUT    /api/v1/workspaces/:id/notebook
+POST   /api/v1/workspaces/:id/notebook/undo
+POST   /api/v1/workspaces/:id/notebook/assist
 GET    /api/v1/conversations
 GET    /api/v1/workspaces/:id/export
 GET    /api/v1/runner-credentials
@@ -347,6 +351,17 @@ version; `DELETE /api/v1/workspaces/:id` removes the conversation with
 everything it solely owns, atomically, and refuses with 409 while one of its
 runs is unfinished. A research question accepted for a still-untitled
 conversation without messages names it from the question's first line.
+
+Each conversation keeps one versioned Notebook document (ADR-0020): `GET`
+serves it with its version, the latest assistant turns and whether an undo
+is available; `PUT` saves it with compare-and-set (`expectedVersion`), so a
+stale tab or a concurrent assistant turn answers 409 instead of overwriting;
+`POST …/notebook/undo` restores the body kept before the on-screen version
+as a new version (the last 20 bodies are kept); `POST …/notebook/assist`
+stores the instruction as the owner's chat message and queues one
+`notebook-assist` job (at most one active per conversation, `Idempotency-Key`
+required). Deleting a conversation deletes its notebook, revisions and turns
+with everything else it solely owns.
 
 All inputs and stored JSON are runtime-validated. Browser calls do not expose runner endpoints. Runner authentication is separately scoped, renewable and revocable. Maintain uniqueness constraints on canonical article IDs, command IDs, and job idempotency keys, and use conditional updates for leases/workspace versions.
 

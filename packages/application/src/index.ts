@@ -7,6 +7,7 @@ export * from "./home.ts";
 export * from "./ingest.ts";
 export * from "./marketCatalog.ts";
 export * from "./notebook/assistTurn.ts";
+export * from "./notebook/notebook.ts";
 export * from "./notebook/notebookAgent.ts";
 export * from "./notebook/prompts.ts";
 export * from "./ports.ts";

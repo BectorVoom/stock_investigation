@@ -59,6 +59,7 @@ function stubJobs(
 		writeWithEvents: unused,
 		listProgress: unused,
 		findActiveByKind: async () => null,
+		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
 		...overrides,

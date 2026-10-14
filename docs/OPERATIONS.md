@@ -467,6 +467,17 @@ the runner-side token file (`<dataDir>/google-token.json`); deleting the
 owner's link row alone answers "disconnected" at once but leaves the local
 grant file behind, so prefer the page or the file.
 
+Migration `0009_notebooks.sql` (ADR-0020) adds `workspace_notebooks` (one row
+per conversation: notebook JSON, compare-and-set `version`, `updated_at`),
+`workspace_notebook_revisions` (the last 20 bodies per conversation, pruned
+set-based in the same write) and `notebook_turns` (one row per assistant
+turn for the chat card), plus an index for looking up one run's chat message
+(idempotent assist replays). Its header comment is the rollback: after a
+`wrangler d1 export`, `DELETE` all three tables' rows and `DROP TABLE` them
+(and the index), restoring the version-8 schema. Notebooks are owner content
+like the canvas: they are not part of workspace export/import yet (ADR-0020),
+but a directory copy of `data/` carries them.
+
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,
 attempt/success stamps, failure code), `earnings_events` (`WITHOUT ROWID`,

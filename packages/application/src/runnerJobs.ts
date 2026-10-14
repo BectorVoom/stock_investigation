@@ -45,6 +45,11 @@ import {
 	googleSuccessPatch,
 	googleTerminalPatch,
 } from "./googleCalendar.ts";
+import {
+	type NotebookClaimData,
+	notebookAssistedEffects,
+	prepareNotebookAssistClaim,
+} from "./notebook/notebook.ts";
 import type {
 	AuditLog,
 	ChatRepository,
@@ -61,6 +66,7 @@ import type {
 	JobRepository,
 	MarketCompletionSeries,
 	MarketRepository,
+	NotebookRepository,
 	ResearchRecordRepository,
 	ResearchUnitOfWork,
 	RunnerStatusRepository,
@@ -126,6 +132,7 @@ export interface RunnerJobServiceDeps {
 	readonly ids: IdGenerator;
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
+	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;
 	/** Sync-payload assembly at claim time (FR-019). */
 	readonly earnings: EarningsRepository;
@@ -305,6 +312,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			marketSeries,
 			earnings: [],
 			google: null,
+			notebook: null,
+			notebookTurn: null,
 		});
 	}
 
@@ -337,6 +346,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			marketSeries: [],
 			earnings: stocks,
 			google: null,
+			notebook: null,
+			notebookTurn: null,
 		});
 	}
 
@@ -368,6 +379,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				marketSeries: [],
 				earnings: [],
 				google: null,
+				notebook: null,
+				notebookTurn: null,
 			});
 
 		const external = await deps.records.resolve(
@@ -397,6 +410,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			marketSeries: [],
 			earnings: [],
 			google: null,
+			notebook: null,
+			notebookTurn: null,
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -569,6 +584,34 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					googleClaim = prepared.value;
 				}
 
+				// ADR-0020: everything a notebook-assist claim can refuse is
+				// decided BEFORE the lease is granted, while `job.version`
+				// is still current — like the google-calendar refusal above.
+				let notebookClaim: NotebookClaimData | null = null;
+				if (job.kind === "notebook-assist") {
+					const prepared = await prepareNotebookAssistClaim(
+						{ notebooks: deps.notebooks, chat: deps.chat },
+						runner.ownerId,
+						job,
+					);
+					if (!prepared.ok) {
+						await write(
+							{
+								state: "failed",
+								failureCode: prepared.error.failureCode,
+								failureDetail: null,
+								leaseExpiresAt: null,
+							},
+							[auditFor(runner, job.state, "failed", prepared.error.reason)],
+						);
+						continue;
+					}
+					notebookClaim = prepared.value;
+					// The frozen agent choice names the backend that must run
+					// it; any other runner waits (like research jobs).
+					if (!available.has(notebookClaim.agent.agentId)) continue;
+				}
+
 				const audits =
 					decision.reason === "lease-expired"
 						? [
@@ -637,6 +680,27 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
 					};
 					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (notebookClaim !== null) {
+					const notebookWorkspaceId = job.workspaceId;
+					if (notebookWorkspaceId === null) return fail("INTERNAL", "Internal error.");
+					const claimedNotebook: ClaimedJob = {
+						kind: "notebook-assist",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						workspaceId: notebookWorkspaceId,
+						agent: { ...notebookClaim.agent },
+						instruction: notebookClaim.instruction,
+						selectedWidgetIds: [...notebookClaim.selectedWidgetIds],
+						notebook: notebookClaim.notebook,
+						notebookVersion: notebookClaim.notebookVersion,
+						conversationContext: [...notebookClaim.conversationContext],
+					};
+					return ok({ job: claimedNotebook, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (googleClaim !== null) {
 					const claimedGoogle: ClaimedJob = {
@@ -864,15 +928,18 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isEarnings = job.kind === "earnings-refresh";
 				const isResearch = job.kind === "research";
 				const isGoogle = job.kind === "google-calendar";
+				const isNotebook = job.kind === "notebook-assist";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
+				const notebookOnly = request.outcome === "notebook-assisted";
 				const googleOnly =
 					request.outcome === "google-calendar-connected" ||
 					request.outcome === "google-calendar-synced" ||
 					request.outcome === "google-calendar-disconnected";
 				if (
-					(isIngest && (researchOnly || marketOnly || earningsOnly || googleOnly)) ||
+					(isIngest &&
+						(researchOnly || marketOnly || earningsOnly || googleOnly || notebookOnly)) ||
 					(isMarket &&
 						!marketOnly &&
 						request.outcome !== "failed" &&
@@ -882,11 +949,20 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
 					(isResearch &&
-						(request.outcome === "ingested" || marketOnly || earningsOnly || googleOnly)) ||
+						(request.outcome === "ingested" ||
+							marketOnly ||
+							earningsOnly ||
+							googleOnly ||
+							notebookOnly)) ||
 					(isGoogle &&
 						!googleOnly &&
 						request.outcome !== "failed" &&
-						request.outcome !== "cancelled")
+						request.outcome !== "cancelled") ||
+					(isNotebook &&
+						!notebookOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(notebookOnly && !isNotebook)
 				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
 				}
@@ -924,6 +1000,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					marketSeries: [],
 					earnings: [],
 					google: null,
+					notebook: null,
+					notebookTurn: null,
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -996,6 +1074,30 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					const kept = built.value.earnings.filter((entry) => current.has(entry.stockId));
 					droppedEarningsStocks = built.value.earnings.length - kept.length;
 					effects = { ...built.value, earnings: kept };
+				} else if (request.outcome === "notebook-assisted") {
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					const built = await notebookAssistedEffects(
+						{ notebooks: deps.notebooks, workspaces: deps.workspaces, ids: deps.ids },
+						job,
+						request,
+						now,
+					);
+					if (!built.ok) return built;
+					effects = {
+						bundle: null,
+						articles: [],
+						sourceReports: [],
+						workspace: null,
+						marketSeries: [],
+						earnings: [],
+						google: null,
+						notebook: built.value.notebook,
+						notebookTurn: built.value.notebookTurn,
+						assistantMessage: built.value.assistantMessage,
+					};
 				} else if (request.outcome === "completed" || request.outcome === "partial") {
 					target = request.outcome;
 					const built = await bundleEffects(job, request, now);
@@ -1086,6 +1188,25 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					effects,
 				);
 				if (committed.kind === "committed") {
+					if (isNotebook && request.outcome === "notebook-assisted") {
+						// One agent-origin audit row per assistant turn: the
+						// applied version, or the stable failure code when the
+						// turn applied nothing (ids and codes only, SEC-010).
+						const turn = effects.notebookTurn?.turn;
+						if (turn !== undefined) {
+							await deps.audit.record({
+								ownerId: runner.ownerId,
+								actor: `runner:${runner.credentialId}`,
+								action: "notebook.assist.turn",
+								resource: runId,
+								detail:
+									turn.appliedVersion !== null
+										? `appliedVersion=${turn.appliedVersion}`
+										: `failure=${turn.failure?.code ?? "UNKNOWN"}`,
+								at: now,
+							});
+						}
+					}
 					// Owner-visible audit rows for the three google outcomes
 					// (detail = counts / codes only, never tokens).
 					if (isGoogle && outcome !== "cancelled") {
@@ -1119,10 +1240,23 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					}
 					return ok({ state: target, replayed: false, newArticleCount: committed.newArticleCount });
 				}
-				// A concurrent heartbeat or an owner edit moved a version; recompute once.
+				if (committed.kind === "notebook-conflict") {
+					// The notebook moved past the turn's base version while it
+					// was computed: the loop runs once more, which re-reads the
+					// stored notebook and records NOTEBOOK_CHANGED instead of
+					// applying anything.
+				} else {
+					// A concurrent heartbeat or an owner edit moved a version.
+					// Still conflicting: stop here, inside the request's query
+					// budget. The request is idempotent, so the runner simply
+					// sends it again.
+					return fail("CONFLICT", "The run or its workspace changed concurrently; resend.");
+				}
 			}
-			// Still conflicting: stop here, inside the request's query budget. The request is
-			// idempotent, so the runner simply sends it again.
+			// Only a second consecutive notebook-conflict lands here (the
+			// notebook moved again between the re-read and the commit): stop
+			// inside the request's query budget. The request is idempotent, so
+			// the runner simply sends it again.
 			return fail("CONFLICT", "The run or its workspace changed concurrently; resend.");
 		},
 
