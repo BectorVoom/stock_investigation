@@ -418,20 +418,17 @@ test("UI review of the Chat page", async ({ browser }) => {
 		await page.waitForTimeout(300);
 	}
 
-	// A chip in a canvas component pins its source card inside the panel.
-	const canvasChip = page
-		.getByRole("region", { name: "Canvas" })
-		.locator("[data-citation-chip]")
-		.first();
+	// A chip in a thread result preview pins its source card inside that preview.
+	const canvasChip = page.locator("[data-preview-component] [data-citation-chip]").first();
 	if ((await canvasChip.count()) > 0) {
 		await canvasChip.scrollIntoViewIfNeeded();
 		await canvasChip.click();
 		await page.waitForTimeout(300);
-		await shot(page, "A2c-canvas-source-card");
-		await audit(page, "A canvas source card open");
+		await shot(page, "A2c-preview-source-card");
+		await audit(page, "A preview source card open");
 		const boxes = await page.evaluate(() => {
 			const card = document.querySelector("[data-citation-card]");
-			const panel = document.querySelector('[data-panel="canvas"]');
+			const panel = card?.closest("[data-preview-component]") ?? null;
 			if (!(card instanceof HTMLElement) || !(panel instanceof HTMLElement)) return null;
 			const rect = (element: HTMLElement) => {
 				const box = element.getBoundingClientRect();
@@ -441,13 +438,13 @@ test("UI review of the Chat page", async ({ browser }) => {
 		});
 		if (boxes === null) {
 			findings.push({
-				state: "A canvas source card open",
+				state: "A preview source card open",
 				rule: "missing-control",
-				detail: "the open canvas card or its panel was not found",
+				detail: "the open source card or its preview was not found",
 			});
 		} else if (boxes.card.left < boxes.panel.left - 1 || boxes.card.right > boxes.panel.right + 1) {
 			findings.push({
-				state: "A canvas source card open",
+				state: "A preview source card open",
 				rule: "card-overflows-panel",
 				detail: `card ${Math.round(boxes.card.left)}-${Math.round(boxes.card.right)} vs panel ${Math.round(boxes.panel.left)}-${Math.round(boxes.panel.right)}`,
 			});
@@ -456,9 +453,9 @@ test("UI review of the Chat page", async ({ browser }) => {
 		await page.waitForTimeout(300);
 	} else {
 		findings.push({
-			state: "A canvas source card open",
+			state: "A preview source card open",
 			rule: "missing-control",
-			detail: "no citation chip in the Canvas panel",
+			detail: "no citation chip in a thread result preview",
 		});
 	}
 
