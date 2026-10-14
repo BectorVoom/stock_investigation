@@ -1335,6 +1335,9 @@ export function createMarketRepository(db: SqlDatabase): MarketRepository {
 
 /* ---------- Notebook of one conversation (ADR-0020) ---------- */
 
+/** One row of the notebooks' market series scan. */
+const seriesIdRowSchema = z.object({ series_id: z.string() });
+
 export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 	return {
 		async get(ownerId, workspaceId) {
@@ -1485,12 +1488,11 @@ export function createNotebookRepository(db: SqlDatabase): NotebookRepository {
 				.all();
 			const ids: string[] = [];
 			for (const row of results) {
-				const record = row as Record<string, unknown>;
-				if (typeof record.series_id !== "string") continue;
 				// Stored data is parsed at the boundary: an id that no
 				// longer parses is dropped, never served as another provider.
-				if (parseMarketSeriesId(record.series_id) === null) continue;
-				ids.push(record.series_id);
+				const parsed = seriesIdRowSchema.safeParse(row);
+				if (!parsed.success || parseMarketSeriesId(parsed.data.series_id) === null) continue;
+				ids.push(parsed.data.series_id);
 			}
 			return ids;
 		},
