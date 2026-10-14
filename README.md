@@ -71,12 +71,14 @@ Every `bun run` script in `package.json` (the ground truth), with its meaning to
 ```sh
 bun run check          # format + lint (Biome; `any` and non-null assertions are errors)
 bun run typecheck      # strict tsc; each project sees only its own runtime's globals
-bun run test           # vitest: 3,936 tests passed, 11 skipped across Node, DOM and the real Workers runtime with local D1 (2026-10-13)
+bun run test           # vitest: 4,735 tests passed, 14 skipped across Node, DOM and the real Workers runtime with local D1 (2026-10-14)
 bun run test:e2e       # Playwright, once per engine (Chrome channel, Firefox, WebKit), each with a fresh server and database: chat → research → sourced table/chart → reload, plus `bun run prod` and `bun run dev` themselves (Chrome only)
 bun run test:e2e:chrome|firefox|webkit  # one engine at a time
 bun run test:real      # Playwright, needs the network, spends no model quota: pristine-copy prod + dev with one real feed refresh each (PARTIAL coverage of the owner's rule — network path only)
 RUN_LIVE_OPENCODE=1 OPENCODE_MODEL=opencode-go/muse-spark-1.3-contributor bun run test:real:live   # the positive path: a real question, a real page and both settings states against `bun run dev` (spends plan quota)
 bun run test:live:opencode  # pipeline + whole-app live OpenCode run (needs OPENCODE_MODEL in the environment)
+bun run mcp:home       # Home-widget MCP server against production (or RESEARCH_API_URL)
+bun run mcp:home:dev   # Home-widget MCP server against development
 bun run review:ui      # scripted UI review (REVIEW_BROWSER=chrome|firefox|webkit)
 bun run formal:check   # Lean 4 proofs build, no sorry, vectors current (needs elan)
 bun run bench          # hot-path benchmarks with budgets

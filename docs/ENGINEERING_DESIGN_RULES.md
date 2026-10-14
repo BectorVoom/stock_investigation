@@ -43,9 +43,11 @@ Error handling follows docs/rule/error_handling.md.
 Allowed dependency direction:
 
 ```text
-apps/web -> packages/contracts, packages/ui-registry, web application adapters
+apps/web -> packages/contracts, packages/ui-registry, packages/widget-grid, web application adapters
 apps/api -> packages/application, packages/contracts, packages/effects, server adapters
 apps/runner -> packages/agent-core, packages/application, packages/effects, runner adapters
+apps/mcp -> packages/contracts, packages/widget-grid/{core,agent}, zod
+packages/widget-grid -> solid-js, zod (no workspace package)
 packages/effects -> packages/domain, effect
 packages/application -> packages/domain, packages/contracts, declared ports
 packages/domain -> TypeScript standard primitives and minimal pure utilities

@@ -1,6 +1,6 @@
 # Agent instructions
 
-Canonical engineering rules: [docs/ENGINEERING_DESIGN_RULES.md](docs/ENGINEERING_DESIGN_RULES.md). Architecture and requirements: [docs/ARCHITECTURE_AND_REQUIREMENTS.md](docs/ARCHITECTURE_AND_REQUIREMENTS.md). Design guideline: [docs/DESIGN_GUIDELINE.md](docs/DESIGN_GUIDELINE.md). Pages: [docs/PAGES.md](docs/PAGES.md). Requirements status: [docs/REQUIREMENTS_STATUS.md](docs/REQUIREMENTS_STATUS.md). Operations: [docs/OPERATIONS.md](docs/OPERATIONS.md). Threat model: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). Agent backends: [docs/AGENT_BACKENDS.md](docs/AGENT_BACKENDS.md). Formal verification: [docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md). Independent review: [docs/CODEX_REVIEW.md](docs/CODEX_REVIEW.md). UI review record: [docs/UI_review.md](docs/UI_review.md). Decisions: [docs/adr/](docs/adr/). Rules: [logging](docs/rule/logging.md), [error handling](docs/rule/error_handling.md), [UI review](docs/rule/UI_review_rule.md), [real-environment testing](docs/rule/test_guideline.md). This file only points at them and adds the owner's standing instructions below.
+Canonical engineering rules: [docs/ENGINEERING_DESIGN_RULES.md](docs/ENGINEERING_DESIGN_RULES.md). Architecture and requirements: [docs/ARCHITECTURE_AND_REQUIREMENTS.md](docs/ARCHITECTURE_AND_REQUIREMENTS.md). Design guideline: [docs/DESIGN_GUIDELINE.md](docs/DESIGN_GUIDELINE.md). Pages: [docs/PAGES.md](docs/PAGES.md). Requirements status: [docs/REQUIREMENTS_STATUS.md](docs/REQUIREMENTS_STATUS.md). Operations: [docs/OPERATIONS.md](docs/OPERATIONS.md). Threat model: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). Agent backends: [docs/AGENT_BACKENDS.md](docs/AGENT_BACKENDS.md). AI agents arrange the Home widgets through an MCP server: [docs/adr/0019-reusable-widget-grid-and-agent-layer.md](docs/adr/0019-reusable-widget-grid-and-agent-layer.md). Formal verification: [docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md). Independent review: [docs/CODEX_REVIEW.md](docs/CODEX_REVIEW.md). UI review record: [docs/UI_review.md](docs/UI_review.md). Decisions: [docs/adr/](docs/adr/). Rules: [logging](docs/rule/logging.md), [error handling](docs/rule/error_handling.md), [UI review](docs/rule/UI_review_rule.md), [real-environment testing](docs/rule/test_guideline.md). This file only points at them and adds the owner's standing instructions below.
 
 Please do not use any type.
 
@@ -27,6 +27,8 @@ bun run prod:build     # build a new release generation (safe while production r
 bun run prod:start     # serve the pointed-to generation (production)
 bun run prod:rollback  # move the pointer to the previous activation (then restart)
 bun run start          # same as bun run prod
+bun run mcp:home       # Home-widget MCP server against production (or RESEARCH_API_URL)
+bun run mcp:home:dev   # Home-widget MCP server against development
 bun run build          # SPA, runner bundle, dry-run of the Cloudflare bundle
 bun run build:web      # build the SPA only (vite build)
 bun run build:runner   # bundle the runner only (to dist/runner/main.mjs)

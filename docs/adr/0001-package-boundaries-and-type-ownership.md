@@ -14,10 +14,12 @@ contracts     -> domain, zod
 agent-core    -> contracts, domain, zod
 application   -> domain, contracts, agent-core, zod
 ui-registry   -> contracts, domain, solid-js, zod
+widget-grid   -> solid-js, zod (no workspace package)
 adapters      -> application, agent-core, contracts, domain, external SDKs
 apps/api      -> application, contracts, domain, adapters/{d1,worker,feed,runtime}, hono, jose
 apps/runner   -> application, agent-core, contracts, domain, adapters/{node,providers,tools,finance,feed,runtime}
-apps/web      -> contracts, ui-registry, domain, solid-js
+apps/mcp      -> contracts, widget-grid/{core,agent}, zod
+apps/web      -> contracts, ui-registry, domain, widget-grid, solid-js
 ```
 
 - **Domain owns calculation types** (e.g. `DemandScenarioInput`, `PositionFigures`, `UiCommand`, `WorkspaceState`, `JobState` and its transition matrix) because the pure functions need them and may import nothing.

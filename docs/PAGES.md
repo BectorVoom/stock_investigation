@@ -37,6 +37,9 @@ Check market prices, charts and economic indicators at a glance on widgets you a
 - Remove a widget.
 - Reset to the default arrangement.
 - Queue a market-data refresh for the local runner.
+- (Elsewhere) Have an AI agent arrange the widgets through the MCP server
+  (`docs/OPERATIONS.md`); edits made elsewhere — another tab, an agent —
+  appear on this page when its tab becomes visible again.
 
 Every action is an icon-only button (accessible name and tooltip carry the
 former label); the per-widget actions open a text menu with leading icons.
