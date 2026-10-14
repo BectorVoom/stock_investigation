@@ -1,21 +1,48 @@
-import { For, type JSX, onCleanup } from "solid-js";
+import { type Accessor, For, type JSX, onCleanup } from "solid-js";
 import type { WidgetBase } from "../core/types.ts";
+import { WIDGET_GRID_CLASS } from "./classNames.ts";
 import { createWidgetDrag, type WidgetDragDrop } from "./widgetDrag.ts";
 
 export type { WidgetDragDrop };
 
+/** True for a value with a callable `then` (narrowed without a cast). */
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"then" in value &&
+		typeof value.then === "function"
+	);
+}
+
 export interface WidgetGridProps<W extends WidgetBase = WidgetBase> {
 	readonly widgets: readonly W[];
-	/** The host's own condition for starting a drag (for example `!busy()`). */
-	readonly canDrag: boolean;
+	/**
+	 * The host's own condition for starting a drag (for example `!busy()`).
+	 * Defaults to `true` when omitted.
+	 */
+	readonly canDrag?: boolean;
+	/**
+	 * Extra selector for controls that never start a drag, appended to the
+	 * drag engine's native list. Read lazily on every press, so the host's
+	 * own elements stay out of the package.
+	 */
+	readonly ignoreDragFrom?: string;
 	/**
 	 * Called once per committed drop with the reorder to save. May return a
 	 * promise: until it settles no new drag starts and the previewed order
 	 * stays on screen, afterwards the preview `order` values are cleared.
+	 * A synchronous throw propagates to the host after the preview is
+	 * cleared; a rejected promise only clears the preview (the host owns
+	 * its own failure handling).
 	 */
 	readonly onReorder: (drop: WidgetDragDrop) => unknown;
-	/** Renders one widget (usually a `WidgetFrame` with the host's body). */
-	readonly children: (widget: W) => JSX.Element;
+	/**
+	 * Renders one widget (usually a `WidgetFrame` with the host's body).
+	 * The position arrives as `<For>`'s index accessor, so a reorder
+	 * updates every child's reported position without re-creating it.
+	 */
+	readonly children: (widget: W, index: Accessor<number>) => JSX.Element;
 }
 
 /**
@@ -33,20 +60,22 @@ export function WidgetGrid<W extends WidgetBase>(props: WidgetGridProps<W>): JSX
 	const controller = createWidgetDrag<W>({
 		getGrid: () => gridEl,
 		getWidgets: () => props.widgets,
-		canStart: () => !savingPreview && props.canDrag,
-		extraIgnoreSelector: "sl-dialog,sl-select,sl-input,sl-option",
+		canStart: () => !savingPreview && (props.canDrag ?? true),
+		get extraIgnoreSelector(): string | undefined {
+			return props.ignoreDragFrom;
+		},
 		onDrop: (drop) => {
 			savingPreview = true;
 			let result: unknown;
 			try {
 				result = props.onReorder(drop);
-			} catch {
+			} catch (error) {
 				savingPreview = false;
 				controller.clearPreview();
-				return;
+				throw error;
 			}
-			if (result !== undefined && typeof (result as Promise<unknown>).then === "function") {
-				void (result as Promise<unknown>).then(
+			if (isThenable(result)) {
+				void result.then(
 					() => {
 						savingPreview = false;
 						controller.clearPreview();
@@ -71,13 +100,13 @@ export function WidgetGrid<W extends WidgetBase>(props: WidgetGridProps<W>): JSX
 	return (
 		<div
 			data-widget-grid
-			class="wg-grid"
+			class={WIDGET_GRID_CLASS}
 			ref={(element) => {
 				gridEl = element;
 			}}
-			onPointerDown={(event) => controller.onPointerDown(event as PointerEvent)}
+			onPointerDown={(event) => controller.onPointerDown(event)}
 		>
-			<For each={props.widgets}>{(widget) => props.children(widget)}</For>
+			<For each={props.widgets}>{(widget, index) => props.children(widget, index)}</For>
 		</div>
 	);
 }

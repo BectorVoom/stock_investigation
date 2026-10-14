@@ -36,7 +36,12 @@ import {
 } from "../watchlist/watchlistModel.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
 import "./shoelace.ts";
-import { createMoveAnnouncer, MoveAnnouncerView, WidgetGrid } from "@research/widget-grid";
+import {
+	createMoveAnnouncer,
+	MoveAnnouncerView,
+	WIDGET_GRID_CLASS,
+	WidgetGrid,
+} from "@research/widget-grid";
 import { HomeFrame } from "./HomeFrame.tsx";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
 import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
@@ -635,7 +640,7 @@ export function HomeView(props: {
 		>
 			<section class="space-y-2" aria-label="Loading market data">
 				<output class="block text-sm text-slate-600">Loading market data…</output>
-				<div class="wg-grid">
+				<div class={WIDGET_GRID_CLASS}>
 					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
 				</div>
 			</section>
@@ -707,7 +712,7 @@ export function HomeView(props: {
 				<Match when={dashboard.value() === null && dashboardError() === null}>
 					<section class="space-y-2" aria-label="Loading home">
 						<output class="block text-sm text-slate-600">Loading market widgets…</output>
-						<div class="wg-grid">
+						<div class={WIDGET_GRID_CLASS}>
 							<For each={[0, 1, 2, 3]}>
 								{() => <sl-skeleton effect="sheen" class="block h-full" />}
 							</For>
@@ -747,14 +752,13 @@ export function HomeView(props: {
 							<WidgetGrid
 								widgets={dashboard.value()?.dashboard.widgets ?? []}
 								canDrag={!busy() && dashboard.value() !== null}
+								ignoreDragFrom="sl-dialog,sl-select,sl-input,sl-option"
 								onReorder={onWidgetDrop}
 							>
-								{(widget) => (
+								{(widget, index) => (
 									<HomeFrame
 										widget={widget}
-										position={(dashboard.value()?.dashboard.widgets ?? []).findIndex(
-											(entry) => entry.widgetId === widget.widgetId,
-										)}
+										position={index()}
 										total={dashboard.value()?.dashboard.widgets.length ?? 0}
 										actionsDisabled={busy()}
 										onEdit={openEditDialog}

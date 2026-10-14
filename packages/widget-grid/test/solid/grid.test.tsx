@@ -1,4 +1,5 @@
 import { cleanup, render, waitFor } from "@solidjs/testing-library";
+import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WidgetBase } from "../../src/core/types.ts";
 import { WidgetFrame } from "../../src/solid/WidgetFrame.tsx";
@@ -283,5 +284,230 @@ describe("WidgetGrid", () => {
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		expect(called).toBe(0);
 		expect(container.querySelector("[data-widget-placeholder]")).toBeNull();
+	});
+
+	it("a press on the host selector starts no drag; without it the same press does", async () => {
+		const framed = (item: WidgetBase) => (
+			<article
+				data-widget-id={item.widgetId}
+				data-widget-type={item.type}
+				data-widget-size={item.size}
+				class="wg-frame"
+			>
+				<div class="wg-header" data-widget-drag-handle={item.widgetId}>
+					<span class="host-ignore">grip</span>
+				</div>
+			</article>
+		);
+		async function pressGripMove(
+			container: HTMLElement,
+			toX: number,
+			toY: number,
+		): Promise<HTMLElement> {
+			const grip = container.querySelector(".host-ignore");
+			if (!(grip instanceof HTMLElement)) throw new Error("no host grip");
+			const box = grip.getBoundingClientRect();
+			const fromX = box.x + box.width / 2;
+			const fromY = box.y + box.height / 2;
+			grip.dispatchEvent(
+				new PointerEvent("pointerdown", {
+					bubbles: true,
+					clientX: fromX,
+					clientY: fromY,
+					button: 0,
+					pointerId: 1,
+					isPrimary: true,
+				}),
+			);
+			window.dispatchEvent(
+				new PointerEvent("pointermove", {
+					bubbles: true,
+					clientX: toX,
+					clientY: toY,
+					pointerId: 1,
+					isPrimary: true,
+				}),
+			);
+			await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+			return grip;
+		}
+		// With the host selector the press never starts a drag.
+		let blocked = 0;
+		const stopBlocked = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				ignoreDragFrom=".host-ignore"
+				onReorder={() => {
+					blocked += 1;
+				}}
+			>
+				{(item) => framed(item)}
+			</WidgetGrid>
+		));
+		mockLayout(stopBlocked.container);
+		await pressGripMove(stopBlocked.container, 150, 320);
+		expect(stopBlocked.container.querySelector("[data-widget-placeholder]")).toBeNull();
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(blocked).toBe(0);
+		stopBlocked.unmount();
+		// Without it the same press starts a drag.
+		let allowed = 0;
+		const stopAllowed = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				onReorder={() => {
+					allowed += 1;
+				}}
+			>
+				{(item) => framed(item)}
+			</WidgetGrid>
+		));
+		mockLayout(stopAllowed.container);
+		await pressGripMove(stopAllowed.container, 150, 320);
+		expect(stopAllowed.container.querySelector("[data-widget-placeholder]")).not.toBeNull();
+		expect(allowed).toBe(0);
+		window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 320,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(allowed).toBe(0);
+		stopAllowed.unmount();
+	});
+
+	it("a synchronous onReorder throw clears the preview and propagates", async () => {
+		let calls = 0;
+		const { container } = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				onReorder={() => {
+					calls += 1;
+					if (calls === 1) throw new Error("host boom");
+				}}
+			>
+				{(item) => (
+					<WidgetFrame widget={item}>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		mockLayout(container);
+		// Drag A (position 0) past C's midpoint to (150,320): the host bug
+		// surfaces instead of disappearing.
+		await expect(dragFromTo(container, "w-a", 150, 50, 150, 320)).rejects.toThrow("host boom");
+		expect(calls).toBe(1);
+		// The preview is cleared and the saving flag is released: the next
+		// drag saves again.
+		expect(
+			[...container.querySelectorAll("article[data-widget-id]")].every(
+				(article) => (article as HTMLElement).style.order === "",
+			),
+		).toBe(true);
+		await dragFromTo(container, "w-a", 150, 50, 150, 320);
+		expect(calls).toBe(2);
+	});
+
+	it("a rejected onReorder promise only clears the preview", async () => {
+		let calls = 0;
+		const { container } = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				onReorder={() => {
+					calls += 1;
+					return Promise.reject(new Error("save failed"));
+				}}
+			>
+				{(item) => (
+					<WidgetFrame widget={item}>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		mockLayout(container);
+		// A rejection never throws out of the drop: it only clears the preview.
+		await dragFromTo(container, "w-a", 150, 50, 150, 320);
+		expect(calls).toBe(1);
+		await waitFor(() =>
+			expect(
+				[...container.querySelectorAll("article[data-widget-id]")].every(
+					(article) => (article as HTMLElement).style.order === "",
+				),
+			).toBe(true),
+		);
+		// The saving flag is released after the settle: the next drag saves.
+		await dragFromTo(container, "w-a", 150, 50, 150, 320);
+		expect(calls).toBe(2);
+	});
+
+	it("canDrag defaults to true when omitted", async () => {
+		let calls = 0;
+		const { container } = render(() => (
+			<WidgetGrid
+				widgets={widgets()}
+				onReorder={() => {
+					calls += 1;
+				}}
+			>
+				{(item) => (
+					<WidgetFrame widget={item}>
+						<span>{item.title}</span>
+					</WidgetFrame>
+				)}
+			</WidgetGrid>
+		));
+		mockLayout(container);
+		await dragFromTo(container, "w-a", 150, 50, 150, 320);
+		expect(calls).toBe(1);
+	});
+
+	it("reports the new position through the index accessor after a reorder, without re-creating children", async () => {
+		const initial = widgets();
+		const [list, setList] = createSignal<WidgetBase[]>([...initial]);
+		const creations = new Map<string, number>();
+		const positions = new Map<string, () => number>();
+		render(() => (
+			<WidgetGrid widgets={list()} onReorder={() => undefined}>
+				{(item, index) => {
+					creations.set(item.widgetId, (creations.get(item.widgetId) ?? 0) + 1);
+					positions.set(item.widgetId, index);
+					return (
+						<WidgetFrame widget={item}>
+							<span>{item.title}</span>
+						</WidgetFrame>
+					);
+				}}
+			</WidgetGrid>
+		));
+		expect(positions.get("w-a")?.()).toBe(0);
+		expect(positions.get("w-b")?.()).toBe(1);
+		expect(positions.get("w-c")?.()).toBe(2);
+		const first = initial[0];
+		const second = initial[1];
+		const third = initial[2];
+		if (first === undefined || second === undefined || third === undefined) {
+			throw new Error("fixture widgets are missing");
+		}
+		setList([second, third, first]);
+		await waitFor(() => expect(positions.get("w-a")?.()).toBe(2));
+		expect(positions.get("w-b")?.()).toBe(0);
+		expect(positions.get("w-c")?.()).toBe(1);
+		expect([...creations.values()]).toEqual([1, 1, 1]);
 	});
 });
