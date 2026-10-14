@@ -1,22 +1,33 @@
+import type {
+	NotebookAssistResponse,
+	NotebookTurn,
+	NotebookWidgetCore,
+	NotebookWidgetOrigin,
+} from "@research/contracts";
+import { isTerminalJobState } from "@research/contracts";
 import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { Canvas } from "../canvas/Canvas.tsx";
-import {
-	BUTTON,
-	CHAT_PANEL,
-	ErrorNotice,
-	Loading,
-	Notice,
-	PanelCollapseButton,
-	PanelHeader,
-} from "../components/ui.tsx";
+import type { ApiResult } from "../api/http.ts";
+import { BUTTON, CHAT_PANEL, ErrorNotice, Notice, PanelCollapseButton } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { createWorkspaceSession, type WorkspaceSession } from "../lib/session.ts";
-import { Composer } from "./Composer.tsx";
-import { Conversation } from "./Conversation.tsx";
+import { NotebookPanel } from "../notebook/NotebookPanel.tsx";
+import { widgetFromAnswer } from "../notebook/notebookModel.ts";
+import { createNotebookSession, type NotebookSession } from "../notebook/notebookSession.ts";
+import type { WorkspaceMode } from "../notebook/types.ts";
+import {
+	dismissNotebookSuggest,
+	isNotebookSuggestDismissed,
+	isKeptRemoval as isStoredKeptRemoval,
+	readKeptRemovals,
+	rememberKeptRemoval,
+} from "../notebook/workspaceMode.ts";
+import { Composer, type ComposerTarget } from "./Composer.tsx";
+import { Conversation, type Message } from "./Conversation.tsx";
 import { focusComposerBox } from "./composerFocus.ts";
+import { ModeSwitch } from "./ModeSwitch.tsx";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
 
 export interface OpenWorkspaceProps {
@@ -27,20 +38,29 @@ export interface OpenWorkspaceProps {
 	readonly listTitle: string | null;
 	readonly onActivity: () => void;
 	readonly focusNonce: number;
-	readonly canvasCollapsed: () => boolean;
-	readonly onToggleCanvas: () => void;
-	readonly mobileTab: () => "chat" | "canvas";
+	readonly mode: WorkspaceMode;
+	readonly onModeChange: (mode: WorkspaceMode) => void;
 	readonly wide: () => boolean;
+	readonly secondaryCollapsed: () => boolean;
+	readonly onToggleSecondary: () => void;
 }
 
 /**
- * One open conversation with ONE workspace session shared by its Chat and
- * Canvas panels (no duplicated polling). The thread and the canvas read from
- * the same `view`, `conversation` and `runs` signals, so a poll that changes
- * nothing updates neither.
+ * One open conversation in exactly two states — Chat-first or
+ * Notebook-first — over ONE workspace session and ONE notebook session
+ * shared by both panels (no duplicated polling). Switching states changes
+ * only proportions and visibility: both panels stay mounted in the same DOM
+ * order, so the thread, the composer draft, the selection and scroll
+ * positions survive. The notebook session is created once here, next to the
+ * workspace session, and never re-created by a layout change.
  */
 export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	const session: WorkspaceSession = createWorkspaceSession(
+		props.api,
+		props.workspaceId,
+		props.visibility,
+	);
+	const notebookSession: NotebookSession = createNotebookSession(
 		props.api,
 		props.workspaceId,
 		props.visibility,
@@ -70,6 +90,57 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	} | null>(null);
 	let suggestionNonce = 0;
 
+	// The composer target: the owner's manual choice wins; otherwise Notebook
+	// when Notebook-first or when widgets are selected, Research otherwise.
+	const [targetManual, setTargetManual] = createSignal<ComposerTarget | null>(null);
+	const target = createMemo((): ComposerTarget => {
+		const manual = targetManual();
+		if (manual !== null) return manual;
+		if (props.mode === "notebook" || notebookSession.selection().length > 0) return "notebook";
+		return "research";
+	});
+	const selectedWidgets = createMemo(() => {
+		const ids = new Set(notebookSession.selection());
+		return notebookSession
+			.widgets()
+			.filter((widget) => ids.has(widget.widgetId))
+			.map((widget) => ({ widgetId: widget.widgetId, title: widget.title }));
+	});
+
+	// Assistant-proposed removals the owner kept, remembered per workspace.
+	const [kept, setKept] = createSignal<Readonly<Record<string, true>>>(
+		readKeptRemovals(props.workspaceId),
+	);
+	// "Add to Notebook" saves in flight, by component or message id.
+	const [savingNotebookIds, setSavingNotebookIds] = createSignal<readonly string[]>([]);
+	// Undo in flight, by assistant run id.
+	const [undoPendingRunId, setUndoPendingRunId] = createSignal<string | null>(null);
+	// The quiet "notebook is taking shape" suggestion, dismissed per workspace.
+	const [suggestDismissed, setSuggestDismissed] = createSignal(
+		isNotebookSuggestDismissed(props.workspaceId),
+	);
+	const showSuggest = () =>
+		props.mode === "chat" && notebookSession.widgets().length >= 3 && !suggestDismissed();
+
+	// When a notebook-assist run reaches a terminal state the notebook changed
+	// on the server: reload once per run (the session's own polling is for the
+	// thread; no second poller is added).
+	const assistReloaded = new Set<string>();
+	createEffect(() => {
+		let fresh = false;
+		for (const run of session.runs()) {
+			if (
+				run.kind === "notebook-assist" &&
+				isTerminalJobState(run.state) &&
+				!assistReloaded.has(run.runId)
+			) {
+				assistReloaded.add(run.runId);
+				fresh = true;
+			}
+		}
+		if (fresh) void notebookSession.reload();
+	});
+
 	// New-chat focus: after the New chat button opens a conversation, focus
 	// moves to the question input. The nonce identifies the request; the
 	// effect runs when the composer for this workspace is mounted.
@@ -88,6 +159,104 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			});
 		}
 	});
+
+	const trackNotebookSave = (id: string, save: () => Promise<unknown>): void => {
+		setSavingNotebookIds((current) => [...current, id]);
+		void save().finally(() => {
+			setSavingNotebookIds((current) => current.filter((entry) => entry !== id));
+		});
+	};
+
+	const addComponent = (core: NotebookWidgetCore, origin: NotebookWidgetOrigin): void => {
+		trackNotebookSave(origin.componentId ?? core.widgetId, () =>
+			notebookSession.addWidget(core, origin),
+		);
+	};
+
+	const addAnswer = (message: Message): void => {
+		trackNotebookSave(message.messageId, () =>
+			notebookSession.addWidget(widgetFromAnswer(message), {
+				kind: "chat",
+				messageId: message.messageId,
+				runId: message.runId,
+				componentId: null,
+			}),
+		);
+	};
+
+	const answerInNotebook = (messageId: string): boolean =>
+		notebookSession
+			.widgets()
+			.some(
+				(widget) => widget.origin.messageId === messageId && widget.origin.componentId === null,
+			);
+
+	const componentInNotebook = (componentId: string): boolean =>
+		notebookSession.widgets().some((widget) => widget.origin.componentId === componentId);
+
+	const undoTurn = (turn: NotebookTurn): void => {
+		const version = notebookSession.state()?.version ?? 0;
+		if (turn.appliedVersion === null || version !== turn.appliedVersion) return;
+		if (undoPendingRunId() !== null) return;
+		setUndoPendingRunId(turn.runId);
+		void notebookSession.undo().finally(() => setUndoPendingRunId(null));
+	};
+
+	const keepRemoval = (runId: string, widgetIds: readonly string[]): void => {
+		let next = kept();
+		for (const widgetId of widgetIds) {
+			next = rememberKeptRemoval(props.workspaceId, next, runId, widgetId);
+		}
+		setKept(next);
+	};
+
+	/** "Ask AI" on widgets: selects them, targets the Notebook assistant, focuses the composer. */
+	const askAssistant = (widgetIds: readonly string[]): void => {
+		notebookSession.select(null, "replace");
+		for (const widgetId of widgetIds) notebookSession.select(widgetId, "toggle");
+		setTargetManual("notebook");
+		focusComposerBox();
+		// Fallback for engines where the panel is still committing: retry once.
+		setTimeout(() => {
+			focusComposerBox();
+		}, 100);
+	};
+
+	const submitNotebook = (
+		instruction: string,
+		idempotencyKey: string,
+	): Promise<ApiResult<NotebookAssistResponse>> => {
+		const result = props.api.assistNotebook(
+			props.workspaceId,
+			{
+				instruction,
+				selectedWidgetIds: [...notebookSession.selection()],
+				notebookVersion: notebookSession.state()?.version ?? 0,
+			},
+			idempotencyKey,
+		);
+		void result.then((outcome) => {
+			if (outcome.ok) props.onActivity();
+		});
+		return result;
+	};
+
+	/** Navigates to where a widget came from: its chat message, scrolled to and briefly lit. */
+	const openOrigin = (origin: NotebookWidgetOrigin): void => {
+		if (origin.messageId === null) return;
+		const messageId = origin.messageId;
+		if (!props.wide()) props.onModeChange("chat");
+		queueMicrotask(() => {
+			const element = document.querySelector(`[data-message-id="${messageId}"]`);
+			if (!(element instanceof HTMLElement)) return;
+			if (typeof element.scrollIntoView === "function") {
+				element.scrollIntoView({ block: "center" });
+			}
+			// A shape as well as a colour (an outline), removed shortly after.
+			element.classList.add("ring-2", "ring-blue-700", "rounded");
+			setTimeout(() => element.classList.remove("ring-2", "ring-blue-700", "rounded"), 1600);
+		});
+	};
 
 	const notices = () => (
 		<>
@@ -126,6 +295,43 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		</>
 	);
 
+	const notebookStates = () => (
+		<>
+			<Show when={notebookSession.notice()}>
+				{(notice) => (
+					<div class="mb-2 flex items-start gap-2">
+						<div class="min-w-0 flex-1">
+							<Show when={notice().failure} fallback={<Notice tone="info">{notice().text}</Notice>}>
+								{(failure) => <ErrorNotice failure={failure()} title={notice().text} />}
+							</Show>
+						</div>
+						<button type="button" class={BUTTON} onClick={() => notebookSession.dismissNotice()}>
+							Dismiss
+						</button>
+					</div>
+				)}
+			</Show>
+			<Show when={notebookSession.loadError()}>
+				{(failure) => (
+					<ErrorNotice
+						failure={failure()}
+						title="Could not load the notebook."
+						onRetry={() => void notebookSession.reload()}
+					/>
+				)}
+			</Show>
+		</>
+	);
+
+	// Below `lg` only the active state shows; at `lg` and up both panels show
+	// side by side. Both stay mounted either way: only classes change, so a
+	// state switch re-creates nothing. A collapsed secondary panel hides at
+	// every width (at `lg` its rail shows instead); the flag only applies
+	// while that panel is secondary, so switching states can never strand a
+	// hidden panel.
+	const chatVisible = () => props.mode === "chat" || !props.secondaryCollapsed();
+	const notebookVisible = () => props.mode === "notebook" || !props.secondaryCollapsed();
+
 	const chatPanel = () => (
 		// WHY `px-3 pb-0 pt-3 lg:p-3` instead of `CHAT_PANEL` (p-3): on narrow
 		// screens the composer is pinned to the viewport bottom and the E2E
@@ -137,13 +343,27 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		<section
 			aria-label="Chat"
 			data-panel="chat"
-			class="flex min-h-0 min-w-0 flex-1 flex-col rounded bg-white px-3 pb-0 pt-3 lg:p-3"
+			class="min-h-0 min-w-0 flex-1 flex-col rounded bg-white px-3 pb-0 pt-3 lg:p-3"
+			classList={{
+				flex: props.mode === "chat",
+				"hidden lg:flex": props.mode === "notebook",
+				"lg:hidden": props.mode === "notebook" && props.secondaryCollapsed(),
+			}}
 		>
 			{notices()}
-			<div class="flex min-w-0 flex-wrap items-baseline gap-2">
+			<div class="flex min-w-0 flex-wrap items-center gap-2">
 				<h3 class="min-w-0 flex-1 truncate text-base font-semibold text-slate-900" title={title()}>
 					{title()}
 				</h3>
+				<ModeSwitch mode={props.mode} onChange={props.onModeChange} />
+				<Show when={props.mode === "notebook"}>
+					<PanelCollapseButton
+						label="Collapse Chat panel"
+						expanded={true}
+						onToggle={props.onToggleSecondary}
+						side="left"
+					/>
+				</Show>
 			</div>
 			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 				<Conversation
@@ -162,6 +382,23 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 						suggestionNonce += 1;
 						setSuggestion({ text, nonce: suggestionNonce });
 					}}
+					view={session.view()}
+					registry={props.registry}
+					turns={notebookSession.turns()}
+					notebookVersion={notebookSession.state()?.version ?? 0}
+					onSelectComponent={(componentId, itemKey) =>
+						void session.dispatch({ operation: "component.select", componentId, itemKey })
+					}
+					onAddComponent={addComponent}
+					onAddAnswer={addAnswer}
+					answerInNotebook={answerInNotebook}
+					componentInNotebook={componentInNotebook}
+					savingNotebookIds={savingNotebookIds()}
+					onUndoTurn={undoTurn}
+					undoPendingRunId={undoPendingRunId()}
+					onRemoveWidgets={(ids) => void notebookSession.removeWidgets(ids)}
+					onKeepRemoval={keepRemoval}
+					isKeptRemoval={(runId, widgetId) => isStoredKeptRemoval(kept(), runId, widgetId)}
 					composer={
 						<Composer
 							workspaceId={props.workspaceId}
@@ -177,6 +414,15 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							}}
 							suggestion={suggestion}
 							runs={session.runs()}
+							target={target()}
+							onTargetChange={setTargetManual}
+							selection={selectedWidgets()}
+							onRemoveSelection={(widgetId) => {
+								if (notebookSession.selection().includes(widgetId)) {
+									notebookSession.select(widgetId, "toggle");
+								}
+							}}
+							onSubmitNotebook={submitNotebook}
 						/>
 					}
 				/>
@@ -195,90 +441,111 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		</section>
 	);
 
-	const canvasBody = () => (
-		<Show when={session.view()} fallback={<Loading label="canvas" />}>
-			{(view) => (
-				<Canvas
-					view={view()}
-					registry={props.registry}
-					busy={session.commandPending()}
-					onOperation={(operation) => void session.dispatch(operation)}
-				/>
-			)}
-		</Show>
-	);
-
-	const canvasPanel = () => (
-		<Show
-			when={!props.canvasCollapsed()}
-			fallback={
-				<div
-					class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`}
-					data-panel="canvas-rail"
-				>
-					<PanelCollapseButton
-						label="Expand Canvas panel"
-						expanded={false}
-						onToggle={props.onToggleCanvas}
-						side="right"
-					/>
-				</div>
-			}
+	const notebookPanel = () => (
+		<div
+			data-panel="notebook"
+			class="min-h-0 min-w-0 flex-1 flex-col rounded bg-white px-3 pb-0 pt-3 lg:p-3"
+			classList={{
+				flex: props.mode === "notebook",
+				"hidden lg:flex": props.mode === "chat",
+				"lg:hidden": props.mode === "chat" && props.secondaryCollapsed(),
+			}}
 		>
-			<section
-				aria-label="Canvas"
-				data-panel="canvas"
-				aria-busy={session.commandPending()}
-				class={`${CHAT_PANEL} hidden min-h-0 min-w-0 flex-col lg:flex`}
-			>
-				<PanelHeader
-					title="Canvas"
-					expanded={true}
-					collapseLabel="Collapse Canvas panel"
-					expandLabel="Expand Canvas panel"
-					onToggle={props.onToggleCanvas}
-					side="right"
-				/>
-				<div class="mt-2 min-h-0 flex-1 overflow-y-auto">{canvasBody()}</div>
-			</section>
-		</Show>
-	);
-
-	// Wide layout renders both panels from this one session; narrow layout
-	// renders one tab at a time (the hidden tab's heavy content stays
-	// unmounted). The session lives in this component, outside the layout
-	// branch, so crossing the `lg` breakpoint swaps the layout without
-	// recreating the session (no duplicated polling, no loading flash).
-	return (
-		<Show
-			when={props.wide()}
-			fallback={
-				<div
-					id={props.mobileTab() === "chat" ? "chat-panel-mobile" : "canvas-panel-mobile"}
-					role="tabpanel"
-					aria-labelledby={props.mobileTab() === "chat" ? "chat-tab-mobile" : "canvas-tab-mobile"}
-					class="flex min-w-0 flex-1 flex-col lg:hidden"
-				>
-					<Show
-						when={props.mobileTab() === "chat"}
-						fallback={
-							<section
-								aria-label="Canvas"
-								data-panel="canvas"
-								class={`${CHAT_PANEL} flex min-h-0 flex-col`}
-							>
-								<h3 class="text-sm font-semibold text-slate-900">Canvas</h3>
-								<div class="mt-2">{canvasBody()}</div>
-							</section>
-						}
+			{notebookStates()}
+			<Show when={showSuggest()}>
+				<p class="mb-1 text-xs text-slate-600">
+					Your notebook is taking shape —{" "}
+					<button
+						type="button"
+						class="min-h-6 text-blue-800 underline"
+						onClick={() => props.onModeChange("notebook")}
 					>
-						{chatPanel()}
-					</Show>
-				</div>
-			}
+						Focus Notebook
+					</button>{" "}
+					<button
+						type="button"
+						aria-label="Dismiss suggestion"
+						title="Dismiss suggestion"
+						class="min-h-6 text-blue-800 underline"
+						onClick={() => {
+							dismissNotebookSuggest(props.workspaceId);
+							setSuggestDismissed(true);
+						}}
+					>
+						Dismiss
+					</button>
+				</p>
+			</Show>
+			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+				<NotebookPanel
+					session={notebookSession}
+					registry={props.registry}
+					view={session.view()}
+					mode={props.mode}
+					onAskAssistant={askAssistant}
+					onOpenOrigin={openOrigin}
+					headerActions={
+						<>
+							<ModeSwitch mode={props.mode} onChange={props.onModeChange} />
+							<Show when={props.mode === "chat"}>
+								<PanelCollapseButton
+									label="Collapse Notebook panel"
+									expanded={true}
+									onToggle={props.onToggleSecondary}
+									side="right"
+								/>
+							</Show>
+						</>
+					}
+				/>
+			</div>
+		</div>
+	);
+
+	const chatRail = () => (
+		<div class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`} data-panel="chat-rail">
+			<PanelCollapseButton
+				label="Expand Chat panel"
+				expanded={false}
+				onToggle={props.onToggleSecondary}
+				side="left"
+			/>
+		</div>
+	);
+
+	const notebookRail = () => (
+		<div
+			class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`}
+			data-panel="notebook-rail"
 		>
-			{chatPanel()}
-			{canvasPanel()}
-		</Show>
+			<PanelCollapseButton
+				label="Expand Notebook panel"
+				expanded={false}
+				onToggle={props.onToggleSecondary}
+				side="right"
+			/>
+		</div>
+	);
+
+	// One tree for both breakpoints: `wide` only changes the tabpanel
+	// chrome, never the panels, so crossing `lg` (like switching states)
+	// swaps no sessions and remounts nothing.
+	const tabPanelProps = (): Record<string, string> =>
+		props.wide()
+			? {}
+			: {
+					role: "tabpanel",
+					id: props.mode === "chat" ? "chat-panel-mobile" : "notebook-panel-mobile",
+					"aria-labelledby": props.mode === "chat" ? "chat-tab-mobile" : "notebook-tab-mobile",
+				};
+	return (
+		<div {...tabPanelProps()} class="flex min-w-0 flex-1 flex-col lg:contents">
+			<Show when={chatVisible()} fallback={chatRail()}>
+				{chatPanel()}
+			</Show>
+			<Show when={notebookVisible()} fallback={notebookRail()}>
+				{notebookPanel()}
+			</Show>
+		</div>
 	);
 }

@@ -3,19 +3,46 @@ import type {
 	Claim,
 	Conversation as ConversationData,
 	Evidence,
+	NotebookTurn,
+	NotebookWidgetCore,
+	NotebookWidgetOrigin,
 	ResearchRun,
+	WorkspaceView,
 } from "@research/contracts";
-import { isTerminalJobState } from "@research/contracts";
+import { isLeasedJobState, isTerminalJobState } from "@research/contracts";
+import type { RenderContext, UiRegistry, WorkspaceComponent } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { AnswerClaims } from "./Citations.tsx";
+import { NotebookTurnCard } from "./NotebookTurnCard.tsx";
 import { RunCard } from "./RunCard.tsx";
 import { SUGGESTIONS } from "./suggestions.ts";
+import { groupThreadComponents, OtherResults, ThreadPreviewsForRun } from "./ThreadPreviews.tsx";
 
-type Message = ConversationData["messages"][number];
+/**
+ * A notebook-assist run shows its run card only while queued or running;
+ * afterwards its assistant reply and turn card speak for it.
+ */
+function runCardVisible(run: ResearchRun): boolean {
+	if (run.kind === "notebook-assist") {
+		return run.state === "pending" || isLeasedJobState(run.state);
+	}
+	return run.state !== "completed";
+}
+
+/**
+ * Research cards always stay mounted (a completed one's state remains
+ * readable as data); a finished notebook-assist run mounts no card at all.
+ */
+function runCardMounted(run: ResearchRun): boolean {
+	if (run.kind === "notebook-assist") return runCardVisible(run);
+	return true;
+}
+
+export type Message = ConversationData["messages"][number];
 /** Minimal clipboard surface, injectable so tests can replace it. */
 type ClipboardLike = Pick<Clipboard, "writeText">;
 
@@ -99,11 +126,19 @@ function AssistantMessage(props: {
 	readonly evidence: ReadonlyMap<string, Evidence>;
 	readonly clipboard?: ClipboardLike | null;
 	readonly onOpenRecords: (runId: string, opener: HTMLElement | null) => void;
+	/** "Notebook assistant" for notebook-assist replies (never citations, never a badge). */
+	readonly assistantLabel: string;
+	readonly withCitations: boolean;
+	readonly showEvidence: boolean;
+	/** Null offers no save (e.g. while the notebook session is unavailable). */
+	readonly onAddToNotebook: (() => void) | null;
+	readonly addPending: boolean;
+	readonly inNotebook: boolean;
 }): JSX.Element {
 	return (
 		<div>
 			<p class="text-2xs text-slate-600">
-				<span class="font-semibold">Assistant</span>
+				<span class="font-semibold">{props.assistantLabel}</span>
 				{" · "}
 				<time datetime={props.message.createdAt}>{formatInstant(props.message.createdAt)}</time>
 			</p>
@@ -111,7 +146,7 @@ function AssistantMessage(props: {
 			<p class="mt-0.5 whitespace-pre-wrap wrap-anywhere text-sm text-slate-900">
 				{props.message.text}
 			</p>
-			<Show when={props.message.claimIds.length > 0}>
+			<Show when={props.withCitations && props.message.claimIds.length > 0}>
 				<AnswerClaims
 					claimIds={props.message.claimIds}
 					claims={props.claims}
@@ -120,7 +155,7 @@ function AssistantMessage(props: {
 			</Show>
 			<p class="mt-1 flex flex-wrap gap-2">
 				<CopyButton text={props.message.text} clipboard={props.clipboard} />
-				<Show when={props.message.runId}>
+				<Show when={props.showEvidence && props.message.runId}>
 					{(runId) => (
 						<button
 							type="button"
@@ -130,6 +165,33 @@ function AssistantMessage(props: {
 							Evidence
 						</button>
 					)}
+				</Show>
+				<Show when={props.onAddToNotebook !== null}>
+					<Show
+						when={!props.inNotebook}
+						fallback={
+							<span class="inline-flex min-h-6 items-center px-1 py-0.5 text-xs text-slate-600">
+								In notebook
+							</span>
+						}
+					>
+						<button
+							type="button"
+							disabled={props.addPending}
+							onClick={() => props.onAddToNotebook?.()}
+							class="inline-flex min-h-6 items-center gap-1 rounded px-1 py-0.5 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none">
+								<path
+									d="M6 1.5v9M1.5 6h9"
+									stroke="currentColor"
+									stroke-width="1.8"
+									stroke-linecap="round"
+								/>
+							</svg>
+							<span>Add to Notebook</span>
+						</button>
+					</Show>
 				</Show>
 			</p>
 		</div>
@@ -233,6 +295,27 @@ export function Conversation(props: {
 	readonly onOpenRecords?: (runId: string, opener: HTMLElement | null) => void;
 	readonly onSelectSuggestion?: (text: string) => void;
 	readonly clipboard?: ClipboardLike | null;
+	/** The workspace view, for the result previews rendered inside the thread (null while loading). */
+	readonly view?: WorkspaceView | null;
+	readonly registry?: UiRegistry | null;
+	/** Assistant turns from the notebook session, matched to replies by `runId`. */
+	readonly turns?: readonly NotebookTurn[];
+	/** The notebook version on screen (gates Undo on the turn card). */
+	readonly notebookVersion?: number;
+	/** Item selection inside a preview still dispatches through the session. */
+	readonly onSelectComponent?: (componentId: string, itemKey: string | null) => void;
+	/** Saving chat output into the Notebook (preview widget or answer). */
+	readonly onAddComponent?: (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => void;
+	readonly onAddAnswer?: (message: Message) => void;
+	readonly answerInNotebook?: (messageId: string) => boolean;
+	readonly componentInNotebook?: (componentId: string) => boolean;
+	/** Component and message ids with an "Add to Notebook" save in flight. */
+	readonly savingNotebookIds?: readonly string[];
+	readonly onUndoTurn?: (turn: NotebookTurn) => void;
+	readonly undoPendingRunId?: string | null;
+	readonly onRemoveWidgets?: (widgetIds: readonly string[]) => void;
+	readonly onKeepRemoval?: (runId: string, widgetIds: readonly string[]) => void;
+	readonly isKeptRemoval?: (runId: string, widgetId: string) => boolean;
 	/**
 	 * The question form, owned by the page. Rendered in exactly one DOM
 	 * position below, so sending the first question (which flips the empty
@@ -310,12 +393,46 @@ export function Conversation(props: {
 		}
 		return ids;
 	});
-	// Completed runs are left out: their cards are hidden, and a heading
-	// over nothing but hidden cards would be an empty section.
+	// Completed research runs are left out: their cards are hidden, and a heading
+	// over nothing but hidden cards would be an empty section. Notebook-assist
+	// runs show only while queued or running (their reply and turn card speak
+	// afterwards), so finished ones stay out of here too.
 	const earlierRunIds = createMemo(() =>
 		listedRuns()
-			.filter((run) => run.state !== "completed" && !placedInlineIds().has(run.runId))
+			.filter((run) => runCardVisible(run) && !placedInlineIds().has(run.runId))
 			.map((run) => run.runId),
+	);
+	/** Result previews grouped by producing run (`${runId}_` prefix); the rest are orphans. */
+	const previewGroups = createMemo(() => {
+		const view = props.view ?? null;
+		if (view === null)
+			return {
+				byRun: new Map<string, readonly WorkspaceComponent[]>(),
+				orphans: [] as readonly WorkspaceComponent[],
+			};
+		const ids = new Set(listedRuns().map((run) => run.runId));
+		return groupThreadComponents(view.state.components, view.state.layout.order, ids);
+	});
+	const previewReady = createMemo(() => {
+		const view = props.view ?? null;
+		const registry = props.registry ?? null;
+		if (view === null || registry === null) return null;
+		return { view, registry };
+	});
+	const turnsByRunId = createMemo(
+		() => new Map((props.turns ?? []).map((turn) => [turn.runId, turn] as const)),
+	);
+	const previewContext = createMemo(
+		(): RenderContext => ({
+			datasets: new Map(
+				(props.view?.datasets ?? []).map((dataset) => [dataset.datasetId, dataset] as const),
+			),
+			sources: new Map(
+				(props.view?.sources ?? []).map((source) => [source.evidenceId, source] as const),
+			),
+			selection: props.view?.state.selection ?? null,
+			onSelect: (componentId, itemKey) => props.onSelectComponent?.(componentId, itemKey),
+		}),
 	);
 	/**
 	 * A truly empty conversation: loaded, no messages, no runs, nothing
@@ -395,18 +512,22 @@ export function Conversation(props: {
 		return (
 			<Show when={run()} fallback={null}>
 				{(current) => (
-					// A completed run has nothing left to show (no badge, no
+					// A completed research run has nothing left to show (no badge, no
 					// action; its answer follows), so its card is hidden rather
 					// than left as an empty box. It stays in the DOM: the state
-					// is still readable on `data-run-state`.
-					<li aria-label="Run status" hidden={current().state === "completed"}>
-						<RunCard
-							run={current()}
-							agents={props.agents ?? null}
-							onCancel={props.onCancel ?? noopCancel}
-							onRetry={props.onRetry ?? noopRetry}
-							onApprove={props.onApprove ?? noopApprove}
-						/>
+					// is still readable on `data-run-state`. A finished
+					// notebook-assist run mounts no card at all: its assistant
+					// reply and turn card below speak for it.
+					<li aria-label="Run status" hidden={!runCardVisible(current())}>
+						<Show when={runCardMounted(current())} fallback={null}>
+							<RunCard
+								run={current()}
+								agents={props.agents ?? null}
+								onCancel={props.onCancel ?? noopCancel}
+								onRetry={props.onRetry ?? noopRetry}
+								onApprove={props.onApprove ?? noopApprove}
+							/>
+						</Show>
 					</li>
 				)}
 			</Show>
@@ -504,6 +625,28 @@ export function Conversation(props: {
 									}
 									return inlineRunIds(current.runId);
 								});
+								const messageRun = createMemo(() => {
+									const current = message();
+									if (current === undefined || current.runId === null) return undefined;
+									return runById().get(current.runId);
+								});
+								const assistReply = createMemo(() => messageRun()?.kind === "notebook-assist");
+								const messageTurn = createMemo(() => {
+									const current = message();
+									if (current === undefined || current.runId === null) return undefined;
+									return turnsByRunId().get(current.runId);
+								});
+								const runPreviews = createMemo(() => {
+									const current = message();
+									if (
+										current === undefined ||
+										current.role !== "assistant" ||
+										current.runId === null
+									) {
+										return [] as const;
+									}
+									return previewGroups().byRun.get(current.runId) ?? [];
+								});
 								return (
 									<Show when={message()} fallback={null}>
 										{(current) => (
@@ -514,6 +657,8 @@ export function Conversation(props: {
 															current().role === "owner" ? "Your message" : "Assistant message"
 														}
 														data-role={current().role}
+														data-message-id={current().messageId}
+														id={`message-${current().messageId}`}
 													>
 														<Show
 															when={current().role === "owner"}
@@ -524,12 +669,71 @@ export function Conversation(props: {
 																	evidence={evidence()}
 																	clipboard={props.clipboard}
 																	onOpenRecords={openRecords}
+																	assistantLabel={
+																		assistReply() ? "Notebook assistant" : "Assistant"
+																	}
+																	withCitations={!assistReply()}
+																	showEvidence={!assistReply()}
+																	onAddToNotebook={
+																		props.onAddAnswer === undefined
+																			? null
+																			: () => props.onAddAnswer?.(current())
+																	}
+																	addPending={(props.savingNotebookIds ?? []).includes(
+																		current().messageId,
+																	)}
+																	inNotebook={
+																		props.answerInNotebook?.(current().messageId) ?? false
+																	}
 																/>
 															}
 														>
 															<OwnerMessage message={current()} />
 														</Show>
 													</article>
+													<Show when={previewReady()} keyed>
+														{(ready) => (
+															<>
+																<Show
+																	when={current().role === "assistant" && runPreviews().length > 0}
+																>
+																	<ThreadPreviewsForRun
+																		runId={current().runId ?? ""}
+																		components={runPreviews()}
+																		context={previewContext()}
+																		registry={ready.registry}
+																		view={ready.view}
+																		messageId={current().messageId}
+																		isInNotebook={(componentId) =>
+																			props.componentInNotebook?.(componentId) ?? false
+																		}
+																		savingIds={props.savingNotebookIds ?? []}
+																		onAdd={(core, origin) => props.onAddComponent?.(core, origin)}
+																	/>
+																</Show>
+																<Show
+																	when={
+																		current().role === "assistant" ? (messageTurn() ?? null) : null
+																	}
+																	keyed
+																>
+																	{(turn) => (
+																		<NotebookTurnCard
+																			turn={turn}
+																			notebookVersion={props.notebookVersion ?? 0}
+																			isKept={(widgetId) =>
+																				props.isKeptRemoval?.(turn.runId, widgetId) ?? false
+																			}
+																			onUndo={() => props.onUndoTurn?.(turn)}
+																			undoPending={props.undoPendingRunId === turn.runId}
+																			onRemove={(ids) => props.onRemoveWidgets?.(ids)}
+																			onKeep={(ids) => props.onKeepRemoval?.(turn.runId, ids)}
+																		/>
+																	)}
+																</Show>
+															</>
+														)}
+													</Show>
 												</li>
 												<Show when={inlineIds().length > 0}>
 													<For each={inlineIds()}>{(runId) => <RunListItem runId={runId} />}</For>
@@ -542,6 +746,19 @@ export function Conversation(props: {
 						</For>
 					</ol>
 				</Show>
+			</Show>
+			<Show when={previewReady()} keyed>
+				{(ready) => (
+					<OtherResults
+						components={previewGroups().orphans}
+						context={previewContext()}
+						registry={ready.registry}
+						view={ready.view}
+						isInNotebook={(componentId) => props.componentInNotebook?.(componentId) ?? false}
+						savingIds={props.savingNotebookIds ?? []}
+						onAdd={(core, origin) => props.onAddComponent?.(core, origin)}
+					/>
+				)}
 			</Show>
 			{props.composer !== undefined ? (
 				<div

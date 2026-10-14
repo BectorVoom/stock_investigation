@@ -34,11 +34,13 @@ beforeEach(() => {
 	server = initialServerState();
 	installWorkspaceRoutes(backend, server);
 	window.location.hash = `#/chat/${WORKSPACE_ID}`;
+	window.localStorage.clear();
 });
 
 afterEach(() => {
 	cleanup();
 	window.location.hash = "";
+	window.localStorage.clear();
 });
 
 async function threadReady(): Promise<HTMLElement> {
@@ -51,8 +53,8 @@ async function historyReady(): Promise<HTMLElement> {
 	return screen.findByRole("navigation", { name: "Chats" });
 }
 
-async function canvasReady(): Promise<HTMLElement> {
-	return screen.findByRole("region", { name: "Canvas" });
+async function notebookReady(): Promise<HTMLElement> {
+	return screen.findByRole("region", { name: "Notebook" });
 }
 
 describe("disclosure summaries", () => {
@@ -156,19 +158,17 @@ describe("chat history", () => {
 		).toContain("INTERNAL");
 	});
 
-	it("shows the canvas panel alongside the thread, from one shared session", async () => {
+	it("shows the notebook panel alongside the thread, each session created once", async () => {
 		mountApp(backend);
 		await threadReady();
-		const canvas = await canvasReady();
-		expect(within(canvas).getByRole("list", { name: "Workspace components" })).toBeDefined();
-		// No workspace version line and no column switch on the canvas.
-		expect(canvas.querySelector('[data-field="workspace-version"]')).toBeNull();
-		expect(canvas.textContent).not.toContain("Workspace version");
-		expect(within(canvas).queryByRole("button", { name: "Use 2 columns" })).toBeNull();
-		expect(within(canvas).queryByRole("button", { name: "Use 1 column" })).toBeNull();
-		// One session: a single workspace read backs both panels.
+		const notebook = await notebookReady();
+		expect(within(notebook).getByText("Nothing saved yet.")).toBeDefined();
+		// One workspace session and one notebook session: a single read each backs both panels.
 		await waitFor(() =>
 			expect(backend.requestsTo("GET", /^\/api\/v1\/workspaces\/ws_1$/)).toHaveLength(1),
+		);
+		await waitFor(() =>
+			expect(backend.requestsTo("GET", /^\/api\/v1\/workspaces\/ws_1\/notebook$/)).toHaveLength(1),
 		);
 	});
 
@@ -176,14 +176,14 @@ describe("chat history", () => {
 		window.location.hash = `#/canvas/${WORKSPACE_ID}`;
 		const first = mountApp(backend);
 		await threadReady();
-		await canvasReady();
+		await notebookReady();
 		expect(window.location.hash).toBe(`#/canvas/${WORKSPACE_ID}`);
 		first.unmount();
 		cleanup();
 		window.location.hash = `#/workspace/${WORKSPACE_ID}`;
 		mountApp(backend);
 		await threadReady();
-		await canvasReady();
+		await notebookReady();
 	});
 });
 
@@ -227,7 +227,7 @@ describe("chat history disclosure (narrow layout)", () => {
 		}
 	});
 
-	it("offers Chat and Canvas tabs that show one panel at a time", async () => {
+	it("offers Chat and Notebook tabs that switch the workspace state", async () => {
 		const original = window.matchMedia;
 		window.matchMedia = (() => ({
 			matches: false,
@@ -237,16 +237,15 @@ describe("chat history disclosure (narrow layout)", () => {
 		try {
 			mountApp(backend);
 			await threadReady();
-			const tablist = await screen.findByRole("tablist", { name: "Chat or Canvas" });
+			const tablist = await screen.findByRole("tablist", { name: "Chat or Notebook" });
 			const chatTab = within(tablist).getByRole("tab", { name: "Chat" });
-			const canvasTab = within(tablist).getByRole("tab", { name: "Canvas" });
+			const notebookTab = within(tablist).getByRole("tab", { name: "Notebook" });
 			expect(chatTab.getAttribute("aria-selected")).toBe("true");
-			expect(canvasTab.getAttribute("aria-selected")).toBe("false");
+			expect(notebookTab.getAttribute("aria-selected")).toBe("false");
 			expect(screen.getByRole("region", { name: "Conversation" })).toBeDefined();
-			fireEvent.click(canvasTab);
-			await waitFor(() => expect(canvasTab.getAttribute("aria-selected")).toBe("true"));
-			await screen.findByRole("region", { name: "Canvas" });
-			expect(screen.queryByRole("region", { name: "Conversation" })).toBeNull();
+			fireEvent.click(notebookTab);
+			await waitFor(() => expect(notebookTab.getAttribute("aria-selected")).toBe("true"));
+			await screen.findByRole("region", { name: "Notebook" });
 		} finally {
 			window.matchMedia = original;
 		}
@@ -594,7 +593,7 @@ describe("delete chats", () => {
 		fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
 		const dialog = await screen.findByRole("dialog");
 		expect(dialog.textContent).toContain("Second research");
-		expect(dialog.textContent).toContain("messages, canvas and research records");
+		expect(dialog.textContent).toContain("messages, notebook and research records");
 		expect(dialog.textContent).toContain("cannot be undone");
 		fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 		await waitFor(() => expect(nav.textContent).not.toContain("Second research"));
@@ -684,24 +683,24 @@ describe("panels", () => {
 		await historyReady();
 	});
 
-	it("collapses the Canvas panel without mounting its components", async () => {
+	it("collapses the secondary Notebook panel without mounting its content", async () => {
 		mountApp(backend);
 		await threadReady();
-		await canvasReady();
-		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
-		const expand = await screen.findByRole("button", { name: "Expand Canvas panel" });
+		await notebookReady();
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Notebook panel" }));
+		const expand = await screen.findByRole("button", { name: "Expand Notebook panel" });
 		expect(expand.getAttribute("aria-expanded")).toBe("false");
-		expect(screen.queryByRole("list", { name: "Workspace components" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Notebook" })).toBeNull();
 		fireEvent.click(expand);
-		await canvasReady();
+		await notebookReady();
 	});
 
 	it("uses icon-only collapse buttons with accessible names and no visible text", async () => {
 		mountApp(backend);
 		await historyReady();
 		await threadReady();
-		await canvasReady();
-		for (const name of ["Collapse Chats panel", "Collapse Canvas panel"]) {
+		await notebookReady();
+		for (const name of ["Collapse Chats panel", "Collapse Notebook panel"]) {
 			const button = screen.getByRole("button", { name }) as HTMLElement;
 			expect(button.textContent?.trim()).toBe("");
 			expect(button.getAttribute("aria-expanded")).toBe("true");
@@ -713,10 +712,10 @@ describe("panels", () => {
 		expect((expandChats as HTMLElement).textContent?.trim()).toBe("");
 		expect(expandChats.getAttribute("aria-expanded")).toBe("false");
 		expect(expandChats.getAttribute("title")).toBe("Expand Chats panel");
-		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
-		const expandCanvas = await screen.findByRole("button", { name: "Expand Canvas panel" });
-		expect((expandCanvas as HTMLElement).textContent?.trim()).toBe("");
-		expect(expandCanvas.getAttribute("aria-expanded")).toBe("false");
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Notebook panel" }));
+		const expandNotebook = await screen.findByRole("button", { name: "Expand Notebook panel" });
+		expect((expandNotebook as HTMLElement).textContent?.trim()).toBe("");
+		expect(expandNotebook.getAttribute("aria-expanded")).toBe("false");
 	});
 });
 
@@ -756,33 +755,33 @@ describe("borderless chat surfaces (background tone, not outlines)", () => {
 		mountApp(backend);
 		await historyReady();
 		await threadReady();
-		await canvasReady();
+		await notebookReady();
 		for (const panel of document.querySelectorAll(
-			'section[data-panel="chat"], section[data-panel="canvas"], nav[aria-label="Chats"]',
+			'section[data-panel="chat"], div[data-panel="notebook"], nav[aria-label="Chats"]',
 		)) {
 			expect(borderTokens(panel.getAttribute("class") ?? "")).toEqual([]);
 		}
 		// The collapsed rails are borderless too.
 		fireEvent.click(screen.getByRole("button", { name: "Collapse Chats panel" }));
 		await screen.findByRole("button", { name: "Expand Chats panel" });
-		fireEvent.click(screen.getByRole("button", { name: "Collapse Canvas panel" }));
-		await screen.findByRole("button", { name: "Expand Canvas panel" });
+		fireEvent.click(screen.getByRole("button", { name: "Collapse Notebook panel" }));
+		await screen.findByRole("button", { name: "Expand Notebook panel" });
 		for (const rail of document.querySelectorAll(
-			'[data-panel="canvas-rail"], div[class*="lg:flex"]',
+			'[data-panel="notebook-rail"], div[class*="lg:flex"]',
 		)) {
 			expect(borderTokens(rail.getAttribute("class") ?? "")).toEqual([]);
 		}
 	});
 
-	it("renders run cards, canvas cards and the composer box as fills with their focus cues", async () => {
+	it("renders run cards, result previews and the composer box as fills with their focus cues", async () => {
 		mountApp(backend);
 		await threadReady();
-		const canvas = await canvasReady();
+		await notebookReady();
 		// run_1 is completed, so its card is hidden; the classes are still its own.
 		const run = await screen.findByRole("article", { name: "Run run_1", hidden: true });
 		expect(borderTokens(run.getAttribute("class") ?? "")).toEqual([]);
 		expect(run.className).toContain("bg-slate-100");
-		for (const card of canvas.querySelectorAll("ul[aria-label='Workspace components'] > li")) {
+		for (const card of document.querySelectorAll("li[data-preview-component]")) {
 			expect(borderTokens(card.getAttribute("class") ?? "")).toEqual([]);
 			expect(card.getAttribute("class") ?? "").toContain("bg-slate-100");
 		}
@@ -837,7 +836,8 @@ describe("chat thread", () => {
 		expect(chip.textContent).toBe("1");
 		expect(claims.textContent).toContain("No evidence linked to this claim.");
 		// The compact sources row lists the same source with its host.
-		const sources = within(conversation).getByRole("list", { name: "Sources" });
+		const answer = within(conversation).getByRole("article", { name: "Assistant message" });
+		const sources = within(answer).getByRole("list", { name: "Sources" });
 		expect(sources.textContent).toContain("Grid storage outlook 2026");
 		expect(sources.textContent).toContain("example.com");
 		const sourceLink = within(sources).getByRole("link", { name: "Grid storage outlook 2026" });
@@ -1018,11 +1018,11 @@ describe("chat thread", () => {
 		await within(conversation).findByText("Where will storage demand grow?");
 	});
 
-	it("shows the canvas panel alongside the thread", async () => {
+	it("shows the notebook panel alongside the thread", async () => {
 		mountApp(backend);
 		await threadReady();
-		const canvas = await screen.findByRole("region", { name: "Canvas" });
-		expect(within(canvas).getByRole("list", { name: "Workspace components" })).toBeDefined();
+		const notebook = await screen.findByRole("region", { name: "Notebook" });
+		expect(within(notebook).getByText("Nothing saved yet.")).toBeDefined();
 	});
 });
 

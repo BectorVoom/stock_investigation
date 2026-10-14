@@ -5,17 +5,20 @@ import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { CHAT_PANEL, ErrorNotice, Loading } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
+import { createWorkspaceMode } from "../notebook/workspaceMode.ts";
 import { ChatsPanel, DeleteChatDialog, NewChatButton } from "./ChatsPanel.tsx";
 import { focusComposerBox } from "./composerFocus.ts";
 import { byNewestActivity, createConversationList } from "./conversationList.ts";
 import { OpenWorkspace } from "./OpenWorkspace.tsx";
 
 /**
- * Chat page: past chats, one open conversation and its canvas in one
- * NotebookLM-style view. Chat and Canvas share ONE workspace session (inside
- * `OpenWorkspace`), so there is no duplicated polling. The selected id lives
- * in the URL hash, so reloading reopens the same conversation from server
- * state without rerunning any research (FR-010).
+ * Chat page: past chats plus one open conversation in exactly two states —
+ * Chat-first or Notebook-first (ADR-0020). Chat, Notebook, the workspace
+ * session, the notebook session, the thread, the composer draft and the
+ * selection live above the layout; switching states changes only the grid
+ * proportions, so nothing is re-created. The selected id lives in the URL
+ * hash, so reloading reopens the same conversation from server state without
+ * rerunning any research (FR-010).
  */
 export function ChatView(props: {
 	readonly api: ApiClient;
@@ -55,8 +58,13 @@ export function ChatView(props: {
 	});
 
 	const [chatsCollapsed, setChatsCollapsed] = createSignal(false);
-	const [canvasCollapsed, setCanvasCollapsed] = createSignal(false);
-	const [mobileTab, setMobileTab] = createSignal<"chat" | "canvas">("chat");
+	// The secondary panel (the Notebook in Chat-first, Chat in Notebook-first)
+	// collapses to a rail; the dominant panel always stays.
+	const [secondaryCollapsed, setSecondaryCollapsed] = createSignal(false);
+	// The two states, remembered per conversation (a conversation never seen
+	// opens Chat-first). Below `lg` the states keep their meaning as the
+	// two-tab switcher, so the selected tab IS the mode.
+	const [mode, setMode] = createWorkspaceMode(() => props.workspaceId);
 
 	const [newChatPending, setNewChatPending] = createSignal(false);
 	const [newChatError, setNewChatError] = createSignal<ApiFailure | null>(null);
@@ -183,20 +191,25 @@ export function ChatView(props: {
 		deleteOpener()?.focus();
 	};
 
+	// One grid whose column template changes with the state: Chat-first is
+	// Chat ≈ 75–80 % / Notebook ≈ 20–25 % of the space right of the Chats
+	// panel (`3fr`/`1fr`), Notebook-first the reverse. The transition is
+	// disabled under `prefers-reduced-motion`.
 	const gridColumns = () => {
-		if (chatsCollapsed() && canvasCollapsed()) return "lg:grid-cols-[3rem_minmax(0,1fr)_3rem]";
-		if (chatsCollapsed()) return "lg:grid-cols-[3rem_minmax(0,1fr)_minmax(18rem,26rem)]";
-		if (canvasCollapsed()) return "lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_3rem]";
-		return "lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)_minmax(18rem,26rem)]";
+		const chats = chatsCollapsed() ? "3rem" : "minmax(14rem,18rem)";
+		const secondary = secondaryCollapsed() ? "3rem" : "minmax(0,1fr)";
+		const dominant = "minmax(0,3fr)";
+		const pair = mode() === "chat" ? `${dominant}_${secondary}` : `${secondary}_${dominant}`;
+		return `lg:grid-cols-[${chats}_${pair}]`;
 	};
 
 	const onMobileTabKeyDown = (event: KeyboardEvent) => {
 		if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
 		event.preventDefault();
-		setMobileTab((current) => (current === "chat" ? "canvas" : "chat"));
+		setMode(mode() === "chat" ? "notebook" : "chat");
 		// Move focus to the newly selected tab.
 		queueMicrotask(() => {
-			const next = mobileTab() === "chat" ? "chat-tab-mobile" : "canvas-tab-mobile";
+			const next = mode() === "chat" ? "chat-tab-mobile" : "notebook-tab-mobile";
 			document.getElementById(next)?.focus();
 		});
 	};
@@ -233,12 +246,13 @@ export function ChatView(props: {
 	);
 
 	return (
-		// One session per open conversation: `OpenWorkspace` is keyed by
-		// workspace id OUTSIDE the narrow/wide branch, so crossing the `lg`
-		// breakpoint swaps the layout without recreating the session (no
-		// duplicated polling, no loading flash). Only the layout branches;
-		// the hidden tab's heavy content stays unmounted in both.
-		<div class={`flex min-w-0 flex-1 flex-col gap-3 lg:grid lg:min-h-0 ${gridColumns()}`}>
+		// `OpenWorkspace` is keyed by workspace id OUTSIDE the narrow/wide branch, so
+		// crossing the `lg` breakpoint swaps the layout without recreating the sessions
+		// (no duplicated polling, no loading flash). Only the layout branches; the
+		// two states only change the grid template and tab selection below `lg`.
+		<div
+			class={`flex min-w-0 flex-1 flex-col gap-3 lg:grid lg:min-h-0 lg:transition-[grid-template-columns] lg:duration-150 lg:motion-reduce:transition-none ${gridColumns()}`}
+		>
 			<ChatsPanel
 				conversations={conversations}
 				ordered={ordered}
@@ -261,37 +275,37 @@ export function ChatView(props: {
 				renameError={renameError}
 			/>
 			<Show when={!wide() && props.workspaceId !== null && ordered().length > 0}>
-				<div role="tablist" aria-label="Chat or Canvas" onKeyDown={onMobileTabKeyDown}>
+				<div role="tablist" aria-label="Chat or Notebook" onKeyDown={onMobileTabKeyDown}>
 					<div class="flex gap-1 lg:hidden">
 						<button
 							id="chat-tab-mobile"
 							type="button"
 							role="tab"
-							aria-selected={mobileTab() === "chat"}
+							aria-selected={mode() === "chat"}
 							aria-controls="chat-panel-mobile"
 							class="rounded px-2 py-1 text-sm font-medium"
 							classList={{
-								"bg-blue-700 text-white": mobileTab() === "chat",
-								"text-slate-800 hover:bg-slate-200": mobileTab() !== "chat",
+								"bg-blue-700 text-white": mode() === "chat",
+								"text-slate-800 hover:bg-slate-200": mode() !== "chat",
 							}}
-							onClick={() => setMobileTab("chat")}
+							onClick={() => setMode("chat")}
 						>
 							Chat
 						</button>
 						<button
-							id="canvas-tab-mobile"
+							id="notebook-tab-mobile"
 							type="button"
 							role="tab"
-							aria-selected={mobileTab() === "canvas"}
-							aria-controls="canvas-panel-mobile"
+							aria-selected={mode() === "notebook"}
+							aria-controls="notebook-panel-mobile"
 							class="rounded px-2 py-1 text-sm font-medium"
 							classList={{
-								"bg-blue-700 text-white": mobileTab() === "canvas",
-								"text-slate-800 hover:bg-slate-200": mobileTab() !== "canvas",
+								"bg-blue-700 text-white": mode() === "notebook",
+								"text-slate-800 hover:bg-slate-200": mode() !== "notebook",
 							}}
-							onClick={() => setMobileTab("canvas")}
+							onClick={() => setMode("notebook")}
 						>
-							Canvas
+							Notebook
 						</button>
 					</div>
 				</div>
@@ -312,10 +326,11 @@ export function ChatView(props: {
 						listTitle={selectedSummary()?.title ?? null}
 						onActivity={() => void conversations.reload()}
 						focusNonce={focusNonce()}
-						canvasCollapsed={canvasCollapsed}
-						onToggleCanvas={() => setCanvasCollapsed((current) => !current)}
-						mobileTab={mobileTab}
+						mode={mode()}
+						onModeChange={setMode}
 						wide={wide}
+						secondaryCollapsed={secondaryCollapsed}
+						onToggleSecondary={() => setSecondaryCollapsed((current) => !current)}
 					/>
 				)}
 			</Show>
