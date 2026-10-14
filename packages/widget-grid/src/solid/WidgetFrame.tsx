@@ -31,7 +31,9 @@ const SELECT_GUARD_SELECTOR =
  * exactly. The header is a single clean strip holding only the grip glyph,
  * the title and the host's actions slot (the whole strip is the drag
  * handle); the body below it scrolls inside the frame when taller and is
- * keyboard-focusable (labelled by the widget title).
+ * keyboard-focusable (labelled by the widget title). With `titleHidden` the
+ * header is instead an overlay pinned to the top edge (see styles.css) and
+ * the body starts at the top of the frame.
  *
  * The `actions` slot and `children` stay live: both are read inside JSX on
  * every render, never copied to a variable.

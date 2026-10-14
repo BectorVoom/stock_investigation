@@ -339,6 +339,60 @@
 	}
 }
 
+/* Untitled frames (`titleHidden`, ADR-0021): the Notebook hides titles while
+ * Home keeps them. The title stays the accessible name (rendered
+ * visually-hidden); the body starts at the top of the frame and the header
+ * becomes an overlay pinned to the top edge, holding only the grip, the
+ * select toggle and the actions. Only the controls take pointer events, so
+ * text and charts under the overlay stay usable; the grip keeps a 28 px hit
+ * target and stays the drag handle (a grip click still selects through the
+ * header click). The controls fade exactly like the quiet reveal above
+ * (opacity only, so nothing shifts), stay visible on devices without hover,
+ * and never animate under reduced motion. */
+.wg-frame[data-widget-title-hidden] {
+	position: relative;
+}
+
+.wg-frame[data-widget-title-hidden] .wg-header {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	left: 0.5rem;
+	z-index: 1;
+	min-height: 0;
+	pointer-events: none;
+}
+
+.wg-frame[data-widget-title-hidden] .wg-header-actions {
+	margin-left: auto;
+}
+
+/* Legible on top of content: the controls carry the frame surface behind
+ * them, rounded, with no shadow. */
+.wg-frame[data-widget-title-hidden] .wg-grip,
+.wg-frame[data-widget-title-hidden] .wg-select-toggle,
+.wg-frame[data-widget-title-hidden] .wg-header-actions {
+	pointer-events: auto;
+	background-color: var(--wg-surface, #ffffff);
+	border-radius: 0.5rem;
+}
+
+/* A 28 px desktop hit target around the 16 px grip glyph (HIG). */
+.wg-frame[data-widget-title-hidden] .wg-grip {
+	box-sizing: content-box;
+	display: block;
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	padding: 6px;
+	cursor: grab;
+	touch-action: none;
+}
+
+.wg-frame[data-widget-title-hidden] .wg-body {
+	margin-top: 0;
+}
+
 /* Size picker: one compact segmented S / M / L group, the same control for
  * every widget type. */
 .wg-size-picker {
