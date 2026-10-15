@@ -1,7 +1,13 @@
-import type { HomeDashboard, MarketSeries } from "@research/contracts";
+import {
+	HOME_WIDGET_TYPES,
+	type HomeDashboard,
+	type MarketSeries,
+	WIDGET_TYPE_META,
+} from "@research/contracts";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
+import { resetWidgetClipboard, widgetClipboard } from "../src/widgets/widgetClipboard.ts";
 import {
 	HOME_CATALOG,
 	type HomeServerState,
@@ -65,7 +71,7 @@ function watchStock(
 /** The default dashboard plus one earnings-calendar widget. */
 function withCalendarWidget(): void {
 	home.dashboard = {
-		schemaVersion: 1,
+		schemaVersion: 2,
 		widgets: [
 			...home.dashboard.widgets,
 			{
@@ -189,8 +195,19 @@ function dialogButton(dialog: HTMLElement, name: string): HTMLElement {
 	return within(dialog).getByRole("button", { name });
 }
 
-async function openAddDialog(): Promise<HTMLElement> {
+/** Opens the add menu and picks a type; synchronous, so it also runs under fake timers. */
+function chooseAddType(typeLabel = "Market metric"): void {
 	fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+	fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: typeLabel }));
+}
+
+/** The add menu (ADR-0024): the type is chosen there, then its dialog opens. */
+async function openAddDialog(typeLabel = "Market metric"): Promise<HTMLElement> {
+	fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+	const item = await waitFor(() =>
+		within(lastOpenMenu()).getByRole("menuitem", { name: typeLabel }),
+	);
+	fireEvent.click(item);
 	await waitFor(() => {
 		if (document.querySelector("sl-dialog") === null) throw new Error("dialog is not open yet");
 	});
@@ -431,7 +448,7 @@ describe("home view", () => {
 	it("V3: an empty dashboard queues no refresh", async () => {
 		usePollTimers();
 		try {
-			home.dashboard = { schemaVersion: 1, widgets: [] };
+			home.dashboard = { schemaVersion: 2, widgets: [] };
 			home.series = [];
 			mountApp(backend);
 			expect(screen.getByRole("heading", { level: 2, name: "Home" })).toBeDefined();
@@ -539,9 +556,9 @@ describe("home view", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const dialog = await openAddDialog();
-		expect(
-			within(dialog.ownerDocument.body).getByText("Metric", { selector: "sl-option" }),
-		).toBeDefined();
+		// The type was chosen in the add menu; the dialog names it and has no type select.
+		expect(dialog.getAttribute("label")).toBe("Add market metric widget");
+		expect(dialog.querySelector('sl-select[label="Widget type"]')).toBeNull();
 
 		setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Apple watch", "sl-input");
 		expect(
@@ -632,8 +649,7 @@ describe("home view", () => {
 	it("shows a legend naming every series on a multi-series chart", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		const dialog = await openAddDialog();
-		setShoelaceValue(dialogControl(dialog, "sl-select", "Widget type"), "line-chart", "sl-change");
+		const dialog = await openAddDialog("Line chart");
 		setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Two indices", "sl-input");
 		setShoelaceValue(
 			dialogControl(dialog, "sl-select", "Series"),
@@ -658,8 +674,7 @@ describe("home view", () => {
 	it("rejects a line chart whose series do not share one unit", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		const dialog = await openAddDialog();
-		setShoelaceValue(dialogControl(dialog, "sl-select", "Widget type"), "line-chart", "sl-change");
+		const dialog = await openAddDialog("Line chart");
 		setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Mixed", "sl-input");
 		setShoelaceValue(
 			dialogControl(dialog, "sl-select", "Series"),
@@ -674,7 +689,7 @@ describe("home view", () => {
 	it("edits a widget title through the dialog", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		await chooseWidgetMenuItem("w-vix", "Edit widget");
+		await chooseWidgetMenuItem("w-vix", "Edit…");
 		const dialog = await waitFor(() => dialogOrThrow());
 		const title = dialogControl(dialog, "sl-input", "Title");
 		setShoelaceValue(title, "Volatility gauge", "sl-input");
@@ -698,7 +713,7 @@ describe("home view", () => {
 	it("removes a widget and persists it", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		await chooseWidgetMenuItem("w-gold", "Remove widget");
+		await chooseWidgetMenuItem("w-gold", "Remove");
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		await waitFor(() => expect(widgets()).toHaveLength(6));
 		expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull();
@@ -706,7 +721,7 @@ describe("home view", () => {
 
 	it("resets to the default arrangement only after confirmation", async () => {
 		home.dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [home.dashboard.widgets[0]].filter(
 				(widget): widget is (typeof home.dashboard.widgets)[number] => widget !== undefined,
 			),
@@ -717,7 +732,7 @@ describe("home view", () => {
 		await waitFor(() => expect(widgets()).toHaveLength(1));
 		fireEvent.click(screen.getByRole("button", { name: "Reset to default arrangement" }));
 		const dialog = await waitFor(() => dialogOrThrow());
-		expect(dialog.textContent).toContain("cannot be undone");
+		expect(dialog.textContent).toContain("Undo restores the widgets you had");
 		fireEvent.click(dialogButton(dialog, "Reset widgets"));
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		expect(homePuts()[0]?.body).toMatchObject({ expectedVersion: 3 });
@@ -730,7 +745,7 @@ describe("home view", () => {
 		);
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
-		await chooseWidgetMenuItem("w-gold", "Remove widget");
+		await chooseWidgetMenuItem("w-gold", "Remove");
 		await screen.findByText(/changed elsewhere; it was reloaded/);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 	});
@@ -862,7 +877,7 @@ describe("home view", () => {
 			// A widget with a series the running job never claimed is added.
 			// (fred:NEWFRED1 validates and has no stored data anywhere.)
 			const dialog = await (async () => {
-				fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+				chooseAddType();
 				await settleUntil(() => document.querySelector("sl-dialog") !== null, "dialog open");
 				return dialogOrThrow();
 			})();
@@ -918,7 +933,7 @@ describe("home view", () => {
 			mountApp(backend);
 			await settleUntil(() => widgets().length === 7, "initial widgets");
 			// The Add dialog is opened BEFORE anything is busy…
-			fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+			chooseAddType();
 			await settleUntil(() => document.querySelector("sl-dialog") !== null, "dialog open");
 			const dialog = dialogOrThrow();
 			setShoelaceValue(dialogControl(dialog, "sl-input", "Title"), "Busy", "sl-input");
@@ -928,7 +943,7 @@ describe("home view", () => {
 				"sl-change",
 			);
 			// …then a save from a widget menu holds the busy flag…
-			await chooseWidgetMenuItem("w-gold", "Remove widget");
+			await chooseWidgetMenuItem("w-gold", "Remove");
 			await settleUntil(
 				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
 				"PUT in flight",
@@ -1347,7 +1362,7 @@ describe("home follows edits made elsewhere", () => {
 	function externalReorder(): void {
 		const first = home.dashboard.widgets[0];
 		if (first === undefined) throw new Error("no widgets on the fake backend");
-		home.dashboard = { schemaVersion: 1, widgets: [...home.dashboard.widgets.slice(1), first] };
+		home.dashboard = { schemaVersion: 2, widgets: [...home.dashboard.widgets.slice(1), first] };
 		home.version += 1;
 	}
 
@@ -1397,7 +1412,7 @@ describe("home follows edits made elsewhere", () => {
 			mountApp(backend, visibility);
 			await settleUntil(() => widgets().length === 7, "initial widgets");
 			const getsBefore = dashboardGets().length;
-			await chooseWidgetMenuItem("w-gold", "Remove widget");
+			await chooseWidgetMenuItem("w-gold", "Remove");
 			await settleUntil(
 				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
 				"PUT in flight",
@@ -1442,7 +1457,7 @@ describe("home follows edits made elsewhere", () => {
 		const first = home.dashboard.widgets[0];
 		if (first === undefined) throw new Error("no widgets on the fake backend");
 		const staleDashboard = {
-			schemaVersion: 1 as const,
+			schemaVersion: 2 as const,
 			widgets: [...home.dashboard.widgets.slice(1), first],
 		};
 		visibility.setVisible(false);
@@ -1451,7 +1466,7 @@ describe("home follows edits made elsewhere", () => {
 			timeout: 10_000,
 		});
 		// The owner's own save lands while the GET is in flight.
-		await chooseWidgetMenuItem("w-gold", "Remove widget");
+		await chooseWidgetMenuItem("w-gold", "Remove");
 		await waitFor(() => expect(homePuts()).toHaveLength(1));
 		await waitFor(
 			() => expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull(),
@@ -1474,7 +1489,7 @@ describe("home follows edits made elsewhere", () => {
 		expect(document.querySelector('article[data-widget-id="w-gold"]')).toBeNull();
 		// The version on screen still tracks the server, so the next save is
 		// not refused with "changed elsewhere".
-		await chooseWidgetMenuItem("w-vix", "Remove widget");
+		await chooseWidgetMenuItem("w-vix", "Remove");
 		await waitFor(() => expect(homePuts()).toHaveLength(2));
 		await waitFor(
 			() => expect(document.querySelector('article[data-widget-id="w-vix"]')).toBeNull(),
@@ -1496,7 +1511,7 @@ describe("home follows edits made elsewhere", () => {
 			timeout: 10_000,
 		});
 		// A dialog opens while the GET is in flight; the answer must not disturb it.
-		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+		chooseAddType();
 		await waitFor(() => expect(document.querySelector("sl-dialog")).not.toBeNull(), {
 			timeout: 10_000,
 		});
@@ -1563,5 +1578,130 @@ describe("home api client", () => {
 		const refresh = await api.refreshMarket(api.newIdempotencyKey());
 		if (!refresh.ok) throw new Error("refresh was not queued");
 		expect(refresh.value.kind).toBe("market-refresh");
+	});
+});
+
+describe("Home follows the one widget specification (ADR-0024)", () => {
+	beforeEach(() => {
+		// One app clipboard: start each case empty, whatever an earlier case copied.
+		window.localStorage.clear();
+		resetWidgetClipboard();
+	});
+
+	const ids = () => widgets().map((article) => article.getAttribute("data-widget-id"));
+	const lastPut = () => homePuts().at(-1)?.body as { dashboard: HomeDashboard } | undefined;
+
+	it("offers every Home type in the add menu, and never a research result", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+		const names = within(lastOpenMenu())
+			.getAllByRole("menuitem")
+			.map((item) => item.textContent?.trim());
+		expect(names).toEqual(HOME_WIDGET_TYPES.map((type) => WIDGET_TYPE_META[type].label));
+		expect(names).not.toContain("Research result");
+	});
+
+	it("adds a Text widget on Home and opens its editor", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		chooseAddType("Text");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		expect(lastPut()?.dashboard.widgets.at(-1)).toMatchObject({ type: "text", text: "New note" });
+		await waitFor(() => expect(widgets()).toHaveLength(8));
+		await waitFor(() => expect(document.querySelector("dialog[open]")).not.toBeNull());
+		expect(document.querySelector("dialog[open]")?.textContent).toContain("Edit text widget");
+	});
+
+	it("has the Notebook's menu: Edit…, Size, Cut, Copy, Paste after, Duplicate, Move, Remove", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		fireEvent.click(widgetActionsButton(widgetById("w-vix")));
+		const names = within(lastOpenMenu())
+			.getAllByRole("menuitem")
+			.map((item) => item.textContent?.trim());
+		expect(names).toEqual([
+			"Edit…",
+			"Size: Small",
+			"Size: Medium",
+			"Size: Large",
+			"Cut",
+			"Copy",
+			"Paste after",
+			"Duplicate",
+			"Move earlier",
+			"Move later",
+			"Remove",
+		]);
+	});
+
+	it("resizes and duplicates in one save each, and Undo restores the earlier arrangement", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const undo = screen.getByRole("button", { name: "Undo" });
+		expect(undo.hasAttribute("disabled")).toBe(true);
+
+		await chooseWidgetMenuItem("w-vix", "Size: Large");
+		await waitFor(() => expect(widgetById("w-vix").getAttribute("data-widget-size")).toBe("large"));
+		expect(homePuts()).toHaveLength(1);
+
+		await chooseWidgetMenuItem("w-vix", "Duplicate");
+		await waitFor(() => expect(widgets()).toHaveLength(8));
+		expect(homePuts()).toHaveLength(2);
+		// The copy lands directly after its original, under a fresh id.
+		expect(ids()[0]).toBe("w-vix");
+		expect(ids()[1]).not.toBe("w-vix");
+		expect(lastPut()?.dashboard.widgets[1]).toMatchObject({
+			type: "market-metric",
+			seriesId: "fred:VIXCLS",
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+		await waitFor(() => expect(widgets()).toHaveLength(7));
+		fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+		await waitFor(() => expect(widgetById("w-vix").getAttribute("data-widget-size")).toBe("small"));
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Undo" }).hasAttribute("disabled")).toBe(true),
+		);
+	});
+
+	it("removes at once with no dialog, says so, and Undo brings it back", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await chooseWidgetMenuItem("w-gold", "Remove");
+		await waitFor(() => expect(widgets()).toHaveLength(6));
+		expect(document.querySelector("sl-dialog, dialog[open]")).toBeNull();
+		const live = document.querySelector("output.sr-only[aria-live='polite']");
+		await waitFor(() => expect(live?.textContent).toBe("Removed 1 widget. Undo restores it."));
+		fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+		await waitFor(() => expect(widgets()).toHaveLength(7));
+		expect(ids()[1]).toBe("w-gold");
+	});
+
+	it("selects widgets and acts on the selection from its toolbar", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		fireEvent.click(within(widgetById("w-vix")).getByRole("button", { name: /^Select / }));
+		fireEvent.click(within(widgetById("w-gold")).getByRole("button", { name: /^Select / }));
+		const toolbar = await screen.findByRole("toolbar", { name: "Selected widgets" });
+		expect(toolbar.textContent).toContain("2 selected");
+		fireEvent.click(within(toolbar).getByRole("button", { name: "Remove selected widgets" }));
+		await waitFor(() => expect(widgets()).toHaveLength(5));
+		expect(homePuts()).toHaveLength(1);
+		expect(screen.queryByRole("toolbar", { name: "Selected widgets" })).toBeNull();
+	});
+
+	it("copies a Home widget and pastes it after another, through the app's one clipboard", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		await chooseWidgetMenuItem("w-vix-chart", "Copy");
+		await chooseWidgetMenuItem("w-vix", "Paste after");
+		await waitFor(() => expect(widgets()).toHaveLength(8));
+		expect(lastPut()?.dashboard.widgets[1]).toMatchObject({
+			type: "line-chart",
+			seriesIds: ["fred:VIXCLS"],
+		});
+		// The clipboard says where it came from, so a notebook can take it too.
+		expect(widgetClipboard().content()?.sourceWorkspaceId).toBe("home");
 	});
 });

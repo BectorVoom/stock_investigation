@@ -1,5 +1,10 @@
-import type { HomeWidget, MarketSeries, WatchlistResponse } from "@research/contracts";
-import { HOME_WIDGET_TYPE_META, HOME_WIDGET_TYPES, type HomeWidgetType } from "@research/contracts";
+import {
+	type MarketSeries,
+	type MarketWidgetCore,
+	type MarketWidgetType,
+	type WatchlistResponse,
+	WIDGET_TYPE_META,
+} from "@research/contracts";
 import { type Accessor, type Component, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
@@ -9,11 +14,8 @@ import { LineChartWidget } from "./widgets/LineChartWidget.tsx";
 import { MetricWidget } from "./widgets/MetricWidget.tsx";
 import { StockTableWidget } from "./widgets/StockTableWidget.tsx";
 
-/** Re-exported so dialog code keeps importing the type list from the registry. */
-export { HOME_WIDGET_TYPES, type HomeWidgetType };
-
 export interface WidgetRendererProps {
-	readonly widget: HomeWidget;
+	readonly widget: MarketWidgetCore;
 	/**
 	 * The dashboard's series as an accessor, never a snapshot: HomeView
 	 * passes its `byId` memo itself, so every widget reads live data through
@@ -39,7 +41,7 @@ export interface WidgetRendererProps {
 	/** Typed access to the backend (the calendar widget downloads the .ics through it). */
 	readonly api: ApiClient;
 	/** Line-chart range changes save the widget; other widgets ignore it. */
-	readonly onSaveRange: (widget: HomeWidget) => void;
+	readonly onSaveRange: (widget: MarketWidgetCore) => void;
 	/**
 	 * V8: true while HomeView is saving. The line-chart range select is
 	 * disabled so the control always reflects the server copy; other widgets
@@ -56,10 +58,10 @@ export interface WidgetRendererProps {
  * live series accessor as props.
  */
 export interface WidgetTypeInfo {
-	readonly type: HomeWidgetType;
+	readonly type: MarketWidgetType;
 	readonly label: string;
 	readonly description: string;
-	readonly defaultSize: HomeWidget["size"];
+	readonly defaultSize: MarketWidgetCore["size"];
 	readonly minSeries: number;
 	readonly maxSeries: number;
 	/**
@@ -80,8 +82,8 @@ export interface WidgetTypeInfo {
  * the `<Show>` stays live when the widget is replaced by an edit.
  */
 function MetricEntry(props: WidgetRendererProps): JSX.Element {
-	const metric = (): Extract<HomeWidget, { readonly type: "metric" }> | null =>
-		props.widget.type === "metric" ? props.widget : null;
+	const metric = (): Extract<MarketWidgetCore, { readonly type: "market-metric" }> | null =>
+		props.widget.type === "market-metric" ? props.widget : null;
 	return (
 		<Show when={metric()} fallback={null}>
 			{(current) => <MetricWidget widget={current()} seriesById={props.seriesById} />}
@@ -90,7 +92,7 @@ function MetricEntry(props: WidgetRendererProps): JSX.Element {
 }
 
 function LineChartEntry(props: WidgetRendererProps): JSX.Element {
-	const chart = (): Extract<HomeWidget, { readonly type: "line-chart" }> | null =>
+	const chart = (): Extract<MarketWidgetCore, { readonly type: "line-chart" }> | null =>
 		props.widget.type === "line-chart" ? props.widget : null;
 	return (
 		<Show when={chart()} fallback={null}>
@@ -107,7 +109,7 @@ function LineChartEntry(props: WidgetRendererProps): JSX.Element {
 }
 
 function StockTableEntry(props: WidgetRendererProps): JSX.Element {
-	const table = (): Extract<HomeWidget, { readonly type: "stock-table" }> | null =>
+	const table = (): Extract<MarketWidgetCore, { readonly type: "stock-table" }> | null =>
 		props.widget.type === "stock-table" ? props.widget : null;
 	return (
 		<Show when={table()} fallback={null}>
@@ -117,7 +119,7 @@ function StockTableEntry(props: WidgetRendererProps): JSX.Element {
 }
 
 function IndicatorTableEntry(props: WidgetRendererProps): JSX.Element {
-	const table = (): Extract<HomeWidget, { readonly type: "indicator-table" }> | null =>
+	const table = (): Extract<MarketWidgetCore, { readonly type: "indicator-table" }> | null =>
 		props.widget.type === "indicator-table" ? props.widget : null;
 	return (
 		<Show when={table()} fallback={null}>
@@ -127,7 +129,7 @@ function IndicatorTableEntry(props: WidgetRendererProps): JSX.Element {
 }
 
 function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
-	const calendar = (): Extract<HomeWidget, { readonly type: "earnings-calendar" }> | null =>
+	const calendar = (): Extract<MarketWidgetCore, { readonly type: "earnings-calendar" }> | null =>
 		props.widget.type === "earnings-calendar" ? props.widget : null;
 	return (
 		<Show when={calendar()} fallback={null}>
@@ -148,20 +150,20 @@ function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
 
 /**
  * Label, description and default size from the one shared table
- * (`HOME_WIDGET_TYPE_META` in `@research/contracts`), so they are written
+ * (`WIDGET_TYPE_META` in `@research/contracts`), so they are written
  * once for the web registry and the MCP agent types alike.
  */
 function sharedMeta(
-	type: HomeWidgetType,
+	type: MarketWidgetType,
 ): Pick<WidgetTypeInfo, "label" | "description" | "defaultSize"> {
-	const meta = HOME_WIDGET_TYPE_META[type];
+	const meta = WIDGET_TYPE_META[type];
 	return { label: meta.label, description: meta.description, defaultSize: meta.defaultSize };
 }
 
-export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo } = {
-	metric: {
-		type: "metric",
-		...sharedMeta("metric"),
+export const WIDGET_REGISTRY: { readonly [T in MarketWidgetType]: WidgetTypeInfo } = {
+	"market-metric": {
+		type: "market-metric",
+		...sharedMeta("market-metric"),
 		minSeries: 1,
 		maxSeries: 1,
 		seriesKind: "single",
@@ -210,51 +212,3 @@ export const WIDGET_REGISTRY: { readonly [T in HomeWidgetType]: WidgetTypeInfo }
 		component: EarningsCalendarEntry,
 	},
 };
-
-let widgetSeq = 0;
-
-/** A fresh widget id, unique within this page visit (the server copy is canonical afterwards). */
-export function newWidgetId(): string {
-	widgetSeq += 1;
-	return `w-new-${Date.now().toString(36)}-${widgetSeq}`;
-}
-
-export function defaultWidgetOf(type: HomeWidgetType): HomeWidget {
-	const info = WIDGET_REGISTRY[type];
-	switch (type) {
-		case "metric":
-			return {
-				type,
-				widgetId: newWidgetId(),
-				title: "",
-				size: info.defaultSize,
-				seriesId: "",
-			};
-		case "line-chart":
-			return {
-				type,
-				widgetId: newWidgetId(),
-				title: "",
-				size: info.defaultSize,
-				seriesIds: [],
-				range: "1y",
-			};
-		case "stock-table":
-		case "indicator-table":
-			return {
-				type,
-				widgetId: newWidgetId(),
-				title: "",
-				size: info.defaultSize,
-				seriesIds: [],
-			};
-		case "earnings-calendar":
-			return {
-				type,
-				widgetId: newWidgetId(),
-				title: "",
-				size: info.defaultSize,
-				daysAhead: 90,
-			};
-	}
-}

@@ -1,19 +1,20 @@
 import {
-	NOTEBOOK_CONTENT_SHAPES,
+	type MarketWidgetCore,
 	NOTEBOOK_LIMITS,
-	NOTEBOOK_WIDGET_TYPE_META,
-	NOTEBOOK_WIDGET_TYPES,
 	type Notebook,
 	type NotebookCapacityProblem,
 	type NotebookChange,
-	type NotebookMarketWidgetCore,
 	type NotebookWidget,
-	type NotebookWidgetCore,
 	type NotebookWidgetOrigin,
-	type NotebookWidgetType,
 	notebookCapacityProblem,
-	notebookWidgetCoreSchema,
-	notebookWidgetSeriesIds,
+	WIDGET_TYPE_META,
+	WIDGET_TYPES,
+	type WidgetCore,
+	type WidgetType,
+	widgetAgentDescription,
+	widgetContentSchema,
+	widgetCoreSchema,
+	widgetSeriesIds,
 } from "@research/contracts";
 import {
 	createWidgetAgentHost,
@@ -41,17 +42,16 @@ import { z } from "zod";
 
 const GENERIC_KEYS: ReadonlySet<string> = new Set(["widgetId", "type", "title", "size"]);
 
-function contentSchemaFor(type: NotebookWidgetType): JsonObject {
-	const { type: _discriminator, ...content } = NOTEBOOK_CONTENT_SHAPES[type];
-	const generated: unknown = z.toJSONSchema(z.strictObject(content));
+function contentSchemaFor(type: WidgetType): JsonObject {
+	const generated: unknown = z.toJSONSchema(widgetContentSchema(type));
 	if (!isJsonObject(generated)) {
 		throw new Error(`the "${type}" notebook widget config schema is not an object schema.`);
 	}
 	return generated;
 }
 
-const CONFIG_SCHEMAS: ReadonlyMap<NotebookWidgetType, JsonObject> = new Map(
-	NOTEBOOK_WIDGET_TYPES.map((type) => [type, contentSchemaFor(type)] as const),
+const CONFIG_SCHEMAS: ReadonlyMap<WidgetType, JsonObject> = new Map(
+	WIDGET_TYPES.map((type) => [type, contentSchemaFor(type)] as const),
 );
 
 /** What the agent types need from the conversation the notebook belongs to. */
@@ -62,7 +62,7 @@ export interface NotebookAgentContext {
 }
 
 /** The type-specific part of a widget as JSON: everything but the four generic fields. */
-export function notebookWidgetConfig(widget: NotebookWidgetCore): JsonObject {
+export function notebookWidgetConfig(widget: WidgetCore): JsonObject {
 	const config: { [key: string]: JsonObject[string] } = {};
 	for (const [key, value] of Object.entries(widget)) {
 		if (!GENERIC_KEYS.has(key)) config[key] = value;
@@ -71,17 +71,17 @@ export function notebookWidgetConfig(widget: NotebookWidgetCore): JsonObject {
 }
 
 function buildCore(
-	type: NotebookWidgetType,
+	type: WidgetType,
 	draft: {
 		readonly widgetId: string;
 		readonly title: string;
-		readonly size: NotebookWidgetCore["size"];
+		readonly size: WidgetCore["size"];
 		readonly config: JsonObject;
 	},
 	context: NotebookAgentContext,
-): Result<NotebookWidgetCore, string> {
+): Result<WidgetCore, string> {
 	// Generic fields win over same-named config keys, so config cannot smuggle them in.
-	const parsed = notebookWidgetCoreSchema.safeParse({
+	const parsed = widgetCoreSchema.safeParse({
 		...draft.config,
 		widgetId: draft.widgetId,
 		title: draft.title,
@@ -104,15 +104,15 @@ function buildCore(
 
 export function notebookWidgetAgentTypes(
 	context: NotebookAgentContext,
-): readonly WidgetAgentType<NotebookWidgetCore>[] {
-	return NOTEBOOK_WIDGET_TYPES.map((type) => {
-		const meta = NOTEBOOK_WIDGET_TYPE_META[type];
+): readonly WidgetAgentType<WidgetCore>[] {
+	return WIDGET_TYPES.map((type) => {
+		const meta = WIDGET_TYPE_META[type];
 		const configSchema = CONFIG_SCHEMAS.get(type);
 		if (configSchema === undefined) throw new Error(`no config schema for "${type}".`);
 		return {
 			type,
 			label: meta.label,
-			description: meta.description,
+			description: widgetAgentDescription(type),
 			defaultSize: meta.defaultSize,
 			sizes: meta.sizes,
 			configSchema,
@@ -128,7 +128,7 @@ export function notebookWidgetAgentTypes(
 }
 
 /** A stored widget without the server-stamped metadata. */
-export function toNotebookWidgetCore(widget: NotebookWidget): NotebookWidgetCore {
+export function toNotebookWidgetCore(widget: NotebookWidget): WidgetCore {
 	const { createdAt: _c, updatedAt: _u, revision: _r, origin: _o, ...core } = widget;
 	return core;
 }
@@ -140,7 +140,7 @@ export interface NotebookCommandFailure {
 }
 
 export interface AppliedNotebookCommands {
-	readonly widgets: readonly NotebookWidgetCore[];
+	readonly widgets: readonly WidgetCore[];
 	readonly snapshot: WidgetSnapshot;
 	/** One entry per change, in command order (moves and resizes included). */
 	readonly changes: readonly NotebookChange[];
@@ -201,7 +201,7 @@ function jsonEqual(left: unknown, right: unknown): boolean {
 
 const PREVIEW_CHARS = 600;
 
-function preview(widget: NotebookWidgetCore | undefined): string | null {
+function preview(widget: WidgetCore | undefined): string | null {
 	if (widget === undefined) return null;
 	const text =
 		widget.type === "text"
@@ -219,24 +219,24 @@ function preview(widget: NotebookWidgetCore | undefined): string | null {
 }
 
 /** A market widget's live content in one line: its type label and what it shows. */
-function marketPreview(widget: NotebookMarketWidgetCore): string {
-	const label = NOTEBOOK_WIDGET_TYPE_META[widget.type].label;
+function marketPreview(widget: MarketWidgetCore): string {
+	const label = WIDGET_TYPE_META[widget.type].label;
 	if (widget.type === "earnings-calendar") return `${label}, next ${widget.daysAhead} days`;
-	const series = notebookWidgetSeriesIds(widget).join(", ");
+	const series = widgetSeriesIds(widget).join(", ");
 	return widget.type === "line-chart"
 		? `${label} of ${series}, ${widget.range}`
 		: `${label} of ${series}`;
 }
 
 /** True when anything but the size differs (the size has its own change kind). */
-function contentDiffers(old: NotebookWidgetCore, next: NotebookWidgetCore): boolean {
+function contentDiffers(old: WidgetCore, next: WidgetCore): boolean {
 	return !jsonEqual({ ...old, size: next.size }, next);
 }
 
 function changesOf(
 	command: WidgetCommand,
-	before: readonly NotebookWidgetCore[],
-	after: readonly NotebookWidgetCore[],
+	before: readonly WidgetCore[],
+	after: readonly WidgetCore[],
 ): NotebookChange[] {
 	const previous = new Map(before.map((widget) => [widget.widgetId, widget] as const));
 	const changes: NotebookChange[] = [];
@@ -311,7 +311,7 @@ export async function applyNotebookCommands(
 			},
 		});
 	}
-	let widgets: readonly NotebookWidgetCore[] = notebook.widgets.map(toNotebookWidgetCore);
+	let widgets: readonly WidgetCore[] = notebook.widgets.map(toNotebookWidgetCore);
 	let revision = 0;
 	const host = createWidgetAgentHost({
 		store: {
@@ -369,9 +369,9 @@ export async function applyNotebookCommands(
  */
 export function stampNotebook(
 	previous: Notebook,
-	next: readonly NotebookWidgetCore[],
+	next: readonly WidgetCore[],
 	now: string,
-	originForNew: (widget: NotebookWidgetCore) => NotebookWidgetOrigin,
+	originForNew: (widget: WidgetCore) => NotebookWidgetOrigin,
 ): Notebook {
 	const stored = new Map(previous.widgets.map((widget) => [widget.widgetId, widget] as const));
 	return {

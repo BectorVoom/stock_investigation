@@ -1,9 +1,8 @@
 import {
-	NOTEBOOK_LIMITS,
-	NOTEBOOK_WIDGET_TYPE_META,
-	type NotebookWidget,
-	type NotebookWidgetCore,
-	notebookWidgetCoreSchema,
+	WIDGET_LIMITS,
+	WIDGET_TYPE_META,
+	type WidgetCore,
+	widgetCoreSchema,
 } from "@research/contracts";
 import { WidgetSizePicker } from "@research/widget-grid";
 import {
@@ -24,17 +23,21 @@ interface ChartSeriesDraft {
 	points: { x: string; y: number }[];
 }
 
-/** One native-dialog editor per widget type; validates with the contract schemas before saving. */
-export function NotebookEditor(props: {
-	readonly widget: NotebookWidget;
+/**
+ * One native-dialog editor per content widget type, the same on Home and in
+ * the Notebook (ADR-0024); validates with the contract schemas before
+ * saving. Live market widgets open the market dialog instead.
+ */
+export function ContentWidgetEditor(props: {
+	readonly widget: WidgetCore;
 	readonly opener: HTMLElement | null;
-	readonly onSave: (core: NotebookWidgetCore) => Promise<boolean>;
+	readonly onSave: (core: WidgetCore) => Promise<boolean>;
 	readonly onClose: () => void;
 }): JSX.Element {
 	const headingId = createUniqueId();
 	let dialog: HTMLDialogElement | undefined;
 	const [title, setTitle] = createSignal(props.widget.title);
-	const [size, setSize] = createSignal<NotebookWidget["size"]>(props.widget.size);
+	const [size, setSize] = createSignal<WidgetCore["size"]>(props.widget.size);
 	const [problems, setProblems] = createSignal<readonly string[]>([]);
 	const [saveError, setSaveError] = createSignal<string | null>(null);
 	const [saving, setSaving] = createSignal(false);
@@ -98,7 +101,7 @@ export function NotebookEditor(props: {
 		setSaveError(null);
 		const core = buildCore();
 		if (core === null) return;
-		const parsed = notebookWidgetCoreSchema.safeParse(core);
+		const parsed = widgetCoreSchema.safeParse(core);
 		if (!parsed.success) {
 			setProblems(describeIssues(parsed.error.issues));
 			return;
@@ -111,7 +114,7 @@ export function NotebookEditor(props: {
 				props.onClose();
 				closeToOpener();
 			} else {
-				setSaveError("The widget was not saved. The notebook notice says why.");
+				setSaveError("The widget was not saved. The notice above the widgets says why.");
 			}
 		} finally {
 			setSaving(false);
@@ -119,7 +122,7 @@ export function NotebookEditor(props: {
 	};
 
 	/** Builds the edited core, or null after recording structural parse problems. */
-	const buildCore = (): NotebookWidgetCore | null => {
+	const buildCore = (): WidgetCore | null => {
 		const widgetId = props.widget.widgetId;
 		const trimmedTitle = title().trim();
 		const widgetSize = size();
@@ -164,13 +167,18 @@ export function NotebookEditor(props: {
 			return { widgetId, type: "table", title: trimmedTitle, size: widgetSize, ...parsed };
 		}
 		// Research widgets are read-only: only the title and size are editable.
-		return {
-			widgetId,
-			type: "research",
-			title: trimmedTitle,
-			size: widgetSize,
-			componentId: (widget as Extract<NotebookWidget, { readonly type: "research" }>).componentId,
-		};
+		if (widget.type === "research") {
+			return {
+				widgetId,
+				type: "research",
+				title: trimmedTitle,
+				size: widgetSize,
+				componentId: widget.componentId,
+			};
+		}
+		// A live market widget keeps its series and options here: the
+		// market dialog edits those; this editor changes only title and size.
+		return { ...widget, title: trimmedTitle, size: widgetSize };
 	};
 
 	const parseOptionalNumber = (raw: string, field: string): number | null | undefined => {
@@ -279,7 +287,7 @@ export function NotebookEditor(props: {
 			onClose={() => closeToOpener()}
 		>
 			<h3 id={headingId} class="text-base font-semibold text-slate-900">
-				Edit {NOTEBOOK_WIDGET_TYPE_META[props.widget.type].label.toLowerCase()} widget
+				Edit {WIDGET_TYPE_META[props.widget.type].label.toLowerCase()} widget
 			</h3>
 			<div class="mt-2 max-w-md space-y-2">
 				<Show when={problems().length > 0}>
@@ -300,14 +308,14 @@ export function NotebookEditor(props: {
 						id={`${headingId}-title`}
 						type="text"
 						class={INPUT}
-						maxLength={NOTEBOOK_LIMITS.maxTitleChars}
+						maxLength={WIDGET_LIMITS.maxTitleChars}
 						value={title()}
 						onInput={(event) => setTitle(event.currentTarget.value)}
 					/>
 				</div>
 				<WidgetSizePicker
 					value={size()}
-					sizes={[...NOTEBOOK_WIDGET_TYPE_META[props.widget.type].sizes]}
+					sizes={[...WIDGET_TYPE_META[props.widget.type].sizes]}
 					label={`Size of “${props.widget.title}”`}
 					onChange={setSize}
 				/>
@@ -321,7 +329,7 @@ export function NotebookEditor(props: {
 								id={`${headingId}-text`}
 								class={INPUT}
 								rows={6}
-								maxLength={NOTEBOOK_LIMITS.maxTextChars}
+								maxLength={WIDGET_LIMITS.maxTextChars}
 								aria-describedby={`${headingId}-text-hint`}
 								value={text()}
 								onInput={(event) => setText(event.currentTarget.value)}
@@ -356,7 +364,7 @@ export function NotebookEditor(props: {
 									id={`${headingId}-unit`}
 									type="text"
 									class={INPUT}
-									maxLength={NOTEBOOK_LIMITS.maxUnitChars}
+									maxLength={WIDGET_LIMITS.maxUnitChars}
 									value={metricUnit()}
 									onInput={(event) => setMetricUnit(event.currentTarget.value)}
 								/>
@@ -382,7 +390,7 @@ export function NotebookEditor(props: {
 									id={`${headingId}-caption`}
 									type="text"
 									class={INPUT}
-									maxLength={NOTEBOOK_LIMITS.maxCaptionChars}
+									maxLength={WIDGET_LIMITS.maxCaptionChars}
 									value={metricCaption()}
 									onInput={(event) => setMetricCaption(event.currentTarget.value)}
 								/>
@@ -426,7 +434,7 @@ export function NotebookEditor(props: {
 									id={`${headingId}-chartunit`}
 									type="text"
 									class={INPUT}
-									maxLength={NOTEBOOK_LIMITS.maxUnitChars}
+									maxLength={WIDGET_LIMITS.maxUnitChars}
 									value={chartUnit()}
 									onInput={(event) => setChartUnit(event.currentTarget.value)}
 								/>
@@ -525,5 +533,5 @@ function parseTableCell(token: string): string | number | null {
 		const value = Number(token);
 		if (Number.isFinite(value)) return value;
 	}
-	return token.slice(0, NOTEBOOK_LIMITS.maxCellChars);
+	return token.slice(0, WIDGET_LIMITS.maxCellChars);
 }

@@ -1,20 +1,19 @@
 import {
 	type ChatMessage,
 	NOTEBOOK_LIMITS,
-	notebookWidgetCoreSchema,
 	type WorkspaceView,
+	widgetCoreSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { widgetFromAnswer, widgetFromComponent } from "../../src/notebook/notebookModel.ts";
 import {
-	duplicateNotebookWidget,
-	moveNotebookWidget,
-	newNotebookWidgetId,
-	removeNotebookWidgets,
-	reorderNotebookWidgets,
-	resizeNotebookWidget,
-	widgetFromAnswer,
-	widgetFromComponent,
-} from "../../src/notebook/notebookModel.ts";
+	duplicateWidget,
+	moveWidget,
+	newWidgetId,
+	removeWidgets,
+	reorderWidgets,
+	resizeWidget,
+} from "../../src/widgets/widgetModel.ts";
 import { WORKSPACE_VIEW } from "../fixtures.ts";
 import { notebookFixtures } from "./notebookHarness.ts";
 
@@ -32,8 +31,8 @@ function chatMessage(text: string): ChatMessage {
 
 describe("notebook model", () => {
 	it("makes unique widget ids", () => {
-		expect(newNotebookWidgetId()).not.toBe(newNotebookWidgetId());
-		expect(newNotebookWidgetId().startsWith("nb-")).toBe(true);
+		expect(newWidgetId()).not.toBe(newWidgetId());
+		expect(newWidgetId().startsWith("w-")).toBe(true);
 	});
 
 	it("converts an answer to editable text with a title from its first words", () => {
@@ -45,7 +44,7 @@ describe("notebook model", () => {
 		expect(core.text).toContain("Utility tenders are rising");
 		expect(core.title).toContain("Utility");
 		expect(core.title.length).toBeLessThanOrEqual(NOTEBOOK_LIMITS.maxTitleChars);
-		expect(notebookWidgetCoreSchema.safeParse(core).success).toBe(true);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
 	it("falls back for an empty answer", () => {
@@ -70,7 +69,7 @@ describe("notebook model", () => {
 			["2026", 120],
 			["2027", null],
 		]);
-		expect(notebookWidgetCoreSchema.safeParse(core).success).toBe(true);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
 	it("returns null when the dataset is missing from the view", () => {
@@ -144,7 +143,7 @@ describe("notebook model", () => {
 		// A null cell is not plotted, never drawn as 0.
 		expect(core.series[0]?.points).toHaveLength(2);
 		expect(core.series[1]?.points).toHaveLength(1);
-		expect(notebookWidgetCoreSchema.safeParse(core).success).toBe(true);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
 	it("converts a candlestick component to a line chart of the close", () => {
@@ -231,7 +230,7 @@ describe("notebook model", () => {
 		const core = widgetFromComponent(component, view);
 		if (core?.type !== "table") throw new Error("expected a table widget");
 		expect(core.rows).toHaveLength(NOTEBOOK_LIMITS.maxTableRows);
-		expect(notebookWidgetCoreSchema.safeParse(core).success).toBe(true);
+		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
 	it("duplicates a bare core under a fresh id, deeply copied", () => {
@@ -243,42 +242,46 @@ describe("notebook model", () => {
 		void updatedAt;
 		void revision;
 		void origin;
-		const copy = duplicateNotebookWidget(core);
+		const copy = duplicateWidget(core);
 		expect(copy.widgetId).not.toBe(chart.widgetId);
 		if (copy.type !== "chart") throw new Error("expected a chart copy");
 		expect(copy.series).toEqual(chart.series);
 		copy.series[0]?.points.push({ x: "2028", y: 160 });
 		expect(chart.series[0]?.points).toHaveLength(2);
-		expect(notebookWidgetCoreSchema.safeParse(copy).success).toBe(true);
+		expect(widgetCoreSchema.safeParse(copy).success).toBe(true);
 	});
 
 	it("duplicates under a fresh id, and moves, reorders, resizes and removes", () => {
 		const fixtures = notebookFixtures();
 		const widgets = [fixtures.text, fixtures.metric, fixtures.chart];
-		const copy = duplicateNotebookWidget(fixtures.text);
+		const copy = duplicateWidget(fixtures.text);
 		expect(copy.widgetId).not.toBe(fixtures.text.widgetId);
+		// A stored widget's metadata never travels into the copy.
+		expect(widgetCoreSchema.safeParse(copy).success).toBe(true);
+		expect("origin" in copy).toBe(false);
 		if (copy.type !== "text") throw new Error("expected a text copy");
 		const original = fixtures.text;
 		if (original.type !== "text") throw new Error("expected a text fixture");
 		expect(copy.text).toBe(original.text);
 
-		expect(
-			moveNotebookWidget(widgets, "nb-metric", "earlier").map((widget) => widget.widgetId),
-		).toEqual(["nb-metric", "nb-text", "nb-chart"]);
-		expect(reorderNotebookWidgets(widgets, "nb-text", 2).map((widget) => widget.widgetId)).toEqual([
+		expect(moveWidget(widgets, "nb-metric", "earlier").map((widget) => widget.widgetId)).toEqual([
+			"nb-metric",
+			"nb-text",
+			"nb-chart",
+		]);
+		expect(reorderWidgets(widgets, "nb-text", 2).map((widget) => widget.widgetId)).toEqual([
 			"nb-metric",
 			"nb-chart",
 			"nb-text",
 		]);
 		expect(
-			resizeNotebookWidget(widgets, "nb-text", "large").find(
-				(widget) => widget.widgetId === "nb-text",
-			)?.size,
+			resizeWidget(widgets, "nb-text", "large").find((widget) => widget.widgetId === "nb-text")
+				?.size,
 		).toBe("large");
 		expect(
-			removeNotebookWidgets(widgets, ["nb-text", "nb-chart"]).map((widget) => widget.widgetId),
+			removeWidgets(widgets, ["nb-text", "nb-chart"]).map((widget) => widget.widgetId),
 		).toEqual(["nb-metric"]);
 		// Unknown ids change nothing.
-		expect(moveNotebookWidget(widgets, "nb-missing", "earlier")).toBe(widgets);
+		expect(moveWidget(widgets, "nb-missing", "earlier")).toBe(widgets);
 	});
 });

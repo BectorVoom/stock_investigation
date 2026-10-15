@@ -1,7 +1,7 @@
 import { createBaselineUiRegistry } from "@research/ui-registry";
 import { cleanup, render, screen, within } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
-import { WidgetBody } from "../../src/notebook/widgets/WidgetBody.tsx";
+import { WidgetBody } from "../../src/widgets/WidgetBody.tsx";
 import { WORKSPACE_VIEW } from "../fixtures.ts";
 import { notebookFixtures } from "./notebookHarness.ts";
 

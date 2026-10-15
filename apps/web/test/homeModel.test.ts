@@ -1,3 +1,4 @@
+import { widgetSeriesIds } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	buildHomeLineModel,
@@ -15,7 +16,6 @@ import {
 	staleFailureReason,
 	toPoints,
 	unavailableText,
-	widgetSeriesIds,
 } from "../src/home/homeModel.ts";
 
 describe("home view-model", () => {
@@ -246,7 +246,7 @@ describe("home view-model", () => {
 		expect(toPoints([["2026-10-08", 15.41]])).toEqual([{ observedOn: "2026-10-08", value: 15.41 }]);
 		expect(
 			widgetSeriesIds({
-				type: "metric",
+				type: "market-metric",
 				widgetId: "w",
 				title: "t",
 				size: "small",

@@ -12,6 +12,7 @@ import {
 	CONVERSATION_CONTEXT_LIMITS,
 	type CompleteJobRequest,
 	type ConversationContextMessage,
+	distinctWidgetSeriesIds,
 	EMPTY_NOTEBOOK,
 	type HomeDataResponse,
 	MARKET_LIMITS,
@@ -23,7 +24,6 @@ import {
 	type NotebookResponse,
 	type NotebookTurn,
 	notebookCapacityProblem,
-	notebookMarketSeriesIds,
 	type ResearchRun,
 } from "@research/contracts";
 import { EMPTY_USAGE, err, ok, type Result } from "@research/domain";
@@ -168,7 +168,7 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 			const stored = await deps.notebooks.get(ownerId, workspaceId);
 			if (stored === "unreadable") return fail("STORED_NOTEBOOK_UNREADABLE", UNREADABLE_SHOWN);
 			const notebook = stored === null ? EMPTY_NOTEBOOK : stored.notebook;
-			const ids = notebookMarketSeriesIds(notebook.widgets).slice(0, MARKET_LIMITS.maxSeries);
+			const ids = distinctWidgetSeriesIds(notebook.widgets).slice(0, MARKET_LIMITS.maxSeries);
 			const [status, metas] = await Promise.all([
 				fetchMarketRefreshStatus(deps.jobs, ownerId),
 				deps.market.getSeriesMeta(ownerId, ids),

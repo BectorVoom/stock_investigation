@@ -1,24 +1,47 @@
 import {
+	distinctWidgetSeriesIds,
 	type EarningsCalendarDaysAhead,
-	type HomeDashboard,
-	type HomeWidget,
 	type MarketCatalogEntry,
 	type MarketProviderId,
 	type MarketRange,
 	type MarketSeries,
+	type MarketWidgetCore,
+	type MarketWidgetType,
 	parseMarketSeriesId,
+	WIDGET_LIMITS,
+	WIDGET_TYPE_META,
+	type WidgetCore,
+	type WidgetSize,
+	widgetSeriesIds,
 } from "@research/contracts";
+import { WIDGET_SIZE_SHAPES } from "@research/widget-grid/core";
 import { createMemo, createSignal, For, type JSX, onMount, Show } from "solid-js";
 import { DisclosureSummary, IconButton } from "../components/ui.tsx";
-import { HOME_RANGE_LABELS, HOME_RANGES, widgetSeriesIds } from "./homeModel.ts";
-import "./shoelace.ts";
-import { WIDGET_SIZE_SHAPES } from "@research/widget-grid/core";
-import { HOME_WIDGET_TYPES, type HomeWidgetType, WIDGET_REGISTRY } from "./widgetRegistry.tsx";
+import { HOME_RANGE_LABELS, HOME_RANGES } from "../home/homeModel.ts";
+import "../home/shoelace.ts";
+import { WIDGET_REGISTRY } from "../home/widgetRegistry.tsx";
+import { newWidgetId } from "./widgetModel.ts";
 
-export type WidgetDialogState =
-	| { readonly mode: "add" }
-	| { readonly mode: "edit"; readonly widget: HomeWidget }
-	| { readonly mode: "confirm-reset" };
+/**
+ * Add / edit dialog of the live market widgets, the same on Home and in the
+ * Notebook (ADR-0024): series (catalog or custom id), range, days ahead,
+ * title and size. The type is chosen in the page's add menu before the
+ * dialog opens. Problems are listed the way other forms do it
+ * (`ul[aria-label="Before you can …"]`, save described by it). Focus moves
+ * into the dialog on open and returns to the explicit opener on close
+ * (Safari never focuses the clicked button itself, guideline 9a — hence the
+ * explicit opener, never `document.activeElement`).
+ */
+export type MarketWidgetDialogState =
+	| { readonly mode: "add"; readonly type: MarketWidgetType }
+	| { readonly mode: "edit"; readonly widget: MarketWidgetCore };
+
+/** The page's own bounds: Home's dashboard or one notebook. */
+export interface MarketWidgetLimits {
+	readonly scope: "dashboard" | "notebook";
+	readonly maxWidgets: number;
+	readonly maxSeries: number;
+}
 
 const PROVIDERS: readonly MarketProviderId[] = ["fred", "twelve-data"];
 
@@ -46,44 +69,6 @@ interface OptionGroup {
 	readonly key: string;
 	readonly label: string;
 	readonly options: readonly MarketCatalogEntry[];
-}
-
-/**
- * Add / edit / reset-confirm dialog (`sl-dialog`). Problems are listed the
- * way other forms do it (`ul[aria-label="Before you can …"]`, save described
- * by it). Focus moves into the dialog on open and returns to the explicit
- * opener on close (Safari never focuses the clicked button itself, guideline
- * 9a — hence the explicit opener, never `document.activeElement`).
- */
-export function WidgetDialog(props: {
-	readonly state: WidgetDialogState | null;
-	/** Element that opened the dialog; focus returns to it on close. */
-	readonly opener: HTMLElement | null;
-	readonly dashboard: HomeDashboard;
-	readonly catalog: readonly MarketCatalogEntry[] | null;
-	readonly catalogState: "loading" | "ready" | "error";
-	readonly seriesById: ReadonlyMap<string, MarketSeries>;
-	readonly onSave: (widget: HomeWidget) => void;
-	readonly onConfirmReset: () => void;
-	readonly onClose: () => void;
-}): JSX.Element {
-	const current = () => props.state;
-	const opened = () => current() !== null;
-	return (
-		<Show when={opened()} fallback={null}>
-			<DialogBody
-				state={current() ?? { mode: "add" }}
-				opener={props.opener}
-				dashboard={props.dashboard}
-				catalog={props.catalog}
-				catalogState={props.catalogState}
-				seriesById={props.seriesById}
-				onSave={props.onSave}
-				onConfirmReset={props.onConfirmReset}
-				onClose={props.onClose}
-			/>
-		</Show>
-	);
 }
 
 /**
@@ -119,15 +104,17 @@ export function isDirectShoelaceEvent(event: Event): boolean {
 	return event.target === event.currentTarget;
 }
 
-function DialogBody(props: {
-	readonly state: WidgetDialogState;
+export function MarketWidgetDialog(props: {
+	readonly state: MarketWidgetDialogState | null;
+	/** Element that opened the dialog; focus returns to it on close. */
 	readonly opener: HTMLElement | null;
-	readonly dashboard: HomeDashboard;
+	/** The page's widgets now: the add limits and the series bound read them. */
+	readonly widgets: readonly WidgetCore[];
+	readonly limits: MarketWidgetLimits;
 	readonly catalog: readonly MarketCatalogEntry[] | null;
 	readonly catalogState: "loading" | "ready" | "error";
 	readonly seriesById: ReadonlyMap<string, MarketSeries>;
-	readonly onSave: (widget: HomeWidget) => void;
-	readonly onConfirmReset: () => void;
+	readonly onSave: (widget: MarketWidgetCore) => void;
 	readonly onClose: () => void;
 }): JSX.Element {
 	const closeAndReturnFocus = (event?: Event) => {
@@ -137,84 +124,50 @@ function DialogBody(props: {
 		props.onClose();
 		props.opener?.focus();
 	};
-
-	useInitialFocus();
-	if (props.state.mode === "confirm-reset") {
-		return (
-			<sl-dialog
-				label="Reset to the default arrangement"
-				open
-				on:sl-after-show={focusFirstField}
-				on:sl-after-hide={closeAndReturnFocus}
-			>
-				<p class="text-sm text-slate-800">
-					This replaces every widget with the default arrangement. This cannot be undone.
-				</p>
-				<div slot="footer" class="flex justify-end gap-1">
-					<IconButton label="Cancel" icon="x-lg" onClick={(event) => closeAndReturnFocus(event)} />
-					<IconButton
-						label="Reset widgets"
-						icon="arrow-counterclockwise"
-						variant="danger"
-						onClick={() => props.onConfirmReset()}
-					/>
-				</div>
-			</sl-dialog>
-		);
-	}
 	return (
-		<WidgetForm
-			mode={props.state.mode}
-			initial={props.state.mode === "edit" ? props.state.widget : null}
-			dashboard={props.dashboard}
-			catalog={props.catalog}
-			catalogState={props.catalogState}
-			seriesById={props.seriesById}
-			onSave={props.onSave}
-			onClose={closeAndReturnFocus}
-			onShown={focusFirstField}
-			onHidden={closeAndReturnFocus}
-		/>
+		<Show when={props.state} keyed fallback={null}>
+			{(state) => (
+				<MarketWidgetForm
+					mode={state.mode}
+					type={state.mode === "add" ? state.type : state.widget.type}
+					initial={state.mode === "edit" ? state.widget : null}
+					widgets={props.widgets}
+					limits={props.limits}
+					catalog={props.catalog}
+					catalogState={props.catalogState}
+					seriesById={props.seriesById}
+					onSave={props.onSave}
+					onClose={() => closeAndReturnFocus()}
+					onShown={focusFirstField}
+					onHidden={closeAndReturnFocus}
+				/>
+			)}
+		</Show>
 	);
 }
 
-/**
- * Series and widget-count limits the dialog enforces in "add" mode. Home
- * passes its dashboard (from which both are derived); the Notebook passes
- * its own numbers instead, so the form never reads a `HomeDashboard` it
- * does not have.
- */
-export interface WidgetFormLimits {
-	readonly maxWidgets: number;
-	readonly maxSeries: number;
-	readonly existingCount: number;
-	readonly existingSeries: readonly string[];
-	/** "dashboard" for Home, "notebook" for the Notebook: the word the problems list uses. */
-	readonly scope: "dashboard" | "notebook";
-}
-
-export interface WidgetFormProps {
+interface MarketWidgetFormProps {
 	readonly mode: "add" | "edit";
-	readonly initial: HomeWidget | null;
-	/** The preselected widget type for "add" without an initial widget. */
-	readonly initialType?: HomeWidgetType;
-	readonly dashboard?: HomeDashboard;
-	readonly limits?: WidgetFormLimits;
+	readonly type: MarketWidgetType;
+	readonly initial: MarketWidgetCore | null;
+	readonly widgets: readonly WidgetCore[];
+	readonly limits: MarketWidgetLimits;
 	readonly catalog: readonly MarketCatalogEntry[] | null;
 	readonly catalogState: "loading" | "ready" | "error";
 	readonly seriesById: ReadonlyMap<string, MarketSeries>;
-	readonly onSave: (widget: HomeWidget) => void;
+	readonly onSave: (widget: MarketWidgetCore) => void;
 	readonly onClose: () => void;
 	readonly onShown: (event: Event) => void;
 	readonly onHidden: (event: Event) => void;
 }
 
-export function WidgetForm(props: WidgetFormProps): JSX.Element {
-	const [widgetType, setWidgetType] = createSignal<HomeWidgetType>(
-		props.initial?.type ?? props.initialType ?? "metric",
-	);
+function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
+	/** The type is chosen before the form opens (the add menu) and never changes in it. */
+	const widgetType = (): MarketWidgetType => props.initial?.type ?? props.type;
 	const [title, setTitle] = createSignal(props.initial?.title ?? "");
-	const [size, setSize] = createSignal<HomeWidget["size"]>(props.initial?.size ?? "small");
+	const [size, setSize] = createSignal<WidgetSize>(
+		props.initial?.size ?? WIDGET_TYPE_META[props.type].defaultSize,
+	);
 	const [selected, setSelected] = createSignal<readonly string[]>(
 		props.initial === null ? [] : [...widgetSeriesIds(props.initial)],
 	);
@@ -271,7 +224,9 @@ export function WidgetForm(props: WidgetFormProps): JSX.Element {
 		const found: string[] = [];
 		const trimmed = title().trim();
 		if (trimmed === "") found.push("Enter a title.");
-		if (trimmed.length > 80) found.push("Shorten the title to 80 characters or fewer.");
+		if (trimmed.length > WIDGET_LIMITS.maxTitleChars) {
+			found.push(`Shorten the title to ${WIDGET_LIMITS.maxTitleChars} characters or fewer.`);
+		}
 		const ids = selected();
 		if (ids.length < info().minSeries) {
 			found.push(
@@ -295,26 +250,16 @@ export function WidgetForm(props: WidgetFormProps): JSX.Element {
 				found.push(`Line-chart series must share one unit (found: ${distinct.join(", ")}).`);
 			}
 		}
-		if (props.mode === "add") {
-			// Home derives both numbers from its dashboard; the Notebook
-			// passes them as `limits` instead.
-			const scope = props.limits?.scope ?? "dashboard";
-			const existingCount = props.limits?.existingCount ?? props.dashboard?.widgets.length ?? 0;
-			const maxWidgets = props.limits?.maxWidgets ?? 24;
-			const maxSeries = props.limits?.maxSeries ?? 30;
-			if (existingCount >= maxWidgets) {
-				found.push(`The ${scope} already holds ${maxWidgets} widgets; remove one first.`);
-			}
-			const distinct = new Set<string>(props.limits?.existingSeries);
-			if (props.limits === undefined) {
-				for (const widget of props.dashboard?.widgets ?? []) {
-					for (const id of widgetSeriesIds(widget)) distinct.add(id);
-				}
-			}
-			for (const id of ids) distinct.add(id);
-			if (distinct.size > maxSeries) {
-				found.push(`The ${scope} holds at most ${maxSeries} distinct series; remove one first.`);
-			}
+		const { scope, maxWidgets, maxSeries } = props.limits;
+		if (props.mode === "add" && props.widgets.length >= maxWidgets) {
+			found.push(`The ${scope} already holds ${maxWidgets} widgets; remove one first.`);
+		}
+		// The page's series without this widget's own, plus the chosen ones.
+		const others = props.widgets.filter((widget) => widget.widgetId !== props.initial?.widgetId);
+		const distinct = new Set<string>(distinctWidgetSeriesIds(others));
+		for (const id of ids) distinct.add(id);
+		if (distinct.size > maxSeries) {
+			found.push(`The ${scope} holds at most ${maxSeries} distinct series; remove one first.`);
 		}
 		return found;
 	});
@@ -357,14 +302,12 @@ export function WidgetForm(props: WidgetFormProps): JSX.Element {
 	const save = () => {
 		if (problems().length > 0) return;
 		const base = {
-			widgetId:
-				props.initial?.widgetId ??
-				`w-${Date.now().toString(36)}-${Math.floor(Math.random() * 0xffff).toString(36)}`,
+			widgetId: props.initial?.widgetId ?? newWidgetId(),
 			title: title().trim(),
 			size: size(),
 		};
 		const type = widgetType();
-		if (type === "metric") {
+		if (type === "market-metric") {
 			const [seriesId] = selected();
 			if (seriesId === undefined) return;
 			props.onSave({ ...base, type, seriesId });
@@ -379,7 +322,7 @@ export function WidgetForm(props: WidgetFormProps): JSX.Element {
 
 	return (
 		<sl-dialog
-			label={props.mode === "add" ? "Add widget" : "Edit widget"}
+			label={`${props.mode === "add" ? "Add" : "Edit"} ${WIDGET_TYPE_META[widgetType()].label.toLowerCase()} widget`}
 			open
 			on:sl-after-show={props.onShown}
 			on:sl-after-hide={props.onHidden}
@@ -408,35 +351,12 @@ export function WidgetForm(props: WidgetFormProps): JSX.Element {
 						</ul>
 					</div>
 				</Show>
-				<Show when={props.mode === "add"}>
-					<sl-select
-						label="Widget type"
-						value={widgetType()}
-						size="small"
-						hoist
-						on:sl-change={(event) => {
-							if (!isDirectShoelaceEvent(event)) return;
-							const next = event.currentTarget.value;
-							const value = Array.isArray(next) ? next[0] : next;
-							const found = HOME_WIDGET_TYPES.find((entry) => entry === value);
-							if (found === undefined) return;
-							setDirty(true);
-							setWidgetType(found);
-							setSize(WIDGET_REGISTRY[found].defaultSize);
-							setSelected([]);
-						}}
-					>
-						<For each={HOME_WIDGET_TYPES}>
-							{(type) => <sl-option value={type}>{WIDGET_REGISTRY[type].label}</sl-option>}
-						</For>
-					</sl-select>
-					<p class="text-2xs text-slate-600">{info().description}</p>
-				</Show>
+				<p class="text-2xs text-slate-600">{info().description}</p>
 				<sl-input
 					label="Title"
 					value={title()}
 					size="small"
-					maxlength={80}
+					maxlength={WIDGET_LIMITS.maxTitleChars}
 					on:sl-input={(event) => {
 						if (!isDirectShoelaceEvent(event)) return;
 						setDirty(true);

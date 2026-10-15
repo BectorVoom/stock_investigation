@@ -1112,7 +1112,7 @@ test("an edit made through the API appears when the tab becomes visible again", 
 			"Content-Type": "application/json",
 		},
 		data: {
-			dashboard: { schemaVersion: 1, widgets: reordered },
+			dashboard: { schemaVersion: 2, widgets: reordered },
 			expectedVersion: stored.version,
 		},
 	});
@@ -1144,7 +1144,7 @@ test("an edit made through the API appears when the tab becomes visible again", 
 			"Content-Type": "application/json",
 		},
 		data: {
-			dashboard: { schemaVersion: 1, widgets: restored },
+			dashboard: { schemaVersion: 2, widgets: restored },
 			expectedVersion: current.version,
 		},
 	});

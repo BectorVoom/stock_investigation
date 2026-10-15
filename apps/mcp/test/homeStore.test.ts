@@ -15,7 +15,7 @@ function dashboardBody(
 	version: number,
 	widgets: readonly unknown[] = DEFAULT_HOME_DASHBOARD.widgets,
 ) {
-	return { dashboard: { schemaVersion: 1, widgets }, version, updatedAt: null, origin: "saved" };
+	return { dashboard: { schemaVersion: 2, widgets }, version, updatedAt: null, origin: "saved" };
 }
 
 /** A fetch that records its calls and answers from `handler`. */
@@ -73,7 +73,7 @@ describe("createHomeDashboardStore", () => {
 				throw new Error("the PUT has no dashboard");
 			}
 			const dashboard: unknown = (body as { dashboard: unknown }).dashboard;
-			expect(dashboard).toMatchObject({ schemaVersion: 1 });
+			expect(dashboard).toMatchObject({ schemaVersion: 2 });
 			return jsonResponse(dashboardBody(5, (dashboard as { widgets: unknown[] }).widgets));
 		});
 		const store = createHomeDashboardStore({ apiOrigin: API_ORIGIN, fetch: backend.fetch });

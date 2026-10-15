@@ -141,9 +141,9 @@ const reversed = [...fullWorkspace.layout.order].reverse();
 
 /* A dashboard at the contract bound (`DASHBOARD_LIMITS.maxWidgets`). */
 const reorderBenchDashboard: Dashboard = {
-	schemaVersion: 1,
+	schemaVersion: 2,
 	widgets: Array.from({ length: 24 }, (_, widget) => ({
-		type: "metric" as const,
+		type: "market-metric" as const,
 		widgetId: `w-bench-${widget}`,
 		title: `Bench widget ${widget}`,
 		size: "small" as const,
@@ -337,7 +337,7 @@ const HOME_BENCH_SERIES = Array.from({ length: 30 }, (_, series) => ({
 }));
 
 const homeBenchDashboard: HomeDashboard = {
-	schemaVersion: 1,
+	schemaVersion: 2,
 	widgets: Array.from({ length: 10 }, (_, widget) => ({
 		type: "stock-table" as const,
 		widgetId: `w-bench-${widget}`,

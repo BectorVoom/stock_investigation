@@ -1,4 +1,4 @@
-import type { HomeWidget, WatchlistResponse, WatchlistStock } from "@research/contracts";
+import type { MarketWidgetCore, WatchlistResponse, WatchlistStock } from "@research/contracts";
 import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
 import { selectUpcomingEarnings } from "@research/domain";
 import { SafeLink } from "@research/ui-registry";
@@ -52,7 +52,7 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
  * it stays reactive across reloads like the other widgets.
  */
 export function EarningsCalendarWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "earnings-calendar" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "earnings-calendar" }>;
 	readonly watchlist: Accessor<WatchlistResponse | null>;
 	readonly watchlistError: Accessor<ApiFailure | null>;
 	readonly onRetryWatchlist: () => void;

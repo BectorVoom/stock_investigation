@@ -1,4 +1,4 @@
-import type { HomeWidget, MarketSeries } from "@research/contracts";
+import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import { WidgetProvenance } from "../HomeFrame.tsx";
@@ -20,7 +20,7 @@ import {
  * (reason)" note row beneath it.
  */
 export function IndicatorTableWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "indicator-table" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "indicator-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	return (

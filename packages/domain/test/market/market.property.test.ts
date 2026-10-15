@@ -29,7 +29,7 @@ const point = fc.record({
 const widgetId = fc.stringMatching(/^[a-z][a-z0-9]{0,7}$/);
 
 function metricWidget(id: string, series: string): DashboardWidget {
-	return { widgetId: id, title: `T ${id}`, size: "small", type: "metric", seriesId: series };
+	return { widgetId: id, title: `T ${id}`, size: "small", type: "market-metric", seriesId: series };
 }
 
 describe("market properties", () => {
@@ -72,7 +72,7 @@ describe("market properties", () => {
 				(ids, id, series) => {
 					const unique = [...new Set(ids)];
 					const dashboard: Dashboard = {
-						schemaVersion: 1,
+						schemaVersion: 2,
 						widgets: unique.map((candidate) => metricWidget(candidate, "fred:SP500")),
 					};
 					const result = applyDashboardEdit(dashboard, {
@@ -103,7 +103,7 @@ describe("market properties", () => {
 				(ids, direction) => {
 					const unique = [...new Set(ids)];
 					const dashboard: Dashboard = {
-						schemaVersion: 1,
+						schemaVersion: 2,
 						widgets: unique.map((candidate) => metricWidget(candidate, "fred:SP500")),
 					};
 					const target = unique[0];
@@ -138,7 +138,7 @@ describe("market properties", () => {
 					const moved = unique[from];
 					if (moved === undefined) return;
 					const dashboard: Dashboard = {
-						schemaVersion: 1,
+						schemaVersion: 2,
 						widgets: unique.map((candidate) => metricWidget(candidate, "fred:SP500")),
 					};
 					const result = applyDashboardEdit(dashboard, {

@@ -274,7 +274,7 @@ describe("createHomeMcpServer", () => {
 
 		const added = snapshotWidgets(
 			await callTool(server, 2, "widgets_add", {
-				type: "metric",
+				type: "market-metric",
 				title: "Gold (agent)",
 				config: { seriesId: "twelve-data:XAU/USD" },
 				toIndex: 0,
@@ -363,7 +363,7 @@ describe("createHomeMcpServer", () => {
 			seriesIds: [...ids],
 		});
 		const full: HomeDashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [
 				table(
 					0,
@@ -383,7 +383,7 @@ describe("createHomeMcpServer", () => {
 		const server = createHomeMcpServer({ apiOrigin: API_ORIGIN, fetch: api.fetch });
 		const putsBefore = api.puts();
 		const result = await callTool(server, 1, "widgets_add", {
-			type: "metric",
+			type: "market-metric",
 			title: "One too many",
 			config: { seriesId: "fred:VIXCLS" },
 		});

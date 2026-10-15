@@ -103,7 +103,7 @@ export function createHomeDashboardStore(
 					[CSRF_HEADER]: CSRF_HEADER_VALUE,
 				},
 				body: JSON.stringify({
-					dashboard: { schemaVersion: 1, widgets: [...widgets] },
+					dashboard: { schemaVersion: 2, widgets: [...widgets] },
 					expectedVersion: revision,
 				}),
 				signal: AbortSignal.timeout(timeoutMs),

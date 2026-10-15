@@ -22,18 +22,23 @@ function propertiesOf(configSchema: JsonObject): Record<string, unknown> {
 
 describe("HOME_WIDGET_AGENT_TYPES", () => {
 	it("covers every Home widget type with the shared label, description, default size and all sizes", () => {
+		// ADR-0024: every type of the one specification but the research result.
 		expect(HOME_WIDGET_AGENT_TYPES.map((entry) => entry.type).sort()).toEqual([
+			"chart",
 			"earnings-calendar",
 			"indicator-table",
 			"line-chart",
+			"market-metric",
 			"metric",
 			"stock-table",
+			"table",
+			"text",
 		]);
 		for (const entry of HOME_WIDGET_AGENT_TYPES) {
 			expect(entry.label.trim().length).toBeGreaterThan(0);
 			expect([...entry.sizes].sort()).toEqual(["large", "medium", "small"]);
 		}
-		for (const type of ["metric", "line-chart", "stock-table", "indicator-table"] as const) {
+		for (const type of ["market-metric", "line-chart", "stock-table", "indicator-table"] as const) {
 			const description = byType(type).description;
 			expect(description).toContain("fred:VIXCLS");
 			expect(description).toContain("twelve-data:AAPL");
@@ -41,8 +46,11 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		const calendar = byType("earnings-calendar").description;
 		expect(calendar).toContain("daysAhead");
 		expect(calendar).not.toContain("fred:");
-		expect(byType("metric").defaultSize).toBe("small");
+		expect(byType("market-metric").defaultSize).toBe("small");
 		expect(byType("earnings-calendar").description).not.toContain("fred:");
+		// The static types tell the agent to use the live types for market data.
+		expect(byType("metric").description).toContain("market-metric");
+		expect(byType("chart").description).toContain("line-chart");
 	});
 
 	it("generates config schemas with no generic fields", () => {
@@ -52,7 +60,10 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			expect(keys.filter((key) => GENERIC_FIELDS.includes(key))).toEqual([]);
 			expect(keys.length).toBeGreaterThan(0);
 		}
-		expect(Object.keys(propertiesOf(byType("metric").configSchema)).sort()).toEqual(["seriesId"]);
+		expect(Object.keys(propertiesOf(byType("market-metric").configSchema)).sort()).toEqual([
+			"seriesId",
+		]);
+		expect(Object.keys(propertiesOf(byType("text").configSchema)).sort()).toEqual(["text"]);
 		expect(Object.keys(propertiesOf(byType("line-chart").configSchema)).sort()).toEqual([
 			"range",
 			"seriesIds",
@@ -64,11 +75,25 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 
 	it("builds each type from a valid config", () => {
 		const cases: { readonly type: HomeWidget["type"]; readonly config: JsonObject }[] = [
-			{ type: "metric", config: { seriesId: "fred:VIXCLS" } },
+			{ type: "market-metric", config: { seriesId: "fred:VIXCLS" } },
 			{ type: "line-chart", config: { seriesIds: ["fred:VIXCLS"], range: "1y" } },
 			{ type: "stock-table", config: { seriesIds: ["twelve-data:AAPL", "twelve-data:MSFT"] } },
 			{ type: "indicator-table", config: { seriesIds: ["fred:CPIAUCSL"] } },
 			{ type: "earnings-calendar", config: { daysAhead: 90 } },
+			{ type: "text", config: { text: "## Note\n\n**Bold** idea." } },
+			{
+				type: "metric",
+				config: { value: 3.2, unit: "%", change: null, caption: "Margin", asOf: null },
+			},
+			{
+				type: "chart",
+				config: {
+					chartType: "bar",
+					unit: "",
+					series: [{ name: "A", points: [{ x: "Q1", y: 1 }] }],
+				},
+			},
+			{ type: "table", config: { columns: ["Name", "Value"], rows: [["A", 1]] } },
 		];
 		for (const { type, config } of cases) {
 			const built = byType(type).build({ widgetId: "w-1", title: "T", size: "small", config });
@@ -84,9 +109,9 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			readonly config: JsonObject;
 			readonly field: string;
 		}[] = [
-			{ type: "metric", config: {}, field: "seriesId" },
-			{ type: "metric", config: { seriesId: "nope" }, field: "seriesId" },
-			{ type: "metric", config: { seriesId: "fred:VIXCLS", nope: 1 }, field: "nope" },
+			{ type: "market-metric", config: {}, field: "seriesId" },
+			{ type: "market-metric", config: { seriesId: "nope" }, field: "seriesId" },
+			{ type: "market-metric", config: { seriesId: "fred:VIXCLS", nope: 1 }, field: "nope" },
 			{ type: "line-chart", config: { seriesIds: [], range: "1y" }, field: "seriesIds" },
 			{ type: "line-chart", config: { seriesIds: ["fred:VIXCLS"], range: "9y" }, field: "range" },
 			{ type: "earnings-calendar", config: { daysAhead: 45 }, field: "daysAhead" },
@@ -99,19 +124,31 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		}
 	});
 
-	it("leaves the no-repeat rule to the layout check, like the contract does", () => {
+	it("refuses a widget that repeats a series, naming the field (the one widget rule)", () => {
 		const built = byType("stock-table").build({
 			widgetId: "w-1",
 			title: "T",
 			size: "small",
 			config: { seriesIds: ["fred:VIXCLS", "fred:VIXCLS"] },
 		});
-		if (!built.ok) throw new Error(`a repeated series failed build: ${built.error}`);
+		if (built.ok) throw new Error("a repeated series was accepted");
+		expect(built.error).toContain('"seriesIds"');
+	});
+
+	it("refuses a table whose rows do not match its columns", () => {
+		const built = byType("table").build({
+			widgetId: "w-1",
+			title: "T",
+			size: "small",
+			config: { columns: ["A", "B"], rows: [["only one"]] },
+		});
+		if (built.ok) throw new Error("a short row was accepted");
+		expect(built.error).toContain('"rows"');
 	});
 
 	it("round-trips configOf after build", () => {
 		const cases: { readonly type: HomeWidget["type"]; readonly config: JsonObject }[] = [
-			{ type: "metric", config: { seriesId: "twelve-data:XAU/USD" } },
+			{ type: "market-metric", config: { seriesId: "twelve-data:XAU/USD" } },
 			{ type: "line-chart", config: { seriesIds: ["fred:VIXCLS", "fred:SP500"], range: "3m" } },
 			{ type: "stock-table", config: { seriesIds: ["twelve-data:NVDA"] } },
 			{ type: "indicator-table", config: { seriesIds: ["fred:UNRATE", "fred:CPIAUCSL"] } },

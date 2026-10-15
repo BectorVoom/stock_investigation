@@ -6,7 +6,7 @@ import { richTextSchema } from "./schema.ts";
  * Conversion between the typed tree (`model.ts`) and ProseMirror documents.
  * Every editor change flows through here: Markdown → `parser.ts` model →
  * ProseMirror doc on open, and doc → model → `serializer.ts` on every edit,
- * so the stored text is always the canonical `NOTEBOOK_TEXT_MARKDOWN` form.
+ * so the stored text is always the canonical `WIDGET_TEXT_MARKDOWN` form.
  * Total: unknown nodes, marks and attributes degrade to plain text or are
  * skipped, never thrown on.
  */

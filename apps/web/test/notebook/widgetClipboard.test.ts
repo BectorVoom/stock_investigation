@@ -1,8 +1,4 @@
-import {
-	NOTEBOOK_LIMITS,
-	type NotebookWidgetCore,
-	type NotebookWidgetOrigin,
-} from "@research/contracts";
+import { NOTEBOOK_LIMITS, type NotebookWidgetOrigin, type WidgetCore } from "@research/contracts";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -17,7 +13,7 @@ import {
 	type WidgetClipboardEntry,
 	type WidgetClipboardStorage,
 	widgetClipboard,
-} from "../../src/notebook/widgetClipboard.ts";
+} from "../../src/widgets/widgetClipboard.ts";
 
 const OWNER: NotebookWidgetOrigin = {
 	kind: "owner",
@@ -32,11 +28,11 @@ const CHAT: NotebookWidgetOrigin = {
 	componentId: null,
 };
 
-function textCore(widgetId = "nb-text"): NotebookWidgetCore {
+function textCore(widgetId = "nb-text"): WidgetCore {
 	return { widgetId, type: "text", title: "Notes", size: "small", text: "Hello" };
 }
 
-function chartCore(widgetId = "nb-chart"): NotebookWidgetCore {
+function chartCore(widgetId = "nb-chart"): WidgetCore {
 	return {
 		widgetId,
 		type: "chart",
@@ -48,7 +44,7 @@ function chartCore(widgetId = "nb-chart"): NotebookWidgetCore {
 	};
 }
 
-function researchCore(widgetId = "nb-research"): NotebookWidgetCore {
+function researchCore(widgetId = "nb-research"): WidgetCore {
 	return {
 		widgetId,
 		type: "research",
@@ -58,7 +54,7 @@ function researchCore(widgetId = "nb-research"): NotebookWidgetCore {
 	};
 }
 
-function entry(core: NotebookWidgetCore, origin: NotebookWidgetOrigin): WidgetClipboardEntry {
+function entry(core: WidgetCore, origin: NotebookWidgetOrigin): WidgetClipboardEntry {
 	return { core, origin };
 }
 

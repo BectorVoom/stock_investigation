@@ -5,8 +5,6 @@ import {
 	completeJobRequestSchema,
 	DEFAULT_HOME_DASHBOARD,
 	formatMarketSeriesId,
-	HOME_WIDGET_SIZES,
-	HOME_WIDGET_TYPE_META,
 	HOME_WIDGET_TYPES,
 	type HomeDashboard,
 	homeDashboardResponseSchema,
@@ -25,11 +23,13 @@ import {
 	marketUnavailableSchema,
 	parseMarketSeriesId,
 	putHomeDashboardRequestSchema,
+	WIDGET_SIZES,
+	WIDGET_TYPE_META,
 } from "../src/index.ts";
 import { expectAccepted, expectRejected, repeat, without } from "./support.ts";
 
 const metricWidget = {
-	type: "metric",
+	type: "market-metric",
 	widgetId: "w-1",
 	title: "VIX",
 	size: "small",
@@ -37,7 +37,7 @@ const metricWidget = {
 } as const;
 
 const dashboard = {
-	schemaVersion: 1,
+	schemaVersion: 2,
 	widgets: [metricWidget],
 } as const;
 
@@ -143,13 +143,13 @@ describe("home dashboard", () => {
 	it("rejects duplicate widget ids, too many widgets and too many series", () => {
 		expectRejected(
 			homeDashboardSchema,
-			{ schemaVersion: 1, widgets: [metricWidget, metricWidget] },
+			{ schemaVersion: 2, widgets: [metricWidget, metricWidget] },
 			["widgets"],
 		);
 		expectRejected(
 			homeDashboardSchema,
 			{
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: repeat({ ...metricWidget, widgetId: "w", seriesId: "fred:VIXCLS" }, 25).map(
 					(widget, index) => ({ ...widget, widgetId: `w-${index}` }),
 				),
@@ -157,7 +157,7 @@ describe("home dashboard", () => {
 			["widgets"],
 		);
 		const wide = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: Array.from({ length: 3 }, (_, index) => ({
 				type: "indicator-table",
 				widgetId: `w-${index}`,
@@ -173,13 +173,13 @@ describe("home dashboard", () => {
 	it("rejects bad series ids and duplicate series inside one widget", () => {
 		expectRejected(
 			homeDashboardSchema,
-			{ schemaVersion: 1, widgets: [{ ...metricWidget, seriesId: "nope" }] },
+			{ schemaVersion: 2, widgets: [{ ...metricWidget, seriesId: "nope" }] },
 			["widgets"],
 		);
 		expectRejected(
 			homeDashboardSchema,
 			{
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [
 					{
 						type: "line-chart",
@@ -198,14 +198,19 @@ describe("home dashboard", () => {
 	it("enforces widget title length", () => {
 		expectRejected(
 			homeDashboardSchema,
-			{ schemaVersion: 1, widgets: [{ ...metricWidget, title: "" }] },
+			{ schemaVersion: 2, widgets: [{ ...metricWidget, title: "" }] },
 			["widgets"],
 		);
 		expectRejected(
 			homeDashboardSchema,
-			{ schemaVersion: 1, widgets: [{ ...metricWidget, title: "x".repeat(81) }] },
+			{ schemaVersion: 2, widgets: [{ ...metricWidget, title: "x".repeat(121) }] },
 			["widgets"],
 		);
+		// One title rule for every widget on every page (ADR-0024): 120 characters.
+		expectAccepted(homeDashboardSchema, {
+			schemaVersion: 2,
+			widgets: [{ ...metricWidget, title: "x".repeat(120) }],
+		});
 	});
 
 	it("edits a HomeDashboard through the domain editor with its own widget type", () => {
@@ -265,19 +270,24 @@ describe("home dashboard", () => {
 
 describe("home widget type metadata", () => {
 	it("covers every widget type with a label, a description, a valid default size and all sizes", () => {
+		// ADR-0024: Home takes every type of the one specification but `research`.
 		expect([...HOME_WIDGET_TYPES].sort()).toEqual([
+			"chart",
 			"earnings-calendar",
 			"indicator-table",
 			"line-chart",
+			"market-metric",
 			"metric",
 			"stock-table",
+			"table",
+			"text",
 		]);
-		expect([...HOME_WIDGET_SIZES].sort()).toEqual(["large", "medium", "small"]);
+		expect([...WIDGET_SIZES].sort()).toEqual(["large", "medium", "small"]);
 		for (const type of HOME_WIDGET_TYPES) {
-			const meta = HOME_WIDGET_TYPE_META[type];
+			const meta = WIDGET_TYPE_META[type];
 			expect(meta.label.trim().length).toBeGreaterThan(0);
 			expect(meta.description.trim().length).toBeGreaterThan(0);
-			expect(HOME_WIDGET_SIZES).toContain(meta.defaultSize);
+			expect(WIDGET_SIZES).toContain(meta.defaultSize);
 			expect([...meta.sizes].sort()).toEqual(["large", "medium", "small"]);
 		}
 	});

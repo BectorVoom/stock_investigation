@@ -1,8 +1,8 @@
 import type {
 	NotebookTurn,
 	NotebookWidget,
-	NotebookWidgetCore,
 	NotebookWidgetOrigin,
+	WidgetCore,
 } from "@research/contracts";
 import type { WorkspaceComponent } from "@research/ui-registry";
 import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
@@ -22,7 +22,7 @@ const notebookControl = vi.hoisted(() => ({
 	seedWidgets: [] as NotebookWidget[],
 	seedVersion: 0,
 	seedTurns: [] as NotebookTurn[],
-	addCalls: [] as { readonly core: NotebookWidgetCore; readonly origin: NotebookWidgetOrigin }[],
+	addCalls: [] as { readonly core: WidgetCore; readonly origin: NotebookWidgetOrigin }[],
 	reloadCalls: 0,
 	created: 0,
 }));
@@ -33,7 +33,7 @@ vi.mock("../../src/notebook/notebookSession.ts", async () => {
 	const { makeNotebookResponse: seedNotebook } = await import("./notebookFixtures.ts");
 	type SeededResponse = import("@research/contracts").NotebookResponse;
 	type SeededWidget = import("@research/contracts").NotebookWidget;
-	type SeededCore = import("@research/contracts").NotebookWidgetCore;
+	type SeededCore = import("@research/contracts").WidgetCore;
 	type SeededOrigin = import("@research/contracts").NotebookWidgetOrigin;
 	return {
 		createNotebookSession: () => {
@@ -84,6 +84,16 @@ vi.mock("../../src/notebook/notebookSession.ts", async () => {
 					return widget.widgetId;
 				},
 				undo: async () => true,
+				undoAvailable: () => false,
+				replaceWidget: async () => false,
+				toWidget: ({ core, origin }: { core: SeededCore; origin: SeededOrigin }) =>
+					contractsModule.notebookWidgetSchema.parse({
+						...core,
+						createdAt: "2026-10-07T00:00:00Z",
+						updatedAt: "2026-10-07T00:00:00Z",
+						revision: 1,
+						origin,
+					}),
 				removeWidgets: async (widgetIds: readonly string[]) => {
 					setState((current) => ({
 						...current,

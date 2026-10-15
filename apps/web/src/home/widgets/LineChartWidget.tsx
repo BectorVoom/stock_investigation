@@ -1,4 +1,4 @@
-import type { HomeWidget, MarketRange, MarketSeries } from "@research/contracts";
+import type { MarketRange, MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { ChartFrame, ChartLegend, SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
@@ -26,11 +26,11 @@ import { WidgetProvenance } from "../HomeFrame.tsx";
  * amber "last refresh failed (reason)" note beside them.
  */
 export function LineChartWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "line-chart" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "line-chart" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 	/** V8: disabled while HomeView is saving, so the control reflects the server copy. */
 	readonly disabled: boolean;
-	readonly onSaveRange: (widget: HomeWidget) => void;
+	readonly onSaveRange: (widget: MarketWidgetCore) => void;
 }): JSX.Element {
 	const resolved = createMemo(() =>
 		props.widget.seriesIds.map((id) => props.seriesById().get(id) ?? null),

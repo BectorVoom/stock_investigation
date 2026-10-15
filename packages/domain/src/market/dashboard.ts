@@ -3,13 +3,23 @@ import { err, ok, type Result } from "../result.ts";
 export type DashboardWidgetSize = "small" | "medium" | "large";
 
 /**
- * One widget on a Home dashboard. A discriminated union on `type`: each
- * variant carries exactly the fields it needs, so a missing `seriesId` or an
- * extra `range` is a type error rather than a silent mis-read.
+ * One widget on a Home dashboard or in a notebook (ADR-0024: one widget
+ * specification). A discriminated union on `type`: each market variant
+ * carries exactly the series fields it needs, so a missing `seriesId` or an
+ * extra `range` is a type error rather than a silent mis-read. The content
+ * types carry no market series; their content is validated by the contracts
+ * schema, and the dashboard rules here only see their generic fields.
  */
 export type DashboardWidget =
 	| {
-			readonly type: "metric";
+			/** Static content: rich text, a number, a chart or table with its own data, a research result. */
+			readonly type: "text" | "metric" | "chart" | "table" | "research";
+			readonly widgetId: string;
+			readonly title: string;
+			readonly size: DashboardWidgetSize;
+	  }
+	| {
+			readonly type: "market-metric";
 			readonly widgetId: string;
 			readonly title: string;
 			readonly size: DashboardWidgetSize;
@@ -65,11 +75,17 @@ export const DASHBOARD_LIMITS = {
 	maxLineChartSeries: 4,
 	maxTableSeries: 12,
 	minWidgetTitle: 1,
-	maxWidgetTitle: 80,
+	/** One title rule for every widget on every page (ADR-0024). */
+	maxWidgetTitle: 120,
 } as const;
 
+/**
+ * Version 2 (ADR-0024): the live single-series widget is `market-metric`,
+ * and `metric` is a static number. A version-1 document is upgraded on read
+ * by the contracts layer.
+ */
 export interface Dashboard<W extends DashboardWidget = DashboardWidget> {
-	readonly schemaVersion: 1;
+	readonly schemaVersion: 2;
 	readonly widgets: readonly W[];
 }
 
@@ -91,24 +107,38 @@ export type DashboardEditError =
 	| "DUPLICATE_SERIES_IN_WIDGET"
 	| "INVALID_WIDGET";
 
-function seriesOf(widget: DashboardWidget): readonly string[] {
-	if (widget.type === "metric") return [widget.seriesId];
-	if (widget.type === "earnings-calendar") return [];
-	return widget.seriesIds;
+/**
+ * Market series one widget names, in its own order (none for the content
+ * types and the earnings calendar). The ONE implementation for Home and the
+ * notebooks.
+ */
+export function dashboardWidgetSeriesIds(widget: DashboardWidget): readonly string[] {
+	switch (widget.type) {
+		case "market-metric":
+			return [widget.seriesId];
+		case "line-chart":
+		case "stock-table":
+		case "indicator-table":
+			return widget.seriesIds;
+		default:
+			return [];
+	}
 }
 
+const seriesOf = dashboardWidgetSeriesIds;
+
 /**
- * Distinct series of a dashboard, in widget order. The ONE implementation:
- * the contract refinements, the home service and the runner claim path all
- * call this instead of keeping their own copy.
+ * Distinct series of a dashboard (or a notebook), in widget order. The ONE
+ * implementation: the contract refinements, the home service, the notebook
+ * capacity rule and the runner claim path all call this instead of keeping
+ * their own copy.
  */
 export function distinctDashboardSeriesIds(widgets: readonly DashboardWidget[]): string[] {
-	const ids: string[] = [];
+	const ids = new Set<string>();
 	for (const widget of widgets) {
-		if (widget.type === "metric") ids.push(widget.seriesId);
-		else if (widget.type !== "earnings-calendar") ids.push(...widget.seriesIds);
+		for (const id of dashboardWidgetSeriesIds(widget)) ids.add(id);
 	}
-	return [...new Set(ids)];
+	return [...ids];
 }
 
 function validWidget(widget: DashboardWidget): boolean {
@@ -123,7 +153,7 @@ function validWidget(widget: DashboardWidget): boolean {
 	if (widget.type === "earnings-calendar") {
 		return EARNINGS_CALENDAR_DAYS_AHEAD.includes(widget.daysAhead);
 	}
-	if (widget.type === "metric" && series.length !== 1) return false;
+	if (widget.type === "market-metric" && series.length !== 1) return false;
 	if (
 		widget.type === "line-chart" &&
 		(series.length < 1 || series.length > DASHBOARD_LIMITS.maxLineChartSeries)
@@ -154,7 +184,7 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 	switch (edit.kind) {
 		case "reset": {
 			return ok({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [...edit.dashboard.widgets],
 			});
 		}
@@ -172,13 +202,13 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 			if (distinctDashboardSeriesIds(next).length > DASHBOARD_LIMITS.maxSeries) {
 				return err("TOO_MANY_SERIES");
 			}
-			return ok({ schemaVersion: 1, widgets: next });
+			return ok({ schemaVersion: 2, widgets: next });
 		}
 		case "remove": {
 			const index = dashboard.widgets.findIndex((widget) => widget.widgetId === edit.widgetId);
 			if (index === -1) return err("WIDGET_NOT_FOUND");
 			return ok({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: dashboard.widgets.filter((widget) => widget.widgetId !== edit.widgetId),
 			});
 		}
@@ -209,7 +239,7 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 				next[target] = widget;
 				source += 1;
 			}
-			return ok({ schemaVersion: 1, widgets: next });
+			return ok({ schemaVersion: 2, widgets: next });
 		}
 		case "move": {
 			const index = dashboard.widgets.findIndex((widget) => widget.widgetId === edit.widgetId);
@@ -222,7 +252,7 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 			if (current === undefined || other === undefined) return err("WIDGET_NOT_FOUND");
 			next[index] = other;
 			next[target] = current;
-			return ok({ schemaVersion: 1, widgets: next });
+			return ok({ schemaVersion: 2, widgets: next });
 		}
 		case "replace": {
 			if (!validWidget(edit.widget)) {
@@ -240,7 +270,7 @@ export function applyDashboardEdit<W extends DashboardWidget>(
 			if (distinctDashboardSeriesIds(next).length > DASHBOARD_LIMITS.maxSeries) {
 				return err("TOO_MANY_SERIES");
 			}
-			return ok({ schemaVersion: 1, widgets: next });
+			return ok({ schemaVersion: 2, widgets: next });
 		}
 	}
 }

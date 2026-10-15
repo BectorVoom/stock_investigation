@@ -2,7 +2,7 @@ import type { DOMOutputSpec } from "prosemirror-model";
 import { Schema } from "prosemirror-model";
 
 /**
- * ProseMirror schema for the `NOTEBOOK_TEXT_MARKDOWN` subset (ADR-0021).
+ * ProseMirror schema for the `WIDGET_TEXT_MARKDOWN` subset (ADR-0021).
  * It mirrors `model.ts` exactly — paragraph, headings 1–3, bullet and
  * numbered lists, to-do lists, blockquote, code block, divider, hard break;
  * marks strong, em, strike, code and link (href limited to http/https/mailto

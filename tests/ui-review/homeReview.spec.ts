@@ -296,7 +296,7 @@ test("UI review of the Home page", async ({ browser }) => {
 			...dashboardBody.dashboard.widgets,
 			{
 				widgetId: `w-review-unavailable-${Date.now()}`,
-				type: "metric",
+				type: "market-metric",
 				title: "Review unavailable",
 				size: "small",
 				seriesId: "fred:UNRATE",

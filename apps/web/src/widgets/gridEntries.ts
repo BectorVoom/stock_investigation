@@ -1,13 +1,12 @@
-import type { NotebookWidget } from "@research/contracts";
 import type { WidgetBase } from "@research/widget-grid";
 import { type Accessor, createMemo } from "solid-js";
 
 /**
- * One notebook widget as the grid sees it: a stable object per `widgetId`
- * whose fields read the current widget.
+ * One widget as the grid sees it: a stable object per `widgetId` whose
+ * fields read the current widget (Home and the Notebook alike, ADR-0024).
  */
-export interface NotebookGridEntry extends WidgetBase {
-	readonly widget: NotebookWidget;
+export interface WidgetGridEntry<W extends WidgetBase> extends WidgetBase {
+	readonly widget: W;
 }
 
 /**
@@ -18,20 +17,20 @@ export interface NotebookGridEntry extends WidgetBase {
  * dropping its caret and undo history. Reorders move the same entries;
  * removed ids are forgotten. Must be called inside a reactive owner.
  */
-export function createNotebookGridEntries(
-	widgets: Accessor<readonly NotebookWidget[]>,
-): Accessor<readonly NotebookGridEntry[]> {
+export function createWidgetGridEntries<W extends WidgetBase>(
+	widgets: Accessor<readonly W[]>,
+): Accessor<readonly WidgetGridEntry<W>[]> {
 	const byId = createMemo(
 		() => new Map(widgets().map((widget) => [widget.widgetId, widget] as const)),
 	);
-	const entries = new Map<string, NotebookGridEntry>();
+	const entries = new Map<string, WidgetGridEntry<W>>();
 
-	const entryFor = (first: NotebookWidget): NotebookGridEntry => {
+	const entryFor = (first: W): WidgetGridEntry<W> => {
 		const id = first.widgetId;
 		// The last widget seen keeps a removed entry readable while `<For>`
 		// disposes it.
 		let last = first;
-		const current = (): NotebookWidget => {
+		const current = (): W => {
 			const widget = byId().get(id);
 			if (widget !== undefined) last = widget;
 			return last;

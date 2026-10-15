@@ -158,7 +158,7 @@ export function createHomeService(deps: HomeServiceDeps) {
 		async resetDashboard(ownerId: string): Promise<UseCaseResult<HomeDashboardResponse>> {
 			const now = deps.clock.nowIso();
 			const dashboard: HomeDashboard = {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [...DEFAULT_HOME_DASHBOARD.widgets],
 			};
 			const stored = await deps.dashboard.reset(ownerId, dashboard, now);

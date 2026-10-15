@@ -21,7 +21,6 @@ import {
 	earningsUnavailableCodeSchema,
 	googleCalendarRequestSchema,
 	type HomeDashboard,
-	homeDashboardSchema,
 	type NewsSource,
 	type Notebook,
 	type NotebookTurn,
@@ -34,6 +33,7 @@ import {
 	resourceUsageSchema,
 	runnerCredentialSchema,
 	STABLE_FAILURE_CODE_PATTERN,
+	storedHomeDashboardSchema,
 	uiCommandSchema,
 	type WatchMarket,
 	type WorkspaceSummary,
@@ -440,7 +440,10 @@ const homeDashboardRowSchema = z.object({
 	updated_at: z.string(),
 });
 
-/** A stored dashboard that no longer parses is a typed failure (fail closed). */
+/**
+ * A stored dashboard that no longer parses is a typed failure (fail closed).
+ * A version-1 document is upgraded on read (ADR-0024).
+ */
 export function toHomeDashboardRecord(row: unknown): {
 	readonly dashboard: HomeDashboard;
 	readonly version: number;
@@ -448,7 +451,7 @@ export function toHomeDashboardRecord(row: unknown): {
 } {
 	const r = decode("home_dashboards", homeDashboardRowSchema, row);
 	return {
-		dashboard: parseJsonColumn("home_dashboards", homeDashboardSchema, r.dashboard_json),
+		dashboard: parseJsonColumn("home_dashboards", storedHomeDashboardSchema, r.dashboard_json),
 		version: r.version,
 		updatedAt: r.updated_at,
 	};

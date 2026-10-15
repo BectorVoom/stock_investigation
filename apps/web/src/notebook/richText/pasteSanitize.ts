@@ -1,5 +1,5 @@
 /**
- * Paste keeps only what the `NOTEBOOK_TEXT_MARKDOWN` subset can express
+ * Paste keeps only what the `WIDGET_TEXT_MARKDOWN` subset can express
  * (or falls back to plain text): hostile markup, styles and scripts never
  * reach the document. Runs in the browser (and in happy-dom tests) on the
  * clipboard HTML before ProseMirror parses it against the schema.

@@ -1,81 +1,12 @@
-import type { HomeWidget, MarketSeries } from "@research/contracts";
+import { type MarketSeries, type MarketWidgetCore, widgetSeriesIds } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
-import { WidgetFrame } from "@research/widget-grid";
 import { type Accessor, For, type JSX, Match, Show, Switch } from "solid-js";
-import { ActionMenu } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
-import { widgetSeriesIds } from "./homeModel.ts";
 
-export interface HomeFrameProps {
-	readonly widget: HomeWidget;
-	readonly position: number;
-	readonly total: number;
-	/** V8: while a save is in flight every menu action is impossible, not silently skipped. */
-	readonly actionsDisabled: boolean;
-	readonly onEdit: (widget: HomeWidget) => void;
-	readonly onMove: (widget: HomeWidget, direction: "earlier" | "later") => void;
-	readonly onRemove: (widget: HomeWidget) => void;
-	readonly children: JSX.Element;
-}
-
-/**
- * The Home frame: the package `WidgetFrame` with this app's `ActionMenu`
- * (same items, labels, icons, disabled rules and `data-widget-actions` as
- * before) in its `actions` slot. Provenance stays in each widget's own
- * output (never a frame prop: prop elements snapshot once, while children
- * stay live).
+/*
+ * Provenance parts of the market widgets (the frame and its menu are the
+ * shared board's since ADR-0024).
  */
-export function HomeFrame(props: HomeFrameProps): JSX.Element {
-	const actionsLabel = () => `${props.widget.title} actions`;
-	return (
-		<WidgetFrame
-			widget={props.widget}
-			actions={
-				<ActionMenu
-					buttonLabel={actionsLabel()}
-					menuLabel={actionsLabel()}
-					iconTrigger={{
-						icon: "three-dots",
-						disabled: props.actionsDisabled,
-						widgetActions: props.widget.widgetId,
-					}}
-					items={[
-						{
-							value: "edit",
-							label: "Edit widget",
-							icon: "pencil",
-							disabled: props.actionsDisabled,
-							onSelect: () => props.onEdit(props.widget),
-						},
-						{
-							value: "earlier",
-							label: "Move earlier",
-							icon: "arrow-left",
-							disabled: props.actionsDisabled || props.position === 0,
-							onSelect: () => props.onMove(props.widget, "earlier"),
-						},
-						{
-							value: "later",
-							label: "Move later",
-							icon: "arrow-right",
-							disabled: props.actionsDisabled || props.position === props.total - 1,
-							onSelect: () => props.onMove(props.widget, "later"),
-						},
-						{
-							value: "remove",
-							label: "Remove widget",
-							icon: "trash",
-							disabled: props.actionsDisabled,
-							onSelect: () => props.onRemove(props.widget),
-						},
-					]}
-				/>
-			}
-		>
-			{props.children}
-		</WidgetFrame>
-	);
-}
 
 /** "As of <date>" for one observation date. */
 export function AsOf(props: { readonly date: string }): JSX.Element {
@@ -148,7 +79,7 @@ export function TwelveDataSessionNote(props: {
  * over memoized lookups.
  */
 export function WidgetProvenance(props: {
-	readonly widget: HomeWidget;
+	readonly widget: MarketWidgetCore;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	// The earnings calendar carries its own provenance line in its body
@@ -167,16 +98,18 @@ export function WidgetProvenance(props: {
 }
 
 function WidgetProvenanceLines(props: {
-	readonly widget: HomeWidget;
+	readonly widget: MarketWidgetCore;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	const metricSeries = () =>
-		props.widget.type === "metric" ? (props.byId().get(props.widget.seriesId) ?? null) : null;
+		props.widget.type === "market-metric"
+			? (props.byId().get(props.widget.seriesId) ?? null)
+			: null;
 	const chartIds = () =>
 		props.widget.type === "line-chart" ? [...widgetSeriesIds(props.widget)] : [];
 	return (
 		<Switch fallback={<TableFooter />}>
-			<Match when={props.widget.type === "metric"}>
+			<Match when={props.widget.type === "market-metric"}>
 				<Show when={metricSeries()} fallback={<span class="italic">source not stated</span>}>
 					{(series) => (
 						<SingleSeriesFooter

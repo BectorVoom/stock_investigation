@@ -1,8 +1,8 @@
 import {
 	type MarketSeries,
-	NOTEBOOK_WIDGET_TYPE_META,
 	type NotebookWidget,
 	notebookWidgetSchema,
+	WIDGET_TYPE_META,
 	watchlistResponseSchema,
 } from "@research/contracts";
 import { createBaselineUiRegistry } from "@research/ui-registry";
@@ -11,10 +11,10 @@ import { createRoot } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../../src/api/client.ts";
 import { ensureHomeIconLibraries } from "../../src/home/shoelace.ts";
-import type { NotebookMarketContext } from "../../src/notebook/marketContext.ts";
 import { NotebookPanel } from "../../src/notebook/NotebookPanel.tsx";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
-import { WidgetBody } from "../../src/notebook/widgets/WidgetBody.tsx";
+import type { WidgetMarketContext } from "../../src/widgets/marketContext.ts";
+import { WidgetBody } from "../../src/widgets/WidgetBody.tsx";
 import { defaultHomeSeries, HOME_CATALOG } from "../appHarness.tsx";
 import {
 	ALWAYS_VISIBLE,
@@ -242,7 +242,7 @@ function stubMarket(
 	series: readonly MarketSeries[],
 	watchlist: ReturnType<typeof watchlistWithAapl> | null,
 	api: ReturnType<typeof createApiClient>,
-): NotebookMarketContext {
+): WidgetMarketContext {
 	const byId = new Map(series.map((entry) => [entry.seriesId, entry] as const));
 	return {
 		seriesById: () => byId,
@@ -658,9 +658,7 @@ describe("notebook market add and edit", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
 		for (const type of ["text", "metric", "chart", "table"] as const) {
 			await waitFor(() =>
-				expect(
-					screen.getByRole("menuitem", { name: NOTEBOOK_WIDGET_TYPE_META[type].label }),
-				).toBeDefined(),
+				expect(screen.getByRole("menuitem", { name: WIDGET_TYPE_META[type].label })).toBeDefined(),
 			);
 		}
 		const marketLabels = [
@@ -674,8 +672,8 @@ describe("notebook market add and edit", () => {
 			await waitFor(() => expect(screen.getByRole("menuitem", { name: label })).toBeDefined());
 		}
 		// The market entries read their labels from the contract's one table.
-		expect(NOTEBOOK_WIDGET_TYPE_META["market-metric"].label).toBe("Market metric");
-		expect(NOTEBOOK_WIDGET_TYPE_META["earnings-calendar"].label).toBe("Earnings calendar");
+		expect(WIDGET_TYPE_META["market-metric"].label).toBe("Market metric");
+		expect(WIDGET_TYPE_META["earnings-calendar"].label).toBe("Earnings calendar");
 
 		// Adding a line chart opens Home's form with the type preset.
 		fireEvent.click(screen.getByRole("menuitem", { name: "Line chart" }));

@@ -10,13 +10,13 @@ const metric = (widgetId: string, seriesId = "fred:VIXCLS"): DashboardWidget => 
 	widgetId,
 	title: `Widget ${widgetId}`,
 	size: "small",
-	type: "metric",
+	type: "market-metric",
 	seriesId,
 });
 
-const empty: Dashboard = { schemaVersion: 1, widgets: [] };
-const one: Dashboard = { schemaVersion: 1, widgets: [metric("a")] };
-const two: Dashboard = { schemaVersion: 1, widgets: [metric("a"), metric("b", "fred:DGS10")] };
+const empty: Dashboard = { schemaVersion: 2, widgets: [] };
+const one: Dashboard = { schemaVersion: 2, widgets: [metric("a")] };
+const two: Dashboard = { schemaVersion: 2, widgets: [metric("a"), metric("b", "fred:DGS10")] };
 
 describe("applyDashboardEdit", () => {
 	it("adds a widget at the end", () => {
@@ -46,7 +46,7 @@ describe("applyDashboardEdit", () => {
 
 	it("removes exactly that widget and keeps the order of the rest", () => {
 		const three: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [metric("a"), metric("b", "fred:DGS10"), metric("c", "fred:SP500")],
 		};
 		const next = expectOk(applyDashboardEdit(three, { kind: "remove", widgetId: "b" }));
@@ -78,7 +78,7 @@ describe("applyDashboardEdit", () => {
 
 	it("reorders a widget to an absolute index", () => {
 		const four: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
 		};
 		const ids = (dashboard: Dashboard) => dashboard.widgets.map((widget) => widget.widgetId);
@@ -101,7 +101,7 @@ describe("applyDashboardEdit", () => {
 
 	it("treats a reorder to the current index as a no-op copy", () => {
 		const four: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
 		};
 		const next = expectOk(applyDashboardEdit(four, { kind: "reorder", widgetId: "b", toIndex: 1 }));
@@ -112,7 +112,7 @@ describe("applyDashboardEdit", () => {
 
 	it("rejects a reorder with an unknown id or an out-of-range index", () => {
 		const four: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [metric("a"), metric("b"), metric("c"), metric("d")],
 		};
 		expect(
@@ -162,14 +162,14 @@ describe("applyDashboardEdit", () => {
 
 	it("enforces the widget and series limits", () => {
 		const full: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: Array.from({ length: 24 }, (_, index) => metric(`w${index}`, `fred:S${index}`)),
 		};
 		expect(expectErr(applyDashboardEdit(full, { kind: "add", widget: metric("extra") }))).toBe(
 			"TOO_MANY_WIDGETS",
 		);
 		const wide: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: Array.from({ length: 3 }, (_, index) =>
 				index === 0
 					? metric("w0", "fred:A")
@@ -184,7 +184,7 @@ describe("applyDashboardEdit", () => {
 		};
 		// 1 + 12 + 12 = 25 distinct series; replacing w0 with 6 more distinct hits 30+… use a wider case:
 		const atLimit: Dashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [
 				{
 					widgetId: "w0",

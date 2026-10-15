@@ -1,7 +1,7 @@
 import type { NotebookWidget } from "@research/contracts";
 import { createRoot, createSignal } from "solid-js";
 import { describe, expect, it } from "vitest";
-import { createNotebookGridEntries } from "../../src/notebook/gridEntries.ts";
+import { createWidgetGridEntries } from "../../src/widgets/gridEntries.ts";
 
 function textWidget(widgetId: string, text: string, revision = 1): NotebookWidget {
 	return {
@@ -24,7 +24,7 @@ describe("notebook grid entries", () => {
 				textWidget("a", "first"),
 				textWidget("b", "second"),
 			]);
-			const entries = createNotebookGridEntries(widgets);
+			const entries = createWidgetGridEntries(widgets);
 			const [a, b] = entries();
 			if (a === undefined || b === undefined) throw new Error("two entries expected");
 

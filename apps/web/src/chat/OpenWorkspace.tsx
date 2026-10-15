@@ -1,8 +1,8 @@
 import type {
 	NotebookAssistResponse,
 	NotebookTurn,
-	NotebookWidgetCore,
 	NotebookWidgetOrigin,
+	WidgetCore,
 } from "@research/contracts";
 import { isTerminalJobState } from "@research/contracts";
 import type { UiRegistry } from "@research/ui-registry";
@@ -171,7 +171,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		});
 	};
 
-	const addComponent = (core: NotebookWidgetCore, origin: NotebookWidgetOrigin): void => {
+	const addComponent = (core: WidgetCore, origin: NotebookWidgetOrigin): void => {
 		trackNotebookSave(origin.componentId ?? core.widgetId, () =>
 			notebookSession.addWidget(core, origin),
 		);
