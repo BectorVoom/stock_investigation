@@ -250,6 +250,89 @@ describe("notebook session", () => {
 		}
 	});
 
+	it("adds several widgets in one save, in entry order", async () => {
+		const fixtures = notebookFixtures();
+		const { backend, session, dispose } = setup([fixtures.text]);
+		try {
+			await waitForLoaded(session);
+			const ids = await session.addWidgets(
+				[
+					{
+						core: {
+							widgetId: "nb-added-a",
+							type: "text",
+							title: "First",
+							size: "small",
+							text: "Hello",
+						},
+						origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+					},
+					{
+						core: {
+							widgetId: "nb-added-b",
+							type: "text",
+							title: "Second",
+							size: "small",
+							text: "World",
+						},
+						origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+					},
+				],
+				0,
+			);
+			expect(ids).toEqual(["nb-added-a", "nb-added-b"]);
+			expect(session.widgets().map((widget) => widget.widgetId)).toEqual([
+				"nb-added-a",
+				"nb-added-b",
+				"nb-text",
+			]);
+			// One save, not N parallel saves.
+			expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1);
+		} finally {
+			dispose();
+		}
+	});
+
+	it("resolves null without saving when a multi-add would exceed the maximum", async () => {
+		const fixtures = notebookFixtures();
+		const full = Array.from({ length: NOTEBOOK_LIMITS.maxWidgets - 1 }, (_, index) => ({
+			...fixtures.text,
+			widgetId: `nb-${index}`,
+		}));
+		const { backend, session, dispose } = setup(full);
+		try {
+			await waitForLoaded(session);
+			const ids = await session.addWidgets([
+				{
+					core: { widgetId: "nb-a", type: "text", title: "A", size: "small", text: "A" },
+					origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+				},
+				{
+					core: { widgetId: "nb-b", type: "text", title: "B", size: "small", text: "B" },
+					origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+				},
+			]);
+			expect(ids).toBeNull();
+			expect(session.widgets()).toHaveLength(NOTEBOOK_LIMITS.maxWidgets - 1);
+			expect(session.notice()?.text).toContain("at most 200 widgets");
+			expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toEqual([]);
+		} finally {
+			dispose();
+		}
+	});
+
+	it("resolves an empty multi-add without saving", async () => {
+		const fixtures = notebookFixtures();
+		const { backend, session, dispose } = setup([fixtures.text]);
+		try {
+			await waitForLoaded(session);
+			expect(await session.addWidgets([])).toEqual([]);
+			expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toEqual([]);
+		} finally {
+			dispose();
+		}
+	});
+
 	it("removes widgets and prunes the selection", async () => {
 		const fixtures = notebookFixtures();
 		const { session, dispose } = setup([fixtures.text, fixtures.metric]);

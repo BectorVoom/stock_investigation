@@ -289,17 +289,16 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 			})
 			.toBe(true);
 
-		// The draft names the notebook, so the pills route to the notebook
-		// assistant live, before anything is sent.
+		// The draft names the notebook, so the mode menu routes to the
+		// notebook assistant live, before anything is sent.
 		const research = page.getByRole("form", { name: "Research composer" });
 		await research
 			.getByRole("textbox", { name: "Question" })
 			.fill("Create a chart of gold prices over the past year in the Notebook");
 		const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
-		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
-			"aria-pressed",
-			"true",
-		);
+		await expect(
+			notebookComposer.getByRole("button", { name: "Leave Notebook mode" }),
+		).toBeVisible();
 		await instruct(page, "Create a chart of gold prices over the past year in the Notebook");
 		await expect(
 			page.locator('div[data-panel="notebook"] article[data-widget-type="line-chart"]'),
@@ -360,10 +359,9 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 			.getByRole("form", { name: "Research composer" })
 			.getByRole("textbox", { name: "Question" })
 			.fill("Please create gold chart.");
-		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
-			"aria-pressed",
-			"true",
-		);
+		await expect(
+			notebookComposer.getByRole("button", { name: "Leave Notebook mode" }),
+		).toBeVisible();
 		await instruct(page, "Please create gold chart.");
 		await expect(goldFrame).toHaveCount(1);
 		const ownerChatId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
@@ -416,6 +414,56 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		const reloaded = notebookWidgets(page).last();
 		await expect(reloaded.locator("h1")).toHaveText("Gold notes", { timeout: 30_000 });
 		await expect(reloaded.locator("strong")).toHaveText("trend");
+	});
+
+	test("the + menu chooses Notebook by hand, and a widget cut here pastes into a new chat", async () => {
+		const page = activePage();
+		const originalUrl = page.url();
+		// ADR-0023: no dedicated mode buttons; the + menu picks the mode. The
+		// instruction names neither the notebook nor a chart, so only the
+		// owner's choice sends it to the notebook assistant.
+		await expect(page.getByRole("form", { name: "Research composer" })).toBeVisible();
+		await page.getByRole("button", { name: "Choose mode" }).click();
+		await page.getByRole("menuitemradio", { name: "Notebook" }).click();
+		const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
+		await expect(notebookComposer.getByRole("textbox", { name: "Instruction" })).toBeFocused();
+		await expect(
+			notebookComposer.getByRole("button", { name: "Leave Notebook mode" }),
+		).toBeVisible();
+		await page.screenshot({ path: test.info().outputPath("7-mode-menu-notebook.png") });
+		const before = await notebookWidgets(page).count();
+		await instruct(page, "Add a note that says: quarterly review done.");
+		await expect
+			.poll(() => notebookWidgets(page).count(), { timeout: 30_000 })
+			.toBeGreaterThan(before);
+		await notebookComposer.getByRole("button", { name: "Leave Notebook mode" }).click();
+		await expect(page.getByRole("form", { name: "Research composer" })).toBeVisible();
+
+		// Cut the rich-text note, open a new chat, reload, paste it there.
+		const note = notebookWidgets(page).filter({
+			has: page.locator("h1", { hasText: "Gold notes" }),
+		});
+		await expect(note).toHaveCount(1);
+		const count = await notebookWidgets(page).count();
+		await note.locator("button[data-widget-actions]").click();
+		await page.getByRole("menuitem", { name: "Cut", exact: true }).click();
+		await expect(notebookWidgets(page)).toHaveCount(count - 1);
+		await page.getByRole("button", { name: "New chat" }).first().click();
+		await expect.poll(() => page.url(), { timeout: 30_000 }).not.toBe(originalUrl);
+		await page.reload();
+		const notebook = page.locator('div[data-panel="notebook"]');
+		await expect(notebookWidgets(page)).toHaveCount(0, { timeout: 30_000 });
+		await notebook.getByRole("button", { name: "Paste widgets" }).click();
+		await expect(notebookWidgets(page)).toHaveCount(1);
+		await expect(notebookWidgets(page).locator("h1")).toHaveText("Gold notes");
+		await page.screenshot({ path: test.info().outputPath("8-pasted-in-new-chat.png") });
+		await page.reload();
+		await expect(notebookWidgets(page).locator("h1")).toHaveText("Gold notes", { timeout: 30_000 });
+		await expect(notebookWidgets(page).locator("strong")).toHaveText("trend");
+		await page.goto(originalUrl);
+		await expect(page.getByRole("form", { name: "Research composer" })).toBeVisible({
+			timeout: 30_000,
+		});
 	});
 
 	test("a large notebook with nothing selected: the assistant works from its summary index", async () => {

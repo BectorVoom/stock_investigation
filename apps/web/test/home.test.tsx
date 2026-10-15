@@ -23,6 +23,7 @@ import {
 	jsonResponse,
 } from "./fakeBackend.ts";
 import { makeRun } from "./fixtures.ts";
+import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
 
 let backend: FakeBackend;
@@ -170,7 +171,9 @@ function widgetActionsButton(article: HTMLElement): HTMLElement {
 async function chooseWidgetMenuItem(widgetId: string, itemName: string): Promise<void> {
 	const article = widgetById(widgetId);
 	fireEvent.click(widgetActionsButton(article));
-	const item = await waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+	const item = await waitFor(() =>
+		within(lastOpenMenu()).getByRole("menuitem", { name: itemName }),
+	);
 	fireEvent.click(item);
 }
 
@@ -178,7 +181,7 @@ async function chooseWidgetMenuItem(widgetId: string, itemName: string): Promise
 async function openWidgetMenuItem(widgetId: string, itemName: string): Promise<HTMLElement> {
 	const article = widgetById(widgetId);
 	fireEvent.click(widgetActionsButton(article));
-	return waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+	return waitFor(() => within(lastOpenMenu()).getByRole("menuitem", { name: itemName }));
 }
 
 /** A native footer button of the widget dialog, found by its accessible name. */

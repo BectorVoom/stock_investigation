@@ -5,9 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../../src/api/client.ts";
 import { NotebookPanel } from "../../src/notebook/NotebookPanel.tsx";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
+import {
+	createWidgetClipboardStore,
+	parseWidgetClipboardJson,
+	WIDGET_CLIPBOARD_STORAGE_KEY,
+	type WidgetClipboardStore,
+} from "../../src/notebook/widgetClipboard.ts";
 import type { FakeBackend } from "../fakeBackend.ts";
 import { ALWAYS_VISIBLE } from "../fakeBackend.ts";
 import { WORKSPACE_VIEW } from "../fixtures.ts";
+import { lastOpenMenu } from "../openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import {
 	createNotebookBackend,
@@ -26,7 +33,7 @@ let asked: string[][];
 let origins: unknown[];
 const rootDisposers: (() => void)[] = [];
 
-function createSession(): void {
+function createSession(clipboard?: WidgetClipboardStore): void {
 	const api = createApiClient({ fetch: backend.fetch });
 	asked = [];
 	origins = [];
@@ -45,6 +52,7 @@ function createSession(): void {
 			registry={registry}
 			view={WORKSPACE_VIEW}
 			mode="notebook"
+			clipboard={clipboard}
 			onAskAssistant={(ids) => {
 				asked.push([...ids]);
 			}}
@@ -53,6 +61,35 @@ function createSession(): void {
 			}}
 		/>
 	));
+}
+
+/** A clipboard backed by a plain map, so no test leaks through `localStorage`. */
+function createMemoryClipboard(): {
+	readonly store: WidgetClipboardStore;
+	readonly map: Map<string, string>;
+} {
+	const map = new Map<string, string>();
+	let store!: WidgetClipboardStore;
+	const release = createRoot((dispose) => {
+		store = createWidgetClipboardStore({
+			getItem: (key) => map.get(key) ?? null,
+			setItem: (key, value) => {
+				map.set(key, value);
+			},
+			removeItem: (key) => {
+				map.delete(key);
+			},
+		});
+		return dispose;
+	});
+	rootDisposers.push(release);
+	return { store, map };
+}
+
+function clipboardLiveRegion(): HTMLElement {
+	const live = document.querySelector("output.sr-only[aria-live='polite']");
+	if (!(live instanceof HTMLElement)) throw new Error("no clipboard live region");
+	return live;
 }
 
 function articles(): HTMLElement[] {
@@ -76,7 +113,10 @@ function actionsButton(article: HTMLElement): HTMLElement {
 async function chooseMenuItem(widgetId: string, itemName: string): Promise<void> {
 	const article = articleById(widgetId);
 	fireEvent.click(actionsButton(article));
-	const item = await waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+	// The open menu renders in a portal on <body>, not inside the article.
+	const item = await waitFor(() =>
+		within(lastOpenMenu()).getByRole("menuitem", { name: itemName }),
+	);
 	fireEvent.click(item);
 }
 
@@ -334,6 +374,199 @@ describe("notebook panel", () => {
 		expect(articles()[1]?.textContent).toContain("First paragraph.");
 	});
 
+	it("cuts a widget through its menu and offers paste in the header", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		const paste = screen.getByRole("button", { name: "Paste widgets" });
+		expect(paste.hasAttribute("disabled")).toBe(true);
+		await chooseMenuItem("nb-text", "Cut");
+		// One save removes the widget; the clipboard still holds it.
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
+		await waitFor(() => expect(articles()).toHaveLength(4));
+		expect(document.querySelector('article[data-widget-id="nb-text"]')).toBeNull();
+		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
+		await waitFor(() => expect(paste.hasAttribute("disabled")).toBe(false));
+		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Cut 1 widget."), {
+			timeout: 10_000,
+		});
+	});
+
+	it("persists a cut so a reloaded page reads it back", async () => {
+		const { store: clipboard, map } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		await chooseMenuItem("nb-text", "Cut");
+		await waitFor(() => expect(articles()).toHaveLength(4));
+		// The stored JSON re-parses (no metadata stows away inside `core`,
+		// which the strict contract schema would reject): a reloaded page
+		// sees the same clipboard.
+		const raw = map.get(WIDGET_CLIPBOARD_STORAGE_KEY) ?? null;
+		const reread = parseWidgetClipboardJson(raw);
+		expect(reread?.sourceWorkspaceId).toBe(WORKSPACE_ID);
+		expect(reread?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
+		expect(reread).toEqual(clipboard.content());
+	});
+
+	it("pastes a copy after another widget and selects exactly the pasted widget", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		await chooseMenuItem("nb-text", "Copy");
+		// Copy saves nothing.
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
+		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
+		await chooseMenuItem("nb-metric", "Paste after");
+		// Paste is one save inserting after the anchored widget.
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
+		await waitFor(() => expect(articles()).toHaveLength(6));
+		const ids = articles().map((article) => article.getAttribute("data-widget-id"));
+		expect(ids.slice(0, 2)).toEqual(["nb-text", "nb-metric"]);
+		expect(ids.slice(3)).toEqual(["nb-chart", "nb-table", "nb-research"]);
+		const pasted = ids[2];
+		if (pasted === null || pasted === undefined || ["nb-text", "nb-metric"].includes(pasted))
+			throw new Error("the pasted widget has no fresh id");
+		// The selection lands once the paste save resolves.
+		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull(), {
+			timeout: 10_000,
+		});
+		const selected = articles().filter(
+			(article) => article.getAttribute("data-widget-selected") !== null,
+		);
+		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual([pasted]);
+		expect(selected[0]?.textContent).toContain("First paragraph.");
+		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Pasted 1 widget."), {
+			timeout: 10_000,
+		});
+	});
+
+	it("cuts and pastes several selected widgets from the toolbar and header", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		session.select("nb-text", "replace");
+		session.select("nb-table", "toggle");
+		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
+		fireEvent.click(screen.getByRole("button", { name: "Cut selected widgets" }));
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
+		await waitFor(() => expect(articles()).toHaveLength(3));
+		expect(articles().map((article) => article.getAttribute("data-widget-id"))).toEqual([
+			"nb-metric",
+			"nb-chart",
+			"nb-research",
+		]);
+		// The cut announces only once its save resolves; pasting before that
+		// is disabled (the header button disables while a save is in flight).
+		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Cut 2 widgets."), {
+			timeout: 10_000,
+		});
+		// Nothing is selected after a cut, so the header paste lands at the end.
+		fireEvent.click(screen.getByRole("button", { name: "Paste widgets" }));
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(2));
+		await waitFor(() => expect(articles()).toHaveLength(5));
+		const ids = articles().map((article) => article.getAttribute("data-widget-id"));
+		expect(ids.slice(0, 3)).toEqual(["nb-metric", "nb-chart", "nb-research"]);
+		const pasted = ids.slice(3);
+		expect(new Set(pasted).size).toBe(2);
+		expect(pasted).not.toContain("nb-text");
+		expect(pasted).not.toContain("nb-table");
+		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
+		const selected = articles().filter(
+			(article) => article.getAttribute("data-widget-selected") !== null,
+		);
+		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual(pasted);
+		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Pasted 2 widgets."), {
+			timeout: 10_000,
+		});
+	});
+
+	it("says when research widgets stay in their own chat", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		clipboard.set("ws_other", [
+			{
+				core: {
+					widgetId: "nb-research",
+					type: "research",
+					title: "Demand scenarios",
+					size: "large",
+					componentId: "run_1_table",
+				},
+				origin: { kind: "chat", messageId: null, runId: "run_1", componentId: "run_1_table" },
+			},
+		]);
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		fireEvent.click(screen.getByRole("button", { name: "Paste widgets" }));
+		await waitFor(() =>
+			expect(document.body.textContent).toContain(
+				"1 research result stays in its own chat and was not pasted.",
+			),
+		);
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
+		expect(articles()).toHaveLength(5);
+	});
+
+	it("copies with Ctrl+C and pastes with Ctrl+V on the selected widgets", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		const panel = document.querySelector('section[data-panel="notebook"]');
+		if (!(panel instanceof HTMLElement)) throw new Error("no notebook panel");
+		session.select("nb-chart", "replace");
+		fireEvent.keyDown(panel, { key: "c", ctrlKey: true });
+		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-chart"]);
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
+		fireEvent.keyDown(panel, { key: "v", ctrlKey: true });
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
+		await waitFor(() => expect(articles()).toHaveLength(6));
+		const pastedIds = articles().map((article) => article.getAttribute("data-widget-id"));
+		expect(pastedIds.slice(0, 3)).toEqual(["nb-text", "nb-metric", "nb-chart"]);
+		expect(pastedIds.slice(4)).toEqual(["nb-table", "nb-research"]);
+		expect(pastedIds[3]).not.toBe("nb-chart");
+		expect(articles()[3]?.textContent).toContain("Demand");
+	});
+
+	it("acts with focus on the body, where a header-click selection leaves it", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		// Selecting by clicking the header strip, like an owner does.
+		const grip = articleById("nb-text").querySelector(".wg-grip");
+		if (!(grip instanceof Element)) throw new Error("no widget grip");
+		fireEvent.click(grip);
+		await waitFor(() => expect(screen.queryByText("1 selected")).not.toBeNull());
+		fireEvent.keyDown(document.body, { key: "c", ctrlKey: true });
+		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
+	});
+
+	it("leaves text fields and text selections to the browser", async () => {
+		const { store: clipboard } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		const panel = document.querySelector('section[data-panel="notebook"]');
+		if (!(panel instanceof HTMLElement)) throw new Error("no notebook panel");
+		session.select("nb-text", "replace");
+		// Inside a text field the shortcut is the field's.
+		const field = document.createElement("textarea");
+		panel.appendChild(field);
+		fireEvent.keyDown(field, { key: "c", ctrlKey: true });
+		expect(clipboard.content()).toBeNull();
+		field.remove();
+		// A non-empty text selection is a text copy, never a widget copy.
+		const body = articleById("nb-text").querySelector(".wg-body");
+		if (!(body instanceof HTMLElement)) throw new Error("no widget body");
+		const selection = window.getSelection();
+		if (selection === null) throw new Error("no window selection");
+		selection.removeAllRanges();
+		const range = document.createRange();
+		range.selectNodeContents(body);
+		selection.addRange(range);
+		fireEvent.keyDown(panel, { key: "c", ctrlKey: true });
+		expect(clipboard.content()).toBeNull();
+		selection.removeAllRanges();
+	});
+
 	it("navigates to a widget's source only when it has one", async () => {
 		createSession();
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
@@ -341,15 +574,16 @@ describe("notebook panel", () => {
 		const chart = articleById("nb-chart");
 		fireEvent.click(actionsButton(chart));
 		const source = await waitFor(() =>
-			within(chart).getByRole("menuitem", { name: "Go to source" }),
+			within(lastOpenMenu()).getByRole("menuitem", { name: "Go to source" }),
 		);
 		fireEvent.click(source);
 		expect(origins).toHaveLength(1);
 		// The text widget is owner-made: no source item.
 		const text = articleById("nb-text");
 		fireEvent.click(actionsButton(text));
-		await waitFor(() => within(text).getByRole("menuitem", { name: "Edit…" }));
-		expect(within(text).queryByRole("menuitem", { name: "Go to source" })).toBeNull();
+		const textMenu = await waitFor(() => screen.getByRole("menu", { name: /Actions for/ }));
+		within(textMenu).getByRole("menuitem", { name: "Edit…" });
+		expect(within(textMenu).queryByRole("menuitem", { name: "Go to source" })).toBeNull();
 	});
 
 	it("undoes through the header button when an undo is available", async () => {

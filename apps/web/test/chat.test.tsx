@@ -823,11 +823,12 @@ describe("borderless chat surfaces (background tone, not outlines)", () => {
 		await screen.findByRole("heading", { level: 3, name: "What would you like to research?" });
 		expect((await screen.findAllByRole("list", { name: "Suggestions" })).length).toBeGreaterThan(0);
 		const research = screen.getByRole("form", { name: "Research composer" });
-		fireEvent.click(within(research).getByRole("button", { name: "Notebook" }));
+		fireEvent.click(within(research).getByRole("button", { name: "Choose mode" }));
+		fireEvent.click(await screen.findByRole("menuitemradio", { name: "Notebook" }));
 		await screen.findByRole("form", { name: "Notebook composer" });
 		expect(screen.queryAllByRole("list", { name: "Suggestions" })).toHaveLength(0);
 		const notebook = screen.getByRole("form", { name: "Notebook composer" });
-		fireEvent.click(within(notebook).getByRole("button", { name: "Research" }));
+		fireEvent.click(within(notebook).getByRole("button", { name: "Leave Notebook mode" }));
 		expect((await screen.findAllByRole("list", { name: "Suggestions" })).length).toBeGreaterThan(0);
 		window.location.hash = "";
 	});

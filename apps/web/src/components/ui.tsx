@@ -12,6 +12,7 @@ import {
 	Switch,
 	splitProps,
 } from "solid-js";
+import { Portal } from "solid-js/web";
 import type { ApiFailure } from "../api/http.ts";
 import type { Remote } from "../lib/remote.ts";
 import { PAGES, type ViewName } from "../pages.ts";
@@ -50,7 +51,12 @@ export type IconButtonName =
 	| "arrow-right"
 	| "download"
 	| "copy"
-	| "chat";
+	| "chat"
+	| "scissors"
+	| "clipboard"
+	| "search"
+	| "journal-text"
+	| "plus-square";
 
 function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 	switch (props.name) {
@@ -137,6 +143,40 @@ function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 		case "chat":
 			return (
 				<path d="M2.678 11.894a1 1 0 0 1 .287.801 11 11 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8 8 0 0 0 8 14c3.996 0 7-2.807 7-6s-3.004-6-7-6-7 2.808-7 6c0 1.468.617 2.83 1.678 3.894m-.493 3.905a22 22 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a10 10 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9 9 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105" />
+			);
+		// ADR-0023: widget cut / paste, and the composer's mode menu
+		// (Research, Notebook).
+		case "scissors":
+			return (
+				<path d="M3.5 3.5c-.614-.884-.074-1.962.858-2.5L8 7.226 11.642 1c.932.538 1.472 1.616.858 2.5L8.81 8.61l1.556 2.661a2.5 2.5 0 1 1-.794.637L8 9.73l-1.572 2.177a2.5 2.5 0 1 1-.794-.637L7.19 8.61zm2.5 10a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0m7 0a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0" />
+			);
+		case "clipboard":
+			return (
+				<>
+					<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
+					<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z" />
+				</>
+			);
+		case "search":
+			return (
+				<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+			);
+		// Duplicate in the Notebook: "copy" now means Copy (ADR-0023), and the
+		// two sit side by side in the selection toolbar.
+		case "plus-square":
+			return (
+				<>
+					<path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+					<path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+				</>
+			);
+		case "journal-text":
+			return (
+				<>
+					<path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
+					<path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2" />
+					<path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
+				</>
 			);
 	}
 }
@@ -595,6 +635,59 @@ export interface ActionMenuItem {
 	readonly icon?: IconButtonName;
 	readonly disabled?: boolean;
 	readonly value?: string;
+	/**
+	 * Opt-in radio state (ADR-0023): when ANY item of a menu defines it,
+	 * every item renders as `menuitemradio` with `aria-checked`, and a
+	 * checked item shows a trailing check glyph. Menus without it render
+	 * exactly as before.
+	 */
+	readonly checked?: boolean;
+}
+
+/** The viewport rectangle of a menu's button, as `getBoundingClientRect` reports it. */
+export interface MenuAnchorRect {
+	readonly left: number;
+	readonly top: number;
+	readonly right: number;
+	readonly bottom: number;
+}
+
+const MENU_GAP_PX = 4;
+const MENU_VIEWPORT_MARGIN_PX = 8;
+
+/**
+ * Where an open menu goes, in viewport coordinates (it is `position: fixed`,
+ * so no `overflow` container — the Notebook's narrow scrolling panel, a
+ * widget frame — can clip it). `below-end` hangs under the button with
+ * right edges aligned, `above-start` stands on it with left edges aligned;
+ * either flips to the other side when it does not fit, and the result is
+ * clamped inside the viewport with a small margin.
+ */
+export function placeActionMenu(
+	anchor: MenuAnchorRect,
+	size: { readonly width: number; readonly height: number },
+	viewport: { readonly width: number; readonly height: number },
+	placement: "below-end" | "above-start",
+): { readonly left: number; readonly top: number } {
+	const margin = MENU_VIEWPORT_MARGIN_PX;
+	const below = anchor.bottom + MENU_GAP_PX;
+	const above = anchor.top - MENU_GAP_PX - size.height;
+	const fitsBelow = below + size.height <= viewport.height - margin;
+	const fitsAbove = above >= margin;
+	const top =
+		placement === "above-start"
+			? fitsAbove || !fitsBelow
+				? above
+				: below
+			: fitsBelow || !fitsAbove
+				? below
+				: above;
+	const left = placement === "above-start" ? anchor.left : anchor.right - size.width;
+	const clamp = (value: number, max: number) => Math.max(margin, Math.min(value, max));
+	return {
+		left: clamp(left, viewport.width - size.width - margin),
+		top: clamp(top, viewport.height - size.height - margin),
+	};
 }
 
 /**
@@ -608,6 +701,15 @@ export interface ActionMenuItem {
  * (an `IconButton` with `three-dots`) and items with leading icons plus
  * per-item `disabled` (skipped by arrow keys). Items without icons render
  * exactly as before, so existing uses are unchanged.
+ *
+ * Two opt-in props (ADR-0023, composer's mode menu): `checked` on the items
+ * turns the menu into radios, and `placement="above-start"` opens it upward
+ * from the button's leading edge (the composer sits at the page bottom).
+ * Both default off, so existing menus render and behave exactly as today.
+ *
+ * The open menu renders in a portal on <body> at a fixed position, so no
+ * overflow container clips it. Not for use inside a modal <dialog>: content
+ * outside the dialog's top layer is inert.
  */
 export function ActionMenu(props: {
 	readonly buttonLabel: string;
@@ -618,8 +720,11 @@ export function ActionMenu(props: {
 		readonly disabled?: boolean;
 		readonly widgetActions?: string;
 	};
+	readonly placement?: "below-end" | "above-start";
 }): JSX.Element {
 	const [open, setOpen] = createSignal(false);
+	/** Radio menu: any item defines `checked` (ADR-0023). */
+	const radio = () => props.items.some((item) => item.checked !== undefined);
 	let button: HTMLButtonElement | undefined;
 	let menu: HTMLDivElement | undefined;
 	const itemElements: (HTMLButtonElement | undefined)[] = [];
@@ -641,11 +746,31 @@ export function ActionMenu(props: {
 		return props.items.length - 1;
 	};
 
+	/**
+	 * Pins the open menu to its button in viewport coordinates (see
+	 * `placeActionMenu`). The CSSOM writes are allowed under the app's
+	 * `style-src 'self'`, like the widget drag's. It runs before the first
+	 * paint of the open menu.
+	 */
+	const place = () => {
+		if (button === undefined || menu === undefined) return;
+		const spot = placeActionMenu(
+			button.getBoundingClientRect(),
+			{ width: menu.offsetWidth, height: menu.offsetHeight },
+			{ width: window.innerWidth, height: window.innerHeight },
+			props.placement ?? "below-end",
+		);
+		menu.style.setProperty("left", `${spot.left}px`);
+		menu.style.setProperty("top", `${spot.top}px`);
+	};
+
 	const openAndFocus = (index: number) => {
 		if (props.iconTrigger?.disabled === true) return;
 		setOpen(true);
-		// Focus after Solid renders the menu.
+		// Place and focus after Solid renders the menu (a microtask runs
+		// before the next paint, so the menu never shows unplaced).
 		queueMicrotask(() => {
+			place();
 			focusItem(index);
 		});
 	};
@@ -698,7 +823,9 @@ export function ActionMenu(props: {
 			event.preventDefault();
 			focusItem(props.items.length - 1);
 		} else if (event.key === "Tab") {
-			setOpen(false);
+			// The menu lives at the end of <body>: hand focus back to its
+			// button first, so Tab continues from there in page order.
+			close(true);
 		}
 	};
 
@@ -711,7 +838,16 @@ export function ActionMenu(props: {
 			setOpen(false);
 		};
 		document.addEventListener("pointerdown", onPointerDown);
-		onCleanup(() => document.removeEventListener("pointerdown", onPointerDown));
+		// A fixed menu follows its button when anything scrolls or the
+		// window resizes (capture: scrolls of inner panels do not bubble).
+		const onMove = () => place();
+		window.addEventListener("scroll", onMove, { capture: true, passive: true });
+		window.addEventListener("resize", onMove, { passive: true });
+		onCleanup(() => {
+			document.removeEventListener("pointerdown", onPointerDown);
+			window.removeEventListener("scroll", onMove, { capture: true });
+			window.removeEventListener("resize", onMove);
+		});
 	});
 
 	return (
@@ -758,53 +894,68 @@ export function ActionMenu(props: {
 				)}
 			</Show>
 			<Show when={open()}>
-				<div
-					ref={(element) => {
-						menu = element;
-					}}
-					role="menu"
-					aria-label={props.menuLabel}
-					class={
-						props.items.some((item) => item.icon !== undefined)
-							? "absolute right-0 z-20 min-w-44 rounded border border-slate-200 bg-white p-1"
-							: "absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
-					}
-					onKeyDown={onMenuKeyDown}
-				>
-					<For each={props.items}>
-						{(item, index) => (
-							<button
-								ref={(element) => {
-									itemElements[index()] = element;
-								}}
-								type="button"
-								role="menuitem"
-								data-menu-value={item.value}
-								disabled={item.disabled}
-								class={
-									item.icon === undefined
-										? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-										: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-								}
-								onClick={() => {
-									if (item.disabled === true) return;
-									setOpen(false);
-									button?.focus();
-									item.onSelect();
-								}}
-							>
-								<Show when={item.icon}>
-									{(glyph) => (
-										<span aria-hidden="true" class="inline-flex shrink-0">
-											<IconGlyph name={glyph()} />
-										</span>
-									)}
-								</Show>
-								<span>{item.label}</span>
-							</button>
-						)}
-					</For>
-				</div>
+				{/* A portal on <body>: an ancestor with `container-type` (the
+				    widget grid) or a transform is the containing block of a
+				    fixed descendant, and the Notebook's scrolling panel then
+				    clipped the menu. Placed by `place()`. */}
+				<Portal>
+					<div
+						ref={(element) => {
+							menu = element;
+						}}
+						role="menu"
+						aria-label={props.menuLabel}
+						class={
+							props.items.some((item) => item.icon !== undefined)
+								? "fixed top-0 left-0 z-50 min-w-44 rounded border border-slate-200 bg-white p-1"
+								: "fixed top-0 left-0 z-50 min-w-32 rounded bg-slate-100 p-1"
+						}
+						onKeyDown={onMenuKeyDown}
+					>
+						<For each={props.items}>
+							{(item, index) => (
+								<>
+									{/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the role is menuitemradio (which supports aria-checked) whenever any item defines checked */}
+									<button
+										ref={(element) => {
+											itemElements[index()] = element;
+										}}
+										type="button"
+										role={radio() ? "menuitemradio" : "menuitem"}
+										aria-checked={radio() ? item.checked === true : undefined}
+										data-menu-value={item.value}
+										disabled={item.disabled}
+										class={
+											item.icon === undefined && !radio()
+												? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+												: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+										}
+										onClick={() => {
+											if (item.disabled === true) return;
+											setOpen(false);
+											button?.focus();
+											item.onSelect();
+										}}
+									>
+										<Show when={item.icon}>
+											{(glyph) => (
+												<span aria-hidden="true" class="inline-flex shrink-0">
+													<IconGlyph name={glyph()} />
+												</span>
+											)}
+										</Show>
+										<span class={radio() ? "flex-1" : undefined}>{item.label}</span>
+										<Show when={item.checked === true}>
+											<span aria-hidden="true" class="inline-flex shrink-0">
+												<IconGlyph name="check-lg" />
+											</span>
+										</Show>
+									</button>
+								</>
+							)}
+						</For>
+					</div>
+				</Portal>
 			</Show>
 		</div>
 	);

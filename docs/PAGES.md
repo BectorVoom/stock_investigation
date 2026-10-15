@@ -215,7 +215,9 @@ Ask research questions and read the answers, with their sources and run progress
   group; below `lg` the form stays pinned to the viewport bottom.
 - The question form (question, horizon, markets and the one-time spend consent,
   with a read-only agent summary and no "Limits and cost" disclosure; a
-  Research / Notebook target toggle beside the input — the Notebook target
+  round + button at the input's leading edge opens the "Composer mode" menu
+  with Research and Notebook, the current one checked (ADR-0023, as in
+  ChatGPT) — Notebook shows as a removable "Notebook" chip beside the +,
   hides the research-only fields, shows the selection chips and sends the
   instruction to the notebook assistant) and the
   evidence records drawer for one run, session notices and load errors.
@@ -232,6 +234,13 @@ Ask research questions and read the answers, with their sources and run progress
   button. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header
   and toolbar; dragging near its top or bottom edge scrolls it.
+- Cut, copy and paste widgets (ADR-0023): Cut / Copy / Paste after in each
+  widget's menu, Cut / Copy in the selection toolbar, a Paste button in the
+  Notebook header, and ⌘X / ⌘C / ⌘V (Ctrl elsewhere) on the selected widgets
+  when focus is not in a text field. Cut removes at once (Undo restores);
+  paste inserts fresh copies after the last selected widget (or at the end)
+  and selects them. One app-wide widget clipboard (kept in this browser), so
+  widgets move between chats; a research result stays in its own chat.
 - Text widgets edit in place, Notion style: click the note (or Enter on it)
   and type formatted text — `# `/`## `/`### ` headings, `- `, `1. `, `[] `
   and `> ` blocks, a `/` block menu, a selection toolbar (bold, italic,
