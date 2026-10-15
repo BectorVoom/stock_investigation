@@ -662,6 +662,10 @@ export function ActionMenu(props: {
 	readonly placement?: "below-end" | "above-start";
 }): JSX.Element {
 	const [open, setOpen] = createSignal(false);
+	/** Radio menu: any item defines `checked` (ADR-0023). */
+	const radio = () => props.items.some((item) => item.checked !== undefined);
+	const position = () =>
+		props.placement === "above-start" ? "absolute bottom-full left-0 mb-1" : "absolute right-0";
 	let button: HTMLButtonElement | undefined;
 	let menu: HTMLDivElement | undefined;
 	const itemElements: (HTMLButtonElement | undefined)[] = [];
@@ -808,8 +812,8 @@ export function ActionMenu(props: {
 					aria-label={props.menuLabel}
 					class={
 						props.items.some((item) => item.icon !== undefined)
-							? `${props.placement === "above-start" ? "absolute bottom-full left-0 mb-1" : "absolute right-0"} z-20 min-w-44 rounded border border-slate-200 bg-white p-1`
-							: `${props.placement === "above-start" ? "absolute bottom-full left-0 mb-1" : "absolute right-0"} z-20 min-w-32 rounded bg-slate-100 p-1`
+							? `${position()} z-20 min-w-44 rounded border border-slate-200 bg-white p-1`
+							: `${position()} z-20 min-w-32 rounded bg-slate-100 p-1`
 					}
 					onKeyDown={onMenuKeyDown}
 				>
@@ -822,21 +826,12 @@ export function ActionMenu(props: {
 										itemElements[index()] = element;
 									}}
 									type="button"
-									role={
-										props.items.some((entry) => entry.checked !== undefined)
-											? "menuitemradio"
-											: "menuitem"
-									}
-									aria-checked={
-										props.items.some((entry) => entry.checked !== undefined)
-											? item.checked === true
-											: undefined
-									}
+									role={radio() ? "menuitemradio" : "menuitem"}
+									aria-checked={radio() ? item.checked === true : undefined}
 									data-menu-value={item.value}
 									disabled={item.disabled}
 									class={
-										item.icon === undefined &&
-										props.items.every((entry) => entry.checked === undefined)
+										item.icon === undefined && !radio()
 											? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
 											: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
 									}
@@ -854,15 +849,7 @@ export function ActionMenu(props: {
 											</span>
 										)}
 									</Show>
-									<span
-										class={
-											props.items.some((entry) => entry.checked !== undefined)
-												? "flex-1"
-												: undefined
-										}
-									>
-										{item.label}
-									</span>
+									<span class={radio() ? "flex-1" : undefined}>{item.label}</span>
 									<Show when={item.checked === true}>
 										<span aria-hidden="true" class="inline-flex shrink-0">
 											<IconGlyph name="check-lg" />
