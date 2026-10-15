@@ -76,20 +76,28 @@ describe("composer target (integration)", () => {
 		mountApp(backend);
 		await chatReady();
 		const research = await screen.findByRole("form", { name: "Research composer" });
+		// The old target buttons are gone; the mode lives in the + menu.
+		expect(within(research).queryByRole("button", { name: "Research" })).toBeNull();
+		expect(within(research).queryByRole("button", { name: "Notebook" })).toBeNull();
+		expect(within(research).getByRole("button", { name: "Choose mode" })).toBeDefined();
+		expect(within(research).queryByRole("button", { name: "Leave Notebook mode" })).toBeNull();
+		fireEvent.click(within(research).getByRole("button", { name: "Choose mode" }));
+		const menu = await screen.findByRole("menu", { name: "Composer mode" });
 		expect(
-			within(research).getByRole("button", { name: "Research" }).getAttribute("aria-pressed"),
+			within(menu).getByRole("menuitemradio", { name: "Research" }).getAttribute("aria-checked"),
 		).toBe("true");
 		expect(
-			within(research).getByRole("button", { name: "Notebook" }).getAttribute("aria-pressed"),
+			within(menu).getByRole("menuitemradio", { name: "Notebook" }).getAttribute("aria-checked"),
 		).toBe("false");
 		expect(within(research).getByText(/Options:/)).toBeDefined();
 
-		fireEvent.click(within(research).getByRole("button", { name: "Notebook" }));
+		fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Notebook" }));
 		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
 		expect(within(notebook).queryByText(/Options:/)).toBeNull();
 		expect(within(notebook).queryByText(/Change in Settings/)).toBeNull();
 		expect(within(notebook).getByText("About the whole notebook")).toBeDefined();
 		expect(within(notebook).getByRole("button", { name: "Send instruction" })).toBeDefined();
+		expect(within(notebook).getByRole("button", { name: "Leave Notebook mode" })).toBeDefined();
 	});
 
 	it("defaults to Notebook in Notebook-first and keeps the draft across the switch", async () => {
@@ -109,7 +117,9 @@ describe("composer target (integration)", () => {
 		await chatReady();
 		fireEvent.click(screen.getAllByRole("button", { name: "Focus Notebook" })[0] as HTMLElement);
 		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
-		fireEvent.click(within(notebook).getByRole("button", { name: "Research" }));
+		fireEvent.click(within(notebook).getByRole("button", { name: "Choose mode" }));
+		const menu = await screen.findByRole("menu", { name: "Composer mode" });
+		fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Research" }));
 		await screen.findByRole("form", { name: "Research composer" });
 	});
 
@@ -172,9 +182,8 @@ describe("composer target (integration)", () => {
 		});
 		// The pills update live while typing: the draft names the notebook.
 		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
-		expect(
-			within(notebook).getByRole("button", { name: "Notebook" }).getAttribute("aria-pressed"),
-		).toBe("true");
+		// The chip makes that routing visible.
+		expect(within(notebook).getByRole("button", { name: "Leave Notebook mode" })).toBeDefined();
 		// Dropping the mention routes back to Research.
 		fireEvent.input(within(notebook).getByLabelText("Instruction"), {
 			target: { value: "gold prices" },
@@ -190,12 +199,14 @@ describe("composer target (integration)", () => {
 			target: { value: "add a widget for gold" },
 		});
 		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
-		fireEvent.click(within(notebook).getByRole("button", { name: "Research" }));
+		fireEvent.click(within(notebook).getByRole("button", { name: "Choose mode" }));
+		const menu = await screen.findByRole("menu", { name: "Composer mode" });
+		fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Research" }));
 		// The draft still names a widget, but the manual choice holds.
 		const backToResearch = await screen.findByRole("form", { name: "Research composer" });
 		expect(
-			within(backToResearch).getByRole("button", { name: "Research" }).getAttribute("aria-pressed"),
-		).toBe("true");
+			within(backToResearch).queryByRole("button", { name: "Leave Notebook mode" }),
+		).toBeNull();
 	});
 });
 
