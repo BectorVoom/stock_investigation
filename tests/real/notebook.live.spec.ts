@@ -231,7 +231,9 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		// Focus Notebook, select the note, ask for a chart from its numbers.
 		await page.getByRole("button", { name: "Focus Notebook" }).first().click();
 		const note = notebookWidgets(page).first();
-		await note.getByRole("button", { name: "Select “Revenue note”" }).click();
+		// Untitled frames (ADR-0021): a pointer selects with the grip.
+		await note.hover();
+		await note.locator(".wg-grip").click();
 		await expect(note).toHaveAttribute("data-widget-selected", "");
 		await instruct(
 			page,
@@ -244,7 +246,8 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 
 		// Select the chart alone and ask for it to be large.
 		const chart = page.locator('div[data-panel="notebook"] article[data-widget-type="chart"]');
-		await chart.locator(".wg-title").click();
+		await chart.hover();
+		await chart.locator(".wg-grip").click();
 		await expect(chart).toHaveAttribute("data-widget-selected", "");
 		const sizeBefore = (await chart.getAttribute("data-widget-size")) ?? "";
 		await instruct(page, "Make this chart large.");
@@ -262,6 +265,116 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		const reloadedNotebook = await notebook.boundingBox();
 		expect((reloadedNotebook?.width ?? 0) > (reloadedChat?.width ?? 0) * 2).toBe(true);
 		await page.screenshot({ path: test.info().outputPath("3-after-reload.png") });
+	});
+
+	test("a gold instruction from fresh Chat-first adds a market chart", async () => {
+		test.setTimeout(900_000);
+		const page = activePage();
+		// A new chat: fresh state, Chat-first, nothing selected.
+		await page.getByRole("link", { name: "Chat", exact: true }).click();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
+		await expect(page).toHaveURL(/#\/chat\/ws_/);
+		const freshChatBox = await page.locator('section[data-panel="chat"]').boundingBox();
+		const freshNotebookBox = await page.locator('div[data-panel="notebook"]').boundingBox();
+		expect((freshChatBox?.width ?? 0) > (freshNotebookBox?.width ?? 0) * 2).toBe(true);
+
+		// The draft names the notebook, so the pills route to the notebook
+		// assistant live, before anything is sent.
+		const research = page.getByRole("form", { name: "Research composer" });
+		await research
+			.getByRole("textbox", { name: "Question" })
+			.fill("Create a chart of gold prices over the past year in the Notebook");
+		const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
+		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await instruct(page, "Create a chart of gold prices over the past year in the Notebook");
+		await expect(
+			page.locator('div[data-panel="notebook"] article[data-widget-type="line-chart"]'),
+		).toHaveCount(1);
+		await expect(page.locator("[data-notebook-turn]").last()).toContainText(/added/i);
+		await page.screenshot({ path: test.info().outputPath("5-gold-chart.png") });
+
+		// The stored notebook names the gold series and range: no invented numbers.
+		const workspaceId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+		if (workspaceId === undefined) throw new Error(`no open chat in ${page.url()}`);
+		const read = await fetch(`${API_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`, {
+			headers: ownerHeaders(API_ORIGIN),
+		});
+		expect(read.status).toBe(200);
+		const stored = (await read.json()) as {
+			notebook: {
+				widgets: {
+					widgetId: string;
+					type: string;
+					seriesIds?: readonly string[];
+					range?: string;
+				}[];
+			};
+		};
+		const chart = stored.notebook.widgets.find((widget) => widget.type === "line-chart");
+		expect(chart?.seriesIds).toEqual(["twelve-data:XAU/USD"]);
+		expect(chart?.range).toBe("1y");
+
+		// The chart renders through Home's component: a plotted series, or
+		// Home's stated reason when the provider key is not configured.
+		const goldFrame = page.locator(
+			'div[data-panel="notebook"] article[data-widget-type="line-chart"]',
+		);
+		await expect
+			.poll(
+				async () =>
+					(await goldFrame.locator("g[data-series] path").count()) > 0 ||
+					/unavailable/i.test(await goldFrame.innerText()),
+				{ timeout: 120_000, intervals: [1_000] },
+			)
+			.toBe(true);
+		console.log(`gold chart widget: ${await goldFrame.innerText()}`);
+		// Notebook frames show no title (ADR-0021).
+		await expect(page.locator('div[data-panel="notebook"] .wg-title')).toHaveCount(0);
+	});
+
+	test("a text widget edits in place as rich text and keeps it across a reload", async () => {
+		const page = activePage();
+		const notebook = page.locator('div[data-panel="notebook"]');
+		await notebook.getByRole("button", { name: "Add widget" }).click();
+		await page.getByRole("menuitem", { name: "Text" }).click();
+		const dialog = page.getByRole("dialog", { name: /Edit text widget/ });
+		await dialog.getByRole("button", { name: "Cancel" }).click();
+		const note = notebookWidgets(page).last();
+		await note.locator("[data-text-view]").click({ position: { x: 8, y: 8 } });
+		const editor = page.getByRole("textbox", { name: "Edit note" });
+		await expect(editor).toBeVisible();
+		await editor.press("ControlOrMeta+a");
+		await editor.pressSequentially("# Gold notes");
+		await expect(note.locator(".ProseMirror h1")).toHaveText("Gold notes");
+		await editor.press("Enter");
+		await editor.pressSequentially("Watch the trend.");
+		const word = await note.locator(".ProseMirror p").evaluate((paragraph) => {
+			const text = paragraph.firstChild;
+			if (text === null) throw new Error("no paragraph text");
+			const range = document.createRange();
+			const at = (text.textContent ?? "").indexOf("trend");
+			range.setStart(text, at);
+			range.setEnd(text, at + "trend".length);
+			const rect = range.getBoundingClientRect();
+			return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+		});
+		await page.mouse.dblclick(word.x, word.y);
+		await expect(page.getByRole("toolbar", { name: "Formatting" })).toBeVisible();
+		await editor.press("ControlOrMeta+b");
+		await expect(note.locator(".ProseMirror strong")).toHaveText("trend");
+		await editor.press("Escape");
+		await expect(editor).toBeHidden();
+		await page.screenshot({ path: test.info().outputPath("6-rich-text.png") });
+		await page.reload();
+		const reloaded = notebookWidgets(page).last();
+		await expect(reloaded.locator("h1")).toHaveText("Gold notes", { timeout: 30_000 });
+		await expect(reloaded.locator("strong")).toHaveText("trend");
 	});
 
 	test("a large notebook with nothing selected: the assistant works from its summary index", async () => {
@@ -311,10 +424,25 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		);
 		await expect(notebookWidgets(page)).toHaveCount(200, { timeout: 30_000 });
 		const index = notebookWidgets(page).last();
-		await expect(index.locator(".wg-title")).toHaveText("Index");
+		// The title is the frame's accessible name (Notebook frames hide it).
+		await expect(index).toHaveAccessibleName("Index");
 		const indexText = await index.innerText();
 		console.log(`index widget: ${indexText}`);
 		for (const title of lastTitles) expect(indexText).toContain(title);
 		await page.screenshot({ path: test.info().outputPath("4-large-notebook-index.png") });
+
+		// 200 widgets scroll inside the panel, not the page.
+		const scroller = page.locator("[data-notebook-scroll]");
+		const sizes = await scroller.evaluate((element) => ({
+			scrollHeight: element.scrollHeight,
+			clientHeight: element.clientHeight,
+			pageOverflow: document.documentElement.scrollHeight - window.innerHeight,
+		}));
+		expect(sizes.scrollHeight).toBeGreaterThan(sizes.clientHeight * 5);
+		await scroller.evaluate((element) => element.scrollTo({ top: 0 }));
+		await expect(notebookWidgets(page).first()).toBeInViewport();
+		await scroller.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+		await expect(index).toBeInViewport();
+		console.log(`notebook scroller: ${JSON.stringify(sizes)}`);
 	});
 });

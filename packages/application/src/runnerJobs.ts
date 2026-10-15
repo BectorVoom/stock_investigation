@@ -18,7 +18,6 @@ import {
 	CONVERSATION_CONTEXT_LIMITS,
 	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
-	MARKET_LIMITS,
 	parseMarketSeriesId,
 	parseStockId,
 } from "@research/contracts";
@@ -45,6 +44,7 @@ import {
 	googleSuccessPatch,
 	googleTerminalPatch,
 } from "./googleCalendar.ts";
+import { unionSeriesIds } from "./marketData.ts";
 import {
 	type NotebookClaimData,
 	notebookAssistedEffects,
@@ -638,9 +638,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				if (!granted) continue;
 				if (job.kind === "market-refresh") {
 					const dashboard = await marketDashboard(runner.ownerId);
-					const ids = distinctDashboardSeriesIds(dashboard.widgets).slice(
-						0,
-						MARKET_LIMITS.maxSeries,
+					// ADR-0021: the union of the Home dashboard's series
+					// (first) and every notebook's market series,
+					// de-duplicated, at most maxTrackedSeries.
+					const ids = unionSeriesIds(
+						distinctDashboardSeriesIds(dashboard.widgets),
+						await deps.notebooks.listMarketSeriesIds(runner.ownerId),
 					);
 					const latest = await deps.market.getLatestObservedOn(runner.ownerId, ids);
 					const claimedMarket: ClaimedJob = {
@@ -1049,12 +1052,14 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.approvalRequest = null;
 					const built = await marketEffects(request);
 					if (!built.ok) return built;
-					// S4a: store only series on the owner's CURRENT dashboard —
-					// the dashboard may have changed since the claim. Dropped
-					// series are counted in the audit detail, never stored.
-					const current = new Set(
-						distinctDashboardSeriesIds((await marketDashboard(runner.ownerId)).widgets),
-					);
+					// S4a: store only series on the owner's CURRENT dashboard or
+					// in a CURRENT notebook — either may have changed since the
+					// claim. Dropped series are counted in the audit detail,
+					// never stored.
+					const current = new Set([
+						...distinctDashboardSeriesIds((await marketDashboard(runner.ownerId)).widgets),
+						...(await deps.notebooks.listMarketSeriesIds(runner.ownerId)),
+					]);
 					const kept = built.value.marketSeries.filter((entry) => current.has(entry.seriesId));
 					droppedMarketSeries = built.value.marketSeries.length - kept.length;
 					effects = { ...built.value, marketSeries: kept };

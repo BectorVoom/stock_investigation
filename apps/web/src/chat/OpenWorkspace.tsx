@@ -27,6 +27,7 @@ import {
 import { Composer, type ComposerTarget } from "./Composer.tsx";
 import { Conversation, type Message } from "./Conversation.tsx";
 import { focusComposerBox } from "./composerFocus.ts";
+import { mentionsNotebook } from "./composerTarget.ts";
 import { ModeSwitch } from "./ModeSwitch.tsx";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
 
@@ -91,12 +92,15 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	let suggestionNonce = 0;
 
 	// The composer target: the owner's manual choice wins; otherwise Notebook
-	// when Notebook-first or when widgets are selected, Research otherwise.
+	// when Notebook-first, when widgets are selected, or when the draft
+	// names the notebook or a widget — otherwise Research.
 	const [targetManual, setTargetManual] = createSignal<ComposerTarget | null>(null);
+	const [composerDraft, setComposerDraft] = createSignal("");
 	const target = createMemo((): ComposerTarget => {
 		const manual = targetManual();
 		if (manual !== null) return manual;
 		if (props.mode === "notebook" || notebookSession.selection().length > 0) return "notebook";
+		if (mentionsNotebook(composerDraft())) return "notebook";
 		return "research";
 	});
 	const selectedWidgets = createMemo(() => {
@@ -416,6 +420,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							target={target()}
 							onTargetChange={setTargetManual}
 							selection={selectedWidgets()}
+							onDraftChange={setComposerDraft}
 							onRemoveSelection={(widgetId) => {
 								if (notebookSession.selection().includes(widgetId)) {
 									notebookSession.select(widgetId, "toggle");
@@ -477,6 +482,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 				<NotebookPanel
 					session={notebookSession}
+					api={props.api}
 					registry={props.registry}
 					view={session.view()}
 					mode={props.mode}

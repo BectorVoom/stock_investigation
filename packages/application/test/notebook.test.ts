@@ -156,6 +156,9 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 		async listTurns() {
 			return [...notebookStore.turns];
 		},
+		async listMarketSeriesIds() {
+			return [];
+		},
 	};
 	const workspaces: WorkspaceRepository = {
 		list: async () => [],
@@ -286,6 +289,12 @@ function service(f: Fakes, rateLimiter?: RateLimiter) {
 		jobs: f.jobs,
 		chat: f.chat,
 		settings: f.settings,
+		market: {
+			getSeriesMeta: async () => [],
+			getLatestObservedOn: async () => new Map(),
+			getObservations: async () => [],
+			deleteSeriesNotIn: async () => 0,
+		},
 		unitOfWork: f.unitOfWork,
 		clock: f.clock,
 		ids: f.ids,

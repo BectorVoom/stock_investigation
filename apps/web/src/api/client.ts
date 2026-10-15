@@ -525,6 +525,20 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 		},
 
+		/**
+		 * Live series of the notebook's market widgets (ADR-0021), in the Home
+		 * data shape; conditional on the ETag like `getHomeData`.
+		 */
+		getNotebookMarketData: (
+			workspaceId: string,
+			etag: string | null = null,
+		): Promise<ApiResult<Conditional<HomeDataResponse>>> =>
+			conditionalGet(
+				`${workspaces}/${segment(workspaceId)}/notebook/market-data`,
+				homeDataResponseSchema,
+				etag,
+			),
+
 		/* ----- home dashboard (FR-017) ----- */
 		getHomeDashboard: (): Promise<ApiResult<HomeDashboardResponse>> =>
 			requestJson(

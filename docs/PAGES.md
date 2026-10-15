@@ -234,7 +234,23 @@ Ask research questions and read the answers, with their sources and run progress
   evidence records drawer for one run, session notices and load errors.
 - The Notebook panel: the widgets saved from this conversation and made here,
   with the notebook assistant one instruction away; a collapsed secondary
-  panel mounts none of it.
+  panel mounts none of it. The five market widget types (market metric, line
+  chart, stock table, indicator table, earnings calendar) name market series
+  by id and render live data through the same Home widget components (same
+  numbers, units, as-of dates, sources and unavailable states); they are
+  added from the Add menu through Home's form (series, range, days ahead),
+  edited in the same form, and reloaded only when the named series change —
+  a series never refreshed queues one market-data refresh by itself. The
+  earnings calendar reads the Watchlist page's stocks with its own refresh
+  button. Titles stay in the data but the frames hide them.
+- The Notebook's widget list scrolls inside the panel, below its fixed header
+  and toolbar; dragging near its top or bottom edge scrolls it.
+- Text widgets edit in place, Notion style: click the note (or Enter on it)
+  and type formatted text — `# `/`## `/`### ` headings, `- `, `1. `, `[] `
+  and `> ` blocks, a `/` block menu, a selection toolbar (bold, italic,
+  strike, code, link) and ⌘B/⌘I/⌘K; Escape or clicking away saves and
+  leaves; to-dos toggle without opening the editor. Stored as the Markdown
+  subset the assistant also writes.
 
 **Not here**
 

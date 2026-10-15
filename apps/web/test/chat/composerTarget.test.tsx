@@ -12,6 +12,7 @@ import {
 	notebookFailureLink,
 	notebookFailureText,
 } from "../../src/chat/Composer.tsx";
+import { mentionsNotebook } from "../../src/chat/composerTarget.ts";
 import type { Remote } from "../../src/lib/remote.ts";
 import {
 	initialServerState,
@@ -160,6 +161,61 @@ describe("composer target (integration)", () => {
 		fireEvent.click(within(notebook).getByRole("button", { name: "Send instruction" }));
 		const alert = await within(notebook).findByText(/database unavailable/);
 		expect(alert.closest('[role="alert"]')?.textContent).toContain("INTERNAL");
+	});
+
+	it("routes to the Notebook target while the draft names the notebook", async () => {
+		mountApp(backend);
+		await chatReady();
+		const research = await screen.findByRole("form", { name: "Research composer" });
+		fireEvent.input(within(research).getByLabelText("Question"), {
+			target: { value: "Create a chart of gold prices in the Notebook" },
+		});
+		// The pills update live while typing: the draft names the notebook.
+		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
+		expect(
+			within(notebook).getByRole("button", { name: "Notebook" }).getAttribute("aria-pressed"),
+		).toBe("true");
+		// Dropping the mention routes back to Research.
+		fireEvent.input(within(notebook).getByLabelText("Instruction"), {
+			target: { value: "gold prices" },
+		});
+		await screen.findByRole("form", { name: "Research composer" });
+	});
+
+	it("a manual pill choice wins over a draft that names a widget", async () => {
+		mountApp(backend);
+		await chatReady();
+		const research = await screen.findByRole("form", { name: "Research composer" });
+		fireEvent.input(within(research).getByLabelText("Question"), {
+			target: { value: "add a widget for gold" },
+		});
+		const notebook = await screen.findByRole("form", { name: "Notebook composer" });
+		fireEvent.click(within(notebook).getByRole("button", { name: "Research" }));
+		// The draft still names a widget, but the manual choice holds.
+		const backToResearch = await screen.findByRole("form", { name: "Research composer" });
+		expect(
+			within(backToResearch).getByRole("button", { name: "Research" }).getAttribute("aria-pressed"),
+		).toBe("true");
+	});
+});
+
+describe("mentionsNotebook", () => {
+	const cases: { readonly text: string; readonly expected: boolean }[] = [
+		{ text: "create a widget in the Notebook showing a chart", expected: true },
+		{ text: "Create a chart of gold prices over the past year in the Notebook", expected: true },
+		{ text: "add a WIDGET for gold", expected: true },
+		{ text: "open my notebooks", expected: true },
+		{ text: "notebook", expected: true },
+		{ text: "ノートブックに金価格のチャートを追加", expected: true },
+		{ text: "ウィジェットを追加して", expected: true },
+		{ text: "Which storage products will see demand growth?", expected: false },
+		{ text: "noteworthy gadgets", expected: false },
+		{ text: "somewidgets here", expected: false },
+		{ text: "ノート", expected: false },
+		{ text: "", expected: false },
+	];
+	it.each(cases)("mentionsNotebook($text) is $expected", ({ text, expected }) => {
+		expect(mentionsNotebook(text)).toBe(expected);
 	});
 });
 

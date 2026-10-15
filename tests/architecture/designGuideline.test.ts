@@ -35,6 +35,12 @@ const CHAT_PREFIX = "apps/web/src/chat/";
 const FORBIDDEN_LIGHT_TEXT = ["50", "100", "200", "300", "400", "500"] as const;
 /** Guideline section 7: `h1` is the app name and lives only here. */
 const H1_ALLOWED_FILES = ["apps/web/src/App.tsx"] as const;
+/**
+ * Guideline section 7: notebook rich-text headings (ADR-0021, task W4) render
+ * the Markdown `#`/`##` as `h1`/`h2` inside the text widget's own `article`,
+ * so each widget keeps its article-scoped outline. No other file needs one.
+ */
+const H1_ALLOWLIST: readonly string[] = ["apps/web/src/notebook/richText/RichTextView.tsx"];
 /** Guideline section 7: `h2` is the page title and lives only in `PageHeader`. */
 const H2_ALLOWED_FILES = ["apps/web/src/components/ui.tsx"] as const;
 /**
@@ -42,7 +48,10 @@ const H2_ALLOWED_FILES = ["apps/web/src/components/ui.tsx"] as const;
  * component-scoped `h3`/`h4`, so no file needs an `h2` exception today. Any
  * future `h2` in the registry must add a commented entry here.
  */
-const H2_ALLOWLIST: readonly string[] = [];
+const H2_ALLOWLIST: readonly string[] = [
+	// Notebook rich-text headings (ADR-0021, task W4): see H1_ALLOWLIST above.
+	"apps/web/src/notebook/richText/RichTextView.tsx",
+];
 /** Guideline section 10: the chart palette is the only hex colour in UI source. */
 const HEX_ALLOWED_FILES = ["packages/ui-registry/src/charts/chartMath.ts"] as const;
 
@@ -157,7 +166,7 @@ function checkSourceFile(file: string, text: string): Violation[] {
 		for (const match of content.matchAll(LIGHT_SECONDARY_TEXT)) {
 			violations.push(violation(file, lineNumber, "secondary-text", match[0] ?? ""));
 		}
-		if (!allows(H1_ALLOWED_FILES, file)) {
+		if (!allows(H1_ALLOWED_FILES, file) && !allows(H1_ALLOWLIST, file)) {
 			for (const match of content.matchAll(H1)) {
 				violations.push(violation(file, lineNumber, "heading-level", match[0] ?? ""));
 			}

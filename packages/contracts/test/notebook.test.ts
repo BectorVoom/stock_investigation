@@ -7,15 +7,19 @@ import { describe, expect, it } from "vitest";
 import { MAX_REQUEST_BODY_BYTES } from "../src/api.ts";
 import {
 	EMPTY_NOTEBOOK,
+	homeWidgetAsNotebookWidget,
+	isNotebookMarketWidget,
 	NOTEBOOK_LIMITS,
 	NOTEBOOK_WIDGET_TYPE_META,
 	NOTEBOOK_WIDGET_TYPES,
 	notebookAssistRequestSchema,
 	notebookCapacityProblem,
 	notebookContentBytes,
+	notebookMarketSeriesIds,
 	notebookResponseSchema,
 	notebookSchema,
 	notebookTurnSchema,
+	notebookWidgetAsHomeWidget,
 	notebookWidgetCoreSchema,
 	notebookWidgetSchema,
 	putNotebookRequestSchema,
@@ -41,11 +45,16 @@ const TEXT_WIDGET = {
 } as const;
 
 describe("notebook widgets", () => {
-	it("knows the five widget types with their sizes", () => {
+	it("knows the widget types with their sizes, Home's market types included", () => {
 		expect([...NOTEBOOK_WIDGET_TYPES].sort()).toEqual([
 			"chart",
+			"earnings-calendar",
+			"indicator-table",
+			"line-chart",
+			"market-metric",
 			"metric",
 			"research",
+			"stock-table",
 			"table",
 			"text",
 		]);
@@ -300,5 +309,64 @@ describe("turns and owner API schemas", () => {
 			workspaceId: "ws_1",
 			question: "Q?",
 		});
+	});
+});
+
+describe("notebook market widgets (ADR-0021)", () => {
+	const GOLD_CHART = {
+		widgetId: "w-gold",
+		type: "line-chart",
+		title: "Gold, past year",
+		size: "medium",
+		seriesIds: ["twelve-data:XAU/USD"],
+		range: "1y",
+	} as const;
+
+	it("accepts each Home widget type with exactly Home's fields", () => {
+		expectAccepted(notebookWidgetCoreSchema, GOLD_CHART);
+		expectAccepted(notebookWidgetCoreSchema, {
+			widgetId: "w-m",
+			type: "market-metric",
+			title: "VIX",
+			size: "small",
+			seriesId: "fred:VIXCLS",
+		});
+		expectAccepted(notebookWidgetCoreSchema, {
+			widgetId: "w-e",
+			type: "earnings-calendar",
+			title: "Earnings",
+			size: "large",
+			daysAhead: 90,
+		});
+		expectRejected(notebookWidgetCoreSchema, { ...GOLD_CHART, seriesIds: ["gold"] });
+		expectRejected(notebookWidgetCoreSchema, { ...GOLD_CHART, points: [] });
+	});
+
+	it("refuses a widget that repeats a series", () => {
+		expectRejected(notebookWidgetCoreSchema, {
+			...GOLD_CHART,
+			seriesIds: ["twelve-data:XAU/USD", "twelve-data:XAU/USD"],
+		});
+	});
+
+	it("round-trips through the Home widget form", () => {
+		const parsed = notebookWidgetCoreSchema.parse(GOLD_CHART);
+		if (!isNotebookMarketWidget(parsed)) throw new Error("expected a market widget");
+		const home = notebookWidgetAsHomeWidget(parsed);
+		expect(home.type).toBe("line-chart");
+		expect(homeWidgetAsNotebookWidget(home)).toEqual(parsed);
+		expect(notebookMarketSeriesIds([parsed, parsed])).toEqual(["twelve-data:XAU/USD"]);
+	});
+
+	it("caps the distinct series a notebook may grow to", () => {
+		const many = Array.from({ length: NOTEBOOK_LIMITS.maxMarketSeries + 1 }, (_, index) => ({
+			widgetId: `w-${index}`,
+			type: "market-metric" as const,
+			title: "S",
+			size: "small" as const,
+			seriesId: `fred:S${index}`,
+		}));
+		expect(notebookCapacityProblem(many, [])?.code).toBe("TOO_MANY_SERIES");
+		expect(notebookCapacityProblem(many.slice(1), many)).toBeNull();
 	});
 });

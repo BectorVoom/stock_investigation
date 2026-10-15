@@ -4,7 +4,7 @@ import {
 	type HomeWidget,
 	type MarketCatalogEntry,
 } from "@research/contracts";
-import { applyDashboardEdit, isTerminalJobState } from "@research/domain";
+import { applyDashboardEdit } from "@research/domain";
 import {
 	createEffect,
 	createMemo,
@@ -18,7 +18,7 @@ import {
 	Switch,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import type { ApiClient, HomeDataResponse, WatchlistData } from "../api/client.ts";
+import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
@@ -32,9 +32,9 @@ import {
 	googleAutoSyncWanted,
 	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
-	watchlistRefreshSignal,
 } from "../watchlist/watchlistModel.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
+import { createEtagLoader, createMarketRefreshQueue, type MarketPollSignal } from "./marketData.ts";
 import "./shoelace.ts";
 import {
 	createMoveAnnouncer,
@@ -54,19 +54,7 @@ interface HomeNotice {
 }
 
 /** What one data poll observed; queued/active keep polling, the rest settle. */
-type HomePollSignal = "active" | "queued" | "changed" | "unchanged" | "failed";
-
-/**
- * The run signal carried by the data response itself (V7: no extra run GET).
- * "pending" polls at the slow cadence (V6: the runner may be offline);
- * a leased run polls fast.
- */
-function refreshSignal(current: HomeDataResponse | null): "active" | "queued" | "unchanged" {
-	if (current !== null && current.refresh.activeRunId !== null) {
-		return current.refresh.activeRunState === "pending" ? "queued" : "active";
-	}
-	return "unchanged";
-}
+type HomePollSignal = MarketPollSignal;
 
 /**
  * Home: market widgets the owner arranges (FR-017). Loads the dashboard and
@@ -81,19 +69,42 @@ export function HomeView(props: {
 }): JSX.Element {
 	ensureHomeIconLibraries();
 	const dashboard = createRemote(() => props.api.getHomeDashboard());
-	const [data, setData] = createSignal<HomeDataResponse | null>(null);
-	const [dataEtag, setDataEtag] = createSignal<string | null>(null);
-	const [dataLoading, setDataLoading] = createSignal(true);
-	const [dataError, setDataError] = createSignal<ApiFailure | null>(null);
+	/**
+	 * Market data and the watchlist through the shared ETag loader
+	 * (`home/marketData.ts`, also used by the Notebook): the signals below
+	 * keep their names so the view reads unchanged; only the mechanics moved.
+	 */
+	let disposed = false;
+	const dataLoader = createEtagLoader({
+		load: (etag) => props.api.getHomeData(etag),
+		refreshOf: (value) => value.refresh,
+		isDisposed: () => disposed,
+	});
+	const data = dataLoader.value;
+	const dataError = dataLoader.error;
+	const dataLoading = dataLoader.loading;
 	/**
 	 * The watchlist for earnings-calendar widgets, loaded only when the
 	 * dashboard holds at least one (an effect below starts the load). Like
 	 * the series, it arrives through an accessor so the widget stays
 	 * reactive across reloads.
 	 */
-	const [watchlist, setWatchlist] = createSignal<WatchlistData | null>(null);
-	const [watchlistEtag, setWatchlistEtag] = createSignal<string | null>(null);
-	const [watchlistError, setWatchlistError] = createSignal<ApiFailure | null>(null);
+	const watchLoader = createEtagLoader({
+		load: (etag) => props.api.getWatchlist(etag),
+		refreshOf: (value) =>
+			value.refresh.activeRunId !== null
+				? value.refresh
+				: value.googleCalendar.activeRunId !== null
+					? {
+							activeRunId: value.googleCalendar.activeRunId,
+							activeRunState: value.googleCalendar.activeRunState,
+						}
+					: { activeRunId: null, activeRunState: null },
+		isDisposed: () => disposed,
+	});
+	const watchlist = watchLoader.value;
+	const watchlistEtag = watchLoader.etag;
+	const watchlistError = watchLoader.error;
 	const [notice, setNotice] = createSignal<HomeNotice | null>(null);
 	const [busy, setBusy] = createSignal(false);
 	const [dialog, setDialog] = createSignal<WidgetDialogState | null>(null);
@@ -103,10 +114,10 @@ export function HomeView(props: {
 	/** Polite announcement for every completed move (drag or menu). */
 	const announcer = createMoveAnnouncer();
 	const announceMove = announcer.announceMove;
-	let disposed = false;
 	let autoRefreshTried = false;
 	let followUpTried = false;
-	let refreshKey: string | null = null;
+	/** One market-refresh queue with Home's idempotency-key rule (V9, in the shared module). */
+	const marketQueue = createMarketRefreshQueue(props.api);
 	/** Earnings-date auto-refresh (FR-018 fix F): once per mount, like market data above. */
 	const earningsQueue = createEarningsRefreshQueue(props.api);
 	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
@@ -121,24 +132,12 @@ export function HomeView(props: {
 	});
 
 	const loadData = async (): Promise<HomePollSignal> => {
-		const result = await props.api.getHomeData(dataEtag());
+		const outcome = await dataLoader.load();
 		if (disposed) return "unchanged";
-		if (!result.ok) {
-			if (data() === null) setDataError(result.error);
-			else setNotice({ tone: "warning", text: "Market data did not refresh." });
-			setDataLoading(false);
-			return "failed";
+		if (outcome.signal === "failed" && outcome.stale) {
+			setNotice({ tone: "warning", text: "Market data did not refresh." });
 		}
-		if (!result.value.changed) {
-			setDataLoading(false);
-			return refreshSignal(data());
-		}
-		setData(result.value.value);
-		setDataEtag(result.value.etag);
-		setDataError(null);
-		setDataLoading(false);
-		const current = result.value.value;
-		return current.refresh.activeRunId !== null ? refreshSignal(current) : "changed";
+		return outcome.signal;
 	};
 
 	/** One follow-up refresh when the run that just ended never covered a series (V4). */
@@ -178,22 +177,12 @@ export function HomeView(props: {
 	const loadWatchlist = async (): Promise<
 		"active" | "queued" | "changed" | "unchanged" | "failed"
 	> => {
-		const result = await props.api.getWatchlist(watchlistEtag());
-		if (disposed) return "unchanged";
-		if (!result.ok) {
-			if (watchlist() === null) setWatchlistError(result.error);
-			return "failed";
-		}
-		if (!result.value.changed) return watchlistRefreshSignal(watchlist());
-		setWatchlist(result.value.value);
-		setWatchlistEtag(result.value.etag);
-		setWatchlistError(null);
-		const current = result.value.value;
 		// A Google Calendar step keeps the poll alive too (its URL and counts
-		// arrive through this poll); only a run-free change settles it.
-		return current.refresh.activeRunId !== null || current.googleCalendar.activeRunId !== null
-			? watchlistRefreshSignal(current)
-			: "changed";
+		// arrive through this poll); only a run-free change settles it. The
+		// shared loader answers the combined refresh signal for both runs.
+		const outcome = await watchLoader.load();
+		if (disposed) return "unchanged";
+		return outcome.signal;
 	};
 
 	const watchlistPoller = createPoller({
@@ -331,7 +320,7 @@ export function HomeView(props: {
 
 	/** The calendar widget's "Try again": clears the error and reloads. */
 	const retryWatchlist = () => {
-		setWatchlistError(null);
+		watchLoader.clearError();
 		maybeLoadWatchlist();
 	};
 
@@ -360,37 +349,27 @@ export function HomeView(props: {
 		if (dashboard.value() !== null && data() !== null) maybeAutoRefresh();
 	});
 
-	const queueRefresh = async (announce?: string, isRetry = false): Promise<void> => {
+	const queueRefresh = async (announce?: string): Promise<void> => {
 		// V8: a skipped action says why instead of silently doing nothing.
 		if (busy()) {
 			setNotice({ tone: "info", text: "A market-data refresh is already being queued." });
 			return;
 		}
 		setBusy(true);
-		refreshKey ??= props.api.newIdempotencyKey();
-		const result = await props.api.refreshMarket(refreshKey);
+		const result = await marketQueue.queue();
 		if (disposed) return;
 		setBusy(false);
-		if (!result.ok) {
-			// V9: keep the key only for an unambiguous retry of the same
-			// attempt — a network failure with unknown outcome. A server
-			// answer means nothing was queued under this key.
-			if (result.error.kind !== "network") refreshKey = null;
+		if (result.kind === "busy") {
+			setNotice({ tone: "info", text: "A market-data refresh is already being queued." });
+			return;
+		}
+		if (result.kind === "failed") {
 			setNotice({
 				tone: "error",
 				text: `The market-data refresh was not queued: ${result.error.message}`,
 			});
 			return;
 		}
-		// V9: a replayed TERMINAL run means nothing was queued (the earlier
-		// attempt finished while its answer was lost): take a fresh key and
-		// queue again, once.
-		if (isTerminalJobState(result.value.state) && !isRetry) {
-			refreshKey = null;
-			await queueRefresh(announce, true);
-			return;
-		}
-		refreshKey = null;
 		setNotice({
 			tone: "info",
 			text: announce ?? "Market-data refresh queued for the local runner.",
@@ -693,8 +672,7 @@ export function HomeView(props: {
 							title="Could not load market data."
 							iconRetry={true}
 							onRetry={() => {
-								setDataError(null);
-								setDataLoading(true);
+								dataLoader.beginReload();
 								void reloadDataAfterSave().then(() => maybeAutoRefresh());
 							}}
 						/>

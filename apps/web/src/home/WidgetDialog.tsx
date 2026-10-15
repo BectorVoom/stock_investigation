@@ -178,10 +178,28 @@ function DialogBody(props: {
 	);
 }
 
-function WidgetForm(props: {
+/**
+ * Series and widget-count limits the dialog enforces in "add" mode. Home
+ * passes its dashboard (from which both are derived); the Notebook passes
+ * its own numbers instead, so the form never reads a `HomeDashboard` it
+ * does not have.
+ */
+export interface WidgetFormLimits {
+	readonly maxWidgets: number;
+	readonly maxSeries: number;
+	readonly existingCount: number;
+	readonly existingSeries: readonly string[];
+	/** "dashboard" for Home, "notebook" for the Notebook: the word the problems list uses. */
+	readonly scope: "dashboard" | "notebook";
+}
+
+export interface WidgetFormProps {
 	readonly mode: "add" | "edit";
 	readonly initial: HomeWidget | null;
-	readonly dashboard: HomeDashboard;
+	/** The preselected widget type for "add" without an initial widget. */
+	readonly initialType?: HomeWidgetType;
+	readonly dashboard?: HomeDashboard;
+	readonly limits?: WidgetFormLimits;
 	readonly catalog: readonly MarketCatalogEntry[] | null;
 	readonly catalogState: "loading" | "ready" | "error";
 	readonly seriesById: ReadonlyMap<string, MarketSeries>;
@@ -189,8 +207,12 @@ function WidgetForm(props: {
 	readonly onClose: () => void;
 	readonly onShown: (event: Event) => void;
 	readonly onHidden: (event: Event) => void;
-}): JSX.Element {
-	const [widgetType, setWidgetType] = createSignal<HomeWidgetType>(props.initial?.type ?? "metric");
+}
+
+export function WidgetForm(props: WidgetFormProps): JSX.Element {
+	const [widgetType, setWidgetType] = createSignal<HomeWidgetType>(
+		props.initial?.type ?? props.initialType ?? "metric",
+	);
 	const [title, setTitle] = createSignal(props.initial?.title ?? "");
 	const [size, setSize] = createSignal<HomeWidget["size"]>(props.initial?.size ?? "small");
 	const [selected, setSelected] = createSignal<readonly string[]>(
@@ -274,16 +296,24 @@ function WidgetForm(props: {
 			}
 		}
 		if (props.mode === "add") {
-			if (props.dashboard.widgets.length >= 24) {
-				found.push("The dashboard already holds 24 widgets; remove one first.");
+			// Home derives both numbers from its dashboard; the Notebook
+			// passes them as `limits` instead.
+			const scope = props.limits?.scope ?? "dashboard";
+			const existingCount = props.limits?.existingCount ?? props.dashboard?.widgets.length ?? 0;
+			const maxWidgets = props.limits?.maxWidgets ?? 24;
+			const maxSeries = props.limits?.maxSeries ?? 30;
+			if (existingCount >= maxWidgets) {
+				found.push(`The ${scope} already holds ${maxWidgets} widgets; remove one first.`);
 			}
-			const distinct = new Set<string>();
-			for (const widget of props.dashboard.widgets) {
-				for (const id of widgetSeriesIds(widget)) distinct.add(id);
+			const distinct = new Set<string>(props.limits?.existingSeries);
+			if (props.limits === undefined) {
+				for (const widget of props.dashboard?.widgets ?? []) {
+					for (const id of widgetSeriesIds(widget)) distinct.add(id);
+				}
 			}
 			for (const id of ids) distinct.add(id);
-			if (distinct.size > 30) {
-				found.push("The dashboard holds at most 30 distinct series; remove one first.");
+			if (distinct.size > maxSeries) {
+				found.push(`The ${scope} holds at most ${maxSeries} distinct series; remove one first.`);
 			}
 		}
 		return found;

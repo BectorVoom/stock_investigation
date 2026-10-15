@@ -13,6 +13,8 @@ import {
 	type CompleteJobRequest,
 	type ConversationContextMessage,
 	EMPTY_NOTEBOOK,
+	type HomeDataResponse,
+	MARKET_LIMITS,
 	NOTEBOOK_LIMITS,
 	type Notebook,
 	type NotebookAssistJobRequest,
@@ -21,10 +23,13 @@ import {
 	type NotebookResponse,
 	type NotebookTurn,
 	notebookCapacityProblem,
+	notebookMarketSeriesIds,
 	type ResearchRun,
 } from "@research/contracts";
 import { EMPTY_USAGE, err, ok, type Result } from "@research/domain";
 import { fail, type UseCaseResult } from "../errors.ts";
+import type { HomeDataDigest } from "../home.ts";
+import { assembleMarketSeries, fetchMarketRefreshStatus, seriesStampsFor } from "../marketData.ts";
 import type {
 	AuditLog,
 	ChatRepository,
@@ -33,6 +38,7 @@ import type {
 	IdGenerator,
 	JobRecord,
 	JobRepository,
+	MarketRepository,
 	NotebookRepository,
 	RateLimiter,
 	ResearchUnitOfWork,
@@ -57,6 +63,8 @@ export interface NotebookServiceDeps {
 	readonly jobs: JobRepository;
 	readonly chat: ChatRepository;
 	readonly settings: SettingsRepository;
+	/** Live series for this conversation's market widgets (ADR-0021). */
+	readonly market: MarketRepository;
 	readonly unitOfWork: ResearchUnitOfWork;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
@@ -141,6 +149,76 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 			return ok(
 				await responseOf(ownerId, workspaceId, stored.notebook, stored.version, stored.updatedAt),
 			);
+		},
+
+		/**
+		 * The cheap, owner-scoped facts a notebook market-data ETag covers
+		 * (ADR-0021, like `/home/data`): the notebook version, the refresh
+		 * state and one stamp per series this notebook names. Observations
+		 * are NOT part of the digest, so a 304 is answered before any
+		 * observation row is loaded. A notebook without market widgets
+		 * answers `series: []` with no market reads at all.
+		 */
+		async getNotebookMarketDataDigest(
+			ownerId: string,
+			workspaceId: string,
+		): Promise<UseCaseResult<HomeDataDigest>> {
+			const workspace = await deps.workspaces.get(ownerId, workspaceId);
+			if (workspace === null) return fail("NOT_FOUND", "Workspace not found.");
+			const stored = await deps.notebooks.get(ownerId, workspaceId);
+			if (stored === "unreadable") return fail("STORED_NOTEBOOK_UNREADABLE", UNREADABLE_SHOWN);
+			const notebook = stored === null ? EMPTY_NOTEBOOK : stored.notebook;
+			const ids = notebookMarketSeriesIds(notebook.widgets).slice(0, MARKET_LIMITS.maxSeries);
+			const [status, metas] = await Promise.all([
+				fetchMarketRefreshStatus(deps.jobs, ownerId),
+				deps.market.getSeriesMeta(ownerId, ids),
+			]);
+			return ok({
+				dashboardVersion: stored === null ? 0 : stored.version,
+				seriesIds: [...ids],
+				activeRunId: status.activeRunId,
+				activeRunState: status.activeRunState,
+				lastSucceededAt: status.lastSucceededAt,
+				lastFailure: status.lastFailure,
+				seriesStamps: seriesStampsFor(ids, metas),
+			});
+		},
+
+		/**
+		 * Live series of THIS conversation's notebook market widgets, in the
+		 * Home data shape (metadata plus the newest ≤ 800 observations each,
+		 * plus the market refresh status). Shares its assembly with Home, so
+		 * the two can never disagree. Pass a digest from
+		 * `getNotebookMarketDataDigest` to reuse its cheap reads.
+		 */
+		async getNotebookMarketData(
+			ownerId: string,
+			workspaceId: string,
+			digest?: HomeDataDigest,
+		): Promise<UseCaseResult<HomeDataResponse>> {
+			let header = digest;
+			if (header === undefined) {
+				const computed = await this.getNotebookMarketDataDigest(ownerId, workspaceId);
+				if (!computed.ok) return computed;
+				header = computed.value;
+			}
+			const [metas, observations] = await Promise.all([
+				deps.market.getSeriesMeta(ownerId, header.seriesIds),
+				deps.market.getObservations(
+					ownerId,
+					header.seriesIds,
+					MARKET_LIMITS.maxObservationsPerResponse,
+				),
+			]);
+			return ok({
+				series: assembleMarketSeries(header.seriesIds, metas, observations),
+				refresh: {
+					activeRunId: header.activeRunId,
+					activeRunState: header.activeRunState,
+					lastSucceededAt: header.lastSucceededAt,
+					lastFailure: header.lastFailure,
+				},
+			});
 		},
 
 		async putNotebook(

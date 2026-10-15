@@ -467,7 +467,7 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 					latestObservedOn: isoDateSchema.nullable(),
 				}),
 			)
-			.max(MARKET_LIMITS.maxSeries),
+			.max(MARKET_LIMITS.maxTrackedSeries),
 	}),
 	/**
 	 * One earnings-date refresh over the owner's current watchlist (FR-018).
@@ -659,7 +659,7 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 						errorCode: marketUnavailableCodeSchema.nullable(),
 					}),
 				)
-				.max(MARKET_LIMITS.maxSeries),
+				.max(MARKET_LIMITS.maxTrackedSeries),
 		})
 		.refine(
 			(completion) =>

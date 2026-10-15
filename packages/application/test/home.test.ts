@@ -6,6 +6,7 @@ import type {
 	HomeDashboardRepository,
 	JobRepository,
 	MarketRepository,
+	NotebookRepository,
 	StoredMarketObservation,
 	StoredMarketSeries,
 } from "../src/ports.ts";
@@ -36,11 +37,20 @@ function stubJobs(): JobRepository {
 
 const AUDIT: AuditLog = { record: async () => {} };
 
+const NOTEBOOKS: NotebookRepository = {
+	get: async () => null,
+	put: async () => "written",
+	getRevision: async () => null,
+	listTurns: async () => [],
+	listMarketSeriesIds: async () => [],
+};
+
 function serviceWith(dashboard: HomeDashboardRepository, market: MarketRepository) {
 	return createHomeService({
 		dashboard,
 		market,
 		jobs: stubJobs(),
+		notebooks: NOTEBOOKS,
 		clock: fixedClock().clock,
 		audit: AUDIT,
 	});
@@ -237,6 +247,7 @@ describe("home getData (FR-017)", () => {
 			dashboard,
 			market: marketOf({ getSeriesMeta: async () => [VIX_META] }),
 			jobs,
+			notebooks: NOTEBOOKS,
 			clock: fixedClock().clock,
 			audit: AUDIT,
 		});
