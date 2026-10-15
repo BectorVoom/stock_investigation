@@ -66,15 +66,9 @@ async function addTextWidget(): Promise<void> {
 	await expect(dialog).toBeHidden();
 }
 
-/**
- * Selects the first occurrence of `text` in a freshly opened editor. The
- * editor learns about DOM selections asynchronously; the suite opens a new
- * session per selection (like a person coming back to edit), so the
- * toolbar starts hidden and its appearance proves ProseMirror holds the
- * wanted range before any shortcut runs.
- */
-async function selectInEditor(text: string): Promise<void> {
-	await richEditor().evaluate((root, wanted) => {
+/** The on-screen box of the first occurrence of `text` in the editor. */
+async function textBox(text: string): Promise<{ x: number; y: number; right: number }> {
+	return await richEditor().evaluate((root, wanted) => {
 		const editable = root.querySelector(".ProseMirror") ?? root;
 		const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
 		let node = walker.nextNode();
@@ -84,16 +78,32 @@ async function selectInEditor(text: string): Promise<void> {
 				const range = document.createRange();
 				range.setStart(node, at);
 				range.setEnd(node, at + wanted.length);
-				const selection = document.getSelection();
-				selection?.removeAllRanges();
-				selection?.addRange(range);
-				return;
+				const rect = range.getBoundingClientRect();
+				return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, right: rect.right };
 			}
 			node = walker.nextNode();
 		}
 		throw new Error(`missing ${wanted} in the editor`);
 	}, text);
+}
+
+/**
+ * Selects one word in the open editor by double-clicking it, as a person
+ * does: a real gesture reaches ProseMirror on every engine, unlike a
+ * scripted DOM range, which it may pick up late or not at all. The
+ * formatting toolbar appearing proves the editor holds the selection.
+ */
+async function selectInEditor(word: string): Promise<void> {
+	const box = await textBox(word);
+	await page.mouse.dblclick(box.x, box.y);
 	await expect(page.getByRole("toolbar", { name: "Formatting" })).toBeVisible();
+	expect(await selectedText()).toBe(word);
+}
+
+/** Places the caret right after `text` by clicking the right half of its last character. */
+async function caretAfter(text: string): Promise<void> {
+	const box = await textBox(text);
+	await page.mouse.click(box.right - 1, box.y);
 }
 
 /** Opens the first widget's editor by clicking at the start of a line. */
@@ -215,9 +225,7 @@ test("a link is added through the link popover", async () => {
 
 test("the editor stays open and editable while it autosaves", async () => {
 	const editor = await openFirstEditor();
-	// The caret after "far.": select the word, then collapse to its end.
-	await selectInEditor("far.");
-	await editor.press("ArrowRight");
+	await caretAfter("far.");
 	await editor.pressSequentially(" Soon");
 	// The debounced autosave lands while the editor is open: a save replaces
 	// the widget object, which must neither close the editor nor block typing.

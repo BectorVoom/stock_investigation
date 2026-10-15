@@ -243,6 +243,14 @@ Ask research questions and read the answers, with their sources and run progress
   a series never refreshed queues one market-data refresh by itself. The
   earnings calendar reads the Watchlist page's stocks with its own refresh
   button. Titles stay in the data but the frames hide them.
+- The Notebook's widget list scrolls inside the panel, below its fixed header
+  and toolbar; dragging near its top or bottom edge scrolls it.
+- Text widgets edit in place, Notion style: click the note (or Enter on it)
+  and type formatted text — `# `/`## `/`### ` headings, `- `, `1. `, `[] `
+  and `> ` blocks, a `/` block menu, a selection toolbar (bold, italic,
+  strike, code, link) and ⌘B/⌘I/⌘K; Escape or clicking away saves and
+  leaves; to-dos toggle without opening the editor. Stored as the Markdown
+  subset the assistant also writes.
 
 **Not here**
 

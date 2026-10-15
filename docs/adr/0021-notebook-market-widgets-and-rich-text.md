@@ -72,9 +72,12 @@ shows anything outside the subset as literal text.
 ### Untitled frames
 
 `WidgetFrame` takes `titleHidden`: the title stays the accessible name of
-the frame and its body; the header shrinks to the grip, select toggle and
-actions, overlaid at the top and revealed on hover, focus and selection in
-the quiet variant. The Notebook hides titles; Home keeps them (its metric
+the frame and its body; the header shrinks to a compact cluster in the
+top-right corner (grip and actions; the select toggle shows only on
+keyboard focus or when selected), revealed on hover, focus and selection in
+the quiet variant. A full-width overlay covered the first line of a small
+widget, so a click on its text hit the controls instead. While a Text
+widget is edited the cluster is hidden. The Notebook hides titles; Home keeps them (its metric
 titles name the series). Titles stay in the data: chat change cards,
 selection chips and dialogs still use them.
 
@@ -119,6 +122,17 @@ dropcursor/gapcursor plugins), so the app's `style-src 'self'` policy holds
 (checked via the Chromium and WebKit E2E console assertions). The dialog
 editor (`NotebookEditor.tsx` text branch) stays a Markdown source textarea
 as the escape hatch.
+
+The open editor survives saves. Every saved edit replaces the widget object
+(new revision) and the grid's `<For>` is keyed by reference, so the first
+autosave re-created the frame and closed the editor; the panel now renders
+stable per-id entries (`apps/web/src/notebook/gridEntries.ts`) whose fields
+read the current widget. The editor also stays editable while any notebook
+save is in flight: the session queues edits made meanwhile and the editor
+saves its newest draft after the one in flight. Pasted HTML is reduced to
+the subset in an inert document (`pasteSanitize.ts`). `bun run bench`
+covers parsing an 8,000-character note (0.2 ms) and the per-keystroke
+document-to-Markdown conversion at that size (0.3 ms).
 
 ## Consequences
 
