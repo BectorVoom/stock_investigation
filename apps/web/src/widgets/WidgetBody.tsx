@@ -70,7 +70,6 @@ export function WidgetBody(props: {
 									onRefreshEarnings={context().onRefreshEarnings}
 									earningsRefreshBusy={context().earningsRefreshBusy}
 									api={context().api}
-									disabled={props.editingDisabled}
 									onSaveRange={(next: MarketWidgetCore) => props.onSaveMarketWidget(next)}
 								/>
 							)}

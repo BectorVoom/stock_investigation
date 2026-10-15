@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	clipboardCountText,
 	createWidgetClipboardStore,
+	HOME_CLIPBOARD_SCOPE,
 	parseWidgetClipboard,
 	parseWidgetClipboardJson,
 	resetWidgetClipboard,
@@ -224,6 +225,29 @@ describe("resolveClipboardPaste", () => {
 		expect(same.entries.map((item) => item.core.type)).toEqual(["text", "research"]);
 		expect(same.entries[1]?.origin).toEqual(CHAT);
 		expect(same.skippedResearch).toBe(0);
+	});
+
+	it("moves widgets between Home and a chat (ADR-0024), never a research result to Home", () => {
+		const fromChat = parseWidgetClipboard({
+			version: 1,
+			sourceWorkspaceId: "ws_1",
+			entries: [entry(textCore(), CHAT), entry(researchCore(), CHAT)],
+		});
+		if (fromChat === null) throw new Error("fixture clipboard is invalid");
+		const onHome = resolveClipboardPaste(fromChat, HOME_CLIPBOARD_SCOPE);
+		expect(onHome.entries.map((item) => item.core.type)).toEqual(["text"]);
+		expect(onHome.entries[0]?.origin).toEqual(OWNER);
+		expect(onHome.skippedResearch).toBe(1);
+
+		const fromHome = parseWidgetClipboard({
+			version: 1,
+			sourceWorkspaceId: HOME_CLIPBOARD_SCOPE,
+			entries: [entry(chartCore(), OWNER)],
+		});
+		if (fromHome === null) throw new Error("fixture clipboard is invalid");
+		const inChat = resolveClipboardPaste(fromHome, "ws_1");
+		expect(inChat.entries.map((item) => item.core.type)).toEqual(["chart"]);
+		expect(inChat.entries[0]?.core.widgetId).not.toBe("nb-chart");
 	});
 
 	it("words the announcements and the skipped notice", () => {

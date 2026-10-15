@@ -113,7 +113,7 @@ test("a line chart added through Home's form renders the Home chart with fixture
 	await page.getByRole("menuitem", { name: "Line chart" }).click();
 
 	// Home's own add form: series picker, range and size.
-	const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+	const dialog = page.locator("sl-dialog", { hasText: /Add [a-z ]*widget/ });
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
 	await setSlValue('sl-dialog sl-select[label="Series"]', "twelve-data:XAU/USD");
@@ -209,7 +209,7 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	const notebook = notebookRegion();
 	await notebook.getByRole("button", { name: "Add widget" }).click();
 	await page.getByRole("menuitem", { name: "Earnings calendar" }).click();
-	const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+	const dialog = page.locator("sl-dialog", { hasText: /Add [a-z ]*widget/ });
 	await expect(dialog).toBeAttached();
 	const calendarTitle = `E2E earnings ${Date.now()}`;
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(calendarTitle);

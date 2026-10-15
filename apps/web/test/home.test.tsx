@@ -904,19 +904,33 @@ describe("home view", () => {
 		}
 	});
 
-	it("V8: while busy every action is either impossible or says why", async () => {
+	it("V8: while busy every action is impossible, and a dialog save waits for the save in flight", async () => {
 		usePollTimers();
 		try {
 			// The PUT handler holds the request until the test releases it,
 			// applying the sent dashboard like the default route would.
 			const gate = deferred<Response>();
 			let putBody: { dashboard: HomeDashboard; expectedVersion: number } | null = null;
+			let released = false;
 			backend.on("PUT", /^\/api\/v1\/home\/dashboard$/, (request) => {
-				putBody = request.body as typeof putBody;
-				return gate.promise;
+				const sent = request.body as { dashboard: HomeDashboard; expectedVersion: number };
+				if (!released) {
+					putBody = sent;
+					return gate.promise;
+				}
+				// Later PUTs (the queued dialog save) answer like the default route.
+				home.dashboard = sent.dashboard;
+				home.version += 1;
+				return jsonResponse({
+					dashboard: home.dashboard,
+					version: home.version,
+					updatedAt: home.updatedAt,
+					origin: "saved",
+				});
 			});
 			const releasePut = () => {
 				if (putBody === null) throw new Error("PUT never arrived");
+				released = true;
 				home.dashboard = putBody.dashboard;
 				home.version += 1;
 				home.updatedAt = "2026-10-12T12:00:00Z";
@@ -948,28 +962,36 @@ describe("home view", () => {
 				() => backend.requestsTo("PUT", /\/home\/dashboard$/).length === 1,
 				"PUT in flight",
 			);
-			// …and every other action is impossible: menus, range select, toolbar.
+			// …and the menus and toolbar are impossible; the range select stays
+			// enabled, because a range change waits for the save in flight.
 			expect(widgetActionsButton(widgetById("w-gold")).hasAttribute("disabled")).toBe(true);
 			expect(
 				widgetById("w-vix-chart")
 					.querySelector('sl-select[label="Range"]')
 					?.hasAttribute("disabled"),
-			).toBe(true);
+			).toBe(false);
 			expect(
 				screen.getByRole("button", { name: "Refresh market data" }).hasAttribute("disabled"),
 			).toBe(true);
-			// A dialog save attempted meanwhile says why instead of vanishing.
+			// A dialog save made meanwhile waits for the save in flight (the
+			// Notebook's rule, ADR-0024): the dialog stays open with the
+			// owner's input until it is applied to the saved result.
 			fireEvent.click(dialogButton(dialog, "Add widget"));
-			await settleUntil(
-				() => (document.body.textContent ?? "").includes("being saved"),
-				"busy notice",
-			);
+			await vi.advanceTimersByTimeAsync(250);
 			expect(document.querySelector("sl-dialog")).not.toBeNull();
+			expect(backend.requestsTo("PUT", /\/home\/dashboard$/)).toHaveLength(1);
 			releasePut();
 			await settleUntil(
 				() => document.querySelector('article[data-widget-id="w-gold"]') === null,
 				"removed",
 			);
+			await settleUntil(() => document.querySelector("sl-dialog") === null, "queued save applied");
+			const second = backend.requestsTo("PUT", /\/home\/dashboard$/)[1]?.body as
+				| { dashboard: HomeDashboard }
+				| undefined;
+			// Applied on top of the removal: gold stays removed, Busy is added.
+			expect(second?.dashboard.widgets.map((widget) => widget.title)).toContain("Busy");
+			expect(second?.dashboard.widgets.some((widget) => widget.widgetId === "w-gold")).toBe(false);
 		} finally {
 			vi.useRealTimers();
 		}

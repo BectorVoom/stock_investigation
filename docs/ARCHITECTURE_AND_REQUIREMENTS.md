@@ -387,6 +387,12 @@ a Home save keeps stored series a notebook still names. Deleting a
 conversation deletes its notebook, revisions and turns
 with everything else it solely owns.
 
+Home dashboards and notebooks hold widgets of one specification (ADR-0024,
+`packages/contracts/src/widgets.ts`): the same types, fields, title rule and
+sizes. The Home document is `schemaVersion: 2` (its live single-series widget
+is `market-metric`); a stored version-1 document is upgraded when it is read,
+and the API accepts only version 2.
+
 All inputs and stored JSON are runtime-validated. Browser calls do not expose runner endpoints. Runner authentication is separately scoped, renewable and revocable. Maintain uniqueness constraints on canonical article IDs, command IDs, and job idempotency keys, and use conditional updates for leases/workspace versions.
 
 ## 11. Initial repository structure

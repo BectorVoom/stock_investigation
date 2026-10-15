@@ -690,21 +690,22 @@ test("the page ran under its Content-Security-Policy without errors", async () =
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
 	await expect(page.locator("article[data-widget-id]").first()).toBeVisible();
 	await page.getByRole("button", { name: "Add widget" }).click();
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
 	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
 	await expect(dialog.locator("sl-icon[name='x-lg']")).toBeAttached();
-	await openSelectViaCombobox(page, "dialog", "Widget type");
+	await openSelectViaCombobox(page, "dialog", "Size");
 	await expect(page.locator("sl-popup").first()).toBeAttached();
 	// F1: on Chromium the first Escape closes only the select listbox
 	// (CloseWatcher); the modal dialog stays open and would swallow the click
 	// below. Close the listbox, then the dialog, and only then touch anything
 	// behind it.
 	await page.keyboard.press("Escape");
-	await waitSelectClosed(page, "dialog", "Widget type");
+	await waitSelectClosed(page, "dialog", "Size");
 	await page.keyboard.press("Escape");
 	await expect(page.locator("sl-dialog")).toHaveCount(0);
 	await page.locator("article[data-widget-id] button[data-widget-actions]").first().click();
-	await expect(page.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
+	await expect(page.getByRole("menuitem", { name: "Edit…" })).toBeVisible();
 	await page.keyboard.press("Escape");
 	await page.keyboard.press("Escape");
 	await expect(dialog).toHaveCount(0);

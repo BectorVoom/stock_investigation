@@ -522,6 +522,24 @@ export function HomeView(props: {
 		return true;
 	};
 
+	/**
+	 * Edits made while a save is in flight wait for it, then apply to the
+	 * saved result (the Notebook session's rule, ADR-0024): a dialog save or
+	 * an in-place text save during a move is applied after it, never lost.
+	 */
+	let saveChain: Promise<unknown> = Promise.resolve();
+	const queueSave = (
+		next: () => readonly HomeWidget[] | null,
+		kind: "edit" | "undo" = "edit",
+	): Promise<boolean> => {
+		const run = saveChain.then(() => {
+			const widgetsNext = next();
+			return widgetsNext === null ? false : saveWidgets(widgetsNext, kind);
+		});
+		saveChain = run;
+		return run;
+	};
+
 	/** After an add or edit: one refresh when a new series has no data yet. */
 	const refreshForNewSeries = (added: readonly WidgetCore[]): void => {
 		const byIdNow = seriesById(data()?.series ?? []);
@@ -558,21 +576,17 @@ export function HomeView(props: {
 				return order.filter((id) => next.includes(id));
 			});
 		},
-		edit: (change) => saveWidgets(change(widgets())),
+		edit: (change) => queueSave(() => change(widgets())),
 		replaceWidget: (core) => {
 			const next = asHomeWidget(core);
 			if (next === null) return Promise.resolve(false);
-			return saveWidgets(
+			return queueSave(() =>
 				widgets().map((widget) => (widget.widgetId === core.widgetId ? next : widget)),
 			);
 		},
 		toWidget: (entry) => asHomeWidget(entry.core),
 		undoAvailable: () => history().length > 0,
-		undo: () => {
-			const previous = history().at(-1);
-			if (previous === undefined) return Promise.resolve(false);
-			return saveWidgets(previous, "undo");
-		},
+		undo: () => queueSave(() => history().at(-1) ?? null, "undo"),
 	};
 
 	/**
@@ -608,7 +622,7 @@ export function HomeView(props: {
 
 	/** Reset replaces every widget with the default arrangement (Undo restores them). */
 	const confirmReset = async (): Promise<void> => {
-		const saved = await saveWidgets(DEFAULT_HOME_DASHBOARD.widgets);
+		const saved = await queueSave(() => DEFAULT_HOME_DASHBOARD.widgets);
 		if (disposed) return;
 		setResetOpen(false);
 		if (saved) {

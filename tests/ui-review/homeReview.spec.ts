@@ -206,6 +206,7 @@ test("UI review of the Home page", async ({ browser }) => {
 
 	/* ---------- H2. Add-widget dialog ---------- */
 	await page.getByRole("button", { name: "Add widget" }).click();
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
 	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
 	await page.waitForTimeout(400);
@@ -246,7 +247,7 @@ test("UI review of the Home page", async ({ browser }) => {
 	const actions = page.locator("article[data-widget-id] button[data-widget-actions]").first();
 	await actions.scrollIntoViewIfNeeded();
 	await actions.click();
-	await expect(page.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
+	await expect(page.getByRole("menuitem", { name: "Edit…" })).toBeVisible();
 	await page.waitForTimeout(300);
 	await shot(page, "H3-widget-menu");
 	await audit(page, "H widget menu");

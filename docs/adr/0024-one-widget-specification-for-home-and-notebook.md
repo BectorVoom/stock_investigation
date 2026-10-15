@@ -35,9 +35,11 @@ Before this decision the two pages had grown two specs over one package
   `earnings-calendar` — the Notebook's names. Home's live `metric` is now
   `market-metric` everywhere.
 - `WIDGET_CONTENT_SHAPES`: the type-specific fields of each type, and
-  `WIDGET_TYPE_META`: label, description, default size and allowed sizes —
-  one table for both pages' UI, the MCP agent types and the notebook
-  assistant.
+  `WIDGET_TYPE_META`: label, description (what the owner reads), agent note
+  (what an agent also needs: the Markdown subset, series-id syntax,
+  `daysAhead` choices), default size and allowed sizes — one table for both
+  pages' UI, the MCP agent types and the notebook assistant
+  (`widgetAgentDescription` joins description and note for agents).
 - `widgetCoreSchema`: `widgetId`, `title` (trimmed, 1–120 characters),
   `size` (`small` / `medium` / `large`) plus the content of one type, with the
   same refinements (a table row has one cell per column; a widget never
@@ -65,6 +67,12 @@ gone); copying a widget from one page to the other is copying its core.
 - **Actions only a conversation has.** "Ask AI" and "Go to source" are
   Notebook-only; Home's "Refresh market data" and "Reset to default
   arrangement" are Home-only.
+- **Saving.** Each page keeps its own save path (the Notebook's
+  versioned session, Home's dashboard `PUT`), both with compare-and-set and
+  both under one rule: an edit made while a save is in flight waits for it
+  and applies to the saved result, so a dialog save or an in-place text save
+  is never refused for being early. A dialog closes only once its save
+  succeeded; a refused save leaves it open beside the reason.
 - **Undo depth.** The Notebook's Undo restores server-kept revisions
   (ADR-0020). Home's Undo restores the bodies kept in this browser session
   (at most 20), saved with the same compare-and-set as any Home edit; a
@@ -117,5 +125,12 @@ as the notebook assistant does; the series help stays with the market types.
   A stored version-1 dashboard still loads.
 - Home menu labels follow the Notebook's ("Edit…", "Remove"); specs and the
   UI review use the new names.
+- Home's frames now survive saves (stable per-id grid entries, as in the
+  Notebook) instead of being rebuilt after each one. That exposed a
+  Shoelace race: setting `disabled` on a closed `sl-select` runs a deferred
+  hide that can finish after the next open, leaving the listbox open but
+  invisible (E2E H1 on Chrome). Because edits made during a save now wait
+  for it, the line chart's Range select is no longer disabled while a page
+  saves.
 - The Lean `Dashboard` model is unchanged: it abstracts widget content and
   the Home bound stays 24.

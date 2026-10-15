@@ -382,10 +382,10 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 			timeout: 60_000,
 		});
 		await page.getByRole("button", { name: "Add widget" }).click();
-		const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+		await page.getByRole("menuitem", { name: "Earnings calendar", exact: true }).click();
+		const dialog = page.locator("sl-dialog");
 		await expect(dialog).toBeAttached();
 		await page.locator('sl-dialog sl-input[label="Title"] input').fill("Earnings calendar");
-		await setSlValue(page, 'sl-dialog sl-select[label="Widget type"]', "earnings-calendar");
 		await setSlValue(page, 'sl-dialog sl-select[label="Days ahead"]', "180");
 		await dialog.getByRole("button", { name: "Add widget" }).click();
 		const added = page.getByRole("article", { name: /Earnings calendar/ });

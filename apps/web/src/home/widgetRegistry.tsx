@@ -42,12 +42,6 @@ export interface WidgetRendererProps {
 	readonly api: ApiClient;
 	/** Line-chart range changes save the widget; other widgets ignore it. */
 	readonly onSaveRange: (widget: MarketWidgetCore) => void;
-	/**
-	 * V8: true while HomeView is saving. The line-chart range select is
-	 * disabled so the control always reflects the server copy; other widgets
-	 * ignore it (their menus are disabled by the frame).
-	 */
-	readonly disabled: boolean;
 }
 
 /**
@@ -100,7 +94,6 @@ function LineChartEntry(props: WidgetRendererProps): JSX.Element {
 				<LineChartWidget
 					widget={current()}
 					seriesById={props.seriesById}
-					disabled={props.disabled}
 					onSaveRange={props.onSaveRange}
 				/>
 			)}
