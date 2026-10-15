@@ -109,10 +109,18 @@ test("the chip leaves Notebook mode, and the menu switches back both ways", asyn
 test("keyboard-only path: Tab to +, open, arrows, select, Escape", async () => {
 	const research = page.getByRole("form", { name: "Research composer" });
 	const question = research.getByRole("textbox", { name: "Question" });
-	await question.click();
-	// The + button is the focusable before the textarea.
-	await page.keyboard.press("Shift+Tab");
-	await expect(page.getByRole("button", { name: "Choose mode" })).toBeFocused();
+	const chooseMode = page.getByRole("button", { name: "Choose mode" });
+	if (page.context().browser()?.browserType().name() === "chromium") {
+		await question.click();
+		// The + button is the focusable before the textarea.
+		await page.keyboard.press("Shift+Tab");
+	} else {
+		// WebKit's default tab ring skips buttons (platform behaviour, like
+		// Safari without full keyboard access): reach + by explicit focus.
+		// Everything below is keys only, on every engine.
+		await chooseMode.focus();
+	}
+	await expect(chooseMode).toBeFocused();
 	// Enter opens with focus on the first item; arrows move; Enter selects.
 	await page.keyboard.press("Enter");
 	const menu = page.getByRole("menu", { name: "Composer mode" });
