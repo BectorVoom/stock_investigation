@@ -1,5 +1,5 @@
 /**
- * Total parser from the `NOTEBOOK_TEXT_MARKDOWN` subset to the typed tree.
+ * Total parser from the `WIDGET_TEXT_MARKDOWN` subset to the typed tree.
  * Never throws on any string input; anything outside the subset is literal
  * text. Linear time: the scanner only moves forward (`indexOf` from the
  * current offset, no nested quantifiers), and inline pairing always takes

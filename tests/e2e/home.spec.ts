@@ -162,8 +162,10 @@ test("an added widget survives a reload until it is removed", async () => {
 	await page.goto("/#/home");
 	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
 
+	// ADR-0024: the type is chosen in the add menu, then its dialog opens.
 	await page.getByRole("button", { name: "Add widget" }).click();
-	const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
+	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
 	await setSlValue('sl-dialog sl-select[label="Series"]', "twelve-data:XAU/USD");
@@ -180,7 +182,7 @@ test("an added widget survives a reload until it is removed", async () => {
 		.getByRole("article", { name: title })
 		.getByRole("button", { name: `${title} actions` })
 		.click();
-	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
 	await expect(page.getByRole("article", { name: title })).toHaveCount(0);
 
 	await page.reload();
@@ -199,7 +201,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	test.setTimeout(180_000);
 	const title = `E2E H1 ${Date.now()}`;
 	async function dialogAttached(): Promise<void> {
-		await expect(page.locator("sl-dialog", { hasText: "Add widget" })).toBeAttached();
+		await expect(page.locator("sl-dialog", { hasText: /Add [a-z ]*widget/ })).toBeAttached();
 	}
 	async function clickCombobox(scope: string, selectLabel: string): Promise<void> {
 		// Clicks the shadow combobox at its center with real mouse events —
@@ -260,8 +262,8 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 
 	// Mouse path on every dialog select.
 	await page.getByRole("button", { name: "Add widget" }).click();
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
 	await dialogAttached();
-	await pickOption("Widget type", "metric");
 	await pickOption("Size", "small");
 	await pickOption("Series", "twelve-data:XAU/USD");
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
@@ -296,6 +298,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 	// Keyboard path: focus the Size select, open with ArrowDown, jump to the
 	// last option with End, choose with Enter — the dialog stays open.
 	await page.getByRole("button", { name: "Add widget" }).click();
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
 	await dialogAttached();
 	await page.evaluate(() => {
 		const select = document.querySelector('sl-dialog sl-select[label="Size"]');
@@ -317,7 +320,7 @@ test("H1: the dialog stays open through real mouse and keyboard select use", asy
 
 	// The H1 probe widget is removed so later runs start clean.
 	await added.getByRole("button", { name: `${title} actions` }).click();
-	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
 	await expect(added).toHaveCount(0);
 });
 
@@ -328,15 +331,16 @@ test("F2: Escape with an open listbox closes only the listbox, keeping the dialo
 	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
 
 	await page.getByRole("button", { name: "Add widget" }).click();
-	const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+	await page.getByRole("menuitem", { name: "Market metric", exact: true }).click();
+	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
-	await openSelectViaCombobox(page, "dialog", "Widget type");
+	await openSelectViaCombobox(page, "dialog", "Size");
 
 	// First Escape closes only the listbox: the dialog stays attached with
 	// the form intact and the listbox gone.
 	await page.keyboard.press("Escape");
-	await waitSelectClosed(page, "dialog", "Widget type");
+	await waitSelectClosed(page, "dialog", "Size");
 	await expect(dialog).toBeAttached();
 	await expect(page.locator('sl-dialog sl-input[label="Title"] input')).toHaveValue(title);
 
@@ -374,20 +378,21 @@ test("every Home icon ships with the build and every sl-icon renders its SVG", a
 		// Open the dialog (close icon), a select (expand icon) and a widget
 		// menu (caret + submenu chevrons) — every icon path Home can reach.
 		await fresh.getByRole("button", { name: "Add widget" }).click();
+		await fresh.getByRole("menuitem", { name: "Market metric", exact: true }).click();
 		const dialog = fresh.locator("sl-dialog");
 		await expect(dialog).toBeAttached();
-		await openSelectViaCombobox(fresh, "dialog", "Widget type");
+		await openSelectViaCombobox(fresh, "dialog", "Size");
 		await expect(fresh.locator("sl-popup").first()).toBeAttached();
 		// F1: on Chromium the first Escape closes only the select listbox
 		// (CloseWatcher); the modal dialog stays open and would swallow the
 		// click below. Close the listbox, then the dialog, and only then
 		// touch anything behind it.
 		await fresh.keyboard.press("Escape");
-		await waitSelectClosed(fresh, "dialog", "Widget type");
+		await waitSelectClosed(fresh, "dialog", "Size");
 		await fresh.keyboard.press("Escape");
 		await expect(fresh.locator("sl-dialog")).toHaveCount(0);
 		await fresh.locator("article[data-widget-id] button[data-widget-actions]").first().click();
-		await expect(fresh.getByRole("menuitem", { name: "Edit widget" })).toBeVisible();
+		await expect(fresh.getByRole("menuitem", { name: "Edit…" })).toBeVisible();
 
 		// Every sl-icon on the page — including the ones inside Shoelace
 		// shadow roots — resolves to an inline <svg>. A missing icon file
@@ -506,9 +511,9 @@ test("widget sizes are fixed: identical boxes per size, 272 px small, 560 px med
 	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible();
 	const sizeTitle = `E2E size ${Date.now()}`;
 	await page.getByRole("button", { name: "Add widget" }).click();
-	await expect(page.locator("sl-dialog", { hasText: "Add widget" })).toBeAttached();
+	await page.getByRole("menuitem", { name: "Indicator table", exact: true }).click();
+	await expect(page.locator("sl-dialog")).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(sizeTitle);
-	await setSlValue('sl-dialog sl-select[label="Widget type"]', "indicator-table");
 	await setSlValue('sl-dialog sl-select[label="Series"]', ["fred:CPIAUCSL"]);
 	await page.locator("sl-dialog").getByRole("button", { name: "Add widget" }).click();
 	const secondLarge = page.getByRole("article", {
@@ -544,7 +549,7 @@ test("widget sizes are fixed: identical boxes per size, 272 px small, 560 px med
 	await page.goto("/#/home");
 	await expect(secondLarge).toBeVisible();
 	await secondLarge.getByRole("button", { name: `${sizeTitle} actions` }).click();
-	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
 	await expect(secondLarge).toHaveCount(0);
 	await page.setViewportSize({ width: 1280, height: 720 });
 });
@@ -863,9 +868,9 @@ test("the actions button still opens its menu, and Move later works and is annou
 	expect(puts).toBe(1);
 	const after = await widgetIds();
 	expect(after.indexOf(first)).toBe(1);
-	// The live region is now styled by the package (`wg-visually-hidden`),
-	// not the Tailwind `sr-only` utility: assert the polite region.
-	const live = page.locator("output[aria-live='polite']");
+	// The move announcer is the package's polite region (`wg-visually-hidden`);
+	// the board's action region (cut / copy / paste / remove) is a second one.
+	const live = page.locator("output.wg-visually-hidden[aria-live='polite']");
 	await expect(live).toContainText(/Moved “.+” to position 2 of /);
 });
 
@@ -876,7 +881,7 @@ async function resetDashboardToDefaults(): Promise<void> {
 	const reset = page.getByRole("button", { name: "Reset to default arrangement" });
 	await expect(reset).toBeEnabled({ timeout: 30_000 });
 	await reset.click();
-	const dialog = page.locator("sl-dialog", { hasText: "cannot be undone" });
+	const dialog = page.locator("sl-dialog", { hasText: "Undo restores" });
 	await expect(dialog).toBeAttached();
 	await dialog.getByRole("button", { name: "Reset widgets" }).click();
 	await expect
@@ -1112,7 +1117,7 @@ test("an edit made through the API appears when the tab becomes visible again", 
 			"Content-Type": "application/json",
 		},
 		data: {
-			dashboard: { schemaVersion: 1, widgets: reordered },
+			dashboard: { schemaVersion: 2, widgets: reordered },
 			expectedVersion: stored.version,
 		},
 	});
@@ -1144,7 +1149,7 @@ test("an edit made through the API appears when the tab becomes visible again", 
 			"Content-Type": "application/json",
 		},
 		data: {
-			dashboard: { schemaVersion: 1, widgets: restored },
+			dashboard: { schemaVersion: 2, widgets: restored },
 			expectedVersion: current.version,
 		},
 	});

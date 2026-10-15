@@ -1,10 +1,15 @@
 import {
+	asHomeWidget,
 	DEFAULT_HOME_DASHBOARD,
+	HOME_WIDGET_TYPES,
 	type HomeDashboard,
 	type HomeWidget,
-	type MarketCatalogEntry,
+	homeCapacityProblem,
+	homeDashboardSchema,
+	MARKET_LIMITS,
+	type WidgetCore,
+	widgetSeriesIds,
 } from "@research/contracts";
-import { applyDashboardEdit } from "@research/domain";
 import {
 	createEffect,
 	createMemo,
@@ -17,7 +22,6 @@ import {
 	Show,
 	Switch,
 } from "solid-js";
-import { Dynamic } from "solid-js/web";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
@@ -33,19 +37,16 @@ import {
 	isGoogleCalendarRunActive,
 	isWatchlistRefreshActive,
 } from "../watchlist/watchlistModel.ts";
-import { hasFredSeries, needsAutoRefresh, seriesById, widgetSeriesIds } from "./homeModel.ts";
+import type { WidgetMarketContext } from "../widgets/marketContext.ts";
+import { WidgetBody } from "../widgets/WidgetBody.tsx";
+import { createWidgetBoard, type WidgetBoardSession } from "../widgets/widgetBoard.tsx";
+import { HOME_CLIPBOARD_SCOPE, widgetClipboard } from "../widgets/widgetClipboard.ts";
+import { hasFredSeries, needsAutoRefresh, seriesById } from "./homeModel.ts";
 import { createEtagLoader, createMarketRefreshQueue, type MarketPollSignal } from "./marketData.ts";
 import "./shoelace.ts";
-import {
-	createMoveAnnouncer,
-	MoveAnnouncerView,
-	WIDGET_GRID_CLASS,
-	WidgetGrid,
-} from "@research/widget-grid";
-import { HomeFrame } from "./HomeFrame.tsx";
+import { WIDGET_GRID_CLASS, WidgetFrame, WidgetGrid } from "@research/widget-grid";
+import { ResetDialog } from "./ResetDialog.tsx";
 import { ensureHomeIconLibraries } from "./shoelace.ts";
-import { WidgetDialog, type WidgetDialogState } from "./WidgetDialog.tsx";
-import { WIDGET_REGISTRY } from "./widgetRegistry.tsx";
 import "@research/widget-grid/styles.css";
 
 interface HomeNotice {
@@ -56,12 +57,16 @@ interface HomeNotice {
 /** What one data poll observed; queued/active keep polling, the rest settle. */
 type HomePollSignal = MarketPollSignal;
 
+/** Undo depth of Home's in-session history (the Notebook keeps as many on the server). */
+const HOME_UNDO_DEPTH = 20;
+
 /**
- * Home: market widgets the owner arranges (FR-017). Loads the dashboard and
+ * Home: widgets the owner arranges (FR-017), with every widget type and
+ * action of the one widget specification (ADR-0024). Loads the dashboard and
  * the data in parallel, then polls `/home/data` conditionally only while a
- * refresh is active. The server copy is canonical: every edit is applied with
- * `applyDashboardEdit`, saved with `PUT` (version CAS), and re-rendered from
- * what the server accepted.
+ * refresh is active. The server copy is canonical: every edit is saved with
+ * `PUT` (version CAS) and re-rendered from what the server accepted; Undo
+ * restores the bodies kept in this page visit.
  */
 export function HomeView(props: {
 	readonly api: ApiClient;
@@ -107,13 +112,11 @@ export function HomeView(props: {
 	const watchlistError = watchLoader.error;
 	const [notice, setNotice] = createSignal<HomeNotice | null>(null);
 	const [busy, setBusy] = createSignal(false);
-	const [dialog, setDialog] = createSignal<WidgetDialogState | null>(null);
-	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
-	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
-	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
-	/** Polite announcement for every completed move (drag or menu). */
-	const announcer = createMoveAnnouncer();
-	const announceMove = announcer.announceMove;
+	const [resetOpen, setResetOpen] = createSignal(false);
+	const [resetOpener, setResetOpener] = createSignal<HTMLElement | null>(null);
+	const [selection, setSelection] = createSignal<readonly string[]>([]);
+	/** Earlier widget lists of this page visit, newest last (Undo). */
+	const [history, setHistory] = createSignal<readonly (readonly HomeWidget[])[]>([]);
 	let autoRefreshTried = false;
 	let followUpTried = false;
 	/** One market-refresh queue with Home's idempotency-key rule (V9, in the shared module). */
@@ -414,14 +417,14 @@ export function HomeView(props: {
 	 */
 	let rereadInFlight = false;
 	const rereadDashboardIfStale = async (): Promise<void> => {
-		if (disposed || rereadInFlight || busy() || dialog() !== null) return;
+		if (disposed || rereadInFlight || busy() || dialogOpen()) return;
 		if (document.querySelector("[data-widget-dragging]") !== null) return;
 		const current = currentDashboard();
 		if (current === null) return;
 		rereadInFlight = true;
 		try {
 			const result = await props.api.getHomeDashboard();
-			if (disposed || busy() || dialog() !== null) return;
+			if (disposed || busy() || dialogOpen()) return;
 			if (document.querySelector("[data-widget-dragging]") !== null) return;
 			if (!result.ok) return;
 			const latest = currentDashboard();
@@ -438,57 +441,66 @@ export function HomeView(props: {
 	});
 	onCleanup(() => stopWatchingVisibility());
 
-	/** Applies an edit locally, saves with CAS, and re-renders from the server copy. */
-	const saveEdit = async (
-		edit:
-			| { readonly kind: "add"; readonly widget: HomeWidget }
-			| { readonly kind: "remove"; readonly widgetId: string }
-			| {
-					readonly kind: "move";
-					readonly widgetId: string;
-					readonly direction: "earlier" | "later";
-			  }
-			| { readonly kind: "reorder"; readonly widgetId: string; readonly toIndex: number }
-			| { readonly kind: "replace"; readonly widget: HomeWidget }
-			| { readonly kind: "reset" },
-	): Promise<void> => {
+	/**
+	 * Memoized derivations (UI-002): `seriesById` rebuilds a Map per read, so
+	 * every derivation over the dashboard is a memo. The `byId` memo itself —
+	 * not its value — is passed to the widgets, so a refresh updates numbers
+	 * and provenance through the live accessor without tearing down any
+	 * widget subtree (its `<article>`, open disclosures, focus and hover all
+	 * survive).
+	 */
+	const byId = createMemo(() => seriesById(data()?.series ?? []));
+	const widgets = createMemo(() => dashboard.value()?.dashboard.widgets ?? []);
+
+	/**
+	 * Saves the next widget list with CAS and re-renders from the server
+	 * copy; resolves true when saved. Every board edit (add, paste, edit,
+	 * size, duplicate, move, drag, cut, remove) and Reset come through here;
+	 * `undo` saves a kept body back without recording it again.
+	 */
+	const saveWidgets = async (
+		next: readonly HomeWidget[],
+		kind: "edit" | "undo" = "edit",
+	): Promise<boolean> => {
 		const current = currentDashboard();
-		if (current === null) return;
-		// V8: edits attempted while a save is in flight say why (the dialog
-		// stays open so nothing is lost); the toolbar and menus are disabled
-		// while busy so this is the dialog-save path.
+		if (current === null) return false;
+		// V8: a change attempted while a save is in flight says why; the
+		// menus and toolbar are disabled while busy, so this is the in-place
+		// editor and dialog path.
 		if (busy()) {
 			setNotice({
 				tone: "warning",
 				text: "The dashboard is being saved; please try your change again in a moment.",
 			});
-			return;
+			return false;
 		}
-		const transition =
-			edit.kind === "reset"
-				? applyDashboardEdit(current.dashboard, {
-						kind: "reset",
-						dashboard: {
-							schemaVersion: 1,
-							widgets: [...DEFAULT_HOME_DASHBOARD.widgets],
-						},
-					})
-				: applyDashboardEdit(current.dashboard, edit);
-		if (!transition.ok) {
-			setNotice({ tone: "error", text: `The change was rejected: ${transition.error}` });
-			return;
+		const capacity = homeCapacityProblem(next);
+		if (capacity !== null) {
+			setNotice({ tone: "error", text: capacity.message });
+			return false;
+		}
+		const parsed = homeDashboardSchema.safeParse({ schemaVersion: 2, widgets: [...next] });
+		if (!parsed.success) {
+			const issue = parsed.error.issues[0];
+			setNotice({
+				tone: "error",
+				text: `The change was rejected: ${issue === undefined ? "the dashboard is invalid" : issue.message}.`,
+			});
+			return false;
 		}
 		setBusy(true);
-		const saved = await props.api.saveHomeDashboard(transition.value, current.version);
-		if (disposed) return;
+		const saved = await props.api.saveHomeDashboard(parsed.data, current.version);
+		if (disposed) return false;
 		setBusy(false);
 		if (!saved.ok) {
 			if (saved.error.code === "VERSION_CONFLICT") {
 				await dashboard.reload();
-				if (disposed) return;
+				if (disposed) return false;
+				// The kept bodies were made against a version that is gone.
+				setHistory([]);
 				// V4: the conflict reload may carry new series — refresh data too.
 				await loadData();
-				if (disposed) return;
+				if (disposed) return false;
 				setNotice({
 					tone: "warning",
 					text: "The dashboard changed elsewhere; it was reloaded. Please try your change again.",
@@ -496,39 +508,125 @@ export function HomeView(props: {
 			} else {
 				setNotice({ tone: "error", text: `The dashboard was not saved: ${saved.error.message}` });
 			}
-			return;
+			return false;
 		}
+		if (kind === "undo") setHistory((kept) => kept.slice(0, -1));
+		else setHistory((kept) => [...kept, current.dashboard.widgets].slice(-HOME_UNDO_DEPTH));
 		dashboard.set(saved.value);
-		setDialog(null);
-		if (edit.kind === "move" || edit.kind === "reorder") {
-			const movedId = edit.widgetId;
-			const position = saved.value.dashboard.widgets.findIndex(
-				(entry) => entry.widgetId === movedId,
-			);
-			const moved = saved.value.dashboard.widgets[position];
-			if (position >= 0 && moved !== undefined) {
-				announceMove(moved.title, position + 1, saved.value.dashboard.widgets.length);
-			}
-		}
+		const live = new Set(saved.value.dashboard.widgets.map((widget) => widget.widgetId));
+		setSelection((selected) => selected.filter((id) => live.has(id)));
 		// V4: data is reloaded after every successful save, so widgets never
 		// show "unavailable … source not stated" for observations the server
 		// already holds.
 		await reloadDataAfterSave();
-		if (disposed) return;
-		if (edit.kind === "add" || edit.kind === "replace") {
-			const added = saved.value.dashboard.widgets.find(
-				(entry) => entry.widgetId === edit.widget.widgetId,
-			);
-			if (added !== undefined) {
-				const byId = seriesById(data()?.series ?? []);
-				const needsData = widgetSeriesIds(added).some((id) => {
-					const series = byId.get(id);
-					return series === undefined || series.observations.length === 0;
-				});
-				if (needsData && data()?.refresh.activeRunId === null) {
-					void queueRefresh("New series have no data yet, so one refresh was queued.");
-				}
+		return true;
+	};
+
+	/**
+	 * Edits made while a save is in flight wait for it, then apply to the
+	 * saved result (the Notebook session's rule, ADR-0024): a dialog save or
+	 * an in-place text save during a move is applied after it, never lost.
+	 */
+	let saveChain: Promise<unknown> = Promise.resolve();
+	const queueSave = (
+		next: () => readonly HomeWidget[] | null,
+		kind: "edit" | "undo" = "edit",
+	): Promise<boolean> => {
+		const run = saveChain.then(() => {
+			const widgetsNext = next();
+			return widgetsNext === null ? false : saveWidgets(widgetsNext, kind);
+		});
+		saveChain = run;
+		return run;
+	};
+
+	/** After an add or edit: one refresh when a new series has no data yet. */
+	const refreshForNewSeries = (added: readonly WidgetCore[]): void => {
+		const byIdNow = seriesById(data()?.series ?? []);
+		const needsData = added.some((widget) =>
+			widgetSeriesIds(widget).some((id) => {
+				const series = byIdNow.get(id);
+				return series === undefined || series.observations.length === 0;
+			}),
+		);
+		if (needsData && data()?.refresh.activeRunId === null) {
+			void queueRefresh("New series have no data yet, so one refresh was queued.");
+		}
+	};
+
+	/** Home as the shared board's session: the dashboard, saved with CAS. */
+	const homeSession: WidgetBoardSession<HomeWidget> = {
+		widgets: () => widgets(),
+		pending: () => busy(),
+		selection,
+		select: (widgetId, mode) => {
+			if (widgetId === null) {
+				setSelection([]);
+				return;
 			}
+			const order = widgets().map((widget) => widget.widgetId);
+			if (mode === "replace") {
+				setSelection(order.includes(widgetId) ? [widgetId] : []);
+				return;
+			}
+			setSelection((current) => {
+				const next = current.includes(widgetId)
+					? current.filter((id) => id !== widgetId)
+					: [...current, widgetId];
+				return order.filter((id) => next.includes(id));
+			});
+		},
+		edit: (change) => queueSave(() => change(widgets())),
+		replaceWidget: (core) => {
+			const next = asHomeWidget(core);
+			if (next === null) return Promise.resolve(false);
+			return queueSave(() =>
+				widgets().map((widget) => (widget.widgetId === core.widgetId ? next : widget)),
+			);
+		},
+		toWidget: (entry) => asHomeWidget(entry.core),
+		undoAvailable: () => history().length > 0,
+		undo: () => queueSave(() => history().at(-1) ?? null, "undo"),
+	};
+
+	/**
+	 * Market data for the market widgets, as the shared `WidgetBody` reads
+	 * it: Home's own loaders, passed as live accessors so a refresh updates
+	 * the widgets in place instead of rebuilding them.
+	 */
+	const marketContext: WidgetMarketContext = {
+		seriesById: () => byId(),
+		watchlist,
+		watchlistError,
+		onRetryWatchlist: () => retryWatchlist(),
+		onRefreshEarnings: () => refreshEarnings(),
+		earningsRefreshBusy: () => earningsRefreshBusy(),
+		api: props.api,
+	};
+
+	const board = createWidgetBoard<HomeWidget>({
+		session: homeSession,
+		types: HOME_WIDGET_TYPES,
+		clipboard: widgetClipboard(),
+		scope: () => HOME_CLIPBOARD_SCOPE,
+		api: props.api,
+		seriesById: () => byId(),
+		marketLimits: {
+			scope: "dashboard",
+			maxWidgets: MARKET_LIMITS.maxWidgets,
+			maxSeries: MARKET_LIMITS.maxSeries,
+		},
+		onAdded: refreshForNewSeries,
+	});
+	const dialogOpen = (): boolean => resetOpen() || board.dialogOpen();
+
+	/** Reset replaces every widget with the default arrangement (Undo restores them). */
+	const confirmReset = async (): Promise<void> => {
+		const saved = await queueSave(() => DEFAULT_HOME_DASHBOARD.widgets);
+		if (disposed) return;
+		setResetOpen(false);
+		if (saved) {
+			setNotice({ tone: "success", text: "The dashboard was reset to the default arrangement." });
 		}
 	};
 
@@ -552,39 +650,11 @@ export function HomeView(props: {
 			return;
 		}
 		dashboard.set(result.value);
-		setDialog(null);
+		setHistory([]);
+		setResetOpen(false);
 		setNotice({ tone: "success", text: "The dashboard was reset to the default arrangement." });
 		// V4: a reset changes the series set, so data is reloaded.
 		await reloadDataAfterSave();
-	};
-
-	const loadCatalog = async () => {
-		setCatalogState("loading");
-		const result = await props.api.listMarketCatalog();
-		if (disposed) return;
-		if (!result.ok) {
-			setCatalogState("error");
-			return;
-		}
-		setCatalog(result.value);
-		setCatalogState("ready");
-	};
-
-	const openDialog = (
-		state: WidgetDialogState,
-		event: MouseEvent & { readonly currentTarget: HTMLElement },
-	) => {
-		setOpener(event.currentTarget);
-		setDialog(state);
-		if (catalog() === null) void loadCatalog();
-	};
-
-	/** The Actions button of a widget menu: dialog focus returns to it on close. */
-	const openEditDialog = (target: HomeWidget) => {
-		const opener = document.querySelector(`[data-widget-actions="${target.widgetId}"]`);
-		setOpener(opener instanceof HTMLElement ? opener : null);
-		if (catalog() === null) void loadCatalog();
-		setDialog({ mode: "edit", widget: target });
 	};
 
 	const statusLine = createMemo((): string | null => {
@@ -609,16 +679,6 @@ export function HomeView(props: {
 		return "No market-data refresh has completed yet.";
 	});
 
-	/**
-	 * Memoized derivations (UI-002): `seriesById` rebuilds a Map per read, so
-	 * every derivation over the dashboard is a memo. The `byId` memo itself —
-	 * not its value — is passed to the widgets, so a refresh updates numbers
-	 * and provenance through the live accessor without tearing down any
-	 * widget subtree (its `<article>`, open disclosures, focus and hover all
-	 * survive).
-	 */
-	const byId = createMemo(() => seriesById(data()?.series ?? []));
-	const widgets = createMemo(() => dashboard.value()?.dashboard.widgets ?? []);
 	const fredShown = createMemo(() =>
 		hasFredSeries(widgets().flatMap((widget) => [...widgetSeriesIds(widget)])),
 	);
@@ -626,20 +686,6 @@ export function HomeView(props: {
 		const state = dashboard.state();
 		return state.status === "error" ? state.error : null;
 	};
-
-	/**
-	 * Drag and drop repositioning (HIG Drag and drop): the pointer/DOM engine
-	 * lives in `@research/widget-grid` (`createWidgetDrag` owns the state, the
-	 * listeners, the CSSOM writes and the cleanup; `WidgetGrid` owns the
-	 * preview-while-saving). A drop saves exactly one `reorder` edit; the
-	 * previewed order stays on screen (CSS `order`, real DOM order changes
-	 * only on commit) until the save settles.
-	 */
-	const onWidgetDrop = (drop: {
-		readonly widgetId: string;
-		readonly toIndex: number;
-	}): Promise<void> =>
-		saveEdit({ kind: "reorder", widgetId: drop.widgetId, toIndex: drop.toIndex });
 
 	/**
 	 * V2: the data loading skeleton — and nothing else — while data loads.
@@ -661,7 +707,12 @@ export function HomeView(props: {
 	);
 
 	return (
-		<div class="space-y-3">
+		<section
+			aria-label="Home widgets"
+			class="space-y-3"
+			ref={(element) => board.attach(element)}
+			onKeyDown={(event) => board.onSectionKeyDown(event)}
+		>
 			{/* V2: a failed data GET with no data is an error state, never a
 			    loading skeleton beside the error. */}
 			<Show when={data() === null}>
@@ -693,13 +744,9 @@ export function HomeView(props: {
 					)}
 				</Show>
 				<div class="ml-auto flex items-center gap-1">
-					<IconButton
-						label="Add widget"
-						icon="plus-lg"
-						variant="primary"
-						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "add" }, event)}
-					/>
+					<Show when={dashboard.value() !== null}>
+						<board.HeaderButtons />
+					</Show>
 					<IconButton
 						label="Refresh market data"
 						icon="arrow-clockwise"
@@ -708,14 +755,18 @@ export function HomeView(props: {
 					/>
 					<IconButton
 						label="Reset to default arrangement"
-						icon="arrow-counterclockwise"
+						icon="arrow-repeat"
 						disabled={busy() || dashboard.value() === null}
-						onClick={(event) => openDialog({ mode: "confirm-reset" }, event)}
+						onClick={(event) => {
+							setResetOpener(event.currentTarget);
+							setResetOpen(true);
+						}}
 					/>
 				</div>
 			</section>
 
-			<MoveAnnouncerView message={announcer.message()} />
+			<board.SelectionToolbar />
+			<board.Announcements />
 
 			{/* V2: the dashboard GET has its own error state (stable code, Try
 			    again) instead of an endless skeleton; when the stored document
@@ -748,7 +799,7 @@ export function HomeView(props: {
 						<div>
 							<IconButton
 								label="Reset to default arrangement"
-								icon="arrow-counterclockwise"
+								icon="arrow-repeat"
 								disabled={busy()}
 								onClick={() => void resetToDefaults()}
 							/>
@@ -762,47 +813,33 @@ export function HomeView(props: {
 							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
 						>
 							<WidgetGrid
-								widgets={dashboard.value()?.dashboard.widgets ?? []}
+								widgets={board.entries()}
 								canDrag={!busy() && dashboard.value() !== null}
-								ignoreDragFrom="sl-dialog,sl-select,sl-input,sl-option"
-								onReorder={onWidgetDrop}
+								ignoreDragFrom="sl-dialog,sl-select,sl-input,sl-option,dialog,input,select,textarea,[data-rich-text-editor]"
+								onReorder={board.onDrop}
 							>
-								{(widget, index) => (
-									<HomeFrame
-										widget={widget}
-										position={index()}
-										total={dashboard.value()?.dashboard.widgets.length ?? 0}
-										actionsDisabled={busy()}
-										onEdit={openEditDialog}
-										onMove={(target, direction) =>
-											void saveEdit({ kind: "move", widgetId: target.widgetId, direction })
-										}
-										onRemove={(target) =>
-											void saveEdit({ kind: "remove", widgetId: target.widgetId })
-										}
+								{(entry, index) => (
+									<WidgetFrame
+										widget={entry}
+										selected={board.isSelected(entry.widgetId)}
+										onSelectChange={(id, mode) => board.select(id, mode)}
+										actions={<board.ActionsMenu widget={entry.widget} index={index()} />}
 									>
 										{/*
-										 * The registry entry's component, with the live series
-										 * accessor as a prop: the For callback never reads the
-										 * data (only `widget.type`), so a refresh updates the
-										 * widgets in place instead of rebuilding every subtree.
+										 * The live series reach the market widgets through the
+										 * context's accessors: the For callback never reads the
+										 * data, so a refresh updates the widgets in place instead
+										 * of rebuilding every subtree.
 										 */}
-										<Dynamic
-											component={WIDGET_REGISTRY[widget.type].component}
-											widget={widget}
-											seriesById={byId}
-											watchlist={watchlist}
-											watchlistError={watchlistError}
-											onRetryWatchlist={retryWatchlist}
-											onRefreshEarnings={refreshEarnings}
-											earningsRefreshBusy={earningsRefreshBusy}
-											api={props.api}
-											disabled={busy()}
-											onSaveRange={(next: HomeWidget) =>
-												void saveEdit({ kind: "replace", widget: next })
-											}
+										<WidgetBody
+											widget={entry.widget}
+											view={null}
+											market={marketContext}
+											editingDisabled={busy()}
+											onSaveText={board.saveText}
+											onSaveMarketWidget={board.saveMarketWidget}
 										/>
-									</HomeFrame>
+									</WidgetFrame>
 								)}
 							</WidgetGrid>
 						</Show>
@@ -821,23 +858,13 @@ export function HomeView(props: {
 				the observation nearest to one year earlier.
 			</p>
 
-			<WidgetDialog
-				state={dialog()}
-				opener={opener()}
-				dashboard={dashboard.value()?.dashboard ?? { schemaVersion: 1 as const, widgets: [] }}
-				catalog={catalog()}
-				catalogState={catalogState()}
-				seriesById={byId()}
-				onSave={(widget) => {
-					const exists = widgets().some((entry) => entry.widgetId === widget.widgetId);
-					void saveEdit(exists ? { kind: "replace", widget } : { kind: "add", widget });
-				}}
-				onConfirmReset={() => void saveEdit({ kind: "reset" })}
-				onClose={() => {
-					setDialog(null);
-					opener()?.focus();
-				}}
+			<board.Dialogs />
+			<ResetDialog
+				open={resetOpen()}
+				opener={resetOpener()}
+				onConfirm={() => void confirmReset()}
+				onClose={() => setResetOpen(false)}
 			/>
-		</div>
+		</section>
 	);
 }

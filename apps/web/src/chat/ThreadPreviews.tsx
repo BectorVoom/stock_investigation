@@ -1,4 +1,4 @@
-import type { NotebookWidgetCore, NotebookWidgetOrigin, WorkspaceView } from "@research/contracts";
+import type { NotebookWidgetOrigin, WidgetCore, WorkspaceView } from "@research/contracts";
 import type { RenderContext, UiRegistry, WorkspaceComponent } from "@research/ui-registry";
 import { WorkspaceComponentView } from "@research/ui-registry";
 import { WidgetFrame } from "@research/widget-grid";
@@ -77,7 +77,7 @@ export function ComponentPreview(props: {
 	readonly messageId: string | null;
 	readonly inNotebook: boolean;
 	readonly saving: boolean;
-	readonly onAdd: (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => void;
+	readonly onAdd: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 }): JSX.Element {
 	const core = () => widgetFromComponent(props.component, props.view);
 	const add = () => {
@@ -142,7 +142,7 @@ export function ThreadPreviewsForRun(props: {
 	readonly messageId: string | null;
 	readonly isInNotebook: (componentId: string) => boolean;
 	readonly savingIds: readonly string[];
-	readonly onAdd: (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => void;
+	readonly onAdd: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 }): JSX.Element {
 	return (
 		<Show when={props.components.length > 0}>

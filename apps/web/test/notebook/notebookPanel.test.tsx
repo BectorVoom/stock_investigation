@@ -10,7 +10,7 @@ import {
 	parseWidgetClipboardJson,
 	WIDGET_CLIPBOARD_STORAGE_KEY,
 	type WidgetClipboardStore,
-} from "../../src/notebook/widgetClipboard.ts";
+} from "../../src/widgets/widgetClipboard.ts";
 import type { FakeBackend } from "../fakeBackend.ts";
 import { ALWAYS_VISIBLE } from "../fakeBackend.ts";
 import { WORKSPACE_VIEW } from "../fixtures.ts";

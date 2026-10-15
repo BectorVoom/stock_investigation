@@ -1,8 +1,4 @@
-import {
-	isNotebookMarketWidget,
-	type NotebookWidget,
-	notebookMarketSeriesIds,
-} from "@research/contracts";
+import { distinctWidgetSeriesIds, isMarketWidget, type NotebookWidget } from "@research/contracts";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ok } from "../api/http.ts";
@@ -14,7 +10,7 @@ import {
 } from "../home/marketData.ts";
 import { createPoller, documentVisibility, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
-import type { NotebookMarketContext } from "./marketContext.ts";
+import type { WidgetMarketContext } from "../widgets/marketContext.ts";
 
 /**
  * Live market data for one conversation's notebook (ADR-0021), through the
@@ -36,7 +32,7 @@ export function createNotebookMarketContext(options: {
 	readonly workspaceId: () => string | null;
 	readonly widgets: () => readonly NotebookWidget[];
 	readonly visibility?: VisibilitySource;
-}): NotebookMarketContext {
+}): WidgetMarketContext {
 	const visibility = options.visibility ?? documentVisibility(document);
 	let disposed = false;
 
@@ -65,11 +61,9 @@ export function createNotebookMarketContext(options: {
 
 	/** Distinct series the notebook's market widgets name, sorted for comparison. */
 	const seriesKey = createMemo(() =>
-		[...notebookMarketSeriesIds(options.widgets())].sort().join(","),
+		[...distinctWidgetSeriesIds(options.widgets())].sort().join(","),
 	);
-	const hasMarket = createMemo(() =>
-		options.widgets().some((widget) => isNotebookMarketWidget(widget)),
-	);
+	const hasMarket = createMemo(() => options.widgets().some((widget) => isMarketWidget(widget)));
 	const hasCalendar = createMemo(() =>
 		options.widgets().some((widget) => widget.type === "earnings-calendar"),
 	);
@@ -100,7 +94,7 @@ export function createNotebookMarketContext(options: {
 		if (key === "") return;
 		const current = dataLoader.value();
 		if (current === null || current.refresh.activeRunId !== null) return;
-		const ids = notebookMarketSeriesIds(options.widgets());
+		const ids = distinctWidgetSeriesIds(options.widgets());
 		const needs = ids.some((id) => {
 			const series = byId().get(id);
 			return series === undefined || series.unavailable?.code === "NEVER_REFRESHED";

@@ -4,9 +4,9 @@ import type {
 	Conversation as ConversationData,
 	Evidence,
 	NotebookTurn,
-	NotebookWidgetCore,
 	NotebookWidgetOrigin,
 	ResearchRun,
+	WidgetCore,
 	WorkspaceView,
 } from "@research/contracts";
 import { isLeasedJobState, isTerminalJobState } from "@research/contracts";
@@ -336,7 +336,7 @@ export function Conversation(props: {
 	/** Item selection inside a preview still dispatches through the session. */
 	readonly onSelectComponent?: (componentId: string, itemKey: string | null) => void;
 	/** Saving chat output into the Notebook (preview widget or answer). */
-	readonly onAddComponent?: (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => void;
+	readonly onAddComponent?: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 	readonly onAddAnswer?: (message: Message) => void;
 	readonly answerInNotebook?: (messageId: string) => boolean;
 	readonly componentInNotebook?: (componentId: string) => boolean;

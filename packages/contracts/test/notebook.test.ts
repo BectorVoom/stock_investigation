@@ -6,24 +6,24 @@
 import { describe, expect, it } from "vitest";
 import { MAX_REQUEST_BODY_BYTES } from "../src/api.ts";
 import {
+	asHomeWidget,
+	distinctWidgetSeriesIds,
 	EMPTY_NOTEBOOK,
-	homeWidgetAsNotebookWidget,
-	isNotebookMarketWidget,
+	homeWidgetSchema,
+	isMarketWidget,
 	NOTEBOOK_LIMITS,
-	NOTEBOOK_WIDGET_TYPE_META,
-	NOTEBOOK_WIDGET_TYPES,
 	notebookAssistRequestSchema,
 	notebookCapacityProblem,
 	notebookContentBytes,
-	notebookMarketSeriesIds,
 	notebookResponseSchema,
 	notebookSchema,
 	notebookTurnSchema,
-	notebookWidgetAsHomeWidget,
-	notebookWidgetCoreSchema,
 	notebookWidgetSchema,
 	putNotebookRequestSchema,
 	undoNotebookRequestSchema,
+	WIDGET_TYPE_META,
+	WIDGET_TYPES,
+	widgetCoreSchema,
 } from "../src/index.ts";
 import { notebookAssistJobRequestSchema } from "../src/jobs.ts";
 import { expectAccepted, expectRejected, repeat, without } from "./support.ts";
@@ -46,7 +46,7 @@ const TEXT_WIDGET = {
 
 describe("notebook widgets", () => {
 	it("knows the widget types with their sizes, Home's market types included", () => {
-		expect([...NOTEBOOK_WIDGET_TYPES].sort()).toEqual([
+		expect([...WIDGET_TYPES].sort()).toEqual([
 			"chart",
 			"earnings-calendar",
 			"indicator-table",
@@ -58,16 +58,16 @@ describe("notebook widgets", () => {
 			"table",
 			"text",
 		]);
-		for (const type of NOTEBOOK_WIDGET_TYPES) {
-			expect(NOTEBOOK_WIDGET_TYPE_META[type].sizes.length).toBeGreaterThan(0);
+		for (const type of WIDGET_TYPES) {
+			expect(WIDGET_TYPE_META[type].sizes.length).toBeGreaterThan(0);
 		}
 		// Agents cannot create research widgets at every size: only the owner's sizes.
-		expect(NOTEBOOK_WIDGET_TYPE_META.research.sizes).toEqual(["medium", "large"]);
+		expect(WIDGET_TYPE_META.research.sizes).toEqual(["medium", "large"]);
 	});
 
 	it("accepts one strict member per type, core and stored", () => {
-		expectAccepted(notebookWidgetCoreSchema, TEXT_CORE);
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, TEXT_CORE);
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-2",
 			type: "metric",
 			title: "M",
@@ -78,7 +78,7 @@ describe("notebook widgets", () => {
 			caption: "",
 			asOf: null,
 		});
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-3",
 			type: "chart",
 			title: "C",
@@ -87,7 +87,7 @@ describe("notebook widgets", () => {
 			unit: "",
 			series: [{ name: "s", points: [{ x: "a", y: 1 }] }],
 		});
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-4",
 			type: "table",
 			title: "T",
@@ -95,7 +95,7 @@ describe("notebook widgets", () => {
 			columns: ["a", "b"],
 			rows: [["c", 1]],
 		});
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-5",
 			type: "research",
 			title: "R",
@@ -107,7 +107,7 @@ describe("notebook widgets", () => {
 
 	it("rejects a table row that does not match its columns", () => {
 		expectRejected(
-			notebookWidgetCoreSchema,
+			widgetCoreSchema,
 			{
 				widgetId: "w-4",
 				type: "table",
@@ -121,7 +121,7 @@ describe("notebook widgets", () => {
 	});
 
 	it("rejects unknown widget fields (strictness)", () => {
-		expectRejected(notebookWidgetCoreSchema, { ...TEXT_CORE, colour: "red" });
+		expectRejected(widgetCoreSchema, { ...TEXT_CORE, colour: "red" });
 		expectRejected(notebookWidgetSchema, { ...TEXT_WIDGET, colour: "red" });
 		expectRejected(notebookSchema, { widgets: [], layout: [] });
 	});
@@ -323,39 +323,38 @@ describe("notebook market widgets (ADR-0021)", () => {
 	} as const;
 
 	it("accepts each Home widget type with exactly Home's fields", () => {
-		expectAccepted(notebookWidgetCoreSchema, GOLD_CHART);
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, GOLD_CHART);
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-m",
 			type: "market-metric",
 			title: "VIX",
 			size: "small",
 			seriesId: "fred:VIXCLS",
 		});
-		expectAccepted(notebookWidgetCoreSchema, {
+		expectAccepted(widgetCoreSchema, {
 			widgetId: "w-e",
 			type: "earnings-calendar",
 			title: "Earnings",
 			size: "large",
 			daysAhead: 90,
 		});
-		expectRejected(notebookWidgetCoreSchema, { ...GOLD_CHART, seriesIds: ["gold"] });
-		expectRejected(notebookWidgetCoreSchema, { ...GOLD_CHART, points: [] });
+		expectRejected(widgetCoreSchema, { ...GOLD_CHART, seriesIds: ["gold"] });
+		expectRejected(widgetCoreSchema, { ...GOLD_CHART, points: [] });
 	});
 
 	it("refuses a widget that repeats a series", () => {
-		expectRejected(notebookWidgetCoreSchema, {
+		expectRejected(widgetCoreSchema, {
 			...GOLD_CHART,
 			seriesIds: ["twelve-data:XAU/USD", "twelve-data:XAU/USD"],
 		});
 	});
 
-	it("round-trips through the Home widget form", () => {
-		const parsed = notebookWidgetCoreSchema.parse(GOLD_CHART);
-		if (!isNotebookMarketWidget(parsed)) throw new Error("expected a market widget");
-		const home = notebookWidgetAsHomeWidget(parsed);
-		expect(home.type).toBe("line-chart");
-		expect(homeWidgetAsNotebookWidget(home)).toEqual(parsed);
-		expect(notebookMarketSeriesIds([parsed, parsed])).toEqual(["twelve-data:XAU/USD"]);
+	it("is a Home widget as it is: one specification, no conversion (ADR-0024)", () => {
+		const parsed = widgetCoreSchema.parse(GOLD_CHART);
+		if (!isMarketWidget(parsed)) throw new Error("expected a market widget");
+		expect(homeWidgetSchema.parse(parsed)).toEqual(parsed);
+		expect(asHomeWidget(parsed)).toBe(parsed);
+		expect(distinctWidgetSeriesIds([parsed, parsed])).toEqual(["twelve-data:XAU/USD"]);
 	});
 
 	it("caps the distinct series a notebook may grow to", () => {

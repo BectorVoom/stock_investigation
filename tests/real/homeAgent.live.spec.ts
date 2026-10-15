@@ -213,7 +213,7 @@ test.describe("a real agent arranges the Home widgets (spends plan quota)", () =
 			const first = widgets[0];
 			if (first === undefined) throw new Error("the stored dashboard is empty");
 			expect(first).toMatchObject({
-				type: "metric",
+				type: "market-metric",
 				title: "Gold (agent)",
 				seriesId: "twelve-data:XAU/USD",
 			});

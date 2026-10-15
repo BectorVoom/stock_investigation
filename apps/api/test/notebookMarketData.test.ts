@@ -241,10 +241,10 @@ describe("notebook market data (ADR-0021)", () => {
 		expect(dashboard.status).toBe(200);
 		const saved = await harness.call("PUT", "/home/dashboard", {
 			dashboard: {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [
 					{
-						type: "metric",
+						type: "market-metric",
 						widgetId: "w-1",
 						title: "VIX",
 						size: "small",
@@ -261,10 +261,10 @@ describe("notebook market data (ADR-0021)", () => {
 		expect((await saveNotebook(harness, workspaceId, [textWidget("w-1")], 1)).status).toBe(200);
 		const savedAgain = await harness.call("PUT", "/home/dashboard", {
 			dashboard: {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [
 					{
-						type: "metric",
+						type: "market-metric",
 						widgetId: "w-1",
 						title: "VIX",
 						size: "small",

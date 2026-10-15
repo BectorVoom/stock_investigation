@@ -447,7 +447,7 @@ test("Home still shows widget titles", async () => {
 		headers: { Origin: E2E_ORIGIN, "X-Research-Csrf": "1", "Content-Type": "application/json" },
 		data: {
 			dashboard: {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [
 					{
 						widgetId: "home-scroll-t1",

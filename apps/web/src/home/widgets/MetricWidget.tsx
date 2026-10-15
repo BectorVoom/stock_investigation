@@ -1,4 +1,4 @@
-import type { HomeWidget, MarketSeries } from "@research/contracts";
+import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, type JSX, Show } from "solid-js";
@@ -24,7 +24,7 @@ import {
  * series with no observations is "unavailable (reason)".
  */
 export function MetricWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "metric" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "market-metric" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	const series = () => props.seriesById().get(props.widget.seriesId) ?? null;

@@ -2,9 +2,9 @@ import {
 	type NotebookResponse,
 	type NotebookTurn,
 	type NotebookWidget,
-	type NotebookWidgetCore,
 	type NotebookWidgetOrigin,
 	notebookCapacityProblem,
+	type WidgetCore,
 } from "@research/contracts";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -43,7 +43,7 @@ export interface NotebookSession {
 	) => Promise<boolean>;
 	/** Adds one widget (at `toIndex`, default last); resolves to its id when saved. */
 	readonly addWidget: (
-		core: NotebookWidgetCore,
+		core: WidgetCore,
 		origin: NotebookWidgetOrigin,
 		toIndex?: number,
 	) => Promise<string | null>;
@@ -55,11 +55,20 @@ export interface NotebookSession {
 	 */
 	readonly addWidgets: (
 		entries: readonly {
-			readonly core: NotebookWidgetCore;
+			readonly core: WidgetCore;
 			readonly origin: NotebookWidgetOrigin;
 		}[],
 		toIndex?: number,
 	) => Promise<readonly string[] | null>;
+	/** A stored widget for a new entry: the metadata stamped like any add (the server re-stamps it). */
+	readonly toWidget: (entry: {
+		readonly core: WidgetCore;
+		readonly origin: NotebookWidgetOrigin;
+	}) => NotebookWidget;
+	/** Replaces one widget's content, title and size, keeping its metadata. */
+	readonly replaceWidget: (core: WidgetCore) => Promise<boolean>;
+	/** True when the server keeps an earlier body, so `undo` restores it. */
+	readonly undoAvailable: Accessor<boolean>;
 	/** Restores the body kept before the version on screen. */
 	readonly undo: () => Promise<boolean>;
 	/** Owner confirmation of an assistant's proposed removals. */
@@ -268,16 +277,14 @@ export function createNotebookSession(
 
 	void reload();
 
+	const toWidget: NotebookSession["toWidget"] = ({ core, origin }) => {
+		const now = new Date().toISOString();
+		return { ...core, createdAt: now, updatedAt: now, revision: 1, origin };
+	};
+
 	const addWidgets: NotebookSession["addWidgets"] = async (entries, toIndex) => {
 		if (entries.length === 0) return [];
-		const now = new Date().toISOString();
-		const placeholders: NotebookWidget[] = entries.map(({ core, origin }) => ({
-			...core,
-			createdAt: now,
-			updatedAt: now,
-			revision: 1,
-			origin,
-		}));
+		const placeholders: NotebookWidget[] = entries.map(toWidget);
 		const insert = (widgets: readonly NotebookWidget[]): readonly NotebookWidget[] => {
 			const index =
 				toIndex === undefined ? widgets.length : Math.max(0, Math.min(toIndex, widgets.length));
@@ -315,6 +322,22 @@ export function createNotebookSession(
 		turns: () => state()?.turns ?? [],
 		reload,
 		edit,
+		toWidget,
+		replaceWidget: (core) =>
+			edit((current) =>
+				current.map((entry) =>
+					entry.widgetId === core.widgetId
+						? {
+								...core,
+								createdAt: entry.createdAt,
+								updatedAt: entry.updatedAt,
+								revision: entry.revision,
+								origin: entry.origin,
+							}
+						: entry,
+				),
+			),
+		undoAvailable: () => state()?.undoAvailable ?? false,
 		addWidgets,
 		addWidget: async (core, origin, toIndex) => {
 			const ids = await addWidgets([{ core, origin }], toIndex);

@@ -173,7 +173,7 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		expect(dashboard.origin).toBe("defaults");
 		const saved = await api<{ origin: string }>("PUT", "/api/v1/home/dashboard", {
 			dashboard: {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				widgets: [
 					...dashboard.dashboard.widgets,
 					{

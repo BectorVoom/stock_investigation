@@ -115,7 +115,12 @@ There is no login in local mode: whoever can open `http://localhost:8787` on thi
 
 Any MCP client (OpenCode, Codex, Claude Code) can list the owner's Home
 widgets and add, remove, move, reorder, resize and reconfigure them through
-the `research-home-widgets` server ([ADR-0019](adr/0019-reusable-widget-grid-and-agent-layer.md)):
+the `research-home-widgets` server ([ADR-0019](adr/0019-reusable-widget-grid-and-agent-layer.md)).
+It offers every Home widget type of the one widget specification
+([ADR-0024](adr/0024-one-widget-specification-for-home-and-notebook.md)):
+`text`, `metric` (a static number), `chart`, `table`, and the live
+`market-metric` (called `metric` before ADR-0024), `line-chart`,
+`stock-table`, `indicator-table` and `earnings-calendar`:
 
 1. Start the workspace (`bun run prod` for production, `bun run dev` for development).
 2. Connect the client. With OpenCode, from the repository root:

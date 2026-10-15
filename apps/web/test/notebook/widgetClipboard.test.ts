@@ -1,13 +1,10 @@
-import {
-	NOTEBOOK_LIMITS,
-	type NotebookWidgetCore,
-	type NotebookWidgetOrigin,
-} from "@research/contracts";
+import { NOTEBOOK_LIMITS, type NotebookWidgetOrigin, type WidgetCore } from "@research/contracts";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
 import {
 	clipboardCountText,
 	createWidgetClipboardStore,
+	HOME_CLIPBOARD_SCOPE,
 	parseWidgetClipboard,
 	parseWidgetClipboardJson,
 	resetWidgetClipboard,
@@ -17,7 +14,7 @@ import {
 	type WidgetClipboardEntry,
 	type WidgetClipboardStorage,
 	widgetClipboard,
-} from "../../src/notebook/widgetClipboard.ts";
+} from "../../src/widgets/widgetClipboard.ts";
 
 const OWNER: NotebookWidgetOrigin = {
 	kind: "owner",
@@ -32,11 +29,11 @@ const CHAT: NotebookWidgetOrigin = {
 	componentId: null,
 };
 
-function textCore(widgetId = "nb-text"): NotebookWidgetCore {
+function textCore(widgetId = "nb-text"): WidgetCore {
 	return { widgetId, type: "text", title: "Notes", size: "small", text: "Hello" };
 }
 
-function chartCore(widgetId = "nb-chart"): NotebookWidgetCore {
+function chartCore(widgetId = "nb-chart"): WidgetCore {
 	return {
 		widgetId,
 		type: "chart",
@@ -48,7 +45,7 @@ function chartCore(widgetId = "nb-chart"): NotebookWidgetCore {
 	};
 }
 
-function researchCore(widgetId = "nb-research"): NotebookWidgetCore {
+function researchCore(widgetId = "nb-research"): WidgetCore {
 	return {
 		widgetId,
 		type: "research",
@@ -58,7 +55,7 @@ function researchCore(widgetId = "nb-research"): NotebookWidgetCore {
 	};
 }
 
-function entry(core: NotebookWidgetCore, origin: NotebookWidgetOrigin): WidgetClipboardEntry {
+function entry(core: WidgetCore, origin: NotebookWidgetOrigin): WidgetClipboardEntry {
 	return { core, origin };
 }
 
@@ -228,6 +225,29 @@ describe("resolveClipboardPaste", () => {
 		expect(same.entries.map((item) => item.core.type)).toEqual(["text", "research"]);
 		expect(same.entries[1]?.origin).toEqual(CHAT);
 		expect(same.skippedResearch).toBe(0);
+	});
+
+	it("moves widgets between Home and a chat (ADR-0024), never a research result to Home", () => {
+		const fromChat = parseWidgetClipboard({
+			version: 1,
+			sourceWorkspaceId: "ws_1",
+			entries: [entry(textCore(), CHAT), entry(researchCore(), CHAT)],
+		});
+		if (fromChat === null) throw new Error("fixture clipboard is invalid");
+		const onHome = resolveClipboardPaste(fromChat, HOME_CLIPBOARD_SCOPE);
+		expect(onHome.entries.map((item) => item.core.type)).toEqual(["text"]);
+		expect(onHome.entries[0]?.origin).toEqual(OWNER);
+		expect(onHome.skippedResearch).toBe(1);
+
+		const fromHome = parseWidgetClipboard({
+			version: 1,
+			sourceWorkspaceId: HOME_CLIPBOARD_SCOPE,
+			entries: [entry(chartCore(), OWNER)],
+		});
+		if (fromHome === null) throw new Error("fixture clipboard is invalid");
+		const inChat = resolveClipboardPaste(fromHome, "ws_1");
+		expect(inChat.entries.map((item) => item.core.type)).toEqual(["chart"]);
+		expect(inChat.entries[0]?.core.widgetId).not.toBe("nb-chart");
 	});
 
 	it("words the announcements and the skipped notice", () => {

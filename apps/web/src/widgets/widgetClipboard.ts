@@ -1,28 +1,32 @@
 import {
 	NOTEBOOK_LIMITS,
-	type NotebookWidgetCore,
 	type NotebookWidgetOrigin,
-	notebookWidgetCoreSchema,
 	notebookWidgetOriginSchema,
+	type WidgetCore,
+	widgetCoreSchema,
 } from "@research/contracts";
 import { type Accessor, createSignal } from "solid-js";
 import { z } from "zod";
-import { duplicateNotebookWidget } from "./notebookModel.ts";
+import { duplicateWidget } from "./widgetModel.ts";
 
 /**
  * The app's one widget clipboard (ADR-0023), separate from the system
  * clipboard: a widget is structured data the server validates, and browsers
  * only allow plain text and HTML on the system clipboard. It holds widget
- * cores and origins plus the workspace they came from, in memory and in
- * `localStorage`, so a widget cut in one chat can be pasted into another —
- * after a reload or in another tab.
+ * cores and origins plus the page they came from (a conversation id, or
+ * `HOME_CLIPBOARD_SCOPE`), in memory and in `localStorage`, so a widget cut
+ * in one chat can be pasted into another, or between Home and a notebook
+ * (ADR-0024) — after a reload or in another tab.
  */
+
+/** The clipboard scope of the Home page: never a conversation id, so research widgets never paste there. */
+export const HOME_CLIPBOARD_SCOPE = "home";
 
 /** Storage key of the persisted clipboard (one clipboard for the whole app). */
 export const WIDGET_CLIPBOARD_STORAGE_KEY = "research.notebookWidgetClipboard.v1";
 
 export interface WidgetClipboardEntry {
-	readonly core: NotebookWidgetCore;
+	readonly core: WidgetCore;
 	readonly origin: NotebookWidgetOrigin;
 }
 
@@ -32,7 +36,7 @@ export interface WidgetClipboardContent {
 }
 
 const widgetClipboardEntrySchema = z.strictObject({
-	core: notebookWidgetCoreSchema,
+	core: widgetCoreSchema,
 	origin: notebookWidgetOriginSchema,
 });
 
@@ -87,7 +91,7 @@ function ownerOrigin(): NotebookWidgetOrigin {
 
 /**
  * Turns the clipboard into what to insert for a target workspace: every
- * entry under a fresh id (a deep copy through `duplicateNotebookWidget`).
+ * entry under a fresh id (a deep copy through `duplicateWidget`).
  * Within the same workspace the original origin is kept (cut + paste is a
  * move); elsewhere the widget becomes owner-made. A `research` widget shows a
  * research component of its own chat, so it is skipped outside that chat.
@@ -106,7 +110,7 @@ export function resolveClipboardPaste(
 			continue;
 		}
 		entries.push({
-			core: duplicateNotebookWidget(entry.core),
+			core: duplicateWidget(entry.core),
 			origin: crossWorkspace ? ownerOrigin() : entry.origin,
 		});
 	}

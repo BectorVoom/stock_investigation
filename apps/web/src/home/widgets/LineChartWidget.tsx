@@ -1,4 +1,4 @@
-import type { HomeWidget, MarketRange, MarketSeries } from "@research/contracts";
+import type { MarketRange, MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { ChartFrame, ChartLegend, SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
@@ -21,16 +21,18 @@ import { WidgetProvenance } from "../HomeFrame.tsx";
  * data-table twin. Built on the shared chart primitives (ChartFrame,
  * ChartLegend, palette, scales, ticks from `@research/ui-registry`); the
  * widget only derives the model (memoized, never re-parsed per render).
- * A range change saves the widget through `onSaveRange`. Series with stored
+ * A range change saves the widget through `onSaveRange`. The select is
+ * never disabled during a page's save: a change made then waits for the
+ * save in flight (ADR-0024), and toggling an `sl-select`'s `disabled` while
+ * closed runs a deferred hide that can land after the next open, leaving
+ * the listbox open but invisible. Series with stored
  * observations stay plotted even when their last refresh failed, with an
  * amber "last refresh failed (reason)" note beside them.
  */
 export function LineChartWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "line-chart" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "line-chart" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
-	/** V8: disabled while HomeView is saving, so the control reflects the server copy. */
-	readonly disabled: boolean;
-	readonly onSaveRange: (widget: HomeWidget) => void;
+	readonly onSaveRange: (widget: MarketWidgetCore) => void;
 }): JSX.Element {
 	const resolved = createMemo(() =>
 		props.widget.seriesIds.map((id) => props.seriesById().get(id) ?? null),
@@ -92,7 +94,6 @@ export function LineChartWidget(props: {
 					value={props.widget.range}
 					size="small"
 					hoist
-					disabled={props.disabled}
 					on:sl-change={onRangeChange}
 				>
 					<For each={HOME_RANGES}>

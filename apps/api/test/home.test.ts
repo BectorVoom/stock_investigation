@@ -31,14 +31,14 @@ const VIX_META = {
 } as const;
 
 const metricWidget = (widgetId: string, seriesId = "fred:VIXCLS") => ({
-	type: "metric",
+	type: "market-metric",
 	widgetId,
 	title: `Widget ${widgetId}`,
 	size: "small",
 	seriesId,
 });
 
-const dashboardWith = (widgets: readonly unknown[]) => ({ schemaVersion: 1, widgets });
+const dashboardWith = (widgets: readonly unknown[]) => ({ schemaVersion: 2, widgets });
 
 function marketCompletion(
 	lease: { leaseGeneration: number },
@@ -687,6 +687,47 @@ describe("market refresh (FR-017)", () => {
 		// The API serves the newest 800; the oldest kept is day 100 of 1,600.
 		expect(vix?.observations).toHaveLength(800);
 		expect(vix?.observations[0]?.[0]).toBe(day(800));
+	});
+
+	it("reads a stored version-1 dashboard as version 2 (ADR-0024), and the next save writes 2", async () => {
+		const harness = createHarness();
+		await harness.call("PUT", "/home/dashboard", {
+			dashboard: dashboardWith([metricWidget("w-1")]),
+			expectedVersion: 0,
+		});
+		// The row as a release before ADR-0024 wrote it: `metric` was the live series.
+		const legacy = {
+			schemaVersion: 1,
+			widgets: [
+				{ type: "metric", widgetId: "w-1", title: "VIX", size: "small", seriesId: "fred:VIXCLS" },
+			],
+		};
+		await env.DB.prepare("UPDATE home_dashboards SET dashboard_json = ? WHERE owner_id = ?")
+			.bind(JSON.stringify(legacy), harness.ownerId)
+			.run();
+		const read = await body(
+			await harness.call("GET", "/home/dashboard"),
+			homeDashboardResponseSchema,
+		);
+		expect(read.dashboard.schemaVersion).toBe(2);
+		expect(read.dashboard.widgets[0]?.type).toBe("market-metric");
+		const saved = await harness.call("PUT", "/home/dashboard", {
+			dashboard: read.dashboard,
+			expectedVersion: read.version,
+		});
+		expect(saved.status).toBe(200);
+		const row = await env.DB.prepare(
+			"SELECT dashboard_json FROM home_dashboards WHERE owner_id = ?",
+		)
+			.bind(harness.ownerId)
+			.first<{ dashboard_json: string }>();
+		expect(JSON.parse(row?.dashboard_json ?? "{}")).toMatchObject({ schemaVersion: 2 });
+		// A version-1 PUT is refused: only the stored form is upgraded.
+		const legacyPut = await harness.call("PUT", "/home/dashboard", {
+			dashboard: legacy,
+			expectedVersion: read.version + 1,
+		});
+		expect(legacyPut.status).toBe(400);
 	});
 
 	it("fails a stored dashboard that no longer parses instead of replacing it", async () => {

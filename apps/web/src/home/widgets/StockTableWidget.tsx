@@ -1,4 +1,4 @@
-import type { HomeWidget, MarketSeries } from "@research/contracts";
+import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Match, Show, Switch } from "solid-js";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
@@ -21,7 +21,7 @@ import {
  * "last refresh failed (reason)" note row beneath it.
  */
 export function StockTableWidget(props: {
-	readonly widget: Extract<HomeWidget, { readonly type: "stock-table" }>;
+	readonly widget: Extract<MarketWidgetCore, { readonly type: "stock-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	return (

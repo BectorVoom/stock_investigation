@@ -1,8 +1,8 @@
-import type { NotebookWidget } from "@research/contracts";
+import type { WidgetCore } from "@research/contracts";
 import type { JSX } from "solid-js";
 import { createMemo, Show } from "solid-js";
 
-type Metric = Extract<NotebookWidget, { readonly type: "metric" }>;
+type Metric = Extract<WidgetCore, { readonly type: "metric" }>;
 
 const DIRECTION_MARK = { up: "▲", down: "▼", unchanged: "▬" } as const;
 const DIRECTION_WORD = { up: "up", down: "down", unchanged: "unchanged" } as const;

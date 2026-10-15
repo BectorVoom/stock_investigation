@@ -148,10 +148,10 @@ test("the Home earnings-calendar widget shows a month grid whose days open the W
 	await expect(page.locator('article[data-widget-id="w-vix"]')).toBeVisible({ timeout: 30_000 });
 
 	await page.getByRole("button", { name: "Add widget" }).click();
-	const dialog = page.locator("sl-dialog", { hasText: "Add widget" });
+	await page.getByRole("menuitem", { name: "Earnings calendar", exact: true }).click();
+	const dialog = page.locator("sl-dialog");
 	await expect(dialog).toBeAttached();
 	await page.locator('sl-dialog sl-input[label="Title"] input').fill(title);
-	await setSlValue('sl-dialog sl-select[label="Widget type"]', "earnings-calendar");
 	await setSlValue('sl-dialog sl-select[label="Days ahead"]', "180");
 	await dialog.getByRole("button", { name: "Add widget" }).click();
 
@@ -222,7 +222,7 @@ test("the Home earnings-calendar widget shows a month grid whose days open the W
 
 	// The widget is removed so later runs start clean.
 	await again.getByRole("button", { name: `${title} actions` }).click();
-	await page.getByRole("menuitem", { name: "Remove widget" }).click();
+	await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
 	await expect(again).toHaveCount(0);
 });
 

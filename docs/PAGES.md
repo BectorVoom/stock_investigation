@@ -25,19 +25,32 @@ Page layout (frame, panels, headings, shared parts) follows
 **Purpose**
 
 Check market prices, charts and economic indicators at a glance on widgets you arrange.
+The widgets are the Notebook's (ADR-0024): the same types, menu, selection,
+clipboard and Undo; Home keeps visible titles and takes every type except a
+research result.
 
 **User actions**
 
-- Add a widget.
-- Edit a widget (title, series, range, size).
+- Add a widget from the + menu: Text, Metric, Chart, Table (added and opened
+  in their editor) or a live market type — Market metric, Line chart, Stock
+  table, Indicator table, Earnings calendar (its dialog opens first).
+- Edit a widget (Edit…: the content editor, or the market dialog for series,
+  range, days ahead), edit a Text widget in place, or change its size from the
+  menu (Size: Small / Medium / Large).
+- Duplicate, Cut, Copy and Paste after (one clipboard with the Notebooks: a
+  widget copied on Home pastes into a chat's notebook and back); Paste widgets
+  in the toolbar; ⌘X / ⌘C / ⌘V on selected widgets.
+- Select widgets (header click, Shift/Ctrl/⌘ to add) and act on the selection
+  from its toolbar (Duplicate, Cut, Copy, Remove, Clear).
+- Undo the last changes of this visit (up to 20; a reload clears them).
 - Move a widget earlier/later.
 - Drag a widget to a new position (the header strip is the handle; Move
   earlier/later in the menu is the keyboard and assistive-technology path,
   announced with the position; the page auto-scrolls while the pointer rests
   near the top or bottom edge of the viewport; the grid, the frame, the
   pointer engine and the announcer live in `@research/widget-grid`).
-- Remove a widget.
-- Reset to the default arrangement.
+- Remove a widget (at once, no dialog; Undo restores it).
+- Reset to the default arrangement (after confirmation; Undo restores it).
 - Queue a market-data refresh for the local runner.
 - (Elsewhere) Have an AI agent arrange the widgets through the MCP server
   (`docs/OPERATIONS.md`); edits made elsewhere — another tab, an agent —

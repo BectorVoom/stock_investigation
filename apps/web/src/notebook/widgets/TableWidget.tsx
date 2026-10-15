@@ -1,8 +1,8 @@
-import type { NotebookWidget } from "@research/contracts";
+import type { WidgetCore } from "@research/contracts";
 import type { JSX } from "solid-js";
 import { For } from "solid-js";
 
-type TableWidget = Extract<NotebookWidget, { readonly type: "table" }>;
+type TableWidget = Extract<WidgetCore, { readonly type: "table" }>;
 
 function cellText(cell: string | number | null): string {
 	if (cell === null) return "—";

@@ -1,5 +1,5 @@
 /**
- * Canonical serializer: tree back to `NOTEBOOK_TEXT_MARKDOWN` source. The
+ * Canonical serializer: tree back to `WIDGET_TEXT_MARKDOWN` source. The
  * editor stores whatever the owner typed, but the property tests pin the
  * round trip (serialize∘parse is a fixpoint) and the editor's list
  * continuation and to-do toggles build on the same canonical prefixes.

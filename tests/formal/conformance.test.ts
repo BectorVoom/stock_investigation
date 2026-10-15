@@ -440,12 +440,12 @@ describe("Lean model conformance: recent message count within budget", () => {
 describe("Lean model conformance: home dashboard edits", () => {
 	const widgetId = (id: number) => `w${id}`;
 	const toDashboard = (ids: readonly number[]) => ({
-		schemaVersion: 1 as const,
+		schemaVersion: 2 as const,
 		widgets: ids.map((id) => ({
 			widgetId: widgetId(id),
 			title: `Widget ${id}`,
 			size: "small" as const,
-			type: "metric" as const,
+			type: "market-metric" as const,
 			seriesId: "fred:VIXCLS",
 		})),
 	});
@@ -465,7 +465,7 @@ describe("Lean model conformance: home dashboard edits", () => {
 								widgetId: id,
 								title: `Widget ${vector.edit.id}`,
 								size: "small" as const,
-								type: "metric" as const,
+								type: "market-metric" as const,
 								seriesId: "fred:VIXCLS",
 							},
 						};

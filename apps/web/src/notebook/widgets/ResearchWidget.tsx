@@ -1,4 +1,4 @@
-import type { NotebookWidget, WorkspaceView } from "@research/contracts";
+import type { WidgetCore, WorkspaceView } from "@research/contracts";
 import { type UiRegistry, WorkspaceComponentView } from "@research/ui-registry";
 import type { JSX } from "solid-js";
 import { createMemo, Show } from "solid-js";
@@ -9,7 +9,7 @@ import { createMemo, Show } from "solid-js";
  * size and position are the owner's.
  */
 export function ResearchWidget(props: {
-	readonly widget: Extract<NotebookWidget, { readonly type: "research" }>;
+	readonly widget: Extract<WidgetCore, { readonly type: "research" }>;
 	readonly view: WorkspaceView | null;
 	readonly registry: UiRegistry;
 }): JSX.Element {

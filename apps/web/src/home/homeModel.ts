@@ -1,6 +1,4 @@
 import {
-	type HomeWidget,
-	homeWidgetSeriesIds,
 	type MarketProviderId,
 	type MarketRange,
 	type MarketSeries,
@@ -68,12 +66,6 @@ export const HOME_RANGE_LABELS: { readonly [R in MarketRange]: string } = {
 
 export function seriesById(series: readonly MarketSeries[]): ReadonlyMap<string, MarketSeries> {
 	return new Map(series.map((entry) => [entry.seriesId, entry]));
-}
-
-export function widgetSeriesIds(widget: HomeWidget): readonly string[] {
-	// The contract owns the walk (the earnings calendar carries no series);
-	// this re-exports it so the two never drift.
-	return homeWidgetSeriesIds(widget);
 }
 
 /** Wire tuples ([observedOn, value]) to domain points; the repository returns them ascending. */

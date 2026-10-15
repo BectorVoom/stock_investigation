@@ -265,7 +265,7 @@ test("an MCP client arranges the Home widgets through the owner API", async ({ p
 				await mcp.call(4, "tools/call", {
 					name: "widgets_add",
 					arguments: {
-						type: "metric",
+						type: "market-metric",
 						title: "Gold (agent)",
 						config: { seriesId: "twelve-data:XAU/USD" },
 						toIndex: 0,

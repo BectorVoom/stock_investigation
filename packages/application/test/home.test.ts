@@ -73,13 +73,13 @@ const VIX_META: StoredMarketSeries = {
 function dashboardOf(widgets: HomeDashboard["widgets"]): HomeDashboardRepository {
 	return {
 		get: async () => ({
-			dashboard: { schemaVersion: 1 as const, widgets },
+			dashboard: { schemaVersion: 2 as const, widgets },
 			version: 1,
 			updatedAt: null,
 		}),
 		put: async () => "written" as const,
 		reset: async () => ({
-			dashboard: { schemaVersion: 1 as const, widgets },
+			dashboard: { schemaVersion: 2 as const, widgets },
 			version: 2,
 			updatedAt: "2026-10-12T12:00:00.000Z",
 		}),
@@ -109,7 +109,7 @@ describe("home getData (FR-017)", () => {
 		// Type-valid but schema-invalid: the write path would never store this,
 		// so reaching it means the stored row predates (or bypassed) validation.
 		const dashboard = dashboardOf([
-			{ type: "metric", widgetId: "w-bad", title: "Bad", size: "small", seriesId: "nope" },
+			{ type: "market-metric", widgetId: "w-bad", title: "Bad", size: "small", seriesId: "nope" },
 		]);
 		const market = marketOf();
 		await expect(serviceWith(dashboard, market).getData(OWNER)).rejects.toThrow(
@@ -119,7 +119,13 @@ describe("home getData (FR-017)", () => {
 
 	it("maps repository rows straight through in the order the SQL returned them", async () => {
 		const dashboard = dashboardOf([
-			{ type: "metric", widgetId: "w-vix", title: "VIX", size: "small", seriesId: "fred:VIXCLS" },
+			{
+				type: "market-metric",
+				widgetId: "w-vix",
+				title: "VIX",
+				size: "small",
+				seriesId: "fred:VIXCLS",
+			},
 		]);
 		const stored: StoredMarketObservation[] = [
 			{ seriesId: "fred:VIXCLS", observedOn: "2026-10-01", value: 15.2 },
@@ -175,9 +181,27 @@ describe("home getData (FR-017)", () => {
 			title: "ZZZZ9",
 		};
 		const dashboard = dashboardOf([
-			{ type: "metric", widgetId: "w-cpi", title: "CPI", size: "small", seriesId: "fred:CPIAUCSL" },
-			{ type: "metric", widgetId: "w-zzz", title: "Zzz", size: "small", seriesId: "fred:ZZZZ9" },
-			{ type: "metric", widgetId: "w-vix", title: "VIX", size: "small", seriesId: "fred:VIXCLS" },
+			{
+				type: "market-metric",
+				widgetId: "w-cpi",
+				title: "CPI",
+				size: "small",
+				seriesId: "fred:CPIAUCSL",
+			},
+			{
+				type: "market-metric",
+				widgetId: "w-zzz",
+				title: "Zzz",
+				size: "small",
+				seriesId: "fred:ZZZZ9",
+			},
+			{
+				type: "market-metric",
+				widgetId: "w-vix",
+				title: "VIX",
+				size: "small",
+				seriesId: "fred:VIXCLS",
+			},
 		]);
 		const market: MarketRepository = {
 			getSeriesMeta: async () => [failedOnly, unknownSymbol, VIX_META],
@@ -230,7 +254,13 @@ describe("home getData (FR-017)", () => {
 
 	it("S2: the refresh object tells the last success apart from the last failure", async () => {
 		const dashboard = dashboardOf([
-			{ type: "metric", widgetId: "w-vix", title: "VIX", size: "small", seriesId: "fred:VIXCLS" },
+			{
+				type: "market-metric",
+				widgetId: "w-vix",
+				title: "VIX",
+				size: "small",
+				seriesId: "fred:VIXCLS",
+			},
 		]);
 		const jobs: JobRepository = {
 			...stubJobs(),

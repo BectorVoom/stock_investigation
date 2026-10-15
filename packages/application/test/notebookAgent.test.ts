@@ -7,11 +7,11 @@
  */
 import {
 	NOTEBOOK_LIMITS,
-	NOTEBOOK_WIDGET_TYPES,
 	type Notebook,
 	type NotebookWidget,
-	type NotebookWidgetCore,
 	notebookContentBytes,
+	WIDGET_TYPES,
+	type WidgetCore,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
@@ -61,7 +61,7 @@ describe("describeNotebook", () => {
 		if (!described.ok) throw new Error("expected a snapshot");
 		expect(described.value.widgets.map((widget) => widget.widgetId)).toEqual(["w-1"]);
 		expect(described.value.widgetTypes.map((entry) => entry.type).sort()).toEqual(
-			[...NOTEBOOK_WIDGET_TYPES].sort(),
+			[...WIDGET_TYPES].sort(),
 		);
 	});
 });
@@ -489,14 +489,14 @@ describe("stampNotebook", () => {
 
 	it("stamps a new widget and keeps an unchanged one identical", async () => {
 		const previous = notebookOf([textWidget("w-1")]);
-		const core: NotebookWidgetCore = {
+		const core: WidgetCore = {
 			widgetId: "w-1",
 			type: "text",
 			title: "Notes",
 			size: "medium",
 			text: "hello",
 		};
-		const fresh: NotebookWidgetCore = {
+		const fresh: WidgetCore = {
 			widgetId: "w-2",
 			type: "text",
 			title: "New",
@@ -532,7 +532,7 @@ describe("stampNotebook", () => {
 		};
 		const previous = notebookOf([table]);
 		// The same content with keys in another order, as a client may send it.
-		const reordered: NotebookWidgetCore = {
+		const reordered: WidgetCore = {
 			rows: [
 				["2025", 10],
 				["2026", null],
@@ -563,7 +563,7 @@ describe("stampNotebook", () => {
 				["2027", 1],
 			],
 		]) {
-			const edited: NotebookWidgetCore = { ...reordered, rows };
+			const edited: WidgetCore = { ...reordered, rows };
 			expect(stampNotebook(previous, [edited], NOW, () => origin).widgets[0]).toMatchObject({
 				updatedAt: NOW,
 				revision: 3,
@@ -571,13 +571,13 @@ describe("stampNotebook", () => {
 		}
 		// A field on one side only is a difference, whichever side has it.
 		const withExtra = { ...reordered, note: "x" };
-		const extraCore: NotebookWidgetCore = withExtra;
+		const extraCore: WidgetCore = withExtra;
 		expect(stampNotebook(previous, [extraCore], NOW, () => origin).widgets[0]?.revision).toBe(3);
 	});
 
 	it("bumps revision and updatedAt only for changed widgets", () => {
 		const previous = notebookOf([textWidget("w-1")]);
-		const changed: NotebookWidgetCore = {
+		const changed: WidgetCore = {
 			widgetId: "w-1",
 			type: "text",
 			title: "Notes",
@@ -602,7 +602,7 @@ describe("stampNotebook", () => {
 			title: "Notes",
 			type: "text",
 			widgetId: "w-1",
-		} as NotebookWidgetCore;
+		} as WidgetCore;
 		const stamped = stampNotebook(previous, [reordered], NOW, () => ({ ...origin }));
 		expect(stamped.widgets[0]).toEqual(textWidget("w-1"));
 	});
@@ -622,6 +622,6 @@ describe("stampNotebook", () => {
 			notebookWidgetAgentTypes(context())
 				.map((entry) => entry.type)
 				.sort(),
-		).toEqual([...NOTEBOOK_WIDGET_TYPES].sort());
+		).toEqual([...WIDGET_TYPES].sort());
 	});
 });

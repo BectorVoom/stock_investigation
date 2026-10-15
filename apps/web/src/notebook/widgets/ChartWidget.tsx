@@ -1,9 +1,9 @@
-import type { NotebookWidget } from "@research/contracts";
+import type { WidgetCore } from "@research/contracts";
 import { seriesColor } from "@research/ui-registry";
 import type { JSX } from "solid-js";
 import { createSignal, For, Show } from "solid-js";
 
-type ChartWidget = Extract<NotebookWidget, { readonly type: "chart" }>;
+type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
 
 const WIDTH = 300;
 const HEIGHT = 120;

@@ -1,5 +1,5 @@
 /**
- * Typed tree for the `NOTEBOOK_TEXT_MARKDOWN` subset (ADR-0021): the
+ * Typed tree for the `WIDGET_TEXT_MARKDOWN` subset (ADR-0021): the
  * renderer and the serializer both read this, so the stored Markdown and
  * what the owner sees cannot drift apart. Anything outside the subset never
  * becomes a node: it stays literal text inside a `text` node.

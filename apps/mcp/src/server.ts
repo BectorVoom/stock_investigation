@@ -29,7 +29,7 @@ export interface CreateHomeMcpServerOptions {
 }
 
 function layoutFailure(widgets: readonly HomeWidget[]): Result<void, WidgetAgentFailure> {
-	const parsed = homeDashboardSchema.safeParse({ schemaVersion: 1, widgets: [...widgets] });
+	const parsed = homeDashboardSchema.safeParse({ schemaVersion: 2, widgets: [...widgets] });
 	if (parsed.success) return ok(undefined);
 	const issue = parsed.error.issues[0];
 	if (issue === undefined) {

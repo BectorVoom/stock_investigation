@@ -146,10 +146,10 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 		const dashboard: HomeDashboardRepository = {
 			get: async () => ({
 				dashboard: {
-					schemaVersion: 1 as const,
+					schemaVersion: 2 as const,
 					widgets: [
 						{
-							type: "metric",
+							type: "market-metric",
 							widgetId: "w-vix",
 							title: "VIX",
 							size: "small",
@@ -195,9 +195,15 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 		const deleted: { keep: readonly string[] | null } = { keep: null };
 		const service = homeWith(["twelve-data:EXTRA"], deleted);
 		const dashboard: HomeDashboard = {
-			schemaVersion: 1,
+			schemaVersion: 2,
 			widgets: [
-				{ type: "metric", widgetId: "w-vix", title: "VIX", size: "small", seriesId: "fred:VIXCLS" },
+				{
+					type: "market-metric",
+					widgetId: "w-vix",
+					title: "VIX",
+					size: "small",
+					seriesId: "fred:VIXCLS",
+				},
 			],
 		};
 		const saved = unwrap(await service.putDashboard(OWNER, dashboard, 1));

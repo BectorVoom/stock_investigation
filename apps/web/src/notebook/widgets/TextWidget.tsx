@@ -1,4 +1,4 @@
-import type { NotebookWidget } from "@research/contracts";
+import type { WidgetCore } from "@research/contracts";
 import type { JSX } from "solid-js";
 import { createSignal, Show } from "solid-js";
 import { parseRichText } from "../richText/parser.ts";
@@ -7,14 +7,14 @@ import { RichTextView } from "../richText/RichTextView.tsx";
 import { toggleTodoLine } from "../richText/serializer.ts";
 
 /**
- * A Text widget: the `NOTEBOOK_TEXT_MARKDOWN` source rendered without
+ * A Text widget: the `WIDGET_TEXT_MARKDOWN` source rendered without
  * `innerHTML`, edited in place Notion-style. Clicking the body (or Enter
  * on the focused body) swaps the read view for the WYSIWYG editor; the
  * editor saves through `onSaveText` and closes itself when the save lands.
  * Focus moves into the editor on open and back to the body on leave.
  */
 export function TextWidget(props: {
-	readonly widget: Extract<NotebookWidget, { readonly type: "text" }>;
+	readonly widget: Extract<WidgetCore, { readonly type: "text" }>;
 	/**
 	 * True while the notebook saves: a closed body does not open. An open
 	 * editor stays editable — the session queues edits made during a save,

@@ -1,22 +1,9 @@
 import type { ChatMessage, WorkspaceView } from "@research/contracts";
-import {
-	homeWidgetAsNotebookWidget,
-	NOTEBOOK_LIMITS,
-	NOTEBOOK_WIDGET_TYPE_META,
-	type NotebookWidget,
-	type NotebookWidgetCore,
-	type NotebookWidgetSize,
-	notebookWidgetAsHomeWidget,
-} from "@research/contracts";
-import { applyWidgetLayoutEdit } from "@research/widget-grid/core";
+import { NOTEBOOK_LIMITS, WIDGET_TYPE_META, type WidgetCore } from "@research/contracts";
+import { newWidgetId } from "../widgets/widgetModel.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
-
-/** A fresh widget id (`nb-` + random), unique within one notebook. */
-export function newNotebookWidgetId(): string {
-	return `nb-${crypto.randomUUID()}`;
-}
 
 function truncateText(text: string, max: number): string {
 	return text.length > max ? text.slice(0, max) : text;
@@ -67,7 +54,7 @@ function tableFromDataset(
 	component: WorkspaceComponent,
 	dataset: WorkspaceDataset,
 	widgetId: string,
-): NotebookWidgetCore {
+): WidgetCore {
 	const columns = dataset.columns
 		.slice(0, NOTEBOOK_LIMITS.maxTableColumns)
 		.map((column) => truncateText(column.label, NOTEBOOK_LIMITS.maxCellChars));
@@ -81,7 +68,7 @@ function tableFromDataset(
 		widgetId,
 		type: "table",
 		title: componentTitle(component) ?? dataset.title.slice(0, NOTEBOOK_LIMITS.maxTitleChars),
-		size: NOTEBOOK_WIDGET_TYPE_META.table.defaultSize,
+		size: WIDGET_TYPE_META.table.defaultSize,
 		columns: columns.length > 0 ? columns : ["Value"],
 		rows,
 	};
@@ -123,12 +110,12 @@ function pointsFromDataset(
 		.filter((entry) => entry.points.length > 0);
 }
 
-function researchFallback(component: WorkspaceComponent, widgetId: string): NotebookWidgetCore {
+function researchFallback(component: WorkspaceComponent, widgetId: string): WidgetCore {
 	return {
 		widgetId,
 		type: "research",
 		title: componentTitle(component) ?? component.componentType,
-		size: NOTEBOOK_WIDGET_TYPE_META.research.defaultSize,
+		size: WIDGET_TYPE_META.research.defaultSize,
 		componentId: component.componentId,
 	};
 }
@@ -143,8 +130,8 @@ function researchFallback(component: WorkspaceComponent, widgetId: string): Note
 export function widgetFromComponent(
 	component: WorkspaceComponent,
 	view: WorkspaceView,
-): NotebookWidgetCore | null {
-	const widgetId = newNotebookWidgetId();
+): WidgetCore | null {
+	const widgetId = newWidgetId();
 	const props = component.props as {
 		readonly datasetRef?: unknown;
 		readonly title?: unknown;
@@ -195,7 +182,7 @@ export function widgetFromComponent(
 				widgetId,
 				type: "chart",
 				title,
-				size: NOTEBOOK_WIDGET_TYPE_META.chart.defaultSize,
+				size: WIDGET_TYPE_META.chart.defaultSize,
 				chartType: component.componentType === "bar-chart" ? "bar" : "line",
 				unit,
 				series: converted,
@@ -221,7 +208,7 @@ export function widgetFromComponent(
 				widgetId,
 				type: "chart",
 				title,
-				size: NOTEBOOK_WIDGET_TYPE_META.chart.defaultSize,
+				size: WIDGET_TYPE_META.chart.defaultSize,
 				chartType: "line",
 				unit,
 				series: converted,
@@ -233,135 +220,16 @@ export function widgetFromComponent(
 }
 
 /** An editable text widget from an assistant answer (citation chips become `[n]` text). */
-export function widgetFromAnswer(message: ChatMessage): NotebookWidgetCore {
+export function widgetFromAnswer(message: ChatMessage): WidgetCore {
 	const text =
 		message.text.trim().length > 0
 			? truncateText(message.text.trim(), NOTEBOOK_LIMITS.maxTextChars)
 			: "(empty answer)";
 	return {
-		widgetId: newNotebookWidgetId(),
+		widgetId: newWidgetId(),
 		type: "text",
 		title: titleFromText(message.text, "Answer"),
-		size: NOTEBOOK_WIDGET_TYPE_META.text.defaultSize,
+		size: WIDGET_TYPE_META.text.defaultSize,
 		text,
 	};
-}
-
-/**
- * A copy of `widget` under a fresh id (position: directly after the
- * original). Takes a full widget or a bare core (the clipboard stores cores):
- * only core fields are read, so a deep copy has this one implementation.
- */
-export function duplicateNotebookWidget(
-	widget: NotebookWidget | NotebookWidgetCore,
-): NotebookWidgetCore {
-	const widgetId = newNotebookWidgetId();
-	switch (widget.type) {
-		case "text":
-			return { widgetId, type: "text", title: widget.title, size: widget.size, text: widget.text };
-		case "metric":
-			return {
-				widgetId,
-				type: "metric",
-				title: widget.title,
-				size: widget.size,
-				value: widget.value,
-				unit: widget.unit,
-				change: widget.change,
-				caption: widget.caption,
-				asOf: widget.asOf,
-			};
-		case "chart":
-			return {
-				widgetId,
-				type: "chart",
-				title: widget.title,
-				size: widget.size,
-				chartType: widget.chartType,
-				unit: widget.unit,
-				series: widget.series.map((entry) => ({
-					name: entry.name,
-					points: entry.points.map((point) => ({ x: point.x, y: point.y })),
-				})),
-			};
-		case "table":
-			return {
-				widgetId,
-				type: "table",
-				title: widget.title,
-				size: widget.size,
-				columns: [...widget.columns],
-				rows: widget.rows.map((row) => [...row]),
-			};
-		case "research":
-			return {
-				widgetId,
-				type: "research",
-				title: widget.title,
-				size: widget.size,
-				componentId: widget.componentId,
-			};
-		case "market-metric":
-		case "line-chart":
-		case "stock-table":
-		case "indicator-table":
-		case "earnings-calendar":
-			// Market widgets hold only series ids and options: a copy of the
-			// Home form under the new id.
-			return homeWidgetAsNotebookWidget({
-				...notebookWidgetAsHomeWidget(widget),
-				widgetId,
-				title: widget.title,
-			});
-	}
-}
-
-const LAYOUT_LIMITS = { maxWidgets: NOTEBOOK_LIMITS.maxWidgets };
-
-/** Pure order/size edits over notebook widgets (order-based, never free placement). */
-export function moveNotebookWidget(
-	widgets: readonly NotebookWidget[],
-	widgetId: string,
-	direction: "earlier" | "later",
-): readonly NotebookWidget[] {
-	const result = applyWidgetLayoutEdit(
-		widgets,
-		{ kind: "move", widgetId, direction },
-		LAYOUT_LIMITS,
-	);
-	return result.ok ? (result.value as readonly NotebookWidget[]) : widgets;
-}
-
-export function reorderNotebookWidgets(
-	widgets: readonly NotebookWidget[],
-	widgetId: string,
-	toIndex: number,
-): readonly NotebookWidget[] {
-	const result = applyWidgetLayoutEdit(
-		widgets,
-		{ kind: "reorder", widgetId, toIndex },
-		LAYOUT_LIMITS,
-	);
-	return result.ok ? (result.value as readonly NotebookWidget[]) : widgets;
-}
-
-export function resizeNotebookWidget(
-	widgets: readonly NotebookWidget[],
-	widgetId: string,
-	size: NotebookWidgetSize,
-): readonly NotebookWidget[] {
-	const result = applyWidgetLayoutEdit(widgets, { kind: "resize", widgetId, size }, LAYOUT_LIMITS);
-	return result.ok ? (result.value as readonly NotebookWidget[]) : widgets;
-}
-
-export function removeNotebookWidgets(
-	widgets: readonly NotebookWidget[],
-	widgetIds: readonly string[],
-): readonly NotebookWidget[] {
-	let next: readonly NotebookWidget[] = widgets;
-	for (const widgetId of widgetIds) {
-		const result = applyWidgetLayoutEdit(next, { kind: "remove", widgetId }, LAYOUT_LIMITS);
-		if (result.ok) next = result.value as readonly NotebookWidget[];
-	}
-	return next;
 }
