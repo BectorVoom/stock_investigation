@@ -623,7 +623,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					/>
 					<IconButton
 						label="Duplicate selected widgets"
-						icon="copy"
+						icon="plus-square"
 						onClick={() => duplicateMany(selection())}
 					/>
 					<IconButton
@@ -751,7 +751,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 												{
 													value: "duplicate",
 													label: "Duplicate",
-													icon: "copy",
+													icon: "plus-square",
 													disabled: pending(),
 													onSelect: () => duplicateOne(entry.widget),
 												},
