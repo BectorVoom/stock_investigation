@@ -7,6 +7,8 @@ import { NotebookPanel } from "../../src/notebook/NotebookPanel.tsx";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
 import {
 	createWidgetClipboardStore,
+	parseWidgetClipboardJson,
+	WIDGET_CLIPBOARD_STORAGE_KEY,
 	type WidgetClipboardStore,
 } from "../../src/notebook/widgetClipboard.ts";
 import type { FakeBackend } from "../fakeBackend.ts";
@@ -61,7 +63,10 @@ function createSession(clipboard?: WidgetClipboardStore): void {
 }
 
 /** A clipboard backed by a plain map, so no test leaks through `localStorage`. */
-function createMemoryClipboard(): WidgetClipboardStore {
+function createMemoryClipboard(): {
+	readonly store: WidgetClipboardStore;
+	readonly map: Map<string, string>;
+} {
 	const map = new Map<string, string>();
 	let store!: WidgetClipboardStore;
 	const release = createRoot((dispose) => {
@@ -77,7 +82,7 @@ function createMemoryClipboard(): WidgetClipboardStore {
 		return dispose;
 	});
 	rootDisposers.push(release);
-	return store;
+	return { store, map };
 }
 
 function clipboardLiveRegion(): HTMLElement {
@@ -366,7 +371,7 @@ describe("notebook panel", () => {
 	});
 
 	it("cuts a widget through its menu and offers paste in the header", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const paste = screen.getByRole("button", { name: "Paste widgets" });
@@ -383,8 +388,24 @@ describe("notebook panel", () => {
 		});
 	});
 
+	it("persists a cut so a reloaded page reads it back", async () => {
+		const { store: clipboard, map } = createMemoryClipboard();
+		createSession(clipboard);
+		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
+		await chooseMenuItem("nb-text", "Cut");
+		await waitFor(() => expect(articles()).toHaveLength(4));
+		// The stored JSON re-parses (no metadata stows away inside `core`,
+		// which the strict contract schema would reject): a reloaded page
+		// sees the same clipboard.
+		const raw = map.get(WIDGET_CLIPBOARD_STORAGE_KEY) ?? null;
+		const reread = parseWidgetClipboardJson(raw);
+		expect(reread?.sourceWorkspaceId).toBe(WORKSPACE_ID);
+		expect(reread?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
+		expect(reread).toEqual(clipboard.content());
+	});
+
 	it("pastes a copy after another widget and selects exactly the pasted widget", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		await chooseMenuItem("nb-text", "Copy");
@@ -416,7 +437,7 @@ describe("notebook panel", () => {
 	});
 
 	it("cuts and pastes several selected widgets from the toolbar and header", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		session.select("nb-text", "replace");
@@ -456,7 +477,7 @@ describe("notebook panel", () => {
 	});
 
 	it("says when research widgets stay in their own chat", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		clipboard.set("ws_other", [
 			{
 				core: {
@@ -482,7 +503,7 @@ describe("notebook panel", () => {
 	});
 
 	it("copies with Ctrl+C and pastes with Ctrl+V on the selected widgets", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const panel = document.querySelector('section[data-panel="notebook"]');
@@ -502,7 +523,7 @@ describe("notebook panel", () => {
 	});
 
 	it("acts with focus on the body, where a header-click selection leaves it", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		// Selecting by clicking the header strip, like an owner does.
@@ -516,7 +537,7 @@ describe("notebook panel", () => {
 	});
 
 	it("leaves text fields and text selections to the browser", async () => {
-		const clipboard = createMemoryClipboard();
+		const { store: clipboard } = createMemoryClipboard();
 		createSession(clipboard);
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const panel = document.querySelector('section[data-panel="notebook"]');

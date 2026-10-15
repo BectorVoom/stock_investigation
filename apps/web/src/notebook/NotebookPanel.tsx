@@ -392,11 +392,15 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		const entries: WidgetClipboardEntry[] = [];
 		for (const widget of widgets()) {
 			if (!wanted.has(widget.widgetId)) continue;
-			const { createdAt, updatedAt, revision, ...entry } = widget;
+			// The core keeps no metadata: the contract schema is strict, so a
+			// stowaway `origin` inside `core` would fail the storage re-read
+			// (an empty clipboard after every reload) while pasting from
+			// memory still worked.
+			const { createdAt, updatedAt, revision, origin, ...core } = widget;
 			void createdAt;
 			void updatedAt;
 			void revision;
-			entries.push({ core: entry, origin: entry.origin });
+			entries.push({ core, origin });
 		}
 		return entries;
 	};
