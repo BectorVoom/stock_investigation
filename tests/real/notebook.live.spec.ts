@@ -336,6 +336,27 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		console.log(`gold chart widget: ${await goldFrame.innerText()}`);
 		// Notebook frames show no title (ADR-0021).
 		await expect(page.locator('div[data-panel="notebook"] .wg-title')).toHaveCount(0);
+
+		// The owner's own words, which went to Research before: a request to
+		// create a chart routes to the notebook assistant and adds gold too.
+		await page
+			.getByRole("form", { name: "Research composer" })
+			.getByRole("textbox", { name: "Question" })
+			.fill("Please create gold chart.");
+		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await instruct(page, "Please create gold chart.");
+		await expect(goldFrame).toHaveCount(2);
+		const reread = await fetch(`${API_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`, {
+			headers: ownerHeaders(API_ORIGIN),
+		});
+		const restored = (await reread.json()) as {
+			notebook: { widgets: { type: string; seriesIds?: readonly string[] }[] };
+		};
+		const charts = restored.notebook.widgets.filter((widget) => widget.type === "line-chart");
+		expect(charts.at(-1)?.seriesIds).toContain("twelve-data:XAU/USD");
 	});
 
 	test("a text widget edits in place as rich text and keeps it across a reload", async () => {

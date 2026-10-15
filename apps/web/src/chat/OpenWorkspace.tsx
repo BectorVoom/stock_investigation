@@ -27,7 +27,7 @@ import {
 import { Composer, type ComposerTarget } from "./Composer.tsx";
 import { Conversation, type Message } from "./Conversation.tsx";
 import { focusComposerBox } from "./composerFocus.ts";
-import { mentionsNotebook } from "./composerTarget.ts";
+import { addressesNotebook } from "./composerTarget.ts";
 import { ModeSwitch } from "./ModeSwitch.tsx";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
 
@@ -93,14 +93,14 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 
 	// The composer target: the owner's manual choice wins; otherwise Notebook
 	// when Notebook-first, when widgets are selected, or when the draft
-	// names the notebook or a widget — otherwise Research.
+	// names the notebook or a widget or asks for a chart — otherwise Research.
 	const [targetManual, setTargetManual] = createSignal<ComposerTarget | null>(null);
 	const [composerDraft, setComposerDraft] = createSignal("");
 	const target = createMemo((): ComposerTarget => {
 		const manual = targetManual();
 		if (manual !== null) return manual;
 		if (props.mode === "notebook" || notebookSession.selection().length > 0) return "notebook";
-		if (mentionsNotebook(composerDraft())) return "notebook";
+		if (addressesNotebook(composerDraft())) return "notebook";
 		return "research";
 	});
 	const selectedWidgets = createMemo(() => {

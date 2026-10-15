@@ -56,7 +56,12 @@ data. "A chart of gold prices over the past year" becomes `add line-chart
 key the widget shows Home's "not configured" reason, as Home does.
 
 While the owner has not chosen a target by hand, the composer switches to
-the Notebook target when the instruction names the notebook or a widget.
+the Notebook target when the instruction names the notebook or a widget, or
+asks to create a chart (a creation verb before chart / graph / plot;
+グラフ or チャート with 作成, 追加, 表示…). The owner's own attempt read
+"Please create gold chart." — no notebook, no widget — and went to
+Research, which cannot create widgets (`addressesNotebook` in
+`apps/web/src/chat/composerTarget.ts`).
 
 ### Rich text is a Markdown subset
 

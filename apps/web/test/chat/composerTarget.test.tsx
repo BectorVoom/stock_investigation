@@ -12,7 +12,7 @@ import {
 	notebookFailureLink,
 	notebookFailureText,
 } from "../../src/chat/Composer.tsx";
-import { mentionsNotebook } from "../../src/chat/composerTarget.ts";
+import { addressesNotebook } from "../../src/chat/composerTarget.ts";
 import type { Remote } from "../../src/lib/remote.ts";
 import {
 	initialServerState,
@@ -199,7 +199,7 @@ describe("composer target (integration)", () => {
 	});
 });
 
-describe("mentionsNotebook", () => {
+describe("addressesNotebook", () => {
 	const cases: { readonly text: string; readonly expected: boolean }[] = [
 		{ text: "create a widget in the Notebook showing a chart", expected: true },
 		{ text: "Create a chart of gold prices over the past year in the Notebook", expected: true },
@@ -208,14 +208,22 @@ describe("mentionsNotebook", () => {
 		{ text: "notebook", expected: true },
 		{ text: "ノートブックに金価格のチャートを追加", expected: true },
 		{ text: "ウィジェットを追加して", expected: true },
+		{ text: "Please create gold chart.", expected: true },
+		{ text: "Can you plot gold prices as a line graph?", expected: true },
+		{ text: "show me a chart of the yen", expected: true },
+		{ text: "金価格のグラフを作成して", expected: true },
+		{ text: "ドル円のチャートを表示", expected: true },
+		{ text: "Which chart patterns do analysts cite for gold?", expected: false },
+		{ text: "Which suppliers make graphite anodes?", expected: false },
+		{ text: "グラフェンの需要は？", expected: false },
 		{ text: "Which storage products will see demand growth?", expected: false },
 		{ text: "noteworthy gadgets", expected: false },
 		{ text: "somewidgets here", expected: false },
 		{ text: "ノート", expected: false },
 		{ text: "", expected: false },
 	];
-	it.each(cases)("mentionsNotebook($text) is $expected", ({ text, expected }) => {
-		expect(mentionsNotebook(text)).toBe(expected);
+	it.each(cases)("addressesNotebook($text) is $expected", ({ text, expected }) => {
+		expect(addressesNotebook(text)).toBe(expected);
 	});
 });
 

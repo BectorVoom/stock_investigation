@@ -148,6 +148,23 @@ test("a gold instruction names the Notebook before sending and adds a market cha
 	expect(chart?.seriesIds).toEqual(["twelve-data:XAU/USD"]);
 	expect(chart?.range).toBe("1y");
 
+	// The owner's own words named neither the notebook nor a widget ("Please
+	// create gold chart." went to Research and failed): a request to create
+	// a chart routes to the notebook assistant too.
+	const draftBox = page.getByRole("textbox", { name: /Question|Instruction/ });
+	await draftBox.fill("");
+	await expect(
+		page.getByRole("form", { name: "Research composer" }).getByRole("button", { name: "Research" }),
+	).toHaveAttribute("aria-pressed", "true");
+	await page.getByRole("textbox", { name: "Question" }).fill("Please create gold chart.");
+	await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await notebookComposer.getByRole("button", { name: "Send instruction" }).click();
+	await expect(widgets).toHaveCount(2, { timeout: 60_000 });
+	await expect(widgets.nth(1)).toHaveAttribute("data-widget-type", "line-chart");
+
 	// Console errors exclude the expected error paths (422/403).
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
