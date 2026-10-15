@@ -117,6 +117,29 @@ test("a new chat seeds its notebook through the API", async () => {
 	await expect(notebookWidgets()).toHaveCount(2);
 });
 
+test("a widget's menu in the narrow Chat-first panel is fully visible, not clipped by the panel", async () => {
+	// Chat-first at 1440 px: the Notebook is the narrow secondary panel and
+	// its scroll container clips overflow, so a menu positioned inside it
+	// lost its left part. Hit-test both ends of every item.
+	await notebookWidgets().first().locator("button[data-widget-actions]").click();
+	const menu = page.getByRole("menu", { name: /^Actions for / });
+	await expect(menu).toBeVisible();
+	const clipped = await menu.evaluate((element) =>
+		[...element.querySelectorAll('[role="menuitem"]')].flatMap((item) => {
+			const rect = item.getBoundingClientRect();
+			const y = rect.top + rect.height / 2;
+			return [rect.left + 2, rect.right - 2].flatMap((x) => {
+				const hit = document.elementFromPoint(x, y);
+				return hit !== null && item.contains(hit) ? [] : [item.textContent ?? ""];
+			});
+		}),
+	);
+	expect(clipped).toEqual([]);
+	await reviewShot("widget-menu-secondary-panel.png");
+	await page.keyboard.press("Escape");
+	await expect(menu).toBeHidden();
+});
+
 test("cut a widget via its menu removes it; Undo brings it back", async () => {
 	const notebook = notebookRegion();
 	const alpha = notebookWidgets().filter({ hasText: "Alpha note" });

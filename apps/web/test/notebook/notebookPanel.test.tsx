@@ -14,6 +14,7 @@ import {
 import type { FakeBackend } from "../fakeBackend.ts";
 import { ALWAYS_VISIBLE } from "../fakeBackend.ts";
 import { WORKSPACE_VIEW } from "../fixtures.ts";
+import { lastOpenMenu } from "../openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import {
 	createNotebookBackend,
@@ -112,7 +113,10 @@ function actionsButton(article: HTMLElement): HTMLElement {
 async function chooseMenuItem(widgetId: string, itemName: string): Promise<void> {
 	const article = articleById(widgetId);
 	fireEvent.click(actionsButton(article));
-	const item = await waitFor(() => within(article).getByRole("menuitem", { name: itemName }));
+	// The open menu renders in a portal on <body>, not inside the article.
+	const item = await waitFor(() =>
+		within(lastOpenMenu()).getByRole("menuitem", { name: itemName }),
+	);
 	fireEvent.click(item);
 }
 
@@ -570,15 +574,16 @@ describe("notebook panel", () => {
 		const chart = articleById("nb-chart");
 		fireEvent.click(actionsButton(chart));
 		const source = await waitFor(() =>
-			within(chart).getByRole("menuitem", { name: "Go to source" }),
+			within(lastOpenMenu()).getByRole("menuitem", { name: "Go to source" }),
 		);
 		fireEvent.click(source);
 		expect(origins).toHaveLength(1);
 		// The text widget is owner-made: no source item.
 		const text = articleById("nb-text");
 		fireEvent.click(actionsButton(text));
-		await waitFor(() => within(text).getByRole("menuitem", { name: "Edit…" }));
-		expect(within(text).queryByRole("menuitem", { name: "Go to source" })).toBeNull();
+		const textMenu = await waitFor(() => screen.getByRole("menu", { name: /Actions for/ }));
+		within(textMenu).getByRole("menuitem", { name: "Edit…" });
+		expect(within(textMenu).queryByRole("menuitem", { name: "Go to source" })).toBeNull();
 	});
 
 	it("undoes through the header button when an undo is available", async () => {

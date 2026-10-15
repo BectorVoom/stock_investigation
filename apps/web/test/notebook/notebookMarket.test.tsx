@@ -24,6 +24,7 @@ import {
 	jsonResponse,
 } from "../fakeBackend.ts";
 import { makeRun, WORKSPACE_VIEW } from "../fixtures.ts";
+import { lastOpenMenu } from "../openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import { createNotebookBackend, WORKSPACE_ID } from "./notebookHarness.ts";
 
@@ -715,7 +716,9 @@ describe("notebook market add and edit", () => {
 		const actions = article.querySelector("button[data-widget-actions]");
 		if (!(actions instanceof HTMLElement)) throw new Error("no widget actions button");
 		fireEvent.click(actions);
-		const edit = await waitFor(() => within(article).getByRole("menuitem", { name: "Edit…" }));
+		const edit = await waitFor(() =>
+			within(lastOpenMenu()).getByRole("menuitem", { name: "Edit…" }),
+		);
 		fireEvent.click(edit);
 		const dialog = await waitFor(() => {
 			const found = document.querySelector("sl-dialog");
