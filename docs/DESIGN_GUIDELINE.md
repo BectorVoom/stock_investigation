@@ -408,14 +408,17 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
 - Untitled frames (`WidgetFrame titleHidden`, ADR-0021; the Notebook uses
   them, Home keeps visible titles): the title stays the frame's accessible
   name (visually hidden) and the body starts at the top of the frame. The
-  controls gather in a compact cluster pinned to the top-right corner — the
-  grip (28 px hit target; a click that is not a drag selects) and the
-  actions button — on the frame surface, revealed on hover, focus and
+  controls gather in a compact cluster straddling the frame's top edge at the
+  right, like the badge of an iOS widget in edit mode — the grip (28 px hit
+  target; a click that is not a drag selects) and the actions button, on the
+  frame surface with a hairline ring — over the border and padding, never
+  over content (the scroller keeps 0.75rem of top padding so the first row's
+  cluster is not clipped); revealed on hover, focus and
   selection like the quiet header (opacity only, never on reduced motion,
   always shown without hover). The select toggle stays in the tab order but
-  shows only on keyboard focus or when selected, so a small frame keeps most
-  of its first line free. While a Text widget is edited the cluster steps
-  aside entirely, as Notion hides block handles while typing.
+  shows only on keyboard focus or when selected. While a Text widget is
+  edited the cluster steps aside entirely, as Notion hides block handles
+  while typing.
 - Drag and drop (HIG Drag and drop, `@research/widget-grid`): the whole header strip is the handle
   (leading grip glyph in the muted text colour as the visible affordance;
   a press on the actions button never starts a drag). Pointer Events only

@@ -117,17 +117,8 @@ export function TextWidget(props: {
 		>
 			<Show
 				when={editing()}
-				fallback={
-					<Show when={size() === "small"} fallback={readBody()}>
-						<div class="relative max-h-24 overflow-hidden">
-							{readBody()}
-							<div
-								aria-hidden="true"
-								class="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent"
-							/>
-						</div>
-					</Show>
-				}
+				// Every size shows the whole note; the frame body scrolls.
+				fallback={readBody()}
 			>
 				<RichTextEditor
 					initialText={props.widget.text}

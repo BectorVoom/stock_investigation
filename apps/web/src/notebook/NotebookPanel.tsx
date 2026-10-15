@@ -433,7 +433,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			    bottom padding keeps the last frame's focus ring visible. */}
 			<div
 				data-notebook-scroll
-				class="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2"
+				class="-mx-1 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pt-3 pb-2"
 			>
 				<Switch>
 					<Match when={props.session.state() === null && props.session.loadError() === null}>

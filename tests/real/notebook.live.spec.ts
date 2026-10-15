@@ -224,7 +224,7 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		await page.getByRole("menuitem", { name: "Text" }).click();
 		const editor = page.getByRole("dialog");
 		await editor.getByLabel("Title").fill("Revenue note");
-		await editor.getByLabel("Text", { exact: true }).fill(NOTE);
+		await editor.getByLabel("Text (Markdown)").fill(NOTE);
 		await editor.getByRole("button", { name: "Save widget" }).click();
 		await expect(notebookWidgets(page)).toHaveCount(1, { timeout: 15_000 });
 
@@ -272,14 +272,22 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		const page = activePage();
 		// A new chat: fresh state, Chat-first, nothing selected.
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
+		// The previous chat is already at a `#/chat/ws_…` URL: wait for the
+		// new one, then for its layout, instead of measuring the old chat.
+		const previousUrl = page.url();
 		await page
 			.getByRole("navigation", { name: "Chats" })
 			.getByRole("button", { name: "New chat", exact: true })
 			.click();
+		await expect(page).not.toHaveURL(previousUrl);
 		await expect(page).toHaveURL(/#\/chat\/ws_/);
-		const freshChatBox = await page.locator('section[data-panel="chat"]').boundingBox();
-		const freshNotebookBox = await page.locator('div[data-panel="notebook"]').boundingBox();
-		expect((freshChatBox?.width ?? 0) > (freshNotebookBox?.width ?? 0) * 2).toBe(true);
+		await expect
+			.poll(async () => {
+				const chat = await page.locator('section[data-panel="chat"]').boundingBox();
+				const notebook = await page.locator('div[data-panel="notebook"]').boundingBox();
+				return (chat?.width ?? 0) > (notebook?.width ?? 0) * 2;
+			})
+			.toBe(true);
 
 		// The draft names the notebook, so the pills route to the notebook
 		// assistant live, before anything is sent.
@@ -337,8 +345,17 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		// Notebook frames show no title (ADR-0021).
 		await expect(page.locator('div[data-panel="notebook"] .wg-title')).toHaveCount(0);
 
-		// The owner's own words, which went to Research before: a request to
-		// create a chart routes to the notebook assistant and adds gold too.
+		// The owner's own words, which went to Research before, in a fresh
+		// chat (the one above already holds a gold chart, so the assistant
+		// rightly adds nothing there): a request to create a chart routes to
+		// the notebook assistant and adds the gold series.
+		const goldChatUrl = page.url();
+		await page
+			.getByRole("navigation", { name: "Chats" })
+			.getByRole("button", { name: "New chat", exact: true })
+			.click();
+		await expect(page).not.toHaveURL(goldChatUrl);
+		await expect(notebookWidgets(page)).toHaveCount(0);
 		await page
 			.getByRole("form", { name: "Research composer" })
 			.getByRole("textbox", { name: "Question" })
@@ -348,8 +365,10 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 			"true",
 		);
 		await instruct(page, "Please create gold chart.");
-		await expect(goldFrame).toHaveCount(2);
-		const reread = await fetch(`${API_ORIGIN}/api/v1/workspaces/${workspaceId}/notebook`, {
+		await expect(goldFrame).toHaveCount(1);
+		const ownerChatId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];
+		if (ownerChatId === undefined) throw new Error(`no open chat in ${page.url()}`);
+		const reread = await fetch(`${API_ORIGIN}/api/v1/workspaces/${ownerChatId}/notebook`, {
 			headers: ownerHeaders(API_ORIGIN),
 		});
 		const restored = (await reread.json()) as {
@@ -357,6 +376,7 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		};
 		const charts = restored.notebook.widgets.filter((widget) => widget.type === "line-chart");
 		expect(charts.at(-1)?.seriesIds).toContain("twelve-data:XAU/USD");
+		await page.screenshot({ path: test.info().outputPath("5b-owner-words-gold.png") });
 	});
 
 	test("a text widget edits in place as rich text and keeps it across a reload", async () => {
@@ -436,6 +456,9 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 		// A reload clears the selection: the instruction is about the whole notebook.
 		await page.reload();
 		await expect(notebookWidgets(page)).toHaveCount(199, { timeout: 60_000 });
+		// The open chat is a fresh Chat-first one: Notebook-first addresses
+		// the composer to the notebook assistant.
+		await page.getByRole("button", { name: "Focus Notebook" }).first().click();
 		const composer = page.getByRole("form", { name: "Notebook composer" });
 		await expect(composer.getByText("About the whole notebook")).toBeVisible();
 		const lastTitles = [fillerCount - 2, fillerCount - 1, fillerCount].map((n) => `Note ${n}`);

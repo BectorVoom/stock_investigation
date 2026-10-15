@@ -77,12 +77,14 @@ shows anything outside the subset as literal text.
 ### Untitled frames
 
 `WidgetFrame` takes `titleHidden`: the title stays the accessible name of
-the frame and its body; the header shrinks to a compact cluster in the
-top-right corner (grip and actions; the select toggle shows only on
-keyboard focus or when selected), revealed on hover, focus and selection in
-the quiet variant. A full-width overlay covered the first line of a small
-widget, so a click on its text hit the controls instead. While a Text
-widget is edited the cluster is hidden. The Notebook hides titles; Home keeps them (its metric
+the frame and its body; the header shrinks to a compact cluster that
+straddles the frame's top edge at the right (grip and actions; the select
+toggle shows only on keyboard focus or when selected), revealed on hover,
+focus and selection in the quiet variant. It covers only the border and
+padding: a full-width overlay, and then a cluster inside the corner, both
+covered the first line of a small widget (a click on its text hit the
+controls; a heading's last letters hid under them). While a Text widget is
+edited the cluster is hidden. The Notebook hides titles; Home keeps them (its metric
 titles name the series). Titles stay in the data: chat change cards,
 selection chips and dialogs still use them.
 

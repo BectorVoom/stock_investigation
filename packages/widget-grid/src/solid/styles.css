@@ -353,27 +353,31 @@
 	position: relative;
 }
 
-/* The controls gather in a compact cluster in the top-right corner, never
- * across the frame: content starts at the top-left (text is left-aligned),
- * so the first line stays readable and clickable under a hovered frame. */
+/* The controls gather in a compact cluster that straddles the frame's top
+ * edge at the right, like the badge on an iOS widget in edit mode: its
+ * 28 px row spans -0.75rem to 1rem, the border and the 1rem padding, so it
+ * never covers content — not even the end of a small frame's first line.
+ * A host whose grid scrolls gives the scroller 0.75rem of top padding so
+ * the first row's cluster is not clipped. */
 .wg-frame[data-widget-title-hidden] .wg-header {
 	position: absolute;
-	top: 0.5rem;
-	right: 0.5rem;
+	top: -0.75rem;
+	right: 0.75rem;
 	z-index: 1;
 	gap: 0.25rem;
 	min-height: 0;
 	pointer-events: none;
 }
 
-/* Legible on top of content: the controls carry the frame surface behind
- * them, rounded, with no shadow. */
+/* Legible on the edge: the controls carry the frame surface and a hairline
+ * ring in the border colour, rounded, with no shadow. */
 .wg-frame[data-widget-title-hidden] .wg-grip,
 .wg-frame[data-widget-title-hidden] .wg-select-toggle,
 .wg-frame[data-widget-title-hidden] .wg-header-actions {
 	pointer-events: auto;
 	background-color: var(--wg-surface, #ffffff);
 	border-radius: 0.5rem;
+	box-shadow: 0 0 0 1px var(--wg-border, #e2e8f0);
 }
 
 /* The cluster stays two controls wide (grip and actions), so even a small

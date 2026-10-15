@@ -435,7 +435,7 @@ describe("text widget in place", () => {
 		await waitFor(() => expect(screen.queryByRole("textbox", { name: "Edit note" })).toBeNull());
 	});
 
-	it("keeps the clamped preview with a fade for small widgets", () => {
+	it("shows a small widget's whole note, unclamped (the frame body scrolls)", () => {
 		render(() => (
 			<TextWidget
 				widget={textWidget("First paragraph.\n\nSecond paragraph.", "small")}
@@ -444,7 +444,8 @@ describe("text widget in place", () => {
 			/>
 		));
 		expect(screen.getByText("First paragraph.")).toBeDefined();
-		expect(document.querySelector(".max-h-24.overflow-hidden")).not.toBeNull();
-		expect(document.querySelector(".bg-gradient-to-t")).not.toBeNull();
+		expect(screen.getByText("Second paragraph.")).toBeDefined();
+		expect(document.querySelector(".max-h-24")).toBeNull();
+		expect(document.querySelector(".bg-gradient-to-t")).toBeNull();
 	});
 });
