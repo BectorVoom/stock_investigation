@@ -411,7 +411,7 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   controls gather in a compact cluster straddling the frame's top edge at the
   right, like the badge of an iOS widget in edit mode — the grip (28 px hit
   target; a click that is not a drag selects) and the actions button, on the
-  frame surface with a hairline ring — over the border and padding, never
+  frame surface with a hairline border — over the border and padding, never
   over content (the scroller keeps 0.75rem of top padding so the first row's
   cluster is not clipped); revealed on hover, focus and
   selection like the quiet header (opacity only, never on reduced motion,

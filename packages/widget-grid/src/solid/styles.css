@@ -370,14 +370,14 @@
 }
 
 /* Legible on the edge: the controls carry the frame surface and a hairline
- * ring in the border colour, rounded, with no shadow. */
+ * border in the border colour, rounded, with no shadow. */
 .wg-frame[data-widget-title-hidden] .wg-grip,
 .wg-frame[data-widget-title-hidden] .wg-select-toggle,
 .wg-frame[data-widget-title-hidden] .wg-header-actions {
 	pointer-events: auto;
 	background-color: var(--wg-surface, #ffffff);
+	border: 1px solid var(--wg-border, #e2e8f0);
 	border-radius: 0.5rem;
-	box-shadow: 0 0 0 1px var(--wg-border, #e2e8f0);
 }
 
 /* The cluster stays two controls wide (grip and actions), so even a small
