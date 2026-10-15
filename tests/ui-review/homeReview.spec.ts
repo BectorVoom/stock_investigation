@@ -264,7 +264,7 @@ test("UI review of the Home page", async ({ browser }) => {
 		const dragged = ids[0] ?? "";
 		const target = ids[2] ?? "";
 		const headerBox = await page
-			.locator(`article[data-widget-id="${dragged}"] [data-widget-drag-handle]`)
+			.locator(`article[data-widget-id="${dragged}"] .wg-grip`)
 			.boundingBox();
 		const targetBox = await page.locator(`article[data-widget-id="${target}"]`).boundingBox();
 		if (headerBox !== null && targetBox !== null) {

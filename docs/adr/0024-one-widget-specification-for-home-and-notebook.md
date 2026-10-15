@@ -61,9 +61,13 @@ gone); copying a widget from one page to the other is copying its core.
   Both name at most 30 distinct market series and hold at most 850 KB of
   widget content (`WIDGET_LIMITS.maxContentBytes`, one rule:
   `widgetContentBytes`), so any widget fits on either page.
-- **Look.** Home keeps visible titles (its metric titles name the series),
-  bordered frames and viewport-sized columns; the Notebook keeps untitled,
-  quiet frames in container-sized columns (ADR-0021).
+- **Look.** Home keeps bordered frames and viewport-sized columns; the
+  Notebook keeps quiet frames in container-sized columns (ADR-0021).
+  *Amended 2026-10-15 at the owner's request ("Remove the titles from all
+  widgets"):* no frame shows a title — Home, the Notebook and the chat's
+  result previews. The title stays in the data as the frame's accessible
+  name; the market metric body now names its series above the value, which
+  the visible title used to do on Home.
 - **Actions only a conversation has.** "Ask AI" and "Go to source" are
   Notebook-only; Home's "Refresh market data" and "Reset to default
   arrangement" are Home-only.

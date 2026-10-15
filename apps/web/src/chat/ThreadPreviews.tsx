@@ -93,8 +93,10 @@ export function ComponentPreview(props: {
 	return (
 		<li
 			data-preview-component={props.component.componentId}
-			class="min-w-0 rounded bg-slate-100 p-2"
+			class="min-w-0 rounded bg-slate-100 p-2 pt-5"
 		>
+			{/* pt-5: the untitled frame's control cluster straddles its top edge
+			    by 0.75rem; the card keeps room so a scroller never clips it. */}
 			<WidgetFrame
 				widget={{
 					widgetId: props.component.componentId,

@@ -26,8 +26,8 @@ Page layout (frame, panels, headings, shared parts) follows
 
 Check market prices, charts and economic indicators at a glance on widgets you arrange.
 The widgets are the Notebook's (ADR-0024): the same types, menu, selection,
-clipboard and Undo; Home keeps visible titles and takes every type except a
-research result.
+clipboard and Undo; like every widget it shows no title (the title stays its
+accessible name), and Home takes every type except a research result.
 
 **User actions**
 
@@ -44,7 +44,8 @@ research result.
   from its toolbar (Duplicate, Cut, Copy, Remove, Clear).
 - Undo the last changes of this visit (up to 20; a reload clears them).
 - Move a widget earlier/later.
-- Drag a widget to a new position (the header strip is the handle; Move
+- Drag a widget to a new position (the grip in the frame's top-right control
+  cluster is the handle; Move
   earlier/later in the menu is the keyboard and assistive-technology path,
   announced with the position; the page auto-scrolls while the pointer rests
   near the top or bottom edge of the viewport; the grid, the frame, the

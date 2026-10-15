@@ -204,7 +204,7 @@ test("a market-data refresh shows a real Twelve Data price with an as-of date", 
 				.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-widget-id") ?? ""));
 		const handleCenter = async (widgetId: string) => {
 			const box = await page
-				.locator(`article[data-widget-id="${widgetId}"] [data-widget-drag-handle]`)
+				.locator(`article[data-widget-id="${widgetId}"] .wg-grip`)
 				.boundingBox();
 			if (box === null) throw new Error(`the drag handle of ${widgetId} is not on screen`);
 			return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
