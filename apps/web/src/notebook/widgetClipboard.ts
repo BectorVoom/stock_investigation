@@ -118,6 +118,11 @@ export function clipboardCountText(count: number, verb: "Cut" | "Copied" | "Past
 	return `${verb} ${count} widget${count === 1 ? "" : "s"}.`;
 }
 
+/** The announcement after Remove (no confirmation: Undo restores). */
+export function removedCountText(count: number): string {
+	return `Removed ${count} widget${count === 1 ? "" : "s"}. Undo restores ${count === 1 ? "it" : "them"}.`;
+}
+
 /** The notice when research widgets stayed behind in their own chat. */
 export function skippedResearchNoticeText(skipped: number): string {
 	return skipped === 1

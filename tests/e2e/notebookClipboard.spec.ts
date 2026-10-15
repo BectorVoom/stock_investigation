@@ -13,6 +13,7 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * component exists on the chat's canvas, and no API can seed one.
  *
  * Contract coverage: cut a widget via its menu → gone, Undo brings it back;
+ * Remove via its menu → gone at once with no dialog, Undo brings it back;
  * copy + paste after another widget → order correct, pasted widget selected;
  * keyboard ⌘/Ctrl+C then ⌘/Ctrl+V on a header-selected widget; cut in one
  * chat and paste in a second chat, including after `page.reload()`; text
@@ -154,6 +155,21 @@ test("cut a widget via its menu removes it; Undo brings it back", async () => {
 	await expect(notebookWidgets()).toHaveCount(1);
 	await expect(notebookWidgets().filter({ hasText: "Alpha note" })).toHaveCount(0);
 	await expect(notebook.getByRole("button", { name: "Paste widgets" })).toBeEnabled();
+	await notebook.getByRole("button", { name: "Undo" }).click();
+	await expect(notebookWidgets()).toHaveCount(2);
+	await expect(widgetIds()).resolves.toEqual(["nb-seed-0", "nb-seed-1"]);
+});
+
+test("remove via the menu acts at once with no dialog; Undo brings it back", async () => {
+	const notebook = notebookRegion();
+	const beta = notebookWidgets().filter({ hasText: "Beta note" });
+	await beta.locator("button[data-widget-actions]").click();
+	await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
+	await expect(notebookWidgets()).toHaveCount(1);
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await expect(notebook.locator("output.sr-only[aria-live='polite']")).toHaveText(
+		"Removed 1 widget. Undo restores it.",
+	);
 	await notebook.getByRole("button", { name: "Undo" }).click();
 	await expect(notebookWidgets()).toHaveCount(2);
 	await expect(widgetIds()).resolves.toEqual(["nb-seed-0", "nb-seed-1"]);

@@ -29,7 +29,6 @@ import type { ApiClient } from "../api/client.ts";
 import {
 	ActionMenu,
 	BUTTON,
-	ConfirmDialog,
 	Empty,
 	ErrorNotice,
 	IconButton,
@@ -52,6 +51,7 @@ import type { NotebookSession } from "./notebookSession.ts";
 import type { WorkspaceMode } from "./types.ts";
 import {
 	clipboardCountText,
+	removedCountText,
 	resolveClipboardPaste,
 	skippedResearchNoticeText,
 	type WidgetClipboardEntry,
@@ -151,8 +151,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	const announcer = createMoveAnnouncer();
 	const [editorId, setEditorId] = createSignal<string | null>(null);
 	const [editorOpener, setEditorOpener] = createSignal<HTMLElement | null>(null);
-	const [removeIds, setRemoveIds] = createSignal<readonly string[] | null>(null);
-	const [removeOpener, setRemoveOpener] = createSignal<HTMLElement | null>(null);
 	/**
 	 * Live market data for the notebook's market widgets (ADR-0021): the
 	 * Home components in `WidgetBody` read their series through this, the
@@ -212,12 +210,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		}
 		setEditorOpener(active instanceof HTMLElement ? active : null);
 		setEditorId(widgetId);
-	};
-
-	const openRemove = (ids: readonly string[]): void => {
-		const active = document.activeElement;
-		setRemoveOpener(active instanceof HTMLElement ? active : null);
-		setRemoveIds([...ids]);
 	};
 
 	const addStarter = (type: "text" | "metric" | "chart" | "table"): void => {
@@ -288,7 +280,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 
 	const onSectionKeyDown = (event: KeyboardEvent): void => {
 		if (event.key !== "Escape") return;
-		if (editorId() !== null || removeIds() !== null) return;
+		if (editorId() !== null) return;
 		const target = event.target;
 		// The in-place text editor leaves itself on Escape first (it stops
 		// propagation); anything from inside it never reaches for selection.
@@ -360,18 +352,18 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	const workspaceId = () => props.session.state()?.workspaceId ?? null;
 	const clipboardEmpty = () => clipboardStore.isEmpty();
 
-	/** Polite announcements for completed cut / copy / paste (moves have their own). */
-	const [clipboardMessage, setClipboardMessage] = createSignal("");
-	let clipboardDisposed = false;
+	/** Polite announcements for completed cut / copy / paste / remove (moves have their own). */
+	const [actionMessage, setActionMessage] = createSignal("");
+	let announcerDisposed = false;
 	onCleanup(() => {
-		clipboardDisposed = true;
+		announcerDisposed = true;
 	});
-	const announceClipboard = (text: string): void => {
+	const announceAction = (text: string): void => {
 		// A live region announces nothing when the same text is set twice:
 		// clear first and set on a later task, like the move announcer.
-		setClipboardMessage("");
+		setActionMessage("");
 		window.setTimeout(() => {
-			if (!clipboardDisposed) setClipboardMessage(text);
+			if (!announcerDisposed) setActionMessage(text);
 		}, 0);
 	};
 
@@ -416,7 +408,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 
 	const copyIds = (ids: readonly string[]): void => {
 		const count = copyToClipboard(ids);
-		if (count > 0) announceClipboard(clipboardCountText(count, "Copied"));
+		if (count > 0) announceAction(clipboardCountText(count, "Copied"));
 	};
 
 	/**
@@ -436,8 +428,22 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		void props.session
 			.edit((current) => current.filter((widget) => !wanted.has(widget.widgetId)))
 			.then((saved) => {
-				if (saved) announceClipboard(clipboardCountText(count, "Cut"));
+				if (saved) announceAction(clipboardCountText(count, "Cut"));
 			});
+	};
+
+	/**
+	 * Remove takes the widgets out in one owner edit with no confirmation,
+	 * like Cut and like Home's Remove: Undo restores them.
+	 */
+	const removeIds = (ids: readonly string[]): void => {
+		if (pending()) return;
+		const wanted = new Set(ids);
+		const count = widgets().filter((widget) => wanted.has(widget.widgetId)).length;
+		if (count === 0) return;
+		void props.session.removeWidgets([...wanted]).then((saved) => {
+			if (saved) announceAction(removedCountText(count));
+		});
 	};
 
 	const pasteEntries = (
@@ -449,7 +455,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			if (ids === null) return;
 			props.session.select(null, "replace");
 			for (const id of ids) props.session.select(id, "toggle");
-			announceClipboard(clipboardCountText(ids.length, "Pasted"));
+			announceAction(clipboardCountText(ids.length, "Pasted"));
 			setPasteNotice(skippedResearch > 0 ? skippedResearchNoticeText(skippedResearch) : null);
 		});
 	};
@@ -640,7 +646,8 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					<IconButton
 						label="Remove selected widgets"
 						icon="trash"
-						onClick={() => openRemove(selection())}
+						disabled={pending()}
+						onClick={() => removeIds(selection())}
 					/>
 					<IconButton
 						label="Clear selection"
@@ -652,7 +659,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 
 			<MoveAnnouncerView message={announcer.message()} />
 			<output aria-live="polite" class="sr-only">
-				{clipboardMessage()}
+				{actionMessage()}
 			</output>
 
 			{/* The widget list scrolls on its own below the fixed header and
@@ -788,10 +795,10 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 													: []),
 												{
 													value: "remove",
-													label: "Remove…",
+													label: "Remove",
 													icon: "trash",
 													disabled: pending(),
-													onSelect: () => openRemove([entry.widgetId]),
+													onSelect: () => removeIds([entry.widgetId]),
 												},
 											]}
 										/>
@@ -840,24 +847,6 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 				)}
 			</Show>
 
-			<Show when={removeIds()}>
-				{(ids) => (
-					<RemoveWidgetsDialog
-						titles={ids().map(
-							(id) =>
-								widgets().find((widget) => widget.widgetId === id)?.title ?? "Untitled widget",
-						)}
-						opener={removeOpener()}
-						onConfirm={() =>
-							props.session.removeWidgets(ids()).then(() => {
-								setRemoveIds(null);
-							})
-						}
-						onCancel={() => setRemoveIds(null)}
-					/>
-				)}
-			</Show>
-
 			<NotebookMarketDialog
 				state={marketDialog()}
 				opener={marketOpener()}
@@ -869,40 +858,5 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 				onClose={() => setMarketDialog(null)}
 			/>
 		</section>
-	);
-}
-
-function RemoveWidgetsDialog(props: {
-	readonly titles: readonly string[];
-	readonly opener: HTMLElement | null;
-	readonly onConfirm: () => void;
-	readonly onCancel: () => void;
-}): JSX.Element {
-	const single = () => props.titles.length === 1;
-	return (
-		<ConfirmDialog
-			title={single() ? `Remove “${props.titles[0]}”?` : `Remove ${props.titles.length} widgets?`}
-			opener={props.opener}
-			confirmLabel="Remove"
-			pending={false}
-			failure={null}
-			onConfirm={props.onConfirm}
-			onCancel={props.onCancel}
-		>
-			<Show
-				when={single()}
-				fallback={
-					<p>
-						This removes the selected widgets from the notebook. This cannot be undone from here;
-						use Undo to restore.
-					</p>
-				}
-			>
-				<p>
-					This removes the widget from the notebook. This cannot be undone from here; use Undo to
-					restore.
-				</p>
-			</Show>
-		</ConfirmDialog>
 	);
 }

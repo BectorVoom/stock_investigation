@@ -86,9 +86,9 @@ function createMemoryClipboard(): {
 	return { store, map };
 }
 
-function clipboardLiveRegion(): HTMLElement {
+function actionLiveRegion(): HTMLElement {
 	const live = document.querySelector("output.sr-only[aria-live='polite']");
-	if (!(live instanceof HTMLElement)) throw new Error("no clipboard live region");
+	if (!(live instanceof HTMLElement)) throw new Error("no action live region");
 	return live;
 }
 
@@ -229,40 +229,34 @@ describe("notebook panel", () => {
 		await waitFor(() => expect(live.textContent).toBe("Moved “Headline” to position 1 of 5."));
 	});
 
-	it("confirms once when removing several selected widgets", async () => {
+	it("removes several selected widgets at once in one save, without a dialog", async () => {
 		createSession();
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		session.select("nb-text", "replace");
 		session.select("nb-table", "toggle");
 		await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeNull());
 		fireEvent.click(screen.getByRole("button", { name: "Remove selected widgets" }));
-		const dialog = await waitFor(() => {
-			const found = document.querySelector("dialog");
-			if (!(found instanceof HTMLElement)) throw new Error("no remove dialog yet");
-			return found;
-		});
-		expect(dialog.textContent).toContain("Remove 2 widgets?");
-		fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
-		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1));
 		await waitFor(() => expect(articles()).toHaveLength(3));
+		expect(document.querySelector("dialog")).toBeNull();
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1);
 		expect(document.querySelector('article[data-widget-id="nb-text"]')).toBeNull();
 		expect(document.querySelector('article[data-widget-id="nb-table"]')).toBeNull();
+		await waitFor(() =>
+			expect(actionLiveRegion().textContent).toBe("Removed 2 widgets. Undo restores them."),
+		);
 	});
 
-	it("names the widget in a single remove confirmation", async () => {
+	it("removes one widget from its menu without a dialog and announces it", async () => {
 		createSession();
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
-		await chooseMenuItem("nb-metric", "Remove…");
-		const dialog = await waitFor(() => {
-			const found = document.querySelector("dialog");
-			if (!(found instanceof HTMLElement)) throw new Error("no remove dialog yet");
-			return found;
-		});
-		expect(dialog.textContent).toContain("Remove “Headline”?");
-		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-		await waitFor(() => expect(document.querySelector("dialog")).toBeNull());
-		expect(articles()).toHaveLength(5);
-		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(0);
+		await chooseMenuItem("nb-metric", "Remove");
+		await waitFor(() => expect(articles()).toHaveLength(4));
+		expect(document.querySelector("dialog")).toBeNull();
+		expect(document.querySelector('article[data-widget-id="nb-metric"]')).toBeNull();
+		expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1);
+		await waitFor(() =>
+			expect(actionLiveRegion().textContent).toBe("Removed 1 widget. Undo restores it."),
+		);
 	});
 
 	it("adds a starter widget and opens its editor", async () => {
@@ -387,7 +381,7 @@ describe("notebook panel", () => {
 		expect(document.querySelector('article[data-widget-id="nb-text"]')).toBeNull();
 		expect(clipboard.content()?.entries.map((item) => item.core.widgetId)).toEqual(["nb-text"]);
 		await waitFor(() => expect(paste.hasAttribute("disabled")).toBe(false));
-		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Cut 1 widget."), {
+		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Cut 1 widget."), {
 			timeout: 10_000,
 		});
 	});
@@ -435,7 +429,7 @@ describe("notebook panel", () => {
 		);
 		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual([pasted]);
 		expect(selected[0]?.textContent).toContain("First paragraph.");
-		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Pasted 1 widget."), {
+		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Pasted 1 widget."), {
 			timeout: 10_000,
 		});
 	});
@@ -457,7 +451,7 @@ describe("notebook panel", () => {
 		]);
 		// The cut announces only once its save resolves; pasting before that
 		// is disabled (the header button disables while a save is in flight).
-		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Cut 2 widgets."), {
+		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Cut 2 widgets."), {
 			timeout: 10_000,
 		});
 		// Nothing is selected after a cut, so the header paste lands at the end.
@@ -475,7 +469,7 @@ describe("notebook panel", () => {
 			(article) => article.getAttribute("data-widget-selected") !== null,
 		);
 		expect(selected.map((article) => article.getAttribute("data-widget-id"))).toEqual(pasted);
-		await waitFor(() => expect(clipboardLiveRegion().textContent).toBe("Pasted 2 widgets."), {
+		await waitFor(() => expect(actionLiveRegion().textContent).toBe("Pasted 2 widgets."), {
 			timeout: 10_000,
 		});
 	});
@@ -591,13 +585,7 @@ describe("notebook panel", () => {
 		await waitFor(() => expect(articles()).toHaveLength(5), { timeout: 10_000 });
 		const undo = screen.getByRole("button", { name: "Undo" });
 		expect(undo.hasAttribute("disabled")).toBe(true);
-		await chooseMenuItem("nb-text", "Remove…");
-		const dialog = await waitFor(() => {
-			const found = document.querySelector("dialog");
-			if (!(found instanceof HTMLElement)) throw new Error("no remove dialog yet");
-			return found;
-		});
-		fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+		await chooseMenuItem("nb-text", "Remove");
 		await waitFor(() => expect(articles()).toHaveLength(4));
 		await waitFor(() =>
 			expect(screen.getByRole("button", { name: "Undo" }).hasAttribute("disabled")).toBe(false),
