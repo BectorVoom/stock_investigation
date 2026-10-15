@@ -37,6 +37,7 @@ const MCP_TOOLS = [
 	"widgets_describe",
 	"widgets_add",
 	"widgets_remove",
+	"widgets_duplicate",
 	"widgets_move",
 	"widgets_reorder",
 	"widgets_resize",
