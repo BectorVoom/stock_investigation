@@ -234,6 +234,24 @@ describe("notebook model", () => {
 		expect(notebookWidgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
+	it("duplicates a bare core under a fresh id, deeply copied", () => {
+		const fixtures = notebookFixtures();
+		const chart = fixtures.chart;
+		if (chart.type !== "chart") throw new Error("expected a chart fixture");
+		const { createdAt, updatedAt, revision, origin, ...core } = chart;
+		void createdAt;
+		void updatedAt;
+		void revision;
+		void origin;
+		const copy = duplicateNotebookWidget(core);
+		expect(copy.widgetId).not.toBe(chart.widgetId);
+		if (copy.type !== "chart") throw new Error("expected a chart copy");
+		expect(copy.series).toEqual(chart.series);
+		copy.series[0]?.points.push({ x: "2028", y: 160 });
+		expect(chart.series[0]?.points).toHaveLength(2);
+		expect(notebookWidgetCoreSchema.safeParse(copy).success).toBe(true);
+	});
+
 	it("duplicates under a fresh id, and moves, reorders, resizes and removes", () => {
 		const fixtures = notebookFixtures();
 		const widgets = [fixtures.text, fixtures.metric, fixtures.chart];

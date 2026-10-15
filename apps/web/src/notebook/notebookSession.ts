@@ -47,6 +47,19 @@ export interface NotebookSession {
 		origin: NotebookWidgetOrigin,
 		toIndex?: number,
 	) => Promise<string | null>;
+	/**
+	 * Inserts every entry (at `toIndex`, default last) in ONE `edit`, so a
+	 * paste is one save, not N parallel saves. Resolves to the new ids in
+	 * entry order when saved, null when not. An empty entry list resolves to
+	 * `[]` without saving.
+	 */
+	readonly addWidgets: (
+		entries: readonly {
+			readonly core: NotebookWidgetCore;
+			readonly origin: NotebookWidgetOrigin;
+		}[],
+		toIndex?: number,
+	) => Promise<readonly string[] | null>;
 	/** Restores the body kept before the version on screen. */
 	readonly undo: () => Promise<boolean>;
 	/** Owner confirmation of an assistant's proposed removals. */
@@ -255,6 +268,25 @@ export function createNotebookSession(
 
 	void reload();
 
+	const addWidgets: NotebookSession["addWidgets"] = async (entries, toIndex) => {
+		if (entries.length === 0) return [];
+		const now = new Date().toISOString();
+		const placeholders: NotebookWidget[] = entries.map(({ core, origin }) => ({
+			...core,
+			createdAt: now,
+			updatedAt: now,
+			revision: 1,
+			origin,
+		}));
+		const insert = (widgets: readonly NotebookWidget[]): readonly NotebookWidget[] => {
+			const index =
+				toIndex === undefined ? widgets.length : Math.max(0, Math.min(toIndex, widgets.length));
+			return [...widgets.slice(0, index), ...placeholders, ...widgets.slice(index)];
+		};
+		const saved = await edit(insert);
+		return saved ? placeholders.map((placeholder) => placeholder.widgetId) : null;
+	};
+
 	return {
 		state,
 		widgets: displayed,
@@ -283,22 +315,10 @@ export function createNotebookSession(
 		turns: () => state()?.turns ?? [],
 		reload,
 		edit,
+		addWidgets,
 		addWidget: async (core, origin, toIndex) => {
-			const now = new Date().toISOString();
-			const placeholder: NotebookWidget = {
-				...core,
-				createdAt: now,
-				updatedAt: now,
-				revision: 1,
-				origin,
-			};
-			const insert = (widgets: readonly NotebookWidget[]): readonly NotebookWidget[] => {
-				const index =
-					toIndex === undefined ? widgets.length : Math.max(0, Math.min(toIndex, widgets.length));
-				return [...widgets.slice(0, index), placeholder, ...widgets.slice(index)];
-			};
-			const saved = await edit(insert);
-			return saved ? core.widgetId : null;
+			const ids = await addWidgets([{ core, origin }], toIndex);
+			return ids?.[0] ?? null;
 		},
 		undo: async () => {
 			const version = state()?.version ?? 0;
