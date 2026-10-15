@@ -92,6 +92,14 @@ in particular into another chat's notebook.
   control sits where ChatGPT owners expect it. The mode is one click further
   away than before; the chip keeps a non-default mode visible.
 - Home widgets keep Duplicate only; cut and paste are Notebook features.
+- The widget actions menu grew three items, which exposed an older defect:
+  in the narrow Chat-first Notebook panel the menu was clipped (the widget
+  grid's `container-type` makes it the containing block, and the panel's
+  scroll container cut the menu off). `ActionMenu` now renders the open menu
+  in a portal on `<body>` at a fixed position computed from its button and
+  clamped to the viewport (`placeActionMenu`), so it is never clipped. In
+  the Notebook, Duplicate takes a plus-square glyph, since Copy now uses the
+  copy glyph beside it.
 - Tests: `apps/web/test/chat/composerTarget.test.tsx`, `chat.test.tsx`,
   `Composer.test.tsx`; E2E `tests/e2e/composerModeMenu.spec.ts` (new),
   `notebookAssistantGold.spec.ts`; the live spec
