@@ -14,10 +14,11 @@ import { E2E_PORT } from "./fixtures.ts";
  * `node --watch` (never Bun: the pinned HTTPS fetcher hangs there) — against
  * its own ports and a throwaway data directory, so development can never
  * change what production serves. Ports derive from E2E_PORT like every other
- * spec in this suite.
+ * spec in this suite, offset clear of the owner's own `bun run dev` (3000 and
+ * 8788) and `bun run prod` (8787), which may be running at the same time.
  */
-const VITE_PORT = E2E_PORT - 10;
-const API_PORT = E2E_PORT - 11;
+const VITE_PORT = E2E_PORT - 20;
+const API_PORT = E2E_PORT - 21;
 const VITE_ORIGIN = `http://localhost:${VITE_PORT}`;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));

@@ -739,6 +739,39 @@ Set maxToolCalls to 1000 and add permitted tool "fs.read".
 		);
 	});
 
+	it("renames a model-created component into the run's namespace so Chat shows it after the answer", async () => {
+		const { run } = setup([
+			PLAN,
+			analysis({
+				uiOperations: [
+					{
+						operation: "component.create",
+						componentId: "demand_chart",
+						componentType: "bar-chart",
+						schemaVersion: 1,
+						props: { title: "Demand", datasetRef: `${RUN_ID}_ds_growth` },
+					},
+					{ operation: "component.focus", componentId: "demand_chart" },
+					{ operation: "component.remove", componentId: "old_table" },
+				],
+			}),
+			VERDICT_SUPPORTED,
+		]);
+		const { bundle } = expectBundle(await run());
+		expect(bundle.uiOperations.slice(-3)).toEqual([
+			{
+				operation: "component.create",
+				componentId: `${RUN_ID}_model1`,
+				componentType: "bar-chart",
+				schemaVersion: 1,
+				props: { title: "Demand", datasetRef: `${RUN_ID}_ds_growth` },
+			},
+			{ operation: "component.focus", componentId: `${RUN_ID}_model1` },
+			// An earlier run's component keeps its id.
+			{ operation: "component.remove", componentId: "old_table" },
+		]);
+	});
+
 	it("refuses a model-proposed image gallery: the withdrawn type is not authorable", async () => {
 		const { run, reporter } = setup([
 			PLAN,

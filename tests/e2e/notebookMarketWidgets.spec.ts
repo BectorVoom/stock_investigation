@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv } from "../../scripts/testEnv.ts";
-import { E2E_ORIGIN } from "./fixtures.ts";
+import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
  * Notebook market widgets end to end (ADR-0021, task W3): every widget type
@@ -44,7 +44,7 @@ test.beforeAll(async ({ browser }) => {
 		cwd: new URL("../..", import.meta.url).pathname,
 		env: {
 			...baseChildEnv(),
-			E2E_PORT: process.env.E2E_PORT ?? "8799",
+			E2E_PORT: String(E2E_PORT),
 			E2E_RUNNER_OWNER: owner,
 		},
 		stdio: ["ignore", "inherit", "inherit"],

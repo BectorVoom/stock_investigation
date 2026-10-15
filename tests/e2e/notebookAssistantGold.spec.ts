@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv } from "../../scripts/testEnv.ts";
-import { E2E_ORIGIN } from "./fixtures.ts";
+import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
 
 /**
  * The notebook assistant makes market charts (ADR-0021): from a new chat in
@@ -10,9 +10,8 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * adds a `line-chart` naming the gold series instead of invented numbers.
  *
  * Runs as an isolated owner (`X-E2E-Owner`) with the scripted backend, like
- * `notebook.spec.ts`. Port 8972 (see the brief): `E2E_PORT=8972
- * E2E_BROWSER=chrome bunx playwright test -c tests/e2e/playwright.config.ts
- * notebookAssistantGold`.
+ * `notebook.spec.ts`: `E2E_BROWSER=chrome bunx playwright test -c
+ * tests/e2e/playwright.config.ts notebookAssistantGold`.
  */
 
 test.describe.configure({ mode: "serial" });
@@ -38,7 +37,7 @@ test.beforeAll(async ({ browser }) => {
 		cwd: new URL("../..", import.meta.url).pathname,
 		env: {
 			...baseChildEnv(),
-			E2E_PORT: process.env.E2E_PORT ?? "8972",
+			E2E_PORT: String(E2E_PORT),
 			E2E_RUNNER_OWNER: owner,
 		},
 		stdio: ["ignore", "inherit", "inherit"],

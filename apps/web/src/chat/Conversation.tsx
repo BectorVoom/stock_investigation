@@ -20,7 +20,7 @@ import { AnswerClaims } from "./Citations.tsx";
 import { NotebookTurnCard } from "./NotebookTurnCard.tsx";
 import { RunCard } from "./RunCard.tsx";
 import { SUGGESTIONS } from "./suggestions.ts";
-import { groupThreadComponents, OtherResults, ThreadPreviewsForRun } from "./ThreadPreviews.tsx";
+import { groupThreadComponents, ThreadPreviewsForRun } from "./ThreadPreviews.tsx";
 
 /**
  * A notebook-assist run shows its run card only while queued or running;
@@ -433,14 +433,10 @@ export function Conversation(props: {
 			.filter((run) => runCardVisible(run) && !placedInlineIds().has(run.runId))
 			.map((run) => run.runId),
 	);
-	/** Result previews grouped by producing run (`${runId}_` prefix); the rest are orphans. */
-	const previewGroups = createMemo(() => {
+	/** Result previews grouped by producing run (`${runId}_` prefix). */
+	const previewGroups = createMemo((): ReadonlyMap<string, readonly WorkspaceComponent[]> => {
 		const view = props.view ?? null;
-		if (view === null)
-			return {
-				byRun: new Map<string, readonly WorkspaceComponent[]>(),
-				orphans: [] as readonly WorkspaceComponent[],
-			};
+		if (view === null) return new Map();
 		const ids = new Set(listedRuns().map((run) => run.runId));
 		return groupThreadComponents(view.state.components, view.state.layout.order, ids);
 	});
@@ -689,7 +685,7 @@ export function Conversation(props: {
 									) {
 										return [] as const;
 									}
-									return previewGroups().byRun.get(current.runId) ?? [];
+									return previewGroups().get(current.runId) ?? [];
 								});
 								return (
 									<Show when={message()} fallback={null}>
@@ -790,19 +786,6 @@ export function Conversation(props: {
 						</For>
 					</ol>
 				</Show>
-			</Show>
-			<Show when={previewReady()} keyed>
-				{(ready) => (
-					<OtherResults
-						components={previewGroups().orphans}
-						context={previewContext()}
-						registry={ready.registry}
-						view={ready.view}
-						isInNotebook={(componentId) => props.componentInNotebook?.(componentId) ?? false}
-						savingIds={props.savingNotebookIds ?? []}
-						onAdd={(core, origin) => props.onAddComponent?.(core, origin)}
-					/>
-				)}
 			</Show>
 			{props.composer !== undefined ? (
 				<div

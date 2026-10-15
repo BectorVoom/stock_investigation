@@ -134,7 +134,7 @@ function component(id: string): WorkspaceComponent {
 }
 
 describe("groupThreadComponents", () => {
-	it("groups by the run id prefix in layout order, leaving the rest as orphans", () => {
+	it("groups by the run id prefix in layout order, leaving unowned components out", () => {
 		const table = component("run_1_table");
 		const news = component("run_1_news");
 		const other = component("news_1");
@@ -143,11 +143,11 @@ describe("groupThreadComponents", () => {
 			["news_1", "run_1_news", "run_1_table"],
 			new Set(["run_1", "run_2"]),
 		);
-		expect([...(groups.byRun.get("run_1") ?? [])].map((item) => item.componentId)).toEqual([
+		expect([...groups.keys()]).toEqual(["run_1"]);
+		expect([...(groups.get("run_1") ?? [])].map((item) => item.componentId)).toEqual([
 			"run_1_news",
 			"run_1_table",
 		]);
-		expect(groups.orphans.map((item) => item.componentId)).toEqual(["news_1"]);
 	});
 
 	it("ignores unknown run prefixes and layout ids with no component", () => {
@@ -156,8 +156,19 @@ describe("groupThreadComponents", () => {
 			["run_9_table", "missing_id"],
 			new Set(["run_1"]),
 		);
-		expect(groups.byRun.size).toBe(0);
-		expect(groups.orphans.map((item) => item.componentId)).toEqual(["run_9_table"]);
+		expect(groups.size).toBe(0);
+	});
+
+	it("still places owned components missing from the layout order, after the ordered ones", () => {
+		const groups = groupThreadComponents(
+			[component("run_1_late"), component("run_1_table")],
+			["run_1_table"],
+			new Set(["run_1"]),
+		);
+		expect([...(groups.get("run_1") ?? [])].map((item) => item.componentId)).toEqual([
+			"run_1_table",
+			"run_1_late",
+		]);
 	});
 });
 
@@ -169,21 +180,37 @@ describe("thread previews (integration)", () => {
 		return conversation;
 	}
 
-	it("lists components no visible run owns after the thread under Other results", async () => {
+	it("previews each run's components after its answer and has no Other results area", async () => {
+		// A component no visible run owns stays on the canvas but is not shown.
+		const unowned = {
+			...WORKSPACE_VIEW.state.components[1],
+			componentId: "table_9",
+		} as (typeof WORKSPACE_VIEW.state.components)[number];
+		server.view = {
+			...server.view,
+			state: {
+				...server.view.state,
+				components: [...server.view.state.components, unowned],
+				layout: { order: [...server.view.state.layout.order, "table_9"], columns: 1 },
+			},
+		};
 		mountApp(backend);
 		await threadReady();
-		const others = await screen.findByRole("heading", { name: "Other results" });
-		expect(others).toBeDefined();
 		// The preview renders the component itself, widget-styled.
-		expect(screen.getByRole("article", { name: "Component news_1" })).toBeDefined();
+		expect(screen.getByRole("article", { name: "Component run_1_news" })).toBeDefined();
 		expect(screen.getByRole("table", { name: "Grid storage demand by year" })).toBeDefined();
+		const group = document.querySelector('[data-preview-run="run_1"]');
+		expect(group?.querySelectorAll("[data-preview-component]")).toHaveLength(3);
+		expect(screen.queryByRole("heading", { name: "Other results" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Other results" })).toBeNull();
+		expect(document.querySelector('[data-preview-component="table_9"]')).toBeNull();
 		// Every preview offers one save into the Notebook.
 		expect(
 			screen.getAllByRole("button", { name: "Add to Notebook" }).length,
 		).toBeGreaterThanOrEqual(4);
 	});
 
-	it("renders owned components after their assistant answer, not under Other results", async () => {
+	it("renders owned components after their assistant answer", async () => {
 		const extra = {
 			...WORKSPACE_VIEW.state.components[1],
 			componentId: "run_1_extra",
@@ -221,7 +248,7 @@ describe("thread previews (integration)", () => {
 		};
 		mountApp(backend);
 		const conversation = await threadReady();
-		// An owned preview carries the producing run and answer in its origin…
+		// An owned preview carries the producing run and answer in its origin.
 		const owned = document.querySelector('[data-preview-component="run_1_extra"]');
 		expect(owned).not.toBeNull();
 		fireEvent.click(within(owned as HTMLElement).getByRole("button", { name: "Add to Notebook" }));
@@ -236,23 +263,10 @@ describe("thread previews (integration)", () => {
 		// A table component becomes a self-contained table widget (its rows copied).
 		expect(call?.core.type).toBe("table");
 		expect(typeof call?.core.widgetId).toBe("string");
-		// …while an orphan (no visible run owns it) carries no run or message.
-		const orphan = document.querySelector('[data-preview-component="table_1"]');
-		fireEvent.click(within(orphan as HTMLElement).getByRole("button", { name: "Add to Notebook" }));
-		await waitFor(() => expect(notebookControl.addCalls).toHaveLength(2));
-		expect(notebookControl.addCalls[1]?.origin).toEqual({
-			kind: "chat",
-			messageId: null,
-			runId: null,
-			componentId: "table_1",
-		});
-		// Once added the previews offer no second click.
+		// Once added the preview offers no second click.
 		await within(conversation).findAllByText("In notebook");
 		expect(
 			within(owned as HTMLElement).queryByRole("button", { name: "Add to Notebook" }),
-		).toBeNull();
-		expect(
-			within(orphan as HTMLElement).queryByRole("button", { name: "Add to Notebook" }),
 		).toBeNull();
 	});
 
@@ -260,12 +274,12 @@ describe("thread previews (integration)", () => {
 		notebookControl.seedWidgets = [
 			makeNotebookWidget({
 				widgetId: "nb_saved",
-				origin: { kind: "chat", messageId: "msg_2", runId: "run_1", componentId: "news_1" },
+				origin: { kind: "chat", messageId: "msg_2", runId: "run_1", componentId: "run_1_news" },
 			}),
 		];
 		mountApp(backend);
 		await threadReady();
-		const preview = document.querySelector('[data-preview-component="news_1"]');
+		const preview = document.querySelector('[data-preview-component="run_1_news"]');
 		expect(preview?.textContent).toContain("In notebook");
 		expect(
 			within(preview as HTMLElement).queryByRole("button", { name: "Add to Notebook" }),
@@ -311,7 +325,7 @@ describe("thread previews (integration)", () => {
 		expect(commands).toHaveLength(1);
 		expect(commands[0]?.body).toMatchObject({
 			operation: "component.select",
-			componentId: "table_1",
+			componentId: "run_1_table",
 			itemKey: "row-0",
 			expectedWorkspaceVersion: 4,
 		});

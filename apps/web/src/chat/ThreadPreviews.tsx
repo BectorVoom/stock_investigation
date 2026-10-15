@@ -20,48 +20,41 @@ type ThreadComponent = WorkspaceComponent;
  * `WorkspaceComponentView`, exactly as the old Canvas panel rendered it
  * (item selection still dispatches through the session).
  *
- * Ownership follows the component id prefix `${runId}_`: components no
- * visible run owns are listed after the thread under "Other results".
+ * Ownership follows the component id prefix `${runId}_` (the pipeline also
+ * renames model-created components into it). Components no visible run owns
+ * are not shown in the thread: they stay on the canvas, where the notebook
+ * assistant can still use them.
  */
 
-/** Components grouped by their producing run, in layout order; the rest are orphans. */
+/** Components grouped by their producing run, in layout order; unowned ones are left out. */
 export function groupThreadComponents(
 	components: readonly ThreadComponent[],
 	order: readonly string[],
 	runIds: ReadonlySet<string>,
-): {
-	readonly byRun: ReadonlyMap<string, readonly ThreadComponent[]>;
-	readonly orphans: readonly ThreadComponent[];
-} {
+): ReadonlyMap<string, readonly ThreadComponent[]> {
 	const byId = new Map(components.map((component) => [component.componentId, component] as const));
 	const byRun = new Map<string, ThreadComponent[]>();
-	const orphans: ThreadComponent[] = [];
 	const seen = new Set<string>();
+	const place = (component: ThreadComponent) => {
+		for (const runId of runIds) {
+			if (!component.componentId.startsWith(`${runId}_`)) continue;
+			const group = byRun.get(runId);
+			if (group === undefined) byRun.set(runId, [component]);
+			else group.push(component);
+			return;
+		}
+	};
 	for (const componentId of order) {
 		if (seen.has(componentId)) continue;
 		seen.add(componentId);
 		const component = byId.get(componentId);
-		if (component === undefined) continue;
-		let owner: string | null = null;
-		for (const runId of runIds) {
-			if (componentId.startsWith(`${runId}_`)) {
-				owner = runId;
-				break;
-			}
-		}
-		if (owner === null) orphans.push(component);
-		else {
-			const group = byRun.get(owner);
-			if (group === undefined) byRun.set(owner, [component]);
-			else group.push(component);
-		}
+		if (component !== undefined) place(component);
 	}
 	// Components missing from the layout order still show, after the ordered ones.
 	for (const component of components) {
-		if (seen.has(component.componentId)) continue;
-		orphans.push(component);
+		if (!seen.has(component.componentId)) place(component);
 	}
-	return { byRun, orphans };
+	return byRun;
 }
 
 function previewTitle(component: ThreadComponent): string {
@@ -170,42 +163,6 @@ export function ThreadPreviewsForRun(props: {
 					)}
 				</For>
 			</ul>
-		</Show>
-	);
-}
-
-/** Components no visible run owns, listed after the thread. */
-export function OtherResults(props: {
-	readonly components: readonly ThreadComponent[];
-	readonly context: RenderContext;
-	readonly registry: UiRegistry;
-	readonly view: WorkspaceView;
-	readonly isInNotebook: (componentId: string) => boolean;
-	readonly savingIds: readonly string[];
-	readonly onAdd: (core: NotebookWidgetCore, origin: NotebookWidgetOrigin) => void;
-}): JSX.Element {
-	return (
-		<Show when={props.components.length > 0}>
-			<section aria-label="Other results" class="mx-auto w-full max-w-3xl px-1 pb-2">
-				<h4 class="text-xs font-semibold text-slate-700">Other results</h4>
-				<ul aria-label="Results" class="mt-1 space-y-2">
-					<For each={props.components}>
-						{(component) => (
-							<ComponentPreview
-								component={component}
-								context={props.context}
-								registry={props.registry}
-								view={props.view}
-								runId={null}
-								messageId={null}
-								inNotebook={props.isInNotebook(component.componentId)}
-								saving={props.savingIds.includes(component.componentId)}
-								onAdd={props.onAdd}
-							/>
-						)}
-					</For>
-				</ul>
-			</section>
 		</Show>
 	);
 }

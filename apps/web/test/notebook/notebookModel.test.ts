@@ -58,9 +58,9 @@ describe("notebook model", () => {
 
 	it("converts a data-table component to a table carrying the dataset rows", () => {
 		const component = WORKSPACE_VIEW.state.components.find(
-			(entry) => entry.componentId === "table_1",
+			(entry) => entry.componentId === "run_1_table",
 		);
-		if (component === undefined) throw new Error("table_1 fixture is missing");
+		if (component === undefined) throw new Error("run_1_table fixture is missing");
 		const core = widgetFromComponent(component, WORKSPACE_VIEW);
 		expect(core?.type).toBe("table");
 		if (core?.type !== "table") throw new Error("expected a table widget");
@@ -75,9 +75,9 @@ describe("notebook model", () => {
 
 	it("returns null when the dataset is missing from the view", () => {
 		const component = WORKSPACE_VIEW.state.components.find(
-			(entry) => entry.componentId === "table_1",
+			(entry) => entry.componentId === "run_1_table",
 		);
-		if (component === undefined) throw new Error("table_1 fixture is missing");
+		if (component === undefined) throw new Error("run_1_table fixture is missing");
 		const view: WorkspaceView = { ...WORKSPACE_VIEW, datasets: [] };
 		expect(widgetFromComponent(component, view)).toBeNull();
 	});
@@ -206,18 +206,18 @@ describe("notebook model", () => {
 
 	it("keeps any other component as a research widget with its title", () => {
 		const component = WORKSPACE_VIEW.state.components.find(
-			(entry) => entry.componentId === "news_1",
+			(entry) => entry.componentId === "run_1_news",
 		);
-		if (component === undefined) throw new Error("news_1 fixture is missing");
+		if (component === undefined) throw new Error("run_1_news fixture is missing");
 		const core = widgetFromComponent(component, WORKSPACE_VIEW);
-		expect(core).toMatchObject({ type: "research", componentId: "news_1" });
+		expect(core).toMatchObject({ type: "research", componentId: "run_1_news" });
 	});
 
 	it("truncates large datasets instead of failing", () => {
 		const component = WORKSPACE_VIEW.state.components.find(
-			(entry) => entry.componentId === "table_1",
+			(entry) => entry.componentId === "run_1_table",
 		);
-		if (component === undefined) throw new Error("table_1 fixture is missing");
+		if (component === undefined) throw new Error("run_1_table fixture is missing");
 		const rows = Array.from({ length: NOTEBOOK_LIMITS.maxTableRows + 50 }, (_, index) => ({
 			year: { v: `y${index}` },
 			base: { v: index, sourceId: "ev_a", asOf: "2026-06-30" },

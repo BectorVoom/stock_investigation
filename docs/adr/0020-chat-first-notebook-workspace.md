@@ -71,7 +71,11 @@ above the layout and are not re-created. Below `lg`, the two states keep their
 meaning as a two-tab switcher whose default tab follows the state. The old
 Canvas panel is gone: each research component is shown inside the thread,
 under the answer of the run that produced it, with an "Add to Notebook"
-action; components no visible run owns are listed after the thread.
+action. Ownership follows the `${runId}_` id prefix; the research pipeline
+renames each component the model creates to `${runId}_model<n>`, so it shows
+under its run too. (Amended 2026-10-15 at the owner's request: components
+no visible run owns are no longer listed under "Other results" after the
+thread; they stay on the canvas, where the notebook assistant can use them.)
 
 ### The widget grid package grows, stays generic
 

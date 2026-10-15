@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import { baseChildEnv } from "../../scripts/testEnv.ts";
-import { E2E_ORIGIN, FEED_URL, HEADLINE } from "./fixtures.ts";
+import { E2E_ORIGIN, E2E_PORT, FEED_URL, HEADLINE } from "./fixtures.ts";
 
 /**
  * Two-state workspace and Chat ↔ Notebook integration (task D2, ADR-0020).
@@ -52,7 +52,7 @@ test.beforeAll(async ({ browser }) => {
 		cwd: new URL("../..", import.meta.url).pathname,
 		env: {
 			...baseChildEnv(),
-			E2E_PORT: process.env.E2E_PORT ?? "8799",
+			E2E_PORT: String(E2E_PORT),
 			E2E_RUNNER_OWNER: owner,
 		},
 		stdio: ["ignore", "inherit", "inherit"],

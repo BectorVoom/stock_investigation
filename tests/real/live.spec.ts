@@ -362,6 +362,11 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const preview = conversation.locator("[data-preview-component]").first();
 		await expect(preview).toBeVisible();
 		await expect(preview.getByRole("button", { name: "Add to Notebook" })).toBeVisible();
+		// Every result is the run's own, under its answer: no "Other results" area.
+		await expect(
+			page.getByRole("list", { name: "Messages" }).locator("[data-preview-component]").first(),
+		).toBeVisible();
+		await expect(page.getByRole("region", { name: "Other results" })).toHaveCount(0);
 	});
 
 	test("a question naming a public page archives it as Markdown starting with its heading", async () => {

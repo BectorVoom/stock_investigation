@@ -37,7 +37,7 @@ export const WORKSPACE_VIEW: WorkspaceView = workspaceViewSchema.parse({
 		version: 4,
 		components: [
 			{
-				componentId: "news_1",
+				componentId: "run_1_news",
 				componentType: "news-card",
 				schemaVersion: 1,
 				props: {
@@ -47,19 +47,19 @@ export const WORKSPACE_VIEW: WorkspaceView = workspaceViewSchema.parse({
 				},
 			},
 			{
-				componentId: "table_1",
+				componentId: "run_1_table",
 				componentType: "data-table",
 				schemaVersion: 1,
 				props: { title: "Demand scenarios", datasetRef: "ds_demand", sourceIds: ["ev_a"] },
 			},
 			{
-				componentId: "sources_1",
+				componentId: "run_1_sources",
 				componentType: "source-list",
 				schemaVersion: 1,
 				props: { title: "Key sources", sourceIds: ["ev_a"] },
 			},
 		],
-		layout: { order: ["news_1", "table_1", "sources_1"], columns: 1 },
+		layout: { order: ["run_1_news", "run_1_table", "run_1_sources"], columns: 1 },
 		focusedComponentId: null,
 		selection: null,
 		lastNavigation: null,

@@ -72,6 +72,8 @@ const runnerFetch: typeof fetch = (input, init) => {
 };
 
 async function issueToken(): Promise<string> {
+	// The last refusal, so a Worker that answers but refuses is told apart from one that never starts.
+	let lastRefusal = "no response";
 	for (let attempt = 0; attempt < 120; attempt += 1) {
 		try {
 			const response = await runnerFetch(`${E2E_ORIGIN}/api/v1/runner-credentials`, {
@@ -84,12 +86,13 @@ async function issueToken(): Promise<string> {
 				body: JSON.stringify({ label: `e2e runner ${Date.now()}`, expiresInDays: 1 }),
 			});
 			if (response.ok) return issuedRunnerCredentialSchema.parse(await response.json()).token;
+			lastRefusal = `HTTP ${response.status}: ${(await response.text()).slice(0, 300)}`;
 		} catch {
 			// The Worker is still starting; try again shortly.
 		}
 		await sleep(500);
 	}
-	throw new Error("E2E Worker did not become ready");
+	throw new Error(`E2E Worker did not issue a runner credential (last: ${lastRefusal})`);
 }
 
 /** Replies as a model would: a plan, then an analysis citing what the tool retrieved, then verdicts. */

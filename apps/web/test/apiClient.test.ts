@@ -138,7 +138,7 @@ describe("error mapping", () => {
 			workspaceId: WORKSPACE_ID,
 			expectedWorkspaceVersion: 4,
 			operation: "component.remove",
-			componentId: "news_1",
+			componentId: "run_1_news",
 		});
 		expect(result).toEqual({
 			ok: false,

@@ -105,11 +105,11 @@ export function notebookFixtures(): {
 			type: "research",
 			title: "Demand scenarios",
 			size: "large",
-			componentId: "table_1",
+			componentId: "run_1_table",
 			createdAt: "2026-10-01T00:00:00Z",
 			updatedAt: "2026-10-01T00:00:00Z",
 			revision: 1,
-			origin: { kind: "chat", messageId: null, runId: "run_1", componentId: "table_1" },
+			origin: { kind: "chat", messageId: null, runId: "run_1", componentId: "run_1_table" },
 		}),
 	};
 }

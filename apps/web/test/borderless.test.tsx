@@ -94,7 +94,7 @@ describe("chat page without outlines", () => {
 		// Wait for loaded content, not the loading skeletons: the regions
 		// render immediately while the workspace and chats still load.
 		await screen.findByRole("article", { name: "Assistant message" });
-		await screen.findByRole("article", { name: "Component news_1" });
+		await screen.findByRole("article", { name: "Component run_1_news" });
 		await screen.findByRole("navigation", { name: "Chats" });
 		await screen.findByRole("button", { name: "More actions for Second research" });
 	}

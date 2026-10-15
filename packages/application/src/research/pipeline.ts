@@ -1123,13 +1123,14 @@ export async function runResearchPipeline(
 		positionObservations,
 		evidence,
 	});
-	const proposed: UiOperation[] = [];
+	const accepted: UiOperation[] = [];
 	let rejectedProposals = 0;
 	for (const proposal of [...(analysis?.uiOperations ?? []), ...uiProposals]) {
 		const parsed = uiOperationSchema.safeParse(proposal);
-		if (parsed.success && isModelAuthorable(parsed.data, runId)) proposed.push(parsed.data);
+		if (parsed.success && isModelAuthorable(parsed.data, runId)) accepted.push(parsed.data);
 		else rejectedProposals += 1;
 	}
+	const proposed = namespaceModelComponents(accepted, runId);
 	if (rejectedProposals > 0) {
 		await deps.reporter.note(
 			`${rejectedProposals} model display instruction(s) were refused (invalid, or outside what a model may author).`,
@@ -1221,6 +1222,39 @@ const MODEL_CREATABLE_TYPES: ReadonlySet<string> = new Set([
 	"candlestick-chart",
 	"source-list",
 ]);
+
+/**
+ * Renames each component the model creates into this run's id namespace
+ * (`${runId}_model<n>`), after `isModelAuthorable` has judged the model's own
+ * id. The Chat thread shows a component after the answer of the run whose
+ * `${runId}_` prefix it carries (ADR-0020); a model-chosen id carries none, so
+ * its chart would show nowhere. Later instructions in the same reply that name
+ * a created component follow the rename. Deterministic ids never use the
+ * `model` suffix, so the two cannot collide.
+ */
+function namespaceModelComponents(
+	operations: readonly UiOperation[],
+	runId: string,
+): UiOperation[] {
+	const renamed = new Map<string, string>();
+	for (const operation of operations) {
+		if (operation.operation === "component.create" && !renamed.has(operation.componentId)) {
+			renamed.set(operation.componentId, `${runId}_model${renamed.size + 1}`);
+		}
+	}
+	const rename = (componentId: string) => renamed.get(componentId) ?? componentId;
+	return operations.map((operation) => {
+		switch (operation.operation) {
+			case "component.create":
+			case "component.remove":
+			case "component.focus":
+			case "component.select":
+				return { ...operation, componentId: rename(operation.componentId) };
+			default:
+				return operation;
+		}
+	});
+}
 
 /**
  * What a model may do to the canvas. It may add views over stored datasets and

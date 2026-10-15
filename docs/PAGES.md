@@ -213,8 +213,8 @@ Ask research questions and read the answers, with their sources and run progress
 - Each research result directly after the assistant answer of the run that
   produced it, as a widget-styled preview (the same frame as Notebook widgets,
   fixed height): the rendered component with item selection plus an "Add to
-  Notebook" action ("In notebook" once saved); results no visible run owns
-  listed after the thread under "Other results".
+  Notebook" action ("In notebook" once saved). Results no visible run owns
+  are not shown (there is no "Other results" area).
 - A notebook-assistant reply labelled "Notebook assistant" (never citation
   chips, never a verification badge) with its turn card: one line per change
   (added / updated / moved / resized / duplicated with before → after, long

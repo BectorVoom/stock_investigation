@@ -100,11 +100,11 @@ describe("workspace session polling", () => {
 		await vi.advanceTimersByTimeAsync(0);
 		server.view = {
 			...server.view,
-			state: { ...server.view.state, version: 5, focusedComponentId: "table_1" },
+			state: { ...server.view.state, version: 5, focusedComponentId: "run_1_table" },
 		};
 		await vi.advanceTimersByTimeAsync(5_000);
 		expect(session.view()?.state.version).toBe(5);
-		expect(session.view()?.state.focusedComponentId).toBe("table_1");
+		expect(session.view()?.state.focusedComponentId).toBe("run_1_table");
 	});
 
 	it("polls only the executing run, fast and conditionally, then refetches everything when it finishes", async () => {
@@ -201,15 +201,15 @@ describe("stale reads never overwrite newer state", () => {
 		await vi.advanceTimersByTimeAsync(5_000);
 		serveCurrentWorkspace();
 
-		await session.dispatch({ operation: "component.remove", componentId: "news_1" });
+		await session.dispatch({ operation: "component.remove", componentId: "run_1_news" });
 		expect(session.view()?.state.version).toBe(5);
-		expect(componentIds(session)).toEqual(["table_1", "sources_1"]);
+		expect(componentIds(session)).toEqual(["run_1_table", "run_1_sources"]);
 
 		slowRead.resolve(jsonResponse(versionFour, { headers: { ETag: '"v4-late"' } }));
 		await vi.advanceTimersByTimeAsync(0);
 		// The canvas must not revert to the state before the accepted command.
 		expect(session.view()?.state.version).toBe(5);
-		expect(componentIds(session)).toEqual(["table_1", "sources_1"]);
+		expect(componentIds(session)).toEqual(["run_1_table", "run_1_sources"]);
 		expect(session.view()?.workspace.version).toBe(5);
 
 		// The discarded response's ETag was not adopted either: the next read is unconditional on it.
@@ -227,7 +227,7 @@ describe("stale reads never overwrite newer state", () => {
 		const session = startSession(manualVisibility(true).source);
 		await vi.advanceTimersByTimeAsync(0);
 		const versionFour = structuredClone(server.view);
-		await session.dispatch({ operation: "component.focus", componentId: "table_1" });
+		await session.dispatch({ operation: "component.focus", componentId: "run_1_table" });
 		expect(session.view()?.state.version).toBe(5);
 
 		// A fresh read (started after the command) is answered from a stale cache or replica.
@@ -236,7 +236,7 @@ describe("stale reads never overwrite newer state", () => {
 		);
 		await vi.advanceTimersByTimeAsync(5_000);
 		expect(session.view()?.state.version).toBe(5);
-		expect(session.view()?.state.focusedComponentId).toBe("table_1");
+		expect(session.view()?.state.focusedComponentId).toBe("run_1_table");
 
 		// A genuinely newer version is still accepted afterwards.
 		server.view = { ...server.view, state: { ...server.view.state, version: 6 } };
@@ -250,13 +250,16 @@ describe("stale reads never overwrite newer state", () => {
 		await vi.advanceTimersByTimeAsync(0);
 		const slowCommand = deferred<Response>();
 		backend.on("POST", /\/commands$/, () => slowCommand.promise);
-		const dispatched = session.dispatch({ operation: "component.focus", componentId: "news_1" });
+		const dispatched = session.dispatch({
+			operation: "component.focus",
+			componentId: "run_1_news",
+		});
 
 		// While the command response is in transit, an agent publishes: the poll sees version 6.
-		const acceptedAtFive = { ...server.view.state, version: 5, focusedComponentId: "news_1" };
+		const acceptedAtFive = { ...server.view.state, version: 5, focusedComponentId: "run_1_news" };
 		server.view = {
 			...server.view,
-			state: { ...server.view.state, version: 6, focusedComponentId: "sources_1" },
+			state: { ...server.view.state, version: 6, focusedComponentId: "run_1_sources" },
 		};
 		await vi.advanceTimersByTimeAsync(5_000);
 		expect(session.view()?.state.version).toBe(6);
@@ -264,7 +267,7 @@ describe("stale reads never overwrite newer state", () => {
 		slowCommand.resolve(jsonResponse({ state: acceptedAtFive, replayed: false }));
 		await dispatched;
 		expect(session.view()?.state.version).toBe(6);
-		expect(session.view()?.state.focusedComponentId).toBe("sources_1");
+		expect(session.view()?.state.focusedComponentId).toBe("run_1_sources");
 		expect(session.commandPending()).toBe(false);
 	});
 
