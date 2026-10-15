@@ -289,17 +289,16 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 			})
 			.toBe(true);
 
-		// The draft names the notebook, so the pills route to the notebook
-		// assistant live, before anything is sent.
+		// The draft names the notebook, so the mode menu routes to the
+		// notebook assistant live, before anything is sent.
 		const research = page.getByRole("form", { name: "Research composer" });
 		await research
 			.getByRole("textbox", { name: "Question" })
 			.fill("Create a chart of gold prices over the past year in the Notebook");
 		const notebookComposer = page.getByRole("form", { name: "Notebook composer" });
-		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
-			"aria-pressed",
-			"true",
-		);
+		await expect(
+			notebookComposer.getByRole("button", { name: "Leave Notebook mode" }),
+		).toBeVisible();
 		await instruct(page, "Create a chart of gold prices over the past year in the Notebook");
 		await expect(
 			page.locator('div[data-panel="notebook"] article[data-widget-type="line-chart"]'),
@@ -360,10 +359,9 @@ test.describe("notebook assistant through the real backend (spends real quota)",
 			.getByRole("form", { name: "Research composer" })
 			.getByRole("textbox", { name: "Question" })
 			.fill("Please create gold chart.");
-		await expect(notebookComposer.getByRole("button", { name: "Notebook" })).toHaveAttribute(
-			"aria-pressed",
-			"true",
-		);
+		await expect(
+			notebookComposer.getByRole("button", { name: "Leave Notebook mode" }),
+		).toBeVisible();
 		await instruct(page, "Please create gold chart.");
 		await expect(goldFrame).toHaveCount(1);
 		const ownerChatId = /#\/chat\/([^/?]+)/.exec(page.url())?.[1];

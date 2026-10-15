@@ -16,7 +16,14 @@ import {
 	Show,
 } from "solid-js";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
-import { DisclosureSummary, ErrorNotice, Loading, Notice, Select } from "../components/ui.tsx";
+import {
+	ActionMenu,
+	DisclosureSummary,
+	ErrorNotice,
+	Loading,
+	Notice,
+	Select,
+} from "../components/ui.tsx";
 import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { runnerNotice } from "../settings/agentSettingsModel.ts";
@@ -374,6 +381,17 @@ export function Composer(props: {
 		return isNotebook() ? "Send instruction" : "Send question";
 	};
 
+	// The composer's mode menu (ADR-0023): choosing a mode closes the menu
+	// (which returns focus to the + button) and then puts focus in the
+	// textarea, so the owner can type at once. The microtask runs after the
+	// menu's synchronous focus return.
+	const chooseTarget = (target: ComposerTarget) => {
+		props.onTargetChange?.(target);
+		queueMicrotask(() => {
+			questionBox?.focus();
+		});
+	};
+
 	// noValidate: the rules in composerModel are the single source of validation and messages.
 	return (
 		<form
@@ -398,33 +416,6 @@ export function Composer(props: {
 					</a>
 				</Notice>
 			</Show>
-			<fieldset class="flex gap-1">
-				<legend class="sr-only">Composer target</legend>
-				<button
-					type="button"
-					aria-pressed={!isNotebook()}
-					onClick={() => props.onTargetChange?.("research")}
-					class="min-h-6 rounded px-2 py-0.5 text-xs font-medium"
-					classList={{
-						"bg-blue-700 text-white": !isNotebook(),
-						"bg-slate-200 text-slate-900 hover:bg-slate-300": isNotebook(),
-					}}
-				>
-					Research
-				</button>
-				<button
-					type="button"
-					aria-pressed={isNotebook()}
-					onClick={() => props.onTargetChange?.("notebook")}
-					class="min-h-6 rounded px-2 py-0.5 text-xs font-medium"
-					classList={{
-						"bg-blue-700 text-white": isNotebook(),
-						"bg-slate-200 text-slate-900 hover:bg-slate-300": !isNotebook(),
-					}}
-				>
-					Notebook
-				</button>
-			</fieldset>
 			<Show when={isNotebook()}>
 				<Show
 					when={(props.selection ?? []).length > 0}
@@ -451,6 +442,40 @@ export function Composer(props: {
 				</Show>
 			</Show>
 			<div class="flex items-end gap-2 rounded-2xl bg-slate-100 p-2 focus-within:ring-2 focus-within:ring-blue-700">
+				<ActionMenu
+					buttonLabel="Choose mode"
+					menuLabel="Composer mode"
+					placement="above-start"
+					iconTrigger={{ icon: "plus-lg" }}
+					items={[
+						{
+							label: "Research",
+							icon: "search",
+							checked: !isNotebook(),
+							onSelect: () => chooseTarget("research"),
+						},
+						{
+							label: "Notebook",
+							icon: "journal-text",
+							checked: isNotebook(),
+							onSelect: () => chooseTarget("notebook"),
+						},
+					]}
+				/>
+				<Show when={isNotebook()}>
+					<span class="inline-flex min-h-6 shrink-0 items-center gap-1 rounded bg-slate-200 py-0.5 pl-2 pr-1 text-xs text-slate-900">
+						<span>Notebook</span>
+						<button
+							type="button"
+							aria-label="Leave Notebook mode"
+							title="Leave Notebook mode"
+							onClick={() => props.onTargetChange?.("research")}
+							class="flex min-h-6 min-w-6 items-center justify-center rounded-full hover:bg-slate-300"
+						>
+							<span aria-hidden="true">×</span>
+						</button>
+					</span>
+				</Show>
 				<label for={questionId} class="sr-only">
 					{isNotebook() ? "Instruction" : "Question"}
 				</label>

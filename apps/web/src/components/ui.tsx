@@ -624,6 +624,13 @@ export interface ActionMenuItem {
 	readonly icon?: IconButtonName;
 	readonly disabled?: boolean;
 	readonly value?: string;
+	/**
+	 * Opt-in radio state (ADR-0023): when ANY item of a menu defines it,
+	 * every item renders as `menuitemradio` with `aria-checked`, and a
+	 * checked item shows a trailing check glyph. Menus without it render
+	 * exactly as before.
+	 */
+	readonly checked?: boolean;
 }
 
 /**
@@ -637,6 +644,11 @@ export interface ActionMenuItem {
  * (an `IconButton` with `three-dots`) and items with leading icons plus
  * per-item `disabled` (skipped by arrow keys). Items without icons render
  * exactly as before, so existing uses are unchanged.
+ *
+ * Two opt-in props (ADR-0023, composer's mode menu): `checked` on the items
+ * turns the menu into radios, and `placement="above-start"` opens it upward
+ * from the button's leading edge (the composer sits at the page bottom).
+ * Both default off, so existing menus render and behave exactly as today.
  */
 export function ActionMenu(props: {
 	readonly buttonLabel: string;
@@ -647,6 +659,7 @@ export function ActionMenu(props: {
 		readonly disabled?: boolean;
 		readonly widgetActions?: string;
 	};
+	readonly placement?: "below-end" | "above-start";
 }): JSX.Element {
 	const [open, setOpen] = createSignal(false);
 	let button: HTMLButtonElement | undefined;
@@ -795,42 +808,68 @@ export function ActionMenu(props: {
 					aria-label={props.menuLabel}
 					class={
 						props.items.some((item) => item.icon !== undefined)
-							? "absolute right-0 z-20 min-w-44 rounded border border-slate-200 bg-white p-1"
-							: "absolute right-0 z-20 min-w-32 rounded bg-slate-100 p-1"
+							? `${props.placement === "above-start" ? "absolute bottom-full left-0 mb-1" : "absolute right-0"} z-20 min-w-44 rounded border border-slate-200 bg-white p-1`
+							: `${props.placement === "above-start" ? "absolute bottom-full left-0 mb-1" : "absolute right-0"} z-20 min-w-32 rounded bg-slate-100 p-1`
 					}
 					onKeyDown={onMenuKeyDown}
 				>
 					<For each={props.items}>
 						{(item, index) => (
-							<button
-								ref={(element) => {
-									itemElements[index()] = element;
-								}}
-								type="button"
-								role="menuitem"
-								data-menu-value={item.value}
-								disabled={item.disabled}
-								class={
-									item.icon === undefined
-										? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-										: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-								}
-								onClick={() => {
-									if (item.disabled === true) return;
-									setOpen(false);
-									button?.focus();
-									item.onSelect();
-								}}
-							>
-								<Show when={item.icon}>
-									{(glyph) => (
+							<>
+								{/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: the role is menuitemradio (which supports aria-checked) whenever any item defines checked */}
+								<button
+									ref={(element) => {
+										itemElements[index()] = element;
+									}}
+									type="button"
+									role={
+										props.items.some((entry) => entry.checked !== undefined)
+											? "menuitemradio"
+											: "menuitem"
+									}
+									aria-checked={
+										props.items.some((entry) => entry.checked !== undefined)
+											? item.checked === true
+											: undefined
+									}
+									data-menu-value={item.value}
+									disabled={item.disabled}
+									class={
+										item.icon === undefined &&
+										props.items.every((entry) => entry.checked === undefined)
+											? "block min-h-6 w-full rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+											: "flex min-h-7 w-full items-center gap-2 rounded px-2 py-1 text-left text-sm text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+									}
+									onClick={() => {
+										if (item.disabled === true) return;
+										setOpen(false);
+										button?.focus();
+										item.onSelect();
+									}}
+								>
+									<Show when={item.icon}>
+										{(glyph) => (
+											<span aria-hidden="true" class="inline-flex shrink-0">
+												<IconGlyph name={glyph()} />
+											</span>
+										)}
+									</Show>
+									<span
+										class={
+											props.items.some((entry) => entry.checked !== undefined)
+												? "flex-1"
+												: undefined
+										}
+									>
+										{item.label}
+									</span>
+									<Show when={item.checked === true}>
 										<span aria-hidden="true" class="inline-flex shrink-0">
-											<IconGlyph name={glyph()} />
+											<IconGlyph name="check-lg" />
 										</span>
-									)}
-								</Show>
-								<span>{item.label}</span>
-							</button>
+									</Show>
+								</button>
+							</>
 						)}
 					</For>
 				</div>
