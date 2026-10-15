@@ -199,10 +199,11 @@ codes, token display, `ownerId`, tickers) — never for prose. Tabular numerals
 | Widget controls | Selects, inputs and loading blocks on Home (buttons are the native `IconButton`, menus are native) | — | `sl-select` + `sl-option` / `sl-input` / `sl-skeleton` (cherry-picked modules only, Home chunk only); every control carries `size="small"` and is mapped in `styles.css` onto INPUT / LABEL (0.875rem control text, 0.75rem medium slate-700 labels); controls carry their own `label` prop instead of `Field` |
 | Market tables | Price and indicator tables inside a widget card | — | Semantic `<table>` with `<caption>` and scope attributes in `home/widgets/` (Shoelace has no table component); one shared class set consistent with `DatasetTable` |
 | Disclosure summary | The marker of every expandable `<summary>`: an explicit chevron (inline `<svg aria-hidden="true">`) pointing right when closed, down when open | closed / open | `DisclosureSummary` in `components/ui.tsx` (parent `<details>` carries `group`; chevron rotates with `group-open:rotate-90`, `motion-safe:` transition, `min-h-6`) |
-| Earnings calendar widget | The Home widget over the watchlist's earnings dates: a glanceable month grid plus a short next list (section 14) | compact grid + next list / no announcement in range / empty watchlist | `EarningsMonthCalendar` in `watchlist/EarningsMonthCalendar.tsx` (`compact` variant: semantic `<table>` with `<caption>`, day numbers with a dot marker plus the count past one, today emphasised, announcement days as deep links to the Watchlist calendar) composed by `EarningsCalendarWidget` in `home/widgets/EarningsCalendarWidget.tsx` with the "Next" list (at most 3, date + symbol + name + fiscal period, no per-row links), one status line, "Refresh earnings dates" and the "Open calendar" deep link, one no-upcoming sentence linking to the Watchlist page, and one short provenance line; the full calendar (grid with day details, links, `.ics`, feed, Google card) lives on the Watchlist page, never in the widget |
+| Earnings calendar widget | The Home widget over the watchlist's earnings dates: a glanceable month grid plus a short next list (section 14) | grid + next list / no announcement in range / empty watchlist | `EarningsMonthCalendar` in `home/widgets/EarningsMonthCalendar.tsx` (semantic `<table>` with `<caption>`, day numbers with a dot marker plus the count past one, today emphasised, announcement days as links to the Watchlist page) composed by `EarningsCalendarWidget` in `home/widgets/EarningsCalendarWidget.tsx` with the "Next" list (at most 3, date + symbol + name + fiscal period, no per-row links), one status line ("Connect it in Settings" while Google is not connected), "Refresh earnings dates" and the "Open Watchlist" link, one no-upcoming sentence linking to the Watchlist page, and one short provenance line; per-date calendar links live in the Watchlist table, the `.ics` download, feed and Google card in Settings → Calendar, never in the widget |
 | Registered stocks table | The Watchlist page table: one row per registered stock with its next announcement | dated next announcement / undecided / unavailable / passed dates | `WatchlistView` in `watchlist/WatchlistView.tsx` (semantic `<table>` with `<caption>` and scopes: symbol `font-mono`, company name or "unavailable (not retrieved yet)", market, next date with fiscal period and timing, further dates in a disclosure, as-of date, source `SafeLink`, per-row "unavailable (reason)", `Remove` with `ConfirmDialog`; passed stored dates are stated as text with no date and no calendar links) |
 | Add-a-stock form | Market select + symbol input with guideline-way problem list | valid / problems listed | `WatchlistView` (shared `Select` + `INPUT` + `BUTTON_PRIMARY`; `ul[aria-label="Before you can add this stock"]` the submit points at via `aria-describedby`) |
-| Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | `WatchlistView` (read-only field with Copy button and "will not be shown again" text on issue; created date with "Replace link" and "Revoke link" confirmations when a feed exists; the secrecy + localhost/HTTPS reachability note always visible) |
+| Calendar settings section | Settings → Calendar (ADR-0022): the Google Calendar card, the `.ics` download and the subscription link block over the Watchlist's dates | loading / load error with retry / loaded (download disabled with its reason on an empty watchlist) | `CalendarSettingsSection` in `settings/CalendarSettingsSection.tsx` (the shared `Section` titled "Calendar", an intro sentence linking to the Watchlist, `GoogleCalendarCard` from `settings/GoogleCalendarCard.tsx`, text buttons like the rest of Settings; `#/settings/calendar` scrolls to and focuses its heading) |
+| Subscription link block | The secret-token calendar feed: create shown once, replace/revoke with confirmation | no link / shown once / existing link | `CalendarSettingsSection` (read-only field with Copy button and "will not be shown again" text on issue; created date with "Replace link" and "Revoke link" confirmations when a feed exists; the secrecy + localhost/HTTPS reachability note always visible) |
 
 ## 7. Heading structure
 
@@ -475,20 +476,20 @@ standard; targets stay large enough to hit with confidence (44 × 44 pt on
 touch); corner radii stay concentric with the container; the system font keeps
 a clear hierarchy. Applied to this app's Home:
 
-- The FULL earnings calendar (grid with day details panel and calendar links,
-  the `.ics` download, the subscription feed, the Google Calendar card) lives
-  on the Watchlist page. That is "the app".
-- The Home `earnings-calendar` widget is glanceable: the month grid in a
-  compact variant (day numbers, a dot marker plus the count past one, today
-  emphasised, month navigation as two icon buttons), a "Next" list of at most
-  3 upcoming announcements, one status line, and at most two actions (the
-  "Refresh earnings dates" icon button, the "Open calendar" deep link). Its
-  buttons are the shared icon-only `IconButton` like every Home button
-  (section 13); the Watchlist page's full calendar keeps text buttons. An announcement day is a link to
-  `#/watchlist/calendar/YYYY-MM-DD` — the tap opens the app at the date —
-  never an in-widget details panel.
-- Removed from the widget (kept on the Watchlist page): per-row calendar
-  links, the `.ics` button, the five-column list table, the per-reason
+- "The app" for the earnings dates is the Watchlist page (each stock's row
+  with its dates and per-date calendar links) plus Settings → Calendar (the
+  `.ics` download, the subscription feed, the Google Calendar card). There is
+  no full-page month calendar (ADR-0022): the widget's grid is the calendar.
+- The Home `earnings-calendar` widget is glanceable: the month grid (day
+  numbers, a dot marker plus the count past one, today emphasised, month
+  navigation as two icon buttons), a "Next" list of at most 3 upcoming
+  announcements, one status line, and at most two actions (the "Refresh
+  earnings dates" icon button, the "Open Watchlist" link). Its buttons are
+  the shared icon-only `IconButton` like every Home button (section 13). An
+  announcement day is a link to `#/watchlist` — the tap opens the app where
+  the dates and their calendar links are — never an in-widget details panel.
+- Not in the widget: per-row calendar links (Watchlist table), the `.ics`
+  button (Settings → Calendar), the five-column list table, the per-reason
   disclosure (one sentence remains, linking to the Watchlist page), the long
   provenance block (one short line remains).
 - Sizing: every interactive target in the widget is at least 44 × 44 CSS px

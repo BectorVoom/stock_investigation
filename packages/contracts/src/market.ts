@@ -283,7 +283,7 @@ export const HOME_WIDGET_TYPE_META: { readonly [T in HomeWidgetType]: HomeWidget
 	"earnings-calendar": {
 		label: "Earnings calendar",
 		description:
-			"A glanceable month grid of the Watchlist page's upcoming earnings announcement dates, with a short next list; the full calendar lives on the Watchlist page.",
+			"A glanceable month grid of the Watchlist page's upcoming earnings announcement dates, with a short next list; calendar sync and export are in Settings.",
 		defaultSize: "large",
 		sizes: HOME_WIDGET_SIZES,
 	},

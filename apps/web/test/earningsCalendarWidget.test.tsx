@@ -135,12 +135,12 @@ function mount(
 afterEach(cleanup);
 
 describe("EarningsCalendarWidget", () => {
-	it("shows the compact month grid with day links to the Watchlist calendar", () => {
+	it("shows the month grid with day links to the Watchlist page", () => {
 		mount(WATCHLIST);
 		const table = screen.getByRole("table");
 		expect(table.textContent).toContain("earnings announcements");
 		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
-		expect(day.getAttribute("href")).toBe(`#/watchlist/calendar/${AAPL_DATE}`);
+		expect(day.getAttribute("href")).toBe("#/watchlist");
 	});
 
 	it("lists at most 3 upcoming announcements with no per-row links", () => {
@@ -194,11 +194,11 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByText(/retrieved/)).toBeTruthy();
 	});
 
-	it("offers Refresh and Open calendar, and nothing else", () => {
+	it("offers Refresh and Open Watchlist, and nothing else", () => {
 		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
 		expect(screen.getByRole("button", { name: "Refresh earnings dates" })).toBeTruthy();
-		expect(screen.getByRole("link", { name: "Open calendar" }).getAttribute("href")).toBe(
-			"#/watchlist/calendar",
+		expect(screen.getByRole("link", { name: "Open Watchlist" }).getAttribute("href")).toBe(
+			"#/watchlist",
 		);
 		expect(screen.queryByRole("button", { name: "Download calendar file (.ics)" })).toBe(null);
 		expect(screen.queryByRole("table", { name: /upcoming earnings announcements/ })).toBe(null);
@@ -237,12 +237,12 @@ describe("EarningsCalendarWidget", () => {
 		expect(screen.getByText(/Google Calendar: synced/)).toBeTruthy();
 	});
 
-	it("points at the Watchlist page when Google is not connected", () => {
+	it("points at Settings → Calendar when Google is not connected", () => {
 		mount(WATCHLIST);
 		expect(screen.getByText(/Google Calendar: not connected/)).toBeTruthy();
-		expect(
-			screen.getByRole("link", { name: "Connect it on the Watchlist page" }).getAttribute("href"),
-		).toBe("#/watchlist");
+		expect(screen.getByRole("link", { name: "Connect it in Settings" }).getAttribute("href")).toBe(
+			"#/settings/calendar",
+		);
 	});
 
 	it("keeps only the window: past the fixture date the Next list is empty", () => {
@@ -389,7 +389,7 @@ describe("EarningsCalendarWidget", () => {
 		mount(WATCHLIST, 90, null, { onRefreshEarnings: () => {} });
 		const refresh = screen.getByRole("button", { name: "Refresh earnings dates" });
 		expect(refresh.className).toContain("pointer-coarse:min-h-11");
-		const open = screen.getByRole("link", { name: "Open calendar" });
+		const open = screen.getByRole("link", { name: "Open Watchlist" });
 		expect(open.className).toContain("pointer-coarse:min-h-11");
 		const day = screen.getByRole("link", { name: new RegExp(`${AAPL_DATE.slice(8, 10)} .*AAPL`) });
 		expect(day.className).toContain("pointer-coarse:min-h-11");

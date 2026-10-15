@@ -298,10 +298,10 @@ test("a pre-0007 database gains the Watchlist tables on restart and keeps its da
 		await expect(homeWidget).toContainText("7203");
 		if (widgetNext !== undefined && widgetNext.announcementDate !== null) {
 			await expect(homeWidget).toContainText(widgetNext.announcementDate, { timeout: 120_000 });
-			// The compact widget marks the day with a deep link, not a calendar link.
+			// The widget marks the day with a link to the Watchlist page, not a calendar link.
 			await expect(
-				homeWidget.locator(`a[href="#/watchlist/calendar/${widgetNext.announcementDate}"]`),
-			).toBeVisible();
+				homeWidget.getByRole("link", { name: /announcements?, (.*, )?7203/ }),
+			).toHaveAttribute("href", "#/watchlist");
 		}
 		const shotsDir = join(REPO_ROOT, "test-results-real");
 		mkdirSync(shotsDir, { recursive: true });

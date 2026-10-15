@@ -225,7 +225,8 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	// The stock is still registered: Escape cancels, nothing is removed.
 	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible();
 
-	/* ---------- W4. Subscription link shown once ---------- */
+	/* ---------- W4. Subscription link shown once (Settings → Calendar, ADR-0022) ---------- */
+	await page.goto("/#/settings/calendar");
 	await page.getByRole("button", { name: "Create subscription link" }).click();
 	const issued = page.getByLabel("Subscription link (shown once)");
 	await expect(issued).toBeVisible({ timeout: 30_000 });
@@ -247,6 +248,10 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		await page.waitForTimeout(500);
 		await shot(page, `W-${name}-bottom`);
 		await audit(page, `W ${name} bottom`);
+		await page.goto("/#/settings/calendar");
+		await page.waitForTimeout(1200);
+		await shot(page, `W-${name}-settings-calendar`);
+		await audit(page, `W ${name} settings calendar`);
 	}
 	await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -304,13 +309,9 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 		data: { dashboard: original.dashboard, expectedVersion: savedVersion },
 	});
 
-	/* ---------- W8. The Google Calendar card: disconnected and connected ---------- */
-	await page.goto("/#/watchlist");
-	await expect(page.locator('[data-field="watchlist-status"]')).toContainText(
-		"Last successful refresh:",
-		{ timeout: 30_000 },
-	);
-	const card = page.locator("[data-calendar-section]");
+	/* ---------- W8. The Google Calendar card (Settings → Calendar): disconnected and connected ---------- */
+	await page.goto("/#/settings/calendar");
+	const card = page.getByRole("region", { name: "Calendar" });
 	await card.getByRole("button", { name: "Connect Google Calendar" }).waitFor({
 		timeout: 30_000,
 	});

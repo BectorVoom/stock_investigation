@@ -13,8 +13,7 @@ export const PAGES = [
 	{
 		view: "watchlist",
 		title: "Watchlist",
-		purpose:
-			"Register the stocks you follow and keep their earnings announcement dates in your calendar.",
+		purpose: "Register the stocks you follow and see their earnings announcement dates.",
 	},
 	{
 		view: "chat",
@@ -29,7 +28,8 @@ export const PAGES = [
 	{
 		view: "settings",
 		title: "Settings",
-		purpose: "Configure how the workspace runs: the AI agent, the runner and data export.",
+		purpose:
+			"Configure how the workspace runs: the AI agent, the calendar, the runner and data export.",
 	},
 ] as const;
 

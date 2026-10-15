@@ -5,7 +5,7 @@ import {
 	type CalendarDayEvent,
 	EarningsMonthCalendar,
 	formatLongDayDate,
-} from "../src/watchlist/EarningsMonthCalendar.tsx";
+} from "../src/home/widgets/EarningsMonthCalendar.tsx";
 
 /**
  * Hand-worked month: `today` is Monday 2026-11-02, so November 2026 opens
@@ -56,33 +56,8 @@ const EVENTS: readonly CalendarDayEvent[] = [
 	}),
 ];
 
-function mountFull(
-	events: readonly CalendarDayEvent[] = EVENTS,
-	initialSelected: string | null = null,
-) {
-	const [selected, setSelected] = createSignal<string | null>(initialSelected);
-	render(() => (
-		<EarningsMonthCalendar
-			events={events}
-			variant="full"
-			selectedDate={selected()}
-			onSelectDate={setSelected}
-			today={TODAY}
-		/>
-	));
-	return { selected, setSelected };
-}
-
-function mountCompact(events: readonly CalendarDayEvent[] = EVENTS) {
-	render(() => (
-		<EarningsMonthCalendar
-			events={events}
-			variant="compact"
-			selectedDate={null}
-			onSelectDate={() => {}}
-			today={TODAY}
-		/>
-	));
+function mount(events: readonly CalendarDayEvent[] = EVENTS) {
+	render(() => <EarningsMonthCalendar events={events} today={TODAY} />);
 }
 
 afterEach(cleanup);
@@ -94,14 +69,11 @@ describe("formatLongDayDate", () => {
 	});
 });
 
-describe("EarningsMonthCalendar (full)", () => {
-	it("opens on the month of the first upcoming announcement", () => {
-		mountFull();
+describe("EarningsMonthCalendar", () => {
+	it("opens on the month of the first upcoming announcement, Sunday first", () => {
+		mount();
 		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
-		expect(table).toBeTruthy();
-		// Sunday first: the first header names Sunday.
 		const headers = within(table).getAllByRole("columnheader");
-		expect(headers[0]?.textContent).toBe("Sun");
 		expect(headers.map((entry) => entry.textContent)).toEqual([
 			"Sun",
 			"Mon",
@@ -114,171 +86,58 @@ describe("EarningsMonthCalendar (full)", () => {
 	});
 
 	it("opens on the current month when nothing is upcoming", () => {
-		mountFull([]);
+		mount([]);
 		expect(
 			screen.getByRole("table", { name: "November 2026: earnings announcements" }),
 		).toBeTruthy();
 	});
 
-	it("navigates months locally and returns with Today", () => {
-		mountFull();
+	it("navigates months locally with icon-only buttons and no Today button", () => {
+		mount();
 		fireEvent.click(screen.getByRole("button", { name: "Next month" }));
 		expect(
 			screen.getByRole("table", { name: "December 2026: earnings announcements" }),
 		).toBeTruthy();
-		// The December event is now on the grid.
 		expect(
-			screen.getByRole("button", { name: "3 December 2026: 1 announcement, MSFT" }),
+			screen.getByRole("link", { name: "3 December 2026: 1 announcement, MSFT" }),
 		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
 		expect(
 			screen.getByRole("table", { name: "October 2026: earnings announcements" }),
 		).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Today" }));
-		expect(
-			screen.getByRole("table", { name: "November 2026: earnings announcements" }),
-		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Today" })).toBe(null);
 	});
 
-	it("marks today with aria-current", () => {
-		mountFull();
+	it("marks today with aria-current and an outlined bold number", () => {
+		mount();
 		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
 		const todayCell = table.querySelector('td[aria-current="date"]');
-		expect(todayCell?.textContent).toContain("2");
-		// Marked for the eye too, by shape (an outlined, bold number) — and
-		// only on today's cell.
 		expect(todayCell?.querySelector(".ring-2.font-bold")?.textContent).toBe("2");
 		expect(table.querySelectorAll(".ring-2")).toHaveLength(1);
 	});
 
-	it("names an announcement day with its count and symbols, and shows chips plus overflow", () => {
-		mountFull();
-		const day = screen.getByRole("button", {
-			name: "5 November 2026: 2 announcements, 7203, AAPL",
-		});
-		expect(day.getAttribute("aria-pressed")).toBe("false");
-		expect(day.textContent).toContain("7203");
-		expect(day.textContent).toContain("AAPL");
-	});
-
-	it("selects a day into a details panel with the announcement facts and links", () => {
-		mountFull();
-		fireEvent.click(
-			screen.getByRole("button", { name: "5 November 2026: 2 announcements, 7203, AAPL" }),
-		);
-		expect(
-			screen
-				.getByRole("button", { name: "5 November 2026: 2 announcements, 7203, AAPL" })
-				.getAttribute("aria-pressed"),
-		).toBe("true");
-		const panel = screen.getByRole("region", { name: "Announcements on 5 November 2026" });
-		expect(panel.textContent).toContain("7203");
-		expect(panel.textContent).toContain("Apple Inc");
-		expect(panel.textContent).toContain("Q4 2026");
-		expect(panel.textContent).toContain("after market close");
-		expect(panel.textContent).toContain("Second quarter");
-		const google = within(panel).getAllByRole("link", { name: "Add to Google Calendar" });
-		expect(google).toHaveLength(2);
-		expect(google[0]?.getAttribute("href")).toContain("calendar.google.com");
-		expect(
-			within(panel).getAllByRole("link", { name: "Add to Outlook" })[0]?.getAttribute("href"),
-		).toContain("outlook.live.com");
-		// Selecting again clears the details.
-		fireEvent.click(
-			screen.getByRole("button", { name: "5 November 2026: 2 announcements, 7203, AAPL" }),
-		);
-		expect(screen.queryByRole("region", { name: "Announcements on 5 November 2026" })).toBe(null);
-	});
-
-	it("offers no calendar links for a past date, even with a retrieved stamp", () => {
-		mountFull([event({ announcementDate: "2026-10-29" })], "2026-10-29");
-		const panel = screen.getByRole("region", { name: "Announcements on 29 October 2026" });
-		expect(panel.textContent).toContain("AAPL");
-		expect(within(panel).queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
-		expect(within(panel).queryByRole("link", { name: "Add to Outlook" })).toBe(null);
-	});
-
-	it("offers no calendar links for announcements without a retrieved stamp", () => {
-		mountFull([event({ announcementDate: "2026-11-05", retrievedAt: null })], "2026-11-05");
-		const panel = screen.getByRole("region", { name: "Announcements on 5 November 2026" });
-		expect(within(panel).queryByRole("link", { name: "Add to Google Calendar" })).toBe(null);
-		expect(within(panel).queryByRole("link", { name: "Add to Outlook" })).toBe(null);
-	});
-
-	it("states an empty selected day as text", () => {
-		mountFull([], "2026-11-06");
-		expect(screen.getByText("No announcement on 6 November 2026.")).toBeTruthy();
-	});
-
-	it("leaves days without announcements as plain text (not focusable)", () => {
-		mountFull();
-		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
-		const dayButtons = within(table).getAllByRole("button");
-		// Only announcement days are buttons: 5 November in-month and
-		// 3 December as a muted out-of-month day. Every other day is text.
-		expect(dayButtons).toHaveLength(2);
-	});
-
-	it("is keyboard reachable: every day control is a native button with a name", () => {
-		mountFull();
-		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
-		for (const button of within(table).getAllByRole("button")) {
-			expect(button.tagName).toBe("BUTTON");
-			expect((button.getAttribute("aria-label") ?? "").length).toBeGreaterThan(0);
-		}
-		for (const name of ["Previous month", "Today", "Next month"]) {
-			expect(screen.getByRole("button", { name }).tagName).toBe("BUTTON");
-		}
-	});
-
-	it("does not snap back after navigating away from a deep-linked month", () => {
-		const [selected, setSelected] = createSignal<string | null>("2026-11-05");
-		render(() => (
-			<EarningsMonthCalendar
-				events={EVENTS}
-				variant="full"
-				selectedDate={selected()}
-				onSelectDate={setSelected}
-				initialMonth="2026-11"
-				today={TODAY}
-			/>
-		));
-		fireEvent.click(screen.getByRole("button", { name: "Next month" }));
-		expect(
-			screen.getByRole("table", { name: "December 2026: earnings announcements" }),
-		).toBeTruthy();
-		// Selecting a day in the new month keeps the navigated month.
-		fireEvent.click(screen.getByRole("button", { name: "3 December 2026: 1 announcement, MSFT" }));
-		expect(
-			screen.getByRole("table", { name: "December 2026: earnings announcements" }),
-		).toBeTruthy();
-		expect(screen.getByRole("region", { name: "Announcements on 3 December 2026" })).toBeTruthy();
-	});
-
-	it("keeps every interactive target at the 24 px floor via classes", () => {
-		mountFull();
-		for (const button of screen.getAllByRole("button")) {
-			expect(button.className).toContain("min-h-6");
-		}
-	});
-});
-
-describe("EarningsMonthCalendar (compact)", () => {
-	it("links announcement days to the Watchlist calendar instead of selecting", () => {
-		mountCompact();
+	it("links announcement days to the Watchlist page, with no in-widget details", () => {
+		mount();
 		const day = screen.getByRole("link", {
 			name: "5 November 2026: 2 announcements, 7203, AAPL",
 		});
-		expect(day.getAttribute("href")).toBe("#/watchlist/calendar/2026-11-05");
-		// No in-widget details panel exists in the compact variant.
+		expect(day.getAttribute("href")).toBe("#/watchlist");
 		fireEvent.click(day);
 		expect(screen.queryByRole("region")).toBe(null);
-		expect(screen.queryByRole("button", { name: "Today" })).toBe(null);
+	});
+
+	it("leaves days without announcements as plain text (not focusable)", () => {
+		mount();
+		const table = screen.getByRole("table", { name: "November 2026: earnings announcements" });
+		// Only announcement days are links: 5 November in-month and
+		// 3 December as a muted out-of-month day. Every other day is text.
+		expect(within(table).getAllByRole("link")).toHaveLength(2);
+		expect(within(table).queryAllByRole("button")).toHaveLength(0);
 	});
 
 	it("marks the count on multi-announcement days", () => {
-		mountCompact();
+		mount();
 		const day = screen.getByRole("link", {
 			name: "5 November 2026: 2 announcements, 7203, AAPL",
 		});
@@ -287,15 +146,15 @@ describe("EarningsMonthCalendar (compact)", () => {
 		expect(single.textContent).not.toContain("2");
 	});
 
-	it("keeps compact targets large enough to hit with confidence", () => {
-		mountCompact();
+	it("keeps targets large enough to hit with confidence", () => {
+		mount();
 		const day = screen.getByRole("link", {
 			name: "5 November 2026: 2 announcements, 7203, AAPL",
 		});
 		expect(day.className).toContain("min-h-6");
 		expect(day.className).toContain("pointer-coarse:min-h-11");
-		// Month navigation on Home is the shared icon-only button (28 px, 44 px
-		// under a coarse pointer): no visible text, the words as name and tooltip.
+		// Month navigation is the shared icon-only button (28 px, 44 px under a
+		// coarse pointer): no visible text, the words as name and tooltip.
 		for (const name of ["Previous month", "Next month"]) {
 			const button = screen.getByRole("button", { name });
 			expect(button.className).toContain("min-h-7");
@@ -303,7 +162,6 @@ describe("EarningsMonthCalendar (compact)", () => {
 			expect(button.textContent).toBe("");
 			expect(button.getAttribute("title")).toBe(name);
 		}
-		expect(screen.queryByRole("button", { name: "Today" })).toBe(null);
 	});
 });
 
@@ -316,33 +174,19 @@ describe("EarningsMonthCalendar: dates that arrive after the grid is shown", () 
 
 	it("moves an untouched grid to the first announcement, as a reload would", () => {
 		const [events, setEvents] = createSignal<readonly CalendarDayEvent[]>([]);
-		render(() => (
-			<EarningsMonthCalendar
-				events={events()}
-				variant="compact"
-				selectedDate={null}
-				onSelectDate={() => {}}
-				today={TODAY}
-			/>
-		));
+		render(() => <EarningsMonthCalendar events={events()} today={TODAY} />);
 		// Nothing fetched yet: today's month.
 		expect(screen.getByRole("table", { name: /^November 2026/ })).toBeTruthy();
 		setEvents([december()]);
 		expect(screen.getByRole("table", { name: /^December 2026/ })).toBeTruthy();
-		expect(document.querySelector('a[href="#/watchlist/calendar/2026-12-10"]')).not.toBe(null);
+		expect(
+			screen.getByRole("link", { name: "10 December 2026: 1 announcement, 7203" }),
+		).toBeTruthy();
 	});
 
 	it("leaves the grid where the owner navigated", () => {
 		const [events, setEvents] = createSignal<readonly CalendarDayEvent[]>([]);
-		render(() => (
-			<EarningsMonthCalendar
-				events={events()}
-				variant="compact"
-				selectedDate={null}
-				onSelectDate={() => {}}
-				today={TODAY}
-			/>
-		));
+		render(() => <EarningsMonthCalendar events={events()} today={TODAY} />);
 		fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
 		expect(screen.getByRole("table", { name: /^October 2026/ })).toBeTruthy();
 		setEvents([december()]);

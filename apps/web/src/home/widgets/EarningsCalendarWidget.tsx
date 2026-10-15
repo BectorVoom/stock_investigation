@@ -7,16 +7,13 @@ import type { ApiClient } from "../../api/client.ts";
 import type { ApiFailure } from "../../api/http.ts";
 import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
-import { watchlistCalendarHash } from "../../router.ts";
-import {
-	type CalendarDayEvent,
-	EarningsMonthCalendar,
-} from "../../watchlist/EarningsMonthCalendar.tsx";
+import { SETTINGS_CALENDAR_HASH } from "../../router.ts";
 import {
 	googleWidgetStatus,
 	hasNeverRefreshedStock,
 	utcTodayIso,
 } from "../../watchlist/watchlistModel.ts";
+import { type CalendarDayEvent, EarningsMonthCalendar } from "./EarningsMonthCalendar.tsx";
 
 /** One watchlist event with its stock's context, for the window selection. */
 type UpcomingRow = CalendarDayEvent;
@@ -46,13 +43,13 @@ function rowsOf(watchlist: WatchlistResponse): UpcomingRow[] {
 
 /**
  * The earnings-calendar widget, glanceable (FR-019, Apple HIG): the month
- * grid in its compact variant (announcement days deep-link to the Watchlist
- * calendar — no in-widget details), a "Next" list of at most 3 upcoming
- * announcements, one status line, and at most two actions ("Refresh earnings
- * dates", "Open calendar"). The full calendar — grid, day details, calendar
- * links, the `.ics` download and the subscription feed — lives on the
- * Watchlist page. Reads the watchlist through an accessor (never a
- * snapshot) so it stays reactive across reloads like the other widgets.
+ * grid (announcement days link to the Watchlist page — no in-widget
+ * details), a "Next" list of at most 3 upcoming announcements, one status
+ * line, and at most two actions ("Refresh earnings dates", "Open Watchlist").
+ * Per-date calendar links live in the Watchlist table; Google Calendar, the
+ * `.ics` download and the subscription feed in Settings → Calendar
+ * (ADR-0022). Reads the watchlist through an accessor (never a snapshot) so
+ * it stays reactive across reloads like the other widgets.
  */
 export function EarningsCalendarWidget(props: {
 	readonly widget: Extract<HomeWidget, { readonly type: "earnings-calendar" }>;
@@ -168,12 +165,7 @@ export function EarningsCalendarWidget(props: {
 						</Empty>
 					}
 				>
-					<EarningsMonthCalendar
-						events={datedRows() ?? []}
-						variant="compact"
-						selectedDate={null}
-						onSelectDate={() => {}}
-					/>
+					<EarningsMonthCalendar events={datedRows() ?? []} />
 					<Show
 						when={(nextThree() ?? []).length > 0}
 						fallback={
@@ -225,10 +217,10 @@ export function EarningsCalendarWidget(props: {
 						{earningsStatus()} {googleStatus()}{" "}
 						<Show when={googleDisconnected()}>
 							<a
-								href="#/watchlist"
+								href={SETTINGS_CALENDAR_HASH}
 								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 							>
-								Connect it on the Watchlist page
+								Connect it in Settings
 							</a>
 							.
 						</Show>
@@ -243,10 +235,10 @@ export function EarningsCalendarWidget(props: {
 							onClick={() => props.onRefreshEarnings()}
 						/>
 						<a
-							href={watchlistCalendarHash(null)}
+							href="#/watchlist"
 							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 						>
-							Open calendar
+							Open Watchlist
 						</a>
 					</div>
 					<Show when={provenance().length > 0}>

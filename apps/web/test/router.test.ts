@@ -1,18 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-	formatHash,
-	isValidCalendarDate,
-	parseHash,
-	type Route,
-	watchlistCalendarHash,
-} from "../src/router.ts";
+import { formatHash, parseHash, type Route, SETTINGS_CALENDAR_HASH } from "../src/router.ts";
 
 function route(overrides: Partial<Route>): Route {
 	return {
 		view: "home",
 		workspaceId: null,
 		section: null,
-		calendarDate: null,
 		...overrides,
 	};
 }
@@ -27,8 +20,11 @@ describe("router", () => {
 		expect(parseHash("#/settings")).toEqual(route({ view: "settings" }));
 	});
 
-	it("parses the settings agent marker so chat notices can link to the control", () => {
+	it("parses the settings agent and calendar markers so other pages can link to them", () => {
 		expect(parseHash("#/settings/agent")).toEqual(route({ view: "settings", section: "agent" }));
+		expect(parseHash("#/settings/calendar")).toEqual(
+			route({ view: "settings", section: "calendar" }),
+		);
 		// Unknown sub-sections are ignored rather than failing the route.
 		expect(parseHash("#/settings/billing")).toEqual(route({ view: "settings" }));
 	});
@@ -54,36 +50,18 @@ describe("router", () => {
 		expect(parseHash("#/canvas/ws_1/extra")).toEqual(route({ view: "chat", workspaceId: "ws_1" }));
 	});
 
-	it("parses the Watchlist calendar deep link with and without a date", () => {
-		expect(parseHash("#/watchlist/calendar")).toEqual(
-			route({ view: "watchlist", section: "calendar" }),
-		);
-		expect(parseHash("#/watchlist/calendar/2026-11-05")).toEqual(
-			route({ view: "watchlist", section: "calendar", calendarDate: "2026-11-05" }),
-		);
-		// An invalid or missing date is the default month, never a failed route —
-		// the calendar section is still the target.
-		expect(parseHash("#/watchlist/calendar/not-a-date")).toEqual(
-			route({ view: "watchlist", section: "calendar" }),
-		);
-		expect(parseHash("#/watchlist/calendar/2026-13-40")).toEqual(
-			route({ view: "watchlist", section: "calendar" }),
-		);
-		expect(parseHash("#/watchlist/calendar/2026-02-30")).toEqual(
-			route({ view: "watchlist", section: "calendar" }),
-		);
+	it("parses the legacy Watchlist calendar links as Settings → Calendar", () => {
+		// The calendar settings moved to Settings (ADR-0022); old bookmarks and
+		// day links land there, whatever date they carry.
+		for (const hash of [
+			"#/watchlist/calendar",
+			"#/watchlist/calendar/2026-11-05",
+			"#/watchlist/calendar/not-a-date",
+		]) {
+			expect(parseHash(hash)).toEqual(route({ view: "settings", section: "calendar" }));
+		}
 		// Anything else below the watchlist stays the plain page.
 		expect(parseHash("#/watchlist/other")).toEqual(route({ view: "watchlist" }));
-	});
-
-	it("validates deep-link dates as real civil days", () => {
-		expect(isValidCalendarDate("2026-11-05")).toBe(true);
-		expect(isValidCalendarDate("2024-02-29")).toBe(true);
-		expect(isValidCalendarDate("2026-02-29")).toBe(false);
-		expect(isValidCalendarDate("2026-13-01")).toBe(false);
-		expect(isValidCalendarDate("1969-12-31")).toBe(false);
-		expect(isValidCalendarDate("2026-1-5")).toBe(false);
-		expect(isValidCalendarDate("tomorrow")).toBe(false);
 	});
 
 	it("round-trips every route", () => {
@@ -93,10 +71,9 @@ describe("router", () => {
 			route({ view: "chat", workspaceId: "ws_1" }),
 			route({ view: "sources" }),
 			route({ view: "watchlist" }),
-			route({ view: "watchlist", section: "calendar" }),
 			route({ view: "settings" }),
 			route({ view: "settings", section: "agent" }),
-			route({ view: "watchlist", section: "calendar", calendarDate: "2026-11-05" }),
+			route({ view: "settings", section: "calendar" }),
 		];
 		for (const entry of routes) {
 			expect(parseHash(formatHash(entry))).toEqual({ ...entry });
@@ -109,18 +86,14 @@ describe("router", () => {
 		expect(formatHash(route({ view: "chat", workspaceId: "ws_1" }))).toBe("#/chat/ws_1");
 		expect(formatHash(route({ view: "sources" }))).toBe("#/sources");
 		expect(formatHash(route({ view: "watchlist" }))).toBe("#/watchlist");
-		expect(formatHash(route({ view: "watchlist", section: "calendar" }))).toBe(
-			"#/watchlist/calendar",
-		);
 		expect(formatHash(route({ view: "settings" }))).toBe("#/settings");
 		expect(formatHash(route({ view: "settings", section: "agent" }))).toBe("#/settings/agent");
-		expect(
-			formatHash(route({ view: "watchlist", section: "calendar", calendarDate: "2026-11-05" })),
-		).toBe("#/watchlist/calendar/2026-11-05");
+		expect(formatHash(route({ view: "settings", section: "calendar" }))).toBe(
+			"#/settings/calendar",
+		);
 	});
 
-	it("builds the widget day links to the Watchlist calendar", () => {
-		expect(watchlistCalendarHash("2026-11-05")).toBe("#/watchlist/calendar/2026-11-05");
-		expect(watchlistCalendarHash(null)).toBe("#/watchlist/calendar");
+	it("names the Settings calendar section for the widget's connect link", () => {
+		expect(SETTINGS_CALENDAR_HASH).toBe("#/settings/calendar");
 	});
 });

@@ -5,8 +5,8 @@ import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { BUTTON, BUTTON_DANGER, ConfirmDialog, ErrorNotice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
-import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
-import { googleFailureReason } from "./watchlistModel.ts";
+import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
+import { googleFailureReason } from "../watchlist/watchlistModel.ts";
 
 function syncCountsText(state: GoogleCalendarState): string | null {
 	if (state.lastSync === null) return null;
@@ -15,7 +15,7 @@ function syncCountsText(state: GoogleCalendarState): string | null {
 }
 
 /**
- * The Google Calendar card on the Watchlist page (FR-019 section 2.7): every
+ * The Google Calendar card in Settings → Calendar (FR-019 section 2.7): every
  * state as a complete sentence. Queueing goes through the shared
  * `createGoogleSyncQueue`; cancelling a connecting run uses the existing
  * run-cancel endpoint. Never renders the auth URL outside the sign-in link.

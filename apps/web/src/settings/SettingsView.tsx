@@ -21,6 +21,7 @@ import { formatInstant } from "../lib/format.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote, type Remote } from "../lib/remote.ts";
 import { AgentSettingsSection } from "./AgentSettingsSection.tsx";
+import { CalendarSettingsSection } from "./CalendarSettingsSection.tsx";
 
 interface ActionFailure {
 	readonly title: string;
@@ -449,12 +450,15 @@ function ExportImport(props: {
 	);
 }
 
-/** Settings: AI agent, session, runner credentials, export/import. */
+/** Settings: AI agent, calendar, session, runner credentials, export/import. */
 export function SettingsView(props: {
 	readonly api: ApiClient;
 	readonly session: Remote<Session>;
-	/** From the `#/settings/agent` route marker; focuses the AI agent section. */
-	readonly agentSection: string | null;
+	/**
+	 * The route's sub-section marker: `agent` focuses the AI agent section,
+	 * `calendar` the Calendar section.
+	 */
+	readonly section: string | null;
 	readonly visibility: VisibilitySource;
 	readonly onReloadSession: () => void;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
@@ -463,8 +467,13 @@ export function SettingsView(props: {
 		<div class="space-y-3">
 			<AgentSettingsSection
 				api={props.api}
-				agentSection={props.agentSection}
+				agentSection={props.section}
 				visibility={props.visibility}
+			/>
+			<CalendarSettingsSection
+				api={props.api}
+				visibility={props.visibility}
+				section={props.section}
 			/>
 			<Section title="Session">
 				<RemoteView remote={props.session} label="session" onRetry={props.onReloadSession}>

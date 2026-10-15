@@ -1301,7 +1301,7 @@ describe("home view", () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open calendar"), {
+		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open Watchlist"), {
 			timeout: 10_000,
 		});
 		await new Promise((resolve) => setTimeout(resolve, 300));
@@ -1312,7 +1312,7 @@ describe("home view", () => {
 		withCalendarWidget();
 		watch.stocks = [watchStock()];
 		mountApp(backend);
-		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open calendar"), {
+		await waitFor(() => expect(widgetById("w-cal").textContent).toContain("Open Watchlist"), {
 			timeout: 10_000,
 		});
 		const button = () =>

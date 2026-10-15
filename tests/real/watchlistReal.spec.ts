@@ -327,6 +327,13 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 				}
 			}
 		}
+		// The download, the subscription link and Google Calendar live in
+		// Settings → Calendar (ADR-0022); the Watchlist page has no calendar.
+		await expect(page.getByRole("region", { name: "Calendar" })).toHaveCount(0);
+		await page.goto(`${VITE_ORIGIN}/#/settings/calendar`);
+		await expect(
+			page.getByRole("region", { name: "Calendar" }).getByText("Google Calendar", { exact: true }),
+		).toBeVisible({ timeout: 60_000 });
 		const download = page.waitForEvent("download", { timeout: 30_000 });
 		await page.getByRole("button", { name: "Download calendar file (.ics)" }).click();
 		const file = await download;
@@ -361,10 +368,6 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 
 		// No Google credentials in the runner env file: connecting ends in the
 		// fixed not-configured sentence (never a guess, never provider text).
-		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
-		await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible({
-			timeout: 60_000,
-		});
 		await page.getByRole("button", { name: "Connect Google Calendar" }).click();
 		await expect(
 			page.getByText(
@@ -396,21 +399,18 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 			}
 			// The month grid marks the 7203 date: navigate from the opening
 			// month when it is not there yet…
-			const dayLink = added.locator(`a[href="#/watchlist/calendar/${next.announcementDate}"]`);
+			const dayLink = added.getByRole("link", { name: /announcements?, (.*, )?7203/ });
 			for (let step = 0; step < 12 && (await dayLink.count()) === 0; step += 1) {
 				await added.getByRole("button", { name: "Next month" }).click();
 			}
 			await expect(dayLink).toBeVisible({ timeout: 30_000 });
-			// …following that day's link lands on the Watchlist calendar with
-			// the day selected and its details showing the Google link.
+			// …following that day's link lands on the Watchlist page, whose
+			// 7203 row carries the date and its Google link.
 			await dayLink.click();
-			const section = page.locator("[data-calendar-section]");
-			await expect(section.getByRole("button", { name: /7203/ })).toHaveAttribute(
-				"aria-pressed",
-				"true",
-			);
+			const row = page.locator('tr[data-stock-id="jp:7203"]');
+			await expect(row).toContainText(next.announcementDate, { timeout: 60_000 });
 			await expect(
-				section.getByRole("link", { name: "Add to Google Calendar" }).first(),
+				row.getByRole("link", { name: "Add to Google Calendar" }).first(),
 			).toHaveAttribute("href", /calendar\.google\.com/);
 			// Back on Home for the screenshots below.
 			await page.goto(`${VITE_ORIGIN}/#/home`);

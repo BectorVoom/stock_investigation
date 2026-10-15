@@ -3,7 +3,7 @@ import { GOOGLE_AUTH_URL_PREFIX } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../src/api/client.ts";
-import { GoogleCalendarCard } from "../src/watchlist/GoogleCalendarCard.tsx";
+import { GoogleCalendarCard } from "../src/settings/GoogleCalendarCard.tsx";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { makeRun } from "./fixtures.ts";
 

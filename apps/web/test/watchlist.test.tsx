@@ -1,7 +1,5 @@
-import type { WatchlistStock } from "@research/contracts";
-import { GOOGLE_AUTH_URL_PREFIX } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { formatInstant } from "../src/lib/format.ts";
 import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
@@ -18,248 +16,28 @@ import {
 	type FakeBackend,
 	jsonResponse,
 } from "./fakeBackend.ts";
-import { makeRun } from "./fixtures.ts";
-
-const NOW_MS = Date.now();
-/** A fresh stamp (one hour old), so the default fixture queues no auto-refresh on load. */
-const FRESH_STAMP = new Date(NOW_MS - 3_600_000).toISOString();
-/** A UTC date `days` from today, so fixtures stay upcoming on any day. */
-function isoInDays(days: number): string {
-	return new Date(NOW_MS + days * 86_400_000).toISOString().slice(0, 10);
-}
-/** The fixture's upcoming announcement date (the view compares it to today). */
-const UPCOMING_DATE = isoInDays(16);
-
-function makeStock(overrides: Partial<WatchlistStock> = {}): WatchlistStock {
-	return {
-		stockId: "us:AAPL",
-		market: "US",
-		symbol: "AAPL",
-		name: "Apple Inc",
-		addedAt: "2026-10-12T00:00:00Z",
-		source: "finnhub",
-		publisher: "Finnhub",
-		sourceUrl: "https://finnhub.io/",
-		lastRefreshedAt: FRESH_STAMP,
-		retrievedAt: FRESH_STAMP,
-		unavailable: null,
-		events: [
-			{
-				periodKey: "2026-q4",
-				announcementDate: UPCOMING_DATE,
-				fiscalPeriodLabel: "Q4 2026",
-				fiscalPeriodEnd: null,
-				timing: "after-close",
-			},
-		],
-		...overrides,
-	};
-}
-
-interface WatchServer {
-	stocks: WatchlistStock[];
-	activeRunId: string | null;
-	runState: string;
-	lastSucceededAt: string | null;
-	feedCreatedAt: string | null;
-	google: {
-		status: "disconnected" | "connecting" | "connected" | "needs-reconnect";
-		authUrl: string | null;
-		calendarId: string | null;
-		connectedAt: string | null;
-		lastSyncedAt: string | null;
-		lastSync: { inserted: number; updated: number; deleted: number; unchanged: number } | null;
-		inSync: boolean | null;
-		activeRunId: string | null;
-		activeRunState: string | null;
-		activeAction: "connect" | "sync" | "disconnect" | null;
-		lastFailure: { code: string; reason: string; at: string } | null;
-	};
-}
-
-const DISCONNECTED_GOOGLE = (): WatchServer["google"] => ({
-	status: "disconnected",
-	authUrl: null,
-	calendarId: null,
-	connectedAt: null,
-	lastSyncedAt: null,
-	lastSync: null,
-	inSync: null,
-	activeRunId: null,
-	activeRunState: null,
-	activeAction: null,
-	lastFailure: null,
-});
+import {
+	createWatchlistBackend,
+	DISCONNECTED_GOOGLE,
+	FRESH_STAMP,
+	makeStock,
+	NOW_MS,
+	UPCOMING_DATE,
+	type WatchServer,
+} from "./watchlistHarness.ts";
 
 let backend: FakeBackend;
 let server: WatchServer;
 
-function responseBody() {
-	return {
-		stocks: server.stocks,
-		refresh: {
-			activeRunId: server.activeRunId,
-			activeRunState: server.activeRunId === null ? null : server.runState,
-			lastSucceededAt: server.lastSucceededAt,
-			lastFailure: null,
-		},
-		feed: { enabled: server.feedCreatedAt !== null, createdAt: server.feedCreatedAt },
-		googleCalendar: {
-			...server.google,
-			activeRunState:
-				server.google.activeRunId === null ? null : (server.google.activeRunState ?? "pending"),
-		},
-	};
-}
-
-function etag() {
-	return `"w-${server.stocks.length}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
-}
-
 beforeEach(() => {
-	backend = createFakeBackend();
-	server = {
-		stocks: [makeStock()],
-		activeRunId: null,
-		runState: "pending",
-		lastSucceededAt: FRESH_STAMP,
-		feedCreatedAt: null,
-		google: DISCONNECTED_GOOGLE(),
-	};
-	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
-		if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
-		return jsonResponse(responseBody(), { headers: { ETag: etag() } });
-	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/stocks$/, (request) => {
-		const body = request.body as { market?: unknown; symbol?: unknown };
-		if (body.market !== "US" && body.market !== "JP") {
-			return errorResponse(400, "VALIDATION_FAILED", "market is required");
-		}
-		const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
-		if (symbol === "" || symbol === "BAD!") {
-			return errorResponse(400, "VALIDATION_FAILED", "symbol is required");
-		}
-		const market = body.market as "US" | "JP";
-		const stockId = `${market.toLowerCase()}:${symbol}`;
-		if (!server.stocks.some((entry) => entry.stockId === stockId)) {
-			server.stocks = [
-				...server.stocks,
-				makeStock({
-					stockId,
-					market,
-					symbol,
-					name: null,
-					source: market === "US" ? "finnhub" : "jpx",
-					publisher: market === "US" ? "Finnhub" : "Japan Exchange Group (JPX)",
-					sourceUrl:
-						market === "US"
-							? "https://finnhub.io/"
-							: "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html",
-					lastRefreshedAt: null,
-					retrievedAt: null,
-					events: [],
-				}),
-			];
-		}
-		return jsonResponse(responseBody());
-	});
-	backend.on("DELETE", /^\/api\/v1\/watchlist\/stocks\/(.+)$/, (_request, match) => {
-		const stockId = decodeURIComponent(match[1] ?? "");
-		if (!server.stocks.some((entry) => entry.stockId === stockId)) {
-			return errorResponse(404, "NOT_FOUND", "Stock not found.");
-		}
-		server.stocks = server.stocks.filter((entry) => entry.stockId !== stockId);
-		return jsonResponse(responseBody());
-	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () => {
-		if (server.stocks.length === 0) {
-			return errorResponse(400, "VALIDATION_FAILED", "The watchlist has no stocks to refresh.");
-		}
-		server.activeRunId = "run_earnings_1";
-		server.runState = "pending";
-		return jsonResponse(
-			{ run: makeRun({ runId: "run_earnings_1", kind: "earnings-refresh", state: "pending" }) },
-			{ status: 202 },
-		);
-	});
-	backend.on(
-		"GET",
-		/^\/api\/v1\/watchlist\/calendar\.ics$/,
-		() =>
-			new Response("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n", {
-				status: 200,
-				headers: { "Content-Type": "text/calendar; charset=utf-8" },
-			}),
-	);
-	backend.on("POST", /^\/api\/v1\/watchlist\/feed$/, () => {
-		const token = "a".repeat(43);
-		server.feedCreatedAt = "2026-10-12T13:00:00Z";
-		return jsonResponse(
-			{
-				token,
-				path: `/api/v1/calendar-feed/${token}/earnings.ics`,
-				createdAt: server.feedCreatedAt,
-			},
-			{ status: 201 },
-		);
-	});
-	backend.on("DELETE", /^\/api\/v1\/watchlist\/feed$/, () => {
-		if (server.feedCreatedAt === null) {
-			return errorResponse(404, "NOT_FOUND", "There is no subscription link to revoke.");
-		}
-		server.feedCreatedAt = null;
-		return new Response(null, { status: 204 });
-	});
-	backend.on(
-		"POST",
-		/^\/api\/v1\/google-calendar\/(connect|sync|disconnect)$/,
-		(_request, match) => {
-			const action = match[1] as "connect" | "sync" | "disconnect";
-			if (action !== "connect" && server.google.status !== "connected") {
-				return errorResponse(400, "VALIDATION_FAILED", "Google Calendar is not connected.");
-			}
-			server.google = {
-				...server.google,
-				status: action === "connect" ? "connecting" : server.google.status,
-				activeRunId: `run_google_${action}`,
-				activeRunState: "pending",
-				activeAction: action,
-			};
-			return jsonResponse(
-				{
-					run: makeRun({
-						runId: `run_google_${action}`,
-						kind: "google-calendar",
-						state: "pending",
-					}),
-				},
-				{ status: 202 },
-			);
-		},
-	);
-	backend.on("POST", /^\/api\/v1\/research-runs\/.+\/cancel$/, () => {
-		server.google = {
-			...server.google,
-			activeRunId: null,
-			activeRunState: null,
-			activeAction: null,
-		};
-		return jsonResponse({ run: makeRun({ state: "cancelled" }) });
-	});
+	({ backend, server } = createWatchlistBackend());
 });
 
 afterEach(cleanup);
 
-function mount(
-	props: { readonly calendarDate?: string | null; readonly calendarLinked?: boolean } = {},
-) {
+function mount() {
 	render(() => (
-		<WatchlistView
-			api={createApiClient({ fetch: backend.fetch })}
-			visibility={ALWAYS_VISIBLE}
-			calendarDate={props.calendarDate ?? null}
-			calendarLinked={props.calendarLinked ?? false}
-		/>
+		<WatchlistView api={createApiClient({ fetch: backend.fetch })} visibility={ALWAYS_VISIBLE} />
 	));
 }
 
@@ -465,32 +243,6 @@ describe("Watchlist view", () => {
 		expect(row.textContent).toContain("not retrieved yet");
 	});
 
-	it("downloads the calendar file through the shared download helper", async () => {
-		const created: string[] = [];
-		Object.defineProperty(URL, "createObjectURL", {
-			value: () => {
-				created.push("blob:fake");
-				return "blob:fake";
-			},
-			configurable: true,
-		});
-		Object.defineProperty(URL, "revokeObjectURL", { value: () => {}, configurable: true });
-		const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-		try {
-			mount();
-			await screen.findByRole("table", {
-				name: "Stocks you follow, with their next earnings announcement date",
-			});
-			fireEvent.click(screen.getByRole("button", { name: "Download calendar file (.ics)" }));
-			await waitFor(() => {
-				expect(click).toHaveBeenCalled();
-			});
-			expect(created).toEqual(["blob:fake"]);
-		} finally {
-			click.mockRestore();
-		}
-	});
-
 	it("opens from the navigation as its own page", async () => {
 		const appBackend = createFakeBackend();
 		installHomeRoutes(appBackend, initialServerState(), initialHomeServerState(false));
@@ -528,47 +280,6 @@ describe("Watchlist view", () => {
 		} finally {
 			window.location.hash = "";
 		}
-	});
-
-	it("creates the subscription link once, copies it, replaces and revokes it", async () => {
-		const written: string[] = [];
-		Object.defineProperty(navigator, "clipboard", {
-			value: { writeText: (text: string) => written.push(text) },
-			configurable: true,
-		});
-		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Create subscription link" }));
-		const field = (await screen.findByLabelText(
-			"Subscription link (shown once)",
-		)) as HTMLInputElement;
-		expect(field.value).toContain("/api/v1/calendar-feed/");
-		expect(field.value).not.toContain("undefined");
-		fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-		await waitFor(() => {
-			expect(written).toHaveLength(1);
-		});
-		expect(await screen.findByText("Copied to the clipboard.")).toBeTruthy();
-
-		fireEvent.click(await screen.findByRole("button", { name: "Replace link" }));
-		const replaceDialog = await screen.findByRole("dialog");
-		expect(replaceDialog.textContent).toContain("The old link stops working immediately.");
-		fireEvent.click(within(replaceDialog).getByRole("button", { name: "Replace link" }));
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/feed$/)).toHaveLength(2);
-		});
-		// The dialog closes only once the issue response is processed, not
-		// when the request is recorded — wait for the dismissal itself.
-		await waitFor(() => {
-			expect(screen.queryByRole("dialog")).toBe(null);
-		});
-
-		fireEvent.click(await screen.findByRole("button", { name: "Revoke link" }));
-		const revokeDialog = await screen.findByRole("dialog");
-		fireEvent.click(within(revokeDialog).getByRole("button", { name: "Revoke link" }));
-		expect(await screen.findByText("The subscription link was revoked.")).toBeTruthy();
 	});
 
 	it("queues one refresh on load when dates were never fetched, and says why", async () => {
@@ -740,83 +451,7 @@ describe("Watchlist view", () => {
 		expect(screen.getByText(/Last successful refresh:/)).toBeTruthy();
 	}, 60_000);
 
-	it("shows the month calendar and selects a day with its details and links", async () => {
-		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		const calendar = await screen.findByRole("table", { name: /earnings announcements/ });
-		expect(calendar.textContent).toContain("earnings announcements");
-		const day = within(calendar).getByRole("button", { name: /1 announcement, AAPL/ });
-		fireEvent.click(day);
-		expect(day.getAttribute("aria-pressed")).toBe("true");
-		const panel = await screen.findByRole("region", { name: /Announcements on/ });
-		expect(panel.textContent).toContain("Apple Inc");
-		expect(panel.textContent).toContain("Q4 2026");
-		expect(
-			within(panel).getByRole("link", { name: "Add to Google Calendar" }).getAttribute("href"),
-		).toContain("calendar.google.com");
-	});
-
-	it("opens on the deep-linked day with its details", async () => {
-		mount({ calendarDate: UPCOMING_DATE, calendarLinked: true });
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		const panel = await screen.findByRole("region", { name: /Announcements on/ });
-		expect(panel.textContent).toContain("AAPL");
-	});
-
-	it("queues a Google Calendar connect and shows the preparing state", async () => {
-		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		fireEvent.click(screen.getByRole("button", { name: "Connect Google Calendar" }));
-		await waitFor(() => {
-			expect(backend.requestsTo("POST", /google-calendar\/connect$/)).toHaveLength(1);
-		});
-		expect(await screen.findByText(/Preparing Google sign-in…/)).toBeTruthy();
-	});
-
-	it("shows the sign-in link while connecting with a URL", async () => {
-		const authUrl = `${GOOGLE_AUTH_URL_PREFIX}response_type=code&client_id=e2e`;
-		server.google = {
-			...DISCONNECTED_GOOGLE(),
-			status: "connecting",
-			authUrl,
-			activeRunId: "run_google_connect",
-			activeRunState: "claimed",
-			activeAction: "connect",
-		};
-		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		const link = await screen.findByRole("link", { name: "Open Google sign-in" });
-		expect(link.getAttribute("href")).toBe(authUrl);
-		expect(await screen.findByText(/Waiting for you to finish in Google/)).toBeTruthy();
-	});
-
-	it("states needs-reconnect with the fixed failure sentence", async () => {
-		server.google = {
-			...DISCONNECTED_GOOGLE(),
-			status: "needs-reconnect",
-			lastFailure: {
-				code: "GOOGLE_AUTH_EXPIRED",
-				reason: "The Google connection expired; reconnect Google Calendar.",
-				at: FRESH_STAMP,
-			},
-		};
-		mount();
-		await screen.findByRole("table", {
-			name: "Stocks you follow, with their next earnings announcement date",
-		});
-		expect(await screen.findByRole("button", { name: "Reconnect Google Calendar" })).toBeTruthy();
-		expect((await screen.findAllByText(/The Google connection expired/)).length).toBeGreaterThan(0);
-	});
-
-	it("queues one automatic sync when connected and out of sync, and never loops after a failed run", async () => {
+	it("still queues one automatic sync after its own changes, and never loops after a failed run", async () => {
 		server.google = {
 			...DISCONNECTED_GOOGLE(),
 			status: "connected",
@@ -834,8 +469,6 @@ describe("Watchlist view", () => {
 			},
 			{ timeout: 30_000 },
 		);
-		// The queued run is active: the card says syncing.
-		expect(await screen.findByText(/Syncing…/)).toBeTruthy();
 		// The run fails server-side: the active run clears and the failure moves the ETag.
 		server.google = {
 			...server.google,
@@ -848,16 +481,27 @@ describe("Watchlist view", () => {
 				at: FRESH_STAMP,
 			},
 		};
-		await waitFor(
-			() => {
-				expect(screen.queryByText(/Syncing…/)).toBe(null);
-			},
-			{ timeout: 30_000 },
-		);
-		// No second sync is queued even though the ETag moved: no loops.
+		// The poller reads the ended run and its failure…
+		const reads = () => backend.requestsTo("GET", /^\/api\/v1\/watchlist$/).length;
+		const before = reads();
+		await waitFor(() => expect(reads()).toBeGreaterThan(before), { timeout: 30_000 });
+		// …and no second sync is queued even though the ETag moved: no loops.
 		await new Promise((resolve) => setTimeout(resolve, 3000));
 		expect(backend.requestsTo("POST", /google-calendar\/sync$/)).toHaveLength(1);
-		const alert = await screen.findByRole("alert");
-		expect(alert.textContent).toContain("The Google Calendar request failed.");
 	}, 90_000);
+
+	it("has no calendar: the month grid and the calendar settings live elsewhere", async () => {
+		mount();
+		const table = await screen.findByRole("table", {
+			name: "Stocks you follow, with their next earnings announcement date",
+		});
+		expect(screen.queryByRole("region", { name: "Calendar" })).toBe(null);
+		expect(screen.queryByRole("table", { name: /earnings announcements$/ })).toBe(null);
+		expect(screen.queryByRole("button", { name: "Download calendar file (.ics)" })).toBe(null);
+		expect(screen.queryByRole("button", { name: "Create subscription link" })).toBe(null);
+		expect(screen.queryByRole("button", { name: "Connect Google Calendar" })).toBe(null);
+		// Each row keeps its per-date calendar links.
+		expect(within(table).getByRole("link", { name: "Add to Google Calendar" })).toBeTruthy();
+		expect(within(table).getByRole("link", { name: "Add to Outlook" })).toBeTruthy();
+	});
 });

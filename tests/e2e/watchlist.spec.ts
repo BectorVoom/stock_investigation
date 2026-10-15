@@ -8,12 +8,13 @@ import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
  * Watchlist and earnings-date calendar end to end (FR-018/FR-019): registering
  * a US and a JP stock, an earnings-date refresh through the REAL runner loop
  * with the fixture Finnhub/JPX sources (`tests/e2e/earningsFixtures.ts` —
- * canned dates, never live data), the Home earnings-calendar widget (compact
- * month grid, day deep links, month navigation), the Watchlist month calendar
- * with day selection, the Google Calendar card (scripted connect → automatic
- * sync → disconnect, plus the not-configured failure sentence), the .ics
- * download, and the secret-token subscription feed (fetch without cookies,
- * rotation, revocation). CSP stays clean.
+ * canned dates, never live data), the Home earnings-calendar widget (month
+ * grid, day links to the Watchlist page, month navigation) and, in Settings →
+ * Calendar (ADR-0022), the Google Calendar card (scripted connect →
+ * automatic sync → disconnect, plus the not-configured failure sentence),
+ * the .ics download, and the secret-token subscription feed (fetch without
+ * cookies, rotation, revocation). The Watchlist page itself has no calendar.
+ * CSP stays clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -26,6 +27,16 @@ const consoleErrors: string[] = [];
  */
 let appleDate = "";
 let toyotaDate = "";
+
+/** Opens Settings → Calendar and waits for its watchlist-backed state. */
+async function openCalendarSettings(): Promise<Locator> {
+	await page.goto("/#/settings/calendar");
+	const section = page.getByRole("region", { name: "Calendar" });
+	await expect(section.getByText("Google Calendar", { exact: true })).toBeVisible({
+		timeout: 30_000,
+	});
+	return section;
+}
 
 /** The first `<time>` in a watchlist row is the next announcement date. */
 async function rowDate(row: Locator): Promise<string> {
@@ -130,7 +141,7 @@ test("adding a US and a JP stock fetches the fixture earnings dates with no manu
 	await expect(toyota).toContainText("Second quarter");
 });
 
-test("the Home earnings-calendar widget shows a compact grid with day deep links", async () => {
+test("the Home earnings-calendar widget shows a month grid whose days open the Watchlist", async () => {
 	test.setTimeout(180_000);
 	const title = `E2E earnings ${Date.now()}`;
 	await page.goto("/#/home");
@@ -147,10 +158,11 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 	const added = page.getByRole("article", {
 		name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
 	});
-	// The compact grid links the announcement day to the Watchlist calendar…
-	const appleDay = added.locator(`a[href="#/watchlist/calendar/${appleDate}"]`);
+	// The grid links each announcement day to the Watchlist page…
+	const appleDay = added.getByRole("link", { name: /announcements?, (.*, )?AAPL/ });
 	await expect(appleDay).toBeVisible({ timeout: 30_000 });
-	const toyotaDay = added.locator(`a[href="#/watchlist/calendar/${toyotaDate}"]`);
+	await expect(appleDay).toHaveAttribute("href", "#/watchlist");
+	const toyotaDay = added.getByRole("link", { name: /announcements?, (.*, )?7203/ });
 	// …navigating forward when the date falls in a later month…
 	for (let step = 0; step < 3 && (await toyotaDay.count()) === 0; step += 1) {
 		await added.getByRole("button", { name: "Next month" }).click();
@@ -169,9 +181,9 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 	expect(await added.getByRole("link", { name: "Add to Outlook" }).count()).toBe(0);
 	// …and the widget keeps one provenance line plus its two actions.
 	await expect(added).toContainText("Finnhub");
-	await expect(added.getByRole("link", { name: "Open calendar" })).toHaveAttribute(
+	await expect(added.getByRole("link", { name: "Open Watchlist" })).toHaveAttribute(
 		"href",
-		"#/watchlist/calendar",
+		"#/watchlist",
 	);
 
 	// Month navigation is local: the caption moves and returns.
@@ -183,32 +195,22 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 	await added.getByRole("button", { name: "Previous month" }).click();
 	await expect.poll(() => caption.textContent(), { timeout: 10_000 }).toBe(first);
 
-	// A day deep link opens the Watchlist calendar on that date, selected,
-	// with its details and calendar links.
+	// A day link opens the Watchlist page, whose table carries the date with
+	// its calendar links; the page has no calendar of its own (ADR-0022).
 	await appleDay.click();
-	await expect(page).toHaveURL(`#/watchlist/calendar/${appleDate}`);
+	await expect(page).toHaveURL(/#\/watchlist$/);
 	const appleCompact = appleDate.replaceAll("-", "");
 	const appleNextCompact = nextDay(appleDate).replaceAll("-", "");
-	const section = page.locator("[data-calendar-section]");
-	await expect(section.getByRole("button", { name: /AAPL/ })).toHaveAttribute(
-		"aria-pressed",
-		"true",
-	);
-	await expect(section.getByText("Apple Inc")).toBeVisible();
+	const appleRow = page.locator('tr[data-stock-id="us:AAPL"]');
+	await expect(appleRow).toContainText(appleDate, { timeout: 30_000 });
 	await expect(
-		section.getByRole("link", { name: "Add to Google Calendar" }).first(),
+		appleRow.getByRole("link", { name: "Add to Google Calendar" }).first(),
 	).toHaveAttribute(
 		"href",
 		new RegExp(`calendar\\.google\\.com.*dates=${appleCompact}/${appleNextCompact}`),
 	);
-	// Selecting the other day moves the details there (navigating to its
-	// month first when the two fixture dates span months).
-	const toyotaButton = section.getByRole("button", { name: /7203/ });
-	for (let step = 0; step < 3 && (await toyotaButton.count()) === 0; step += 1) {
-		await section.getByRole("button", { name: "Next month" }).click();
-	}
-	await toyotaButton.click();
-	await expect(section.getByText("Toyota Motor Corp.")).toBeVisible();
+	await expect(page.getByRole("region", { name: "Calendar" })).toHaveCount(0);
+	await expect(page.getByRole("button", { name: "Connect Google Calendar" })).toHaveCount(0);
 
 	// Back on Home: the widget's own Refresh button queues a run (the one manual-button step).
 	await page.goto("/#/home");
@@ -226,8 +228,7 @@ test("the Home earnings-calendar widget shows a compact grid with day deep links
 
 test("the calendar file downloads with deterministic earnings content", async () => {
 	test.setTimeout(120_000);
-	await page.goto("/#/watchlist");
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+	await openCalendarSettings();
 
 	const response = await page.request.get("/api/v1/watchlist/calendar.ics");
 	expect(response.ok()).toBe(true);
@@ -248,8 +249,7 @@ test("the calendar file downloads with deterministic earnings content", async ()
 
 test("the subscription link serves the calendar without cookies until revoked", async () => {
 	test.setTimeout(120_000);
-	await page.goto("/#/watchlist");
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+	await openCalendarSettings();
 
 	// Create (or rotate: a link may already exist from an earlier run).
 	const existing = page.getByRole("button", { name: "Replace link" });
@@ -319,8 +319,7 @@ test("an unknown feed token answers the same uniform 404", async () => {
 
 test("Google Calendar connects, syncs automatically, then disconnects", async () => {
 	test.setTimeout(240_000);
-	await page.goto("/#/watchlist");
-	await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+	await openCalendarSettings();
 
 	await page.getByRole("button", { name: "Connect Google Calendar" }).click();
 	await expect(page.getByText(/Preparing Google sign-in…/)).toBeVisible({ timeout: 30_000 });
@@ -350,8 +349,7 @@ test("a Google connect without credentials ends in the fixed not-configured sent
 	mkdirSync(dirname(flagFile), { recursive: true });
 	writeFileSync(flagFile, "unconfigured\n");
 	try {
-		await page.goto("/#/watchlist");
-		await expect(page.locator('tr[data-stock-id="us:AAPL"]')).toBeVisible({ timeout: 30_000 });
+		await openCalendarSettings();
 		await page.getByRole("button", { name: "Connect Google Calendar" }).click();
 		await expect(
 			page.getByText(
@@ -363,7 +361,7 @@ test("a Google connect without credentials ends in the fixed not-configured sent
 	}
 });
 
-test("the Watchlist page ran under its Content-Security-Policy without errors", async () => {
+test("the Watchlist page and Settings → Calendar ran under the Content-Security-Policy without errors", async () => {
 	const response = await page.request.get("/");
 	const policy = response.headers()["content-security-policy"] ?? "";
 	expect(policy).toContain("script-src 'self'");
@@ -372,6 +370,7 @@ test("the Watchlist page ran under its Content-Security-Policy without errors", 
 
 	await page.goto("/#/watchlist");
 	await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible();
+	await openCalendarSettings();
 	await page.goto("/#/home");
 	await expect(page.getByRole("heading", { level: 2, name: "Home" })).toBeVisible();
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(

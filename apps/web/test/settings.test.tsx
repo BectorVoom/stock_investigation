@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/te
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { SettingsView } from "../src/settings/SettingsView.tsx";
+import { initialWatchlistServerState, installWatchlistRoutes } from "./appHarness.tsx";
 import {
 	ALWAYS_VISIBLE,
 	createFakeBackend,
@@ -71,6 +72,7 @@ beforeEach(() => {
 	backend.on("GET", /workspaces$/, () => jsonResponse({ workspaces: [WORKSPACE_SUMMARY] }));
 	backend.on("GET", /agents$/, () => jsonResponse(AGENTS));
 	backend.on("GET", /settings\/agent$/, () => jsonResponse(AGENT_SETTINGS_RESPONSE));
+	installWatchlistRoutes(backend, initialWatchlistServerState());
 });
 
 afterEach(() => {
@@ -86,7 +88,7 @@ function mount() {
 				status: "ready",
 				value: { ownerId: "owner-1", authMode: "cloudflare-access", environment: "production" },
 			}}
-			agentSection={null}
+			section={null}
 			visibility={ALWAYS_VISIBLE}
 			onReloadSession={() => {}}
 			onOpenWorkspace={(workspaceId) => openedWorkspaces.push(workspaceId)}
@@ -102,10 +104,12 @@ function chooseFile(content: string, name = "export.json") {
 }
 
 describe("Settings: session", () => {
-	it("shows the AI agent section first, then the session owner id, sign-in method and environment", () => {
+	it("shows the AI agent section first, then Calendar, then the session owner id, sign-in method and environment", () => {
 		mount();
-		const sections = [...document.querySelectorAll("div.space-y-3 > section")];
-		expect(sections[0]?.getAttribute("aria-label")).toBe("AI agent");
+		const sections = [...document.querySelectorAll("section[aria-label]")].map((section) =>
+			section.getAttribute("aria-label"),
+		);
+		expect(sections.slice(0, 3)).toEqual(["AI agent", "Calendar", "Session"]);
 		const session = screen.getByRole("region", { name: "Session" });
 		expect(session.querySelector('[data-field="owner-id"]')?.textContent).toBe("owner-1");
 		expect(session.querySelector('[data-field="auth-mode"]')?.textContent).toBe(
