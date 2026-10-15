@@ -247,8 +247,14 @@ export function widgetFromAnswer(message: ChatMessage): NotebookWidgetCore {
 	};
 }
 
-/** A copy of `widget` under a fresh id (position: directly after the original). */
-export function duplicateNotebookWidget(widget: NotebookWidget): NotebookWidgetCore {
+/**
+ * A copy of `widget` under a fresh id (position: directly after the
+ * original). Takes a full widget or a bare core (the clipboard stores cores):
+ * only core fields are read, so a deep copy has this one implementation.
+ */
+export function duplicateNotebookWidget(
+	widget: NotebookWidget | NotebookWidgetCore,
+): NotebookWidgetCore {
 	const widgetId = newNotebookWidgetId();
 	switch (widget.type) {
 		case "text":

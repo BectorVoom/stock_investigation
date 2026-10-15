@@ -24,7 +24,7 @@ import {
 // The package stylesheet: without it the grid and the frames are unstyled
 // markup. Home loads it in its own lazy chunk, so the Chat page imports it too.
 import "@research/widget-grid/styles.css";
-import { createSignal, type JSX, Match, Show, Switch } from "solid-js";
+import { createSignal, type JSX, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import {
 	ActionMenu,
@@ -50,6 +50,14 @@ import {
 } from "./notebookModel.ts";
 import type { NotebookSession } from "./notebookSession.ts";
 import type { WorkspaceMode } from "./types.ts";
+import {
+	clipboardCountText,
+	resolveClipboardPaste,
+	skippedResearchNoticeText,
+	type WidgetClipboardEntry,
+	type WidgetClipboardStore,
+	widgetClipboard,
+} from "./widgetClipboard.ts";
 import { WidgetBody } from "./widgets/WidgetBody.tsx";
 
 /**
@@ -71,6 +79,12 @@ export interface NotebookPanelProps {
 	readonly headerActions?: JSX.Element;
 	/** Navigates to where a widget came from (its chat message). */
 	readonly onOpenOrigin?: (origin: NotebookWidgetOrigin) => void;
+	/**
+	 * The widget clipboard (the app singleton by default, shared across
+	 * chats; a test double in tests so clipboard state never leaks between
+	 * cases through `localStorage`).
+	 */
+	readonly clipboard?: WidgetClipboardStore;
 	/** Typed backend access for market widgets (series data, refresh, watchlist). */
 	readonly api: ApiClient;
 }
@@ -341,12 +355,188 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	const pending = () => props.session.pending();
 	const notice = () => props.session.notice();
 
+	const clipboardStore = props.clipboard ?? widgetClipboard();
+	/** The conversation on screen; null until the notebook loads. */
+	const workspaceId = () => props.session.state()?.workspaceId ?? null;
+	const clipboardEmpty = () => clipboardStore.isEmpty();
+
+	/** Polite announcements for completed cut / copy / paste (moves have their own). */
+	const [clipboardMessage, setClipboardMessage] = createSignal("");
+	let clipboardDisposed = false;
+	onCleanup(() => {
+		clipboardDisposed = true;
+	});
+	const announceClipboard = (text: string): void => {
+		// A live region announces nothing when the same text is set twice:
+		// clear first and set on a later task, like the move announcer.
+		setClipboardMessage("");
+		window.setTimeout(() => {
+			if (!clipboardDisposed) setClipboardMessage(text);
+		}, 0);
+	};
+
+	/** The skipped-research notice of the last paste, until dismissed. */
+	const [pasteNotice, setPasteNotice] = createSignal<string | null>(null);
+
+	/** The selection in notebook order (the session already keeps it ordered). */
+	const orderedSelection = (): readonly string[] => {
+		const selected = new Set(props.session.selection());
+		return widgets()
+			.filter((widget) => selected.has(widget.widgetId))
+			.map((widget) => widget.widgetId);
+	};
+
+	/** Clipboard entries for widgets, in notebook order (skips unknown ids). */
+	const clipboardEntriesOf = (ids: readonly string[]): WidgetClipboardEntry[] => {
+		const wanted = new Set(ids);
+		const entries: WidgetClipboardEntry[] = [];
+		for (const widget of widgets()) {
+			if (!wanted.has(widget.widgetId)) continue;
+			const { createdAt, updatedAt, revision, ...entry } = widget;
+			void createdAt;
+			void updatedAt;
+			void revision;
+			entries.push({ core: entry, origin: entry.origin });
+		}
+		return entries;
+	};
+
+	const copyToClipboard = (ids: readonly string[]): number => {
+		const target = workspaceId();
+		if (target === null) return 0;
+		const entries = clipboardEntriesOf(ids);
+		if (entries.length === 0) return 0;
+		clipboardStore.set(target, entries);
+		return entries.length;
+	};
+
+	const copyIds = (ids: readonly string[]): void => {
+		const count = copyToClipboard(ids);
+		if (count > 0) announceClipboard(clipboardCountText(count, "Copied"));
+	};
+
+	/**
+	 * Cut fills the clipboard first and removes the widgets in one owner
+	 * edit — no confirmation, because Undo restores them and the clipboard
+	 * still holds them.
+	 */
+	const cutIds = (ids: readonly string[]): void => {
+		if (pending()) return;
+		const target = workspaceId();
+		if (target === null) return;
+		const entries = clipboardEntriesOf(ids);
+		if (entries.length === 0) return;
+		clipboardStore.set(target, entries);
+		const wanted = new Set(entries.map((entry) => entry.core.widgetId));
+		const count = entries.length;
+		void props.session
+			.edit((current) => current.filter((widget) => !wanted.has(widget.widgetId)))
+			.then((saved) => {
+				if (saved) announceClipboard(clipboardCountText(count, "Cut"));
+			});
+	};
+
+	const pasteEntries = (
+		entries: readonly WidgetClipboardEntry[],
+		toIndex: number,
+		skippedResearch: number,
+	): void => {
+		void props.session.addWidgets(entries, toIndex).then((ids) => {
+			if (ids === null) return;
+			props.session.select(null, "replace");
+			for (const id of ids) props.session.select(id, "toggle");
+			announceClipboard(clipboardCountText(ids.length, "Pasted"));
+			setPasteNotice(skippedResearch > 0 ? skippedResearchNoticeText(skippedResearch) : null);
+		});
+	};
+
+	/**
+	 * Paste after one widget (its menu), else after the last selected widget
+	 * (header, ⌘V), else at the end — as one owner edit, selecting exactly
+	 * the pasted widgets. The clipboard keeps its content for another paste.
+	 */
+	const pasteAfter = (afterWidgetId: string | null): void => {
+		const target = workspaceId();
+		if (target === null || pending()) return;
+		const resolved = resolveClipboardPaste(clipboardStore.content(), target);
+		if (resolved.entries.length === 0) {
+			// Everything on the clipboard belongs to another chat: say so.
+			if (resolved.skippedResearch > 0)
+				setPasteNotice(skippedResearchNoticeText(resolved.skippedResearch));
+			return;
+		}
+		const current = widgets();
+		const fallback = orderedSelection();
+		const anchorId = afterWidgetId ?? fallback[fallback.length - 1] ?? null;
+		let toIndex = current.length;
+		if (anchorId !== null) {
+			const anchor = current.findIndex((widget) => widget.widgetId === anchorId);
+			if (anchor >= 0) toIndex = anchor + 1;
+		}
+		pasteEntries(resolved.entries, toIndex, resolved.skippedResearch);
+	};
+
+	/**
+	 * Targets a clipboard shortcut must never steal: text fields, the
+	 * in-place rich-text editor, dialogs and menus.
+	 */
+	const CLIPBOARD_GUARD_SELECTOR =
+		'input,textarea,select,[contenteditable],[data-rich-text-editor],dialog,[role="menu"]';
+	let sectionElement: HTMLElement | undefined;
+
+	/**
+	 * ⌘X / ⌘C / ⌘V (Ctrl on other systems) on the selected widgets. A
+	 * document-level listener, not the section's keydown: selecting a widget
+	 * by clicking its header leaves focus on `<body>` (the header strip is
+	 * not focusable, and it belongs to `packages/widget-grid`, which this
+	 * task must not touch), so the section would never see the key. It acts
+	 * only when focus is inside this panel or on `<body>` itself — never
+	 * from another panel's control — and `preventDefault`s only when it
+	 * acts, so a text copy stays the browser's.
+	 */
+	const onDocumentKeyDown = (event: KeyboardEvent): void => {
+		if (event.defaultPrevented) return;
+		if (!event.metaKey && !event.ctrlKey) return;
+		if (event.altKey) return;
+		const key = event.key.toLowerCase();
+		if (key !== "x" && key !== "c" && key !== "v") return;
+		const target = event.target;
+		if (target instanceof HTMLElement && target.closest(CLIPBOARD_GUARD_SELECTOR) !== null) return;
+		const inScope =
+			target === document.body ||
+			target === document.documentElement ||
+			(target instanceof Node && sectionElement !== undefined && sectionElement.contains(target));
+		if (!inScope) return;
+		if (key === "v") {
+			if (clipboardEmpty() || pending()) return;
+			event.preventDefault();
+			pasteAfter(null);
+			return;
+		}
+		const selected = orderedSelection();
+		if (selected.length === 0) return;
+		// A non-empty text selection belongs to the browser (quoting text).
+		const textSelection = window.getSelection();
+		if (textSelection !== null && !textSelection.isCollapsed) return;
+		event.preventDefault();
+		if (key === "x") cutIds(selected);
+		else copyIds(selected);
+	};
+
+	onMount(() => {
+		document.addEventListener("keydown", onDocumentKeyDown);
+		onCleanup(() => document.removeEventListener("keydown", onDocumentKeyDown));
+	});
+
 	return (
 		<section
 			aria-label="Notebook"
 			data-panel="notebook"
 			data-mode={props.mode}
 			class="flex min-h-0 min-w-0 flex-1 flex-col gap-2"
+			ref={(element) => {
+				sectionElement = element;
+			}}
 			onKeyDown={onSectionKeyDown}
 		>
 			<div class="flex items-center gap-1">
@@ -355,6 +545,12 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 					<span class="font-normal text-slate-600"> ({widgets().length})</span>
 				</h3>
 				{props.headerActions}
+				<IconButton
+					label="Paste widgets"
+					icon="clipboard"
+					disabled={clipboardEmpty() || pending()}
+					onClick={() => pasteAfter(null)}
+				/>
 				<IconButton
 					label="Undo"
 					icon="arrow-counterclockwise"
@@ -396,6 +592,19 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 				)}
 			</Show>
 
+			<Show when={pasteNotice()}>
+				{(text) => (
+					<Notice tone="info">
+						<span class="flex flex-wrap items-center gap-2">
+							<span>{text()}</span>
+							<button type="button" class={BUTTON} onClick={() => setPasteNotice(null)}>
+								Dismiss
+							</button>
+						</span>
+					</Notice>
+				)}
+			</Show>
+
 			<Show when={selection().length > 0}>
 				<div
 					role="toolbar"
@@ -414,6 +623,17 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 						onClick={() => duplicateMany(selection())}
 					/>
 					<IconButton
+						label="Cut selected widgets"
+						icon="scissors"
+						disabled={pending()}
+						onClick={() => cutIds(selection())}
+					/>
+					<IconButton
+						label="Copy selected widgets"
+						icon="copy"
+						onClick={() => copyIds(selection())}
+					/>
+					<IconButton
 						label="Remove selected widgets"
 						icon="trash"
 						onClick={() => openRemove(selection())}
@@ -427,6 +647,9 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			</Show>
 
 			<MoveAnnouncerView message={announcer.message()} />
+			<output aria-live="polite" class="sr-only">
+				{clipboardMessage()}
+			</output>
 
 			{/* The widget list scrolls on its own below the fixed header and
 			    toolbar (the Chat page is viewport-tall from lg up). The
@@ -500,6 +723,26 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 													label: "Size: Large",
 													disabled: pending() || entry.size === "large",
 													onSelect: () => resize(entry.widget, "large"),
+												},
+												{
+													value: "cut",
+													label: "Cut",
+													icon: "scissors",
+													disabled: pending(),
+													onSelect: () => cutIds([entry.widgetId]),
+												},
+												{
+													value: "copy",
+													label: "Copy",
+													icon: "copy",
+													onSelect: () => copyIds([entry.widgetId]),
+												},
+												{
+													value: "paste-after",
+													label: "Paste after",
+													icon: "clipboard",
+													disabled: clipboardEmpty() || pending(),
+													onSelect: () => pasteAfter(entry.widgetId),
 												},
 												{
 													value: "duplicate",
