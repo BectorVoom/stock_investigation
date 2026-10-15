@@ -102,6 +102,7 @@ export function ComponentPreview(props: {
 					title: previewTitle(props.component),
 					size: "large",
 				}}
+				titleHidden
 				actions={
 					<Show when={core() !== null}>
 						<Show

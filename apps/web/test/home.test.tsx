@@ -1613,6 +1613,20 @@ describe("Home follows the one widget specification (ADR-0024)", () => {
 	const ids = () => widgets().map((article) => article.getAttribute("data-widget-id"));
 	const lastPut = () => homePuts().at(-1)?.body as { dashboard: HomeDashboard } | undefined;
 
+	it("shows no widget titles; the title names each frame for assistive tech, and a metric names its series", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		for (const article of widgets()) {
+			expect(article.hasAttribute("data-widget-title-hidden")).toBe(true);
+			expect(article.querySelector("h3")?.className).toContain("wg-visually-hidden");
+		}
+		expect(screen.getAllByRole("article", { name: "VIX" })).toContain(widgetById("w-vix"));
+		// Without a visible title the metric body says what it measures.
+		expect(widgetById("w-vix").querySelector('[data-field="metric-series"]')?.textContent).toBe(
+			home.series.find((entry) => entry.seriesId === "fred:VIXCLS")?.title,
+		);
+	});
+
 	it("offers every Home type in the add menu, and never a research result", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });

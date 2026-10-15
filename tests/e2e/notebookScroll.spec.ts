@@ -435,7 +435,7 @@ test("Chat-first still scrolls the narrow panel to every widget", async () => {
 	await reviewShot("chat-first.png");
 });
 
-test("Home still shows widget titles", async () => {
+test("Home widgets show no visible title either; the title stays the accessible name", async () => {
 	const dashboardUrl = `${E2E_ORIGIN}/api/v1/home/dashboard`;
 	const read = await page.request.get(dashboardUrl);
 	expect(read.ok()).toBe(true);
@@ -466,16 +466,14 @@ test("Home still shows widget titles", async () => {
 	await page.goto("/");
 	const frame = page.locator('article[data-widget-id="home-scroll-t1"]');
 	await expect(frame).toBeVisible({ timeout: 30_000 });
+	// Owner's instruction of 2026-10-15: no widget shows a title, Home included.
 	const title = frame.locator("h3");
 	await expect(title).toHaveText("Home Earnings");
-	const style = await title.evaluate((element) => {
-		const computed = getComputedStyle(element);
-		return { className: element.className, position: computed.position, width: computed.width };
-	});
-	expect(style.className).toContain("wg-title");
-	expect(style.className).not.toContain("wg-visually-hidden");
-	expect(style.position).not.toBe("absolute");
-	expect(Number.parseFloat(style.width)).toBeGreaterThan(1);
+	await expect(title).toHaveClass(/wg-visually-hidden/);
+	expect(
+		await title.evaluate((element) => element.getBoundingClientRect().width),
+	).toBeLessThanOrEqual(1);
+	await expect(page.getByRole("article", { name: "Home Earnings" })).toBeVisible();
 	// Console errors exclude the expected error paths (422/403).
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],

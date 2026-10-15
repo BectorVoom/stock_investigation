@@ -17,7 +17,8 @@ import {
 /**
  * One series: latest value with its unit, change vs the previous observation,
  * one-year change, and a sparkline of the last 3 months (`aria-hidden` —
- * the same numbers are in the text). The unit is shown once, next to the
+ * the same numbers are in the text), under the series name (frames show no
+ * title, so the body says what it measures). The unit is shown once, next to the
  * value; change lines carry no unit ("▲ +0.33 (+2.19%)", "▲ +0.50 pp" for
  * percent-unit series). A series whose last refresh failed still shows its
  * stored values with an amber "last refresh failed (reason)" note; only a
@@ -30,6 +31,11 @@ export function MetricWidget(props: {
 	const series = () => props.seriesById().get(props.widget.seriesId) ?? null;
 	return (
 		<>
+			{/* Frames carry no visible title, so the body names its series:
+			    the provider's title once refreshed, else the series id. */}
+			<p class="text-xs font-medium text-slate-700" data-field="metric-series">
+				{series()?.title ?? props.widget.seriesId}
+			</p>
 			<Show
 				when={series()}
 				fallback={<p class="text-sm text-amber-900">unavailable ({unavailableText("NO_DATA")})</p>}

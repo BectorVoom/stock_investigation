@@ -821,6 +821,7 @@ export function HomeView(props: {
 								{(entry, index) => (
 									<WidgetFrame
 										widget={entry}
+										titleHidden
 										selected={board.isSelected(entry.widgetId)}
 										onSelectChange={(id, mode) => board.select(id, mode)}
 										actions={<board.ActionsMenu widget={entry.widget} index={index()} />}

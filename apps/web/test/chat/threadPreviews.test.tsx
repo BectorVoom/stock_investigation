@@ -211,6 +211,10 @@ describe("thread previews (integration)", () => {
 		expect(screen.getByRole("table", { name: "Grid storage demand by year" })).toBeDefined();
 		const group = document.querySelector('[data-preview-run="run_1"]');
 		expect(group?.querySelectorAll("[data-preview-component]")).toHaveLength(3);
+		// No widget shows a title (owner, 2026-10-15): previews use untitled frames too.
+		for (const frame of group?.querySelectorAll("article[data-widget-id]") ?? []) {
+			expect(frame.hasAttribute("data-widget-title-hidden")).toBe(true);
+		}
 		expect(screen.queryByRole("heading", { name: "Other results" })).toBeNull();
 		expect(screen.queryByRole("region", { name: "Other results" })).toBeNull();
 		expect(document.querySelector('[data-preview-component="table_9"]')).toBeNull();
