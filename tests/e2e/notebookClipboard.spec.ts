@@ -121,7 +121,12 @@ test("cut a widget via its menu removes it; Undo brings it back", async () => {
 	const notebook = notebookRegion();
 	const alpha = notebookWidgets().filter({ hasText: "Alpha note" });
 	await alpha.locator("button[data-widget-actions]").click();
-	await reviewShot("widget-menu.png");
+	if (page.context().browser()?.browserType().name() === "chromium") {
+		await page.screenshot({ path: test.info().outputPath("widget-menu.png") });
+		await page
+			.getByRole("menu")
+			.screenshot({ path: test.info().outputPath("widget-menu-items.png") });
+	}
 	await page.getByRole("menuitem", { name: "Cut", exact: true }).click();
 	await expect(notebookWidgets()).toHaveCount(1);
 	await expect(notebookWidgets().filter({ hasText: "Alpha note" })).toHaveCount(0);
@@ -201,11 +206,6 @@ test("cut in one chat pastes in a second chat, even after a reload", async () =>
 	// And it survives a page reload: pasting again duplicates.
 	await page.reload();
 	await expect(notebookWidgets()).toHaveCount(1);
-	const storedAfterReload = await page.evaluate(
-		(key) => window.localStorage.getItem(key),
-		"research.notebookWidgetClipboard.v1",
-	);
-	console.log(`clipboard in storage after reload: ${storedAfterReload ?? "ABSENT"}`);
 	await expect(notebookRegion().getByRole("button", { name: "Paste widgets" })).toBeEnabled();
 	await notebookRegion().getByRole("button", { name: "Paste widgets" }).click();
 	await expect(notebookWidgets()).toHaveCount(2);
