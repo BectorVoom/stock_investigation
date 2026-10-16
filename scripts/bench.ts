@@ -49,11 +49,15 @@ import {
 	latestChange,
 	type ManagedGoogleEvent,
 	type MarketPoint,
+	movingAverage,
 	normalizeFeed,
 	planGoogleSync,
 	type RawFeed,
+	resampleSeries,
 	verifyClaims,
+	visibleSlice,
 	type WorkspaceState,
+	windowStats,
 } from "@research/domain";
 import { createWidgetAgentHost, parseWidgetCommand } from "@research/widget-grid/agent";
 import {
@@ -691,6 +695,17 @@ const richTextBenchSource = (() => {
 })();
 const richTextBenchPm = modelToPm(parseRichText(richTextBenchSource));
 
+/* Four series of 1,500 daily closes for the chart viewer (ADR-0025): the
+ * viewer resamples each held series once per interval, averages once per
+ * (series, interval, period), and re-slices per window change. */
+const CHART_BENCH_SERIES = Array.from({ length: 4 }, (_, series) => homeBenchPoints(series, 1500));
+const CHART_BENCH_DAILY_BARS = resampleSeries(CHART_BENCH_SERIES[0] ?? [], "daily");
+const CHART_BENCH_MIDDLE = {
+	from: CHART_BENCH_DAILY_BARS[500]?.day ?? 0,
+	to: CHART_BENCH_DAILY_BARS[999]?.day ?? 0,
+};
+const CHART_BENCH_VALUES = (CHART_BENCH_SERIES[0] ?? []).map((point) => point.value);
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -941,6 +956,46 @@ const cases: Case[] = [
 		name: `parse a JPX-sized synthetic workbook (2,900 rows, ${Math.round(JPX_BENCH.sheet.length / 1024)} KB sheet)`,
 		budgetMs: 50,
 		run: () => parseJpxWorkbook(JPX_BENCH.sheet, JPX_BENCH.shared),
+	},
+	{
+		name: "resample 4 x 1,500 daily points to daily bars",
+		budgetMs: 5,
+		run: () => CHART_BENCH_SERIES.map((points) => resampleSeries(points, "daily")),
+	},
+	{
+		name: "resample 4 x 1,500 daily points to weekly bars",
+		budgetMs: 5,
+		run: () => CHART_BENCH_SERIES.map((points) => resampleSeries(points, "weekly")),
+	},
+	{
+		name: "resample 4 x 1,500 daily points to monthly bars",
+		budgetMs: 5,
+		run: () => CHART_BENCH_SERIES.map((points) => resampleSeries(points, "monthly")),
+	},
+	{
+		name: "resample 4 x 1,500 daily points to quarterly bars",
+		budgetMs: 5,
+		run: () => CHART_BENCH_SERIES.map((points) => resampleSeries(points, "quarterly")),
+	},
+	{
+		name: "resample 4 x 1,500 daily points to yearly bars",
+		budgetMs: 5,
+		run: () => CHART_BENCH_SERIES.map((points) => resampleSeries(points, "yearly")),
+	},
+	{
+		name: "movingAverage(200) over 1,500 closes",
+		budgetMs: 1,
+		run: () => movingAverage(CHART_BENCH_VALUES, 200),
+	},
+	{
+		name: "windowStats over 1,500 daily bars",
+		budgetMs: 1,
+		run: () => windowStats(CHART_BENCH_DAILY_BARS),
+	},
+	{
+		name: "visibleSlice over 1,500 daily bars",
+		budgetMs: 0.5,
+		run: () => visibleSlice(CHART_BENCH_DAILY_BARS, CHART_BENCH_MIDDLE),
 	},
 ];
 
