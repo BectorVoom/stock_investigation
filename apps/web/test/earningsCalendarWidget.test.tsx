@@ -1,13 +1,18 @@
 import type { WatchlistResponse } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { type Accessor, createSignal } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "../src/api/client.ts";
 import type { ApiFailure } from "../src/api/http.ts";
 import { EarningsCalendarWidget } from "../src/home/widgets/EarningsCalendarWidget.tsx";
 
-const NOW_MS = Date.now();
-/** A UTC date `days` from today, so fixtures stay upcoming on any day. */
+/**
+ * A pinned "today" early in a month: the widget shows the current month's
+ * grid, so a fixture date counted from the real clock fell into the next
+ * month during the last 16 days of every month and the day-link tests failed.
+ */
+const NOW_MS = Date.parse("2026-10-05T12:00:00Z");
+/** A UTC date `days` from the pinned today. */
 function isoInDays(days: number): string {
 	return new Date(NOW_MS + days * 86_400_000).toISOString().slice(0, 10);
 }
@@ -132,7 +137,14 @@ function mount(
 	return { setCurrent, setBusy };
 }
 
-afterEach(cleanup);
+beforeEach(() => {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(NOW_MS);
+});
+afterEach(() => {
+	cleanup();
+	vi.useRealTimers();
+});
 
 describe("EarningsCalendarWidget", () => {
 	it("shows the month grid with day links to the Watchlist page", () => {
