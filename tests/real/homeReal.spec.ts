@@ -244,6 +244,36 @@ test("a market-data refresh shows a real Twelve Data price with an as-of date", 
 		await expect.poll(widgetOrder, { timeout: 30_000 }).toEqual(expectedOrder);
 		await page.waitForTimeout(1_000);
 		await page.screenshot({ path: join(shotsDir, "home-real-1440x900.png"), fullPage: true });
+
+		// The chart viewer (ADR-0025) on real held prices: the AAPL row of
+		// the watchlist opens it; Max shows every held daily close, 3M
+		// narrows the window, and Escape returns focus to the row button.
+		const openAapl = aaplRow.getByRole("button", { name: /^Open chart: / });
+		await openAapl.click();
+		const viewer = page.locator("sl-dialog.chart-viewer[open]");
+		await expect(viewer).toBeVisible({ timeout: 30_000 });
+		const barsCell = viewer
+			.locator("table")
+			.first()
+			.locator("tbody tr")
+			.first()
+			.locator("td")
+			.last();
+		await viewer.getByRole("button", { name: "Max", exact: true }).click();
+		await expect(viewer.getByRole("button", { name: "Max", exact: true })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		const maxBars = Number(await barsCell.innerText());
+		expect(maxBars).toBeGreaterThan(1);
+		await viewer.getByRole("button", { name: "3M", exact: true }).click();
+		await expect.poll(async () => Number(await barsCell.innerText())).toBeLessThan(maxBars);
+		await page.waitForTimeout(500);
+		await page.screenshot({ path: join(shotsDir, "chart-viewer-real-1440x900.png") });
+		await page.keyboard.press("Escape");
+		await expect(viewer).toBeHidden();
+		await expect(openAapl).toBeFocused();
+
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.waitForTimeout(1_000);
 		await page.screenshot({ path: join(shotsDir, "home-real-390x844.png"), fullPage: true });
