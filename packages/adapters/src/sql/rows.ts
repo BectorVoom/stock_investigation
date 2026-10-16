@@ -19,6 +19,7 @@ import {
 	type EarningsUnavailableCode,
 	earningsTimingSchema,
 	earningsUnavailableCodeSchema,
+	failureCodeTakesDetail,
 	googleCalendarRequestSchema,
 	type HomeDashboard,
 	type NewsSource,
@@ -202,7 +203,7 @@ export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerp
 	const failureDetail =
 		rawDetail !== null &&
 		STABLE_FAILURE_CODE_PATTERN.test(rawDetail) &&
-		(r.failure_code === "ALL_TOOL_CALLS_FAILED" || r.failure_code === "NO_EVIDENCE_COLLECTED")
+		failureCodeTakesDetail(r.failure_code ?? null)
 			? rawDetail
 			: null;
 	return {

@@ -203,6 +203,16 @@ export const STABLE_FAILURE_CODE_PATTERN = /^[A-Z][A-Z0-9_]{1,59}$/;
 export const stableFailureCodeSchema = z.string().regex(STABLE_FAILURE_CODE_PATTERN);
 export const TOOL_ERROR_FALLBACK_CODE = "TOOL_ERROR";
 
+/**
+ * The failure codes a `failureDetail` may accompany: the most frequent tool
+ * error with `ALL_TOOL_CALLS_FAILED` (finding 10), why nothing was collected
+ * with `NO_EVIDENCE_COLLECTED` (ADR-0025). One list for the run view, the
+ * completion and the stored row, so they cannot disagree.
+ */
+export function failureCodeTakesDetail(failureCode: string | null): boolean {
+	return failureCode === "ALL_TOOL_CALLS_FAILED" || failureCode === "NO_EVIDENCE_COLLECTED";
+}
+
 /** A tool error code that does not match the stable shape becomes `TOOL_ERROR`. */
 export function sanitizeToolErrorCode(code: string): string {
 	return STABLE_FAILURE_CODE_PATTERN.test(code) ? code : TOOL_ERROR_FALLBACK_CODE;
@@ -243,17 +253,11 @@ export const researchRunSchema = z
 		updatedAt: isoDateTimeSchema,
 		progress: z.array(runProgressEntrySchema).max(200),
 	})
-	.refine(
-		(run) =>
-			run.failureDetail === null ||
-			run.failureCode === "ALL_TOOL_CALLS_FAILED" ||
-			run.failureCode === "NO_EVIDENCE_COLLECTED",
-		{
-			message:
-				"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
-			path: ["failureDetail"],
-		},
-	);
+	.refine((run) => run.failureDetail === null || failureCodeTakesDetail(run.failureCode), {
+		message:
+			"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
+		path: ["failureDetail"],
+	});
 export type ResearchRun = z.infer<typeof researchRunSchema>;
 
 /* ---------- Research bundle (runner -> Worker on completion) ---------- */
@@ -623,8 +627,7 @@ const failedCompletionSchema = z
 		(completion) =>
 			completion.failureDetail === null ||
 			completion.failureDetail === undefined ||
-			completion.failureCode === "ALL_TOOL_CALLS_FAILED" ||
-			completion.failureCode === "NO_EVIDENCE_COLLECTED",
+			failureCodeTakesDetail(completion.failureCode),
 		{
 			message:
 				"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
