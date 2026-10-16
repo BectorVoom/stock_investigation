@@ -131,6 +131,32 @@ describe("web.search: registration", () => {
 });
 
 describe("web.search: happy path", () => {
+	it("keeps a GDELT article without a date or domain: its host names the publisher", async () => {
+		const query = "gold price";
+		const { tool } = setup({
+			[gdeltUrl(query)]: {
+				text: JSON.stringify({
+					articles: [
+						{ url: "https://news.synthetic-wire.org/bare", title: "Gold steadies" },
+						...GDELT_OK.articles,
+					],
+				}),
+				contentType: "application/json",
+			},
+			[wikipediaUrl(query)]: {
+				text: JSON.stringify({ pages: [] }),
+				contentType: "application/json",
+			},
+		});
+		const result = await tool.execute({ query }, createToolContext());
+		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
+		expect(result.value.evidence).toHaveLength(3);
+		const bare = result.value.evidence[0]?.evidence;
+		expect(bare?.publisher).toBe("news.synthetic-wire.org");
+		expect(bare?.publishedAt).toBe(null);
+		expect(result.value.modelText).not.toContain("GDELT news search failed");
+	});
+
 	it("turns both backends' results into evidence with correct URLs, publishers and dates", async () => {
 		const query = "gold price";
 		const { fetcher, tool } = setup(pagesFor(query));
