@@ -91,3 +91,6 @@ run had web access off.
   filtered to English; it is a free service with no uptime promise. Market
   data (prices, charts) still needs the FRED / Twelve Data keys (ADR-0014).
 - Two more outbound hosts from the owner's machine when web access is on.
+- The collection allowance is now 3 of the 6 default steps, so a run whose
+  first analysis draft fails its schema still reaches independent verification
+  on its repair turn.

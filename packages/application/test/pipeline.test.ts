@@ -1069,6 +1069,77 @@ describe("research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)", ()
 	});
 });
 
+describe("research pipeline: the collection allowance leaves room for repair and verification", () => {
+	const collecting = (done: boolean) =>
+		JSON.stringify({
+			toolCalls: [{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } }],
+			done,
+		});
+	const planningPrompts = (agent: { readonly requests: readonly { readonly prompt: string }[] }) =>
+		agent.requests.filter((sent) => sent.prompt.includes("planning step"));
+
+	it("reaches the verifier on the repair turn with a 6-step budget", async () => {
+		const { run, agent } = setup([
+			collecting(false),
+			collecting(false),
+			collecting(false),
+			'{"answer": 42}',
+			analysis(),
+			VERDICT_SUPPORTED,
+		]);
+		const outcome = expectBundle(await run());
+		// 3 collection + 2 analysis (first draft invalid, repair valid) + 1 verification.
+		expect(outcome.kind).toBe("completed");
+		expect(outcome.usage.agentSteps).toBe(6);
+		expect(outcome.bundle.verificationStatus).toBe("verified");
+		expect(outcome.bundle.claims).toMatchObject([{ status: "supported" }]);
+		expect(planningPrompts(agent)).toHaveLength(3);
+		expect(agent.requests).toHaveLength(6);
+		expect(agent.requests[4]?.prompt).toContain("Your previous reply was rejected");
+		expect(agent.requests[5]?.prompt).toContain("independent verification step");
+	});
+
+	it("still verifies with room to spare when no repair is needed", async () => {
+		const { run, agent } = setup([
+			collecting(false),
+			collecting(false),
+			collecting(false),
+			analysis(),
+			VERDICT_SUPPORTED,
+		]);
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(outcome.bundle.verificationStatus).toBe("verified");
+		expect(planningPrompts(agent)).toHaveLength(3);
+		expect(agent.requests).toHaveLength(5);
+		expect(agent.requests[4]?.prompt).toContain("independent verification step");
+	});
+
+	it("keeps today's split on a 3-step budget: 1 collection turn, then analysis and verification", async () => {
+		const { run, agent } = setup([collecting(false), analysis(), VERDICT_SUPPORTED], {
+			input: { request: request({ budget: { ...request().budget, maxAgentSteps: 3 } }) },
+		});
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(outcome.bundle.verificationStatus).toBe("verified");
+		expect(planningPrompts(agent)).toHaveLength(1);
+		expect(agent.requests).toHaveLength(3);
+	});
+
+	it("keeps today's behaviour on a 2-step budget: no step left for the verifier", async () => {
+		const { run, agent } = setup([PLAN, analysis(), VERDICT_SUPPORTED], {
+			input: { request: request({ budget: { ...request().budget, maxAgentSteps: 2 } }) },
+		});
+		const outcome = expectBundle(await run());
+		expect(agent.requests).toHaveLength(2);
+		expect(outcome.bundle.verificationStatus).toBe("unverified");
+		expect(outcome.bundle.claims.map((claim) => claim.status)).toEqual(["unsupported"]);
+		expect(outcome.bundle.answerText).toContain(
+			"Independent verification did not run (MAX_AGENT_STEPS)",
+		);
+	});
+});
+
 describe("research pipeline: capability negotiation and failure handling (FR-012, section 6.1)", () => {
 	it("fails closed, without spending quota, when the backend is unavailable", async () => {
 		const { run, agent } = setup([PLAN], {

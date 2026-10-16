@@ -204,6 +204,20 @@ function byteLength(text: string): number {
 	return new TextEncoder().encode(text).length;
 }
 
+/**
+ * Steps kept back from collection so a run that needs them still reaches
+ * analysis and independent verification (AGT-013). A full allowance keeps one
+ * step each for analysis, its repair turn and verification; a 3–4 step
+ * allowance keeps analysis plus verification as before; below that, analysis
+ * alone. Counted from what is left of the run's allowance, which earlier
+ * attempts may have used.
+ */
+function reservedPostCollectionSteps(remainingSteps: number): number {
+	if (remainingSteps >= 5) return 3;
+	if (remainingSteps >= 3) return 2;
+	return 1;
+}
+
 /** One line per evidence item; a result with no evidence is one line naming its record count. */
 function digestLinesFor(toolId: string, output: ToolOutput): string[] {
 	const oneLine = (text: string): string => text.replace(/[\r\n]+/g, " ");
@@ -494,10 +508,11 @@ export async function runResearchPipeline(
 		entries: [],
 	};
 	const uiProposals: unknown[] = [];
-	// Keep one step for analysis, and one more for independent verification when the budget allows.
+	// Collection stops before the reserved tail so a run that needs the
+	// analysis repair turn still reaches independent verification (AGT-013).
 	// Counted from what is left of the run's allowance, which earlier attempts may have used.
 	const remainingSteps = Math.max(0, budget.maxAgentSteps - usage.agentSteps);
-	const reservedSteps = remainingSteps >= 3 ? 2 : 1;
+	const reservedSteps = reservedPostCollectionSteps(remainingSteps);
 	const collectionSteps = Math.max(0, remainingSteps - reservedSteps);
 	let reachedCollecting = false;
 	let stoppedBy: BudgetLimit | null = null;

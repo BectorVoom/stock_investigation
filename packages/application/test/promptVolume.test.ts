@@ -146,7 +146,9 @@ async function runVolumeScenario() {
 		{
 			runId: RUN_ID,
 			request: request({
-				budget: { ...request().budget, maxAgentSteps: 7, maxToolCalls: 10 },
+				// 5 collection steps plus the 3 reserved post-collection steps
+				// (analysis, its repair turn, verification).
+				budget: { ...request().budget, maxAgentSteps: 8, maxToolCalls: 10 },
 			}),
 			sources: SOURCES,
 			workspaceComponents: [],
