@@ -436,12 +436,16 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const page = activePage();
 		try {
 			const composer = page.getByRole("form", { name: "Research composer" });
+			const thread = page.getByRole("list", { name: "Messages" });
+			// Counted from what is already there, so the test also holds when
+			// run on its own after the fresh-state test (`-g`).
+			const completedBefore = await thread.locator('[data-run-state="completed"]').count();
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_SEARCH);
 			await composer.getByRole("button", { name: "Send question" }).click();
-			const thread = page.getByRole("list", { name: "Messages" });
-			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(3, {
-				timeout: 720_000,
-			});
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
+				completedBefore + 1,
+				{ timeout: 720_000 },
+			);
 		} catch (error) {
 			await dumpDiagnostics("search question", dataDirA);
 			throw error;
