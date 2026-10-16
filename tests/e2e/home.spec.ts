@@ -567,6 +567,10 @@ test("every button in Home main is icon-only with an accessible name, while head
 	});
 	expect(buttons.length).toBeGreaterThan(0);
 	for (const button of buttons) {
+		// The chart-viewer openers (ADR-0025) wrap real content — the plot,
+		// the value block, a row name — so they are the exception to the
+		// icon-only rule; their accessible name still carries the words.
+		if (button.name.startsWith("Open chart:")) continue;
 		expect(button.text).toBe("");
 		expect(button.name).not.toBe("");
 	}

@@ -801,7 +801,7 @@ describe("home view", () => {
 		expect(cpiHeader.querySelector(".font-mono")?.textContent).toBe("CPIAUCSL");
 	});
 
-	it("renders icon-only buttons: every button in Home main has an accessible name and no visible text", async () => {
+	it("renders icon-only buttons: every toolbar and frame button has an accessible name and no visible text", async () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const main = document.querySelector("main");
@@ -812,6 +812,10 @@ describe("home view", () => {
 		expect(buttons.length).toBeGreaterThan(0);
 		for (const button of buttons) {
 			expect(button.getAttribute("aria-label") ?? "").not.toBe("");
+			// The chart-viewer openers (ADR-0025) wrap real content — the plot,
+			// the value block, a row name — so they are the exception to the
+			// icon-only rule; their accessible name still carries the words.
+			if ((button.getAttribute("aria-label") ?? "").startsWith("Open chart:")) continue;
 			expect(button.textContent?.trim() ?? "").toBe("");
 		}
 		// The former visible labels survive as accessible names.
@@ -1739,5 +1743,164 @@ describe("Home follows the one widget specification (ADR-0024)", () => {
 		});
 		// The clipboard says where it came from, so a notebook can take it too.
 		expect(widgetClipboard().content()?.sourceWorkspaceId).toBe("home");
+	});
+});
+
+describe("chart viewer entry points (ADR-0025)", () => {
+	/** The open viewer's dialog, or an error naming what is missing. */
+	function viewerDialog(): HTMLElement {
+		const dialog = document.querySelector("sl-dialog.chart-viewer");
+		if (!(dialog instanceof HTMLElement)) throw new Error("the chart viewer did not open");
+		return dialog;
+	}
+
+	/** The From/To date inputs of the open viewer, in order. */
+	function viewerRange(): { readonly from: HTMLInputElement; readonly to: HTMLInputElement } {
+		const dialog = viewerDialog();
+		const inputs = [...dialog.querySelectorAll('input[type="date"]')].filter(
+			(input): input is HTMLInputElement => input instanceof HTMLInputElement,
+		);
+		const [from, to] = [inputs[0], inputs[1]];
+		if (from === undefined || to === undefined) throw new Error("the viewer has no From/To inputs");
+		return { from, to };
+	}
+
+	/** Closes the viewer through its Close button and waits until it unmounts. */
+	async function closeViewer(): Promise<void> {
+		fireEvent.click(within(viewerDialog()).getByRole("button", { name: "Close" }));
+		await waitFor(() => expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull());
+	}
+
+	it("opens the line chart's plot with every usable series at the widget's range", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		// w-vix-chart holds fred:VIXCLS at range 1y over 2026-10-06…2026-10-08.
+		const open = within(widgetById("w-vix-chart")).getByRole("button", {
+			name: "Open chart: VIX",
+		});
+		open.focus();
+		fireEvent.click(open);
+		const dialog = viewerDialog();
+		// Solid sets the Shoelace `label` as a property on the custom
+		// element, not as an attribute.
+		expect((dialog as unknown as { readonly label: string }).label).toBe("VIX");
+		expect(dialog.textContent).toContain("CBOE Volatility Index: VIX");
+		// The 1y preset cannot be filled by three days, so the window starts
+		// at the first held observation.
+		expect(viewerRange().from.value).toBe("2026-10-06");
+		expect(viewerRange().to.value).toBe("2026-10-08");
+		// The viewer mounts only while open: closing unmounts it and focus
+		// returns to the button that opened it.
+		await closeViewer();
+		expect(document.activeElement).toBe(open);
+	});
+
+	it("keeps the line chart's hover readout working inside the opener", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const chart = widgetById("w-vix-chart");
+		const svg = chart.querySelector("svg[role='img']");
+		if (!(svg instanceof SVGSVGElement)) throw new Error("no line-chart svg");
+		// Happy-dom reports zero-size boxes; the frame ignores those, so the
+		// plot is given a real size like a laid-out page would.
+		svg.getBoundingClientRect = () =>
+			new DOMRect(0, 0, 640, 320) as unknown as ReturnType<SVGSVGElement["getBoundingClientRect"]>;
+		const readout = chart.querySelector('[data-chart-part="readout"]');
+		if (!(readout instanceof HTMLElement)) throw new Error("no widget readout");
+		expect(readout.textContent).toContain("Point at the chart");
+		// The plot's right edge holds the last row (2026-10-08).
+		fireEvent.pointerMove(svg, { clientX: 600 });
+		await waitFor(() => expect(readout.textContent).toContain("2026-10-08"));
+		// Hovering never opened the viewer by itself.
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+	});
+
+	it("opens a metric's value block with its series at the 1y preset", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const open = within(widgetById("w-vix")).getByRole("button", {
+			name: "Open chart: CBOE Volatility Index: VIX",
+		});
+		open.focus();
+		fireEvent.click(open);
+		const dialog = viewerDialog();
+		expect(dialog.textContent).toContain("CBOE Volatility Index: VIX");
+		expect(viewerRange().from.value).toBe("2026-10-06");
+		expect(viewerRange().to.value).toBe("2026-10-08");
+		await closeViewer();
+		expect(document.activeElement).toBe(open);
+	});
+
+	it("opens a stock-table row with that row's series only, at the 1y preset", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		const open = within(table).getByRole("button", { name: "Open chart: AAPL (NASDAQ)" });
+		fireEvent.click(open);
+		const dialog = viewerDialog();
+		expect(dialog.textContent).toContain("AAPL (NASDAQ)");
+		expect(dialog.textContent).not.toContain("MSFT (NASDAQ)");
+		expect(viewerRange().from.value).toBe("2026-10-07");
+		expect(viewerRange().to.value).toBe("2026-10-09");
+		await closeViewer();
+	});
+
+	it("offers no opener for a series without observations", async () => {
+		const aapl = home.series.find((entry) => entry.seriesId === "twelve-data:AAPL");
+		if (aapl === undefined) throw new Error("AAPL fixture is missing");
+		aapl.observations = [];
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		expect(within(table).queryByRole("button", { name: "Open chart: AAPL (NASDAQ)" })).toBeNull();
+		// The row itself still states the reason, never a blank.
+		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain("unavailable (");
+	});
+
+	it("a press that turns into a widget drag never opens the viewer", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const article = widgetById("w-vix-chart");
+		const handle = article.querySelector("[data-widget-drag-handle]");
+		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
+		const open = within(article).getByRole("button", { name: "Open chart: VIX" });
+		// A press on the grip that moves past the 4 px drag threshold starts
+		// a drag; releasing it arms the engine's one-shot click guard, which
+		// swallows the release click inside the grid.
+		handle.dispatchEvent(
+			new PointerEvent("pointerdown", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 50,
+				button: 0,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		window.dispatchEvent(
+			new PointerEvent("pointermove", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 60,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		window.dispatchEvent(
+			new PointerEvent("pointerup", {
+				bubbles: true,
+				clientX: 150,
+				clientY: 60,
+				pointerId: 1,
+				isPrimary: true,
+			}),
+		);
+		fireEvent.click(open);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+		// The guard is one-shot: the next click is a real press and opens.
+		fireEvent.click(open);
+		viewerDialog();
+		await closeViewer();
 	});
 });

@@ -2,6 +2,8 @@ import type { MarketRange, MarketSeries, MarketWidgetCore } from "@research/cont
 import { selectRange } from "@research/domain";
 import { ChartFrame, ChartLegend, SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
+import { ChartViewer } from "../../chartViewer/ChartViewer.tsx";
+import { initialPresetForRange, OPEN_CHART_BUTTON_CLASS } from "../../chartViewer/openChart.ts";
 import { DisclosureSummary } from "../../components/ui.tsx";
 import {
 	buildHomeLineModel,
@@ -27,7 +29,12 @@ import { WidgetProvenance } from "../HomeFrame.tsx";
  * closed runs a deferred hide that can land after the next open, leaving
  * the listbox open but invisible. Series with stored
  * observations stay plotted even when their last refresh failed, with an
- * amber "last refresh failed (reason)" note beside them.
+ * amber "last refresh failed (reason)" note beside them. The plot area is a
+ * native button ("Open chart: <title>") that opens the detailed chart viewer
+ * (ADR-0025) with all the widget's usable series; the Range select, legend
+ * and data-table twin stay outside it, and the hover readout keeps working
+ * (the button never starts a widget drag — buttons are in the drag engine's
+ * no-drag list — and a completed drag swallows the release click).
  */
 export function LineChartWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "line-chart" }>;
@@ -65,6 +72,7 @@ export function LineChartWidget(props: {
 		);
 	});
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
+	const [viewerOpen, setViewerOpen] = createSignal(false);
 	const readout = createMemo((): string | null => {
 		const current = model();
 		const rowIndex = hoveredRow();
@@ -116,44 +124,51 @@ export function LineChartWidget(props: {
 				>
 					{(current) => (
 						<>
-							<ChartFrame
-								ariaLabel={`Line chart: ${props.widget.title}. ${unit()} by date.`}
-								plot={current().plot}
-								xAxisTitle="Date"
-								yAxisTitle={unit()}
-								yTicks={current().yTicks}
-								yScale={current().yScale}
-								xTicks={current().xTicks}
-								rowXs={current().rowXs}
-								hoveredRow={hoveredRow()}
-								onHoverRow={setHoveredRow}
+							<button
+								type="button"
+								aria-label={`Open chart: ${props.widget.title}`}
+								class={OPEN_CHART_BUTTON_CLASS}
+								onClick={() => setViewerOpen(true)}
 							>
-								<For each={current().series}>
-									{(entry) => (
-										<g data-series={entry.label}>
-											<For each={entry.paths}>
-												{(d) => (
-													<path
-														d={d}
-														fill="none"
-														stroke={entry.color}
-														stroke-width="2"
-														stroke-linejoin="round"
-														stroke-linecap="round"
-													/>
-												)}
-											</For>
-											<Show when={entry.circles.length <= 200}>
-												<For each={entry.circles}>
-													{(circle) => (
-														<circle cx={circle.x} cy={circle.y} r={2.5} fill={entry.color} />
+								<ChartFrame
+									ariaLabel={`Line chart: ${props.widget.title}. ${unit()} by date.`}
+									plot={current().plot}
+									xAxisTitle="Date"
+									yAxisTitle={unit()}
+									yTicks={current().yTicks}
+									yScale={current().yScale}
+									xTicks={current().xTicks}
+									rowXs={current().rowXs}
+									hoveredRow={hoveredRow()}
+									onHoverRow={setHoveredRow}
+								>
+									<For each={current().series}>
+										{(entry) => (
+											<g data-series={entry.label}>
+												<For each={entry.paths}>
+													{(d) => (
+														<path
+															d={d}
+															fill="none"
+															stroke={entry.color}
+															stroke-width="2"
+															stroke-linejoin="round"
+															stroke-linecap="round"
+														/>
 													)}
 												</For>
-											</Show>
-										</g>
-									)}
-								</For>
-							</ChartFrame>
+												<Show when={entry.circles.length <= 200}>
+													<For each={entry.circles}>
+														{(circle) => (
+															<circle cx={circle.x} cy={circle.y} r={2.5} fill={entry.color} />
+														)}
+													</For>
+												</Show>
+											</g>
+										)}
+									</For>
+								</ChartFrame>
+							</button>
 							<ChartLegend
 								mark="line"
 								items={current().series.map((entry) => ({
@@ -199,6 +214,19 @@ export function LineChartWidget(props: {
 						)}
 					</For>
 				</ul>
+			</Show>
+			{/*
+			 * The viewer mounts only while open (ADR-0025): nothing is saved,
+			 * and the opening preset follows the widget's current range.
+			 */}
+			<Show when={viewerOpen() && usable().length > 0}>
+				<ChartViewer
+					open
+					title={props.widget.title}
+					series={usable}
+					initialPreset={initialPresetForRange(props.widget.range)}
+					onClose={() => setViewerOpen(false)}
+				/>
 			</Show>
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />
 		</div>
