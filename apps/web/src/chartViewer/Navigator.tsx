@@ -1,7 +1,24 @@
 import { clampWindow, type DayWindow } from "@research/domain";
 import { buildNavigatorModel, CHART_INK } from "@research/ui-registry";
-import { createMemo, type JSX, Show } from "solid-js";
+import { createMemo, type JSX, onCleanup, Show } from "solid-js";
 import { createFrameScheduler } from "./frame.ts";
+
+/**
+ * Client-x to viewBox-x under `preserveAspectRatio="xMidYMid meet"` (the
+ * navigator's declared policy): a wider or taller element letterboxes the
+ * 600 × 56 scene instead of stretching it, so the dead margins on each side
+ * are removed before scaling. Pure over the measured rect for tests.
+ */
+export function navigatorViewX(
+	clientX: number,
+	bounds: { readonly left: number; readonly width: number; readonly height: number },
+): number {
+	if (!(bounds.width > 0) || !(bounds.height > 0)) return clientX;
+	const scale = Math.min(bounds.width / 600, bounds.height / 56);
+	if (!(scale > 0)) return clientX;
+	const offsetX = bounds.left + (bounds.width - 600 * scale) / 2;
+	return (clientX - offsetX) / scale;
+}
 
 /**
  * The overview under the main chart (ADR-0025 layout §5): one decimated line
@@ -20,7 +37,9 @@ export function Navigator(props: {
 	readonly onWindow: (window: DayWindow) => void;
 	readonly windowLabel: string;
 }): JSX.Element {
-	const schedule = createFrameScheduler();
+	const frame = createFrameScheduler();
+	// A queued drag or centre must never fire after unmount.
+	onCleanup(() => frame.cancel());
 	const model = createMemo(() =>
 		buildNavigatorModel({
 			days: props.days,
@@ -48,10 +67,10 @@ export function Navigator(props: {
 	let drag: DragMode | null = null;
 	const HANDLE_HALF = 10;
 
+	/** Pointer position in viewBox coordinates (letterbox-aware, never stretched). */
 	const toX = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): number => {
 		const bounds = event.currentTarget.getBoundingClientRect();
-		if (!(bounds.width > 0)) return event.clientX;
-		return (event.clientX - bounds.left) * (600 / bounds.width);
+		return navigatorViewX(event.clientX, bounds);
 	};
 
 	const onPointerDown = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
@@ -75,9 +94,10 @@ export function Navigator(props: {
 			const day = dayAtX(x);
 			const span = to - from;
 			const start = day - Math.round(span / 2);
-			schedule(() =>
-				props.onWindow(clampWindow({ from: start, to: start + span }, props.extent, span)),
-			);
+			frame.schedule(() => {
+				const centred = clampWindow({ from: start, to: start + span }, props.extent, span);
+				if (centred.ok) props.onWindow(centred.value);
+			});
 			drag = { kind: "move", grabOffset: Math.round(span / 2), span };
 		}
 		try {
@@ -93,24 +113,33 @@ export function Navigator(props: {
 		if (!Number.isFinite(event.clientX)) return;
 		const day = dayAtX(toX(event));
 		if (active.kind === "left") {
-			schedule(() =>
-				props.onWindow(
-					clampWindow({ from: day, to: active.fixedTo }, props.extent, props.minSpanDays),
-				),
-			);
+			frame.schedule(() => {
+				const resized = clampWindow(
+					{ from: day, to: active.fixedTo },
+					props.extent,
+					props.minSpanDays,
+				);
+				if (resized.ok) props.onWindow(resized.value);
+			});
 		} else if (active.kind === "right") {
-			schedule(() =>
-				props.onWindow(
-					clampWindow({ from: active.fixedFrom, to: day }, props.extent, props.minSpanDays),
-				),
-			);
+			frame.schedule(() => {
+				const resized = clampWindow(
+					{ from: active.fixedFrom, to: day },
+					props.extent,
+					props.minSpanDays,
+				);
+				if (resized.ok) props.onWindow(resized.value);
+			});
 		} else {
 			const start = day - active.grabOffset;
-			schedule(() =>
-				props.onWindow(
-					clampWindow({ from: start, to: start + active.span }, props.extent, active.span),
-				),
-			);
+			frame.schedule(() => {
+				const moved = clampWindow(
+					{ from: start, to: start + active.span },
+					props.extent,
+					active.span,
+				);
+				if (moved.ok) props.onWindow(moved.value);
+			});
 		}
 	};
 
@@ -125,7 +154,8 @@ export function Navigator(props: {
 					role="img"
 					aria-label={props.windowLabel}
 					viewBox="0 0 600 56"
-					class="block h-14 w-full"
+					preserveAspectRatio="xMidYMid meet"
+					class="chart-viewer-gesture block h-14 w-full"
 					font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
 					onPointerDown={onPointerDown}
 					onPointerMove={onPointerMove}

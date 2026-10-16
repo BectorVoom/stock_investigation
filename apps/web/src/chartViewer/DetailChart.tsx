@@ -35,7 +35,10 @@ export function DetailChart(props: {
 }): JSX.Element {
 	const instructionsId = createUniqueId();
 	const clipId = `cv-clip-${createUniqueId()}`;
-	const schedule = createFrameScheduler();
+	const frame = createFrameScheduler();
+	// A queued frame must never fire after unmount (a range change can retire
+	// this chart before its callback runs).
+	onCleanup(() => frame.cancel());
 	const [announced, setAnnounced] = createSignal("");
 	const [viewSize, setViewSize] = createSignal({ width: 640, height: 320 });
 	let container: HTMLDivElement | undefined;
@@ -122,12 +125,25 @@ export function DetailChart(props: {
 	// A press that moves less than 4 px is a plain click, never a drag.
 	let dragStartX: number | null = null;
 	let lastPanX = 0;
-	let panCarry = 0;
+	// Accumulated pan debt in days: every move adds its exact distance and a
+	// single scheduled flush applies the truncated total, so three moves in
+	// one frame pan by their sum instead of only the latest delta.
+	let panDebt = 0;
 	let downX = 0;
 
 	const endDrag = (): void => {
 		dragStartX = null;
-		panCarry = 0;
+		// Apply the whole days of any debt a queued flush has not consumed
+		// yet (a later flush then finds nothing left); fractions still reset.
+		const delta = Math.trunc(panDebt);
+		panDebt = 0;
+		if (delta !== 0) props.onPan(delta);
+	};
+
+	const flushPan = (): void => {
+		const delta = Math.trunc(panDebt);
+		panDebt -= delta;
+		if (delta !== 0) props.onPan(delta);
 	};
 
 	const onPointerDown = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
@@ -149,17 +165,15 @@ export function DetailChart(props: {
 		const viewX = toViewX(event.clientX - bounds.left, bounds.width);
 		const start = dragStartX;
 		if (start === null || event.buttons === 0) {
-			schedule(() => props.onCrosshair(props.model.nearestBar(viewX)));
+			frame.schedule(() => props.onCrosshair(props.model.nearestBar(viewX)));
 			return;
 		}
 		if (Math.abs(event.clientX - downX) < 4 && Math.abs(event.clientX - start) < 4) return;
 		const dx = event.clientX - lastPanX;
 		lastPanX = event.clientX;
 		const dayPerPx = bounds.width > 0 ? spanDays() / bounds.width : 0;
-		const exact = -dx * dayPerPx + panCarry;
-		const delta = Math.trunc(exact);
-		panCarry = exact - delta;
-		if (delta !== 0) schedule(() => props.onPan(delta));
+		panDebt += -dx * dayPerPx;
+		frame.schedule(flushPan);
 	};
 
 	const onPointerUp = (): void => {
@@ -174,7 +188,7 @@ export function DetailChart(props: {
 			return;
 		}
 		if (event.buttons !== 0) return;
-		schedule(() => props.onCrosshair(null));
+		frame.schedule(() => props.onCrosshair(null));
 	};
 
 	const onWheelNative = (event: WheelEvent): void => {
@@ -187,7 +201,7 @@ export function DetailChart(props: {
 		// zoom then goes around the centre instead of refusing to work.
 		const hasPointer = Number.isFinite(event.clientX) && Number.isFinite(event.clientY);
 		const clientX = hasPointer ? event.clientX - (bounds?.left ?? 0) : Number.NaN;
-		schedule(() => {
+		frame.schedule(() => {
 			const middle = Math.round((props.window.from + props.window.to) / 2);
 			const anchor = Number.isFinite(clientX)
 				? dayAtViewX(toViewX(clientX, bounds?.width ?? 0))
@@ -246,7 +260,7 @@ export function DetailChart(props: {
 					aria-describedby={instructionsId}
 					aria-label={props.label}
 					viewBox={`0 0 ${viewSize().width} ${viewSize().height}`}
-					class="block h-auto w-full"
+					class="chart-viewer-gesture block h-auto w-full"
 					font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
 					font-size="12"
 					onKeyDown={onKeyDown}
@@ -400,12 +414,28 @@ function Crosshair(props: {
 	const day = (): number => props.model.dayAt[props.index] ?? 0;
 	const iso = (): string => props.model.isoAt[props.index] ?? "";
 	const x = (): number => props.model.xForDay(day());
-	const firstValue = (): number | null => {
+	// An object, never a bare number: a legitimate zero value must still
+	// render the horizontal crosshair and its label (`<Show>` hides falsy).
+	const firstPoint = (): { readonly value: number } | null => {
 		for (const entry of props.model.seriesValues) {
 			const value = entry.values[props.index] ?? null;
-			if (value !== null && Number.isFinite(value)) return value;
+			if (value !== null && Number.isFinite(value)) return { value };
 		}
 		return null;
+	};
+	/**
+	 * Date-label placement: centred on the bar, but docked to the plot edge
+	 * (with the matching anchor) when centring would clip it past the SVG
+	 * boundary — the first and last bars. The crosshair line itself stays on
+	 * the bar.
+	 */
+	const datePlace = (): { readonly x: number; readonly anchor: "start" | "middle" | "end" } => {
+		const plot = props.model.plot;
+		const centre = x();
+		const half = (iso().length * 6 + 8) / 2;
+		if (centre - half <= plot.left) return { x: plot.left, anchor: "start" };
+		if (centre + half >= plot.right) return { x: plot.right, anchor: "end" };
+		return { x: centre, anchor: "middle" };
 	};
 	const label = (value: number): string =>
 		props.mode === "percent" ? `${formatAxisTick(value)}%` : formatAxisTick(value);
@@ -419,20 +449,20 @@ function Crosshair(props: {
 				stroke={CHART_INK.secondary}
 				stroke-width="1"
 			/>
-			<Show when={firstValue()}>
-				{(value) => (
+			<Show when={firstPoint()}>
+				{(point) => (
 					<>
 						<line
 							x1={props.model.plot.left}
 							x2={props.model.plot.right}
-							y1={props.model.yFor(value())}
-							y2={props.model.yFor(value())}
+							y1={props.model.yFor(point().value)}
+							y2={props.model.yFor(point().value)}
 							stroke={CHART_INK.secondary}
 							stroke-width="1"
 						/>
 						<text
 							x={props.model.plot.right + 6}
-							y={props.model.yFor(value())}
+							y={props.model.yFor(point().value)}
 							dy="0.32em"
 							text-anchor="start"
 							fill={CHART_INK.primary}
@@ -440,15 +470,15 @@ function Crosshair(props: {
 							stroke-width="3"
 							paint-order="stroke"
 						>
-							{label(value())}
+							{label(point().value)}
 						</text>
 					</>
 				)}
 			</Show>
 			<text
-				x={x()}
+				x={datePlace().x}
 				y={props.model.plot.bottom + 18}
-				text-anchor="middle"
+				text-anchor={datePlace().anchor}
 				fill={CHART_INK.primary}
 				stroke={CHART_INK.surface}
 				stroke-width="3"

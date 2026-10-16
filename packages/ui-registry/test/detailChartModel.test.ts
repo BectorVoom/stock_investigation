@@ -1,4 +1,4 @@
-import { isoToDayNumber } from "@research/domain";
+import { dayNumberToIso, isoToDayNumber, movingAverage } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { seriesColor } from "../src/charts/chartMath.ts";
 import {
@@ -6,20 +6,24 @@ import {
 	buildNavigatorModel,
 	type DetailSeriesInput,
 	decimateToWidth,
+	ensureTwoBarWindow,
 	formatDetailTick,
+	logScaleBlocked,
 	tickGranularityForSpan,
+	unionOverview,
 } from "../src/charts/detailChartModel.ts";
 
-/** Consecutive daily bars starting at `startIso`, one unit of close per day. */
+/** Consecutive daily bars starting at `startIso`, one close per day (real calendar dates). */
 function dailyBars(startIso: string, closes: readonly number[]) {
+	const start = isoToDayNumber(startIso);
+	if (!start.ok) throw new Error("bad fixture date");
 	return closes.map((close, index) => {
-		const day = isoToDayNumber(startIso);
-		if (!day.ok) throw new Error("bad fixture date");
-		const current = day.value + index;
-		const observedOn = `2026-01-${String(index + 1).padStart(2, "0")}`;
+		const day = start.value + index;
+		const iso = dayNumberToIso(day);
+		if (!iso.ok) throw new Error("bad fixture day");
 		return {
-			observedOn,
-			day: current,
+			observedOn: iso.value,
+			day,
 			open: close,
 			high: close + 1,
 			low: close - 1,
@@ -227,6 +231,8 @@ describe("detail chart model", () => {
 			const first = bars[0]?.bars[0];
 			const lastBar = bars[0]?.bars[span - 1];
 			if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
+			// The fixture carries real calendar dates from `startIso`.
+			expect(first.observedOn).toBe("2026-01-01");
 			for (const width of [320, 640, 1200]) {
 				const model = buildDetailChartModel({
 					series: bars,
@@ -240,6 +246,20 @@ describe("detail chart model", () => {
 				if (model === null) throw new Error(`model is null for span ${span}`);
 				const ticks = model.xTicks;
 				expect(ticks.length).toBeGreaterThanOrEqual(1);
+				// Representative labels for the span's granularity, not the
+				// malformed-date fallback: months read "Oct 2026", years "2026".
+				const granularity = tickGranularityForSpan(span - 1);
+				for (const tick of ticks) {
+					if (granularity === "day") expect(tick.label).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/);
+					else if (granularity === "month") expect(tick.label).toMatch(/^[A-Z][a-z]{2} \d{4}$/);
+					else expect(tick.label).toMatch(/^\d{4}$/);
+				}
+				if (granularity === "month") {
+					expect(ticks.some((tick) => tick.label === "Jul 2026")).toBe(true);
+				}
+				if (granularity === "year") {
+					expect(ticks.some((tick) => tick.label === "2028")).toBe(true);
+				}
 				const ordered = [...ticks].sort((a, b) => a.x - b.x);
 				for (let index = 1; index < ordered.length; index += 1) {
 					const previous = ordered[index - 1];
@@ -325,5 +345,205 @@ describe("detail chart model", () => {
 		expect(nav.windowLeft).toBeGreaterThanOrEqual(0);
 		expect(nav.windowLeft + nav.windowWidth).toBeLessThanOrEqual(600);
 		expect(nav.windowWidth).toBeGreaterThan(0);
+	});
+
+	it("decimates visible points without the offscreen neighbours", () => {
+		// A hidden 1000 close before the window must not displace the visible
+		// 200 spike when decimation kicks in: the old code folded the
+		// neighbour into the boundary pixel column and drew a flat 100 line.
+		const closes = [1000, 100, 200, ...Array.from({ length: 47 }, () => 100)];
+		const bars = singleSeries(closes);
+		const all = bars[0]?.bars ?? [];
+		const hidden = all[0];
+		const firstVisible = all[1];
+		const lastBar = all[all.length - 1];
+		if (hidden === undefined || firstVisible === undefined || lastBar === undefined) {
+			throw new Error("fixture is empty");
+		}
+		const model = buildDetailChartModel({
+			series: bars,
+			window: { from: firstVisible.day, to: lastBar.day },
+			plotWidth: 20,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+		});
+		if (model === null) throw new Error("model is null");
+		const d = model.seriesPaths[0]?.d ?? "";
+		const ys = d
+			.split(" ")
+			.map((part) => Number(part.slice(1).split(",")[1]))
+			.filter((value) => Number.isFinite(value));
+		// The 200 spike survives decimation at its plotted height.
+		expect(ys.some((y) => Math.abs(y - model.yFor(200)) < 1e-9)).toBe(true);
+		// The hidden neighbour still connects the line to the plot edge.
+		const firstX = Number(d.slice(1).split(",")[0]);
+		expect(firstX).toBeLessThan(model.plot.left);
+		expect(model.seriesPaths[0]?.plottedCount).toBe(49);
+	});
+
+	it("honours precomputed moving-average overlays without recomputing", () => {
+		const closes = Array.from({ length: 30 }, (_, index) => 100 + index);
+		const bars = singleSeries(closes);
+		const all = bars[0]?.bars ?? [];
+		const first = all[0];
+		const lastBar = all[all.length - 1];
+		if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
+		const window = { from: first.day + 20, to: lastBar.day };
+		const expected = buildDetailChartModel({
+			series: bars,
+			window,
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [20],
+		});
+		if (expected === null) throw new Error("model is null");
+		const averaged = movingAverage(closes, 20);
+		if (!averaged.ok) throw new Error("bad fixture average");
+		const cached = buildDetailChartModel({
+			series: bars,
+			window,
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+			maOverlays: [
+				{
+					seriesKey: "s1",
+					color: seriesColor(0),
+					period: 20,
+					label: "MA 20",
+					days: all.map((bar) => bar.day),
+					values: averaged.value,
+				},
+			],
+		});
+		if (cached === null) throw new Error("model is null");
+		// The cached overlay draws exactly the computed average's path.
+		expect(cached.maPaths).toHaveLength(1);
+		expect(cached.maPaths[0]?.d).toBe(expected.maPaths[0]?.d);
+		// A sentinel overlay proves the input is honoured, not recomputed.
+		const sentinel = buildDetailChartModel({
+			series: bars,
+			window,
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+			maOverlays: [
+				{
+					seriesKey: "s1",
+					color: seriesColor(0),
+					period: 20,
+					label: "MA 20",
+					days: all.map((bar) => bar.day),
+					values: all.map(() => 119.5),
+				},
+			],
+		});
+		if (sentinel === null) throw new Error("model is null");
+		expect(sentinel.maPaths).toHaveLength(1);
+		expect(sentinel.maPaths[0]?.d).not.toBe(expected.maPaths[0]?.d);
+		const flatYs = (sentinel.maPaths[0]?.d ?? "")
+			.split(" ")
+			.map((part) => Number(part.slice(1).split(",")[1]))
+			.filter((value) => Number.isFinite(value));
+		expect(flatYs.length).toBeGreaterThan(0);
+		for (const y of flatYs) expect(Math.abs(y - sentinel.yFor(119.5)) < 1e-9).toBe(true);
+	});
+
+	it("exposes raw closes alongside rebased display values", () => {
+		const bars = singleSeries([100, 110, 121]);
+		const first = bars[0]?.bars[0];
+		const lastBar = bars[0]?.bars[2];
+		if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
+		const model = buildDetailChartModel({
+			series: bars,
+			window: { from: first.day, to: lastBar.day },
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "percent",
+			maPeriods: [],
+		});
+		if (model === null) throw new Error("model is null");
+		expect(model.mode).toBe("percent");
+		expect(model.seriesValues[0]?.values).toEqual([0, 10, 21]);
+		expect(model.rawValues[0]?.values).toEqual([100, 110, 121]);
+	});
+
+	it("blocks log for non-positive effective values, including percent mode", () => {
+		const positive = singleSeries([100, 110, 121]);
+		const mixed = singleSeries([0, 100, 110]);
+		const first = positive[0]?.bars[0];
+		const lastBar = positive[0]?.bars[2];
+		if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
+		const window = { from: first.day, to: lastBar.day };
+		expect(logScaleBlocked({ series: positive, window, mode: "value" })).toBe(false);
+		expect(logScaleBlocked({ series: mixed, window, mode: "value" })).toBe(true);
+		// Percent mode rebases to 0 % at the first visible bar, so Log never fits.
+		expect(logScaleBlocked({ series: positive, window, mode: "percent" })).toBe(true);
+		expect(
+			logScaleBlocked({
+				series: positive,
+				window: { from: first.day, to: first.day + 1 },
+				mode: "percent",
+			}),
+		).toBe(true);
+		// No visible bars blocks nothing (the frame states the empty window).
+		expect(logScaleBlocked({ series: positive, window: { from: 1, to: 2 }, mode: "value" })).toBe(
+			false,
+		);
+	});
+
+	it("widens a bar-less window to its neighbouring bars", () => {
+		// Weekday bars only: a Saturday–Sunday window holds no observations.
+		const bars = singleSeries([10, 11, 12, 13, 14], "2026-09-28");
+		const all = bars[0]?.bars ?? [];
+		const friday = all[4];
+		if (friday === undefined) throw new Error("fixture is empty");
+		const monday = { ...friday, observedOn: "2026-10-05", day: friday.day + 3 };
+		const held = [...all, monday];
+		const saturday = friday.day + 1;
+		const sunday = friday.day + 2;
+		const widened = ensureTwoBarWindow({ from: saturday, to: sunday }, [held], {
+			from: all[0]?.day ?? 0,
+			to: monday.day,
+		});
+		// Friday through Monday: the two real bars around the weekend.
+		expect(widened).toEqual({ from: friday.day, to: monday.day });
+		// A window already holding two bars is untouched.
+		const untouched = ensureTwoBarWindow({ from: friday.day - 4, to: friday.day }, [held], {
+			from: all[0]?.day ?? 0,
+			to: monday.day,
+		});
+		expect(untouched).toEqual({ from: friday.day - 4, to: friday.day });
+		// Data shorter than two bars yields the whole extent.
+		const single = ensureTwoBarWindow({ from: saturday, to: sunday }, [[all[0] ?? monday]], {
+			from: saturday,
+			to: sunday,
+		});
+		expect(single).toEqual({ from: saturday, to: sunday });
+	});
+
+	it("covers the full held extent in the navigator overview", () => {
+		// A dense series plus an older short one: the union starts at the
+		// older date, with the longest series' closes aligned onto it.
+		const dense = singleSeries([50, 51, 52, 53], "2026-01-05");
+		const older = singleSeries([9], "2026-01-01");
+		const overview = unionOverview([dense[0]?.bars ?? [], older[0]?.bars ?? []]);
+		const firstDense = dense[0]?.bars[0];
+		if (firstDense === undefined) throw new Error("fixture is empty");
+		expect(overview.days[0]).toBeLessThan(firstDense.day);
+		expect(overview.days).toContain(firstDense.day);
+		expect(overview.values).toHaveLength(overview.days.length);
+		// The older day has no dense close: a gap, not an invented value.
+		expect(overview.values[0]).toBeNaN();
+		expect(overview.values.slice(1)).toEqual([50, 51, 52, 53]);
 	});
 });

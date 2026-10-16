@@ -31,6 +31,7 @@ export {
 	buildNavigatorModel,
 	type DetailChartModel,
 	type DetailLastMarker,
+	type DetailMaOverlayInput,
 	type DetailMaPath,
 	type DetailScale,
 	type DetailSeriesInput,
@@ -40,10 +41,15 @@ export {
 	type DetailValueMode,
 	type DetailXTick,
 	decimateToWidth,
+	ensureTwoBarWindow,
 	formatDetailTick,
+	type LogGateInput,
+	logScaleBlocked,
 	type NavigatorInput,
 	type NavigatorModel,
+	plotWidthForSize,
 	tickGranularityForSpan,
+	unionOverview,
 } from "./charts/detailChartModel.ts";
 export {
 	buildHomeLineModel,

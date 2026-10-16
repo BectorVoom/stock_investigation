@@ -12,6 +12,7 @@ import {
 	dayNumberToIso,
 	isoToDayNumber,
 	type MarketChange,
+	movingAverage,
 	panWindow,
 	presetWindow,
 	resampleSeries,
@@ -22,18 +23,23 @@ import {
 import {
 	buildDetailChartModel,
 	ChartLegend,
+	type DetailMaOverlayInput,
 	type DetailScale,
 	type DetailValueMode,
+	ensureTwoBarWindow,
+	logScaleBlocked,
+	plotWidthForSize,
 	seriesColor,
+	unionOverview,
 } from "@research/ui-registry";
 import {
 	type Accessor,
+	createEffect,
 	createMemo,
 	createSignal,
 	createUniqueId,
 	For,
 	type JSX,
-	onMount,
 	Show,
 } from "solid-js";
 import { BUTTON, BUTTON_PRIMARY, DisclosureSummary, INPUT, LABEL } from "../components/ui.tsx";
@@ -172,6 +178,29 @@ interface SeriesStats {
 	readonly last: ChartBar | undefined;
 }
 
+/**
+ * One interval option with a reactive disabled state: the `For` loop over the
+ * constant `INTERVALS` renders each item once and never re-runs, so the
+ * coarse-native check must live in its own component to follow a series
+ * change (daily data replaced by monthly disables Daily with its reason).
+ */
+function IntervalOption(props: {
+	readonly value: ChartInterval;
+	readonly label: string;
+	readonly rank: number;
+	readonly coarsest: Accessor<{ readonly rank: number; readonly word: string }>;
+}): JSX.Element {
+	const blocked = createMemo(() => props.rank < props.coarsest().rank);
+	const text = createMemo(() =>
+		blocked() ? `${props.label} — source is ${props.coarsest().word}` : props.label,
+	);
+	return (
+		<sl-option value={props.value} disabled={blocked() ? true : undefined}>
+			{text()}
+		</sl-option>
+	);
+}
+
 export function ChartViewer(props: {
 	readonly open: boolean;
 	readonly onClose: () => void;
@@ -186,7 +215,10 @@ export function ChartViewer(props: {
 	const openingWindow = createMemo(() => {
 		const full = extent();
 		if (full === null) return null;
-		return presetWindow(props.initialPreset, full.from, full.to);
+		const window = presetWindow(props.initialPreset, full.from, full.to);
+		// The extent holds validated finite days, so this is always ok; a
+		// rejection would mean corrupt input, and there is no window to show.
+		return window.ok ? window.value : null;
 	});
 	// A gesture or custom range replaces the window; null means "as opened".
 	const [window, setWindow] = createSignal<DayWindow | null>(null);
@@ -199,10 +231,20 @@ export function ChartViewer(props: {
 	const [crosshair, setCrosshair] = createSignal<number | null>(null);
 	const [rangeError, setRangeError] = createSignal<string | null>(null);
 	const [plotSize, setPlotSize] = createSignal({ width: 640, height: 320 });
+	// True after an automatic Log→Linear fallback, until the next manual
+	// scale pick: the status line below explains the switch.
+	const [logAutoNote, setLogAutoNote] = createSignal(false);
 
+	// The opener is captured on each closed→open transition, not at mount:
+	// the component may mount closed long before the user opens it.
 	let opener: HTMLElement | null = null;
-	onMount(() => {
-		if (document.activeElement instanceof HTMLElement) opener = document.activeElement;
+	let wasOpen = false;
+	createEffect(() => {
+		const open = props.open;
+		if (open && !wasOpen) {
+			opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		}
+		wasOpen = open;
 	});
 	const handleClose = (): void => {
 		props.onClose();
@@ -230,11 +272,17 @@ export function ChartViewer(props: {
 		return { rank, word };
 	});
 
+	// Auto budgets bars against the drawable plot width (container minus the
+	// axis gutters), the same bounds the render model draws into — not the
+	// wider SVG element.
+	const plotBudget = createMemo(() =>
+		Math.max(1, Math.floor(plotWidthForSize(plotSize().width) / 3)),
+	);
+
 	const resolvedInterval = createMemo<ChartInterval>(() => {
 		const choice = intervalChoice();
 		if (choice !== "auto") return choice;
-		const maxBars = Math.max(1, Math.floor(plotSize().width / 3));
-		return autoInterval(spanDays(), toNativeFrequency(coarsest().word), maxBars);
+		return autoInterval(spanDays(), toNativeFrequency(coarsest().word), plotBudget());
 	});
 	const autoLabel = createMemo(() => `Auto (${INTERVAL_LABELS[resolvedInterval()]})`);
 
@@ -244,6 +292,35 @@ export function ChartViewer(props: {
 			bars: resampleSeries(toChartPoints(entry.observations), resolvedInterval()),
 		})),
 	);
+
+	const singleSeries = createMemo(() => props.series().length === 1);
+
+	// Moving averages cached per (series, interval, period) outside the
+	// window-dependent model (ADR-0025 performance): a pan or zoom re-slices by
+	// binary search and never recomputes these. Only the single-series case
+	// carries overlays; the model ignores them otherwise.
+	const maOverlays = createMemo((): readonly DetailMaOverlayInput[] => {
+		if (!singleSeries() || maPeriods().length === 0) return [];
+		const sampled = resampled();
+		const first = sampled[0];
+		if (first === undefined) return [];
+		const closes = first.bars.map((bar) => bar.close);
+		const days = first.bars.map((bar) => bar.day);
+		const overlays: DetailMaOverlayInput[] = [];
+		for (const period of maPeriods()) {
+			const averaged = movingAverage(closes, period);
+			if (!averaged.ok) continue;
+			overlays.push({
+				seriesKey: first.entry.seriesId,
+				color: seriesColor(0),
+				period,
+				label: `MA ${period}`,
+				days,
+				values: averaged.value,
+			});
+		}
+		return overlays;
+	});
 
 	// The window never narrows below two bars of the current interval.
 	const minSpanDays = createMemo(() => {
@@ -260,13 +337,63 @@ export function ChartViewer(props: {
 		return gap ?? 0;
 	});
 
-	const setClamped = (next: DayWindow): void => {
+	// Every window transition lands here: clamped into the held data, then
+	// widened against real bar positions until it holds at least two bars of
+	// the interval it will render at (a day-count minimum admits bar-less
+	// weekends, and presets and interval switches bypass clamping).
+	const commitWindow = (next: DayWindow): void => {
 		const full = extent();
 		if (full === null) return;
-		setWindow(clampWindow(next, full, minSpanDays()));
+		const interval = resolveIntervalFor(next);
+		const clamped = clampWindow(next, full, minSpanDays());
+		if (!clamped.ok) return;
+		setWindow(ensureTwoBarWindow(clamped.value, barsForInterval(interval), full));
 	};
 
-	const singleSeries = createMemo(() => props.series().length === 1);
+	/** Bars the candidate window will render at: cached when the interval is unchanged. */
+	const barsForInterval = (interval: ChartInterval): readonly (readonly ChartBar[])[] => {
+		if (interval === resolvedInterval()) return resampled().map(({ bars }) => bars);
+		return props
+			.series()
+			.map((entry) => resampleSeries(toChartPoints(entry.observations), interval));
+	};
+
+	/** The interval a candidate window resolves at (explicit choice, or Auto for its span). */
+	const resolveIntervalFor = (candidate: DayWindow): ChartInterval => {
+		const choice = intervalChoice();
+		if (choice !== "auto") return choice;
+		const span = Math.max(
+			0,
+			Math.max(Math.trunc(candidate.from), Math.trunc(candidate.to)) -
+				Math.min(Math.trunc(candidate.from), Math.trunc(candidate.to)),
+		);
+		return autoInterval(span, toNativeFrequency(coarsest().word), plotBudget());
+	};
+
+	// Interval switches and new data revalidate the stored window: a one-week
+	// view moved from Daily to Yearly must grow to two yearly bars. Guarded by
+	// equality, so the write converges instead of looping.
+	createEffect(() => {
+		const active = activeWindow();
+		const full = extent();
+		if (active === null || full === null) return;
+		const fixed = ensureTwoBarWindow(
+			active,
+			resampled().map(({ bars }) => bars),
+			full,
+		);
+		if (fixed.from !== active.from || fixed.to !== active.to) setWindow(fixed);
+	});
+
+	// An explicitly selected interval is revalidated against the current
+	// native frequency: replacing daily data with monthly data drops a stale
+	// Daily pick back to Auto.
+	createEffect(() => {
+		const choice = intervalChoice();
+		if (choice !== "auto" && INTERVAL_RANK[choice] < coarsest().rank) {
+			setIntervalChoice("auto");
+		}
+	});
 
 	const model = createMemo(() => {
 		const active = activeWindow();
@@ -284,7 +411,8 @@ export function ChartViewer(props: {
 			plotHeight: plotSize().height,
 			scale: scale(),
 			mode: mode(),
-			maPeriods: singleSeries() ? maPeriods() : [],
+			maPeriods: [],
+			maOverlays: maOverlays(),
 		});
 	});
 
@@ -324,30 +452,38 @@ export function ChartViewer(props: {
 		}),
 	);
 
-	// Log is disabled (with the reason) when any visible value is not positive.
+	// Log is disabled (with the reason) when the effective display values —
+	// after the window and the value mode, so percent mode's zero baseline
+	// counts — include a value ≤ 0.
 	const logBlocked = createMemo(() => {
 		const active = activeWindow();
 		if (active === null) return false;
-		for (const { bars } of resampled()) {
-			const slice = visibleSlice(bars, active);
-			for (let index = slice.start; index < slice.end; index += 1) {
-				const bar = bars[index];
-				if (bar !== undefined && !(bar.close > 0)) return true;
-			}
-		}
-		return false;
+		return logScaleBlocked({
+			series: resampled().map(({ entry, bars }, slot) => ({
+				key: entry.seriesId,
+				label: entry.title,
+				color: seriesColor(slot),
+				bars,
+			})),
+			window: active,
+			mode: mode(),
+		});
 	});
 
-	const overview = createMemo(() => {
-		let longest: readonly ChartBar[] = [];
-		for (const { bars } of resampled()) {
-			if (bars.length > longest.length) longest = bars;
+	// An already selected Log cannot survive a window or mode change that
+	// hides non-positive values: fall back to Linear and say why in the
+	// status line, instead of silently omitting observations.
+	createEffect(() => {
+		if (scale() === "log" && logBlocked()) {
+			setScale("linear");
+			setLogAutoNote(true);
 		}
-		return {
-			days: longest.map((bar) => bar.day),
-			values: longest.map((bar) => bar.close),
-		};
 	});
+
+	// The overview covers the complete held-data extent (every series' dates),
+	// not just the longest resampled series, so older windows position
+	// correctly against the navigator scale.
+	const overview = createMemo(() => unionOverview(resampled().map(({ bars }) => bars)));
 
 	const navigatorInput = createMemo(() => {
 		const full = extent();
@@ -382,7 +518,9 @@ export function ChartViewer(props: {
 	const applyPreset = (preset: ChartPreset): void => {
 		const full = extent();
 		if (full === null) return;
-		setWindow(presetWindow(preset, full.from, full.to));
+		const window = presetWindow(preset, full.from, full.to);
+		if (!window.ok) return;
+		commitWindow(window.value);
 		setPressedPreset(preset);
 		setRangeError(null);
 		setCrosshair(null);
@@ -401,7 +539,7 @@ export function ChartViewer(props: {
 		}
 		const full = extent();
 		if (full === null) return false;
-		setWindow(clampWindow({ from: from.value, to: to.value }, full, minSpanDays()));
+		commitWindow({ from: from.value, to: to.value });
 		setPressedPreset(null);
 		setRangeError(null);
 		setCrosshair(null);
@@ -422,7 +560,9 @@ export function ChartViewer(props: {
 		const active = activeWindow();
 		const full = extent();
 		if (active === null || full === null) return;
-		setWindow(zoomWindow(active, anchorDay, factor, full, minSpanDays()));
+		const zoomed = zoomWindow(active, anchorDay, factor, full, minSpanDays());
+		if (!zoomed.ok) return;
+		commitWindow(zoomed.value);
 		clearPresetGesture();
 	};
 
@@ -431,12 +571,14 @@ export function ChartViewer(props: {
 		const active = activeWindow();
 		const full = extent();
 		if (active === null || full === null) return;
-		setWindow(panWindow(active, deltaDays, full));
+		const panned = panWindow(active, deltaDays, full);
+		if (!panned.ok) return;
+		commitWindow(panned.value);
 		clearPresetGesture();
 	};
 
 	const onWindow = (next: DayWindow): void => {
-		setClamped(next);
+		commitWindow(next);
 		clearPresetGesture();
 	};
 
@@ -459,7 +601,10 @@ export function ChartViewer(props: {
 	const onScaleChange = (event: Event & { readonly currentTarget: SlSelectElement }): void => {
 		const raw = event.currentTarget.value;
 		const value = Array.isArray(raw) ? raw[0] : raw;
-		if (value === "linear" || value === "log") setScale(value);
+		if (value === "linear" || value === "log") {
+			setScale(value);
+			setLogAutoNote(false);
+		}
 	};
 
 	const onModeChange = (event: Event & { readonly currentTarget: SlSelectElement }): void => {
@@ -480,17 +625,33 @@ export function ChartViewer(props: {
 	const twinRows = createMemo(() => {
 		const ready = view();
 		if (ready === null) return [];
+		const rawByKey = new Map(ready.model.rawValues.map((entry) => [entry.key, entry.values]));
 		return ready.model.dayAt.map((day, index) => ({
 			day,
 			iso: ready.model.isoAt[index] ?? String(day),
-			cells: ready.model.seriesValues.map((entry) => entry.values[index] ?? null),
+			cells: ready.model.seriesValues.map((entry, slot) => ({
+				raw: rawByKey.get(entry.key)?.[index] ?? null,
+				display: entry.values[index] ?? null,
+				unit: units()[slot] ?? "",
+			})),
 		}));
 	});
 
-	const twinCell = (value: number | null): string => {
-		if (value === null || !Number.isFinite(value)) return "unavailable (no bar)";
-		if (mode() === "percent") return `${formatSignedDelta(value, value)}%`;
-		return formatValue(value);
+	// Data-table cells always show the raw value with its unit; in percent
+	// mode the rebased percent rides along with percentage units, never the
+	// original unit on a rebased number.
+	const twinCell = (cell: {
+		readonly raw: number | null;
+		readonly display: number | null;
+		readonly unit: string;
+	}): string => {
+		if (cell.raw === null || !Number.isFinite(cell.raw)) return "unavailable (no bar)";
+		const suffix = cell.unit === "" ? "" : ` ${cell.unit}`;
+		if (mode() !== "percent") return `${formatValue(cell.raw)}${suffix}`;
+		if (cell.display === null || !Number.isFinite(cell.display)) {
+			return `${formatValue(cell.raw)}${suffix} (rebased unavailable (zero base))`;
+		}
+		return `${formatValue(cell.raw)}${suffix} (${formatSignedDelta(cell.display, cell.display)}%)`;
 	};
 
 	const percentCell = (percentChange: number | null, unit: string, open: number): string => {
@@ -516,7 +677,7 @@ export function ChartViewer(props: {
 				open
 				on:sl-request-close={() => handleClose()}
 			>
-				<div class="space-y-3">
+				<div class="chart-viewer-scroll space-y-3">
 					<section aria-label="Series">
 						<div class="space-y-1 text-sm">
 							<For each={stats()}>
@@ -626,14 +787,14 @@ export function ChartViewer(props: {
 							>
 								<sl-option value="auto">{autoLabel()}</sl-option>
 								<For each={INTERVALS}>
-									{({ value, label }) => {
-										const blocked = INTERVAL_RANK[value] < coarsest().rank;
-										return (
-											<sl-option value={value} disabled={blocked ? true : undefined}>
-												{blocked ? `${label} — source is ${coarsest().word}` : label}
-											</sl-option>
-										);
-									}}
+									{({ value, label }) => (
+										<IntervalOption
+											value={value}
+											label={label}
+											rank={INTERVAL_RANK[value]}
+											coarsest={coarsest}
+										/>
+									)}
 								</For>
 							</sl-select>
 							<sl-select
@@ -648,6 +809,12 @@ export function ChartViewer(props: {
 									{logBlocked() ? "Log — needs values above zero" : "Log"}
 								</sl-option>
 							</sl-select>
+							<Show when={logAutoNote() && logBlocked() && scale() === "linear"}>
+								<output class="w-full text-xs text-slate-600">
+									Log scale needs values above zero in the visible window, so the chart switched
+									back to Linear. Zoom to a positive range to use Log.
+								</output>
+							</Show>
 							<sl-select
 								label="Values"
 								value={mode()}
@@ -684,7 +851,7 @@ export function ChartViewer(props: {
 					<Show when={view()} fallback={<p class="text-sm text-amber-900">{modelFallback()}</p>}>
 						{(ready) => (
 							<>
-								<section aria-label="Chart">
+								<section aria-label="Chart" class="chart-viewer-chart">
 									<p class="mb-1 text-xs text-slate-600">
 										{unitCaption()} · {INTERVAL_LABELS[resolvedInterval()]} bars
 									</p>
@@ -844,7 +1011,8 @@ export function ChartViewer(props: {
 										<table class="w-full border-collapse text-left text-xs">
 											<caption class="caption-top pb-1 text-left text-slate-600">
 												Values plotted in "{props.title}" ({unitCaption()};{" "}
-												{INTERVAL_LABELS[resolvedInterval()]} bars)
+												{INTERVAL_LABELS[resolvedInterval()]} bars
+												{mode() === "percent" ? "; % change from the first visible bar" : ""}
 											</caption>
 											<thead>
 												<tr class="border-b border-slate-200">

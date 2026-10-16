@@ -25,6 +25,16 @@ export interface DetailSeriesInput {
 	readonly bars: readonly ChartBar[];
 }
 
+export interface DetailMaOverlayInput {
+	readonly seriesKey: string;
+	readonly color: string;
+	readonly period: number;
+	readonly label: string;
+	/** Raw moving-average values aligned 1:1 with the series' full bars (`null` for the warm-up). */
+	readonly days: readonly number[];
+	readonly values: readonly (number | null)[];
+}
+
 export interface BuildDetailChartInput {
 	readonly series: readonly DetailSeriesInput[];
 	readonly window: DayWindow;
@@ -35,6 +45,13 @@ export interface BuildDetailChartInput {
 	readonly mode: DetailValueMode;
 	/** Simple-moving-average periods to overlay (only passed for one series). */
 	readonly maPeriods: readonly number[];
+	/**
+	 * Precomputed moving averages, one entry per (series, interval, period).
+	 * The viewer memoizes these outside the window-dependent model (ADR-0025
+	 * performance), so a window change only re-slices; direct callers that
+	 * omit this fall back to `maPeriods` computed over all held bars.
+	 */
+	readonly maOverlays?: readonly DetailMaOverlayInput[];
 }
 
 export interface DetailSeriesPath {
@@ -76,6 +93,8 @@ export interface DetailSeriesValues {
 
 export interface DetailChartModel {
 	readonly plot: PlotArea;
+	/** Value mode the display values were computed in (readouts pair raw values with rebased percents). */
+	readonly mode: DetailValueMode;
 	readonly yTicks: readonly number[];
 	readonly yTickLabels: readonly string[];
 	/** Display value to pixel y. */
@@ -92,6 +111,8 @@ export interface DetailChartModel {
 	readonly dayAt: readonly number[];
 	readonly isoAt: readonly string[];
 	readonly seriesValues: readonly DetailSeriesValues[];
+	/** Raw closes aligned with `dayAt` (null where the series has no bar): readouts and the data table show these with the series unit, plus the rebased percent in percent mode. */
+	readonly rawValues: readonly DetailSeriesValues[];
 	/** Visible-relative union-day index nearest pixel x, or null when empty. */
 	nearestBar(x: number): number | null;
 }
@@ -132,6 +153,164 @@ function plotForSize(plotWidth: number, plotHeight: number): PlotArea {
 	const right = Math.max(left + 10, width - AXIS_GUTTER_RIGHT);
 	const bottom = Math.max(top + 10, height - AXIS_GUTTER_BOTTOM);
 	return { left, right, top, bottom };
+}
+
+/**
+ * Drawable plot width for a container width: the same gutters the render
+ * model subtracts, so interval budgets (Auto's one-bar-per-3px rule) and the
+ * rendered paths agree on the available pixels.
+ */
+export function plotWidthForSize(containerWidth: number): number {
+	const width = Number.isFinite(containerWidth) ? Math.max(0, containerWidth) : 0;
+	return Math.max(10, width - PLOT_MARGIN - AXIS_GUTTER_RIGHT);
+}
+
+/** First index with `days[index] >= day` (ascending days). */
+function lowerBoundDay(days: readonly number[], day: number): number {
+	let low = 0;
+	let high = days.length;
+	while (low < high) {
+		const mid = Math.floor((low + high) / 2);
+		const value = days[mid];
+		if (value !== undefined && value < day) low = mid + 1;
+		else high = mid;
+	}
+	return low;
+}
+
+/** First index with `days[index] > day` (ascending days). */
+function upperBoundDay(days: readonly number[], day: number): number {
+	let low = 0;
+	let high = days.length;
+	while (low < high) {
+		const mid = Math.floor((low + high) / 2);
+		const value = days[mid];
+		if (value !== undefined && value <= day) low = mid + 1;
+		else high = mid;
+	}
+	return low;
+}
+
+export interface LogGateInput {
+	readonly series: readonly DetailSeriesInput[];
+	readonly window: DayWindow;
+	readonly mode: DetailValueMode;
+}
+
+/**
+ * True when a log scale cannot show the effective display values (after the
+ * window and the value mode): any visible display value ≤ 0. Percent mode
+ * always qualifies while a bar is visible, because the rebase puts 0 % at
+ * the first visible bar. The viewer gates the Log option on this and switches
+ * an already selected Log back to Linear with a status line.
+ */
+export function logScaleBlocked(input: LogGateInput): boolean {
+	const from = Math.min(Math.trunc(input.window.from), Math.trunc(input.window.to));
+	const to = Math.max(Math.trunc(input.window.from), Math.trunc(input.window.to));
+	let sawBar = false;
+	for (const entry of input.series) {
+		const slice = visibleSlice(entry.bars, { from, to });
+		if (slice.end > slice.start) sawBar = true;
+		if (input.mode === "percent") continue;
+		for (let index = slice.start; index < slice.end; index += 1) {
+			const bar = entry.bars[index];
+			if (bar !== undefined && !(bar.close > 0)) return true;
+		}
+	}
+	if (!sawBar) return false;
+	return input.mode === "percent";
+}
+
+/**
+ * Widens a window until it holds at least two bars of the current interval
+ * (ADR-0025 interaction: the window is never narrower than two bars), judged
+ * against real bar positions — a day-count minimum admits bar-less weekends.
+ * A window overlapping exactly one bar grows to its nearest neighbour; a
+ * window with no bars takes the nearest pair around it; data shorter than two
+ * bars yields the whole extent. Total: invalid coordinates fall back to the
+ * extent-clamped window.
+ */
+export function ensureTwoBarWindow(
+	window: DayWindow,
+	barsList: readonly (readonly ChartBar[])[],
+	extent: DayWindow,
+): DayWindow {
+	const lo = Math.min(Math.trunc(extent.from), Math.trunc(extent.to));
+	const hi = Math.max(Math.trunc(extent.from), Math.trunc(extent.to));
+	if (
+		!Number.isFinite(window.from) ||
+		!Number.isFinite(window.to) ||
+		!Number.isFinite(lo) ||
+		!Number.isFinite(hi) ||
+		hi < lo
+	) {
+		return { from: lo, to: hi };
+	}
+	const a = Math.min(Math.max(Math.trunc(window.from), lo), hi);
+	const b = Math.min(Math.max(Math.trunc(window.to), lo), hi);
+	const ordered = a <= b ? { from: a, to: b } : { from: b, to: a };
+	const days: number[] = [];
+	for (const bars of barsList) {
+		for (const bar of bars) days.push(bar.day);
+	}
+	days.sort((x, y) => x - y);
+	const union: number[] = [];
+	for (const day of days) {
+		if (union[union.length - 1] !== day) union.push(day);
+	}
+	if (union.length < 2) return { from: lo, to: hi };
+	if (upperBoundDay(union, ordered.to) - lowerBoundDay(union, ordered.from) >= 2) return ordered;
+	const insertion = lowerBoundDay(union, ordered.from);
+	let first: number;
+	let second: number;
+	const inside = union[insertion];
+	if (inside !== undefined && inside <= ordered.to) {
+		// Exactly one bar inside: take its neighbour, preferring the next.
+		if (insertion + 1 < union.length) {
+			first = inside;
+			second = union[insertion + 1] ?? inside;
+		} else {
+			first = union[insertion - 1] ?? inside;
+			second = inside;
+		}
+	} else if (insertion <= 0) {
+		first = union[0] ?? lo;
+		second = union[1] ?? hi;
+	} else if (insertion >= union.length) {
+		first = union[union.length - 2] ?? lo;
+		second = union[union.length - 1] ?? hi;
+	} else {
+		first = union[insertion - 1] ?? lo;
+		second = union[insertion] ?? hi;
+	}
+	return { from: Math.min(first, second), to: Math.max(first, second) };
+}
+
+/**
+ * Overview line for the navigator over the complete held-data extent: the
+ * union of every series' bar days (ascending) with the longest series' closes
+ * aligned onto it (`NaN` where the longest series has no bar that day, which
+ * the navigator skips). Using only the longest series' own days would drop
+ * held dates outside it and collapse older windows against the edge.
+ */
+export function unionOverview(barsList: readonly (readonly ChartBar[])[]): {
+	readonly days: readonly number[];
+	readonly values: readonly number[];
+} {
+	let longest: readonly ChartBar[] = [];
+	for (const bars of barsList) {
+		if (bars.length > longest.length) longest = bars;
+	}
+	const seen = new Set<number>();
+	for (const bars of barsList) {
+		for (const bar of bars) seen.add(bar.day);
+	}
+	const days = [...seen].sort((a, b) => a - b);
+	const closeByDay = new Map<number, number>();
+	for (const bar of longest) {
+		if (!closeByDay.has(bar.day)) closeByDay.set(bar.day, bar.close);
+	}
+	return { days, values: days.map((day) => closeByDay.get(day) ?? Number.NaN) };
 }
 
 export type DetailTickGranularity = "day" | "month" | "year";
@@ -400,6 +579,8 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		/** Display values of the visible bars (extended range handled below). */
 		readonly visibleDays: readonly number[];
 		readonly visibleValues: readonly (number | null)[];
+		/** Raw closes of the visible bars, parallel to `visibleDays`. */
+		readonly visibleRaw: readonly number[];
 	}
 	const works: SeriesWork[] = [];
 	for (const entry of input.series) {
@@ -409,11 +590,13 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		const zeroBase = input.mode === "percent" && (base === null || base === 0);
 		const visibleDays: number[] = [];
 		const visibleValues: (number | null)[] = [];
+		const visibleRaw: number[] = [];
 		for (let index = slice.start; index < slice.end; index += 1) {
 			const bar = entry.bars[index];
 			if (bar === undefined) continue;
 			visibleDays.push(bar.day);
 			visibleValues.push(displayOf(bar.close, input.mode, base));
+			visibleRaw.push(Number.isFinite(bar.close) ? bar.close : Number.NaN);
 		}
 		works.push({
 			entry,
@@ -423,6 +606,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 			zeroBase,
 			visibleDays,
 			visibleValues,
+			visibleRaw,
 		});
 	}
 
@@ -453,8 +637,28 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		return { key: work.entry.key, values };
 	});
 
+	// Raw closes per series, aligned with the union days: readouts and the
+	// data table show these with the series unit (plus the rebased percent in
+	// percent mode), and previous-bar returns come from these, never from the
+	// rebased display values.
+	const rawValues: DetailSeriesValues[] = works.map((work) => {
+		const values: (number | null)[] = dayAt.map(() => null);
+		for (let position = 0; position < work.visibleDays.length; position += 1) {
+			const day = work.visibleDays[position];
+			const raw = work.visibleRaw[position];
+			if (day === undefined || raw === undefined) continue;
+			const slot = dayIndex.get(day);
+			if (slot === undefined) continue;
+			values[slot] = Number.isFinite(raw) ? raw : null;
+		}
+		return { key: work.entry.key, values };
+	});
+
 	// Moving averages over all held bars (so the first visible bars already
-	// have a value), rebased with the same base in percent mode.
+	// have a value), rebased with the same base in percent mode. The viewer
+	// passes precomputed overlays memoized per (series, interval, period), so
+	// a window change never recomputes them; direct callers fall back to
+	// `maPeriods` computed here.
 	interface MaWork {
 		readonly seriesKey: string;
 		readonly color: string;
@@ -462,28 +666,56 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		readonly label: string;
 		readonly days: readonly number[];
 		readonly values: readonly (number | null)[];
+		/** Binary-search slice of the visible bars, shared with the series. */
+		readonly start: number;
+		readonly end: number;
+		readonly base: number | null;
 	}
+	const workByKey = new Map(works.map((work) => [work.entry.key, work] as const));
 	const maWorks: MaWork[] = [];
-	for (const work of works) {
-		if (input.maPeriods.length === 0) break;
-		const closes = work.entry.bars.map((bar) => bar.close);
-		const days = work.entry.bars.map((bar) => bar.day);
-		for (const period of input.maPeriods) {
-			const averaged = movingAverage(closes, period);
-			if (!averaged.ok) continue;
+	const overlays = input.maOverlays;
+	if (overlays !== undefined && overlays.length > 0) {
+		for (const overlay of overlays) {
+			const work = workByKey.get(overlay.seriesKey);
+			if (work === undefined) continue;
 			maWorks.push({
-				seriesKey: work.entry.key,
-				color: work.entry.color,
-				period,
-				label: `MA ${period}`,
-				days,
-				values: averaged.value.map((value) =>
+				seriesKey: overlay.seriesKey,
+				color: overlay.color,
+				period: overlay.period,
+				label: overlay.label,
+				days: overlay.days,
+				values: overlay.values.map((value) =>
 					value === null ? null : displayOf(value, input.mode, work.base),
 				),
+				start: work.start,
+				end: work.end,
+				base: work.base,
 			});
 		}
+	} else {
+		for (const work of works) {
+			if (input.maPeriods.length === 0) break;
+			const closes = work.entry.bars.map((bar) => bar.close);
+			const days = work.entry.bars.map((bar) => bar.day);
+			for (const period of input.maPeriods) {
+				const averaged = movingAverage(closes, period);
+				if (!averaged.ok) continue;
+				maWorks.push({
+					seriesKey: work.entry.key,
+					color: work.entry.color,
+					period,
+					label: `MA ${period}`,
+					days,
+					values: averaged.value.map((value) =>
+						value === null ? null : displayOf(value, input.mode, work.base),
+					),
+					start: work.start,
+					end: work.end,
+					base: work.base,
+				});
+			}
+		}
 	}
-
 	// Y domain over the visible display values (series plus overlays).
 	const domainValues: number[] = [];
 	const collectVisible = (days: readonly number[], values: readonly (number | null)[]): void => {
@@ -495,7 +727,13 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		}
 	};
 	for (const work of works) collectVisible(work.visibleDays, work.visibleValues);
-	for (const ma of maWorks) collectVisible(ma.days, ma.values);
+	// Overlays reuse the binary-search slice bounds, never a scan over all held bars.
+	for (const ma of maWorks) {
+		for (let index = ma.start; index < ma.end; index += 1) {
+			const value = ma.values[index];
+			if (usable(value)) domainValues.push(value);
+		}
+	}
 	// No plottable value (e.g. every percent base is zero): still return the
 	// frame — days, ticks, zero-base flags — so the viewer states the reason
 	// instead of a blank area. Log has no axis without a positive value.
@@ -526,24 +764,18 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	const xForDay = linearScale(from, to, plot.left, plot.right);
 
 	// Paths over the visible bars plus one bar either side per series, so
-	// lines meet the plot edge instead of stopping short.
-	const extendedPoints = (
+	// lines meet the plot edge instead of stopping short. Only the
+	// binary-searched slice ±1 is ever touched (never a map over all held
+	// bars); the visible points are decimated on their own, and the outside
+	// neighbours are stitched on afterwards undecimated — folding a neighbour
+	// into the boundary pixel column would let it displace a visible extreme.
+	const pointsForRange = (
 		days: readonly number[],
 		values: readonly (number | null)[],
+		start: number,
+		end: number,
 	): DecimPoint[] => {
 		const points: DecimPoint[] = [];
-		// First visible index in this day list, to extend one bar either side.
-		let firstVisible = -1;
-		let lastVisible = -1;
-		for (let index = 0; index < days.length; index += 1) {
-			const day = days[index];
-			if (day !== undefined && day >= from && day <= to) {
-				if (firstVisible < 0) firstVisible = index;
-				lastVisible = index;
-			}
-		}
-		const start = firstVisible < 0 ? 0 : Math.max(0, firstVisible - 1);
-		const end = lastVisible < 0 ? 0 : Math.min(days.length, lastVisible + 2);
 		for (let index = start; index < end; index += 1) {
 			const day = days[index];
 			const value = values[index];
@@ -552,28 +784,67 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		}
 		return points;
 	};
+	const stitchedPath = (
+		days: readonly number[],
+		values: readonly (number | null)[],
+		start: number,
+		end: number,
+		size: number,
+	): string => {
+		const edgeStart = Math.max(0, start - 1);
+		const edgeEnd = Math.min(size, end + 1);
+		const visibleStart = start - edgeStart;
+		const visibleEnd = visibleStart + (end - start);
+		const before = pointsForRange(days, values, 0, visibleStart);
+		const visible = pointsForRange(days, values, visibleStart, visibleEnd);
+		const after = pointsForRange(days, values, visibleEnd, edgeEnd - edgeStart);
+		const stitched = [
+			...before.slice(-1),
+			...decimateToWidth(visible, plot.left, plotWidth),
+			...after.slice(0, 1),
+		];
+		return pathOf(stitched);
+	};
 	const seriesPaths: DetailSeriesPath[] = works.map((work) => {
 		const bars = work.entry.bars;
-		const days = bars.map((bar) => bar.day);
-		const values = bars.map((bar) => displayOf(bar.close, input.mode, work.base));
-		const points = extendedPoints(days, values);
+		const size = bars.length;
+		const edgeStart = Math.max(0, work.start - 1);
+		const edgeEnd = Math.min(size, work.end + 1);
+		const days: number[] = [];
+		const values: (number | null)[] = [];
+		for (let index = edgeStart; index < edgeEnd; index += 1) {
+			const bar = bars[index];
+			if (bar === undefined) continue;
+			days.push(bar.day);
+			values.push(displayOf(bar.close, input.mode, work.base));
+		}
 		let plottedCount = 0;
 		for (const value of work.visibleValues) if (usable(value)) plottedCount += 1;
 		return {
 			key: work.entry.key,
 			label: work.entry.label,
 			color: work.entry.color,
-			d: pathOf(decimateToWidth(points, plot.left, plotWidth)),
+			d: stitchedPath(days, values, work.start - edgeStart, work.end - edgeStart, days.length),
 			plottedCount,
 		};
 	});
-	const maPaths: DetailMaPath[] = maWorks.map((ma) => ({
-		seriesKey: ma.seriesKey,
-		period: ma.period,
-		label: ma.label,
-		color: ma.color,
-		d: pathOf(decimateToWidth(extendedPoints(ma.days, ma.values), plot.left, plotWidth)),
-	}));
+	const maPaths: DetailMaPath[] = maWorks.map((ma) => {
+		const edgeStart = Math.max(0, ma.start - 1);
+		const edgeEnd = Math.min(ma.days.length, ma.end + 1);
+		return {
+			seriesKey: ma.seriesKey,
+			period: ma.period,
+			label: ma.label,
+			color: ma.color,
+			d: stitchedPath(
+				ma.days.slice(edgeStart, edgeEnd),
+				ma.values.slice(edgeStart, edgeEnd),
+				ma.start - edgeStart,
+				ma.end - edgeStart,
+				edgeEnd - edgeStart,
+			),
+		};
+	});
 
 	const lastMarkers: DetailLastMarker[] = [];
 	for (const work of works) {
@@ -599,6 +870,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 
 	return {
 		plot,
+		mode: input.mode,
 		yTicks,
 		yTickLabels,
 		yFor,
@@ -611,6 +883,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		dayAt,
 		isoAt,
 		seriesValues,
+		rawValues,
 		nearestBar: (x: number) => nearestDayIndex(xs, x),
 	};
 }
