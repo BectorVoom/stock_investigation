@@ -10,9 +10,9 @@ import {
 import type { JSX } from "solid-js";
 import { createMemo, For, Show } from "solid-js";
 import {
-	chartWidgetAxisTitles,
 	chartWidgetSeries,
 	chartWidgetToGuardedDataset,
+	chartWidgetXAxisTitle,
 } from "../chartDataset.ts";
 
 type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
@@ -30,7 +30,6 @@ type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
 export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Element {
 	const data = createMemo(() => chartWidgetToGuardedDataset(props.widget));
 	const series = createMemo(() => chartWidgetSeries(props.widget));
-	const titles = createMemo(() => chartWidgetAxisTitles(props.widget));
 
 	const model = createMemo(() => {
 		const current = data();
@@ -82,7 +81,7 @@ export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Elemen
 							{(line) => (
 								<LinePlot
 									model={line()}
-									xLabel={titles().xAxisTitle}
+									xLabel={chartWidgetXAxisTitle(props.widget)}
 									yLabel={props.widget.yLabel?.trim() ?? ""}
 									yUnit={props.widget.unit}
 									title={props.widget.title}
@@ -94,7 +93,7 @@ export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Elemen
 					{(bar) => (
 						<BarPlot
 							model={bar()}
-							xLabel={titles().xAxisTitle}
+							xLabel={chartWidgetXAxisTitle(props.widget)}
 							yLabel={props.widget.yLabel?.trim() ?? ""}
 							yUnit={props.widget.unit}
 							title={props.widget.title}

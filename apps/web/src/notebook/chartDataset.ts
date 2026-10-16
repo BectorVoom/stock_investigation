@@ -31,25 +31,22 @@ function rowKeyText(key: RowKey): string {
 function orderedRowKeys(
 	series: readonly { readonly points: readonly { readonly x: string }[] }[],
 ): readonly RowKey[] {
-	const sequences: readonly string[][] = series.map((entry) => {
-		const seen = new Map<string, number>();
-		return entry.points.map((point) => {
-			const occurrence = seen.get(point.x) ?? 0;
-			seen.set(point.x, occurrence + 1);
-			return rowKeyText({ label: point.x, occurrence });
-		});
-	});
 	const decoded = new Map<string, RowKey>();
 	const firstSeen = new Map<string, { readonly seriesIndex: number; readonly position: number }>();
-	for (const [seriesIndex, sequence] of sequences.entries()) {
-		for (const [position, key] of sequence.entries()) {
-			if (!decoded.has(key)) {
-				const parsed = JSON.parse(key) as readonly [string, number];
-				decoded.set(key, { label: parsed[0], occurrence: parsed[1] });
-				firstSeen.set(key, { seriesIndex, position });
+	const sequences: readonly string[][] = series.map((entry, seriesIndex) => {
+		const seen = new Map<string, number>();
+		return entry.points.map((point, position) => {
+			const occurrence = seen.get(point.x) ?? 0;
+			seen.set(point.x, occurrence + 1);
+			const key: RowKey = { label: point.x, occurrence };
+			const text = rowKeyText(key);
+			if (!decoded.has(text)) {
+				decoded.set(text, key);
+				firstSeen.set(text, { seriesIndex, position });
 			}
-		}
-	}
+			return text;
+		});
+	});
 	// Order constraints: each series' keys in its own order.
 	const successors = new Map<string, Set<string>>();
 	const indegree = new Map<string, number>();
@@ -191,18 +188,9 @@ export function chartWidgetToGuardedDataset(widget: ChartWidget): GuardedDataset
 	);
 }
 
-/** Axis titles for a `chart` widget, matching the registry's format. */
-export function chartWidgetAxisTitles(widget: ChartWidget): {
-	readonly xAxisTitle: string;
-	readonly yAxisTitle: string;
-} {
-	const xLabel = widget.xLabel?.trim() ?? "";
-	const yLabel = widget.yLabel?.trim() ?? "";
-	const unit = widget.unit.trim();
-	if (yLabel.length > 0 && unit.length > 0) {
-		return { xAxisTitle: xLabel, yAxisTitle: `${yLabel} (${unit})` };
-	}
-	return { xAxisTitle: xLabel, yAxisTitle: yLabel.length > 0 ? yLabel : unit };
+/** The x-axis title of a `chart` widget ("" when it has none); the plot builds the y title from `yLabel` and the unit. */
+export function chartWidgetXAxisTitle(widget: ChartWidget): string {
+	return widget.xLabel?.trim() ?? "";
 }
 
 /** Series specs for `LinePlot` / `BarPlot` from a `chart` widget. */

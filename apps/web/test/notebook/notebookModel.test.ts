@@ -146,6 +146,49 @@ describe("notebook model", () => {
 		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
+	it("keeps a bar chart as a research widget when the registry would refuse its props or cut its unit", () => {
+		const viewWith = (props: Record<string, unknown>): WorkspaceView => ({
+			...WORKSPACE_VIEW,
+			datasets: [
+				{
+					datasetId: "ds_bar",
+					title: "Growth",
+					createdAt: "2026-10-03T00:00:00Z",
+					columns: [
+						{ key: "scenario", label: "Scenario", kind: "text" },
+						{ key: "base", label: "Base", kind: "number", unit: "%" },
+					],
+					rows: [{ scenario: { v: "AI" }, base: { v: 16.5, basis: "derived" } }],
+				},
+			],
+			state: {
+				...WORKSPACE_VIEW.state,
+				components: [{ componentId: "bar_1", componentType: "bar-chart", schemaVersion: 1, props }],
+			},
+		});
+		const props = {
+			title: "Growth",
+			datasetRef: "ds_bar",
+			categoryKey: "scenario",
+			series: [{ key: "base", label: "Base" }],
+			xLabel: "Scenario",
+			yLabel: "Growth",
+			yUnit: "% per year",
+			sourceIds: [],
+		};
+		const typeOf = (view: WorkspaceView): string | undefined => {
+			const component = view.state.components[0];
+			if (component === undefined) throw new Error("bar_1 is missing");
+			return widgetFromComponent(component, view)?.type;
+		};
+		expect(typeOf(viewWith(props))).toBe("chart");
+		// No yUnit: the registry shows "cannot render", so no chart widget may claim the same picture.
+		const { yUnit: _dropped, ...withoutUnit } = props;
+		expect(typeOf(viewWith(withoutUnit))).toBe("research");
+		// 30 characters fit the chart props (40) but not a widget unit (24).
+		expect(typeOf(viewWith({ ...props, yUnit: "percent per year, compounded" }))).toBe("research");
+	});
+
 	it("keeps a candlestick component as a research widget (candles are not a close-price line)", () => {
 		const view: WorkspaceView = {
 			...WORKSPACE_VIEW,

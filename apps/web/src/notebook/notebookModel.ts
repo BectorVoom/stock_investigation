@@ -1,11 +1,18 @@
 import type { ChatMessage, WorkspaceView } from "@research/contracts";
-import { NOTEBOOK_LIMITS, WIDGET_TYPE_META, type WidgetCore } from "@research/contracts";
+import {
+	barChartPropsSchema,
+	lineChartPropsSchema,
+	NOTEBOOK_LIMITS,
+	WIDGET_TYPE_META,
+	type WidgetCore,
+} from "@research/contracts";
 import { guardDataset, presentedSeriesLabels } from "@research/ui-registry";
 import { newWidgetId } from "../widgets/widgetModel.ts";
 import { chartWidgetToGuardedDataset } from "./chartDataset.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
+type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
 
 function truncateText(text: string, max: number): string {
 	return text.length > max ? text.slice(0, max) : text;
@@ -69,7 +76,7 @@ function tableFromDataset(
 	return {
 		widgetId,
 		type: "table",
-		title: componentTitle(component) ?? component.componentType,
+		title: componentTitle(component) ?? dataset.title.slice(0, NOTEBOOK_LIMITS.maxTitleChars),
 		size: WIDGET_TYPE_META.table.defaultSize,
 		columns: columns.length > 0 ? columns : ["Value"],
 		rows,
@@ -122,8 +129,7 @@ function researchFallback(component: WorkspaceComponent, widgetId: string): Widg
 	};
 }
 
-function axisLabel(value: unknown): string | undefined {
-	if (typeof value !== "string") return undefined;
+function axisLabel(value: string): string | undefined {
 	const trimmed = value.trim().slice(0, NOTEBOOK_LIMITS.maxTitleChars);
 	return trimmed.length > 0 ? trimmed : undefined;
 }
@@ -164,7 +170,7 @@ export function losslessChartWidget(args: {
 	readonly xLabel: string | undefined;
 	readonly yLabel: string | undefined;
 	readonly widgetId: string;
-}): WidgetCore | null {
+}): ChartWidgetCore | null {
 	const guarded = guardDataset(args.dataset, presentedSeriesLabels(args.series));
 	if (guarded.withheldColumns.size > 0) return null;
 	if (args.series.length === 0 || args.series.length > NOTEBOOK_LIMITS.maxChartSeries) return null;
@@ -180,7 +186,7 @@ export function losslessChartWidget(args: {
 	const sourceColumn = args.dataset.columns.find((column) => column.key === args.xKey);
 	if (sourceColumn === undefined) return null;
 	const xKind = sourceColumn.kind;
-	const candidate = {
+	const candidate: ChartWidgetCore = {
 		widgetId: args.widgetId,
 		type: "chart",
 		title: args.title,
@@ -191,14 +197,8 @@ export function losslessChartWidget(args: {
 		...(args.xLabel === undefined ? {} : { xLabel: args.xLabel }),
 		...(args.yLabel === undefined ? {} : { yLabel: args.yLabel }),
 		...(xKind === "text" ? {} : { xKind }),
-	} as const;
-	const parsedCandidate = {
-		...candidate,
-		size: candidate.size as WidgetCore["size"],
 	};
-	const rebuilt = chartWidgetToGuardedDataset(
-		parsedCandidate as Extract<WidgetCore, { readonly type: "chart" }>,
-	);
+	const rebuilt = chartWidgetToGuardedDataset(candidate);
 	if (rebuilt.withheldColumns.size > 0) return null;
 	const sourceRows = guarded.dataset.rows;
 	const rebuiltRows = rebuilt.dataset.rows;
@@ -212,7 +212,26 @@ export function losslessChartWidget(args: {
 				return null;
 		}
 	}
-	return parsedCandidate as WidgetCore;
+	return candidate;
+}
+
+/** A line or bar chart's props as the registry parses them; null when it would refuse them. */
+function chartPropsOf(component: WorkspaceComponent): {
+	readonly chartType: "line" | "bar";
+	readonly xKey: string;
+	readonly series: readonly ChartSeriesInput[];
+	readonly xLabel: string;
+	readonly yLabel: string;
+	readonly yUnit: string;
+} | null {
+	if (component.componentType === "line-chart") {
+		const parsed = lineChartPropsSchema.safeParse(component.props);
+		return parsed.success ? { chartType: "line", ...parsed.data } : null;
+	}
+	const parsed = barChartPropsSchema.safeParse(component.props);
+	return parsed.success
+		? { chartType: "bar", xKey: parsed.data.categoryKey, ...parsed.data }
+		: null;
 }
 
 /**
@@ -230,16 +249,7 @@ export function widgetFromComponent(
 	view: WorkspaceView,
 ): WidgetCore | null {
 	const widgetId = newWidgetId();
-	const props = component.props as {
-		readonly datasetRef?: unknown;
-		readonly title?: unknown;
-		readonly xKey?: unknown;
-		readonly categoryKey?: unknown;
-		readonly series?: unknown;
-		readonly yUnit?: unknown;
-		readonly xLabel?: unknown;
-		readonly yLabel?: unknown;
-	};
+	const props = component.props as { readonly datasetRef?: unknown };
 	const title = componentTitle(component) ?? component.componentType;
 
 	switch (component.componentType) {
@@ -255,36 +265,24 @@ export function widgetFromComponent(
 			if (typeof props.datasetRef !== "string") return null;
 			const dataset = datasetById(view, props.datasetRef);
 			if (dataset === null) return null;
-			const xKey =
-				typeof props.xKey === "string"
-					? props.xKey
-					: typeof props.categoryKey === "string"
-						? props.categoryKey
-						: null;
-			if (xKey === null || !Array.isArray(props.series))
+			// Parsed with the schemas the registry renders from: props it would
+			// refuse cannot be "the same graph", so they stay a research widget.
+			const chart = chartPropsOf(component);
+			if (chart === null) return researchFallback(component, widgetId);
+			// A unit longer than a widget's would be cut, renaming the y axis: not
+			// the same picture. (Axis titles fit: the props cap them below the widget's.)
+			if (chart.yUnit.length > NOTEBOOK_LIMITS.maxUnitChars) {
 				return researchFallback(component, widgetId);
-			const series = (props.series as readonly unknown[]).flatMap((entry): ChartSeriesInput[] => {
-				if (typeof entry !== "object" || entry === null) return [];
-				const record = entry as { readonly key?: unknown; readonly label?: unknown };
-				return typeof record.key === "string" && typeof record.label === "string"
-					? [{ key: record.key, label: record.label }]
-					: [];
-			});
-			if (series.length === 0) return researchFallback(component, widgetId);
-			const unit =
-				typeof props.yUnit === "string" ? props.yUnit.slice(0, NOTEBOOK_LIMITS.maxUnitChars) : "";
-			// A truncated unit is lossy; the lossless check rejects it.
-			if (typeof props.yUnit === "string" && props.yUnit.length > NOTEBOOK_LIMITS.maxUnitChars)
-				return researchFallback(component, widgetId);
+			}
 			const converted = losslessChartWidget({
 				dataset,
-				xKey,
-				series,
-				chartType: component.componentType === "bar-chart" ? "bar" : "line",
+				xKey: chart.xKey,
+				series: chart.series,
+				chartType: chart.chartType,
 				title,
-				unit,
-				xLabel: axisLabel(props.xLabel),
-				yLabel: axisLabel(props.yLabel),
+				unit: chart.yUnit,
+				xLabel: axisLabel(chart.xLabel),
+				yLabel: axisLabel(chart.yLabel),
 				widgetId,
 			});
 			return converted ?? researchFallback(component, widgetId);
