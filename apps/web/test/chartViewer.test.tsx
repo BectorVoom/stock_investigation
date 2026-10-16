@@ -463,15 +463,16 @@ describe("chart viewer", () => {
 		expect(details.textContent).toContain("% change from the first visible bar");
 	});
 
-	it("maps navigator pointers through aspect-ratio letterboxing", () => {
-		// Pure conversion: a 1000 px wide element centres the 600 px scene
-		// with 200 px dead margins on each side.
-		expect(navigatorViewX(200, { left: 0, width: 1000, height: 56 })).toBeCloseTo(0, 5);
-		expect(navigatorViewX(320, { left: 0, width: 1000, height: 56 })).toBeCloseTo(120, 5);
-		expect(navigatorViewX(800, { left: 0, width: 1000, height: 56 })).toBeCloseTo(600, 5);
+	it("maps navigator pointers with one uniform scale (no letterbox)", () => {
+		// Pure conversion: the viewBox follows the measured element width,
+		// so element pixels scale uniformly onto the scene.
+		expect(navigatorViewX(0, { left: 0, width: 600 }, 600)).toBeCloseTo(0, 5);
+		expect(navigatorViewX(300, { left: 0, width: 600 }, 600)).toBeCloseTo(300, 5);
+		expect(navigatorViewX(500, { left: 0, width: 1000 }, 600)).toBeCloseTo(300, 5);
+		expect(navigatorViewX(320, { left: 20, width: 600 }, 600)).toBeCloseTo(300, 5);
 	});
 
-	it("resizes (not pans) the window from a handle under letterboxing", async () => {
+	it("resizes (not pans) the window from a handle", async () => {
 		const dates = isoDays("2026-10-08", 101);
 		const closes = dates.map((observedOn, index): [string, number] => [observedOn, 1 + index]);
 		renderViewer([trendSeries("fred:SPAN", "Span", "Index", "daily", closes)]);
@@ -481,14 +482,17 @@ describe("chart viewer", () => {
 		expect(before).toEqual({ from: dates[20], to: dates[40] });
 
 		const svg = navigatorSvg();
-		mockRect(svg, { left: 0, top: 0, width: 1000, height: 56 });
+		// The viewBox follows the measured width (600 in happy-dom, where
+		// the container reports no size), so the element is mocked at the
+		// same width: one element pixel is one viewBox unit, no dead margin.
+		mockRect(svg, { left: 0, top: 0, width: 600, height: 56 });
 		const handle = svg.querySelector('rect[fill-opacity="0.12"]');
 		if (!(handle instanceof SVGRectElement)) throw new Error("no window rect");
 		const left = Number(handle.getAttribute("x"));
 		// Press the left handle and drag it 20 px right: the start moves by
 		// about three days while the end stays fixed.
-		fireEvent.pointerDown(svg, { clientX: 200 + left + 2 });
-		fireEvent.pointerMove(svg, { clientX: 200 + left + 22, buttons: 1 });
+		fireEvent.pointerDown(svg, { clientX: left + 2 });
+		fireEvent.pointerMove(svg, { clientX: left + 22, buttons: 1 });
 		await waitFor(() => expect(fromInput().value).not.toBe(before.from), { timeout: 2000 });
 		expect(toInput().value).toBe(before.to);
 		expect(fromInput().value > before.from).toBe(true);

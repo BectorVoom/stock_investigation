@@ -4,6 +4,7 @@ import {
 	type DetailChartModel,
 	type DetailValueMode,
 	formatAxisTick,
+	isValueLabelHidden,
 } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
 import { createFrameScheduler } from "./frame.ts";
@@ -249,8 +250,23 @@ export function DetailChart(props: {
 		}
 	});
 
-	const markerLabel = (value: number): string =>
-		props.mode === "percent" ? `${formatAxisTick(value)}%` : formatAxisTick(value);
+	/**
+	 * Value-axis collision rule (ADR-0025 fix round 4): a y tick label hides
+	 * behind a last-value tag or the crosshair value label when their
+	 * centres are closer than one label height. The grid line stays; only
+	 * the text goes, so the axis still bounds the data.
+	 */
+	const tagYs = (): readonly number[] => props.model.lastValueTags.map((tag) => tag.y);
+	const crosshairValueY = (): number | null => {
+		if (props.crosshair === null) return null;
+		for (const entry of props.model.seriesValues) {
+			const value = entry.values[props.crosshair] ?? null;
+			if (value !== null && Number.isFinite(value)) return props.model.yFor(value);
+		}
+		return null;
+	};
+	const yTickHidden = (tick: number): boolean =>
+		isValueLabelHidden(props.model.yFor(tick), tagYs(), crosshairValueY());
 
 	return (
 		// Flex column filling the chart section: the readout takes its line
@@ -315,15 +331,17 @@ export function DetailChart(props: {
 										stroke={tick === 0 ? CHART_INK.axis : CHART_INK.grid}
 										stroke-width="1"
 									/>
-									<text
-										x={props.model.plot.right + 6}
-										y={props.model.yFor(tick)}
-										dy="0.32em"
-										text-anchor="start"
-										fill={CHART_INK.secondary}
-									>
-										{props.model.yTickLabels[index()] ?? ""}
-									</text>
+									<Show when={!yTickHidden(tick)}>
+										<text
+											x={props.model.plot.right + 6}
+											y={props.model.yFor(tick)}
+											dy="0.32em"
+											text-anchor="start"
+											fill={CHART_INK.secondary}
+										>
+											{props.model.yTickLabels[index()] ?? ""}
+										</text>
+									</Show>
 								</>
 							)}
 						</For>
@@ -380,23 +398,35 @@ export function DetailChart(props: {
 					<g data-chart-part="last-values">
 						<For each={props.model.lastMarkers}>
 							{(marker) => (
-								<>
-									<circle
-										cx={props.model.xForDay(marker.day)}
-										cy={marker.y}
-										r={3}
-										fill={marker.color}
+								<circle
+									cx={props.model.xForDay(marker.day)}
+									cy={marker.y}
+									r={3}
+									fill={marker.color}
+								/>
+							)}
+						</For>
+						<For each={props.model.lastValueTags}>
+							{(tag) => (
+								<g data-chart-part="last-value-tag">
+									<rect
+										x={tag.x}
+										y={tag.y - tag.height / 2}
+										width={tag.width}
+										height={tag.height}
+										rx="3"
+										fill={tag.color}
 									/>
 									<text
-										x={props.model.plot.right + 6}
-										y={marker.y}
+										x={tag.x + 4}
+										y={tag.y}
 										dy="0.32em"
 										text-anchor="start"
-										fill={CHART_INK.secondary}
+										fill={CHART_INK.tagText}
 									>
-										{markerLabel(marker.displayValue)}
+										{tag.text}
 									</text>
-								</>
+								</g>
 							)}
 						</For>
 					</g>

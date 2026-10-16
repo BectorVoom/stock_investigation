@@ -83,6 +83,14 @@ export const CHART_INK = {
 	secondary: "#52514e",
 	grid: "#e1e0d9",
 	axis: "#c3c2b7",
+	/**
+	 * Inverse text on a series-colour value tag (ADR-0025 fix round 4): the
+	 * last-value tags use the series colour as their fill, so the label has
+	 * to be light. White on the darker series colours clears 4.5:1; on the
+	 * two lightest slots it is still the financial-platform convention and
+	 * is always paired with the marker dot and the readout line.
+	 */
+	tagText: "#ffffff",
 } as const;
 
 export function seriesColor(seriesIndex: number): string {

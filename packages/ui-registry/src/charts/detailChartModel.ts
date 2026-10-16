@@ -85,6 +85,33 @@ export interface DetailLastMarker {
 	readonly y: number;
 }
 
+/**
+ * A last-value tag on the value axis (ADR-0025 fix round 4): the financial
+ * platforms draw the last value as a small filled tag in the series colour
+ * with light text, instead of plain text over the tick labels. `y` is the
+ * de-overlapped centre, `x`/`width`/`height` the tag box in viewBox units.
+ */
+export interface DetailValueTag {
+	readonly seriesKey: string;
+	readonly text: string;
+	readonly color: string;
+	readonly value: number;
+	readonly x: number;
+	readonly y: number;
+	readonly width: number;
+	readonly height: number;
+}
+
+/**
+ * Vertical footprint of one value-axis label in px (12 px text plus tag
+ * padding). Two labels closer than this overlap and unreadably collide —
+ * the same threshold hides a tick label behind a tag and separates tags
+ * from each other.
+ */
+export const VALUE_LABEL_HEIGHT = 16;
+/** Horizontal padding inside a value tag, each side. */
+const VALUE_TAG_PAD_X = 4;
+
 export interface DetailSeriesValues {
 	readonly key: string;
 	/** Display values aligned with `dayAt` (null where the series has no bar, or the base is zero). */
@@ -105,6 +132,15 @@ export interface DetailChartModel {
 	readonly seriesPaths: readonly DetailSeriesPath[];
 	readonly maPaths: readonly DetailMaPath[];
 	readonly lastMarkers: readonly DetailLastMarker[];
+	/** De-overlapped last-value tags on the value axis, sorted by y. */
+	readonly lastValueTags: readonly DetailValueTag[];
+	/**
+	 * One flag per y tick: true when the tick label sits behind a
+	 * last-value tag. The view recomputes the same predicate with the
+	 * live crosshair y added, so the crosshair value label hides ticks
+	 * too while it is shown.
+	 */
+	readonly yTickHidden: readonly boolean[];
 	/** Series keys whose percent base is zero (rendered as "unavailable (zero base)"). */
 	readonly zeroBaseKeys: readonly string[];
 	/** Union of visible days across series, ascending. */
@@ -531,6 +567,66 @@ function pickXTicks(
 }
 
 /**
+ * True when a y tick label at `tickY` would collide with a last-value tag
+ * or — while the crosshair is shown — with the crosshair value label at
+ * `crosshairY`. Overlap is a vertical pixel distance below one label
+ * height, the same threshold that separates the tags from each other.
+ */
+export function isValueLabelHidden(
+	tickY: number,
+	tagYs: readonly number[],
+	crosshairY: number | null,
+): boolean {
+	if (!Number.isFinite(tickY)) return false;
+	for (const tagY of tagYs) {
+		if (Number.isFinite(tagY) && Math.abs(tickY - tagY) < VALUE_LABEL_HEIGHT) return true;
+	}
+	if (
+		crosshairY !== null &&
+		Number.isFinite(crosshairY) &&
+		Math.abs(tickY - crosshairY) < VALUE_LABEL_HEIGHT
+	) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Nudges sorted tag centres apart so no two overlap, keeping every tag
+ * inside the plot. A forward pass enforces one label height of gap, a
+ * backward pass pulls the run back inside the bottom edge, and a final
+ * clamp holds a taller-than-plot stack at the edges. O(tags); at most one
+ * tag per series.
+ */
+export function layoutTagCenters(sortedYs: readonly number[], plot: PlotArea): readonly number[] {
+	const half = VALUE_LABEL_HEIGHT / 2;
+	const top = plot.top + half;
+	const bottom = plot.bottom - half;
+	if (sortedYs.length === 0 || !(top <= bottom)) return [...sortedYs];
+	const placed = sortedYs.map((y) =>
+		Number.isFinite(y) ? Math.min(Math.max(y, top), bottom) : top,
+	);
+	for (let index = 1; index < placed.length; index += 1) {
+		const previous = placed[index - 1];
+		const current = placed[index];
+		if (previous === undefined || current === undefined) continue;
+		if (current - previous < VALUE_LABEL_HEIGHT) placed[index] = previous + VALUE_LABEL_HEIGHT;
+	}
+	for (let index = placed.length - 1; index >= 0; index -= 1) {
+		const current = placed[index];
+		if (current === undefined) continue;
+		if (current > bottom) placed[index] = bottom;
+		if (index + 1 < placed.length) {
+			const next = placed[index + 1];
+			if (next !== undefined && next - (placed[index] ?? next) < VALUE_LABEL_HEIGHT) {
+				placed[index] = next - VALUE_LABEL_HEIGHT;
+			}
+		}
+	}
+	return placed.map((y) => Math.min(Math.max(y, top), bottom));
+}
+
+/**
  * Visible-relative union-day index nearest pixel x, by binary search over the
  * ascending pixel positions (O(log n), never a scan over all bars).
  */
@@ -864,6 +960,37 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		}
 	}
 
+	// Last-value tags, de-overlapped: the raw marker dots stay on the line,
+	// while the axis tags nudge apart so no two tags share a label height.
+	// Sorted by y so the layout pass and the reading order agree.
+	const tagTextOf = (value: number): string =>
+		input.mode === "percent" ? `${formatAxisTick(value)}%` : formatAxisTick(value);
+	const orderedMarkers = [...lastMarkers].sort((a, b) => a.y - b.y);
+	const placedYs = layoutTagCenters(
+		orderedMarkers.map((marker) => marker.y),
+		plot,
+	);
+	const lastValueTags: DetailValueTag[] = orderedMarkers.flatMap((marker, index) => {
+		const y = placedYs[index];
+		if (y === undefined) return [];
+		const text = tagTextOf(marker.displayValue);
+		const width = text.length * TICK_CHAR_WIDTH + VALUE_TAG_PAD_X * 2;
+		return [
+			{
+				seriesKey: marker.seriesKey,
+				text,
+				color: marker.color,
+				value: marker.displayValue,
+				x: plot.right + 2,
+				y,
+				width,
+				height: VALUE_LABEL_HEIGHT,
+			},
+		];
+	});
+	const tagYs = lastValueTags.map((tag) => tag.y);
+	const yTickHidden = yTicks.map((tick) => isValueLabelHidden(yFor(tick), tagYs, null));
+
 	const granularity = tickGranularityForSpan(to - from);
 	const xTicks = pickXTicks(dayAt, isoAt, xForDay, granularity, plot);
 	const xs = dayAt.map((day) => xForDay(day));
@@ -879,6 +1006,8 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		seriesPaths,
 		maPaths,
 		lastMarkers,
+		lastValueTags,
+		yTickHidden,
 		zeroBaseKeys: works.filter((work) => work.zeroBase).map((work) => work.entry.key),
 		dayAt,
 		isoAt,

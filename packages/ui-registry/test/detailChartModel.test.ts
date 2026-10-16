@@ -8,9 +8,12 @@ import {
 	decimateToWidth,
 	ensureTwoBarWindow,
 	formatDetailTick,
+	isValueLabelHidden,
+	layoutTagCenters,
 	logScaleBlocked,
 	tickGranularityForSpan,
 	unionOverview,
+	VALUE_LABEL_HEIGHT,
 } from "../src/charts/detailChartModel.ts";
 
 /** Consecutive daily bars starting at `startIso`, one close per day (real calendar dates). */
@@ -545,5 +548,85 @@ describe("detail chart model", () => {
 		// The older day has no dense close: a gap, not an invented value.
 		expect(overview.values[0]).toBeNaN();
 		expect(overview.values.slice(1)).toEqual([50, 51, 52, 53]);
+	});
+
+	it("draws last values as non-overlapping tags and hides the tick behind a tag", () => {
+		// Two series closing almost together: the tags must nudge apart to
+		// a full label height while the tick between them hides.
+		const bars: DetailSeriesInput[] = [
+			{
+				key: "s1",
+				label: "One",
+				color: seriesColor(0),
+				bars: dailyBars("2026-01-01", [100, 100.01]),
+			},
+			{
+				key: "s2",
+				label: "Two",
+				color: seriesColor(1),
+				bars: dailyBars("2026-01-01", [100.02, 100.03]),
+			},
+		];
+		const first = bars[0]?.bars[0];
+		const lastBar = bars[0]?.bars[1];
+		if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
+		const model = buildDetailChartModel({
+			series: bars,
+			window: { from: first.day, to: lastBar.day },
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+		});
+		if (model === null) throw new Error("model is null");
+		expect(model.lastValueTags).toHaveLength(2);
+		const [upper, lower] = [...model.lastValueTags].sort((a, b) => a.y - b.y);
+		if (upper === undefined || lower === undefined) throw new Error("tags are empty");
+		// Tags keep one label height apart and stay inside the plot.
+		expect(lower.y - upper.y).toBeGreaterThanOrEqual(VALUE_LABEL_HEIGHT);
+		for (const tag of model.lastValueTags) {
+			expect(tag.y).toBeGreaterThanOrEqual(model.plot.top + VALUE_LABEL_HEIGHT / 2);
+			expect(tag.y).toBeLessThanOrEqual(model.plot.bottom - VALUE_LABEL_HEIGHT / 2);
+		}
+		// A tick label on top of a tag hides; one a full height away shows.
+		expect(isValueLabelHidden(upper.y, [upper.y], null)).toBe(true);
+		expect(isValueLabelHidden(upper.y + VALUE_LABEL_HEIGHT, [upper.y], null)).toBe(false);
+		expect(isValueLabelHidden(upper.y + VALUE_LABEL_HEIGHT - 0.5, [upper.y], null)).toBe(true);
+		// The crosshair value label hides ticks too while it is shown.
+		expect(isValueLabelHidden(100, [0], 100 + VALUE_LABEL_HEIGHT - 0.5)).toBe(true);
+		expect(isValueLabelHidden(100, [0], 100 + VALUE_LABEL_HEIGHT)).toBe(false);
+		// The model's own flags agree with the predicate for the tag-only case.
+		model.yTicks.forEach((tick, index) => {
+			expect(model.yTickHidden[index]).toBe(
+				isValueLabelHidden(
+					model.yFor(tick),
+					model.lastValueTags.map((tag) => tag.y),
+					null,
+				),
+			);
+		});
+		// At least one tick hides behind the close pair (the defect: the
+		// "15.41" text sat on the "15.4" tick).
+		expect(model.yTickHidden.some((hidden) => hidden)).toBe(true);
+	});
+
+	it("keeps tag centres separated and inside the plot", () => {
+		const plot = { left: 8, right: 576, top: 8, bottom: 294 };
+		const placed = layoutTagCenters([100, 105, 200], plot);
+		const first = placed[0];
+		const second = placed[1];
+		const third = placed[2];
+		if (first === undefined || second === undefined || third === undefined) {
+			throw new Error("layout is empty");
+		}
+		expect(second - first).toBeGreaterThanOrEqual(VALUE_LABEL_HEIGHT);
+		expect(third - second).toBeGreaterThanOrEqual(VALUE_LABEL_HEIGHT);
+		// Clamping holds a stack at the edges instead of spilling out.
+		const clamped = layoutTagCenters([8, 8, 8, 8], plot);
+		for (const y of clamped) {
+			expect(y).toBeGreaterThanOrEqual(plot.top + VALUE_LABEL_HEIGHT / 2);
+			expect(y).toBeLessThanOrEqual(plot.bottom - VALUE_LABEL_HEIGHT / 2);
+		}
 	});
 });

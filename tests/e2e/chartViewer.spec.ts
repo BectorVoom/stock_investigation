@@ -263,8 +263,65 @@ async function openViewerAt(width: number, height: number): Promise<void> {
 	await expect(viewer()).toContainText("CBOE Volatility Index: VIX");
 }
 
-/** Bounding boxes of every painted mark of the main chart outside its SVG (1px tolerance). */
-async function marksOutsideMainSvg(): Promise<readonly string[]> {
+/** Visible y tick labels that intersect a last-value tag (round-4 defect: "15.41" on "15.4"). */
+async function tickTagOverlaps(): Promise<readonly string[]> {
+	return page.evaluate(() => {
+		const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
+		if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart svg");
+		const boxOf = (element: Element): DOMRect | null => {
+			if (!(element instanceof SVGElement)) return null;
+			const box = element.getBoundingClientRect();
+			return box.width === 0 && box.height === 0 ? null : box;
+		};
+		const ticks = [...svg.querySelectorAll('g[data-chart-part="y-axis"] text')];
+		const tags = [...svg.querySelectorAll('g[data-chart-part="last-value-tag"]')];
+		const bad: string[] = [];
+		for (const tick of ticks) {
+			const tickBox = boxOf(tick);
+			if (tickBox === null) continue;
+			for (const tag of tags) {
+				const tagBox = boxOf(tag);
+				if (tagBox === null) continue;
+				const separated =
+					tickBox.right <= tagBox.left ||
+					tagBox.right <= tickBox.left ||
+					tickBox.bottom <= tagBox.top ||
+					tagBox.bottom <= tickBox.top;
+				if (!separated) bad.push(`${tick.textContent ?? ""} vs ${tag.textContent ?? ""}`);
+			}
+		}
+		return bad;
+	});
+}
+
+/** Left/right edge gaps between the main and navigator SVGs, plus the navigator's letterbox check. */
+async function navigatorAlignment(): Promise<{
+	readonly leftGap: number;
+	readonly rightGap: number;
+	readonly viewBoxWidth: number;
+	readonly elementWidth: number;
+}> {
+	return page.evaluate(() => {
+		const main = document.querySelector('svg[aria-roledescription="interactive chart"]');
+		const nav = document.querySelector('section[aria-label="Overview"] svg');
+		if (!(main instanceof SVGSVGElement) || !(nav instanceof SVGSVGElement)) {
+			throw new Error("missing chart section");
+		}
+		const mainBox = main.getBoundingClientRect();
+		const navBox = nav.getBoundingClientRect();
+		const viewBox = nav.viewBox.baseVal;
+		return {
+			leftGap: Math.abs(mainBox.left - navBox.left),
+			rightGap: Math.abs(mainBox.right - navBox.right),
+			viewBoxWidth: viewBox.width,
+			elementWidth: navBox.width,
+		};
+	});
+}
+
+/** Bounding boxes of every painted mark of the main chart outside its SVG (1px tolerance). */ async function marksOutsideMainSvg(): Promise<
+	readonly string[]
+> {
 	return page.evaluate(() => {
 		const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
 		if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart svg");
@@ -389,6 +446,26 @@ async function expectViewerLayout(): Promise<void> {
 	// viewport changes; poll until the geometry holds instead of sleeping.
 	await expect.poll(async () => marksOutsideMainSvg(), { timeout: 10_000 }).toEqual([]);
 	await expect.poll(async () => overlappingSections(), { timeout: 10_000 }).toEqual([]);
+	// Round 4: last-value tags never sit on a tick label, and the navigator
+	// spans the same horizontal range as the main chart (no letterbox).
+	await expect.poll(async () => tickTagOverlaps(), { timeout: 10_000 }).toEqual([]);
+	await expect
+		.poll(
+			async () => {
+				const alignment = await navigatorAlignment();
+				return (
+					alignment.leftGap <= 2 &&
+					alignment.rightGap <= 2 &&
+					Math.abs(alignment.viewBoxWidth - alignment.elementWidth) <= 2
+				);
+			},
+			{ timeout: 10_000 },
+		)
+		.toBe(true);
+	const alignment = await navigatorAlignment();
+	expect(alignment.leftGap).toBeLessThanOrEqual(2);
+	expect(alignment.rightGap).toBeLessThanOrEqual(2);
+	expect(Math.abs(alignment.viewBoxWidth - alignment.elementWidth)).toBeLessThanOrEqual(2);
 	const coverage = await yCoverage();
 	expect(
 		coverage.covers,
