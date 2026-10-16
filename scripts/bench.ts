@@ -71,6 +71,11 @@ import { parseRichText } from "../apps/web/src/notebook/richText/parser.ts";
 import { serializeRichText } from "../apps/web/src/notebook/richText/serializer.ts";
 import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.ts";
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
+import { seriesColor } from "../packages/ui-registry/src/charts/chartMath.ts";
+import {
+	type BuildDetailChartInput,
+	buildDetailChartModel,
+} from "../packages/ui-registry/src/charts/detailChartModel.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 
 interface Case {
@@ -706,6 +711,23 @@ const CHART_BENCH_MIDDLE = {
 };
 const CHART_BENCH_VALUES = (CHART_BENCH_SERIES[0] ?? []).map((point) => point.value);
 
+/* The viewer builds one render model per window change over 4 × 1,500 daily
+ * bars at desktop plot width, with three moving-average overlays (ADR-0025). */
+const CHART_BENCH_DETAIL_INPUT: BuildDetailChartInput = {
+	series: CHART_BENCH_SERIES.map((points, series) => ({
+		key: `bench-${series}`,
+		label: `Bench series ${series}`,
+		color: seriesColor(series),
+		bars: resampleSeries(points, "daily"),
+	})),
+	window: CHART_BENCH_MIDDLE,
+	plotWidth: 1200,
+	plotHeight: 480,
+	scale: "linear",
+	mode: "value",
+	maPeriods: [20, 50, 200],
+};
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -996,6 +1018,11 @@ const cases: Case[] = [
 		name: "visibleSlice over 1,500 daily bars",
 		budgetMs: 0.5,
 		run: () => visibleSlice(CHART_BENCH_DAILY_BARS, CHART_BENCH_MIDDLE),
+	},
+	{
+		name: "build the detail chart model for 4 x 1,500 daily bars at 1,200 px",
+		budgetMs: 15,
+		run: () => buildDetailChartModel(CHART_BENCH_DETAIL_INPUT),
 	},
 ];
 

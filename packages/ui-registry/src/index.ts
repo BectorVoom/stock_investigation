@@ -26,6 +26,26 @@ export {
 	xAxisModel,
 } from "./charts/chartMath.ts";
 export {
+	type BuildDetailChartInput,
+	buildDetailChartModel,
+	buildNavigatorModel,
+	type DetailChartModel,
+	type DetailLastMarker,
+	type DetailMaPath,
+	type DetailScale,
+	type DetailSeriesInput,
+	type DetailSeriesPath,
+	type DetailSeriesValues,
+	type DetailTickGranularity,
+	type DetailValueMode,
+	type DetailXTick,
+	decimateToWidth,
+	formatDetailTick,
+	type NavigatorInput,
+	type NavigatorModel,
+	tickGranularityForSpan,
+} from "./charts/detailChartModel.ts";
+export {
 	buildHomeLineModel,
 	type HomeLineModel,
 	type HomeLinePath,
@@ -50,7 +70,7 @@ export {
 	guardDataset,
 	resolveDataset,
 } from "./datasetGuard.ts";
-export { formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
+export { formatAxisTick, formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
 export { ClaimStatusBadge, ClaimTypeBadge } from "./parts/Badges.tsx";
 export {
 	CitationChip,
