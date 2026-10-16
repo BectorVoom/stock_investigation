@@ -39,6 +39,11 @@ export {
 	xAxisModel,
 } from "./charts/chartMath.ts";
 export {
+	chartWidgetSeries,
+	chartWidgetToGuardedDataset,
+	chartWidgetXAxisTitle,
+} from "./charts/chartWidgetDataset.ts";
+export {
 	buildHomeLineModel,
 	type HomeLineModel,
 	type HomeLinePath,

@@ -1,5 +1,5 @@
 import { DATASET_LIMITS, type WidgetCore } from "@research/contracts";
-import { type GuardedDataset, guardDataset, type PresentedLabels } from "@research/ui-registry";
+import { type GuardedDataset, guardDataset, type PresentedLabels } from "../datasetGuard.ts";
 
 type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
 
@@ -112,7 +112,9 @@ function orderedRowKeys(
 
 /**
  * A `chart` widget as a guarded dataset, so it draws through the same plot
- * code as a Chat chart preview (`LinePlot` / `BarPlot`).
+ * code as a Chat chart preview (`LinePlot` / `BarPlot`). No DOM, no Solid:
+ * `scripts/bench.ts` imports this file directly, the web app through the
+ * package index.
  *
  * One x column (kind from `xKind`, absent = "text") plus one number column
  * per series (label = series name); rows follow the order-preserving merge

@@ -147,7 +147,9 @@ describe("notebook model", () => {
 	});
 
 	it("keeps a bar chart as a research widget when the registry would refuse its props or cut its unit", () => {
-		const viewWith = (props: Record<string, unknown>): WorkspaceView => ({
+		const viewWith = (
+			props: WorkspaceView["state"]["components"][number]["props"],
+		): WorkspaceView => ({
 			...WORKSPACE_VIEW,
 			datasets: [
 				{

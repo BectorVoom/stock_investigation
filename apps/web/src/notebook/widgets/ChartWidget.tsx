@@ -5,15 +5,13 @@ import {
 	buildLineModel,
 	ChartNotices,
 	cellDisplay,
+	chartWidgetSeries,
+	chartWidgetToGuardedDataset,
+	chartWidgetXAxisTitle,
 	LinePlot,
 } from "@research/ui-registry";
 import type { JSX } from "solid-js";
 import { createMemo, For, Show } from "solid-js";
-import {
-	chartWidgetSeries,
-	chartWidgetToGuardedDataset,
-	chartWidgetXAxisTitle,
-} from "../chartDataset.ts";
 
 type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
 

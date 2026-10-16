@@ -503,7 +503,7 @@ export const datasetColumnSchema = z.strictObject({
 });
 
 /**
- * Bounds the dataset the Notebook `chart` widget rebuilds from (`chartDataset.ts`):
+ * Bounds the dataset the Notebook `chart` widget rebuilds from (`chartWidgetDataset.ts` in `@research/ui-registry`):
  * column labels and number units. The numbers match `datasetColumnSchema` above,
  * so the widget's rebuild can never exceed what a stored dataset allows.
  */

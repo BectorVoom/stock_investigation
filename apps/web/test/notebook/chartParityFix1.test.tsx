@@ -2,13 +2,13 @@ import { DATASET_LIMITS, widgetCoreSchema } from "@research/contracts";
 import {
 	buildLineModel,
 	ChartNotices,
+	chartWidgetToGuardedDataset,
 	guardDataset,
 	LinePlot,
 	xAxisModel,
 } from "@research/ui-registry";
 import { cleanup, render } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
-import { chartWidgetToGuardedDataset } from "../../src/notebook/chartDataset.ts";
 import { losslessChartWidget, widgetFromComponent } from "../../src/notebook/notebookModel.ts";
 import { ChartWidget } from "../../src/notebook/widgets/ChartWidget.tsx";
 import { duplicateWidget } from "../../src/widgets/widgetModel.ts";

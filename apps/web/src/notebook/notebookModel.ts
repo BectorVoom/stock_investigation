@@ -6,9 +6,12 @@ import {
 	WIDGET_TYPE_META,
 	type WidgetCore,
 } from "@research/contracts";
-import { guardDataset, presentedSeriesLabels } from "@research/ui-registry";
+import {
+	chartWidgetToGuardedDataset,
+	guardDataset,
+	presentedSeriesLabels,
+} from "@research/ui-registry";
 import { newWidgetId } from "../widgets/widgetModel.ts";
-import { chartWidgetToGuardedDataset } from "./chartDataset.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
