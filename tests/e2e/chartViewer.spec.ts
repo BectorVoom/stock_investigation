@@ -246,6 +246,174 @@ test("a metric widget opens the viewer with its series", async () => {
 	).toBeFocused();
 });
 
+/**
+ * Opens the viewer from the line-chart widget at the given viewport size,
+ * ready for layout assertions (dialog visible, opening preset applied).
+ */
+async function openViewerAt(width: number, height: number): Promise<void> {
+	await page.setViewportSize({ width, height });
+	if ((await viewer().count()) > 0) {
+		await page.keyboard.press("Escape");
+		await expect(viewer()).toHaveCount(0);
+	}
+	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
+	await expect(chart.getByRole("img", { name: /Line chart: VIX/ })).toBeVisible();
+	await chart.getByRole("button", { name: "Open chart: VIX" }).click();
+	await expect(viewer()).toBeVisible();
+	await expect(viewer()).toContainText("CBOE Volatility Index: VIX");
+}
+
+/** Bounding boxes of every painted mark of the main chart outside its SVG (1px tolerance). */
+async function marksOutsideMainSvg(): Promise<readonly string[]> {
+	return page.evaluate(() => {
+		const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
+		if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart svg");
+		const frame = svg.getBoundingClientRect();
+		const bad: string[] = [];
+		const marks = svg.querySelectorAll("path, circle");
+		marks.forEach((mark, index) => {
+			const box = mark.getBoundingClientRect();
+			if (box.width === 0 && box.height === 0) return;
+			const tag = mark.tagName.toLowerCase();
+			if (
+				box.left < frame.left - 1 ||
+				box.right > frame.right + 1 ||
+				box.top < frame.top - 1 ||
+				box.bottom > frame.bottom + 1
+			) {
+				bad.push(`${tag}[${index}]`);
+			}
+		});
+		return bad;
+	});
+}
+
+/** Overlapping pairs among the main SVG, the navigator SVG and the stats table. */
+async function overlappingSections(): Promise<readonly string[]> {
+	return page.evaluate(() => {
+		const rectOf = (selector: string): DOMRect | null => {
+			const element = document.querySelector(selector);
+			return element instanceof Element ? element.getBoundingClientRect() : null;
+		};
+		const main = rectOf('svg[aria-roledescription="interactive chart"]');
+		const nav = rectOf('section[aria-label="Overview"] svg');
+		const stats = rectOf('section[aria-label="Statistics for the visible window"] table');
+		if (main === null || nav === null || stats === null) throw new Error("missing layout section");
+		const overlaps = (a: DOMRect, b: DOMRect): boolean =>
+			!(
+				a.bottom <= b.top + 1 ||
+				b.bottom <= a.top + 1 ||
+				a.right <= b.left + 1 ||
+				b.right <= a.left + 1
+			);
+		const bad: string[] = [];
+		if (overlaps(main, nav)) bad.push("main/nav");
+		if (overlaps(main, stats)) bad.push("main/stats");
+		if (overlaps(nav, stats)) bad.push("nav/stats");
+		return bad;
+	});
+}
+
+async function yCoverage(): Promise<{
+	readonly covers: boolean;
+	readonly tickMin: number | null;
+	readonly tickMax: number | null;
+	readonly dataMin: number | null;
+	readonly dataMax: number | null;
+}> {
+	return page.evaluate(() => {
+		const numbers = (text: string | null): number | null => {
+			if (text === null) return null;
+			const cleaned = text.replace("%", "").trim();
+			const value = Number.parseFloat(cleaned);
+			return Number.isFinite(value) ? value : null;
+		};
+		const tickTexts = [
+			...document.querySelectorAll(
+				'svg[aria-roledescription="interactive chart"] g[data-chart-part="y-axis"] text',
+			),
+		].map((node) => numbers(node.textContent));
+		const ticks = tickTexts.filter((value): value is number => value !== null);
+		// Statistics columns: Series(th) Open Close Change %change High Low Average MaxDD Bars.
+		const rows = [
+			...document.querySelectorAll(
+				'section[aria-label="Statistics for the visible window"] tbody tr',
+			),
+		];
+		const highs: number[] = [];
+		const lows: number[] = [];
+		for (const row of rows) {
+			const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
+			const high = numbers(cells[4]?.split(" ").at(0) ?? null);
+			const low = numbers(cells[5]?.split(" ").at(0) ?? null);
+			if (high !== null) highs.push(high);
+			if (low !== null) lows.push(low);
+		}
+		const tickMin = ticks.length > 0 ? Math.min(...ticks) : null;
+		const tickMax = ticks.length > 0 ? Math.max(...ticks) : null;
+		const dataMin = lows.length > 0 ? Math.min(...lows) : null;
+		const dataMax = highs.length > 0 ? Math.max(...highs) : null;
+		const epsilon = 1e-9;
+		const covers =
+			tickMin !== null && tickMax !== null && dataMin !== null && dataMax !== null
+				? tickMin <= dataMin + epsilon && tickMax >= dataMax - epsilon
+				: false;
+		return { covers, tickMin, tickMax, dataMin, dataMax };
+	});
+}
+
+async function visibleXTickCount(): Promise<number> {
+	return page.evaluate(() => {
+		const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
+		if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart svg");
+		const labels = svg.querySelectorAll('g[data-chart-part="x-axis"] text');
+		let count = 0;
+		labels.forEach((label) => {
+			const box = label.getBoundingClientRect();
+			if ((label.textContent ?? "").trim() !== "" && box.width > 0 && box.height > 0) count += 1;
+		});
+		return count;
+	});
+}
+
+/**
+ * The layout regression for the viewer (round-3 overflow defect): every mark
+ * paints inside the main SVG, the main chart / navigator / statistics stack
+ * without overlap, the y ticks cover the visible data range, and the date
+ * axis labels render — at desktop and phone viewports alike.
+ */
+async function expectViewerLayout(): Promise<void> {
+	const dialog = viewer();
+	await expect(dialog).toBeVisible();
+	// The chart settles through a ResizeObserver round-trip after open and
+	// viewport changes; poll until the geometry holds instead of sleeping.
+	await expect.poll(async () => marksOutsideMainSvg(), { timeout: 10_000 }).toEqual([]);
+	await expect.poll(async () => overlappingSections(), { timeout: 10_000 }).toEqual([]);
+	const coverage = await yCoverage();
+	expect(
+		coverage.covers,
+		`y ticks [${coverage.tickMin}, ${coverage.tickMax}] cover data [${coverage.dataMin}, ${coverage.dataMax}]`,
+	).toBe(true);
+	expect(await visibleXTickCount()).toBeGreaterThanOrEqual(2);
+}
+
+test("viewer layout holds together at desktop 1280x720", async () => {
+	await openViewerAt(1280, 720);
+	await expectViewerLayout();
+	await page.screenshot({ path: test.info().outputPath("chart-viewer-layout-1280.png") });
+	await page.keyboard.press("Escape");
+	await expect(viewer()).toHaveCount(0);
+});
+
+test("viewer layout holds together at phone 390x844", async () => {
+	await openViewerAt(390, 844);
+	await expectViewerLayout();
+	await page.screenshot({ path: test.info().outputPath("chart-viewer-layout-390.png") });
+	await page.keyboard.press("Escape");
+	await expect(viewer()).toHaveCount(0);
+	await page.setViewportSize({ width: 1280, height: 720 });
+});
+
 test("no console errors", async () => {
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],

@@ -238,10 +238,12 @@ sl-dialog::part(title) {
  * Chart viewer (ADR-0025): a large modal sheet over the current page.
  * Full screen below 40rem wide (HIG full-screen modal on iPhone); above it
  * the sheet fills the viewport minus a 1rem margin on every side (no width
- * cap). The panel is a flex column whose body scrolls as one unit; the chart
- * section grows into the remaining height (the main chart keeps its 16rem
- * floor). Both gesture surfaces opt out of native touch scrolling, so a
- * touch drag pans or resizes instead of scrolling the page.
+ * cap). The panel is a fixed-height flex column; the inner scroll container
+ * scrolls as one unit when the viewport is too short; the chart section grows
+ * into the remaining height (the main chart keeps its 16rem floor, so the
+ * chart box always has a definite flex height for the SVG to fill). Both
+ * gesture surfaces opt out of native touch scrolling, so a touch drag pans
+ * or resizes instead of scrolling the page.
  */
 .chart-viewer {
 	--width: calc(100vw - 2rem);
@@ -259,6 +261,7 @@ sl-dialog::part(title) {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
+	overflow: hidden;
 }
 
 .chart-viewer-scroll {
@@ -266,18 +269,30 @@ sl-dialog::part(title) {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
+	overflow-y: auto;
+}
+
+/* Nothing in the scrolling column squeezes: sections keep their natural
+ * height and the container scrolls instead, so the chart can never spill
+ * over the navigator, statistics or data table below it. */
+.chart-viewer-scroll > * {
+	flex-shrink: 0;
 }
 
 .chart-viewer-chart {
 	display: flex;
 	flex-direction: column;
-	flex: 1 1 auto;
+	flex: 1 0 auto;
 	min-height: 0;
 }
 
-/* The main chart fills the remaining height, at least 16rem. */
+/* The main chart fills the remaining height, at least 16rem: a definite flex
+ * height the SVG fills exactly (absolutely positioned, so the SVG never
+ * contributes to the box size), so measuring the box never resizes it and
+ * the viewBox always matches the box. */
 .chart-viewer-main {
-	flex: 1 1 auto;
+	position: relative;
+	flex: 1 0 auto;
 	min-height: 16rem;
 }
 

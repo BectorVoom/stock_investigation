@@ -11,12 +11,16 @@ import { buildReadoutText, READOUT_HINT } from "./readout.ts";
 
 /**
  * The main chart of the viewer (ADR-0025 interaction): a time-proportional
- * SVG whose viewBox follows the container's pixel size (ResizeObserver), so
- * text never scales. Value axis on the right; crosshair with date and value
- * labels plus a readout line; wheel zooms around the pointer, drag pans,
- * double-click resets, and the keyboard covers bars, pan, zoom and reset.
- * Pointer and wheel updates are coalesced to one per animation frame. No
- * inline `style` attributes (CSP `style-src 'self'`): colours arrive via
+ * SVG whose viewBox equals the container's measured CSS pixel size
+ * (ResizeObserver), so text never scales. The box takes its height from flex
+ * (minimum 16rem) and the SVG is absolutely positioned to fill it exactly,
+ * so measuring the box never resizes it: no resize feedback loop, and the
+ * render model (built from the same measured size one level up) always
+ * agrees with the viewBox. Value axis on the right; crosshair with date and
+ * value labels plus a readout line; wheel zooms around the pointer, drag
+ * pans, double-click resets, and the keyboard covers bars, pan, zoom and
+ * reset. Pointer and wheel updates are coalesced to one per animation frame.
+ * No inline `style` attributes (CSP `style-src 'self'`): colours arrive via
  * `fill`/`stroke` bound to the palette, the halo via `paint-order`.
  */
 export function DetailChart(props: {
@@ -28,19 +32,23 @@ export function DetailChart(props: {
 	readonly onPan: (deltaDays: number) => void;
 	readonly onReset: () => void;
 	readonly onSize: (width: number, height: number) => void;
+	/** Measured CSS pixel size of the chart box (the single source of truth:
+	 * the viewBox and the render model are both built from it). */
+	readonly size: { readonly width: number; readonly height: number };
 	readonly readout: string;
 	readonly units: readonly string[];
 	readonly label: string;
 	readonly mode: DetailValueMode;
 }): JSX.Element {
 	const instructionsId = createUniqueId();
-	const clipId = `cv-clip-${createUniqueId()}`;
+	// createUniqueId may emit characters (`:`) that break `url(#id)`
+	// references, so the clip id is sanitised to URL-safe characters.
+	const clipId = `cv-clip-${createUniqueId().replace(/[^A-Za-z0-9_-]/g, "")}`;
 	const frame = createFrameScheduler();
 	// A queued frame must never fire after unmount (a range change can retire
 	// this chart before its callback runs).
 	onCleanup(() => frame.cancel());
 	const [announced, setAnnounced] = createSignal("");
-	const [viewSize, setViewSize] = createSignal({ width: 640, height: 320 });
 	let container: HTMLDivElement | undefined;
 	let svg: SVGSVGElement | undefined;
 
@@ -53,8 +61,9 @@ export function DetailChart(props: {
 
 	/** Pointer x (client px) to viewBox x; the zero-rect fallback keeps tests honest. */
 	const toViewX = (clientX: number, rectWidth: number): number => {
+		const viewWidth = props.size.width;
 		if (!(rectWidth > 0)) return clientX;
-		return (clientX / rectWidth) * viewSize().width;
+		return (clientX / rectWidth) * viewWidth;
 	};
 
 	/** ViewBox x to integer day number. */
@@ -218,13 +227,18 @@ export function DetailChart(props: {
 		}
 		const box = container;
 		if (box === undefined) return;
+		// The box gets its height from flex (a definite size), while the SVG
+		// fills it (`h-full`), so measuring here never changes the box and
+		// there is no resize feedback loop. Reports only on real change, so
+		// the parent model and this viewBox stay in lockstep.
 		const report = (): void => {
 			const rect = box.getBoundingClientRect();
 			if (rect.width > 0 && rect.height > 0) {
 				const width = Math.round(rect.width);
 				const height = Math.round(rect.height);
-				setViewSize({ width, height });
-				props.onSize(width, height);
+				if (width !== props.size.width || height !== props.size.height) {
+					props.onSize(width, height);
+				}
 			}
 		};
 		report();
@@ -239,7 +253,10 @@ export function DetailChart(props: {
 		props.mode === "percent" ? `${formatAxisTick(value)}%` : formatAxisTick(value);
 
 	return (
-		<div>
+		// Flex column filling the chart section: the readout takes its line
+		// and the box below takes the remaining flex height (a definite size
+		// the SVG fills exactly).
+		<div class="flex min-h-0 flex-1 flex-col">
 			<p data-chart-part="readout" class="min-h-6 text-xs text-slate-700">
 				{props.readout === "" ? READOUT_HINT : props.readout}
 			</p>
@@ -259,8 +276,8 @@ export function DetailChart(props: {
 					aria-roledescription="interactive chart"
 					aria-describedby={instructionsId}
 					aria-label={props.label}
-					viewBox={`0 0 ${viewSize().width} ${viewSize().height}`}
-					class="chart-viewer-gesture block h-auto w-full"
+					viewBox={`0 0 ${props.size.width} ${props.size.height}`}
+					class="chart-viewer-gesture absolute inset-0 block h-full w-full"
 					font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
 					font-size="12"
 					onKeyDown={onKeyDown}
@@ -274,8 +291,8 @@ export function DetailChart(props: {
 					<rect
 						x="0"
 						y="0"
-						width={viewSize().width}
-						height={viewSize().height}
+						width={props.size.width}
+						height={props.size.height}
 						fill={CHART_INK.surface}
 					/>
 					<clipPath id={clipId}>

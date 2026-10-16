@@ -863,7 +863,14 @@ export function ChartViewer(props: {
 										onZoom={onZoom}
 										onPan={onPan}
 										onReset={resetToPressed}
-										onSize={(width, height) => setPlotSize({ width, height })}
+										onSize={(width, height) =>
+											setPlotSize((previous) =>
+												previous.width === width && previous.height === height
+													? previous
+													: { width, height },
+											)
+										}
+										size={plotSize()}
 										readout={readout()}
 										units={units()}
 										label={props.title}
