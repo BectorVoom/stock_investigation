@@ -1,6 +1,6 @@
 import { createToolRegistry, defineTool, EMPTY_TOOL_OUTPUT } from "@research/agent-core";
 import { researchBundleSchema, researchReportPropsSchema } from "@research/contracts";
-import { EMPTY_USAGE, err, ok, summarizeCost } from "@research/domain";
+import { EMPTY_USAGE, err, ok, summarizeCost, transitionJob } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
@@ -119,7 +119,7 @@ describe("research pipeline: happy path (FR-004, FR-005, FR-010, FR-011)", () =>
 		]);
 		expect(bundle.provenance).toMatchObject({
 			agentId: "scripted",
-			promptVersion: "research-v4",
+			promptVersion: "research-v5",
 			toolVersions: { "news.fetch_feed": "1" },
 		});
 		expect(bundle.evidence.map((item) => item.evidenceId)).toEqual([EV1]);
@@ -1138,11 +1138,79 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		});
 	});
 
-	it("fails honestly when nothing could be collected", async () => {
-		const { run } = setup([JSON.stringify({ toolCalls: [], done: true })]);
+	it("reminds once after a zero-call first plan, then fails NO_TOOL_REQUESTED when still empty", async () => {
+		const zero = JSON.stringify({ toolCalls: [], done: true });
+		const { run, agent, reporter } = setup([zero, zero, zero]);
+		const outcome = await run();
+		// The second planning prompt carries the reminder; the tool calls of a
+		// later plan would run from there.
+		expect(agent.requests).toHaveLength(2);
+		expect(agent.requests[1]?.prompt).toContain(
+			"Nothing has been collected yet. Request at least one tool call",
+		);
+		expect(reporter.recorded.notes).toContain(
+			"The plan requested no tools; asking the model again.",
+		);
+		expect(outcome).toMatchObject({
+			kind: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "NO_TOOL_REQUESTED",
+			retryable: false,
+		});
+	});
+
+	it("runs the tool calls of the plan after the reminder", async () => {
+		const zero = JSON.stringify({ toolCalls: [], done: true });
+		const { run, agent, tools, reporter } = setup([zero, PLAN, analysis(), VERDICT_SUPPORTED]);
+		const outcome = expectBundle(await run());
+		expect(outcome.kind).toBe("completed");
+		expect(agent.requests).toHaveLength(4);
+		expect(agent.requests[1]?.prompt).toContain(
+			"Nothing has been collected yet. Request at least one tool call",
+		);
+		expect(tools.executed).toEqual(["news.fetch_feed"]);
+		expect(reporter.recorded.notes).toContain(
+			"The plan requested no tools; asking the model again.",
+		);
+	});
+
+	it("sends the reminder at most once: a third zero-call plan ends the run", async () => {
+		const zero = JSON.stringify({ toolCalls: [], done: true });
+		const { run, agent, reporter } = setup([zero, zero, zero, zero]);
+		const outcome = await run();
+		const reminders = reporter.recorded.notes.filter(
+			(note) => note === "The plan requested no tools; asking the model again.",
+		);
+		expect(reminders).toHaveLength(1);
+		// First prompt has no reminder; the retry does. The run ends after the
+		// second zero-call plan, so no third planning turn runs.
+		expect(agent.requests).toHaveLength(2);
+		expect(agent.requests[0]?.prompt).not.toContain("Nothing has been collected yet");
+		expect(agent.requests[1]?.prompt).toContain("Nothing has been collected yet");
+		expect(outcome).toMatchObject({
+			kind: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "NO_TOOL_REQUESTED",
+		});
+	});
+
+	it("fails PLAN_NOT_JSON when no planning reply was valid JSON", async () => {
+		const { run } = setup(["not json at all", "{still not json}", "nope", "[broken"]);
 		expect(await run()).toMatchObject({
 			kind: "failed",
 			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "PLAN_NOT_JSON",
+			retryable: false,
+		});
+	});
+
+	it("fails honestly when nothing could be collected", async () => {
+		const zero = JSON.stringify({ toolCalls: [], done: true });
+		const { run } = setup([zero, zero]);
+		expect(await run()).toMatchObject({
+			kind: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "NO_TOOL_REQUESTED",
 			retryable: false,
 		});
 	});
@@ -1309,8 +1377,25 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		expect(outcome).toMatchObject({
 			kind: "failed",
 			failureCode: "NO_EVIDENCE_COLLECTED",
-			failureDetail: null,
+			failureDetail: "TOOLS_RETURNED_NOTHING",
 		});
+	});
+
+	it("walks the reported states through the legal transition matrix in order", async () => {
+		const { run, reporter } = setup([PLAN, analysis(), VERDICT_SUPPORTED]);
+		expect((await run()).kind).toBe("completed");
+		// The recording reporter accepts any sequence, so replay the reported
+		// path through the transition matrix: every step must be legal.
+		let state = reporter.recorded.states[0];
+		expect(state).toBe("planning");
+		for (const next of reporter.recorded.states.slice(1)) {
+			if (state === undefined || next === undefined) throw new Error("empty state path");
+			const moved = transitionJob(state, next);
+			expect(moved.ok, `${state} -> ${next}`).toBe(true);
+			if (moved.ok) state = moved.value;
+		}
+		expect(reporter.recorded.states).toContain("collecting");
+		expect(reporter.recorded.states).toContain("publishing");
 	});
 
 	it("asks once for a corrected analysis, then gives up without inventing a result", async () => {

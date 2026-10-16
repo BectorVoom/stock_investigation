@@ -46,22 +46,35 @@ function baseRow(overrides: Record<string, unknown> = {}): Record<string, unknow
 	};
 }
 
-describe("toJobRecord failureDetail decoding (finding 10, task 23b)", () => {
+describe("toJobRecord failureDetail decoding (finding 10, task 23b, ADR-0025)", () => {
 	it("keeps a stable detail tied to ALL_TOOL_CALLS_FAILED", () => {
 		expect(toJobRecord(baseRow()).failureDetail).toBe("TIMEOUT");
+	});
+
+	it("keeps an ADR-0025 detail tied to NO_EVIDENCE_COLLECTED", () => {
+		for (const detail of ["NO_TOOL_REQUESTED", "PLAN_NOT_JSON", "TOOLS_RETURNED_NOTHING"]) {
+			expect(
+				toJobRecord(baseRow({ failure_code: "NO_EVIDENCE_COLLECTED", failure_detail: detail }))
+					.failureDetail,
+			).toBe(detail);
+		}
 	});
 
 	it("decodes page-derived text to null instead of throwing", () => {
 		for (const detail of ["Click here to read more", "timeout", "TIME OUT", "a", "1X"]) {
 			expect(toJobRecord(baseRow({ failure_detail: detail })).failureDetail).toBeNull();
+			expect(
+				toJobRecord(baseRow({ failure_code: "NO_EVIDENCE_COLLECTED", failure_detail: detail }))
+					.failureDetail,
+			).toBeNull();
 		}
 	});
 
 	it("decodes a stable detail with the wrong failure code to null", () => {
 		const record = toJobRecord(
-			baseRow({ failure_code: "NO_EVIDENCE_COLLECTED", failure_detail: "TIMEOUT" }),
+			baseRow({ failure_code: "PROVIDER_RATE_LIMITED", failure_detail: "TIMEOUT" }),
 		);
-		expect(record.failureCode).toBe("NO_EVIDENCE_COLLECTED");
+		expect(record.failureCode).toBe("PROVIDER_RATE_LIMITED");
 		expect(record.failureDetail).toBeNull();
 	});
 

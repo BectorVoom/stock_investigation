@@ -363,13 +363,27 @@ describe("researchRunSchema", () => {
 		});
 	});
 
-	it("ties failureDetail to ALL_TOOL_CALLS_FAILED (finding 10, task 23b)", () => {
+	it("ties failureDetail to ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED (ADR-0025)", () => {
+		expectAccepted(researchRunSchema, {
+			...researchRun,
+			state: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "NO_TOOL_REQUESTED",
+		});
+		for (const detail of ["PLAN_NOT_JSON", "TOOLS_RETURNED_NOTHING", "TIMEOUT"]) {
+			expectAccepted(researchRunSchema, {
+				...researchRun,
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: detail,
+			});
+		}
 		expectRejected(
 			researchRunSchema,
 			{
 				...researchRun,
 				state: "failed",
-				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureCode: "PROVIDER_RATE_LIMITED",
 				failureDetail: "TIMEOUT",
 			},
 			["failureDetail"],
@@ -898,17 +912,29 @@ describe("runner protocol: completion", () => {
 		);
 	});
 
-	it("refuses page-derived text and a mis-tied detail on completion (finding 10)", () => {
+	it("refuses page-derived text and a mis-tied detail on completion (finding 10, ADR-0025)", () => {
 		for (const detail of ["Click here to read more", "timeout", "TIME OUT", "a", "1X"]) {
 			expectRejected(
 				completeJobRequestSchema,
 				{ ...outcomes.failed, failureCode: "ALL_TOOL_CALLS_FAILED", failureDetail: detail },
 				["failureDetail"],
 			);
+			expectRejected(
+				completeJobRequestSchema,
+				{ ...outcomes.failed, failureCode: "NO_EVIDENCE_COLLECTED", failureDetail: detail },
+				["failureDetail"],
+			);
+		}
+		for (const detail of ["NO_TOOL_REQUESTED", "PLAN_NOT_JSON", "TOOLS_RETURNED_NOTHING"]) {
+			expectAccepted(completeJobRequestSchema, {
+				...outcomes.failed,
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: detail,
+			});
 		}
 		expectRejected(
 			completeJobRequestSchema,
-			{ ...outcomes.failed, failureCode: "NO_EVIDENCE_COLLECTED", failureDetail: "TIMEOUT" },
+			{ ...outcomes.failed, failureCode: "PROVIDER_RATE_LIMITED", failureDetail: "TIMEOUT" },
 			["failureDetail"],
 		);
 		expectAccepted(completeJobRequestSchema, {

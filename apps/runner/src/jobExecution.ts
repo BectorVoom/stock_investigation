@@ -109,7 +109,7 @@ export interface ProgressCounts {
  * (SEC-010) — logged once per terminal submission on `job_finished`, so the
  * facts stay observable in `runner.log`. Budget ceilings apply to research
  * jobs only; news-ingest jobs carry no budget and omit those fields.
- * `promptVersion` is the short template version (e.g. `research-v4`), never
+ * `promptVersion` is the short template version (e.g. `research-v5`), never
  * prompt text; `null` when the job publishes no research result.
  */
 export function runFinishedFields(

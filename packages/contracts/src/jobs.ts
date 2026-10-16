@@ -225,9 +225,11 @@ export const researchRunSchema = z
 		failureCode: z.string().max(80).nullable(),
 		/**
 		 * Short stable code carried alongside `failureCode` when every executed
-		 * tool call failed (e.g. TIMEOUT with `ALL_TOOL_CALLS_FAILED`). Null
+		 * tool call failed (e.g. TIMEOUT with `ALL_TOOL_CALLS_FAILED`), or why
+		 * nothing was collected with `NO_EVIDENCE_COLLECTED` (`NO_TOOL_REQUESTED`,
+		 * `PLAN_NOT_JSON`, `TOOLS_RETURNED_NOTHING`, ADR-0025). Null
 		 * otherwise; never free text from a tool. Tied to `failureCode` below:
-		 * non-null only with `ALL_TOOL_CALLS_FAILED` (ARCH-005).
+		 * non-null only with `ALL_TOOL_CALLS_FAILED` or `NO_EVIDENCE_COLLECTED` (ARCH-005).
 		 */
 		failureDetail: stableFailureCodeSchema.nullable(),
 		approvalRequest: z
@@ -241,10 +243,17 @@ export const researchRunSchema = z
 		updatedAt: isoDateTimeSchema,
 		progress: z.array(runProgressEntrySchema).max(200),
 	})
-	.refine((run) => run.failureDetail === null || run.failureCode === "ALL_TOOL_CALLS_FAILED", {
-		message: "failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED",
-		path: ["failureDetail"],
-	});
+	.refine(
+		(run) =>
+			run.failureDetail === null ||
+			run.failureCode === "ALL_TOOL_CALLS_FAILED" ||
+			run.failureCode === "NO_EVIDENCE_COLLECTED",
+		{
+			message:
+				"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
+			path: ["failureDetail"],
+		},
+	);
 export type ResearchRun = z.infer<typeof researchRunSchema>;
 
 /* ---------- Research bundle (runner -> Worker on completion) ---------- */
@@ -602,8 +611,9 @@ const failedCompletionSchema = z
 		failureCode: z.string().min(1).max(80),
 		/**
 		 * Most frequent tool error code when `failureCode` is
-		 * `ALL_TOOL_CALLS_FAILED` (finding 10): a stable code, never free
-		 * text; tied to `failureCode` so a stale detail cannot accompany
+		 * `ALL_TOOL_CALLS_FAILED` (finding 10), or why nothing was collected
+		 * when it is `NO_EVIDENCE_COLLECTED` (ADR-0025): a stable code, never
+		 * free text; tied to `failureCode` so a stale detail cannot accompany
 		 * another code.
 		 */
 		failureDetail: stableFailureCodeSchema.nullish(),
@@ -613,9 +623,11 @@ const failedCompletionSchema = z
 		(completion) =>
 			completion.failureDetail === null ||
 			completion.failureDetail === undefined ||
-			completion.failureCode === "ALL_TOOL_CALLS_FAILED",
+			completion.failureCode === "ALL_TOOL_CALLS_FAILED" ||
+			completion.failureCode === "NO_EVIDENCE_COLLECTED",
 		{
-			message: "failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED",
+			message:
+				"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
 			path: ["failureDetail"],
 		},
 	);
