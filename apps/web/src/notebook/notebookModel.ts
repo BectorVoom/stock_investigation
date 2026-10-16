@@ -142,8 +142,16 @@ export function widgetFromComponent(
 		readonly series?: unknown;
 		readonly yUnit?: unknown;
 		readonly priceUnit?: unknown;
+		readonly xLabel?: unknown;
+		readonly yLabel?: unknown;
 	};
 	const title = componentTitle(component) ?? component.componentType;
+
+	function axisLabel(value: unknown): string | undefined {
+		if (typeof value !== "string") return undefined;
+		const trimmed = value.trim().slice(0, NOTEBOOK_LIMITS.maxTitleChars);
+		return trimmed.length > 0 ? trimmed : undefined;
+	}
 
 	switch (component.componentType) {
 		case "data-table":
@@ -178,6 +186,8 @@ export function widgetFromComponent(
 			if (converted.length === 0) return researchFallback(component, widgetId);
 			const unit =
 				typeof props.yUnit === "string" ? props.yUnit.slice(0, NOTEBOOK_LIMITS.maxUnitChars) : "";
+			const xLabel = axisLabel(props.xLabel);
+			const yLabel = axisLabel(props.yLabel);
 			return {
 				widgetId,
 				type: "chart",
@@ -186,6 +196,8 @@ export function widgetFromComponent(
 				chartType: component.componentType === "bar-chart" ? "bar" : "line",
 				unit,
 				series: converted,
+				...(xLabel === undefined ? {} : { xLabel }),
+				...(yLabel === undefined ? {} : { yLabel }),
 			};
 		}
 		case "candlestick-chart": {
@@ -204,6 +216,11 @@ export function widgetFromComponent(
 				typeof props.priceUnit === "string"
 					? props.priceUnit.slice(0, NOTEBOOK_LIMITS.maxUnitChars)
 					: "";
+			const xLabel = axisLabel(props.xLabel);
+			const closeLabel =
+				typeof closeColumn?.label === "string" && closeColumn.label.trim().length > 0
+					? closeColumn.label.trim().slice(0, NOTEBOOK_LIMITS.maxTitleChars)
+					: "Close";
 			return {
 				widgetId,
 				type: "chart",
@@ -212,6 +229,8 @@ export function widgetFromComponent(
 				chartType: "line",
 				unit,
 				series: converted,
+				...(xLabel === undefined ? {} : { xLabel }),
+				yLabel: closeLabel,
 			};
 		}
 		default:

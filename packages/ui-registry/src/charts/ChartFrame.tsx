@@ -232,8 +232,14 @@ export function ChartShell(props: {
 	readonly tableColumnKeys: readonly string[];
 	/** The columns whose numbers are drawn as marks (not the axis column). */
 	readonly valueColumnKeys: readonly string[];
-	readonly legend: JSX.Element;
-	readonly readout: string | null;
+	/**
+	 * Legacy legend/readout slots for renderers that still provide them
+	 * (candlestick). Line and bar charts render `LinePlot` / `BarPlot` as
+	 * `children`, which already include the legend and readout, so these
+	 * stay absent there and nothing is drawn twice.
+	 */
+	readonly legend?: JSX.Element;
+	readonly readout?: string | null;
 	readonly children: JSX.Element;
 }): JSX.Element {
 	// The data-table twin's cells cite too, so their ids number before the
@@ -272,11 +278,13 @@ export function ChartShell(props: {
 								}
 							>
 								{props.children}
-								{props.legend}
-								<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-									{props.readout ??
-										"Point at the chart to read values; the data table below lists every value."}
-								</p>
+								<Show when={props.legend !== undefined}>{props.legend}</Show>
+								<Show when={props.readout !== undefined}>
+									<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
+										{props.readout ??
+											"Point at the chart to read values; the data table below lists every value."}
+									</p>
+								</Show>
 							</Show>
 							<Show when={props.unavailableCount > 0}>
 								<p

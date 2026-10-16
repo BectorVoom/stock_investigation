@@ -294,7 +294,11 @@ chart states its units and as-of dates (UI-007) plus a basis note when any
 plotted value is not a sourced measurement. Light theme only (known
 limitation, stated in `chartMath.ts`); no inline `style=` (CSP
 `style-src 'self'`) — SVG colours arrive via `fill`/`stroke` attributes bound
-to the palette constants.
+to the palette constants. A Notebook (and Home) `chart` widget draws through
+the same shared plot as a Chat preview (`LinePlot` / `BarPlot` in
+`@research/ui-registry`: same viewBox, plot area, ticks, axis titles, marks,
+colours, legend and readout); its optional `xLabel` / `yLabel` are the axis
+titles kept from the Chat component it was saved from.
 
 ## 11. How this is enforced
 

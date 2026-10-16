@@ -138,3 +138,7 @@ as the notebook assistant does; the series help stays with the market types.
   saves.
 - The Lean `Dashboard` model is unchanged: it abstracts widget content and
   the Home bound stays 24.
+
+*Amended 2026-10-17:* the `chart` widget draws through the registry's shared
+plot (`LinePlot` / `BarPlot` in `@research/ui-registry`, the same code as the
+Chat preview) and carries optional axis titles (`xLabel`, `yLabel`).

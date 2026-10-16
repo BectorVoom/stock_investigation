@@ -93,6 +93,8 @@ export const widgetTitleSchema = z
 	.min(WIDGET_LIMITS.minTitleChars)
 	.max(WIDGET_LIMITS.maxTitleChars);
 const unitSchema = z.string().trim().max(WIDGET_LIMITS.maxUnitChars);
+/** Optional axis titles of a `chart` widget, kept from the Chat component it was saved from. */
+const chartAxisLabelSchema = z.string().trim().min(1).max(WIDGET_LIMITS.maxTitleChars).optional();
 
 /** The generic part every widget shares (the `WidgetBase` of the package). */
 export const WIDGET_CORE_SHAPE = {
@@ -160,6 +162,8 @@ export const WIDGET_CONTENT_SHAPES = {
 		chartType: z.enum(["line", "bar"]),
 		unit: unitSchema,
 		series: z.array(widgetChartSeriesSchema).min(1).max(WIDGET_LIMITS.maxChartSeries),
+		xLabel: chartAxisLabelSchema,
+		yLabel: chartAxisLabelSchema,
 	},
 	/** Structured rows; every row has exactly one cell per column. */
 	table: {

@@ -1,5 +1,12 @@
 export { BASELINE_REGISTRY_ENTRIES, createBaselineUiRegistry } from "./baseline.ts";
-export { ChartFrame, ChartLegend, type LegendItem } from "./charts/ChartFrame.tsx";
+export { BarPlot } from "./charts/BarPlot.tsx";
+export {
+	type Bar,
+	type BarChartSpec,
+	type BarModel,
+	buildBarModel,
+} from "./charts/barModel.ts";
+export { ChartFrame, ChartLegend, ChartShell, type LegendItem } from "./charts/ChartFrame.tsx";
 export {
 	buildXTicks,
 	CHART_INK,
@@ -32,6 +39,14 @@ export {
 	type HomeLineSeriesInput,
 	sparklinePath,
 } from "./charts/homeLineModel.ts";
+export { LinePlot } from "./charts/LinePlot.tsx";
+export {
+	buildLineModel,
+	type LineChartSpec,
+	type LineModel,
+	type LineSeriesModel,
+	type Marker,
+} from "./charts/lineModel.ts";
 export {
 	type CitationNumbering,
 	type ClaimLinksInput,
@@ -48,6 +63,7 @@ export {
 	cellDisplay,
 	type GuardedDataset,
 	guardDataset,
+	type PresentedLabels,
 	resolveDataset,
 } from "./datasetGuard.ts";
 export { formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";

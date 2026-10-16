@@ -104,6 +104,8 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 					name: entry.name,
 					points: entry.points.map((point) => ({ x: point.x, y: point.y })),
 				})),
+				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
+				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
 			};
 		case "table":
 			return {

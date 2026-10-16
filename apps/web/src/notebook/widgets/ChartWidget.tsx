@@ -1,275 +1,167 @@
 import type { WidgetCore } from "@research/contracts";
-import { seriesColor } from "@research/ui-registry";
+import {
+	BarPlot,
+	buildBarModel,
+	buildLineModel,
+	EmptyState,
+	LinePlot,
+} from "@research/ui-registry";
 import type { JSX } from "solid-js";
-import { createSignal, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
+import {
+	chartWidgetAxisTitles,
+	chartWidgetSeries,
+	chartWidgetToGuardedDataset,
+} from "../chartDataset.ts";
 
 type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
 
-const WIDTH = 300;
-const HEIGHT = 120;
-const PAD = 8;
-/** At most this many value labels are drawn on a large chart. */
-const MAX_VALUE_LABELS = 12;
-
-function extent(widget: ChartWidget): { readonly min: number; readonly max: number } {
-	let min = Number.POSITIVE_INFINITY;
-	let max = Number.NEGATIVE_INFINITY;
-	for (const series of widget.series) {
-		for (const point of series.points) {
-			if (point.y < min) min = point.y;
-			if (point.y > max) max = point.y;
-		}
-	}
-	if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: 0, max: 1 };
-	if (min === max) return { min: min - 1, max: max + 1 };
-	return { min, max };
-}
-
-function xAt(index: number, count: number): number {
-	if (count <= 1) return WIDTH / 2;
-	return PAD + (index * (WIDTH - PAD * 2)) / (count - 1);
-}
-
-function yAt(value: number, min: number, max: number): number {
-	return HEIGHT - PAD - ((value - min) / (max - min)) * (HEIGHT - PAD * 2);
-}
-
-function colorAt(index: number): string {
-	return seriesColor(index);
-}
-
-function summaryText(widget: ChartWidget): string {
-	const total = widget.series.reduce((count, series) => count + series.points.length, 0);
-	const names = widget.series
-		.map((series) => `${series.name} (${series.points.length} points)`)
-		.join("; ");
-	return `${widget.chartType === "bar" ? "Bar" : "Line"} chart: ${widget.series.length} series, ${total} points. ${names}${widget.unit.trim().length > 0 ? ` Unit: ${widget.unit}.` : ""}`;
-}
-
-interface MarkLabel {
-	readonly x: number;
-	readonly y: number;
-	readonly text: string;
-}
-
 /**
- * Inline SVG chart (no new dependency). Small: compact sparkline-style, no
- * axes. Medium: axes with first/last labels and the unit. Large: axes, a
- * legend and value labels on hover/focus. Every size ships a text summary
- * (`role="img"`) and a data-table twin, so nothing is pointer-only.
- *
- * The hover readout follows the pointer across the plot (pointer events
- * only); the value labels are CSS-only (`group-hover` / `group-focus-within`
- * over a focusable plot), so keyboard users reach the same values without a
- * handler on every mark, and the data table lists every value regardless.
+ * A `chart` widget drawn through the same plot code as a Chat chart preview
+ * (`LinePlot` / `BarPlot` from `@research/ui-registry`), so the same data
+ * gives the same picture: viewBox, plot area, ticks, axis titles, marks,
+ * colours, legend and hover readout. The same plot renders at every size;
+ * the frame scrolls when content is taller. No visible title in the body.
  */
 export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Element {
-	const widget = () => props.widget;
-	const size = () => props.widget.size;
-	const [hovered, setHovered] = createSignal<string | null>(null);
-	const { min, max } = extent(props.widget);
-	const pointCount = () =>
-		Math.max(...props.widget.series.map((series) => series.points.length), 0);
+	const data = createMemo(() => chartWidgetToGuardedDataset(props.widget));
+	const series = createMemo(() => chartWidgetSeries(props.widget));
+	const titles = createMemo(() => chartWidgetAxisTitles(props.widget));
 
-	const firstLabel = () => props.widget.series[0]?.points[0]?.x ?? "";
-	const lastLabel = () => {
-		const points = props.widget.series[0]?.points ?? [];
-		return points[points.length - 1]?.x ?? "";
-	};
-
-	/** Every plotted mark with its view-box position, for the hover readout. */
-	const marks = (): readonly { readonly x: number; readonly label: string }[] =>
-		widget().series.flatMap((series) =>
-			series.points.map((point, pointIndex) => ({
-				x: xAt(pointIndex, series.points.length),
-				label: `${series.name}: ${point.x} — ${point.y}`,
-			})),
-		);
-
-	/** Thinned value labels for a large chart (at most MAX_VALUE_LABELS). */
-	const valueLabels = (): readonly MarkLabel[] => {
-		const labelled: MarkLabel[] = [];
-		for (const series of widget().series) {
-			const step = Math.max(1, Math.ceil(series.points.length / MAX_VALUE_LABELS));
-			series.points.forEach((point, pointIndex) => {
-				if (pointIndex % step !== 0) return;
-				labelled.push({
-					x: xAt(pointIndex, series.points.length),
-					y: yAt(point.y, min, max),
-					text: `${series.name}: ${point.y}`,
-				});
+	const counts = createMemo(() => {
+		const current = data();
+		const specs = series();
+		if (props.widget.chartType === "bar") {
+			const model = buildBarModel(current, {
+				categoryKey: "x",
+				series: specs,
+				yUnit: props.widget.unit,
 			});
-			if (labelled.length >= MAX_VALUE_LABELS) break;
+			return {
+				plottedCount: model.plottedCount,
+				unavailableCount: model.unavailableCount,
+				missingColumns: model.missingColumns,
+				withheldSeries: model.withheldSeries,
+			};
 		}
-		return labelled.slice(0, MAX_VALUE_LABELS);
-	};
+		const model = buildLineModel(current, { xKey: "x", series: specs });
+		return {
+			plottedCount: model.plottedCount,
+			unavailableCount: model.unavailableCount,
+			missingColumns: model.missingColumns,
+			withheldSeries: model.withheldSeries,
+		};
+	});
 
-	const onPlotMove = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
-		const bounds = event.currentTarget.getBoundingClientRect();
-		if (bounds.width === 0) return;
-		const viewX = ((event.clientX - bounds.left) / bounds.width) * WIDTH;
-		let best: string | null = null;
-		let bestDistance = Number.POSITIVE_INFINITY;
-		for (const mark of marks()) {
-			const distance = Math.abs(mark.x - viewX);
-			if (distance < bestDistance) {
-				best = mark.label;
-				bestDistance = distance;
+	/** Union of x labels in first-seen order, for the data-table twin. */
+	const tableRows = createMemo(() => {
+		const labels: string[] = [];
+		const seen = new Set<string>();
+		for (const entry of props.widget.series) {
+			for (const point of entry.points) {
+				if (!seen.has(point.x)) {
+					seen.add(point.x);
+					labels.push(point.x);
+				}
 			}
 		}
-		setHovered(best);
-	};
+		const bySeries = props.widget.series.map((entry) => {
+			const byLabel = new Map<string, number>();
+			for (const point of entry.points) {
+				if (!byLabel.has(point.x)) byLabel.set(point.x, point.y);
+			}
+			return byLabel;
+		});
+		return labels.map((label) => ({
+			label,
+			values: bySeries.map((byLabel) => byLabel.get(label) ?? null),
+		}));
+	});
 
 	return (
-		<div data-widget-body="chart" data-chart-size={size()} class="group space-y-1">
-			<svg
-				role="img"
-				aria-label={summaryText(widget())}
-				viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-				class="h-auto w-full"
-				tabindex={size() === "large" ? "0" : undefined}
-				onPointerMove={onPlotMove}
-				onPointerLeave={() => setHovered(null)}
+		<div data-widget-body="chart" class="space-y-1">
+			<For each={counts().withheldSeries}>
+				{(entry) => (
+					<p data-withheld-series={entry.label} class="text-xs text-amber-900">
+						Series "{entry.label}" — {entry.reason}.
+					</p>
+				)}
+			</For>
+			<Show when={counts().missingColumns.length > 0}>
+				<output data-state="missing-columns" class="block text-xs text-amber-900">
+					Not in the dataset, so not plotted: {counts().missingColumns.join(", ")}.
+				</output>
+			</Show>
+			<Show
+				when={counts().plottedCount > 0}
+				fallback={
+					<EmptyState>
+						{data().dataset.rows.length === 0
+							? "No data — this dataset has no rows."
+							: "No plottable data — every requested value is unavailable."}
+					</EmptyState>
+				}
 			>
-				<title>{summaryText(widget())}</title>
-				<Show when={size() !== "small"}>
-					<line
-						x1={PAD}
-						x2={WIDTH - PAD}
-						y1={HEIGHT - PAD}
-						y2={HEIGHT - PAD}
-						stroke="currentColor"
-						class="text-slate-600"
-						stroke-width="1"
+				<Show
+					when={props.widget.chartType === "bar"}
+					fallback={
+						<LinePlot
+							data={data()}
+							xKey="x"
+							series={series()}
+							xLabel={titles().xAxisTitle}
+							yLabel={props.widget.yLabel?.trim() ?? ""}
+							yUnit={props.widget.unit}
+							title={props.widget.title}
+						/>
+					}
+				>
+					<BarPlot
+						data={data()}
+						categoryKey="x"
+						series={series()}
+						xLabel={titles().xAxisTitle}
+						yLabel={props.widget.yLabel?.trim() ?? ""}
+						yUnit={props.widget.unit}
+						title={props.widget.title}
 					/>
 				</Show>
-				<For each={widget().series}>
-					{(series, seriesIndex) => (
-						<g>
-							<Show
-								when={widget().chartType === "line"}
-								fallback={
-									<For each={series.points}>
-										{(point, pointIndex) => {
-											const count = series.points.length;
-											const width = Math.max(2, (WIDTH - PAD * 2) / Math.max(count, 1) - 2);
-											const x = xAt(pointIndex(), count) - width / 2;
-											const y = yAt(point.y, min, max);
-											const baseline = yAt(Math.max(0, min), min, max);
-											return (
-												<rect
-													x={x}
-													y={Math.min(y, baseline)}
-													width={width}
-													height={Math.max(1, Math.abs(baseline - y))}
-													fill={colorAt(seriesIndex())}
-												>
-													<title>{`${series.name}: ${point.x} — ${point.y}`}</title>
-												</rect>
-											);
-										}}
-									</For>
-								}
-							>
-								<polyline
-									points={series.points
-										.map(
-											(point, pointIndex) =>
-												`${xAt(pointIndex, series.points.length)},${yAt(point.y, min, max)}`,
-										)
-										.join(" ")}
-									fill="none"
-									stroke={colorAt(seriesIndex())}
-									stroke-width="2"
-									stroke-linejoin="round"
-									stroke-linecap="round"
-								/>
-							</Show>
-						</g>
-					)}
-				</For>
-				<Show when={size() === "large"}>
-					<g>
-						<For each={valueLabels()}>
-							{(label) => (
-								<text
-									x={label.x}
-									y={label.y - 6}
-									text-anchor="middle"
-									font-size="10"
-									class="fill-slate-700 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
-								>
-									{label.text}
-								</text>
-							)}
-						</For>
-					</g>
-				</Show>
-			</svg>
-			<Show when={size() !== "small"}>
-				<div class="flex items-baseline justify-between gap-2 text-2xs text-slate-600">
-					<span>{firstLabel()}</span>
-					<Show when={widget().unit.trim().length > 0}>
-						<span class="font-medium">Unit: {widget().unit}</span>
-					</Show>
-					<span>{lastLabel()}</span>
-				</div>
 			</Show>
-			<Show when={size() === "large"}>
-				<ul aria-label="Legend" class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-800">
-					<For each={widget().series}>
-						{(series, seriesIndex) => (
-							<li class="flex items-center gap-1.5">
-								<svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true">
-									<line
-										x1="1"
-										x2="15"
-										y1="5"
-										y2="5"
-										stroke={colorAt(seriesIndex())}
-										stroke-width="2"
-										stroke-linecap="round"
-									/>
-								</svg>
-								<span>{series.name}</span>
-							</li>
-						)}
-					</For>
-				</ul>
-				<p aria-live="polite" class="min-h-4 text-xs text-slate-700">
-					{hovered() ??
-						"Point at the chart to read values; the data table below lists every value."}
+			<Show when={counts().unavailableCount > 0}>
+				<p data-unavailable-count={counts().unavailableCount} class="mt-1 text-xs text-amber-900">
+					{counts().unavailableCount} {counts().unavailableCount === 1 ? "point" : "points"}{" "}
+					unavailable — not plotted (never drawn as 0). See the data table for the reasons.
 				</p>
 			</Show>
 			<details class="text-xs">
-				<summary class="cursor-pointer text-slate-700">Data table: {widget().title}</summary>
+				<summary class="cursor-pointer text-slate-700">Data table: {props.widget.title}</summary>
 				<table class="mt-1 w-full border-collapse text-xs text-slate-900">
-					<caption class="text-left text-2xs text-slate-600">{`Values plotted in "${widget().title}"`}</caption>
+					<caption class="text-left text-2xs text-slate-600">{`Values plotted in "${props.widget.title}"`}</caption>
 					<thead>
 						<tr>
 							<th scope="col" class="border border-slate-200 px-2 py-1 text-left">
 								Label
 							</th>
-							<For each={widget().series}>
-								{(series) => (
+							<For each={props.widget.series}>
+								{(entry) => (
 									<th scope="col" class="border border-slate-200 px-2 py-1 text-right">
-										{series.name}
+										{entry.name}
 									</th>
 								)}
 							</For>
 						</tr>
 					</thead>
 					<tbody>
-						<For each={widget().series[0]?.points ?? []}>
-							{(point, rowIndex) => (
+						<For each={tableRows()}>
+							{(row) => (
 								<tr>
 									<th scope="row" class="border border-slate-200 px-2 py-1 text-left font-normal">
-										{point.x}
+										{row.label}
 									</th>
-									<For each={widget().series}>
-										{(series) => (
+									<For each={row.values}>
+										{(value) => (
 											<td class="border border-slate-200 px-2 py-1 text-right tabular-nums">
-												{series.points[rowIndex()]?.y ?? "—"}
+												{value ?? "—"}
 											</td>
 										)}
 									</For>
@@ -279,9 +171,6 @@ export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Elemen
 					</tbody>
 				</table>
 			</details>
-			<span class="sr-only">
-				{summaryText(widget())} Points: {pointCount()} per longest series.
-			</span>
 		</div>
 	);
 }
