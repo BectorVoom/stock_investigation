@@ -451,7 +451,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			throw error;
 		}
 		// The evidence came from the search tool: its executed step is in the
-		// newest run's progress.
+		// run's progress (the list leaves progress out; the run itself has it).
 		const runs = (await apiJson("GET", "/api/v1/research-runs")) as { runs: unknown };
 		const list = Array.isArray(runs.runs) ? runs.runs : [];
 		const searchRun = list.find(
@@ -461,7 +461,8 @@ test.describe("live positive path through the real backend (spends real quota)",
 				JSON.stringify(entry).includes(QUESTION_SEARCH),
 		);
 		expect(searchRun, "the search question's run is not listed").toBeDefined();
-		expect(JSON.stringify(searchRun)).toMatch(/web\.search: executed/);
+		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searchRun, "runId")}`);
+		expect(JSON.stringify(detail)).toMatch(/web\.search: executed/);
 	});
 
 	test("a past chat is renamed and then deleted with its runs", async () => {
