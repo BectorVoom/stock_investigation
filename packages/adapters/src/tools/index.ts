@@ -16,6 +16,7 @@ import { createSecClient } from "../finance/secClient.ts";
 import { createSecFinancialsSource } from "../finance/secFinancials.ts";
 import { createNewsTools } from "./newsTools.ts";
 import { createPositionTools } from "./positionTools.ts";
+import { createSearchTools } from "./searchTools.ts";
 import { createSecTools } from "./secTools.ts";
 import { createWebTools } from "./webTools.ts";
 
@@ -45,6 +46,14 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 	});
 	return [
 		...createNewsTools(deps),
+		// The search tool writes nothing to disk: unlike the page tool it is
+		// registered unconditionally (ADR-0025).
+		...createSearchTools({
+			fetcher: deps.fetcher,
+			hasher: deps.hasher,
+			clock: deps.clock,
+			sleep: deps.sleep,
+		}),
 		...createSecTools({
 			financials: createSecFinancialsSource({
 				client: secClient,
