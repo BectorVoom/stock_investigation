@@ -36,4 +36,18 @@ describe("chart axis labels", () => {
 		expectRejected(widgetCoreSchema, { ...baseChart, xLabel: "   " });
 		expectRejected(widgetCoreSchema, { ...baseChart, yLabel: "" });
 	});
+
+	it("accepts an optional x kind, absent means text", () => {
+		expectAccepted(widgetCoreSchema, { ...baseChart, xKind: "date" });
+		expectAccepted(widgetCoreSchema, { ...baseChart, xKind: "number" });
+		expectAccepted(homeWidgetSchema, { ...baseChart, xKind: "date" });
+		const parsed = widgetCoreSchema.parse(baseChart);
+		if (parsed.type !== "chart") throw new Error("expected a chart widget");
+		expect("xKind" in parsed).toBe(false);
+	});
+
+	it("rejects an unknown x kind", () => {
+		expectRejected(widgetCoreSchema, { ...baseChart, xKind: "datetime" });
+		expectRejected(homeWidgetSchema, { ...baseChart, xKind: "number-ish" });
+	});
 });

@@ -95,6 +95,8 @@ export const widgetTitleSchema = z
 const unitSchema = z.string().trim().max(WIDGET_LIMITS.maxUnitChars);
 /** Optional axis titles of a `chart` widget, kept from the Chat component it was saved from. */
 const chartAxisLabelSchema = z.string().trim().min(1).max(WIDGET_LIMITS.maxTitleChars).optional();
+/** Optional x column kind of a `chart` widget (absent = "text"); line charts position dates/numbers by value. */
+const chartXKindSchema = z.enum(["text", "number", "date"]).optional();
 
 /** The generic part every widget shares (the `WidgetBase` of the package). */
 export const WIDGET_CORE_SHAPE = {
@@ -164,6 +166,7 @@ export const WIDGET_CONTENT_SHAPES = {
 		series: z.array(widgetChartSeriesSchema).min(1).max(WIDGET_LIMITS.maxChartSeries),
 		xLabel: chartAxisLabelSchema,
 		yLabel: chartAxisLabelSchema,
+		xKind: chartXKindSchema,
 	},
 	/** Structured rows; every row has exactly one cell per column. */
 	table: {

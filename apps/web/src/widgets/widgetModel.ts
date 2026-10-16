@@ -106,6 +106,7 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 				})),
 				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
 				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
+				...(widget.xKind === undefined ? {} : { xKind: widget.xKind }),
 			};
 		case "table":
 			return {

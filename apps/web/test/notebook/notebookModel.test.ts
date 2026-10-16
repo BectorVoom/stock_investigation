@@ -146,7 +146,7 @@ describe("notebook model", () => {
 		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
-	it("converts a candlestick component to a line chart of the close", () => {
+	it("keeps a candlestick component as a research widget (candles are not a close-price line)", () => {
 		const view: WorkspaceView = {
 			...WORKSPACE_VIEW,
 			datasets: [
@@ -197,10 +197,8 @@ describe("notebook model", () => {
 		const component = view.state.components[0];
 		if (component === undefined) throw new Error("candle_1 is missing");
 		const core = widgetFromComponent(component, view);
-		if (core?.type !== "chart") throw new Error("expected a chart widget");
-		expect(core.chartType).toBe("line");
-		expect(core.series).toHaveLength(1);
-		expect(core.series[0]?.points).toEqual([{ x: "2026-10-07", y: 336.67 }]);
+		if (core?.type !== "research") throw new Error("expected a research widget");
+		expect(core.componentId).toBe("candle_1");
 	});
 
 	it("keeps any other component as a research widget with its title", () => {

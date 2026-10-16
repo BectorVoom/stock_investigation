@@ -6,7 +6,13 @@ export {
 	type BarModel,
 	buildBarModel,
 } from "./charts/barModel.ts";
-export { ChartFrame, ChartLegend, ChartShell, type LegendItem } from "./charts/ChartFrame.tsx";
+export {
+	ChartFrame,
+	ChartLegend,
+	ChartNotices,
+	ChartShell,
+	type LegendItem,
+} from "./charts/ChartFrame.tsx";
 export {
 	buildXTicks,
 	CHART_INK,

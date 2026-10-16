@@ -3,7 +3,8 @@ import {
 	BarPlot,
 	buildBarModel,
 	buildLineModel,
-	EmptyState,
+	ChartNotices,
+	cellDisplay,
 	LinePlot,
 } from "@research/ui-registry";
 import type { JSX } from "solid-js";
@@ -22,130 +23,98 @@ type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
  * gives the same picture: viewBox, plot area, ticks, axis titles, marks,
  * colours, legend and hover readout. The same plot renders at every size;
  * the frame scrolls when content is taller. No visible title in the body.
+ *
+ * The data-table twin reads the GUARDED dataset, so a withheld value never
+ * appears as a number — its reason is shown instead.
  */
 export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Element {
 	const data = createMemo(() => chartWidgetToGuardedDataset(props.widget));
 	const series = createMemo(() => chartWidgetSeries(props.widget));
 	const titles = createMemo(() => chartWidgetAxisTitles(props.widget));
 
-	const counts = createMemo(() => {
+	const model = createMemo(() => {
 		const current = data();
 		const specs = series();
 		if (props.widget.chartType === "bar") {
-			const model = buildBarModel(current, {
-				categoryKey: "x",
-				series: specs,
-				yUnit: props.widget.unit,
-			});
 			return {
-				plottedCount: model.plottedCount,
-				unavailableCount: model.unavailableCount,
-				missingColumns: model.missingColumns,
-				withheldSeries: model.withheldSeries,
+				kind: "bar" as const,
+				model: buildBarModel(current, {
+					categoryKey: "x",
+					series: specs,
+					yUnit: props.widget.unit,
+				}),
 			};
 		}
-		const model = buildLineModel(current, { xKey: "x", series: specs });
 		return {
-			plottedCount: model.plottedCount,
-			unavailableCount: model.unavailableCount,
-			missingColumns: model.missingColumns,
-			withheldSeries: model.withheldSeries,
+			kind: "line" as const,
+			model: buildLineModel(current, { xKey: "x", series: specs }),
 		};
 	});
 
-	/** Union of x labels in first-seen order, for the data-table twin. */
-	const tableRows = createMemo(() => {
-		const labels: string[] = [];
-		const seen = new Set<string>();
-		for (const entry of props.widget.series) {
-			for (const point of entry.points) {
-				if (!seen.has(point.x)) {
-					seen.add(point.x);
-					labels.push(point.x);
-				}
-			}
-		}
-		const bySeries = props.widget.series.map((entry) => {
-			const byLabel = new Map<string, number>();
-			for (const point of entry.points) {
-				if (!byLabel.has(point.x)) byLabel.set(point.x, point.y);
-			}
-			return byLabel;
-		});
-		return labels.map((label) => ({
-			label,
-			values: bySeries.map((byLabel) => byLabel.get(label) ?? null),
-		}));
+	const barModel = createMemo(() => {
+		const current = model();
+		return current.kind === "bar" ? current.model : null;
 	});
+	const lineModel = createMemo(() => {
+		const current = model();
+		return current.kind === "line" ? current.model : null;
+	});
+	const tableColumns = createMemo(() => data().dataset.columns);
+	const tableRows = createMemo(() => data().dataset.rows);
 
 	return (
 		<div data-widget-body="chart" class="space-y-1">
-			<For each={counts().withheldSeries}>
-				{(entry) => (
-					<p data-withheld-series={entry.label} class="text-xs text-amber-900">
-						Series "{entry.label}" — {entry.reason}.
-					</p>
-				)}
-			</For>
-			<Show when={counts().missingColumns.length > 0}>
-				<output data-state="missing-columns" class="block text-xs text-amber-900">
-					Not in the dataset, so not plotted: {counts().missingColumns.join(", ")}.
-				</output>
-			</Show>
-			<Show
-				when={counts().plottedCount > 0}
-				fallback={
-					<EmptyState>
-						{data().dataset.rows.length === 0
-							? "No data — this dataset has no rows."
-							: "No plottable data — every requested value is unavailable."}
-					</EmptyState>
+			<ChartNotices
+				withheldSeries={model().model.withheldSeries}
+				missingColumns={model().model.missingColumns}
+				plottedCount={model().model.plottedCount}
+				unavailableCount={model().model.unavailableCount}
+				emptyMessage={
+					data().dataset.rows.length === 0
+						? "No data — this dataset has no rows."
+						: "No plottable data — every requested value is unavailable."
 				}
 			>
 				<Show
-					when={props.widget.chartType === "bar"}
+					when={barModel()}
 					fallback={
-						<LinePlot
-							data={data()}
-							xKey="x"
-							series={series()}
+						<Show when={lineModel()} fallback={null}>
+							{(line) => (
+								<LinePlot
+									model={line()}
+									xLabel={titles().xAxisTitle}
+									yLabel={props.widget.yLabel?.trim() ?? ""}
+									yUnit={props.widget.unit}
+									title={props.widget.title}
+								/>
+							)}
+						</Show>
+					}
+				>
+					{(bar) => (
+						<BarPlot
+							model={bar()}
 							xLabel={titles().xAxisTitle}
 							yLabel={props.widget.yLabel?.trim() ?? ""}
 							yUnit={props.widget.unit}
 							title={props.widget.title}
 						/>
-					}
-				>
-					<BarPlot
-						data={data()}
-						categoryKey="x"
-						series={series()}
-						xLabel={titles().xAxisTitle}
-						yLabel={props.widget.yLabel?.trim() ?? ""}
-						yUnit={props.widget.unit}
-						title={props.widget.title}
-					/>
+					)}
 				</Show>
-			</Show>
-			<Show when={counts().unavailableCount > 0}>
-				<p data-unavailable-count={counts().unavailableCount} class="mt-1 text-xs text-amber-900">
-					{counts().unavailableCount} {counts().unavailableCount === 1 ? "point" : "points"}{" "}
-					unavailable — not plotted (never drawn as 0). See the data table for the reasons.
-				</p>
-			</Show>
+			</ChartNotices>
 			<details class="text-xs">
 				<summary class="cursor-pointer text-slate-700">Data table: {props.widget.title}</summary>
 				<table class="mt-1 w-full border-collapse text-xs text-slate-900">
 					<caption class="text-left text-2xs text-slate-600">{`Values plotted in "${props.widget.title}"`}</caption>
 					<thead>
 						<tr>
-							<th scope="col" class="border border-slate-200 px-2 py-1 text-left">
-								Label
-							</th>
-							<For each={props.widget.series}>
-								{(entry) => (
-									<th scope="col" class="border border-slate-200 px-2 py-1 text-right">
-										{entry.name}
+							<For each={tableColumns()}>
+								{(column, index) => (
+									<th
+										scope="col"
+										class={`border border-slate-200 px-2 py-1 ${index() === 0 ? "text-left" : "text-right"}`}
+									>
+										{column.label}
 									</th>
 								)}
 							</For>
@@ -155,15 +124,30 @@ export function ChartWidget(props: { readonly widget: ChartWidget }): JSX.Elemen
 						<For each={tableRows()}>
 							{(row) => (
 								<tr>
-									<th scope="row" class="border border-slate-200 px-2 py-1 text-left font-normal">
-										{row.label}
-									</th>
-									<For each={row.values}>
-										{(value) => (
-											<td class="border border-slate-200 px-2 py-1 text-right tabular-nums">
-												{value ?? "—"}
-											</td>
-										)}
+									<For each={tableColumns()}>
+										{(column, columnIndex) => {
+											const text = () => {
+												const display = cellDisplay(row[column.key], column);
+												return display.available ? display.text : display.reason;
+											};
+											return (
+												<Show
+													when={columnIndex() === 0}
+													fallback={
+														<td class="border border-slate-200 px-2 py-1 text-right tabular-nums">
+															{text()}
+														</td>
+													}
+												>
+													<th
+														scope="row"
+														class="border border-slate-200 px-2 py-1 text-left font-normal"
+													>
+														{text()}
+													</th>
+												</Show>
+											);
+										}}
 									</For>
 								</tr>
 							)}

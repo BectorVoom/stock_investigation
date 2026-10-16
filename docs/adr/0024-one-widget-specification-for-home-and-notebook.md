@@ -141,4 +141,12 @@ as the notebook assistant does; the series help stays with the market types.
 
 *Amended 2026-10-17:* the `chart` widget draws through the registry's shared
 plot (`LinePlot` / `BarPlot` in `@research/ui-registry`, the same code as the
-Chat preview) and carries optional axis titles (`xLabel`, `yLabel`).
+Chat preview) and carries optional axis titles (`xLabel`, `yLabel`) plus an
+optional x column kind (`xKind`: `"text"` (absent) / `"number"` / `"date"`,
+kept from the source x column so line charts position dates and numbers by
+value; bars stay categorical). A chart component becomes a `chart` widget only
+when the conversion is lossless (round-trip: guard, convert, rebuild, same
+rows in the same order, same series, no withheld series); otherwise — and
+always for `candlestick-chart`, whose picture is candles — it becomes a
+`research` widget, identical by construction. Repeated x labels are separate
+rows keyed by (label, occurrence index).

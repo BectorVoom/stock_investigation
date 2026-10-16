@@ -41,12 +41,10 @@ export function BarChart(props: RendererProps<BarChartProps>): JSX.Element {
 			tableColumnKeys={[props.props.categoryKey, ...props.props.series.map((series) => series.key)]}
 			valueColumnKeys={props.props.series.map((series) => series.key)}
 		>
-			<Show when={data()}>
+			<Show when={model()}>
 				{(current) => (
 					<BarPlot
-						data={current()}
-						categoryKey={props.props.categoryKey}
-						series={props.props.series}
+						model={current()}
 						xLabel={props.props.xLabel}
 						yLabel={props.props.yLabel}
 						yUnit={props.props.yUnit}

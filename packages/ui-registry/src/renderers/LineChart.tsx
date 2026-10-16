@@ -37,12 +37,10 @@ export function LineChart(props: RendererProps<LineChartProps>): JSX.Element {
 			tableColumnKeys={[props.props.xKey, ...props.props.series.map((series) => series.key)]}
 			valueColumnKeys={props.props.series.map((series) => series.key)}
 		>
-			<Show when={data()}>
+			<Show when={model()}>
 				{(current) => (
 					<LinePlot
-						data={current()}
-						xKey={props.props.xKey}
-						series={props.props.series}
+						model={current()}
 						xLabel={props.props.xLabel}
 						yLabel={props.props.yLabel}
 						yUnit={props.props.yUnit}

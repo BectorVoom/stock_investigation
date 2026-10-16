@@ -298,7 +298,11 @@ to the palette constants. A Notebook (and Home) `chart` widget draws through
 the same shared plot as a Chat preview (`LinePlot` / `BarPlot` in
 `@research/ui-registry`: same viewBox, plot area, ticks, axis titles, marks,
 colours, legend and readout); its optional `xLabel` / `yLabel` are the axis
-titles kept from the Chat component it was saved from.
+titles kept from the Chat component it was saved from, and its optional
+`xKind` (`text` / `number` / `date`, absent is `text`) keeps date/number x
+positioning for line charts. A chart component is saved as a `chart` widget
+only when the conversion is lossless (otherwise a `research` widget, identical
+by construction); candlestick charts always save as `research`.
 
 ## 11. How this is enforced
 
