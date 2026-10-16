@@ -38,9 +38,9 @@ import {
  *    and a Markdown file for that page exists in the development pages
  *    directory, beginning with the page's heading rather than site
  *    navigation.
- * 2b. A question no subscribed source covers (the owner's "Please create
- *    gold chart.") completes through `web.search` instead of failing with
- *    NO_EVIDENCE_COLLECTED (ADR-0025).
+ * 2b. A question no subscribed source covers (the gold price) completes
+ *    through `web.search` instead of failing with NO_EVIDENCE_COLLECTED
+ *    (ADR-0025).
  * 3. Upgraded state: after a restart with a fresh database that has a run
  *    but no saved settings (created through the API), a question can be
  *    sent without visiting Settings.
@@ -67,10 +67,12 @@ const QUESTION_2 =
 	PAGE_URL +
 	" and quote its main heading, then say in one sentence what the page is about.";
 /**
- * The owner's own wording from a run that failed with NO_EVIDENCE_COLLECTED
- * (ADR-0025): no subscribed source covers gold, so the model must search.
+ * A research question no subscribed source covers (ADR-0025): the owner's
+ * gold questions failed with NO_EVIDENCE_COLLECTED because the model had
+ * nothing to ask for, so it must now search. ("Please create gold chart."
+ * itself goes to the notebook assistant, see `composerTarget.ts`.)
  */
-const QUESTION_SEARCH = "Please create gold chart.";
+const QUESTION_SEARCH = "How has the gold price moved this year, and what is driving it?";
 const QUESTION_3 =
 	"Which products or services could see demand growth over the next 3 to 5 years " +
 	"based on recent US energy news?";
