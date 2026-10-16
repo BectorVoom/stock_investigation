@@ -64,6 +64,7 @@ import {
 	analysisPrompt,
 	cutUtf8Bytes,
 	PLANNING_CONTEXT_MAX_BYTES,
+	PLANNING_REMINDER,
 	PLANNING_SOURCES_MAX_BYTES,
 	PLANNING_TOOL_CATALOG_MAX_BYTES,
 	PROMPT_VERSION,
@@ -151,7 +152,11 @@ export type PipelineOutcome =
 	| {
 			readonly kind: "failed";
 			readonly failureCode: string;
-			/** Most frequent tool error code when `failureCode` is `ALL_TOOL_CALLS_FAILED`. */
+			/**
+			 * Most frequent tool error code with `ALL_TOOL_CALLS_FAILED`; with
+			 * `NO_EVIDENCE_COLLECTED` one of `NO_TOOL_REQUESTED`,
+			 * `PLAN_NOT_JSON`, `TOOLS_RETURNED_NOTHING` (ADR-0025).
+			 */
 			readonly failureDetail: string | null;
 			readonly retryable: boolean;
 			readonly usage: ResourceUsage;
@@ -502,6 +507,18 @@ export async function runResearchPipeline(
 	// NO_EVIDENCE_COLLECTED. Denied requests never ran and are not counted.
 	let executedToolCalls = 0;
 	let succeededToolCalls = 0;
+	let deniedToolCalls = 0;
+	// Planning accounting for the NO_EVIDENCE_COLLECTED detail (ADR-0025):
+	// valid plans parsed, tool calls ever requested, and invalid replies.
+	let validPlanCount = 0;
+	let requestedToolCalls = 0;
+	let invalidPlanCount = 0;
+	// ADR-0025 reminder: when the first valid plan asks for no tools while
+	// nothing has been collected, executed or denied, the next collection
+	// step carries a short note saying so. At most one reminder per run, and
+	// it uses the next step of the same collection allowance (no extra steps).
+	let reminderSent = false;
+	let reminderPending: string | null = null;
 	const toolErrorCounts = new Map<string, number>();
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
@@ -517,7 +534,10 @@ export async function runResearchPipeline(
 			conversationContext: input.conversationContext,
 			fenceToken: deps.newFenceToken(),
 			promptBudgetBytes: PLANNING_PROMPT_BUDGET_BYTES,
+			reminder: reminderPending,
 		});
+		// The reminder is consumed by the prompt it was attached to.
+		reminderPending = null;
 		// Fail closed: the builder guarantees the ceiling, so reaching it means
 		// a bug — stop collecting rather than send an over-budget prompt.
 		if (byteLength(prompt) > PLANNING_PROMPT_BUDGET_BYTES) {
@@ -544,6 +564,7 @@ export async function runResearchPipeline(
 		const json = extractJsonObject(planned.value.text);
 		const plan = json.ok ? planSchema.safeParse(json.value) : null;
 		if (plan === null || !plan.success) {
+			invalidPlanCount += 1;
 			await deps.reporter.note("The planning reply was not valid JSON; no tools were run for it.");
 			continue;
 		}
@@ -552,6 +573,27 @@ export async function runResearchPipeline(
 			reachedCollecting = true;
 		}
 		const calls = [...plan.data.toolCalls, ...planned.value.toolRequests];
+		validPlanCount += 1;
+		requestedToolCalls += calls.length;
+		// ADR-0025 reminder: a valid plan that asks for nothing while nothing
+		// has been collected, executed or denied gets one retry with a note.
+		// It consumes the next step of the same collection allowance.
+		if (
+			calls.length === 0 &&
+			!reminderSent &&
+			collected.evidence.length === 0 &&
+			collected.entries.length === 0 &&
+			executedToolCalls === 0 &&
+			deniedToolCalls === 0
+		) {
+			if (step + 1 < collectionSteps) {
+				reminderSent = true;
+				reminderPending = PLANNING_REMINDER;
+				await deps.reporter.note("The plan requested no tools; asking the model again.");
+				await deps.reporter.usage(usage);
+				continue;
+			}
+		}
 		for (const call of calls) {
 			if (input.signal.aborted) return { kind: "cancelled", usage };
 			const label = call.toolId.slice(0, 80);
@@ -561,6 +603,7 @@ export async function runResearchPipeline(
 				call,
 			);
 			if (!authorized.ok) {
+				deniedToolCalls += 1;
 				await deps.reporter.tool(label, "denied", authorized.error);
 				const note = `Tool request ${label} was denied: ${authorized.error}.`;
 				collected.entries.push({ step, fullText: note, digestLines: [note] });
@@ -624,6 +667,21 @@ export async function runResearchPipeline(
 	if (collected.evidence.length === 0) {
 		if (executedToolCalls > 0 && succeededToolCalls === 0) {
 			return failed("ALL_TOOL_CALLS_FAILED", false, mostFrequentToolError(toolErrorCounts));
+		}
+		// ADR-0025: NO_EVIDENCE_COLLECTED carries why. Precedence is fixed:
+		// a success with no evidence beats a parse question (a success implies
+		// a valid plan); a run with no valid plan at all is PLAN_NOT_JSON;
+		// valid plans that never asked for anything are NO_TOOL_REQUESTED;
+		// anything else (e.g. every request denied, or the budget stopped the
+		// run before a tool could run) carries no detail.
+		if (succeededToolCalls > 0) {
+			return failed("NO_EVIDENCE_COLLECTED", false, "TOOLS_RETURNED_NOTHING");
+		}
+		if (validPlanCount === 0 && invalidPlanCount > 0) {
+			return failed("NO_EVIDENCE_COLLECTED", false, "PLAN_NOT_JSON");
+		}
+		if (requestedToolCalls === 0) {
+			return failed("NO_EVIDENCE_COLLECTED", false, "NO_TOOL_REQUESTED");
 		}
 		return failed("NO_EVIDENCE_COLLECTED", false);
 	}

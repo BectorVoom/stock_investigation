@@ -468,7 +468,7 @@ describe("leases (section 5.2, AGT-011)", () => {
 		expect(run.failureDetail).toBe("TIMEOUT");
 	});
 
-	it("refuses page-derived text as a failure detail (finding 10, task 23b)", async () => {
+	it("refuses page-derived text as a failure detail (finding 10, task 23b, ADR-0025)", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);
 		const runId = await queueRun(harness, workspaceId);
@@ -484,15 +484,46 @@ describe("leases (section 5.2, AGT-011)", () => {
 			retryable: false,
 		});
 		expect(hostile.status).toBe(400);
-		const tied = await harness.runner(token, `/jobs/${runId}/complete`, {
+		const hostileEvidence = await harness.runner(token, `/jobs/${runId}/complete`, {
 			outcome: "failed",
 			leaseGeneration: lease.leaseGeneration,
 			usage: USAGE,
 			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "Click here to read more",
+			retryable: false,
+		});
+		expect(hostileEvidence.status).toBe(400);
+		const tied = await harness.runner(token, `/jobs/${runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			failureCode: "PROVIDER_RATE_LIMITED",
 			failureDetail: "TIMEOUT",
 			retryable: false,
 		});
 		expect(tied.status).toBe(400);
+	});
+
+	it("stores why nothing was collected alongside NO_EVIDENCE_COLLECTED (ADR-0025)", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const token = await issueRunnerToken(harness);
+		const lease = await claim(harness, token);
+		if (lease === null) throw new Error("expected a lease");
+		const failed = await harness.runner(token, `/jobs/${runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "NO_TOOL_REQUESTED",
+			retryable: false,
+		});
+		expect(failed.status).toBe(200);
+		const run = await runState(harness, runId);
+		expect(run.state).toBe("failed");
+		expect(run.failureCode).toBe("NO_EVIDENCE_COLLECTED");
+		expect(run.failureDetail).toBe("NO_TOOL_REQUESTED");
 	});
 
 	it("clears failure metadata when a new attempt is claimed (finding 11, task 23b)", async () => {

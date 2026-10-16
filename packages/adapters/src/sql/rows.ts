@@ -196,12 +196,13 @@ export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerp
 	if (!isJobState(r.state)) throw new StoredDataError("research_jobs", "state");
 	// Finding 10: `failure_detail` is a stable code, never free text. Old rows
 	// predate the rule and must still decode, so an unstable or mis-tied value
-	// decodes to null instead of throwing (fail closed, ARCH-017).
+	// decodes to null instead of throwing (fail closed, ARCH-017). ADR-0025:
+	// the detail is tied to ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED.
 	const rawDetail = r.failure_detail ?? null;
 	const failureDetail =
 		rawDetail !== null &&
 		STABLE_FAILURE_CODE_PATTERN.test(rawDetail) &&
-		r.failure_code === "ALL_TOOL_CALLS_FAILED"
+		(r.failure_code === "ALL_TOOL_CALLS_FAILED" || r.failure_code === "NO_EVIDENCE_COLLECTED")
 			? rawDetail
 			: null;
 	return {

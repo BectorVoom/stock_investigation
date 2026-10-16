@@ -218,7 +218,9 @@ describe("prompt volume budget (FR-016, ADR-0010)", () => {
 		// from the task brief proved unreachable for this scenario (measured
 		// 66-67%: the previous step's full output alone is 10 kB per prompt and
 		// the 26 unique evidence items must all stay citable); see ADR-0010.
-		expect(total).toBeLessThanOrEqual(140_000);
+		// ADR-0025 adds planning instructions (~0.4 kB per planning prompt),
+		// so the cap is 142,000 (measured ~141,200; still < 0.7 of before).
+		expect(total).toBeLessThanOrEqual(142_000);
 		expect(total / BEFORE_TOTAL_BYTES).toBeLessThan(0.7);
 
 		// Absolute ceiling: no planning prompt exceeds the budget derived from

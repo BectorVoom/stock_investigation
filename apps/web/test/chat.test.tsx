@@ -1159,6 +1159,66 @@ describe("chat run controls", () => {
 			"ALL_TOOL_CALLS_FAILED",
 		);
 		expect(failed.querySelector('[data-field="failure-detail"]')?.textContent).toBe("TIMEOUT");
+		expect(failed.querySelector('[data-field="failure-hint"]')).toBeNull();
+	});
+
+	it("hints why nothing was collected for each NO_EVIDENCE_COLLECTED detail", async () => {
+		const baseRequest = makeRun({ runId: "x" }).request;
+		if (baseRequest === null) throw new Error("expected a request fixture");
+		server.runs = [
+			makeRun({
+				runId: "run_hint_tool",
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: "NO_TOOL_REQUESTED",
+				request: { ...baseRequest, webAccess: "off" },
+			}),
+			makeRun({
+				runId: "run_hint_tool_on",
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: "NO_TOOL_REQUESTED",
+				request: { ...baseRequest, webAccess: "public-web" },
+			}),
+			makeRun({
+				runId: "run_hint_empty",
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: "TOOLS_RETURNED_NOTHING",
+			}),
+			makeRun({
+				runId: "run_hint_json",
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: "PLAN_NOT_JSON",
+			}),
+			makeRun({
+				runId: "run_hint_null",
+				state: "failed",
+				failureCode: "NO_EVIDENCE_COLLECTED",
+				failureDetail: null,
+			}),
+		];
+		mountApp(backend);
+
+		const tool = await screen.findByRole("article", { name: "Run run_hint_tool" });
+		expect(tool.querySelector('[data-field="failure-hint"]')?.textContent).toContain(
+			"If web access is off in Settings, turn it on",
+		);
+		const toolOn = await screen.findByRole("article", { name: "Run run_hint_tool_on" });
+		expect(toolOn.querySelector('[data-field="failure-hint"]')?.textContent).not.toContain(
+			"Settings",
+		);
+		const empty = await screen.findByRole("article", { name: "Run run_hint_empty" });
+		expect(empty.querySelector('[data-field="failure-hint"]')?.textContent).toContain(
+			"The tools ran but found nothing",
+		);
+		const json = await screen.findByRole("article", { name: "Run run_hint_json" });
+		expect(json.querySelector('[data-field="failure-hint"]')?.textContent).toContain(
+			"could not be read",
+		);
+		const nulled = await screen.findByRole("article", { name: "Run run_hint_null" });
+		expect(nulled.querySelector('[data-field="failure-hint"]')).toBeNull();
 	});
 
 	it("shows the approval request and resumes with the approved budget", async () => {

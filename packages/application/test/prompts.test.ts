@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PLANNING_PROMPT_BUDGET_BYTES } from "../src/index.ts";
 import {
 	analysisPrompt,
+	PLANNING_REMINDER,
 	PLANNING_SOURCES_MAX_BYTES,
 	PROMPT_VERSION,
 	planningPrompt,
@@ -37,7 +38,7 @@ function planPrompt(args: Partial<Parameters<typeof planningPrompt>[0]>): string
 
 describe("conversation context in prompts (AGT-007)", () => {
 	it("bumps the prompt version", () => {
-		expect(PROMPT_VERSION).toBe("research-v4");
+		expect(PROMPT_VERSION).toBe("research-v5");
 	});
 
 	it("adds the context block to the planning prompt right after the question", () => {
@@ -186,6 +187,54 @@ describe("planning prompt byte budget (finding 5)", () => {
 
 	it("keeps the sources section within its own byte budget", () => {
 		expect(PLANNING_SOURCES_MAX_BYTES).toBe(8_000);
+	});
+});
+
+describe("planning prompt search instruction and reminder (ADR-0025)", () => {
+	it("tells the model to keep calling tools until evidence exists and to search when no source fits", () => {
+		const prompt = planPrompt({ tools: newsTools().registry.list() });
+		expect(prompt).toContain("While nothing has been collected, return at least one tool call");
+		expect(prompt).toContain("done with no calls is only for when evidence has been collected");
+		expect(prompt).toContain("use a search tool if one is listed");
+		expect(prompt).toContain("short keyword queries (2-6 words, not the whole question)");
+		expect(prompt).toContain("read promising results with the page tool");
+		// Planning-only: the shared ground rules stay unchanged.
+		expect(prompt.indexOf("While nothing has been collected")).toBeGreaterThan(
+			prompt.indexOf("Research tools you may request"),
+		);
+	});
+
+	it("places the reminder just before the Return line and omits it when null", () => {
+		const without = planPrompt({ tools: newsTools().registry.list() });
+		expect(without).not.toContain("Note from the pipeline");
+		const withReminder = planPrompt({
+			tools: newsTools().registry.list(),
+			reminder: PLANNING_REMINDER,
+		});
+		expect(withReminder).toContain(`Note from the pipeline: ${PLANNING_REMINDER}`);
+		const reminderAt = withReminder.indexOf("Note from the pipeline");
+		const returnAt = withReminder.indexOf('Return: {"toolCalls"');
+		expect(reminderAt).toBeGreaterThan(-1);
+		expect(returnAt).toBeGreaterThan(reminderAt);
+	});
+
+	it("keeps the whole prompt within budget with the reminder attached", () => {
+		const tools = newsTools().registry.list();
+		const prompt = planPrompt({
+			tools,
+			sources: Array.from({ length: 100 }, (_, index) => ({
+				sourceId: `src_${index}`,
+				canonicalUrl: `https://news.example.org/feed${index}.xml`,
+				publisher: "新".repeat(300),
+				title: "日".repeat(300),
+				licensePolicy: "short-excerpt-permitted" as const,
+			})),
+			collectedSoFar: `Fresh output:\n${"日".repeat(30_000)}`,
+			remainingToolCalls: 10,
+			reminder: PLANNING_REMINDER,
+			fenceToken: "fence-max",
+		});
+		expect(promptBytes(prompt)).toBeLessThanOrEqual(PLANNING_PROMPT_BUDGET_BYTES);
 	});
 });
 
