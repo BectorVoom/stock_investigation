@@ -38,6 +38,9 @@ import {
  *    and a Markdown file for that page exists in the development pages
  *    directory, beginning with the page's heading rather than site
  *    navigation.
+ * 2b. A question no subscribed source covers (the owner's "Please create
+ *    gold chart.") completes through `web.search` instead of failing with
+ *    NO_EVIDENCE_COLLECTED (ADR-0025).
  * 3. Upgraded state: after a restart with a fresh database that has a run
  *    but no saved settings (created through the API), a question can be
  *    sent without visiting Settings.
@@ -63,6 +66,11 @@ const QUESTION_2 =
 	"Use the web.fetch_page tool to open the public web page at " +
 	PAGE_URL +
 	" and quote its main heading, then say in one sentence what the page is about.";
+/**
+ * The owner's own wording from a run that failed with NO_EVIDENCE_COLLECTED
+ * (ADR-0025): no subscribed source covers gold, so the model must search.
+ */
+const QUESTION_SEARCH = "Please create gold chart.";
 const QUESTION_3 =
 	"Which products or services could see demand growth over the next 3 to 5 years " +
 	"based on recent US energy news?";
@@ -419,6 +427,35 @@ test.describe("live positive path through the real backend (spends real quota)",
 				`the archived body does not start with article text:\n${markdown.slice(0, 300)}`,
 			).toBe(true);
 		}
+	});
+
+	test("a question no subscribed source covers searches the web and completes", async () => {
+		test.setTimeout(900_000);
+		const page = activePage();
+		try {
+			const composer = page.getByRole("form", { name: "Research composer" });
+			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_SEARCH);
+			await composer.getByRole("button", { name: "Send question" }).click();
+			const thread = page.getByRole("list", { name: "Messages" });
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(3, {
+				timeout: 720_000,
+			});
+		} catch (error) {
+			await dumpDiagnostics("search question", dataDirA);
+			throw error;
+		}
+		// The evidence came from the search tool: its executed step is in the
+		// newest run's progress.
+		const runs = (await apiJson("GET", "/api/v1/research-runs")) as { runs: unknown };
+		const list = Array.isArray(runs.runs) ? runs.runs : [];
+		const searchRun = list.find(
+			(entry: unknown) =>
+				typeof entry === "object" &&
+				entry !== null &&
+				JSON.stringify(entry).includes(QUESTION_SEARCH),
+		);
+		expect(searchRun, "the search question's run is not listed").toBeDefined();
+		expect(JSON.stringify(searchRun)).toMatch(/web\.search: executed/);
 	});
 
 	test("a past chat is renamed and then deleted with its runs", async () => {
