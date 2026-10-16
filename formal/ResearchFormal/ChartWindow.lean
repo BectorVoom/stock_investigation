@@ -14,7 +14,10 @@ implementation and are covered by unit and property tests, not here.
   key is a function of the day (identity for daily bars, the week's Monday
   for weekly bars, a month/quarter/year index otherwise, reusing the
   `MonthGrid` civil-date arithmetic). Proved below, for sorted inputs: output
-  days strictly ascend; every bar's close is its bucket's last value; the bar
+  days strictly ascend for bucketed intervals (daily is the identity, so
+  duplicate input dates yield nondecreasing days); every bar equals the fold
+  of its own run, so its close is its bucket's last value tied by bar
+  identity and by output position; the bar
   count never exceeds the input length and is zero only for empty input; every
   bar satisfies `low ≤ open, close ≤ high`. The calendar correspondence (which
   civil date maps to which key, including the Monday rule and month-end
@@ -23,8 +26,11 @@ implementation and are covered by unit and property tests, not here.
   unit tests — tested on samples, not proved (the same split as `MonthGrid`).
 * The window functions (`presetWindow`, `clampWindow`, `panWindow`,
   `zoomWindow`): the result lies within the extent with `from ≤ to`; a pan
-  preserves the span when the extent is wide enough; a zoom keeps the
-  extent-clamped anchor inside.
+  preserves the span when the extent is wide enough; a zoom with a valid
+  positive factor keeps the extent-clamped anchor inside, while an invalid
+  factor falls back to clamping the input window. Non-finite day
+  coordinates are rejected at the TypeScript boundary (`NON_FINITE_DAY`)
+  before reaching this integer model.
 * `visibleSlice`: the binary-search indices are exactly the bars whose days
   lie in the window (proved against a filter; the model scans linearly while
   the implementation bisects — the vectors pin their agreement, as with
@@ -490,21 +496,61 @@ theorem resample_bounds (iv : CInterval) (pts : List CPoint) :
     show BarBounds (tail.foldl (barAdd iv) (pointBar iv p))
     exact fold_bounds iv tail _ (pointBar_bounds iv p)
 
-/-- **Every bar's close is its bucket's last value.** -/
+/-- **Every bar's close is its own bucket's last value.**
+
+    The witness run is tied to the bar itself (`b = mkBarTotal iv run`),
+    not merely some run with a matching close: a swapped close (January's
+    bar carrying February's last value and vice versa) cannot satisfy this,
+    because each bar must equal the fold of its own run. The day tie
+    (`b.day` is that run's last day) is proved alongside. -/
 theorem resample_close_last (iv : CInterval) (pts : List CPoint) :
     ∀ b ∈ resampleSorted iv pts,
       ∃ run : List CPoint, ∃ p tail,
         run = p :: tail ∧ run ∈ runsFuel iv pts pts.length
-        ∧ b.close = runClose tail p.val := by
+        ∧ b = mkBarTotal iv run
+        ∧ b.close = runClose tail p.val
+        ∧ b.day = runDay tail p.day := by
   intro b hb
   rw [resample_map_runs, List.mem_map] at hb
   obtain ⟨run, hmem, rfl⟩ := hb
   match hrun : run with
   | [] => exact absurd rfl (runsFuel_mem_nonempty iv pts pts.length [] hmem)
   | p :: tail =>
-    refine ⟨p :: tail, p, tail, rfl, hmem, ?_⟩
+    refine ⟨p :: tail, p, tail, rfl, hmem, rfl, ?_, ?_⟩
+    · show (tail.foldl (barAdd iv) (pointBar iv p)).close = _
+      rw [foldClose_eq]
+      rfl
+    · show (tail.foldl (barAdd iv) (pointBar iv p)).day = _
+      rw [foldDay_eq]
+      rfl
+
+/-- **Positional tie: the `i`-th bar is the fold of the `i`-th run.**
+
+    With `resample_close_last` this defeats the swapped-close
+    counterexample outright: January values `[1, 2]` and February values
+    `[2, 1]` yield closes `[2, 1]` at positions `[0, 1]`; swapped closes
+    `[1, 2]` would require the 0-th bar to equal the fold of the 1-st run,
+    contradicting this index agreement. -/
+theorem resample_indexed_close (iv : CInterval) (pts : List CPoint) (i : Nat)
+    (run : List CPoint) (hrun : (runsFuel iv pts pts.length)[i]? = some run)
+    (p : CPoint) (tail : List CPoint) (heq : run = p :: tail) :
+    ∃ b, (resampleSorted iv pts)[i]? = some b
+      ∧ b = mkBarTotal iv run
+      ∧ b.close = runClose tail p.val
+      ∧ b.day = runDay tail p.day := by
+  have hmap : resampleSorted iv pts = (runsFuel iv pts pts.length).map (mkBarTotal iv) :=
+    resample_map_runs iv pts
+  rw [hmap, List.getElem?_map]
+  rw [hrun]
+  simp only [Option.map_some]
+  refine ⟨mkBarTotal iv run, rfl, rfl, ?_, ?_⟩
+  · subst heq
     show (tail.foldl (barAdd iv) (pointBar iv p)).close = _
     rw [foldClose_eq]
+    rfl
+  · subst heq
+    show (tail.foldl (barAdd iv) (pointBar iv p)).day = _
+    rw [foldDay_eq]
     rfl
 
 /-- Tail of a pairwise list stays pairwise. -/
@@ -1189,22 +1235,59 @@ def zoomNewSpan (span num den floor cap : Nat) : Nat :=
   if den = 0 then min cap floor
   else min cap (max floor ((2 * span * num + den) / (2 * den)))
 
-/-- Zooms around `anchor` by `num / den`, fitted into the extent. -/
+/-- Zooms around `anchor` by `num / den`, fitted into the extent. An invalid
+    factor (`den = 0` or `num = 0`: no positive finite scale) falls back to
+    clamping the input window with `minSpan` — the model of the
+    implementation's documented fallback (finding #3). -/
 def zoomWindow (w : Window) (anchor : Int) (num den : Nat) (e : Window)
     (minSpan : Nat) : Window :=
-  zoomFit (min w.lo w.hi) (max w.lo w.hi) anchor
+  if den = 0 ∨ num = 0 then clampWindow w e minSpan
+  else zoomFit (min w.lo w.hi) (max w.lo w.hi) anchor
     (zoomNewSpan ((max w.lo w.hi - min w.lo w.hi).toNat) num den minSpan
       ((max e.lo e.hi - min e.lo e.hi).toNat))
     (min e.lo e.hi) (max e.lo e.hi)
 
-/-- **A zoom keeps the extent-clamped anchor inside.** -/
+/-- An invalid factor falls back to the clamp. -/
+theorem zoomWindow_invalid_clamp (w : Window) (anchor : Int) (num den : Nat) (e : Window)
+    (minSpan : Nat) (h : den = 0 ∨ num = 0) :
+    zoomWindow w anchor num den e minSpan = clampWindow w e minSpan := by
+  unfold zoomWindow
+  rw [ifPos h]
+
+/-- **A zoom with a valid factor keeps the extent-clamped anchor inside.**
+
+    The guarantee is qualified to valid factors (finding #3): an invalid
+    factor takes the clamp fallback above, which may sit away from a
+    far-away anchor. -/
 theorem zoomWindow_anchor (w : Window) (anchor : Int) (num den : Nat) (e : Window)
-    (minSpan : Nat) :
+    (minSpan : Nat) (hden : den ≠ 0) (hnum : num ≠ 0) :
     (zoomWindow w anchor num den e minSpan).lo ≤ min (max anchor (winLo e)) (winHi e)
     ∧ min (max anchor (winLo e)) (winHi e)
       ≤ (zoomWindow w anchor num den e minSpan).hi := by
+  have hneg : ¬ (den = 0 ∨ num = 0) := by
+    intro h
+    cases h with
+    | inl hd => exact hden hd
+    | inr hn => exact hnum hn
   unfold zoomWindow winLo winHi
+  rw [ifNeg hneg]
   exact zoomFit_anchor _ _ _ _ _ _ (by omega)
+
+/-- **A zoom stays inside the extent ordered, on either branch.** -/
+theorem zoomWindow_within (w : Window) (anchor : Int) (num den : Nat) (e : Window)
+    (minSpan : Nat) :
+    winLo e ≤ (zoomWindow w anchor num den e minSpan).lo
+    ∧ (zoomWindow w anchor num den e minSpan).hi ≤ winHi e
+    ∧ (zoomWindow w anchor num den e minSpan).lo
+      ≤ (zoomWindow w anchor num den e minSpan).hi := by
+  by_cases h : den = 0 ∨ num = 0
+  · rw [zoomWindow_invalid_clamp w anchor num den e minSpan h]
+    refine ⟨(clampWindow_within w e minSpan).1, (clampWindow_within w e minSpan).2, ?_⟩
+    exact clampWindow_ordered w e minSpan
+  · have hle : min e.lo e.hi ≤ max e.lo e.hi := by omega
+    unfold zoomWindow winLo winHi
+    rw [ifNeg h]
+    exact zoomFit_within _ _ _ _ _ _ hle
 
 /-- Preset buttons. -/
 inductive CPreset where

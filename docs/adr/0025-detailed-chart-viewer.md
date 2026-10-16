@@ -132,15 +132,23 @@ time zones. Fallible functions return `Result` (ADR-0007).
   period (week = ISO week, Monday start; month; quarter; year); one bar per
   non-empty bucket: `observedOn` = the bucket's last date, `close` = its last
   value, `open` = first value, `high`/`low` = max/min, `count`. `daily` is the
-  identity (one bar per point). Output dates strictly ascending.
+  identity (one bar per point, so duplicate input dates intentionally yield
+  duplicate bar days). Output dates are nondecreasing for `daily` and
+  strictly ascending for every bucketed interval.
 - `autoInterval(spanDays, nativeFrequency, maxBars)`.
-- `presetWindow(preset, firstDay, lastDay)` → `{ from, to }` (YTD = 1 January
+- `presetWindow(preset, firstDay, lastDay)` → `Result<{ from, to }>` (YTD = 1 January
   of the last date's year; 1W = 7 days; months/years by calendar months,
-  clamping the day like `subtractMonths`).
+  clamping the day like `subtractMonths`). Years 0000–0099 use explicit
+  civil-date arithmetic (no `Date.UTC` remap).
 - `clampWindow(window, extent, minSpan)`, `panWindow(window, delta, extent)`,
-  `zoomWindow(window, anchor, factor, extent, minSpan)` — integer days; the
-  result always lies within the extent with `from ≤ to`; a pan keeps the
-  span; a zoom keeps the anchor day inside the result.
+  `zoomWindow(window, anchor, factor, extent, minSpan)` — integer days,
+  each returning `Result` and rejecting non-finite day coordinates with
+  `NON_FINITE_DAY` instead of propagating NaN; the result always lies within
+  the extent with `from ≤ to`; a pan keeps the span; a zoom with a valid
+  positive finite factor keeps the (extent-clamped) anchor day inside the
+  result, while a non-positive or non-finite factor falls back to clamping
+  the input window with `minSpan`; an overflowing zoom-out target saturates
+  to the extent length.
 - `visibleSlice(bars, window)` — binary search on the ascending dates
   (indices `[start, end)`), never a filter over all bars.
 - `movingAverage(values, period)` — same length; `null` for the first
@@ -163,14 +171,22 @@ over 4 × 1,500 points, each with a budget.
 ### Formal verification
 
 `formal/ResearchFormal/ChartWindow.lean` models, over integer days and
-natural-number values: the bucket fold of `resampleSeries` (output dates
-strictly ascending; every bar's close is the last value of its bucket; bar
+natural-number values: the bucket fold of `resampleSeries` (output days
+nondecreasing for `daily`, strictly ascending for bucketed intervals; every
+bar equals the fold of its own run, so its close is the last value of its
+own bucket, tied by bar identity and by output position
+(`resample_close_last`, `resample_indexed_close`); bar
 count ≤ input length and = 0 only for empty input; `low ≤ open, close ≤
 high`), the window functions (result within the extent, `from ≤ to`, pan
-preserves the span when the extent is wide enough, zoom keeps the anchor),
+preserves the span when the extent is wide enough, zoom with a valid factor
+keeps the extent-clamped anchor inside while an invalid factor falls back to
+clamping the input window, `zoomWindow_invalid_clamp`/`zoomWindow_within`),
 `visibleSlice` (exactly the bars whose dates lie in the window), and the
-moving average's null prefix and length. `formal/Export.lean` exports
-vectors; `tests/formal/chartWindow.conformance.test.ts` replays them.
+moving average's null prefix and length. Non-finite day coordinates are
+rejected at the TypeScript boundary (`NON_FINITE_DAY`) before reaching the
+integer model. `formal/Export.lean` exports
+vectors; `tests/formal/chartWindow.conformance.test.ts` replays them
+(including a direct `bar.day` assertion so a day shift cannot pass).
 Floating-point values (averages, percents, drawdown) are covered by unit and
 property tests, not Lean.
 

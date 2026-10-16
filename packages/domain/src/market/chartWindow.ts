@@ -8,8 +8,9 @@ import { err, ok, type Result } from "../result.ts";
  * day-number conversion reuses the same `Date.UTC` validation as
  * `packages/domain/src/market/changes.ts` (`isoToDays` there delegates here),
  * and month stepping uses the same clamp-the-day rule as `subtractMonths`.
- * Fallible entry points return `Result` (ARCH-010); pure window placement is
- * total with documented clamping instead.
+ * Fallible entry points return `Result` (ARCH-010); the window functions
+ * reject non-finite day coordinates with `NON_FINITE_DAY` instead of
+ * propagating NaN.
  */
 
 export type ChartInterval = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
@@ -70,9 +71,27 @@ export interface ChartStats {
 export type DayNumberError = "INVALID_DATE" | "INVALID_DAY";
 export type MovingAverageError = "INVALID_PERIOD" | "NON_FINITE";
 export type WindowStatsError = "EMPTY_WINDOW" | "NON_FINITE";
+/** Rejection for a non-finite day coordinate at a window boundary. */
+export type WindowError = "NON_FINITE_DAY";
 
 const MS_PER_DAY = 86_400_000;
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * `Date.UTC` remaps years 0000–0099 to 1900 + year, which would break the
+ * advertised four-digit calendar support (finding #9). Every civil→millis
+ * construction goes through here, which repairs that remap with an explicit
+ * UTC full-year setter.
+ */
+function utcMs(year: number, monthIndexZeroBased: number, dayOfMonth: number): number {
+	const remapped = Date.UTC(year, monthIndexZeroBased, dayOfMonth);
+	if (year >= 0 && year <= 99) {
+		const repaired = new Date(remapped);
+		repaired.setUTCFullYear(year);
+		return repaired.getTime();
+	}
+	return remapped;
+}
 
 /**
  * `YYYY-MM-DD` to integer day number. Rejects malformed text and impossible
@@ -84,7 +103,7 @@ export function isoToDayNumber(iso: string): Result<number, "INVALID_DATE"> {
 	const year = Number(match[1]);
 	const month = Number(match[2]);
 	const day = Number(match[3]);
-	const ms = Date.UTC(year, month - 1, day);
+	const ms = utcMs(year, month - 1, day);
 	const check = new Date(ms);
 	if (
 		check.getUTCFullYear() !== year ||
@@ -134,7 +153,7 @@ function civilParts(day: number): {
 }
 
 function daysInMonth(year: number, monthOneBased: number): number {
-	return new Date(Date.UTC(year, monthOneBased, 0)).getUTCDate();
+	return new Date(utcMs(year, monthOneBased, 0)).getUTCDate();
 }
 
 /**
@@ -169,7 +188,9 @@ interface BucketEntry {
  * are Jan–Mar etc.). One bar per non-empty bucket: `observedOn` is the
  * bucket's last date, `close` its last value, `open` its first value,
  * `high`/`low` the extremes, `count` the bucket size. `daily` is the
- * identity (one bar per point). Output days ascend.
+ * identity (one bar per point). Output days are nondecreasing for `daily`
+ * (duplicate input dates intentionally yield duplicate bar days) and
+ * strictly ascending for every bucketed interval.
  *
  * Total: points with an invalid date or a non-finite value are dropped (the
  * viewer only holds validated observations, so this is defensive), and the
@@ -305,7 +326,7 @@ function subtractMonthsDay(day: number, months: number): number | null {
 	const targetYear = Math.floor(totalMonths / 12);
 	const targetMonth = totalMonths - targetYear * 12 + 1;
 	const clampedDay = Math.min(parts.day, daysInMonth(targetYear, targetMonth));
-	const ms = Date.UTC(targetYear, targetMonth - 1, clampedDay);
+	const ms = utcMs(targetYear, targetMonth - 1, clampedDay);
 	if (!Number.isFinite(ms)) return null;
 	return Math.floor(ms / MS_PER_DAY);
 }
@@ -314,18 +335,25 @@ function subtractMonthsDay(day: number, months: number): number | null {
  * Preset button to window: `to` is always the last held day; `from` counts
  * back calendar months/years (1W is 7 days, YTD is 1 January of the last
  * date's year) and is clamped into the held `[firstDay, lastDay]` extent, so
- * short histories still show from their first observation. Total: fractional
- * days are truncated, a flipped extent is normalised.
+ * short histories still show from their first observation. Rejects
+ * non-finite day coordinates with `NON_FINITE_DAY` instead of propagating
+ * NaN into an apparently usable window (finding #5). Fractional days are
+ * truncated, a flipped extent is normalised.
  */
-export function presetWindow(preset: ChartPreset, firstDay: number, lastDay: number): DayWindow {
+export function presetWindow(
+	preset: ChartPreset,
+	firstDay: number,
+	lastDay: number,
+): Result<DayWindow, WindowError> {
+	if (!Number.isFinite(firstDay) || !Number.isFinite(lastDay)) return err("NON_FINITE_DAY");
 	const lo = Math.min(Math.trunc(firstDay), Math.trunc(lastDay));
 	const hi = Math.max(Math.trunc(firstDay), Math.trunc(lastDay));
-	if (preset === "max") return { from: lo, to: hi };
+	if (preset === "max") return ok({ from: lo, to: hi });
 	let start: number | null;
 	if (preset === "1w") {
 		start = hi - 7;
 	} else if (preset === "ytd") {
-		start = Math.floor(Date.UTC(civilParts(hi).year, 0, 1) / MS_PER_DAY);
+		start = Math.floor(utcMs(civilParts(hi).year, 0, 1) / MS_PER_DAY);
 	} else {
 		const months =
 			preset === "1m"
@@ -342,7 +370,7 @@ export function presetWindow(preset: ChartPreset, firstDay: number, lastDay: num
 		start = subtractMonthsDay(hi, months);
 	}
 	if (start === null || !Number.isFinite(start)) start = lo;
-	return { from: Math.min(Math.max(start, lo), hi), to: hi };
+	return ok({ from: Math.min(Math.max(start, lo), hi), to: hi });
 }
 
 function normaliseEnds(window: DayWindow): { readonly a: number; readonly b: number } {
@@ -362,36 +390,66 @@ function fitSpan(a: number, span: number, lo: number, hi: number): DayWindow {
 /**
  * Clamps a window into the held extent with `from ≤ to` and at least
  * `minSpan` days (a negative `minSpan` behaves as 0; a `minSpan` wider than
- * the extent yields the whole extent).
+ * the extent yields the whole extent). Rejects non-finite window/extent
+ * coordinates with `NON_FINITE_DAY` (finding #5); a non-finite `minSpan`
+ * still behaves as 0.
  */
-export function clampWindow(window: DayWindow, extent: DayWindow, minSpan: number): DayWindow {
+export function clampWindow(
+	window: DayWindow,
+	extent: DayWindow,
+	minSpan: number,
+): Result<DayWindow, WindowError> {
+	if (
+		!Number.isFinite(window.from) ||
+		!Number.isFinite(window.to) ||
+		!Number.isFinite(extent.from) ||
+		!Number.isFinite(extent.to)
+	) {
+		return err("NON_FINITE_DAY");
+	}
 	const { a, b } = normaliseEnds(window);
 	const lo = Math.min(Math.trunc(extent.from), Math.trunc(extent.to));
 	const hi = Math.max(Math.trunc(extent.from), Math.trunc(extent.to));
 	const floor = Number.isFinite(minSpan) ? Math.max(0, Math.floor(minSpan)) : 0;
-	return fitSpan(a, Math.max(b - a, floor), lo, hi);
+	return ok(fitSpan(a, Math.max(b - a, floor), lo, hi));
 }
 
 /**
  * Shifts a window by `deltaDays` (fractional deltas are truncated), keeping
  * its span; clamps into the extent, or the whole extent when the span cannot
- * fit.
+ * fit. Rejects non-finite window/extent coordinates with `NON_FINITE_DAY`;
+ * a non-finite delta still behaves as 0.
  */
-export function panWindow(window: DayWindow, deltaDays: number, extent: DayWindow): DayWindow {
+export function panWindow(
+	window: DayWindow,
+	deltaDays: number,
+	extent: DayWindow,
+): Result<DayWindow, WindowError> {
+	if (
+		!Number.isFinite(window.from) ||
+		!Number.isFinite(window.to) ||
+		!Number.isFinite(extent.from) ||
+		!Number.isFinite(extent.to)
+	) {
+		return err("NON_FINITE_DAY");
+	}
 	const { a, b } = normaliseEnds(window);
 	const lo = Math.min(Math.trunc(extent.from), Math.trunc(extent.to));
 	const hi = Math.max(Math.trunc(extent.from), Math.trunc(extent.to));
 	const shift = Number.isFinite(deltaDays) ? Math.trunc(deltaDays) : 0;
-	return fitSpan(a + shift, b - a, lo, hi);
+	return ok(fitSpan(a + shift, b - a, lo, hi));
 }
 
 /**
  * Zooms around `anchorDay` by `factor` (> 1 out, < 1 in): the anchor keeps
  * its relative position, the span rounds to whole days within
  * `[minSpan, extent length]`, and the result is fitted into the extent — so
- * the (extent-clamped) anchor always stays inside. A non-positive or
- * non-finite factor cannot express a zoom and falls back to clamping the
- * input window.
+ * for a valid positive finite factor the (extent-clamped) anchor stays
+ * inside. A non-positive or non-finite factor cannot express a zoom and
+ * falls back to clamping the input window with `minSpan` (finding #3). An
+ * overflowing target span saturates to the extent length instead of
+ * collapsing to `minSpan` (finding #4). Non-finite window/extent/anchor
+ * coordinates are rejected with `NON_FINITE_DAY` (finding #5).
  */
 export function zoomWindow(
 	window: DayWindow,
@@ -399,16 +457,31 @@ export function zoomWindow(
 	factor: number,
 	extent: DayWindow,
 	minSpan: number,
-): DayWindow {
+): Result<DayWindow, WindowError> {
+	if (
+		!Number.isFinite(window.from) ||
+		!Number.isFinite(window.to) ||
+		!Number.isFinite(extent.from) ||
+		!Number.isFinite(extent.to) ||
+		!Number.isFinite(anchorDay)
+	) {
+		return err("NON_FINITE_DAY");
+	}
 	const { a, b } = normaliseEnds(window);
 	const lo = Math.min(Math.trunc(extent.from), Math.trunc(extent.to));
 	const hi = Math.max(Math.trunc(extent.from), Math.trunc(extent.to));
-	if (!Number.isFinite(factor) || factor <= 0) return fitSpan(a, b - a, lo, hi);
-	const span = b - a;
 	const floor = Number.isFinite(minSpan) ? Math.max(0, Math.floor(minSpan)) : 0;
-	let next = Math.round(span * factor);
-	if (!Number.isFinite(next)) next = floor;
-	next = Math.min(Math.max(next, floor), Math.max(hi - lo, 0));
+	if (!Number.isFinite(factor) || factor <= 0) {
+		return ok(fitSpan(a, Math.max(b - a, floor), lo, hi));
+	}
+	const span = b - a;
+	const extentLength = Math.max(hi - lo, 0);
+	// An overflowing `span * factor` means "zoom out without bound": saturate
+	// to the extent length (the whole extent) rather than to `floor`.
+	const raw = span * factor;
+	let next = Number.isFinite(raw) ? Math.round(raw) : extentLength;
+	if (!Number.isFinite(next)) next = extentLength;
+	next = Math.min(Math.max(next, floor), extentLength);
 	// Extent-clamped anchor at a clamped relative position; the integer shift
 	// below is truncated (floor), which keeps the bound provable in Lean.
 	const anchor = Math.min(Math.max(Math.trunc(anchorDay), lo), hi);
@@ -416,9 +489,9 @@ export function zoomWindow(
 	const shift =
 		span > 0 ? Math.min(next, Math.floor((offset * next) / span)) : Math.floor(next / 2);
 	const start = anchor - shift;
-	if (next >= hi - lo) return { from: lo, to: hi };
+	if (next >= hi - lo) return ok({ from: lo, to: hi });
 	const from = Math.min(Math.max(start, lo), hi - next);
-	return { from, to: from + next };
+	return ok({ from, to: from + next });
 }
 
 /** First index with `bars[index].day >= day` (ascending days). */
@@ -465,7 +538,16 @@ export function visibleSlice(bars: readonly ChartBar[], window: DayWindow): BarS
 
 /**
  * Simple moving average over the values: same length, `null` for the first
- * `period − 1` entries. One pass with a running sum (O(n)).
+ * `period − 1` entries. One rolling pass (O(n)) over scaled values with
+ * Kahan compensation: each value enters as `value / period`, so the running
+ * total is the window mean itself and can never overflow for finite inputs
+ * (finding #1: no `Infinity`). When the running total goes quiet next to
+ * the window's own magnitudes — the sign of catastrophic cancellation
+ * (`[1e16, 1]` keeping its trailing `1`s, `[1e308, 1]` recovering them) —
+ * that window alone is re-summed exactly with Neumaier arithmetic and the
+ * total is resynced, so the fast path stays O(1) per point and only
+ * pathological windows pay O(period). A non-finite average still fails
+ * closed with `NON_FINITE` rather than succeeding with `Infinity`.
  */
 export function movingAverage(
 	values: readonly number[],
@@ -474,18 +556,72 @@ export function movingAverage(
 	if (!Number.isInteger(period) || period < 1) return err("INVALID_PERIOD");
 	const out: (number | null)[] = [];
 	let sum = 0;
+	let compensation = 0;
+	// Decreasing-|value| deque of window indices for the cancellation check.
+	const deque: number[] = [];
+	let dequeHead = 0;
 	for (let index = 0; index < values.length; index += 1) {
 		const value = values[index];
 		if (value === undefined || !Number.isFinite(value)) return err("NON_FINITE");
-		sum += value;
+		// Kahan add of the scaled value.
+		const scaled = value / period;
+		const y = scaled - compensation;
+		const total = sum + y;
+		compensation = total - sum - y;
+		sum = total;
+		const magnitude = Math.abs(value);
+		while (deque.length > dequeHead) {
+			const back = deque[deque.length - 1];
+			if (back === undefined) break;
+			const backValue = values[back];
+			if (backValue === undefined || !(Math.abs(backValue) <= magnitude)) break;
+			deque.pop();
+		}
+		deque.push(index);
 		if (index >= period) {
 			const dropped = values[index - period];
 			if (dropped === undefined || !Number.isFinite(dropped)) return err("NON_FINITE");
-			sum -= dropped;
+			// Kahan removal = Kahan add of the negated scaled value.
+			const yDrop = -dropped / period - compensation;
+			const totalDrop = sum + yDrop;
+			compensation = totalDrop - sum - yDrop;
+			sum = totalDrop;
+			while (dequeHead < deque.length && (deque[dequeHead] ?? 0) <= index - period) {
+				dequeHead += 1;
+			}
 		}
-		out.push(index >= period - 1 ? sum / period : null);
+		if (index < period - 1) {
+			out.push(null);
+			continue;
+		}
+		const head = deque[dequeHead] ?? index;
+		const headValue = values[head] ?? 0;
+		const windowMax = Math.abs(headValue);
+		// The running total holds at most one window of scaled values, so it
+		// is structurally finite; a total dwarfed by its own window means the
+		// low bits were lost above — re-sum this window exactly (O(period)).
+		if (windowMax > 0 && Math.abs(sum) <= (windowMax / period) * 2 ** -20) {
+			sum = neumaierWindowMean(values, index - period + 1, period);
+			compensation = 0;
+		}
+		if (!Number.isFinite(sum)) return err("NON_FINITE");
+		out.push(sum);
 	}
 	return ok(out);
+}
+
+/** Neumaier sum of `values[start .. start + period]` each scaled by `1 / period`. */
+function neumaierWindowMean(values: readonly number[], start: number, period: number): number {
+	let sum = 0;
+	let compensation = 0;
+	for (let offset = 0; offset < period; offset += 1) {
+		const term = (values[start + offset] ?? 0) / period;
+		const total = sum + term;
+		if (Math.abs(sum) >= Math.abs(term)) compensation += sum - total + term;
+		else compensation += term - total + sum;
+		sum = total;
+	}
+	return sum + compensation;
 }
 
 /**
@@ -522,6 +658,9 @@ export function windowStats(bars: readonly ChartBar[]): Result<ChartStats, Windo
 			sawNonPositivePeak = true;
 		} else {
 			const drawdown = ((peak - bar.close) / peak) * 100;
+			// A subnormal peak with a finite fall overflows to Infinity
+			// (finding #2: peak 1e-310 against close −1); fail closed.
+			if (!Number.isFinite(drawdown)) return err("NON_FINITE");
 			if (drawdown > maxDrawdown) maxDrawdown = drawdown;
 		}
 	}
@@ -531,11 +670,17 @@ export function windowStats(bars: readonly ChartBar[]): Result<ChartStats, Windo
 	if (!Number.isFinite(change)) return err("NON_FINITE");
 	const average = sum / bars.length;
 	if (!Number.isFinite(average)) return err("NON_FINITE");
+	const percentChange = open === 0 ? null : (change / Math.abs(open)) * 100;
+	// A subnormal base inflates a finite change to Infinity (finding #2:
+	// open 1e-310, close 1); the contract promises null-or-finite, never
+	// infinity, so fail closed like the other derived fields.
+	if (percentChange !== null && !Number.isFinite(percentChange)) return err("NON_FINITE");
+	if (!Number.isFinite(maxDrawdown)) return err("NON_FINITE");
 	return ok({
 		open,
 		close,
 		change,
-		percentChange: open === 0 ? null : (change / Math.abs(open)) * 100,
+		percentChange,
 		high,
 		low,
 		average,
@@ -547,14 +692,26 @@ export function windowStats(bars: readonly ChartBar[]): Result<ChartStats, Windo
 /**
  * Rebase values to percent change from `base`: 0 % at the base, `null`
  * everywhere for a zero or non-finite base, `null` per non-finite value.
- * Total — the viewer renders a zero base as "unavailable (zero base)".
+ * The direct difference is used while it stays finite; only when its
+ * intermediate subtraction overflows do we fall back to the scaled form
+ * (`value/|base| − sign`), so opposite-sign extremes never overflow an
+ * intermediate subtraction
+ * (finding #6: `rebasePercent([1e308], −1e308)` is `[200]`, not `[null]`).
+ * Genuinely unrepresentable results stay `null`. Total — the viewer renders
+ * a zero base as "unavailable (zero base)".
  */
 export function rebasePercent(values: readonly number[], base: number): readonly (number | null)[] {
 	if (!Number.isFinite(base) || base === 0) return values.map(() => null);
 	const scale = Math.abs(base);
+	const scaledBase = base / scale;
 	return values.map((value) => {
 		if (!Number.isFinite(value)) return null;
-		const percent = ((value - base) / scale) * 100;
-		return Number.isFinite(percent) ? percent : null;
+		// The direct form is exact for ordinary values; only when its
+		// intermediate subtraction overflows do we fall back to the scaled
+		// difference, which keeps opposite-sign extremes finite.
+		const direct = ((value - base) / scale) * 100;
+		if (Number.isFinite(direct)) return direct;
+		const scaled = (value / scale - scaledBase) * 100;
+		return Number.isFinite(scaled) ? scaled : null;
 	});
 }

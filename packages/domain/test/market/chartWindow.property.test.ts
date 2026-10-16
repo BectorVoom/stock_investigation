@@ -191,19 +191,19 @@ describe("chartWindow properties", () => {
 				(from, span, extentFrom, extentSpan, delta, factor, minSpan) => {
 					const window = { from, to: from + Math.abs(span) };
 					const extent = { from: extentFrom, to: extentFrom + Math.abs(extentSpan) };
-					const clamped = clampWindow(window, extent, minSpan);
+					const clamped = expectOk(clampWindow(window, extent, minSpan));
 					expect(clamped.from).toBeGreaterThanOrEqual(extent.from);
 					expect(clamped.to).toBeLessThanOrEqual(extent.to);
 					expect(clamped.from).toBeLessThanOrEqual(clamped.to);
 
-					const panned = panWindow(window, delta, extent);
+					const panned = expectOk(panWindow(window, delta, extent));
 					const extentLength = extent.to - extent.from;
 					if (window.to - window.from <= extentLength) {
 						expect(panned.to - panned.from).toBe(window.to - window.from);
 					}
 
 					const anchor = Math.min(Math.max(from + Math.floor(span / 2), extent.from), extent.to);
-					const zoomed = zoomWindow(window, anchor, factor, extent, minSpan);
+					const zoomed = expectOk(zoomWindow(window, anchor, factor, extent, minSpan));
 					expect(zoomed.from).toBeLessThanOrEqual(anchor);
 					expect(anchor).toBeLessThanOrEqual(zoomed.to);
 					expect(zoomed.from).toBeGreaterThanOrEqual(extent.from);
@@ -224,7 +224,7 @@ describe("chartWindow properties", () => {
 				fc.integer({ min: 0, max: 4000 }),
 				(preset, firstDay, length) => {
 					const lastDay = firstDay + length;
-					const window = presetWindow(preset, firstDay, lastDay);
+					const window = expectOk(presetWindow(preset, firstDay, lastDay));
 					expect(window.to).toBe(lastDay);
 					expect(window.from).toBeGreaterThanOrEqual(firstDay);
 					expect(window.from).toBeLessThanOrEqual(window.to);

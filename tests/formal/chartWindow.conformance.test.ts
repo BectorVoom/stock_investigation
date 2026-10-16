@@ -135,9 +135,15 @@ describe("Lean model conformance: chart resampling", () => {
 				expect(bar.low, label).toBe(expected.low);
 				expect(bar.close, label).toBe(expected.close);
 				expect(bar.count, label).toBe(expected.count);
+				// Finding #8: the old assertions reparsed observedOn, so a
+				// constant day shift passed silently. Pin the day itself and
+				// its consistency with the date text.
+				expect(bar.day, label).toBe(expected.day);
+				expect(dayToIso(bar.day), label).toBe(bar.observedOn);
 				const day = isoToDayNumber(bar.observedOn);
 				if (!day.ok) throw new Error(`bad bar date: ${label}`);
 				expect(day.value, label).toBe(expected.day);
+				expect(day.value, label).toBe(bar.day);
 			});
 			// The proved properties, checked independently on the wire values.
 			for (let index = 1; index < bars.length; index += 1) {
@@ -158,7 +164,9 @@ describe("Lean model conformance: chart presets", () => {
 	it(`agrees with presetWindow on all ${vectors.chartPreset.length} vectors`, () => {
 		expect(vectors.chartPreset.length).toBe(81);
 		for (const vector of vectors.chartPreset) {
-			const window = presetWindow(vector.preset, vector.firstDay, vector.lastDay);
+			const result = presetWindow(vector.preset, vector.firstDay, vector.lastDay);
+			if (!result.ok) throw new Error(`rejected finite vector: ${JSON.stringify(vector)}`);
+			const window = result.value;
 			const label = JSON.stringify(vector);
 			expect(window.from, label).toBe(vector.from);
 			expect(window.to, label).toBe(vector.to);
@@ -174,7 +182,9 @@ describe("Lean model conformance: chart window placement", () => {
 	it(`agrees with clampWindow on all ${vectors.chartClamp.length} vectors`, () => {
 		expect(vectors.chartClamp.length).toBe(72);
 		for (const vector of vectors.chartClamp) {
-			const window = clampWindow(vector.window, vector.extent, vector.minSpan);
+			const result = clampWindow(vector.window, vector.extent, vector.minSpan);
+			if (!result.ok) throw new Error(`rejected finite vector: ${JSON.stringify(vector)}`);
+			const window = result.value;
 			const label = JSON.stringify(vector);
 			expect(window.from, label).toBe(vector.from);
 			expect(window.to, label).toBe(vector.to);
@@ -189,7 +199,9 @@ describe("Lean model conformance: chart window placement", () => {
 	it(`agrees with panWindow on all ${vectors.chartPan.length} vectors`, () => {
 		expect(vectors.chartPan.length).toBe(72);
 		for (const vector of vectors.chartPan) {
-			const window = panWindow(vector.window, vector.delta, vector.extent);
+			const result = panWindow(vector.window, vector.delta, vector.extent);
+			if (!result.ok) throw new Error(`rejected finite vector: ${JSON.stringify(vector)}`);
+			const window = result.value;
 			const label = JSON.stringify(vector);
 			expect(window.from, label).toBe(vector.from);
 			expect(window.to, label).toBe(vector.to);
@@ -201,13 +213,15 @@ describe("Lean model conformance: chart window placement", () => {
 		for (const vector of vectors.chartZoom) {
 			// Every factor is an exact binary fraction, so the float
 			// product matches the model's integer arithmetic exactly.
-			const window = zoomWindow(
+			const result = zoomWindow(
 				vector.window,
 				vector.anchor,
 				vector.factorNum / vector.factorDen,
 				vector.extent,
 				vector.minSpan,
 			);
+			if (!result.ok) throw new Error(`rejected finite vector: ${JSON.stringify(vector)}`);
+			const window = result.value;
 			const label = JSON.stringify(vector);
 			expect(window.from, label).toBe(vector.from);
 			expect(window.to, label).toBe(vector.to);

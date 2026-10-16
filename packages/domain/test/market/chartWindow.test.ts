@@ -48,6 +48,14 @@ describe("isoToDayNumber / dayNumberToIso", () => {
 		expect(expectErr(dayNumberToIso(1.5))).toBe("INVALID_DAY");
 		expect(expectErr(dayNumberToIso(Number.NaN))).toBe("INVALID_DAY");
 	});
+
+	it("supports years 0000–0099 without the Date.UTC remap", () => {
+		// Finding #9: Date.UTC(99, …) means 1999; the civil helper repairs
+		// it, so 0099-12-31 parses and round-trips the day before 0100-01-01.
+		const eve = expectOk(isoToDayNumber("0099-12-31"));
+		expect(expectOk(dayNumberToIso(eve))).toBe("0099-12-31");
+		expect(eve).toBe(day("0100-01-01") - 1);
+	});
 });
 
 describe("resampleSeries", () => {
@@ -187,24 +195,40 @@ describe("presetWindow", () => {
 
 	it("counts months/years back with month-end clamping", () => {
 		// 1M before 2024-03-31 clamps February to 2024-02-29 (leap year).
-		const oneMonth = presetWindow("1m", first, last);
+		const oneMonth = expectOk(presetWindow("1m", first, last));
 		expect(iso(oneMonth.from)).toBe("2024-02-29");
 		expect(oneMonth.to).toBe(last);
 		// 1Y before 2024-03-31 is 2023-03-31.
-		expect(iso(presetWindow("1y", first, last).from)).toBe("2023-03-31");
+		expect(iso(expectOk(presetWindow("1y", first, last)).from)).toBe("2023-03-31");
 		// 1W is 7 days: 2024-03-24.
-		expect(iso(presetWindow("1w", first, last).from)).toBe("2024-03-24");
+		expect(iso(expectOk(presetWindow("1w", first, last)).from)).toBe("2024-03-24");
 	});
 
 	it("starts YTD on 1 January and returns everything for max", () => {
-		expect(iso(presetWindow("ytd", first, last).from)).toBe("2024-01-01");
-		expect(presetWindow("max", first, last)).toEqual({ from: first, to: last });
+		expect(iso(expectOk(presetWindow("ytd", first, last)).from)).toBe("2024-01-01");
+		expect(expectOk(presetWindow("max", first, last))).toEqual({ from: first, to: last });
 	});
 
 	it("clamps short histories to the first observation", () => {
 		// 5Y before 2024-03-31 is 2019-03-31, before the first held day.
-		const window = presetWindow("5y", first, last);
+		const window = expectOk(presetWindow("5y", first, last));
 		expect(window).toEqual({ from: first, to: last });
+	});
+
+	it("rejects non-finite day coordinates instead of propagating NaN", () => {
+		// Finding #5: an apparently usable window must never come back.
+		expect(expectErr(presetWindow("1m", Number.NaN, last))).toBe("NON_FINITE_DAY");
+		expect(expectErr(presetWindow("max", first, Number.POSITIVE_INFINITY))).toBe("NON_FINITE_DAY");
+	});
+
+	it("supports years 0000–0099 and clamps presets crossing that boundary", () => {
+		// Finding #9: Date.UTC remaps 00–99 onto 1900+; the civil helper
+		// repairs it, so 0099-12-31 parses and a 1m preset over January 0100
+		// clamps to the first held day (January 1).
+		expect(expectOk(isoToDayNumber("0099-12-31"))).toBe(expectOk(isoToDayNumber("0100-01-01")) - 1);
+		const lo = day("0100-01-01");
+		const hi = day("0100-01-31");
+		expect(iso(expectOk(presetWindow("1m", lo, hi)).from)).toBe("0100-01-01");
 	});
 });
 
@@ -212,20 +236,20 @@ describe("clampWindow / panWindow / zoomWindow", () => {
 	const extent = { from: day("2024-01-01"), to: day("2024-12-31") };
 
 	it("keeps windows inside the extent with from ≤ to", () => {
-		const window = clampWindow({ from: extent.to + 10, to: extent.to + 20 }, extent, 2);
+		const window = expectOk(clampWindow({ from: extent.to + 10, to: extent.to + 20 }, extent, 2));
 		expect(window.from).toBeGreaterThanOrEqual(extent.from);
 		expect(window.to).toBeLessThanOrEqual(extent.to);
 		expect(window.from).toBeLessThanOrEqual(window.to);
 		// A span wider than the extent yields the whole extent.
-		expect(clampWindow({ from: 0, to: 100_000 }, extent, 0)).toEqual(extent);
+		expect(expectOk(clampWindow({ from: 0, to: 100_000 }, extent, 0))).toEqual(extent);
 	});
 
 	it("pans by the delta while keeping the span", () => {
 		const window = { from: day("2024-06-01"), to: day("2024-06-11") };
-		const panned = panWindow(window, 5, extent);
+		const panned = expectOk(panWindow(window, 5, extent));
 		expect(panned).toEqual({ from: window.from + 5, to: window.to + 5 });
 		// Panning past the end stops at the edge with the span intact.
-		const stuck = panWindow(window, 10_000, extent);
+		const stuck = expectOk(panWindow(window, 10_000, extent));
 		expect(stuck.to).toBe(extent.to);
 		expect(stuck.to - stuck.from).toBe(10);
 	});
@@ -234,17 +258,61 @@ describe("clampWindow / panWindow / zoomWindow", () => {
 		const window = { from: day("2024-06-01"), to: day("2024-06-11") };
 		const anchor = day("2024-06-06");
 		// Factor 2 about Jun 6 (5 days in, span 10): new span 20, from Jun 1.
-		const out = zoomWindow(window, anchor, 2, extent, 2);
+		const out = expectOk(zoomWindow(window, anchor, 2, extent, 2));
 		expect(out.to - out.from).toBe(20);
 		expect(out.from).toBeLessThanOrEqual(anchor);
 		expect(anchor).toBeLessThanOrEqual(out.to);
 		// Factor 0.5 halves the span to 5, still holding the anchor.
-		const into = zoomWindow(window, anchor, 0.5, extent, 2);
+		const into = expectOk(zoomWindow(window, anchor, 0.5, extent, 2));
 		expect(into.to - into.from).toBe(5);
 		expect(into.from).toBeLessThanOrEqual(anchor);
 		expect(anchor).toBeLessThanOrEqual(into.to);
-		// A useless factor falls back to clamping the input.
-		expect(zoomWindow(window, anchor, 0, extent, 2)).toEqual(clampWindow(window, extent, 2));
+		// A useless factor falls back to clamping the input with minSpan.
+		expect(expectOk(zoomWindow(window, anchor, 0, extent, 2))).toEqual(
+			expectOk(clampWindow(window, extent, 2)),
+		);
+	});
+
+	it("falls back to clampWindow with minSpan for an invalid factor", () => {
+		// Finding #3: {from:5,to:5} zoomed by 0 with minSpan 4 clamps to a
+		// 4-day window {from:5,to:9}, not the degenerate input; Lean models
+		// this branch as clampWindow.
+		expect(expectOk(zoomWindow({ from: 5, to: 5 }, 5, 0, { from: 0, to: 10 }, 4))).toEqual({
+			from: 5,
+			to: 9,
+		});
+		// The anchor guarantee only holds for a valid positive finite
+		// factor: an invalid factor keeps the clamped window, which may sit
+		// away from a far-away anchor.
+		expect(expectOk(zoomWindow({ from: 0, to: 2 }, 8, 0, { from: 0, to: 10 }, 2))).toEqual({
+			from: 0,
+			to: 2,
+		});
+	});
+
+	it("saturates an overflowing zoom-out to the whole extent", () => {
+		// Finding #4: span 6 × 1e308 overflows to Infinity; the target is
+		// the full extent, not the minimum span.
+		expect(expectOk(zoomWindow({ from: 2, to: 8 }, 5, 1e308, { from: 0, to: 10 }, 2))).toEqual({
+			from: 0,
+			to: 10,
+		});
+	});
+
+	it("rejects non-finite coordinates instead of propagating NaN", () => {
+		// Finding #5: every NaN coordinate fails closed with NON_FINITE_DAY.
+		expect(expectErr(clampWindow({ from: Number.NaN, to: 5 }, { from: 0, to: 10 }, 2))).toBe(
+			"NON_FINITE_DAY",
+		);
+		expect(expectErr(panWindow({ from: 0, to: 5 }, 1, { from: 0, to: Number.NaN }))).toBe(
+			"NON_FINITE_DAY",
+		);
+		expect(expectErr(zoomWindow({ from: 0, to: 5 }, Number.NaN, 2, { from: 0, to: 10 }, 0))).toBe(
+			"NON_FINITE_DAY",
+		);
+		expect(expectErr(zoomWindow({ from: 0, to: 5 }, 2, 2, { from: Number.NaN, to: 10 }, 0))).toBe(
+			"NON_FINITE_DAY",
+		);
 	});
 });
 
@@ -290,6 +358,27 @@ describe("movingAverage", () => {
 		expect(expectErr(movingAverage([1, 2], 0))).toBe("INVALID_PERIOD");
 		expect(expectErr(movingAverage([1, 2], 1.5))).toBe("INVALID_PERIOD");
 		expect(expectErr(movingAverage([1, Number.NaN], 1))).toBe("NON_FINITE");
+	});
+
+	it("keeps small values next to a huge one without cancellation", () => {
+		// Finding #1: a plain running sum rounds 1e16 + 1 back to 1e16, so
+		// subtracting the head leaves 0; the compensated scaled accumulator
+		// recovers the trailing ones. Windows: [1e16,1] → 5e15, then 1, 1.
+		expect(expectOk(movingAverage([1e16, 1, 1, 1], 2))).toEqual([null, 5e15, 1, 1]);
+	});
+
+	it("never overflows a finite window to Infinity", () => {
+		// Finding #1: [1e308,1e308,1,1] period 2 ends at the [1,1] window.
+		// Windows: 1e308, (1e308+1)/2 = 5e307, then 1 — every entry finite.
+		const average = expectOk(movingAverage([1e308, 1e308, 1, 1], 2));
+		expect(average).toHaveLength(4);
+		expect(average[0]).toBeNull();
+		expect(average[1]).toBe(1e308);
+		expect(average[2]).toBe(5e307);
+		expect(average[3]).toBe(1);
+		for (const entry of average) {
+			if (entry !== null) expect(Number.isFinite(entry)).toBe(true);
+		}
 	});
 });
 
@@ -355,6 +444,38 @@ describe("windowStats", () => {
 	it("rejects empty input", () => {
 		expect(expectErr(windowStats([]))).toBe("EMPTY_WINDOW");
 	});
+
+	it("fails closed when a derived percent or drawdown overflows", () => {
+		// Finding #2: subnormal bases inflate finite moves to Infinity.
+		const tiny = (close: number): ChartBar => ({
+			observedOn: "2024-01-01",
+			day: day("2024-01-01"),
+			open: close,
+			high: close,
+			low: close,
+			close,
+			count: 1,
+		});
+		// Percent (1 − 1e-310)/1e-310 × 100 overflows.
+		expect(
+			expectErr(
+				windowStats([
+					{ ...tiny(1e-310), observedOn: "2024-01-01", day: day("2024-01-01") },
+					{ ...tiny(1), observedOn: "2024-01-02", day: day("2024-01-02") },
+				]),
+			),
+		).toBe("NON_FINITE");
+		// Drawdown off peak 1e-310 against close −1 overflows.
+		expect(
+			expectErr(
+				windowStats([
+					{ ...tiny(1e-310), observedOn: "2024-01-01", day: day("2024-01-01") },
+					{ ...tiny(-1), observedOn: "2024-01-02", day: day("2024-01-02") },
+					{ ...tiny(1e-310), observedOn: "2024-01-03", day: day("2024-01-03") },
+				]),
+			),
+		).toBe("NON_FINITE");
+	});
 });
 
 describe("rebasePercent", () => {
@@ -362,5 +483,27 @@ describe("rebasePercent", () => {
 		// (110−100)/100×100 = 10; (90−100)/100×100 = −10.
 		expect(rebasePercent([100, 110, 90], 100)).toEqual([0, 10, -10]);
 		expect(rebasePercent([100, 110], 0)).toEqual([null, null]);
+	});
+
+	it("scales before subtracting so opposite extremes stay finite", () => {
+		// Finding #6: (1e308 − (−1e308))/1e308 × 100 = 200; the naive
+		// numerator overflows to Infinity and wrongly yields null.
+		expect(rebasePercent([1e308], -1e308)).toEqual([200]);
+	});
+});
+
+describe("resampleSeries duplicate dates", () => {
+	it("keeps both daily points, so days are nondecreasing rather than strict", () => {
+		// Finding #10: two points on 2024-01-01 intentionally stay two bars.
+		const bars = resampleSeries(
+			[
+				{ observedOn: "2024-01-01", value: 3 },
+				{ observedOn: "2024-01-01", value: 7 },
+			],
+			"daily",
+		);
+		expect(bars.map((bar) => bar.day)).toEqual([day("2024-01-01"), day("2024-01-01")]);
+		expect(bars[0]?.close).toBe(3);
+		expect(bars[1]?.close).toBe(7);
 	});
 });
