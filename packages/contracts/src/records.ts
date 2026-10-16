@@ -502,6 +502,16 @@ export const datasetColumnSchema = z.strictObject({
 	unit: z.string().min(1).max(40).optional(),
 });
 
+/**
+ * Bounds the dataset the Notebook `chart` widget rebuilds from (`chartWidgetDataset.ts` in `@research/ui-registry`):
+ * column labels and number units. The numbers match `datasetColumnSchema` above,
+ * so the widget's rebuild can never exceed what a stored dataset allows.
+ */
+export const DATASET_LIMITS = {
+	maxColumnLabelChars: 80,
+	maxColumnUnitChars: 40,
+} as const;
+
 export const datasetSchema = z
 	.strictObject({
 		datasetId: idSchema,

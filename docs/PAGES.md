@@ -243,7 +243,12 @@ Ask research questions and read the answers, with their sources and run progress
   numbers, units, as-of dates, sources and unavailable states); they are
   added from the Add menu through Home's form (series, range, days ahead),
   edited in the same form, and reloaded only when the named series change —
-  a series never refreshed queues one market-data refresh by itself. The
+  a series never refreshed queues one market-data refresh by itself. A
+  `chart` widget carries its own series and draws through the same shared
+  plot as the Chat preview it was saved from (same viewBox, ticks, axis
+  titles, marks, legend and readout; `xLabel` / `yLabel` plus `xKind` keep the
+  axis titles and date/number x positioning, and only a lossless conversion
+  becomes a `chart` — otherwise `research`). The
   earnings calendar reads the Watchlist page's stocks with its own refresh
   button. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header

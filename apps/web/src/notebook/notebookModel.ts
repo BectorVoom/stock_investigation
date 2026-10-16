@@ -1,9 +1,21 @@
 import type { ChatMessage, WorkspaceView } from "@research/contracts";
-import { NOTEBOOK_LIMITS, WIDGET_TYPE_META, type WidgetCore } from "@research/contracts";
+import {
+	barChartPropsSchema,
+	lineChartPropsSchema,
+	NOTEBOOK_LIMITS,
+	WIDGET_TYPE_META,
+	type WidgetCore,
+} from "@research/contracts";
+import {
+	chartWidgetToGuardedDataset,
+	guardDataset,
+	presentedSeriesLabels,
+} from "@research/ui-registry";
 import { newWidgetId } from "../widgets/widgetModel.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
+type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
 
 function truncateText(text: string, max: number): string {
 	return text.length > max ? text.slice(0, max) : text;
@@ -120,10 +132,118 @@ function researchFallback(component: WorkspaceComponent, widgetId: string): Widg
 	};
 }
 
+function axisLabel(value: string): string | undefined {
+	const trimmed = value.trim().slice(0, NOTEBOOK_LIMITS.maxTitleChars);
+	return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/** Raw x text of a dataset row: numbers stringify, null means no x. */
+function xTextOf(cell: { readonly v: string | number | null } | undefined): string | null {
+	if (cell === undefined || cell.v === null) return null;
+	return typeof cell.v === "number" ? String(cell.v) : cell.v;
+}
+
+/** A plottable number or null (never 0 for missing, never text). */
+function numberOrNull(cell: { readonly v: string | number | null } | undefined): number | null {
+	if (cell === undefined) return null;
+	return typeof cell.v === "number" && Number.isFinite(cell.v) ? cell.v : null;
+}
+
 /**
- * A self-contained widget from a canvas component: tables and charts become
- * `table` / `chart` widgets carrying a copy of their dataset rows (so they
- * stay editable); every other component becomes a `research` widget that
+ * A `chart` widget for the given line/bar component only when the conversion
+ * is lossless; otherwise null (the caller falls back to `research`, which
+ * renders through the registry and is identical by construction).
+ *
+ * Losslessness is decided by a round trip, not by a list of special cases:
+ * the source dataset is guarded exactly as the registry renderer guards it,
+ * converted, rebuilt with `chartWidgetToGuardedDataset`, and required to have
+ * the same rows in the same order (x label text per row, and per series the
+ * same number or null at every row), the same series in the same order, and
+ * no withheld series. Pure, so unit tests cover the five Codex cases (gap in
+ * the first series, a row empty in every series, repeated labels,
+ * withheld-by-presentation, all-null first series).
+ */
+export function losslessChartWidget(args: {
+	readonly dataset: WorkspaceDataset;
+	readonly xKey: string;
+	readonly series: readonly ChartSeriesInput[];
+	readonly chartType: "line" | "bar";
+	readonly title: string;
+	readonly unit: string;
+	readonly xLabel: string | undefined;
+	readonly yLabel: string | undefined;
+	readonly widgetId: string;
+}): ChartWidgetCore | null {
+	const guarded = guardDataset(args.dataset, presentedSeriesLabels(args.series));
+	if (guarded.withheldColumns.size > 0) return null;
+	if (args.series.length === 0 || args.series.length > NOTEBOOK_LIMITS.maxChartSeries) return null;
+	// A capped unit would rename the y axis title, so it is not the same picture.
+	if (args.unit.length > NOTEBOOK_LIMITS.maxUnitChars) return null;
+	const converted = pointsFromDataset(guarded.dataset, args.xKey, args.series);
+	// Dropped series (all null, e.g. an all-null first series) shift colour
+	// slots: Chat colours by the series' slot in the props.
+	if (converted.length !== args.series.length) return null;
+	for (const [index, entry] of converted.entries()) {
+		if (entry.name !== args.series[index]?.label) return null;
+	}
+	const sourceColumn = args.dataset.columns.find((column) => column.key === args.xKey);
+	if (sourceColumn === undefined) return null;
+	const xKind = sourceColumn.kind;
+	const candidate: ChartWidgetCore = {
+		widgetId: args.widgetId,
+		type: "chart",
+		title: args.title,
+		size: WIDGET_TYPE_META.chart.defaultSize,
+		chartType: args.chartType,
+		unit: args.unit,
+		series: converted,
+		...(args.xLabel === undefined ? {} : { xLabel: args.xLabel }),
+		...(args.yLabel === undefined ? {} : { yLabel: args.yLabel }),
+		...(xKind === "text" ? {} : { xKind }),
+	};
+	const rebuilt = chartWidgetToGuardedDataset(candidate);
+	if (rebuilt.withheldColumns.size > 0) return null;
+	const sourceRows = guarded.dataset.rows;
+	const rebuiltRows = rebuilt.dataset.rows;
+	if (sourceRows.length !== rebuiltRows.length) return null;
+	for (const [rowIndex, sourceRow] of sourceRows.entries()) {
+		const rebuiltRow = rebuiltRows[rowIndex];
+		if (rebuiltRow === undefined) return null;
+		if (xTextOf(sourceRow[args.xKey]) !== xTextOf(rebuiltRow.x)) return null;
+		for (const [seriesIndex, entry] of args.series.entries()) {
+			if (numberOrNull(sourceRow[entry.key]) !== numberOrNull(rebuiltRow[`s${seriesIndex}`]))
+				return null;
+		}
+	}
+	return candidate;
+}
+
+/** A line or bar chart's props as the registry parses them; null when it would refuse them. */
+function chartPropsOf(component: WorkspaceComponent): {
+	readonly chartType: "line" | "bar";
+	readonly xKey: string;
+	readonly series: readonly ChartSeriesInput[];
+	readonly xLabel: string;
+	readonly yLabel: string;
+	readonly yUnit: string;
+} | null {
+	if (component.componentType === "line-chart") {
+		const parsed = lineChartPropsSchema.safeParse(component.props);
+		return parsed.success ? { chartType: "line", ...parsed.data } : null;
+	}
+	const parsed = barChartPropsSchema.safeParse(component.props);
+	return parsed.success
+		? { chartType: "bar", xKey: parsed.data.categoryKey, ...parsed.data }
+		: null;
+}
+
+/**
+ * A self-contained widget from a canvas component: tables become `table`
+ * widgets carrying a copy of their dataset rows (so they stay editable);
+ * line/bar charts become `chart` widgets only when the conversion is lossless
+ * (otherwise `research`, identical by construction); candlestick charts always
+ * become `research` (their Chat picture is candles, a close-price line is not
+ * the same graph); every other component becomes a `research` widget that
  * renders the component itself. Null when the component cannot be saved
  * (its dataset is not in `view`).
  */
@@ -132,17 +252,7 @@ export function widgetFromComponent(
 	view: WorkspaceView,
 ): WidgetCore | null {
 	const widgetId = newWidgetId();
-	const props = component.props as {
-		readonly datasetRef?: unknown;
-		readonly title?: unknown;
-		readonly xKey?: unknown;
-		readonly categoryKey?: unknown;
-		readonly dateKey?: unknown;
-		readonly closeKey?: unknown;
-		readonly series?: unknown;
-		readonly yUnit?: unknown;
-		readonly priceUnit?: unknown;
-	};
+	const props = component.props as { readonly datasetRef?: unknown };
 	const title = componentTitle(component) ?? component.componentType;
 
 	switch (component.componentType) {
@@ -158,62 +268,31 @@ export function widgetFromComponent(
 			if (typeof props.datasetRef !== "string") return null;
 			const dataset = datasetById(view, props.datasetRef);
 			if (dataset === null) return null;
-			const xKey =
-				typeof props.xKey === "string"
-					? props.xKey
-					: typeof props.categoryKey === "string"
-						? props.categoryKey
-						: null;
-			if (xKey === null || !Array.isArray(props.series))
-				return researchFallback(component, widgetId);
-			const series = (props.series as readonly unknown[]).flatMap((entry): ChartSeriesInput[] => {
-				if (typeof entry !== "object" || entry === null) return [];
-				const record = entry as { readonly key?: unknown; readonly label?: unknown };
-				return typeof record.key === "string" && typeof record.label === "string"
-					? [{ key: record.key, label: record.label }]
-					: [];
-			});
-			if (series.length === 0) return researchFallback(component, widgetId);
-			const converted = pointsFromDataset(dataset, xKey, series);
-			if (converted.length === 0) return researchFallback(component, widgetId);
-			const unit =
-				typeof props.yUnit === "string" ? props.yUnit.slice(0, NOTEBOOK_LIMITS.maxUnitChars) : "";
-			return {
-				widgetId,
-				type: "chart",
-				title,
-				size: WIDGET_TYPE_META.chart.defaultSize,
-				chartType: component.componentType === "bar-chart" ? "bar" : "line",
-				unit,
-				series: converted,
-			};
-		}
-		case "candlestick-chart": {
-			if (typeof props.datasetRef !== "string") return null;
-			const dataset = datasetById(view, props.datasetRef);
-			if (dataset === null) return null;
-			if (typeof props.dateKey !== "string" || typeof props.closeKey !== "string") {
+			// Parsed with the schemas the registry renders from: props it would
+			// refuse cannot be "the same graph", so they stay a research widget.
+			const chart = chartPropsOf(component);
+			if (chart === null) return researchFallback(component, widgetId);
+			// A unit longer than a widget's would be cut, renaming the y axis: not
+			// the same picture. (Axis titles fit: the props cap them below the widget's.)
+			if (chart.yUnit.length > NOTEBOOK_LIMITS.maxUnitChars) {
 				return researchFallback(component, widgetId);
 			}
-			const closeColumn = dataset.columns.find((column) => column.key === props.closeKey);
-			const converted = pointsFromDataset(dataset, props.dateKey, [
-				{ key: props.closeKey, label: closeColumn?.label ?? "Close" },
-			]);
-			if (converted.length === 0) return researchFallback(component, widgetId);
-			const unit =
-				typeof props.priceUnit === "string"
-					? props.priceUnit.slice(0, NOTEBOOK_LIMITS.maxUnitChars)
-					: "";
-			return {
-				widgetId,
-				type: "chart",
+			const converted = losslessChartWidget({
+				dataset,
+				xKey: chart.xKey,
+				series: chart.series,
+				chartType: chart.chartType,
 				title,
-				size: WIDGET_TYPE_META.chart.defaultSize,
-				chartType: "line",
-				unit,
-				series: converted,
-			};
+				unit: chart.yUnit,
+				xLabel: axisLabel(chart.xLabel),
+				yLabel: axisLabel(chart.yLabel),
+				widgetId,
+			});
+			return converted ?? researchFallback(component, widgetId);
 		}
+		case "candlestick-chart":
+			// Its Chat picture is candles; a close-price line is not the same graph.
+			return researchFallback(component, widgetId);
 		default:
 			return researchFallback(component, widgetId);
 	}

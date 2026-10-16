@@ -212,6 +212,50 @@ function basisNote(data: GuardedDataset, valueColumnKeys: readonly string[]): st
 }
 
 /**
+ * The notices every chart shows around its plot: withheld series, missing
+ * columns, the empty state, and the unavailable count. Shared by the
+ * registry `ChartShell` and the Notebook `chart` widget so the same
+ * condition reads the same way on both pages.
+ */
+export function ChartNotices(props: {
+	/** Series the display rules refuse to plot, with the reason shown to the reader. */
+	readonly withheldSeries: readonly WithheldSeries[];
+	/** Keys the chart was asked to plot that the dataset does not declare. */
+	readonly missingColumns: readonly string[];
+	readonly plottedCount: number;
+	readonly unavailableCount: number;
+	/** Shown when nothing is plotted (no rows vs rows but no values). */
+	readonly emptyMessage: string;
+	readonly children: JSX.Element;
+}): JSX.Element {
+	return (
+		<>
+			<For each={props.withheldSeries}>
+				{(series) => (
+					<p data-withheld-series={series.label} class="text-xs text-amber-900">
+						Series "{series.label}" — {series.reason}.
+					</p>
+				)}
+			</For>
+			<Show when={props.missingColumns.length > 0}>
+				<output data-state="missing-columns" class="block text-xs text-amber-900">
+					Not in the dataset, so not plotted: {props.missingColumns.join(", ")}.
+				</output>
+			</Show>
+			<Show when={props.plottedCount > 0} fallback={<EmptyState>{props.emptyMessage}</EmptyState>}>
+				{props.children}
+			</Show>
+			<Show when={props.unavailableCount > 0}>
+				<p data-unavailable-count={props.unavailableCount} class="mt-1 text-xs text-amber-900">
+					{props.unavailableCount} {props.unavailableCount === 1 ? "point" : "points"} unavailable —
+					not plotted (never drawn as 0). See the data table for the reasons.
+				</p>
+			</Show>
+		</>
+	);
+}
+
+/**
  * Everything around the plot: heading, missing/empty states, the count of
  * points that could not be plotted, the data-table twin, and provenance.
  */
@@ -232,8 +276,14 @@ export function ChartShell(props: {
 	readonly tableColumnKeys: readonly string[];
 	/** The columns whose numbers are drawn as marks (not the axis column). */
 	readonly valueColumnKeys: readonly string[];
-	readonly legend: JSX.Element;
-	readonly readout: string | null;
+	/**
+	 * Legacy legend/readout slots for renderers that still provide them
+	 * (candlestick). Line and bar charts render `LinePlot` / `BarPlot` as
+	 * `children`, which already include the legend and readout, so these
+	 * stay absent there and nothing is drawn twice.
+	 */
+	readonly legend?: JSX.Element;
+	readonly readout?: string | null;
 	readonly children: JSX.Element;
 }): JSX.Element {
 	// The data-table twin's cells cite too, so their ids number before the
@@ -249,44 +299,26 @@ export function ChartShell(props: {
 				<Show when={props.data} fallback={<DataUnavailable datasetRef={props.datasetRef} />}>
 					{(data) => (
 						<>
-							<For each={props.withheldSeries}>
-								{(series) => (
-									<p data-withheld-series={series.label} class="text-xs text-amber-900">
-										Series "{series.label}" — {series.reason}.
-									</p>
-								)}
-							</For>
-							<Show when={props.missingColumns.length > 0}>
-								<output data-state="missing-columns" class="block text-xs text-amber-900">
-									Not in the dataset, so not plotted: {props.missingColumns.join(", ")}.
-								</output>
-							</Show>
-							<Show
-								when={props.plottedCount > 0}
-								fallback={
-									<EmptyState>
-										{data().dataset.rows.length === 0
-											? "No data — this dataset has no rows."
-											: "No plottable data — every requested value is unavailable."}
-									</EmptyState>
+							<ChartNotices
+								withheldSeries={props.withheldSeries}
+								missingColumns={props.missingColumns}
+								plottedCount={props.plottedCount}
+								unavailableCount={props.unavailableCount}
+								emptyMessage={
+									data().dataset.rows.length === 0
+										? "No data — this dataset has no rows."
+										: "No plottable data — every requested value is unavailable."
 								}
 							>
 								{props.children}
-								{props.legend}
-								<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-									{props.readout ??
-										"Point at the chart to read values; the data table below lists every value."}
-								</p>
-							</Show>
-							<Show when={props.unavailableCount > 0}>
-								<p
-									data-unavailable-count={props.unavailableCount}
-									class="mt-1 text-xs text-amber-900"
-								>
-									{props.unavailableCount} {props.unavailableCount === 1 ? "point" : "points"}{" "}
-									unavailable — not plotted (never drawn as 0). See the data table for the reasons.
-								</p>
-							</Show>
+								<Show when={props.legend !== undefined}>{props.legend}</Show>
+								<Show when={props.readout !== undefined}>
+									<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
+										{props.readout ??
+											"Point at the chart to read values; the data table below lists every value."}
+									</p>
+								</Show>
+							</ChartNotices>
 							<Show when={basisNote(data(), props.valueColumnKeys)}>
 								{(note) => (
 									<p data-chart-basis-note="true" class="mt-1 text-xs text-slate-800">

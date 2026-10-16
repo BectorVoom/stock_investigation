@@ -159,6 +159,9 @@ export function ContentWidgetEditor(props: {
 				chartType: chartType(),
 				unit: chartUnit(),
 				series,
+				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
+				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
+				...(widget.xKind === undefined ? {} : { xKind: widget.xKind }),
 			};
 		}
 		if (widget.type === "table") {
