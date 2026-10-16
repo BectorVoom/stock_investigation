@@ -86,9 +86,13 @@ that opened it. Body scroll is locked while it is open (Shoelace does this).
 4. **Main chart** — fills the remaining height (at least `16rem`). The SVG's
    viewBox follows the container's pixel size (ResizeObserver), so text never
    scales. Value axis on the **right** (the financial-platform convention),
-   date axis below with tick labels adapted to the span (day `Oct 16`,
-   month `Oct 2026`, year `2026`). One line per series from the shared
-   palette (`SERIES_COLORS`); moving averages are thinner dashed lines with
+   date axis below with ticks on calendar boundaries picked for the span and
+   the measured width — days (`Oct 16`), week Mondays (`Oct 13`), month
+   starts (`Aug`, with the year added at January and at the first tick:
+   `Jan 2026`), quarter starts, year starts (`2026`) — keeping the finest
+   step whose labels stay distinct and clear each other, so a tick always
+   marks its boundary's time-proportional x instead of an arbitrary bar. One
+   line per series from the shared palette (`SERIES_COLORS`); moving averages are thinner dashed lines with
    their own legend entries. Each series' last visible value is marked on
    the value axis. A crosshair (vertical and horizontal line) follows the
    pointer with the date under the date axis and the value at the value axis,

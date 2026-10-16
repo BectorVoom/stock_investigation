@@ -433,11 +433,28 @@ async function visibleXTickCount(): Promise<number> {
 	});
 }
 
+/** Visible date-axis labels of the main chart (fix round 5: never repeated). */
+async function visibleXTickLabels(): Promise<readonly string[]> {
+	return page.evaluate(() => {
+		const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
+		if (!(svg instanceof SVGSVGElement)) throw new Error("no main chart svg");
+		const labels: string[] = [];
+		svg.querySelectorAll('g[data-chart-part="x-axis"] text').forEach((label) => {
+			const box = label.getBoundingClientRect();
+			const text = (label.textContent ?? "").trim();
+			if (text !== "" && box.width > 0 && box.height > 0) labels.push(text);
+		});
+		return labels;
+	});
+}
+
 /**
  * The layout regression for the viewer (round-3 overflow defect): every mark
  * paints inside the main SVG, the main chart / navigator / statistics stack
  * without overlap, the y ticks cover the visible data range, and the date
- * axis labels render — at desktop and phone viewports alike.
+ * axis labels render — at desktop and phone viewports alike. Round 5 adds
+ * that the visible x tick labels are distinct (calendar boundaries, never
+ * the repeated "Jul 2026" thinning of the old evenly spaced axis).
  */
 async function expectViewerLayout(): Promise<void> {
 	const dialog = viewer();
@@ -472,6 +489,10 @@ async function expectViewerLayout(): Promise<void> {
 		`y ticks [${coverage.tickMin}, ${coverage.tickMax}] cover data [${coverage.dataMin}, ${coverage.dataMax}]`,
 	).toBe(true);
 	expect(await visibleXTickCount()).toBeGreaterThanOrEqual(2);
+	// Round 5: boundary ticks never repeat a label.
+	const xLabels = await visibleXTickLabels();
+	expect(xLabels.length).toBeGreaterThanOrEqual(2);
+	expect(new Set(xLabels).size).toBe(xLabels.length);
 }
 
 test("viewer layout holds together at desktop 1280x720", async () => {

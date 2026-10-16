@@ -29,6 +29,7 @@ export {
 	type BuildDetailChartInput,
 	buildDetailChartModel,
 	buildNavigatorModel,
+	type DateAxisStep,
 	type DetailChartModel,
 	type DetailLastMarker,
 	type DetailMaOverlayInput,

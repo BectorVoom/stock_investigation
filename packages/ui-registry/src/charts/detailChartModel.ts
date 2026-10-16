@@ -74,6 +74,12 @@ export interface DetailMaPath {
 export interface DetailXTick {
 	readonly x: number;
 	readonly label: string;
+	/**
+	 * Integer day number of the calendar boundary the tick marks (a day for
+	 * day steps, a Monday for weekly, a month/quarter/year start above that).
+	 * The tick sits at this day's time-proportional x, never snapped to a bar.
+	 */
+	readonly day: number;
 }
 
 export interface DetailLastMarker {
@@ -177,9 +183,7 @@ const AXIS_GUTTER_RIGHT = 64;
 const AXIS_GUTTER_BOTTOM = 26;
 /** Rough advance width of one tick character plus the gap that keeps labels apart. */
 const TICK_CHAR_WIDTH = 7.5;
-const TICK_LABEL_GAP = 14;
 const TICK_MIN_GAP = 8;
-const MAX_X_TICKS = 10;
 
 function plotForSize(plotWidth: number, plotHeight: number): PlotArea {
 	const width = Number.isFinite(plotWidth) ? Math.max(0, plotWidth) : 0;
@@ -524,46 +528,215 @@ function labelsOverlap(ticks: readonly DetailXTick[]): boolean {
 }
 
 /**
- * Evenly thinned ticks that never overlap: the budget starts at what fits
- * (longest label plus gap per slot) and shrinks until the nudged labels clear
- * each other, so the axis degrades to fewer labels instead of collisions.
+ * Date-axis steps from finest to coarsest (fix round 5): every N days, then
+ * ISO-week Mondays, then month, quarter and year starts. The picker tries
+ * them in this order and keeps the first whose labels are distinct and do
+ * not overlap at the measured width — the financial-platform convention of
+ * ticks on calendar boundaries instead of evenly thinned bars.
+ */
+export type DateAxisStep =
+	| "day-1"
+	| "day-2"
+	| "day-5"
+	| "weekly"
+	| "day-10"
+	| "monthly"
+	| "quarterly"
+	| "yearly";
+
+const DATE_AXIS_STEPS: readonly DateAxisStep[] = [
+	"day-1",
+	"day-2",
+	"day-5",
+	"weekly",
+	"day-10",
+	"monthly",
+	"quarterly",
+	"yearly",
+];
+
+/**
+ * More boundaries than this can never fit a real plot (each label pair needs
+ * at least 30 px, so 2,000 ticks would want 60 m of pixels): enumeration stops
+ * there and the step is skipped, which also bounds the work per window.
+ */
+const MAX_BOUNDARY_TICKS = 2000;
+
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Integer day number of a civil date (UTC). `Date.UTC` remaps years 0000–0099
+ * to 1900 + year, so those go through an explicit full-year setter — the same
+ * repair the domain's day-number conversion applies.
+ */
+function dayOfCivilDate(year: number, monthOneBased: number, dayOfMonth: number): number {
+	const remapped = Date.UTC(year, monthOneBased - 1, dayOfMonth);
+	if (year >= 0 && year <= 99) {
+		const repaired = new Date(remapped);
+		repaired.setUTCFullYear(year);
+		return Math.floor(repaired.getTime() / MS_PER_DAY);
+	}
+	return Math.floor(remapped / MS_PER_DAY);
+}
+
+/** Calendar parts (UTC) of an integer day number. */
+function civilPartsOfDay(day: number): {
+	readonly year: number;
+	readonly month: number;
+	readonly day: number;
+} {
+	const date = new Date(day * MS_PER_DAY);
+	return {
+		year: date.getUTCFullYear(),
+		month: date.getUTCMonth() + 1,
+		day: date.getUTCDate(),
+	};
+}
+
+/** ISO weekday with Monday = 1 through Sunday = 7 (day 0, 1970-01-01, was a Thursday). */
+function weekdayMondayOne(day: number): number {
+	return ((((day + 3) % 7) + 7) % 7) + 1;
+}
+
+/**
+ * Calendar boundaries of one step inside `[from, to]` (ascending, at most
+ * `MAX_BOUNDARY_TICKS + 1` entries): day steps align to the epoch so a pan
+ * keeps the ticks still, weeks land on Mondays, and month/quarter/year steps
+ * land on their first days.
+ */
+function boundaryDays(from: number, to: number, step: DateAxisStep): number[] {
+	const days: number[] = [];
+	const push = (day: number): boolean => {
+		if (day < from || day > to) return true;
+		days.push(day);
+		return days.length <= MAX_BOUNDARY_TICKS;
+	};
+	if (step === "weekly") {
+		const shift = (8 - weekdayMondayOne(from)) % 7;
+		for (let day = from + shift; day <= to; day += 7) {
+			if (!push(day)) return days;
+		}
+		return days;
+	}
+	if (step === "monthly" || step === "quarterly" || step === "yearly") {
+		const start = civilPartsOfDay(from);
+		const end = civilPartsOfDay(to);
+		if (step === "yearly") {
+			for (let year = start.year; year <= end.year; year += 1) {
+				if (!push(dayOfCivilDate(year, 1, 1))) return days;
+			}
+			return days;
+		}
+		let year = start.year;
+		let month = start.month;
+		for (;;) {
+			if (year > end.year || (year === end.year && month > end.month)) break;
+			// Quarter starts are the January/April/July/October month starts.
+			if (step === "monthly" || month % 3 === 1) {
+				if (!push(dayOfCivilDate(year, month, 1))) return days;
+			}
+			month += 1;
+			if (month > 12) {
+				month = 1;
+				year += 1;
+			}
+		}
+		return days;
+	}
+	const every = Number(step.slice("day-".length));
+	if (!Number.isSafeInteger(every) || every < 1) return days;
+	const remainder = ((from % every) + every) % every;
+	const first = remainder === 0 ? from : from + (every - remainder);
+	for (let day = first; day <= to; day += every) {
+		if (!push(day)) return days;
+	}
+	return days;
+}
+
+/** Day and week labels read as "Oct 16" (weeks land on Mondays: "Oct 13"). */
+function dayTickLabel(day: number): string {
+	const parts = civilPartsOfDay(day);
+	const month = MONTH_SHORT[parts.month - 1] ?? String(parts.month);
+	return `${month} ${parts.day}`;
+}
+
+/**
+ * Month and quarter labels: bare month ("Aug") with the year added at January
+ * and at the first tick ("Jan 2026"), so a short window stays glanceable. When
+ * the window spans years and the short forms would repeat a month, every tick
+ * carries its year ("Aug 2025") instead — still distinct, never ambiguous.
+ */
+function monthTickLabels(days: readonly number[]): string[] {
+	const parts = days.map(civilPartsOfDay);
+	const short = parts.map((entry, index) => {
+		const month = MONTH_SHORT[entry.month - 1] ?? String(entry.month);
+		return index === 0 || entry.month === 1 ? `${month} ${entry.year}` : month;
+	});
+	if (new Set(short).size === short.length) return short;
+	return parts.map((entry) => {
+		const month = MONTH_SHORT[entry.month - 1] ?? String(entry.month);
+		return `${month} ${entry.year}`;
+	});
+}
+
+/** Year labels read as "2026". */
+function yearTickLabel(day: number): string {
+	return String(civilPartsOfDay(day).year);
+}
+
+/**
+ * Ticks on calendar boundaries for the window, finest fitting step first: a
+ * step wins when it contributes at least two ticks whose labels are distinct
+ * and clear each other at the measured width. A step that is too dense (past
+ * `MAX_BOUNDARY_TICKS`) or repeats a label never wins — the axis degrades to
+ * coarser boundaries instead of collisions. When no step fits twice (a tiny
+ * plot) the finest single boundary stands in; when the window holds no
+ * boundary at any step (a sub-day window) the middle day names itself, which
+ * is itself a day-step boundary.
  */
 function pickXTicks(
-	days: readonly number[],
-	isos: readonly string[],
+	fromDay: number,
+	toDay: number,
 	xForDay: (day: number) => number,
-	granularity: DetailTickGranularity,
 	plot: PlotArea,
 ): readonly DetailXTick[] {
-	const count = days.length;
-	if (count === 0) return [];
-	const labels = isos.map((iso) => formatDetailTick(iso, granularity));
-	const longest = Math.max(1, ...labels.map((label) => label.length));
-	const plotWidth = plot.right - plot.left;
-	const fits = Math.max(
-		2,
-		Math.min(MAX_X_TICKS, Math.floor(plotWidth / (longest * TICK_CHAR_WIDTH + TICK_LABEL_GAP))),
-	);
+	const from = Math.min(Math.trunc(fromDay), Math.trunc(toDay));
+	const to = Math.max(Math.trunc(fromDay), Math.trunc(toDay));
+	if (!Number.isFinite(from) || !Number.isFinite(to)) return [];
+	if (!(plot.right - plot.left > 0)) return [];
 	const nudge = (x: number, label: string): number => {
 		const half = (label.length * TICK_CHAR_WIDTH) / 2;
 		return Math.min(Math.max(x, plot.left + half), plot.right - half);
 	};
-	for (let budget = Math.min(fits, count); budget >= 2; budget -= 1) {
+	let fallback: DetailXTick[] = [];
+	for (const step of DATE_AXIS_STEPS) {
+		const days = boundaryDays(from, to, step);
+		if (days.length === 0 || days.length > MAX_BOUNDARY_TICKS) continue;
+		const labels =
+			step === "yearly"
+				? days.map(yearTickLabel)
+				: step === "monthly" || step === "quarterly"
+					? monthTickLabels(days)
+					: days.map(dayTickLabel);
+		if (new Set(labels).size !== labels.length) continue;
 		const ticks: DetailXTick[] = [];
-		for (const index of thinnedIndexes(count, budget)) {
+		for (let index = 0; index < days.length; index += 1) {
 			const day = days[index];
 			const label = labels[index];
 			if (day === undefined || label === undefined) continue;
-			ticks.push({ x: nudge(xForDay(day), label), label });
+			ticks.push({ x: nudge(xForDay(day), label), label, day });
 		}
-		if (ticks.length >= 2 && !labelsOverlap(ticks)) return ticks;
-		if (ticks.length < 2) break;
+		if (ticks.length !== days.length) continue;
+		if (ticks.length < 2) {
+			if (fallback.length === 0) fallback = ticks;
+			continue;
+		}
+		if (!labelsOverlap(ticks)) return ticks;
 	}
-	const middle = Math.floor(count / 2);
-	const day = days[middle];
-	const label = labels[middle];
-	if (day === undefined || label === undefined) return [];
-	return [{ x: nudge(xForDay(day), label), label }];
+	if (fallback.length > 0) return fallback;
+	const middle = Math.round((from + to) / 2);
+	const label = dayTickLabel(middle);
+	return [{ x: nudge(xForDay(middle), label), label, day: middle }];
 }
 
 /**
@@ -991,8 +1164,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	const tagYs = lastValueTags.map((tag) => tag.y);
 	const yTickHidden = yTicks.map((tick) => isValueLabelHidden(yFor(tick), tagYs, null));
 
-	const granularity = tickGranularityForSpan(to - from);
-	const xTicks = pickXTicks(dayAt, isoAt, xForDay, granularity, plot);
+	const xTicks = pickXTicks(from, to, xForDay, plot);
 	const xs = dayAt.map((day) => xForDay(day));
 
 	return {

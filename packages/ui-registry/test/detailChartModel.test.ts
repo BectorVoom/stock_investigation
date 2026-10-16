@@ -1,10 +1,13 @@
 import { dayNumberToIso, isoToDayNumber, movingAverage } from "@research/domain";
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { seriesColor } from "../src/charts/chartMath.ts";
 import {
 	buildDetailChartModel,
 	buildNavigatorModel,
+	type DetailChartModel,
 	type DetailSeriesInput,
+	type DetailXTick,
 	decimateToWidth,
 	ensureTwoBarWindow,
 	formatDetailTick,
@@ -50,8 +53,81 @@ function singleSeries(
 	];
 }
 
-function windowOf(days: number, lastDay: number): { readonly from: number; readonly to: number } {
-	return { from: lastDay - days + 1, to: lastDay };
+const BOUNDARY_MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+] as const;
+
+/** A tick label always names its own boundary day (fix round 5). */
+function expectTickLabelMatchesDay(tick: DetailXTick): void {
+	const iso = dayNumberToIso(tick.day);
+	if (!iso.ok) throw new Error("bad tick day");
+	const year = Number(iso.value.slice(0, 4));
+	const month = Number(iso.value.slice(5, 7));
+	const day = Number(iso.value.slice(8, 10));
+	const monthName = BOUNDARY_MONTHS[month - 1] ?? String(month);
+	if (/^\d{4}$/.test(tick.label)) {
+		// Year starts read as "2026".
+		expect(tick.label).toBe(String(year));
+		expect(month).toBe(1);
+		expect(day).toBe(1);
+	} else if (/^[A-Z][a-z]{2}$/.test(tick.label)) {
+		// Month and quarter starts read as "Aug".
+		expect(tick.label).toBe(monthName);
+		expect(day).toBe(1);
+	} else if (/^[A-Z][a-z]{2} \d{4}$/.test(tick.label)) {
+		// A January or first tick carries its year ("Jan 2026").
+		expect(tick.label).toBe(`${monthName} ${year}`);
+		expect(day).toBe(1);
+	} else {
+		// Days and Mondays read as "Oct 16".
+		expect(tick.label).toBe(`${monthName} ${day}`);
+	}
+}
+
+/**
+ * Shared date-axis assertions: labels distinct and in ascending x order, no
+ * two labels touching, every tick on a calendar boundary inside the window at
+ * its time-proportional x (modulo the edge nudge that keeps labels plotted).
+ */
+function expectBoundaryTicks(
+	model: DetailChartModel,
+	from: number,
+	to: number,
+	minTicks: number,
+): void {
+	const ticks = model.xTicks;
+	expect(ticks.length).toBeGreaterThanOrEqual(minTicks);
+	expect(new Set(ticks.map((tick) => tick.label)).size).toBe(ticks.length);
+	for (let index = 1; index < ticks.length; index += 1) {
+		const previous = ticks[index - 1];
+		const current = ticks[index];
+		if (previous === undefined || current === undefined) continue;
+		expect(current.x).toBeGreaterThan(previous.x);
+		const need = ((previous.label.length + current.label.length) / 2) * 7.5 + 8;
+		expect(current.x - previous.x).toBeGreaterThanOrEqual(need);
+	}
+	for (const tick of ticks) {
+		expect(tick.day).toBeGreaterThanOrEqual(from);
+		expect(tick.day).toBeLessThanOrEqual(to);
+		expectTickLabelMatchesDay(tick);
+		const half = (tick.label.length * 7.5) / 2;
+		const expected = Math.min(
+			Math.max(model.xForDay(tick.day), model.plot.left + half),
+			model.plot.right - half,
+		);
+		expect(tick.x).toBeCloseTo(expected, 9);
+	}
 }
 
 describe("detail chart model", () => {
@@ -226,20 +302,23 @@ describe("detail chart model", () => {
 		expect(model.seriesValues[0]?.values).toEqual([null, null, null]);
 	});
 
-	it("adapts x labels to the span and never overlaps them", () => {
-		const spans = [7, 30, 200, 900, 2000];
-		for (const span of spans) {
-			const closes = Array.from({ length: span }, (_, index) => 100 + index * 0.1);
-			const bars = singleSeries(closes);
-			const first = bars[0]?.bars[0];
-			const lastBar = bars[0]?.bars[span - 1];
-			if (first === undefined || lastBar === undefined) throw new Error("fixture is empty");
-			// The fixture carries real calendar dates from `startIso`.
-			expect(first.observedOn).toBe("2026-01-01");
-			for (const width of [320, 640, 1200]) {
+	it("puts distinct boundary ticks on 1W–5Y spans at phone and desktop widths", () => {
+		const last = isoToDayNumber("2026-10-16");
+		if (!last.ok) throw new Error("bad fixture date");
+		const lastDay = last.value;
+		// 1W, 1M, 3M, 1Y and 5Y in days, each ending on real held closes.
+		for (const span of [7, 30, 92, 365, 1826]) {
+			const firstDay = lastDay - span + 1;
+			const firstIso = dayNumberToIso(firstDay);
+			if (!firstIso.ok) throw new Error("bad fixture day");
+			const bars = singleSeries(
+				Array.from({ length: span }, (_, index) => 100 + index * 0.1),
+				firstIso.value,
+			);
+			for (const width of [390, 1440]) {
 				const model = buildDetailChartModel({
 					series: bars,
-					window: windowOf(span, lastBar.day),
+					window: { from: firstDay, to: lastDay },
 					plotWidth: width,
 					plotHeight: 320,
 					scale: "linear",
@@ -247,33 +326,40 @@ describe("detail chart model", () => {
 					maPeriods: [],
 				});
 				if (model === null) throw new Error(`model is null for span ${span}`);
-				const ticks = model.xTicks;
-				expect(ticks.length).toBeGreaterThanOrEqual(1);
-				// Representative labels for the span's granularity, not the
-				// malformed-date fallback: months read "Oct 2026", years "2026".
-				const granularity = tickGranularityForSpan(span - 1);
-				for (const tick of ticks) {
-					if (granularity === "day") expect(tick.label).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/);
-					else if (granularity === "month") expect(tick.label).toMatch(/^[A-Z][a-z]{2} \d{4}$/);
-					else expect(tick.label).toMatch(/^\d{4}$/);
-				}
-				if (granularity === "month") {
-					expect(ticks.some((tick) => tick.label === "Jul 2026")).toBe(true);
-				}
-				if (granularity === "year") {
-					expect(ticks.some((tick) => tick.label === "2028")).toBe(true);
-				}
-				const ordered = [...ticks].sort((a, b) => a.x - b.x);
-				for (let index = 1; index < ordered.length; index += 1) {
-					const previous = ordered[index - 1];
-					const current = ordered[index];
-					if (previous === undefined || current === undefined) continue;
-					const need = ((previous.label.length + current.label.length) / 2) * 7.5 + 8;
-					expect(current.x - previous.x).toBeGreaterThanOrEqual(need);
-				}
+				// Every span here holds enough boundaries for at least two ticks.
+				expectBoundaryTicks(model, firstDay, lastDay, 2);
 			}
-			void first;
 		}
+	});
+
+	it("keeps boundary ticks distinct, ordered and non-overlapping for arbitrary windows and widths", () => {
+		fc.assert(
+			fc.property(
+				fc.integer({ min: 15000, max: 25000 }),
+				fc.integer({ min: 2, max: 2500 }),
+				fc.integer({ min: 200, max: 1600 }),
+				(from, span, width) => {
+					const to = from + span;
+					const firstIso = dayNumberToIso(from);
+					if (!firstIso.ok) throw new Error("bad fixture day");
+					const bars = singleSeries(
+						Array.from({ length: span + 1 }, (_, index) => 100 + ((index * 37) % 41) - 20),
+						firstIso.value,
+					);
+					const model = buildDetailChartModel({
+						series: bars,
+						window: { from, to },
+						plotWidth: width,
+						plotHeight: 320,
+						scale: "linear",
+						mode: "value",
+						maPeriods: [],
+					});
+					if (model === null) throw new Error("model is null");
+					expectBoundaryTicks(model, from, to, 1);
+				},
+			),
+		);
 	});
 
 	it("picks day, month and year labels by span", () => {
