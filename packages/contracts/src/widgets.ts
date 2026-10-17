@@ -410,8 +410,23 @@ export function hasChartProvenance(widgets: readonly WidgetCore[]): boolean {
 	);
 }
 
+/**
+ * What a chart's numbers measure: the unit, both axis titles and the x kind.
+ * Changing any of them changes what a value means, so provenance does not
+ * survive it. (The title is not part of it: frames hide it and renaming a
+ * widget is routine.)
+ */
+function chartMeaningKey(chart: ChartWidgetCore): string {
+	return JSON.stringify([
+		chart.unit,
+		chart.yLabel ?? null,
+		chart.xLabel ?? null,
+		chart.xKind ?? "text",
+	]);
+}
+
 function chartContentKey(chart: ChartWidgetCore): string {
-	return JSON.stringify([chart.unit, chart.series, chart.sourceIds ?? []]);
+	return JSON.stringify([chartMeaningKey(chart), chart.series, chart.sourceIds ?? []]);
 }
 
 function pointKey(seriesName: string, occurrence: number, point: ChartPoint): string {
@@ -445,7 +460,8 @@ function provenanceKeys(chart: ChartWidgetCore): ReadonlySet<string> {
  * writes keeps only the provenance it carried over unchanged. The record
  * check proves a copy is real, not that a number came from it, so a point
  * keeps its basis, source and as-of date only in the same widget, the same
- * series and the same unit, with the same label (occurrence) and value — or
+ * series and the same meaning (unit, axis titles, x kind), with the same
+ * label (occurrence) and value — or
  * when the whole chart is an unchanged copy of one on the page (a
  * duplicate). The chart's own `sourceIds` stay only while such a point
  * remains, and copies no longer cited go. Everything else is written without
@@ -466,7 +482,10 @@ export function withEarnedChartProvenance(
 		if (widget.type !== "chart") return widget;
 		if (contents.has(chartContentKey(widget))) return reconciled(widget);
 		const old = before.get(widget.widgetId);
-		const kept = old !== undefined && old.unit === widget.unit ? provenanceKeys(old) : new Set();
+		const kept =
+			old !== undefined && chartMeaningKey(old) === chartMeaningKey(widget)
+				? provenanceKeys(old)
+				: new Set();
 		let anyKept = false;
 		const series = widget.series.map((entry) => {
 			const seen = new Map<string, number>();

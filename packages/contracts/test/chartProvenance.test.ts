@@ -74,6 +74,9 @@ describe("chart widget provenance (ADR-0026)", () => {
 			);
 		// Untouched, and an exact duplicate under a new id: everything stays.
 		expect(withEarnedChartProvenance(previous, previous)).toEqual(previous);
+		// A retitled widget keeps it: the title is hidden and renaming is routine.
+		const retitled = widgetCoreSchema.parse(chart({ title: "Renamed", sourceIds: ["ev_1"] }));
+		expect(withEarnedChartProvenance([retitled], previous)).toEqual([retitled]);
 		const duplicate = widgetCoreSchema.parse(chart({ widgetId: "w_2", sourceIds: ["ev_1"] }));
 		expect(withEarnedChartProvenance([duplicate], previous)).toEqual([duplicate]);
 
@@ -109,6 +112,8 @@ describe("chart widget provenance (ADR-0026)", () => {
 				series: [{ name: "Bear", points: [{ x: "AI", y: 16.5, basis: "assumption" }] }],
 			}),
 			chart({ widgetId: "w_other", title: "Other", unit: "USD", sourceIds: ["ev_1"] }),
+			// The measure renamed on the axis: the same numbers, another meaning.
+			chart({ yLabel: "Net income", sourceIds: ["ev_1"] }),
 		]) {
 			const [result] = withEarnedChartProvenance([widgetCoreSchema.parse(changed)], previous);
 			if (result?.type !== "chart") throw new Error("expected a chart");
