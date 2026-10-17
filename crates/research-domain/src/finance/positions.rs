@@ -4,6 +4,10 @@
 //! margin-buy balance, and US short interest is not Japan's margin-sale
 //! balance.
 
+use serde::ser::{Serialize, SerializeMap, Serializer};
+
+use crate::literal::js_literal_enum;
+
 /// Japan margin trading balances.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct JpMarginBalanceFigures {
@@ -31,23 +35,56 @@ pub enum PositionFigures {
 	UsShortInterest(UsShortInterestFigures),
 }
 
-/// `PositionFigures["metric"]`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum PositionMetric {
-	/// `jp-margin-balance`.
-	JpMarginBalance,
-	/// `us-short-interest`.
-	UsShortInterest,
+impl PositionFigures {
+	/// The metric these figures belong to.
+	#[must_use]
+	pub const fn metric(&self) -> PositionMetric {
+		match self {
+			Self::JpMarginBalance(_) => PositionMetric::JpMarginBalance,
+			Self::UsShortInterest(_) => PositionMetric::UsShortInterest,
+		}
+	}
 }
 
-impl PositionMetric {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
+/// `positionFiguresSchema`'s parsed value: `jurisdiction` first, then
+/// `metric`, then the figures, in schema key order.
+impl Serialize for PositionFigures {
+	fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		let mut map = serializer.serialize_map(Some(4))?;
 		match self {
-			Self::JpMarginBalance => "jp-margin-balance",
-			Self::UsShortInterest => "us-short-interest",
+			Self::JpMarginBalance(figures) => {
+				map.serialize_entry("jurisdiction", "JP")?;
+				map.serialize_entry("metric", PositionMetric::JpMarginBalance.as_str())?;
+				map.serialize_entry("marginBuyBalanceShares", &figures.margin_buy_balance_shares)?;
+				map.serialize_entry(
+					"marginSellBalanceShares",
+					&figures.margin_sell_balance_shares,
+				)?;
+			}
+			Self::UsShortInterest(figures) => {
+				map.serialize_entry("jurisdiction", "US")?;
+				map.serialize_entry("metric", PositionMetric::UsShortInterest.as_str())?;
+				map.serialize_entry(
+					"reportedShortInterestShares",
+					&figures.reported_short_interest_shares,
+				)?;
+				map.serialize_entry(
+					"averageDailyVolumeShares",
+					&figures.average_daily_volume_shares,
+				)?;
+			}
 		}
+		map.end()
+	}
+}
+
+js_literal_enum! {
+	/// `PositionFigures["metric"]`.
+	pub enum PositionMetric {
+		/// `jp-margin-balance`.
+		JpMarginBalance = "jp-margin-balance",
+		/// `us-short-interest`.
+		UsShortInterest = "us-short-interest",
 	}
 }
 

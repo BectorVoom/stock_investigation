@@ -2,8 +2,10 @@
 //! structural invariants (DATA-009) and its nullable growth rates.
 
 use research_js::whitespace;
+use serde::Serialize;
 
 use super::cagr::{derive_cagr, is_integer};
+use crate::literal::js_literal_enum;
 
 /// Shortest scenario horizon in years.
 pub const MIN_HORIZON_YEARS: f64 = 3.0;
@@ -11,7 +13,8 @@ pub const MIN_HORIZON_YEARS: f64 = 3.0;
 pub const MAX_HORIZON_YEARS: f64 = 5.0;
 
 /// One case (bear, base or bull) of a scenario.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScenarioCase {
 	/// The case's value in the target year.
 	pub target_value: f64,
@@ -19,15 +22,17 @@ pub struct ScenarioCase {
 	pub assumptions: Vec<String>,
 }
 
-/// What a quantity measures; unit demand, revenue and price growth must not be conflated.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DemandQuantityKind {
-	/// `unit-demand`.
-	UnitDemand,
-	/// `revenue`.
-	Revenue,
-	/// `price`.
-	Price,
+js_literal_enum! {
+	/// What a quantity measures; unit demand, revenue and price growth must
+	/// not be conflated.
+	pub enum DemandQuantityKind {
+		/// `unit-demand`.
+		UnitDemand = "unit-demand",
+		/// `revenue`.
+		Revenue = "revenue",
+		/// `price`.
+		Price = "price",
+	}
 }
 
 /// `DemandScenarioInput`.

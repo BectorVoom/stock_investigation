@@ -1,5 +1,7 @@
 //! Port of `packages/domain/src/watchlist/limits.ts`.
 
+use crate::literal::js_literal_enum;
+
 use super::stock_id::WatchMarket;
 
 /// `WATCHLIST_LIMITS`: the single definition of every watchlist/earnings
@@ -22,23 +24,13 @@ pub const WATCHLIST_LIMITS: WatchlistLimits = WatchlistLimits {
 	horizon_days: 185,
 };
 
-/// `EarningsSourceId`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EarningsSourceId {
-	/// `finnhub`.
-	Finnhub,
-	/// `jpx`.
-	Jpx,
-}
-
-impl EarningsSourceId {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Finnhub => "finnhub",
-			Self::Jpx => "jpx",
-		}
+js_literal_enum! {
+	/// `EarningsSourceId`.
+	pub enum EarningsSourceId {
+		/// `finnhub`.
+		Finnhub = "finnhub",
+		/// `jpx`.
+		Jpx = "jpx",
 	}
 }
 

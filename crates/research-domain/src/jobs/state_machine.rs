@@ -4,36 +4,36 @@
 //! The happy path is
 //! pending -> claimed -> planning -> collecting -> analyzing -> verifying -> publishing -> completed.
 
-use serde::{Deserialize, Serialize};
+use crate::literal::js_literal_enum;
 
-/// A job state.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum JobState {
-	/// Waiting for a runner.
-	Pending,
-	/// Leased by a runner.
-	Claimed,
-	/// The agent is planning.
-	Planning,
-	/// Tools are collecting evidence.
-	Collecting,
-	/// The agent is analysing the evidence.
-	Analyzing,
-	/// Claims are being verified.
-	Verifying,
-	/// The result is being published.
-	Publishing,
-	/// Finished successfully.
-	Completed,
-	/// Finished with a failure.
-	Failed,
-	/// Cancelled by the owner.
-	Cancelled,
-	/// Finished with a partial result.
-	Partial,
-	/// Paused until the owner approves (spend).
-	WaitingApproval,
+js_literal_enum! {
+	/// A job state (`jobStateSchema`).
+	pub enum JobState {
+		/// Waiting for a runner.
+		Pending = "pending",
+		/// Leased by a runner.
+		Claimed = "claimed",
+		/// The agent is planning.
+		Planning = "planning",
+		/// Tools are collecting evidence.
+		Collecting = "collecting",
+		/// The agent is analysing the evidence.
+		Analyzing = "analyzing",
+		/// Claims are being verified.
+		Verifying = "verifying",
+		/// The result is being published.
+		Publishing = "publishing",
+		/// Finished successfully.
+		Completed = "completed",
+		/// Finished with a failure.
+		Failed = "failed",
+		/// Cancelled by the owner.
+		Cancelled = "cancelled",
+		/// Finished with a partial result.
+		Partial = "partial",
+		/// Paused until the owner approves (spend).
+		WaitingApproval = "waiting_approval",
+	}
 }
 
 /// `JOB_STATES`, in the TypeScript (and Lean) order.
@@ -71,29 +71,10 @@ pub const TERMINAL_JOB_STATES: [JobState; 4] = [
 ];
 
 impl JobState {
-	/// The TypeScript literal, e.g. `"waiting_approval"`.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Pending => "pending",
-			Self::Claimed => "claimed",
-			Self::Planning => "planning",
-			Self::Collecting => "collecting",
-			Self::Analyzing => "analyzing",
-			Self::Verifying => "verifying",
-			Self::Publishing => "publishing",
-			Self::Completed => "completed",
-			Self::Failed => "failed",
-			Self::Cancelled => "cancelled",
-			Self::Partial => "partial",
-			Self::WaitingApproval => "waiting_approval",
-		}
-	}
-
 	/// `isJobState` + parse: the state named by `value`, if any.
 	#[must_use]
 	pub fn parse(value: &str) -> Option<Self> {
-		JOB_STATES.into_iter().find(|state| state.as_str() == value)
+		Self::from_str_value(value)
 	}
 
 	/// `JOB_TRANSITIONS[self]`: the legal next states, in the TypeScript order.
@@ -184,6 +165,12 @@ pub fn transition_job(from: JobState, to: JobState) -> Result<JobState, IllegalT
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn job_states_list_every_literal_in_order() {
+		assert_eq!(JOB_STATES.as_slice(), JobState::ALL);
+		assert_eq!(JobState::WaitingApproval.to_string(), "waiting_approval");
+	}
 
 	#[test]
 	fn walks_the_happy_path_and_rejects_skips() {

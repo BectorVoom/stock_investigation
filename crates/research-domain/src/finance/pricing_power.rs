@@ -3,9 +3,14 @@
 //! cost effects; a margin improvement alone is never classified as
 //! demonstrated pricing power.
 
+use serde::Serialize;
+
+use crate::literal::js_literal_enum;
+
 /// `PricingPowerInputs`: year-over-year percentages (4.5 = +4.5%) and basis
 /// points; `None` = not disclosed.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PricingPowerInputs {
 	/// Revenue growth.
 	pub revenue_growth_pct: Option<f64>,
@@ -27,71 +32,43 @@ pub struct PricingPowerInputs {
 	pub management_commentary_evidence_ids: Vec<String>,
 }
 
-/// `PricingPowerClassification`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum PricingPowerClassification {
-	/// `corroborated-price-realization`.
-	CorroboratedPriceRealization,
-	/// `price-realization-uncorroborated`.
-	PriceRealizationUncorroborated,
-	/// `price-increase-offset-by-volume-loss`.
-	PriceIncreaseOffsetByVolumeLoss,
-	/// `price-increase-absorbed-by-costs`.
-	PriceIncreaseAbsorbedByCosts,
-	/// `no-price-realization`.
-	NoPriceRealization,
-	/// `margin-improvement-without-price-evidence`.
-	MarginImprovementWithoutPriceEvidence,
-	/// `insufficient-data`.
-	InsufficientData,
-}
-
-impl PricingPowerClassification {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::CorroboratedPriceRealization => "corroborated-price-realization",
-			Self::PriceRealizationUncorroborated => "price-realization-uncorroborated",
-			Self::PriceIncreaseOffsetByVolumeLoss => "price-increase-offset-by-volume-loss",
-			Self::PriceIncreaseAbsorbedByCosts => "price-increase-absorbed-by-costs",
-			Self::NoPriceRealization => "no-price-realization",
-			Self::MarginImprovementWithoutPriceEvidence => {
-				"margin-improvement-without-price-evidence"
-			}
-			Self::InsufficientData => "insufficient-data",
-		}
+js_literal_enum! {
+	/// `PricingPowerClassification`.
+	pub enum PricingPowerClassification {
+		/// `corroborated-price-realization`.
+		CorroboratedPriceRealization = "corroborated-price-realization",
+		/// `price-realization-uncorroborated`.
+		PriceRealizationUncorroborated = "price-realization-uncorroborated",
+		/// `price-increase-offset-by-volume-loss`.
+		PriceIncreaseOffsetByVolumeLoss = "price-increase-offset-by-volume-loss",
+		/// `price-increase-absorbed-by-costs`.
+		PriceIncreaseAbsorbedByCosts = "price-increase-absorbed-by-costs",
+		/// `no-price-realization`.
+		NoPriceRealization = "no-price-realization",
+		/// `margin-improvement-without-price-evidence`.
+		MarginImprovementWithoutPriceEvidence = "margin-improvement-without-price-evidence",
+		/// `insufficient-data`.
+		InsufficientData = "insufficient-data",
 	}
 }
 
-/// `PricingPowerInputName`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum PricingPowerInputName {
-	/// `priceRealizationPct`.
-	PriceRealizationPct,
-	/// `volumeGrowthPct`.
-	VolumeGrowthPct,
-	/// `grossMarginChangeBps`.
-	GrossMarginChangeBps,
-	/// `managementCommentary`.
-	ManagementCommentary,
-}
-
-impl PricingPowerInputName {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::PriceRealizationPct => "priceRealizationPct",
-			Self::VolumeGrowthPct => "volumeGrowthPct",
-			Self::GrossMarginChangeBps => "grossMarginChangeBps",
-			Self::ManagementCommentary => "managementCommentary",
-		}
+js_literal_enum! {
+	/// `PricingPowerInputName`.
+	pub enum PricingPowerInputName {
+		/// `priceRealizationPct`.
+		PriceRealizationPct = "priceRealizationPct",
+		/// `volumeGrowthPct`.
+		VolumeGrowthPct = "volumeGrowthPct",
+		/// `grossMarginChangeBps`.
+		GrossMarginChangeBps = "grossMarginChangeBps",
+		/// `managementCommentary`.
+		ManagementCommentary = "managementCommentary",
 	}
 }
 
 /// `PricingPowerAssessment`.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PricingPowerAssessment {
 	/// The classification.
 	pub classification: PricingPowerClassification,

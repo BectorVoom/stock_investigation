@@ -1,11 +1,8 @@
 //! Port of `packages/domain/src/finance/cagr.ts`.
 //!
-//! `**`, `Math.exp` and `Math.log` come from `research_js::math` (V8's
-//! fdlibm results). `exp` and `log` agree with V8 bit for bit; `pow` can
-//! differ in its last bit for a few percent of inputs (documented there), so
-//! a derived growth rate can differ in its last digits — never in the
-//! two-decimal percentage the presentation rounds it to, except at an exact
-//! rounding tie.
+//! `**`, `Math.exp` and `Math.log` come from `research_js::math`, which
+//! returns V8's results bit for bit, so a derived growth rate equals the
+//! TypeScript's exactly.
 
 use research_js::math;
 

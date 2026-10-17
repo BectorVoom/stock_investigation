@@ -19,8 +19,9 @@ pub struct ResearchBudget {
 	pub max_spend_usd: Option<f64>,
 }
 
-/// What a run has consumed so far. Usage only ever grows.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// What a run has consumed so far. Usage only ever grows. The default is
+/// [`EMPTY_USAGE`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourceUsage {
 	/// Model turns charged.

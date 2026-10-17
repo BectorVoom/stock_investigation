@@ -7,88 +7,41 @@ use crate::patterns;
 use crate::primitives::ISO_DATE;
 use crate::zod::{Cx, StrCheck, decode_object, js_enum, nullable, run_string, string};
 
-/// `EARNINGS_LIMITS` (the domain's `WATCHLIST_LIMITS`).
+/// `EARNINGS_LIMITS`: the domain's [`WATCHLIST_LIMITS`].
 pub mod limits {
+	use research_domain::watchlist::limits::WATCHLIST_LIMITS;
+
 	/// Stocks on the watchlist.
-	pub const MAX_STOCKS: usize = 50;
+	pub const MAX_STOCKS: usize = WATCHLIST_LIMITS.max_stocks;
 	/// Events kept per stock.
-	pub const MAX_EVENTS_PER_STOCK: usize = 8;
+	pub const MAX_EVENTS_PER_STOCK: usize = WATCHLIST_LIMITS.max_events_per_stock;
 	/// How far ahead a refresh looks, in days.
-	pub const HORIZON_DAYS: usize = 185;
+	pub const HORIZON_DAYS: u32 = WATCHLIST_LIMITS.horizon_days;
 }
 
 /// Longest company name the API stores.
 pub const EARNINGS_COMPANY_NAME_MAX: usize = 200;
 
-js_enum! {
-	/// `watchMarketSchema`.
-	pub enum WatchMarket {
-		Us = "US",
-		Jp = "JP",
-	}
-}
+/// `watchMarketSchema`, `earningsSourceIdSchema`, the market → source
+/// mapping and `parseStockId` / `formatStockId` are the domain's
+/// (`watchlist/stockId.ts`, `watchlist/limits.ts`).
+pub use research_domain::watchlist::limits::{
+	EarningsSourceId, EarningsSourceInfo, WATCHLIST_LIMITS, earnings_source_by_market,
+	earnings_source_info,
+};
+pub use research_domain::watchlist::stock_id::{
+	StockId, StockIdError, WatchMarket, format_stock_id, parse_stock_id,
+};
 
-/// A parsed `"<market>:<symbol>"` stock id.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StockIdParts<'a> {
-	/// The market.
-	pub market: WatchMarket,
-	/// The symbol.
-	pub symbol: &'a str,
-}
-
-/// `parseStockId` (domain `watchlist/stockId.ts`): `us:` + `/^[A-Z][A-Z0-9.-]{0,9}$/`
-/// or `jp:` + `/^[0-9][0-9A-Z]{3}$/`.
-#[must_use]
-pub fn parse_stock_id(value: &str) -> Option<StockIdParts<'_>> {
-	let (market, symbol) = value
-		.split_once(':')
-		.filter(|(market, _)| !market.is_empty())?;
-	let bytes = symbol.as_bytes();
-	match market {
-		"us" => {
-			let ok = bytes.split_first().is_some_and(|(first, rest)| {
-				first.is_ascii_uppercase()
-					&& rest.len() <= 9
-					&& rest.iter().all(|byte| {
-						byte.is_ascii_uppercase()
-							|| byte.is_ascii_digit()
-							|| matches!(byte, b'.' | b'-')
-					})
-			});
-			ok.then_some(StockIdParts {
-				market: WatchMarket::Us,
-				symbol,
-			})
-		}
-		"jp" => {
-			let ok = bytes.len() == 4
-				&& bytes.split_first().is_some_and(|(first, rest)| {
-					first.is_ascii_digit()
-						&& rest
-							.iter()
-							.all(|byte| byte.is_ascii_digit() || byte.is_ascii_uppercase())
-				});
-			ok.then_some(StockIdParts {
-				market: WatchMarket::Jp,
-				symbol,
-			})
-		}
-		_ => None,
-	}
-}
-
-/// `formatStockId`: `us:AAPL`, `jp:7203`.
-#[must_use]
-pub fn format_stock_id(market: WatchMarket, symbol: &str) -> String {
-	format!("{}:{symbol}", market.as_str().to_ascii_lowercase())
-}
+/// A parsed `"<market>:<symbol>"` stock id (the domain's [`StockId`], under
+/// its former contracts name).
+pub type StockIdParts<'a> = StockId<'a>;
 
 /// `watchlistStockIdSchema`.
 pub(crate) const WATCHLIST_STOCK_ID: &[StrCheck] = &[
 	StrCheck::Max(64),
 	StrCheck::Refine(
-		|value| parse_stock_id(value).is_some(),
+		|value| parse_stock_id(value).is_ok(),
 		"invalid watchlist stock id",
 	),
 ];
@@ -96,14 +49,6 @@ pub(crate) const WATCHLIST_STOCK_ID: &[StrCheck] = &[
 /// `watchlistStockIdSchema` decoder.
 pub(crate) fn watchlist_stock_id(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	run_string(cx, input, WATCHLIST_STOCK_ID)
-}
-
-js_enum! {
-	/// `earningsSourceIdSchema`.
-	pub enum EarningsSourceId {
-		Finnhub = "finnhub",
-		Jpx = "jpx",
-	}
 }
 
 js_enum! {

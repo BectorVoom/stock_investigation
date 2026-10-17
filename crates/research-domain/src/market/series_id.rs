@@ -1,22 +1,14 @@
 //! Port of `packages/domain/src/market/seriesId.ts`.
 
-/// A market data provider.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum MarketProviderId {
-	/// `fred`.
-	Fred,
-	/// `twelve-data`.
-	TwelveData,
-}
+use crate::literal::js_literal_enum;
 
-impl MarketProviderId {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Fred => "fred",
-			Self::TwelveData => "twelve-data",
-		}
+js_literal_enum! {
+	/// A market data provider.
+	pub enum MarketProviderId {
+		/// `fred`.
+		Fred = "fred",
+		/// `twelve-data`.
+		TwelveData = "twelve-data",
 	}
 }
 

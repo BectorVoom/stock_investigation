@@ -222,21 +222,9 @@ fn budgets_match_typescript() {
 	}
 }
 
-/// A growth rate is `pow(…) - 1`: allow one unit in the last place of the
-/// `pow` result (see `research_js::math`), nothing more.
-fn assert_pow_ulp(actual: f64, expected: f64, case: &Value) {
-	let (actual_pow, expected_pow) = (actual + 1.0, expected + 1.0);
-	let ulp = f64::from_bits(expected_pow.abs().to_bits() + 1) - expected_pow.abs();
-	assert!(
-		actual.to_bits() == expected.to_bits() || (actual_pow - expected_pow).abs() <= ulp,
-		"{case}: {actual:e} vs {expected:e}"
-	);
-}
-
 #[test]
 fn finance_matches_typescript() {
 	let vectors = load("finance.json");
-	let (mut cagr_cases, mut cagr_exact) = (0usize, 0usize);
 	for case in vectors["cagr"].as_array().unwrap() {
 		let inputs: Vec<f64> = case["inputs"]
 			.as_array()
@@ -246,23 +234,10 @@ fn finance_matches_typescript() {
 			.collect();
 		let result = derive_cagr(inputs[0], inputs[1], inputs[2], inputs[3]);
 		match result {
-			Ok(value) => {
-				cagr_cases += 1;
-				if same_bits(Some(value), &case["ok"]) {
-					cagr_exact += 1;
-				} else {
-					assert_pow_ulp(value, bits(&case["ok"]), case);
-				}
-			}
+			Ok(value) => assert!(same_bits(Some(value), &case["ok"]), "{case}: {value:e}"),
 			Err(error) => assert_eq!(error.as_str(), str_of(&case["error"]), "{case}"),
 		}
 	}
-	// See research_js::math: V8's pow differs from the fdlibm port in the
-	// last bit for a few percent of inputs.
-	assert!(
-		cagr_exact * 100 >= cagr_cases * 90,
-		"{cagr_exact} of {cagr_cases} exact"
-	);
 	for case in vectors["scenarios"].as_array().unwrap() {
 		let raw = &case["input"];
 		let scenario_case = |value: &Value| ScenarioCase {
@@ -298,7 +273,9 @@ fn finance_matches_typescript() {
 				] {
 					match actual {
 						None => assert!(expected[key].is_null(), "{case}"),
-						Some(value) => assert_pow_ulp(value, bits(&expected[key]), case),
+						Some(value) => {
+							assert!(same_bits(Some(value), &expected[key]), "{case}: {key}");
+						}
 					}
 				}
 			}
@@ -540,7 +517,6 @@ fn text_ids_dates_and_plans_match_typescript() {
 fn math_matches_v8() {
 	let cases = load("math.json");
 	let cases = cases.as_array().unwrap();
-	let (mut pow_exact, mut pow_total) = (0usize, 0usize);
 	for case in cases {
 		let (x, y) = (bits(&case["x"]), bits(&case["y"]));
 		let exp = research_js::math::exp(y);
@@ -555,17 +531,9 @@ fn math_matches_v8() {
 		);
 		let pow = research_js::math::pow(x, y);
 		let expected = bits(&case["pow"]);
-		pow_total += 1;
-		if pow.to_bits() == expected.to_bits() || (pow.is_nan() && expected.is_nan()) {
-			pow_exact += 1;
-		} else {
-			// The known deviation: one unit in the last place, never more.
-			let distance = pow.to_bits().abs_diff(expected.to_bits());
-			assert!(distance <= 1 && pow.is_finite(), "pow {case}: {pow:e}");
-		}
+		assert!(
+			pow.to_bits() == expected.to_bits() || (pow.is_nan() && expected.is_nan()),
+			"pow {case}: {pow:e}"
+		);
 	}
-	assert!(
-		pow_exact * 100 >= pow_total * 93,
-		"{pow_exact} of {pow_total}"
-	);
 }

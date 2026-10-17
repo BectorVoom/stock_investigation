@@ -4,16 +4,18 @@
 //! carries fdlibm. Node on arm64 is compiled by clang, whose default
 //! `-ffp-contract=on` fuses every `a * b + c` (and `a * b - c`, `c - a * b`,
 //! `c += a * b`) inside one C expression into a fused multiply-add, and the
-//! last bit of `exp` and `log` depends on it. This port spells each fusion
+//! last bit of `exp`, `log` and `pow` depends on it. This port spells each fusion
 //! out with `mul_add` where clang forms it (the left multiplication of
 //! `a * b + c * d`), and leaves every other operation unfused.
 //!
-//! Measured against Node 23 on arm64 (`vectors/domain/math.json`): `exp` and
-//! `log` agree bit for bit. `pow` is fdlibm's `e_pow.c` with the same
-//! treatment, and still differs from V8 by one unit in the last place for
-//! about 5% of random inputs (the platform `powf` differs for about 10%); no
-//! contraction pattern closes the gap, so V8's `pow` evidently computes some
-//! step differently. Known deviation, recorded in the conformance test.
+//! `pow` is V8's adaptation of fdlibm's `e_pow.c` (`base::ieee754::pow`,
+//! V8 12.9), including V8's one change to the algorithm (see the comment at
+//! the final quotient); `Math.pow` and `**` reach it for every input, with
+//! ECMAScript's own answers for a NaN exponent and `(±1) ** ±∞`.
+//!
+//! Measured against Node 23 on arm64 (V8 12.9): `exp`, `log` and `pow`
+//! agree bit for bit (`vectors/js/math.json`, `vectors/domain/math.json`).
+//! The platform `powf` differs from V8 for about 10% of inputs.
 //!
 //! On x86-64 V8 is built without FMA contraction (baseline SSE2 has no FMA),
 //! so a Node there can differ from these vectors in the last bit.
@@ -375,7 +377,10 @@ fn fdlibm_pow(x: f64, y: f64) -> f64 {
 	let w = v - (z - u);
 	let t = z * z;
 	let t1 = (-t).mul_add(horner(t, &[P1, P2, P3, P4, P5]), z);
-	let r = (z * t1) / (t1 - 2.0) - z.mul_add(w, w);
+	// V8's own change to fdlibm (`base::Divide(z * t1, (t1 - two) - (w + z * w))`):
+	// the whole correction is in the divisor, where e_pow.c subtracts it from
+	// the quotient. Ported as V8 has it; it is what `Math.pow` returns.
+	let r = (z * t1) / ((t1 - 2.0) - z.mul_add(w, w));
 	z = 1.0 - (r - z);
 	j = signed(high_word(z));
 	j += n << 20;

@@ -21,6 +21,8 @@ use serde::{Deserialize, Serialize};
 use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::{IsNormalized, is_nfkc_quick};
 
+use crate::literal::js_literal_enum;
+
 /// A supporting or contradicting quote must be long enough to be a passage.
 /// A word or two occurs in almost any article and would "verify" anything.
 pub const MIN_QUOTE_LENGTH: usize = 12;
@@ -28,42 +30,42 @@ pub const MIN_QUOTE_LENGTH: usize = 12;
 /// Below this many bytes of text, one thread is faster than the rayon pool.
 const PARALLEL_MIN_BYTES: usize = 32 * 1024;
 
-/// What a claim asserts.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ClaimType {
-	/// A reported fact: its numbers must appear in the supporting evidence.
-	Observation,
-	/// A conclusion drawn from facts.
-	Inference,
-	/// A tentative explanation.
-	Hypothesis,
-	/// A statement about the future.
-	Forecast,
+js_literal_enum! {
+	/// What a claim asserts (`claimTypeSchema`).
+	pub enum ClaimType {
+		/// A reported fact: its numbers must appear in the supporting evidence.
+		Observation = "observation",
+		/// A conclusion drawn from facts.
+		Inference = "inference",
+		/// A tentative explanation.
+		Hypothesis = "hypothesis",
+		/// A statement about the future.
+		Forecast = "forecast",
+	}
 }
 
-/// How a link relates its evidence to the claim.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EvidenceRelation {
-	/// The passage supports the claim.
-	Supports,
-	/// The passage contradicts the claim.
-	Contradicts,
-	/// The source as a whole gives context.
-	Context,
+js_literal_enum! {
+	/// How a link relates its evidence to the claim (`evidenceRelationSchema`).
+	pub enum EvidenceRelation {
+		/// The passage supports the claim.
+		Supports = "supports",
+		/// The passage contradicts the claim.
+		Contradicts = "contradicts",
+		/// The source as a whole gives context.
+		Context = "context",
+	}
 }
 
-/// Verification outcome of one claim.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ClaimStatus {
-	/// Verified support and no verified contradiction.
-	Supported,
-	/// No verified support, or a figure the support does not contain.
-	Unsupported,
-	/// Verified support and verified contradiction.
-	Conflicting,
+js_literal_enum! {
+	/// Verification outcome of one claim (`claimStatusSchema`).
+	pub enum ClaimStatus {
+		/// Verified support and no verified contradiction.
+		Supported = "supported",
+		/// No verified support, or a figure the support does not contain.
+		Unsupported = "unsupported",
+		/// Verified support and verified contradiction.
+		Conflicting = "conflicting",
+	}
 }
 
 /// One citation of a draft claim.
@@ -102,38 +104,47 @@ pub struct EvidenceText {
 	pub retrieved_text: String,
 }
 
-/// Why a link or a claim failed verification.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+/// Why a link or a claim failed verification (`claimIssueSchema`; serialised
+/// with its `code` tag first, as zod's parsed value).
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(tag = "code")]
 pub enum ClaimIssue {
 	/// `UNKNOWN_EVIDENCE`: the run never fetched this id.
+	#[serde(rename = "UNKNOWN_EVIDENCE", rename_all = "camelCase")]
 	UnknownEvidence {
 		/// The cited id.
 		evidence_id: String,
 	},
 	/// `QUOTE_NOT_FOUND`: the passage is not in the cited evidence.
+	#[serde(rename = "QUOTE_NOT_FOUND", rename_all = "camelCase")]
 	QuoteNotFound {
 		/// The cited id.
 		evidence_id: String,
 	},
 	/// `QUOTE_TOO_SHORT`: under [`MIN_QUOTE_LENGTH`] after normalisation.
+	#[serde(rename = "QUOTE_TOO_SHORT", rename_all = "camelCase")]
 	QuoteTooShort {
 		/// The cited id.
 		evidence_id: String,
 	},
 	/// `MISSING_QUOTE`: support or contradiction without a passage.
+	#[serde(rename = "MISSING_QUOTE", rename_all = "camelCase")]
 	MissingQuote {
 		/// The cited id.
 		evidence_id: String,
 	},
 	/// `NUMBER_NOT_IN_EVIDENCE`: an observation states a figure no support contains.
+	#[serde(rename = "NUMBER_NOT_IN_EVIDENCE", rename_all = "camelCase")]
 	NumberNotInEvidence {
 		/// The figure, thousands separators removed.
 		number_text: String,
 	},
 	/// `NO_SUPPORTING_EVIDENCE`.
+	#[serde(rename = "NO_SUPPORTING_EVIDENCE")]
 	NoSupportingEvidence,
 	/// `NOT_INDEPENDENTLY_VERIFIED`: deterministic checks passed, but no
 	/// independent verdict confirmed the claim.
+	#[serde(rename = "NOT_INDEPENDENTLY_VERIFIED")]
 	NotIndependentlyVerified,
 }
 

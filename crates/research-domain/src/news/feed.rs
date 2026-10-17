@@ -10,6 +10,8 @@
 //! rare duplicates and keeps the map free of shared state. Callers on a
 //! tokio worker bridge to this CPU work through `rayon::spawn` + a oneshot.
 
+use crate::literal::js_literal_enum;
+
 mod plain_text;
 mod timestamp;
 
@@ -32,23 +34,13 @@ pub const MAX_TITLE_LENGTH: usize = 300;
 /// Longest stored excerpt, in UTF-16 units.
 pub const MAX_EXCERPT_LENGTH: usize = 500;
 
-/// What may be retained from a publisher's content (DATA-010).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LicensePolicy {
-	/// Headline and link only; no excerpt is stored.
-	HeadlineAndLinkOnly,
-	/// A short excerpt may be stored.
-	ShortExcerptPermitted,
-}
-
-impl LicensePolicy {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::HeadlineAndLinkOnly => "headline-and-link-only",
-			Self::ShortExcerptPermitted => "short-excerpt-permitted",
-		}
+js_literal_enum! {
+	/// What may be retained from a publisher's content (DATA-010).
+	pub enum LicensePolicy {
+		/// Headline and link only; no excerpt is stored.
+		HeadlineAndLinkOnly = "headline-and-link-only",
+		/// A short excerpt may be stored.
+		ShortExcerptPermitted = "short-excerpt-permitted",
 	}
 }
 
