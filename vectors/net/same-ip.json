@@ -1,0 +1,4202 @@
+[
+	{
+		"input": {
+			"actual": null,
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "93.184.216.34"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "93.184.216.35"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "93.184.216.35"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "127.0.0.1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "0127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "1.2.3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "256.1.1.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "0:0:0:0:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "::ffff:127.0.0.1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "::ffff:7f00:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2606:2800:220:1::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2606:2800:220:1:0:0:0:1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2606:2800:0220:0001:0000:0000:0000:0001"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2606:2800:220:1::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "fe80::1%en0"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "fe80::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "fe80::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "[::1]"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "not-an-ip"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": ""
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": " 93.184.216.34"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2001:DB8::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2001:DB8::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2001:DB8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "2001:db8::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "2001:db8::1"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "2001:db8::1"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "::"
+		},
+		"output": true
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "::"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": null,
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.34",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "93.184.216.35",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "127.0.0.1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0127.0.0.1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1.2.3",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "256.1.1.1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "0:0:0:0:0:0:0:1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:127.0.0.1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::ffff:7f00:1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1:0:0:0:1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:0220:0001:0000:0000:0000:0001",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2606:2800:220:1::1%en0",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1%en0",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "fe80::1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "[::1]",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "not-an-ip",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": " 93.184.216.34",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:DB8::1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "2001:db8::1",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "::",
+			"expected": "1::2::3"
+		},
+		"output": false
+	},
+	{
+		"input": {
+			"actual": "1::2::3",
+			"expected": "1::2::3"
+		},
+		"output": false
+	}
+]

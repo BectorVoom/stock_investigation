@@ -13,6 +13,7 @@ import { jsExporter } from "./js.ts";
 import { loggingExporter } from "./logging.ts";
 import { mathExporter } from "./math.ts";
 import { modelTextExporter } from "./modelText.ts";
+import { netExporter } from "./net.ts";
 import type { VectorExporter } from "./shared.ts";
 import { widgetGridExporter } from "./widgetGrid.ts";
 
@@ -28,4 +29,5 @@ export const exporters: readonly VectorExporter[] = [
 	widgetGridExporter,
 	modelTextExporter,
 	mathExporter,
+	netExporter,
 ];

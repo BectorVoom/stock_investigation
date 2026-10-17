@@ -1,0 +1,10 @@
+[req]
+distinguished_name = dn
+prompt = no
+[dn]
+CN = synthetic-wire test leaf
+[ext]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:a.synthetic-wire.org, DNS:b.synthetic-wire.org, DNS:pinned.synthetic-wire.org, DNS:dual.synthetic-wire.org

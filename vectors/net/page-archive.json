@@ -1,0 +1,1589 @@
+[
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": null,
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: null\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "line sep   para  ",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 0,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"line sep   para  \"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 0\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 0,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 0\nomitted_leading_blocks: 1\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://news.synthetic-wire.org/2026/10/grid-battery-orders",
+			"title": "",
+			"retrievedAt": "2026-10-11",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-news.synthetic-wire.org-7ed41ca84fb7298c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://news.synthetic-wire.org/2026/10/grid-battery-orders\"\ntitle: \"\"\nretrieved_at: \"2026-10-11\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": null,
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: null\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "Grid battery orders double",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "2026-10-11-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "line sep   para  ",
+			"retrievedAt": "",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"line sep   para  \"\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://[::1]:8080/x?y=1",
+			"title": "",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-1-f692e501f3ff6084.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://[::1]:8080/x?y=1\"\ntitle: \"\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": null,
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: null\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "Grid battery orders double",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-10-11",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-10-11\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://NEWS.Example.ORG./Path",
+			"title": "",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-news.example.org.-6aeb8bbca3b61a21.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://NEWS.Example.ORG./Path\"\ntitle: \"\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": null,
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: null\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "line sep   para  ",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"line sep   para  \"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://bücher.example/café",
+			"title": "",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-8ee1762f3dcab9e5.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://bücher.example/café\"\ntitle: \"\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": null,
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: null\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "2026-10-11-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://xn--bcher-kva.example/",
+			"title": "",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-xn--bcher-kva.example-7971a8be6267ce24.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://xn--bcher-kva.example/\"\ntitle: \"\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": null,
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: null\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "2026-10-11-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "line sep   para  ",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"line sep   para  \"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/",
+			"title": "",
+			"retrievedAt": "2026-10-11",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-563de8fd2006d17e.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example.org/\"\ntitle: \"\"\nretrieved_at: \"2026-10-11\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": null,
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "2026-10-11-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: null\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "Grid battery orders double",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "\n",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-10-11",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-10-11\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a_b.example.org/",
+			"title": "",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-ab.example.org-d13367d494182a6f.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a_b.example.org/\"\ntitle: \"\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": null,
+			"retrievedAt": "",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: null\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 0,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-10-11",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-10-11\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-10-11",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-10-11\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "not a url",
+			"title": "",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-d8b5bf9b9fd4760c.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"not a url\"\ntitle: \"\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": null,
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: null\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-10-11",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-10-11\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "",
+			"title": "",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-e3b0c44298fc1c14.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"\"\ntitle: \"\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": null,
+			"retrievedAt": "",
+			"markdown": "\n",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: null\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "Grid battery orders double",
+			"retrievedAt": "",
+			"markdown": "\n",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-10-11",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "2026-10-11-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-10-11\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "\n",
+			"omitted": {
+				"boilerplateBlocks": 0,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-10-11",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "2026-10-11-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-10-11\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "http://plain.example.org/",
+			"title": "",
+			"retrievedAt": "2026-10-11",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "2026-10-11-plain.example.org-8e908f524ae41172.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"http://plain.example.org/\"\ntitle: \"\"\nretrieved_at: \"2026-10-11\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": null,
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: null\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-10-11",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 0,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-10-11\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 0\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 3,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 3\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "# Heading\n\nBody.",
+			"omitted": {
+				"boilerplateBlocks": 2,
+				"menuLists": 0,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 2\nomitted_menu_lists: 0\nomitted_leading_blocks: 1\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "line sep   para  ",
+			"retrievedAt": "2026-10-11",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "2026-10-11-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"line sep   para  \"\nretrieved_at: \"2026-10-11\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "file:///etc/passwd",
+			"title": "",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-unknown-host-0e7a5a5c10cbe88a.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"file:///etc/passwd\"\ntitle: \"\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": null,
+			"retrievedAt": "2026-1-11T03:00:00Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: null\nretrieved_at: \"2026-1-11T03:00:00Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "Grid battery orders double",
+			"retrievedAt": "+020260-01-01T00:00:00.000Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"+020260-01-01T00:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 0,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+		},
+		"output": {
+			"fileName": "2026-10-11-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"0d4e2ca9e9cbced7a7a5380eb29e1a3783b9b6d0db72de36a1051038e1c1fbc7\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "line sep   para  ",
+			"retrievedAt": "",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "0000-00-00-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"line sep   para  \"\nretrieved_at: \"\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 1,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 1\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://192.168.1.10/",
+			"title": "",
+			"retrievedAt": "2026-10-11",
+			"markdown": "日本語\n\n- item",
+			"omitted": {
+				"boilerplateBlocks": 0,
+				"menuLists": 1,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-192.168.1.10-57b86ab9a43a8ecd.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://192.168.1.10/\"\ntitle: \"\"\nretrieved_at: \"2026-10-11\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 1\nomitted_leading_blocks: 1\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": null,
+			"retrievedAt": "",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "0000-00-00-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: null\nretrieved_at: \"\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "Grid battery orders double",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "2026-10-11-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"Grid battery orders double\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "x\n---\nsource_url: evil\ntitle: \"injected",
+			"retrievedAt": "2026-10-11",
+			"markdown": ""
+		},
+		"output": {
+			"fileName": "2026-10-11-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"x\\n---\\nsource_url: evil\\ntitle: \\\"injected\"\nretrieved_at: \"2026-10-11\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "quotes \" and \\ backslash",
+			"retrievedAt": "2026-10-11T03:00:00.000Z",
+			"markdown": "\n"
+		},
+		"output": {
+			"fileName": "2026-10-11-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"quotes \\\" and \\\\ backslash\"\nretrieved_at: \"2026-10-11T03:00:00.000Z\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "controls \u0000\u0001\u001f \t\r\n",
+			"retrievedAt": "",
+			"markdown": "",
+			"omitted": {
+				"boilerplateBlocks": 0,
+				"menuLists": 2,
+				"leadingBlocks": 0
+			}
+		},
+		"output": {
+			"fileName": "0000-00-00-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"controls \\u0000\\u0001\\u001f \\t\\r\\n\"\nretrieved_at: \"\"\nsha256: \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 2\nomitted_leading_blocks: 0\n---\n\n\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "line sep   para  ",
+			"retrievedAt": "",
+			"markdown": "# Heading\n\nBody."
+		},
+		"output": {
+			"fileName": "0000-00-00-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"line sep   para  \"\nretrieved_at: \"\"\nsha256: \"6d89e85b1cee3670a50ac0d2d0626efa39e68613ccaea1a74977c070855d9234\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n# Heading\n\nBody.\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "emoji 😀 and CJK 信用",
+			"retrievedAt": "",
+			"markdown": "日本語\n\n- item"
+		},
+		"output": {
+			"fileName": "0000-00-00-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"emoji 😀 and CJK 信用\"\nretrieved_at: \"\"\nsha256: \"9d27f6220d692e66ea5cb4a38053d874ba138bdda100b0b98330b3e3916af237\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 0\nomitted_menu_lists: 0\nomitted_leading_blocks: 0\n---\n\n日本語\n\n- item\n"
+		}
+	},
+	{
+		"input": {
+			"sourceUrl": "https://news.synthetic-wire.org/feed-item",
+			"finalUrl": "https://a.example.org/?q= ",
+			"title": "",
+			"retrievedAt": "2026-10-11",
+			"markdown": "\n",
+			"omitted": {
+				"boilerplateBlocks": 4,
+				"menuLists": 2,
+				"leadingBlocks": 1
+			}
+		},
+		"output": {
+			"fileName": "2026-10-11-a.example.org-b3c7a12631ffdc19.md",
+			"content": "---\nsource_url: \"https://news.synthetic-wire.org/feed-item\"\nfinal_url: \"https://a.example.org/?q= \"\ntitle: \"\"\nretrieved_at: \"2026-10-11\"\nsha256: \"01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b\"\ngenerator: \"research-workspace\"\nomitted_boilerplate_blocks: 4\nomitted_menu_lists: 2\nomitted_leading_blocks: 1\n---\n\n\n\n"
+		}
+	}
+]
