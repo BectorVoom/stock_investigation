@@ -62,6 +62,9 @@ function byNewestFirst(a: ResearchRun, b: ResearchRun): number {
  */
 const MAX_GAP_FILL_PAGES = 3;
 
+/** The notice a failed retry leaves; the next retry attempt clears it. */
+const RETRY_FAILED = "The run could not be retried.";
+
 function minSeq(messages: readonly Conversation["messages"][number][]): number | null {
 	let minimum: number | null = null;
 	for (const message of messages) {
@@ -177,6 +180,10 @@ export function createWorkspaceSession(
 
 	const reportFailure = (text: string, failure: ApiFailure) => {
 		setNotice({ tone: "error", text, failure });
+	};
+	/** Clears only the retry's own failure notice; any other notice stays until dismissed. */
+	const clearRetryFailure = () => {
+		if (notice()?.text === RETRY_FAILED) setNotice(null);
 	};
 
 	/** Installs a view unless it is older than the one held: workspace versions only move forward. */
@@ -488,13 +495,15 @@ export function createWorkspaceSession(
 		retryRun: async (runId) => {
 			const key = retryKeys.get(runId) ?? api.newIdempotencyKey();
 			retryKeys.set(runId, key);
+			// A new attempt answers the previous one's failure: never leave it on screen.
+			clearRetryFailure();
 			const result = await api.retryResearchRun(runId, key);
 			if (disposed) return;
 			if (result.ok) {
 				acceptRun(result.value);
 				poller.pollNow();
 			} else {
-				reportFailure("The run could not be retried.", result.error);
+				reportFailure(RETRY_FAILED, result.error);
 			}
 		},
 		approveRun: async (runId, budget) => {
