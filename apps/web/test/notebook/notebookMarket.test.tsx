@@ -450,10 +450,14 @@ describe("notebook market widget bodies", () => {
 			/>
 		));
 		// The same Home component, so the same opener with the widget title.
-		const open = screen.getByRole("button", { name: "Open chart: VIX chart" });
+		const open = screen.getByRole("button", { name: /^Open chart: Line chart: VIX chart\./ });
 		fireEvent.click(open);
-		const dialog = document.querySelector("sl-dialog.chart-viewer");
-		if (!(dialog instanceof HTMLElement)) throw new Error("the chart viewer did not open");
+		// The viewer is its own lazy chunk: it renders once the chunk loads.
+		const dialog = await waitFor(() => {
+			const found = document.querySelector("sl-dialog.chart-viewer");
+			if (!(found instanceof HTMLElement)) throw new Error("the chart viewer did not open");
+			return found;
+		});
 		expect(dialog.textContent).toContain("CBOE Volatility Index: VIX");
 		// The 1y opening preset over the three fixture days.
 		const dates = [...dialog.querySelectorAll('input[type="date"]')].filter(
@@ -475,9 +479,12 @@ describe("notebook market widget bodies", () => {
 			/>
 		));
 		// The stock-table row opens its own series only.
-		fireEvent.click(screen.getByRole("button", { name: "Open chart: AAPL (NASDAQ)" }));
-		const rowDialog = document.querySelector("sl-dialog.chart-viewer");
-		if (!(rowDialog instanceof HTMLElement)) throw new Error("the row viewer did not open");
+		fireEvent.click(screen.getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ }));
+		const rowDialog = await waitFor(() => {
+			const found = document.querySelector("sl-dialog.chart-viewer");
+			if (!(found instanceof HTMLElement)) throw new Error("the row viewer did not open");
+			return found;
+		});
 		expect(rowDialog.textContent).toContain("AAPL (NASDAQ)");
 		expect(rowDialog.textContent).not.toContain("MSFT (NASDAQ)");
 	});

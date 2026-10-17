@@ -32,3 +32,10 @@ export function initialPresetForRange(range: MarketRange): ChartPreset {
  * the guideline conformance test and the app's Content-Security-Policy.
  */
 export const OPEN_CHART_BUTTON_CLASS = "block w-full cursor-pointer rounded border-0 p-0 text-left";
+
+/**
+ * A press on an opener that travels this far (px) before its release is a
+ * text selection or a stray drag, not a tap: the release click is ignored
+ * (the same 4 px threshold the main chart uses between a click and a drag).
+ */
+export const OPEN_PRESS_SLOP_PX = 4;

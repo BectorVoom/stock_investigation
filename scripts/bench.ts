@@ -75,6 +75,12 @@ import { seriesColor } from "../packages/ui-registry/src/charts/chartMath.ts";
 import {
 	type BuildDetailChartInput,
 	buildDetailChartModel,
+	buildNavigatorOverview,
+	type DetailMaOverlayInput,
+	ensureTwoBarWindow,
+	navigatorWindowRect,
+	unionBarDays,
+	unionOverview,
 } from "../packages/ui-registry/src/charts/detailChartModel.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 
@@ -728,6 +734,63 @@ const CHART_BENCH_DETAIL_INPUT: BuildDetailChartInput = {
 	maPeriods: [20, 50, 200],
 };
 
+/* Per-window-change cost must not grow with the held bars (ADR-0025
+ * performance, fix round 6): the same 1-month window over 4 × 800 and
+ * 4 × 20,000 daily bars, with everything the viewer memoizes per interval
+ * (resampled bars, union days, moving averages, the navigator overview)
+ * built once up front, exactly as the viewer holds them. The two sizes share
+ * one budget, so a pan or zoom that touches every held bar fails here. */
+function chartWindowFixture(count: number) {
+	const series = Array.from({ length: 4 }, (_, index) =>
+		resampleSeries(homeBenchPoints(index, count), "daily"),
+	);
+	const first = series[0] ?? [];
+	const lastBar = first[first.length - 1];
+	const lastDay = lastBar?.day ?? 0;
+	const window = { from: lastDay - 400, to: lastDay - 370 };
+	const extent = { from: first[0]?.day ?? 0, to: lastDay };
+	const closes = first.map((bar) => bar.close);
+	const days = first.map((bar) => bar.day);
+	const overlays: DetailMaOverlayInput[] = [20, 50, 200].map((period) => {
+		const averaged = movingAverage(closes, period);
+		return {
+			seriesKey: "bench-0",
+			color: seriesColor(0),
+			period,
+			label: `MA ${period}`,
+			days,
+			values: averaged.ok ? averaged.value : [],
+		};
+	});
+	const overview = unionOverview(series);
+	const navigator = buildNavigatorOverview({
+		days: overview.days,
+		values: overview.values,
+		width: 1200,
+		height: 56,
+	});
+	const modelInput: BuildDetailChartInput = {
+		series: series.map((bars, index) => ({
+			key: `bench-${index}`,
+			label: `Bench series ${index}`,
+			color: seriesColor(index),
+			bars,
+		})),
+		window,
+		plotWidth: 1200,
+		plotHeight: 480,
+		scale: "linear",
+		mode: "percent",
+		maPeriods: [],
+		maOverlays: [overlays[0], overlays[1], overlays[2]].flatMap((overlay) =>
+			overlay === undefined ? [] : [overlay],
+		),
+	};
+	return { union: unionBarDays(series), window, extent, navigator, modelInput };
+}
+const CHART_WINDOW_800 = chartWindowFixture(800);
+const CHART_WINDOW_20K = chartWindowFixture(20_000);
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -1024,6 +1087,27 @@ const cases: Case[] = [
 		budgetMs: 15,
 		run: () => buildDetailChartModel(CHART_BENCH_DETAIL_INPUT),
 	},
+	...[
+		{ label: "4 x 800", fixture: CHART_WINDOW_800 },
+		{ label: "4 x 20,000", fixture: CHART_WINDOW_20K },
+	].flatMap(({ label, fixture }): Case[] => [
+		{
+			name: `window change: two-bar check on the memoized union, ${label} bars`,
+			budgetMs: 0.1,
+			run: () => ensureTwoBarWindow(fixture.window, fixture.union, fixture.extent),
+		},
+		{
+			name: `window change: navigator rectangle, ${label} bars`,
+			budgetMs: 0.1,
+			run: () =>
+				fixture.navigator === null ? null : navigatorWindowRect(fixture.navigator, fixture.window),
+		},
+		{
+			name: `window change: 1-month detail model with 3 MAs, ${label} bars`,
+			budgetMs: 0.6,
+			run: () => buildDetailChartModel(fixture.modelInput),
+		},
+	]),
 ];
 
 function median(values: number[]): number {

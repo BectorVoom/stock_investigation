@@ -5,16 +5,17 @@ import { seriesColor } from "../src/charts/chartMath.ts";
 import {
 	buildDetailChartModel,
 	buildNavigatorModel,
+	buildNavigatorOverview,
 	type DetailChartModel,
 	type DetailSeriesInput,
 	type DetailXTick,
 	decimateToWidth,
 	ensureTwoBarWindow,
-	formatDetailTick,
 	isValueLabelHidden,
 	layoutTagCenters,
 	logScaleBlocked,
-	tickGranularityForSpan,
+	navigatorWindowRect,
+	unionBarDays,
 	unionOverview,
 	VALUE_LABEL_HEIGHT,
 } from "../src/charts/detailChartModel.ts";
@@ -89,6 +90,9 @@ function expectTickLabelMatchesDay(tick: DetailXTick): void {
 		// A January or first tick carries its year ("Jan 2026").
 		expect(tick.label).toBe(`${monthName} ${year}`);
 		expect(day).toBe(1);
+	} else if (/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(tick.label)) {
+		// A day or Monday tick that opens a year carries it ("Jan 4, 2026").
+		expect(tick.label).toBe(`${monthName} ${day}, ${year}`);
 	} else {
 		// Days and Mondays read as "Oct 16".
 		expect(tick.label).toBe(`${monthName} ${day}`);
@@ -127,6 +131,65 @@ function expectBoundaryTicks(
 			model.plot.right - half,
 		);
 		expect(tick.x).toBeCloseTo(expected, 9);
+	}
+}
+
+function dayOf(iso: string): number {
+	const day = isoToDayNumber(iso);
+	if (!day.ok) throw new Error("bad fixture date");
+	return day.value;
+}
+
+/** `count` monthly bars on the first of each month from `year`-`month`. */
+function monthlyBars(year: number, month: number, count: number) {
+	return Array.from({ length: count }, (_, index) => {
+		const total = month - 1 + index;
+		const iso = `${year + Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}-01`;
+		const day = dayOf(iso);
+		const close = 100 + index;
+		return { observedOn: iso, day, open: close, high: close, low: close, close, count: 1 };
+	});
+}
+
+/** Date-axis ticks of a window holding one bar at each end (ticks depend only on window and width). */
+function ticksFor(from: number, to: number, width: number): readonly DetailXTick[] {
+	const bar = (day: number, close: number) => {
+		const iso = dayNumberToIso(day);
+		if (!iso.ok) throw new Error("bad fixture day");
+		return { observedOn: iso.value, day, open: close, high: close, low: close, close, count: 1 };
+	};
+	const model = buildDetailChartModel({
+		series: [{ key: "t", label: "Ticks", color: seriesColor(0), bars: [bar(from, 1), bar(to, 2)] }],
+		window: { from, to },
+		plotWidth: width,
+		plotHeight: 320,
+		scale: "linear",
+		mode: "value",
+		maPeriods: [],
+	});
+	if (model === null) throw new Error("model is null");
+	return model.xTicks;
+}
+
+/**
+ * A window crossing a calendar year names the year on its first tick and on
+ * the first tick of every later year (fix round 6: never only "May 18").
+ */
+function expectYearContext(ticks: readonly DetailXTick[], from: number, to: number): void {
+	const yearOf = (day: number): number => {
+		const iso = dayNumberToIso(day);
+		if (!iso.ok) throw new Error("bad tick day");
+		return Number(iso.value.slice(0, 4));
+	};
+	if (yearOf(from) === yearOf(to)) return;
+	expect(ticks.length).toBeGreaterThan(0);
+	let previous: number | null = null;
+	for (const tick of [...ticks].sort((a, b) => a.day - b.day)) {
+		const year = yearOf(tick.day);
+		if (previous === null || year !== previous) {
+			expect(tick.label, `tick on day ${tick.day} names ${year}`).toContain(String(year));
+		}
+		previous = year;
 	}
 }
 
@@ -362,15 +425,6 @@ describe("detail chart model", () => {
 		);
 	});
 
-	it("picks day, month and year labels by span", () => {
-		expect(tickGranularityForSpan(10)).toBe("day");
-		expect(tickGranularityForSpan(400)).toBe("month");
-		expect(tickGranularityForSpan(2000)).toBe("year");
-		expect(formatDetailTick("2026-10-16", "day")).toBe("Oct 16");
-		expect(formatDetailTick("2026-10-16", "month")).toBe("Oct 2026");
-		expect(formatDetailTick("2026-10-16", "year")).toBe("2026");
-	});
-
 	it("finds the nearest bar by binary search", () => {
 		const bars = singleSeries([10, 11, 12, 13, 14]);
 		const first = bars[0]?.bars[0];
@@ -600,23 +654,31 @@ describe("detail chart model", () => {
 		const held = [...all, monday];
 		const saturday = friday.day + 1;
 		const sunday = friday.day + 2;
-		const widened = ensureTwoBarWindow({ from: saturday, to: sunday }, [held], {
+		const widened = ensureTwoBarWindow({ from: saturday, to: sunday }, unionBarDays([held]), {
 			from: all[0]?.day ?? 0,
 			to: monday.day,
 		});
 		// Friday through Monday: the two real bars around the weekend.
 		expect(widened).toEqual({ from: friday.day, to: monday.day });
 		// A window already holding two bars is untouched.
-		const untouched = ensureTwoBarWindow({ from: friday.day - 4, to: friday.day }, [held], {
-			from: all[0]?.day ?? 0,
-			to: monday.day,
-		});
+		const untouched = ensureTwoBarWindow(
+			{ from: friday.day - 4, to: friday.day },
+			unionBarDays([held]),
+			{
+				from: all[0]?.day ?? 0,
+				to: monday.day,
+			},
+		);
 		expect(untouched).toEqual({ from: friday.day - 4, to: friday.day });
 		// Data shorter than two bars yields the whole extent.
-		const single = ensureTwoBarWindow({ from: saturday, to: sunday }, [[all[0] ?? monday]], {
-			from: saturday,
-			to: sunday,
-		});
+		const single = ensureTwoBarWindow(
+			{ from: saturday, to: sunday },
+			unionBarDays([[all[0] ?? monday]]),
+			{
+				from: saturday,
+				to: sunday,
+			},
+		);
 		expect(single).toEqual({ from: saturday, to: sunday });
 	});
 
@@ -682,19 +744,13 @@ describe("detail chart model", () => {
 		// The crosshair value label hides ticks too while it is shown.
 		expect(isValueLabelHidden(100, [0], 100 + VALUE_LABEL_HEIGHT - 0.5)).toBe(true);
 		expect(isValueLabelHidden(100, [0], 100 + VALUE_LABEL_HEIGHT)).toBe(false);
-		// The model's own flags agree with the predicate for the tag-only case.
-		model.yTicks.forEach((tick, index) => {
-			expect(model.yTickHidden[index]).toBe(
-				isValueLabelHidden(
-					model.yFor(tick),
-					model.lastValueTags.map((tag) => tag.y),
-					null,
-				),
-			);
-		});
 		// At least one tick hides behind the close pair (the defect: the
-		// "15.41" text sat on the "15.4" tick).
-		expect(model.yTickHidden.some((hidden) => hidden)).toBe(true);
+		// "15.41" text sat on the "15.4" tick). The view applies exactly this
+		// predicate; the model keeps no second copy of it (fix round 6).
+		const tagYs = model.lastValueTags.map((tag) => tag.y);
+		expect(model.yTicks.some((tick) => isValueLabelHidden(model.yFor(tick), tagYs, null))).toBe(
+			true,
+		);
 	});
 
 	it("keeps tag centres separated and inside the plot", () => {
@@ -714,5 +770,164 @@ describe("detail chart model", () => {
 			expect(y).toBeGreaterThanOrEqual(plot.top + VALUE_LABEL_HEIGHT / 2);
 			expect(y).toBeLessThanOrEqual(plot.bottom - VALUE_LABEL_HEIGHT / 2);
 		}
+	});
+
+	it("names a year on every multi-year axis, with 2/5/10-year steps for decades (fix round 6)", () => {
+		// 800 monthly observations, 1960-02-01 … 2026-09-01, at Max.
+		const monthly = monthlyBars(1960, 2, 800);
+		const firstBar = monthly[0];
+		const lastBar = monthly[monthly.length - 1];
+		if (firstBar === undefined || lastBar === undefined) throw new Error("fixture is empty");
+		expect(lastBar.observedOn).toBe("2026-09-01");
+		for (const width of [358, 700, 1248, 1920]) {
+			const model = buildDetailChartModel({
+				series: [{ key: "m", label: "Monthly", color: seriesColor(0), bars: monthly }],
+				window: { from: firstBar.day, to: lastBar.day },
+				plotWidth: width,
+				plotHeight: 320,
+				scale: "linear",
+				mode: "value",
+				maPeriods: [],
+			});
+			if (model === null) throw new Error("model is null");
+			// Never the single year-less "May 18" of the old fallback.
+			expectBoundaryTicks(model, firstBar.day, lastBar.day, 2);
+			expectYearContext(model.xTicks, firstBar.day, lastBar.day);
+			for (const tick of model.xTicks) expect(tick.label).toMatch(/^\d{4}$/);
+		}
+		// Ten years of days at phone width: year ticks, never "Oct 18".
+		const tenYears = ticksFor(dayOf("2016-10-17"), dayOf("2026-10-16"), 358);
+		expect(tenYears.length).toBeGreaterThanOrEqual(2);
+		expectYearContext(tenYears, dayOf("2016-10-17"), dayOf("2026-10-16"));
+		// A 1Y window at 2500 px keeps fine ticks but names both years.
+		const oneYear = ticksFor(dayOf("2025-10-17"), dayOf("2026-10-16"), 2500);
+		expect(oneYear.length).toBeGreaterThanOrEqual(12);
+		expectYearContext(oneYear, dayOf("2025-10-17"), dayOf("2026-10-16"));
+		expect(oneYear.some((tick) => tick.label.includes("2025"))).toBe(true);
+		expect(oneYear.some((tick) => tick.label.includes("2026"))).toBe(true);
+		// A window inside one year stays glanceable: no year on day ticks.
+		const oneMonth = ticksFor(dayOf("2026-09-16"), dayOf("2026-10-16"), 1200);
+		for (const tick of oneMonth) expect(tick.label).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/);
+	});
+
+	it("names the year on the first tick and at every year change for arbitrary windows", () => {
+		fc.assert(
+			fc.property(
+				fc.integer({ min: -3000, max: 25000 }),
+				fc.integer({ min: 1, max: 30000 }),
+				fc.integer({ min: 120, max: 2600 }),
+				(from, span, width) => {
+					const to = from + span;
+					const ticks = ticksFor(from, to, width);
+					expect(ticks.length).toBeGreaterThanOrEqual(1);
+					expectYearContext(ticks, from, to);
+					for (const tick of ticks) {
+						expect(tick.day).toBeGreaterThanOrEqual(from);
+						expect(tick.day).toBeLessThanOrEqual(to);
+						expectTickLabelMatchesDay(tick);
+					}
+					expect(new Set(ticks.map((tick) => tick.label)).size).toBe(ticks.length);
+				},
+			),
+		);
+	});
+
+	it("rebases only the visible moving-average slice on a window change (fix round 6)", () => {
+		const closes = Array.from({ length: 20_000 }, (_, index) => 100 + Math.sin(index / 50) * 10);
+		const series = singleSeries(closes, "1970-01-01");
+		const bars = series[0]?.bars ?? [];
+		const averaged = movingAverage(closes, 20);
+		if (!averaged.ok) throw new Error("moving average failed");
+		const reads = { count: 0 };
+		const counted = new Proxy([...averaged.value], {
+			get(target, key, receiver) {
+				if (typeof key === "string" && /^\d+$/.test(key)) reads.count += 1;
+				return Reflect.get(target, key, receiver);
+			},
+		});
+		const visibleFrom = bars[10_000]?.day ?? 0;
+		const model = buildDetailChartModel({
+			series,
+			window: { from: visibleFrom, to: visibleFrom + 29 },
+			plotWidth: 1200,
+			plotHeight: 480,
+			scale: "linear",
+			mode: "percent",
+			maPeriods: [],
+			maOverlays: [
+				{
+					seriesKey: "s1",
+					color: seriesColor(0),
+					period: 20,
+					label: "MA 20",
+					days: bars.map((bar) => bar.day),
+					values: counted,
+				},
+			],
+		});
+		if (model === null) throw new Error("model is null");
+		expect(model.maPaths[0]?.d).not.toBe("");
+		// Thirty visible bars plus one either side — never all 20,000.
+		expect(reads.count).toBeLessThanOrEqual(32);
+	});
+
+	it("widens windows against a memoized union by binary search (fix round 6)", () => {
+		const a = dailyBars("2026-01-01", [1, 2, 3, 4]);
+		const b = dailyBars("2026-01-03", [5, 6, 7, 8]);
+		const union = unionBarDays([a, b]);
+		const first = a[0]?.day ?? 0;
+		expect(union).toEqual([0, 1, 2, 3, 4, 5].map((offset) => first + offset));
+		const reads = { count: 0 };
+		const days = Array.from({ length: 80_000 }, (_, index) => index * 2);
+		const counted = new Proxy(days, {
+			get(target, key, receiver) {
+				if (typeof key === "string" && /^\d+$/.test(key)) reads.count += 1;
+				return Reflect.get(target, key, receiver);
+			},
+		});
+		const widened = ensureTwoBarWindow({ from: 1001, to: 1001 }, counted, {
+			from: 0,
+			to: 159_998,
+		});
+		expect(widened).toEqual({ from: 1000, to: 1002 });
+		// O(log n) reads, never a collect-and-sort over every bar.
+		expect(reads.count).toBeLessThan(80);
+	});
+
+	it("splits the navigator into an overview line and an O(1) window rectangle", () => {
+		const bars = singleSeries(Array.from({ length: 100 }, (_, index) => 50 + index))[0]?.bars ?? [];
+		const days = bars.map((bar) => bar.day);
+		const values = bars.map((bar) => bar.close);
+		const overview = buildNavigatorOverview({ days, values, width: 600, height: 56 });
+		if (overview === null) throw new Error("overview is null");
+		const first = days[0] ?? 0;
+		for (const window of [
+			{ from: first + 20, to: first + 39 },
+			{ from: first, to: first + 99 },
+			{ from: first + 98, to: first + 99 },
+		]) {
+			const composed = buildNavigatorModel({ days, values, window, width: 600, height: 56 });
+			const rect = navigatorWindowRect(overview, window);
+			expect(rect.windowLeft).toBe(composed?.windowLeft);
+			expect(rect.windowWidth).toBe(composed?.windowWidth);
+			expect(overview.d).toBe(composed?.d);
+		}
+	});
+
+	it("exports no dead tick helpers and keeps no unread tick flags (fix round 6)", async () => {
+		const registry: Record<string, unknown> = await import("../src/index.ts");
+		expect("tickGranularityForSpan" in registry).toBe(false);
+		expect("formatDetailTick" in registry).toBe(false);
+		const model = buildDetailChartModel({
+			series: singleSeries([1, 2, 3]),
+			window: { from: dayOf("2026-01-01"), to: dayOf("2026-01-03") },
+			plotWidth: 640,
+			plotHeight: 320,
+			scale: "linear",
+			mode: "value",
+			maPeriods: [],
+		});
+		if (model === null) throw new Error("model is null");
+		expect("yTickHidden" in model).toBe(false);
 	});
 });

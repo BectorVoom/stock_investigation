@@ -140,13 +140,6 @@ export interface DetailChartModel {
 	readonly lastMarkers: readonly DetailLastMarker[];
 	/** De-overlapped last-value tags on the value axis, sorted by y. */
 	readonly lastValueTags: readonly DetailValueTag[];
-	/**
-	 * One flag per y tick: true when the tick label sits behind a
-	 * last-value tag. The view recomputes the same predicate with the
-	 * live crosshair y added, so the crosshair value label hides ticks
-	 * too while it is shown.
-	 */
-	readonly yTickHidden: readonly boolean[];
 	/** Series keys whose percent base is zero (rendered as "unavailable (zero base)"). */
 	readonly zeroBaseKeys: readonly string[];
 	/** Union of visible days across series, ascending. */
@@ -262,17 +255,52 @@ export function logScaleBlocked(input: LogGateInput): boolean {
 }
 
 /**
+ * Ascending distinct bar days across every series: a merge of the already
+ * ascending per-series day runs, O(total bars × series) with no sort. The
+ * viewer memoizes this once per (series, interval), so window changes only
+ * binary-search it (ADR-0025 performance).
+ */
+export function unionBarDays(barsList: readonly (readonly ChartBar[])[]): readonly number[] {
+	let union: number[] = [];
+	for (const bars of barsList) {
+		const merged: number[] = [];
+		let left = 0;
+		let right = 0;
+		const push = (day: number): void => {
+			if (!Number.isFinite(day)) return;
+			const last = merged[merged.length - 1];
+			if (last === undefined || day > last) merged.push(day);
+		};
+		while (left < union.length || right < bars.length) {
+			const a = union[left];
+			const b = bars[right]?.day;
+			if (b === undefined || (a !== undefined && a <= b)) {
+				if (a !== undefined) push(a);
+				left += 1;
+			} else {
+				push(b);
+				right += 1;
+			}
+		}
+		union = merged;
+	}
+	return union;
+}
+
+/**
  * Widens a window until it holds at least two bars of the current interval
  * (ADR-0025 interaction: the window is never narrower than two bars), judged
  * against real bar positions — a day-count minimum admits bar-less weekends.
- * A window overlapping exactly one bar grows to its nearest neighbour; a
- * window with no bars takes the nearest pair around it; data shorter than two
- * bars yields the whole extent. Total: invalid coordinates fall back to the
+ * `union` is the ascending distinct bar days of every series
+ * (`unionBarDays`, memoized per interval), so one call is O(log bars). A
+ * window overlapping exactly one bar grows to its nearest neighbour; a window
+ * with no bars takes the nearest pair around it; data shorter than two bars
+ * yields the whole extent. Total: invalid coordinates fall back to the
  * extent-clamped window.
  */
 export function ensureTwoBarWindow(
 	window: DayWindow,
-	barsList: readonly (readonly ChartBar[])[],
+	union: readonly number[],
 	extent: DayWindow,
 ): DayWindow {
 	const lo = Math.min(Math.trunc(extent.from), Math.trunc(extent.to));
@@ -289,15 +317,6 @@ export function ensureTwoBarWindow(
 	const a = Math.min(Math.max(Math.trunc(window.from), lo), hi);
 	const b = Math.min(Math.max(Math.trunc(window.to), lo), hi);
 	const ordered = a <= b ? { from: a, to: b } : { from: b, to: a };
-	const days: number[] = [];
-	for (const bars of barsList) {
-		for (const bar of bars) days.push(bar.day);
-	}
-	days.sort((x, y) => x - y);
-	const union: number[] = [];
-	for (const day of days) {
-		if (union[union.length - 1] !== day) union.push(day);
-	}
 	if (union.length < 2) return { from: lo, to: hi };
 	if (upperBoundDay(union, ordered.to) - lowerBoundDay(union, ordered.from) >= 2) return ordered;
 	const insertion = lowerBoundDay(union, ordered.from);
@@ -341,28 +360,12 @@ export function unionOverview(barsList: readonly (readonly ChartBar[])[]): {
 	for (const bars of barsList) {
 		if (bars.length > longest.length) longest = bars;
 	}
-	const seen = new Set<number>();
-	for (const bars of barsList) {
-		for (const bar of bars) seen.add(bar.day);
-	}
-	const days = [...seen].sort((a, b) => a - b);
+	const days = unionBarDays(barsList);
 	const closeByDay = new Map<number, number>();
 	for (const bar of longest) {
 		if (!closeByDay.has(bar.day)) closeByDay.set(bar.day, bar.close);
 	}
 	return { days, values: days.map((day) => closeByDay.get(day) ?? Number.NaN) };
-}
-
-export type DetailTickGranularity = "day" | "month" | "year";
-
-/**
- * Tick granularity from the window span: days read as "Oct 16", multi-month
- * spans as "Oct 2026", multi-year spans as "2026".
- */
-export function tickGranularityForSpan(spanDays: number): DetailTickGranularity {
-	if (!Number.isFinite(spanDays) || spanDays <= 70) return "day";
-	if (spanDays <= 800) return "month";
-	return "year";
 }
 
 const MONTH_SHORT = [
@@ -379,24 +382,6 @@ const MONTH_SHORT = [
 	"Nov",
 	"Dec",
 ] as const;
-
-function isoParts(
-	iso: string,
-): { readonly year: number; readonly month: number; readonly day: number } | null {
-	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-	if (match === null) return null;
-	return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
-}
-
-/** Date-axis label for one bar, adapted to the span (ADR-0025 layout §4). */
-export function formatDetailTick(iso: string, granularity: DetailTickGranularity): string {
-	const parts = isoParts(iso);
-	if (parts === null) return iso;
-	const month = MONTH_SHORT[parts.month - 1] ?? String(parts.month);
-	if (granularity === "day") return `${month} ${parts.day}`;
-	if (granularity === "month") return `${month} ${parts.year}`;
-	return String(parts.year);
-}
 
 /** Display value of a raw close: identity, or percent off the visible base. */
 function displayOf(close: number, mode: DetailValueMode, base: number | null): number | null {
@@ -528,11 +513,15 @@ function labelsOverlap(ticks: readonly DetailXTick[]): boolean {
 }
 
 /**
- * Date-axis steps from finest to coarsest (fix round 5): every N days, then
- * ISO-week Mondays, then month, quarter and year starts. The picker tries
- * them in this order and keeps the first whose labels are distinct and do
- * not overlap at the measured width — the financial-platform convention of
- * ticks on calendar boundaries instead of evenly thinned bars.
+ * Date-axis steps from finest to coarsest (fix rounds 5 and 6): every N
+ * days, then ISO-week Mondays, then month, quarter and half-year starts,
+ * then year starts every 1, 2, 5, 10, 20, 50, … years (aligned to multiples
+ * of N, so a decade axis reads 1970, 1980, …). The picker tries them in this
+ * order and keeps the first whose labels are distinct and do not overlap at
+ * the measured width — the financial-platform convention of ticks on
+ * calendar boundaries instead of evenly thinned bars. The multi-year steps
+ * keep decades of monthly data on a readable axis instead of collapsing to
+ * one year-less label.
  */
 export type DateAxisStep =
 	| "day-1"
@@ -542,7 +531,17 @@ export type DateAxisStep =
 	| "day-10"
 	| "monthly"
 	| "quarterly"
-	| "yearly";
+	| "semiannual"
+	| "yearly"
+	| "year-2"
+	| "year-5"
+	| "year-10"
+	| "year-20"
+	| "year-50"
+	| "year-100"
+	| "year-200"
+	| "year-500"
+	| "year-1000";
 
 const DATE_AXIS_STEPS: readonly DateAxisStep[] = [
 	"day-1",
@@ -552,8 +551,61 @@ const DATE_AXIS_STEPS: readonly DateAxisStep[] = [
 	"day-10",
 	"monthly",
 	"quarterly",
+	"semiannual",
 	"yearly",
+	"year-2",
+	"year-5",
+	"year-10",
+	"year-20",
+	"year-50",
+	"year-100",
+	"year-200",
+	"year-500",
+	"year-1000",
 ];
+
+/** Months between boundaries of the month-based steps. */
+const MONTH_STEP: { readonly [S in DateAxisStep]?: number } = {
+	monthly: 1,
+	quarterly: 3,
+	semiannual: 6,
+};
+
+/** Years between boundaries of the year-based steps. */
+const YEAR_STEP: { readonly [S in DateAxisStep]?: number } = {
+	yearly: 1,
+	"year-2": 2,
+	"year-5": 5,
+	"year-10": 10,
+	"year-20": 20,
+	"year-50": 50,
+	"year-100": 100,
+	"year-200": 200,
+	"year-500": 500,
+	"year-1000": 1000,
+};
+
+/**
+ * Longest gap in days between two consecutive boundaries of a step. A
+ * window of `span` days holds at least `floor(span / gap)` boundaries, which
+ * lets the picker skip a step that cannot fit before enumerating it.
+ */
+function maxGapDays(step: DateAxisStep): number {
+	const months = MONTH_STEP[step];
+	if (months !== undefined) return months * 31;
+	const years = YEAR_STEP[step];
+	if (years !== undefined) return years * 366;
+	if (step === "weekly") return 7;
+	const every = Number(step.slice("day-".length));
+	return Number.isSafeInteger(every) && every >= 1 ? every : 1;
+}
+
+/**
+ * Narrowest centre distance any two labels can need: the shortest label
+ * ("Jan") at the advance width plus the gap. More boundaries than the plot
+ * width allows at this distance must overlap, whatever their labels.
+ */
+const MIN_LABEL_PAIR_PX = 3 * TICK_CHAR_WIDTH + TICK_MIN_GAP;
 
 /**
  * More boundaries than this can never fit a real plot (each label pair needs
@@ -601,8 +653,9 @@ function weekdayMondayOne(day: number): number {
 /**
  * Calendar boundaries of one step inside `[from, to]` (ascending, at most
  * `MAX_BOUNDARY_TICKS + 1` entries): day steps align to the epoch so a pan
- * keeps the ticks still, weeks land on Mondays, and month/quarter/year steps
- * land on their first days.
+ * keeps the ticks still, weeks land on Mondays, month-based steps land on the
+ * first day of every 1st/3rd/6th month from January, and year-based steps on
+ * 1 January of every year divisible by the step.
  */
 function boundaryDays(from: number, to: number, step: DateAxisStep): number[] {
 	const days: number[] = [];
@@ -618,21 +671,26 @@ function boundaryDays(from: number, to: number, step: DateAxisStep): number[] {
 		}
 		return days;
 	}
-	if (step === "monthly" || step === "quarterly" || step === "yearly") {
+	const years = YEAR_STEP[step];
+	if (years !== undefined) {
+		const start = civilPartsOfDay(from).year;
+		const end = civilPartsOfDay(to).year;
+		const first = Math.ceil(start / years) * years;
+		for (let year = first; year <= end; year += years) {
+			if (!push(dayOfCivilDate(year, 1, 1))) return days;
+		}
+		return days;
+	}
+	const months = MONTH_STEP[step];
+	if (months !== undefined) {
 		const start = civilPartsOfDay(from);
 		const end = civilPartsOfDay(to);
-		if (step === "yearly") {
-			for (let year = start.year; year <= end.year; year += 1) {
-				if (!push(dayOfCivilDate(year, 1, 1))) return days;
-			}
-			return days;
-		}
 		let year = start.year;
 		let month = start.month;
 		for (;;) {
 			if (year > end.year || (year === end.year && month > end.month)) break;
-			// Quarter starts are the January/April/July/October month starts.
-			if (step === "monthly" || month % 3 === 1) {
+			// Quarter and half-year starts are the January-aligned month starts.
+			if ((month - 1) % months === 0) {
 				if (!push(dayOfCivilDate(year, month, 1))) return days;
 			}
 			month += 1;
@@ -653,18 +711,35 @@ function boundaryDays(from: number, to: number, step: DateAxisStep): number[] {
 	return days;
 }
 
-/** Day and week labels read as "Oct 16" (weeks land on Mondays: "Oct 13"). */
-function dayTickLabel(day: number): string {
+/** "Oct 16", or "Oct 16, 2025" when the year is added. */
+function dayTickLabel(day: number, withYear: boolean): string {
 	const parts = civilPartsOfDay(day);
 	const month = MONTH_SHORT[parts.month - 1] ?? String(parts.month);
-	return `${month} ${parts.day}`;
+	return withYear ? `${month} ${parts.day}, ${parts.year}` : `${month} ${parts.day}`;
 }
 
 /**
- * Month and quarter labels: bare month ("Aug") with the year added at January
- * and at the first tick ("Jan 2026"), so a short window stays glanceable. When
- * the window spans years and the short forms would repeat a month, every tick
- * carries its year ("Aug 2025") instead — still distinct, never ambiguous.
+ * Day and week labels ("Oct 16"; weeks land on Mondays: "Oct 13"). When the
+ * window crosses a calendar year, the first tick and the first tick of every
+ * new year carry their year ("Oct 19, 2025" … "Jan 4, 2026"), so a 1Y axis is
+ * never a run of year-less dates whose two Octobers read alike.
+ */
+function dayTickLabels(days: readonly number[], multiYear: boolean): string[] {
+	let previousYear: number | null = null;
+	return days.map((day) => {
+		const year = civilPartsOfDay(day).year;
+		const withYear = multiYear && year !== previousYear;
+		previousYear = year;
+		return dayTickLabel(day, withYear);
+	});
+}
+
+/**
+ * Month, quarter and half-year labels: bare month ("Aug") with the year added
+ * at January and at the first tick ("Jan 2026"), so a short window stays
+ * glanceable. When the window spans years and the short forms would repeat a
+ * month, every tick carries its year ("Aug 2025") instead — still distinct,
+ * never ambiguous.
  */
 function monthTickLabels(days: readonly number[]): string[] {
 	const parts = days.map(civilPartsOfDay);
@@ -684,15 +759,23 @@ function yearTickLabel(day: number): string {
 	return String(civilPartsOfDay(day).year);
 }
 
+function labelsForStep(step: DateAxisStep, days: readonly number[], multiYear: boolean): string[] {
+	if (YEAR_STEP[step] !== undefined) return days.map(yearTickLabel);
+	if (MONTH_STEP[step] !== undefined) return monthTickLabels(days);
+	return dayTickLabels(days, multiYear);
+}
+
 /**
  * Ticks on calendar boundaries for the window, finest fitting step first: a
  * step wins when it contributes at least two ticks whose labels are distinct
  * and clear each other at the measured width. A step that is too dense (past
- * `MAX_BOUNDARY_TICKS`) or repeats a label never wins — the axis degrades to
- * coarser boundaries instead of collisions. When no step fits twice (a tiny
- * plot) the finest single boundary stands in; when the window holds no
- * boundary at any step (a sub-day window) the middle day names itself, which
- * is itself a day-step boundary.
+ * `MAX_BOUNDARY_TICKS`, or more boundaries than the plot can separate) or
+ * repeats a label never wins — the axis degrades to coarser boundaries (up to
+ * millennia) instead of collisions. When no step fits twice (a tiny plot) the
+ * finest single boundary stands in; when the window holds no boundary at any
+ * step (a sub-day window) the middle day names itself, which is itself a
+ * day-step boundary. A window crossing a calendar year always names a year on
+ * its first tick, in every branch.
  */
 function pickXTicks(
 	fromDay: number,
@@ -703,21 +786,24 @@ function pickXTicks(
 	const from = Math.min(Math.trunc(fromDay), Math.trunc(toDay));
 	const to = Math.max(Math.trunc(fromDay), Math.trunc(toDay));
 	if (!Number.isFinite(from) || !Number.isFinite(to)) return [];
-	if (!(plot.right - plot.left > 0)) return [];
+	const plotWidth = plot.right - plot.left;
+	if (!(plotWidth > 0)) return [];
+	const multiYear = civilPartsOfDay(from).year !== civilPartsOfDay(to).year;
+	// At most this many ticks can clear each other inside the plot.
+	const fitCount = Math.floor(plotWidth / MIN_LABEL_PAIR_PX) + 1;
 	const nudge = (x: number, label: string): number => {
 		const half = (label.length * TICK_CHAR_WIDTH) / 2;
 		return Math.min(Math.max(x, plot.left + half), plot.right - half);
 	};
 	let fallback: DetailXTick[] = [];
 	for (const step of DATE_AXIS_STEPS) {
+		// Cheap lower bound on the boundary count: skip a step that cannot fit
+		// before enumerating up to 2,000 boundaries for it.
+		const atLeast = Math.floor((to - from) / maxGapDays(step));
+		if (atLeast > fitCount || atLeast > MAX_BOUNDARY_TICKS) continue;
 		const days = boundaryDays(from, to, step);
 		if (days.length === 0 || days.length > MAX_BOUNDARY_TICKS) continue;
-		const labels =
-			step === "yearly"
-				? days.map(yearTickLabel)
-				: step === "monthly" || step === "quarterly"
-					? monthTickLabels(days)
-					: days.map(dayTickLabel);
+		const labels = labelsForStep(step, days, multiYear);
 		if (new Set(labels).size !== labels.length) continue;
 		const ticks: DetailXTick[] = [];
 		for (let index = 0; index < days.length; index += 1) {
@@ -735,7 +821,7 @@ function pickXTicks(
 	}
 	if (fallback.length > 0) return fallback;
 	const middle = Math.round((from + to) / 2);
-	const label = dayTickLabel(middle);
+	const label = dayTickLabel(middle, multiYear);
 	return [{ x: nudge(xForDay(middle), label), label, day: middle }];
 }
 
@@ -927,19 +1013,49 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	// have a value), rebased with the same base in percent mode. The viewer
 	// passes precomputed overlays memoized per (series, interval, period), so
 	// a window change never recomputes them; direct callers fall back to
-	// `maPeriods` computed here.
+	// `maPeriods` computed here. Either way only the series' binary-search
+	// slice ±1 is copied and rebased: a window change costs the visible bars,
+	// never every held average.
 	interface MaWork {
 		readonly seriesKey: string;
 		readonly color: string;
 		readonly period: number;
 		readonly label: string;
+		/** Days and display values of the visible slice plus one bar either side. */
 		readonly days: readonly number[];
 		readonly values: readonly (number | null)[];
-		/** Binary-search slice of the visible bars, shared with the series. */
+		/** The visible range inside `days`/`values` (`[start, end)`). */
 		readonly start: number;
 		readonly end: number;
-		readonly base: number | null;
 	}
+	const sliceOverlay = (
+		work: SeriesWork,
+		allDays: readonly number[],
+		allValues: readonly (number | null)[],
+	): {
+		readonly days: number[];
+		readonly values: (number | null)[];
+		readonly start: number;
+		readonly end: number;
+	} => {
+		const size = Math.min(allDays.length, allValues.length);
+		const edgeStart = Math.min(size, Math.max(0, work.start - 1));
+		const edgeEnd = Math.min(size, work.end + 1);
+		const days: number[] = [];
+		const values: (number | null)[] = [];
+		for (let index = edgeStart; index < edgeEnd; index += 1) {
+			const day = allDays[index];
+			if (day === undefined) continue;
+			const value = allValues[index];
+			days.push(day);
+			values.push(
+				value === null || value === undefined ? null : displayOf(value, input.mode, work.base),
+			);
+		}
+		const start = Math.min(days.length, Math.max(0, work.start - edgeStart));
+		const end = Math.min(days.length, Math.max(start, work.end - edgeStart));
+		return { days, values, start, end };
+	};
 	const workByKey = new Map(works.map((work) => [work.entry.key, work] as const));
 	const maWorks: MaWork[] = [];
 	const overlays = input.maOverlays;
@@ -952,13 +1068,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 				color: overlay.color,
 				period: overlay.period,
 				label: overlay.label,
-				days: overlay.days,
-				values: overlay.values.map((value) =>
-					value === null ? null : displayOf(value, input.mode, work.base),
-				),
-				start: work.start,
-				end: work.end,
-				base: work.base,
+				...sliceOverlay(work, overlay.days, overlay.values),
 			});
 		}
 	} else {
@@ -974,13 +1084,7 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 					color: work.entry.color,
 					period,
 					label: `MA ${period}`,
-					days,
-					values: averaged.value.map((value) =>
-						value === null ? null : displayOf(value, input.mode, work.base),
-					),
-					start: work.start,
-					end: work.end,
-					base: work.base,
+					...sliceOverlay(work, days, averaged.value),
 				});
 			}
 		}
@@ -1008,8 +1112,14 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 	// instead of a blank area. Log has no axis without a positive value.
 	const emptyFrame = domainValues.length === 0;
 	if (emptyFrame && input.scale === "log") return null;
-	const minValue = emptyFrame ? 0 : Math.min(...domainValues);
-	const maxValue = emptyFrame ? 1 : Math.max(...domainValues);
+	// A loop, not `Math.min(...values)`: spreading tens of thousands of
+	// visible values as arguments can overflow the call stack.
+	let minValue = emptyFrame ? 0 : Number.POSITIVE_INFINITY;
+	let maxValue = emptyFrame ? 1 : Number.NEGATIVE_INFINITY;
+	for (const value of domainValues) {
+		if (value < minValue) minValue = value;
+		if (value > maxValue) maxValue = value;
+	}
 
 	const yTicks: readonly number[] =
 		input.scale === "log" ? logTicks(minValue, maxValue) : niceTicks(minValue, maxValue, 5);
@@ -1097,23 +1207,13 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 			plottedCount,
 		};
 	});
-	const maPaths: DetailMaPath[] = maWorks.map((ma) => {
-		const edgeStart = Math.max(0, ma.start - 1);
-		const edgeEnd = Math.min(ma.days.length, ma.end + 1);
-		return {
-			seriesKey: ma.seriesKey,
-			period: ma.period,
-			label: ma.label,
-			color: ma.color,
-			d: stitchedPath(
-				ma.days.slice(edgeStart, edgeEnd),
-				ma.values.slice(edgeStart, edgeEnd),
-				ma.start - edgeStart,
-				ma.end - edgeStart,
-				edgeEnd - edgeStart,
-			),
-		};
-	});
+	const maPaths: DetailMaPath[] = maWorks.map((ma) => ({
+		seriesKey: ma.seriesKey,
+		period: ma.period,
+		label: ma.label,
+		color: ma.color,
+		d: stitchedPath(ma.days, ma.values, ma.start, ma.end, ma.days.length),
+	}));
 
 	const lastMarkers: DetailLastMarker[] = [];
 	for (const work of works) {
@@ -1161,8 +1261,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 			},
 		];
 	});
-	const tagYs = lastValueTags.map((tag) => tag.y);
-	const yTickHidden = yTicks.map((tick) => isValueLabelHidden(yFor(tick), tagYs, null));
 
 	const xTicks = pickXTicks(from, to, xForDay, plot);
 	const xs = dayAt.map((day) => xForDay(day));
@@ -1179,7 +1277,6 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 		maPaths,
 		lastMarkers,
 		lastValueTags,
-		yTickHidden,
 		zeroBaseKeys: works.filter((work) => work.zeroBase).map((work) => work.entry.key),
 		dayAt,
 		isoAt,
@@ -1190,25 +1287,44 @@ export function buildDetailChartModel(input: BuildDetailChartInput): DetailChart
 }
 
 /**
- * Overview model for the navigator: one decimated line over all held data
- * plus the visible window as a rectangle. The window is expressed in the same
- * day numbers the domain clamps, so drags resize through `clampWindow`.
+ * The navigator's overview line over all held data (ADR-0025 layout §5):
+ * depends only on the held days, values and measured size, so the viewer
+ * memoizes it apart from the window — a pan or zoom never rebuilds it.
  */
-export function buildNavigatorModel(input: NavigatorInput): NavigatorModel | null {
+export interface NavigatorOverview {
+	readonly d: string;
+	/** First and last held day: the overview's x domain. */
+	readonly first: number;
+	readonly last: number;
+	/** Day number to pixel x. */
+	readonly xForDay: (day: number) => number;
+}
+
+export interface NavigatorOverviewInput {
+	readonly days: readonly number[];
+	readonly values: readonly number[];
+	readonly width: number;
+	readonly height: number;
+}
+
+const NAVIGATOR_PAD = 2;
+
+export function buildNavigatorOverview(input: NavigatorOverviewInput): NavigatorOverview | null {
 	if (input.days.length === 0 || input.width <= 0 || input.height <= 0) return null;
 	const first = input.days[0];
 	const last = input.days[input.days.length - 1];
 	if (first === undefined || last === undefined) return null;
-	const pad = 2;
+	const pad = NAVIGATOR_PAD;
 	const xForDay = linearScale(first, last, pad, Math.max(pad + 1, input.width - pad));
-	const finite = input.values.filter((value) => Number.isFinite(value));
-	if (finite.length === 0) return null;
-	const yFor = linearScale(
-		Math.min(...finite),
-		Math.max(...finite),
-		Math.max(pad + 1, input.height - pad),
-		pad,
-	);
+	let low = Number.POSITIVE_INFINITY;
+	let high = Number.NEGATIVE_INFINITY;
+	for (const value of input.values) {
+		if (!Number.isFinite(value)) continue;
+		if (value < low) low = value;
+		if (value > high) high = value;
+	}
+	if (!(low <= high)) return null;
+	const yFor = linearScale(low, high, Math.max(pad + 1, input.height - pad), pad);
 	const points: DecimPoint[] = [];
 	for (let index = 0; index < input.days.length; index += 1) {
 		const day = input.days[index];
@@ -1216,14 +1332,46 @@ export function buildNavigatorModel(input: NavigatorInput): NavigatorModel | nul
 		if (day === undefined || value === undefined || !Number.isFinite(value)) continue;
 		points.push({ x: xForDay(day), y: yFor(value) });
 	}
-	const from = Math.min(Math.trunc(input.window.from), Math.trunc(input.window.to));
-	const to = Math.max(Math.trunc(input.window.from), Math.trunc(input.window.to));
-	const windowLeft = xForDay(Math.min(Math.max(from, first), last));
-	const windowRight = xForDay(Math.min(Math.max(to, first), last));
 	return {
 		d: pathOf(decimateToWidth(points, pad, Math.max(1, input.width - pad * 2))),
-		windowLeft: Math.min(windowLeft, windowRight),
-		windowWidth: Math.max(4, Math.abs(windowRight - windowLeft)),
+		first,
+		last,
 		xForDay,
+	};
+}
+
+/**
+ * The visible window as a rectangle over an overview: O(1), the only
+ * navigator work a window change does. The window is expressed in the same
+ * day numbers the domain clamps, so drags resize through `clampWindow`.
+ */
+export function navigatorWindowRect(
+	overview: NavigatorOverview,
+	window: DayWindow,
+): { readonly windowLeft: number; readonly windowWidth: number } {
+	const from = Math.min(Math.trunc(window.from), Math.trunc(window.to));
+	const to = Math.max(Math.trunc(window.from), Math.trunc(window.to));
+	const left = overview.xForDay(Math.min(Math.max(from, overview.first), overview.last));
+	const right = overview.xForDay(Math.min(Math.max(to, overview.first), overview.last));
+	return {
+		windowLeft: Math.min(left, right),
+		windowWidth: Math.max(4, Math.abs(right - left)),
+	};
+}
+
+/**
+ * Overview model for the navigator: one decimated line over all held data
+ * plus the visible window as a rectangle (the composition of
+ * `buildNavigatorOverview` and `navigatorWindowRect`).
+ */
+export function buildNavigatorModel(input: NavigatorInput): NavigatorModel | null {
+	const overview = buildNavigatorOverview(input);
+	if (overview === null) return null;
+	const rect = navigatorWindowRect(overview, input.window);
+	return {
+		d: overview.d,
+		windowLeft: rect.windowLeft,
+		windowWidth: rect.windowWidth,
+		xForDay: overview.xForDay,
 	};
 }

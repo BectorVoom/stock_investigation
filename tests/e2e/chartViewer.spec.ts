@@ -72,7 +72,7 @@ test("fixture market data loads and the line chart opens the viewer filling the 
 	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
 	await expect(chart.getByRole("img", { name: /Line chart: VIX/ })).toBeVisible();
 
-	const open = chart.getByRole("button", { name: "Open chart: VIX" });
+	const open = chart.getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
 	await open.click();
 	const dialog = viewer();
 	await expect(dialog).toBeVisible();
@@ -225,7 +225,7 @@ test("keyboard arrows move the readout and Escape closes with focus return", asy
 
 	const opener = page
 		.locator('article[data-widget-id="w-vix-chart"]')
-		.getByRole("button", { name: "Open chart: VIX" });
+		.getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toHaveCount(0);
 	await expect(opener).toBeFocused();
@@ -233,7 +233,7 @@ test("keyboard arrows move the readout and Escape closes with focus return", asy
 
 test("a metric widget opens the viewer with its series", async () => {
 	const metric = page.locator('article[data-widget-id="w-vix"]');
-	await metric.getByRole("button", { name: "Open chart: CBOE Volatility Index: VIX" }).click();
+	await metric.getByRole("button", { name: /^Open chart: CBOE Volatility Index: VIX, / }).click();
 	const dialog = viewer();
 	await expect(dialog).toBeVisible();
 	await expect(dialog).toContainText("CBOE Volatility Index: VIX");
@@ -242,7 +242,7 @@ test("a metric widget opens the viewer with its series", async () => {
 	await page.keyboard.press("Escape");
 	await expect(viewer()).toHaveCount(0);
 	await expect(
-		metric.getByRole("button", { name: "Open chart: CBOE Volatility Index: VIX" }),
+		metric.getByRole("button", { name: /^Open chart: CBOE Volatility Index: VIX, / }),
 	).toBeFocused();
 });
 
@@ -258,7 +258,7 @@ async function openViewerAt(width: number, height: number): Promise<void> {
 	}
 	const chart = page.locator('article[data-widget-id="w-vix-chart"]');
 	await expect(chart.getByRole("img", { name: /Line chart: VIX/ })).toBeVisible();
-	await chart.getByRole("button", { name: "Open chart: VIX" }).click();
+	await chart.getByRole("button", { name: /^Open chart: Line chart: VIX\./ }).click();
 	await expect(viewer()).toBeVisible();
 	await expect(viewer()).toContainText("CBOE Volatility Index: VIX");
 }

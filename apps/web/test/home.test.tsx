@@ -4,9 +4,11 @@ import {
 	type MarketSeries,
 	WIDGET_TYPE_META,
 } from "@research/contracts";
-import { cleanup, fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
+import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
+import { MetricWidget } from "../src/home/widgets/MetricWidget.tsx";
 import { resetWidgetClipboard, widgetClipboard } from "../src/widgets/widgetClipboard.ts";
 import {
 	HOME_CATALOG,
@@ -811,11 +813,15 @@ describe("home view", () => {
 		);
 		expect(buttons.length).toBeGreaterThan(0);
 		for (const button of buttons) {
-			expect(button.getAttribute("aria-label") ?? "").not.toBe("");
 			// The chart-viewer openers (ADR-0025) wrap real content — the plot,
 			// the value block, a row name — so they are the exception to the
-			// icon-only rule; their accessible name still carries the words.
-			if ((button.getAttribute("aria-label") ?? "").startsWith("Open chart:")) continue;
+			// icon-only rule: their name is computed from that content after a
+			// visually hidden "Open chart: " prefix, with no aria-label.
+			if ((button.textContent ?? "").startsWith("Open chart:")) {
+				expect(button.hasAttribute("aria-label")).toBe(false);
+				continue;
+			}
+			expect(button.getAttribute("aria-label") ?? "").not.toBe("");
 			expect(button.textContent?.trim() ?? "").toBe("");
 		}
 		// The former visible labels survive as accessible names.
@@ -1765,6 +1771,11 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		return { from, to };
 	}
 
+	/** The viewer's dialog once its lazy chunk has loaded and rendered. */
+	async function openedDialog(): Promise<HTMLElement> {
+		return waitFor(() => viewerDialog(), { timeout: 5000 });
+	}
+
 	/** Closes the viewer through its Close button and waits until it unmounts. */
 	async function closeViewer(): Promise<void> {
 		fireEvent.click(within(viewerDialog()).getByRole("button", { name: "Close" }));
@@ -1776,11 +1787,11 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		// w-vix-chart holds fred:VIXCLS at range 1y over 2026-10-06…2026-10-08.
 		const open = within(widgetById("w-vix-chart")).getByRole("button", {
-			name: "Open chart: VIX",
+			name: /^Open chart: Line chart: VIX\./,
 		});
 		open.focus();
 		fireEvent.click(open);
-		const dialog = viewerDialog();
+		const dialog = await openedDialog();
 		// Solid sets the Shoelace `label` as a property on the custom
 		// element, not as an attribute.
 		expect((dialog as unknown as { readonly label: string }).label).toBe("VIX");
@@ -1819,11 +1830,11 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const open = within(widgetById("w-vix")).getByRole("button", {
-			name: "Open chart: CBOE Volatility Index: VIX",
+			name: /^Open chart: CBOE Volatility Index: VIX, /,
 		});
 		open.focus();
 		fireEvent.click(open);
-		const dialog = viewerDialog();
+		const dialog = await openedDialog();
 		expect(dialog.textContent).toContain("CBOE Volatility Index: VIX");
 		expect(viewerRange().from.value).toBe("2026-10-06");
 		expect(viewerRange().to.value).toBe("2026-10-08");
@@ -1835,9 +1846,9 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
-		const open = within(table).getByRole("button", { name: "Open chart: AAPL (NASDAQ)" });
+		const open = within(table).getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ });
 		fireEvent.click(open);
-		const dialog = viewerDialog();
+		const dialog = await openedDialog();
 		expect(dialog.textContent).toContain("AAPL (NASDAQ)");
 		expect(dialog.textContent).not.toContain("MSFT (NASDAQ)");
 		expect(viewerRange().from.value).toBe("2026-10-07");
@@ -1852,7 +1863,9 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		mountApp(backend);
 		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
 		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
-		expect(within(table).queryByRole("button", { name: "Open chart: AAPL (NASDAQ)" })).toBeNull();
+		expect(
+			within(table).queryByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ }),
+		).toBeNull();
 		// The row itself still states the reason, never a blank.
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain("unavailable (");
 	});
@@ -1863,7 +1876,7 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		const article = widgetById("w-vix-chart");
 		const handle = article.querySelector("[data-widget-drag-handle]");
 		if (!(handle instanceof HTMLElement)) throw new Error("no drag handle");
-		const open = within(article).getByRole("button", { name: "Open chart: VIX" });
+		const open = within(article).getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
 		// A press on the grip that moves past the 4 px drag threshold starts
 		// a drag; releasing it arms the engine's one-shot click guard, which
 		// swallows the release click inside the grid.
@@ -1900,7 +1913,116 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
 		// The guard is one-shot: the next click is a real press and opens.
 		fireEvent.click(open);
-		viewerDialog();
+		await openedDialog();
 		await closeViewer();
+	});
+
+	it("names each opener from its visible content, with no aria-label (fix round 6)", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		// The metric's value block: value, unit and both change lines are in
+		// the name (WCAG 2.5.3), after the hidden "Open chart: <title>, ".
+		const metric = within(widgetById("w-vix")).getByRole("button", { name: /^Open chart: / });
+		expect(metric.hasAttribute("aria-label")).toBe(false);
+		const metricName = metric.textContent ?? "";
+		expect(metricName).toMatch(/^Open chart: CBOE Volatility Index: VIX, 15\.41 Index/);
+		expect(metricName).toContain("Change:");
+		expect(metricName).toContain("1-year change:");
+		// Phrasing content only inside a button: no div or p.
+		expect(metric.querySelector("div, p")).toBeNull();
+		// The stock-table row header keeps the symbol in its name.
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		const rowButton = within(table).getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ });
+		expect(rowButton.hasAttribute("aria-label")).toBe(false);
+		expect(rowButton.closest("th")?.textContent).toContain("AAPL");
+		expect(rowButton.textContent).toMatch(/AAPL \(NASDAQ\)\s*AAPL$/);
+		// The line chart keeps its image name ("Line chart: VIX. … by date.").
+		const plot = within(widgetById("w-vix-chart")).getByRole("button", { name: /^Open chart: / });
+		expect(plot.hasAttribute("aria-label")).toBe(false);
+		expect(plot.querySelector("svg[role='img']")?.getAttribute("aria-label")).toMatch(
+			/^Line chart: VIX\. .+ by date\.$/,
+		);
+	});
+
+	it("returns focus to an opener that a mouse click never focused (fix round 6)", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const open = within(widgetById("w-vix")).getByRole("button", { name: /^Open chart: / });
+		// Safari and Firefox on macOS do not focus a button on click: the
+		// opener is handed over by the click, not read from activeElement.
+		expect(document.activeElement).not.toBe(open);
+		fireEvent.click(open);
+		await openedDialog();
+		await closeViewer();
+		expect(document.activeElement).toBe(open);
+	});
+
+	it("ignores a press that moved 4 px or more before its release (fix round 6)", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		const open = within(table).getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ });
+		// Selecting "AAPL" with the mouse: pressed, moved 20 px, released on it.
+		fireEvent.pointerDown(open, { clientX: 10, clientY: 10, isPrimary: true });
+		fireEvent.click(open, { clientX: 30, clientY: 10, detail: 1 });
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+		// A tap that stays within 4 px opens.
+		fireEvent.pointerDown(open, { clientX: 10, clientY: 10, isPrimary: true });
+		fireEvent.click(open, { clientX: 12, clientY: 11, detail: 1 });
+		await openedDialog();
+		await closeViewer();
+		// A keyboard activation (click detail 0) always opens.
+		fireEvent.click(open, { detail: 0 });
+		await openedDialog();
+		await closeViewer();
+	});
+
+	it("keeps an open viewer when a reload drops the series, and never reopens it by itself (fix round 6)", async () => {
+		const series = (observations: [string, number][]): MarketSeries => ({
+			seriesId: "fred:VIXCLS",
+			provider: "fred",
+			symbol: "VIXCLS",
+			title: "CBOE Volatility Index: VIX",
+			unit: "Index",
+			frequency: "daily",
+			publisher: "Federal Reserve Bank of St. Louis",
+			sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+			lastRefreshedAt: "2026-10-12T11:50:00Z",
+			retrievedAt: "2026-10-12T11:50:00Z",
+			unavailable: null,
+			observations,
+		});
+		const held = series([
+			["2026-10-06", 15.01],
+			["2026-10-07", 15.08],
+			["2026-10-08", 15.41],
+		]);
+		const [byId, setById] = createSignal<ReadonlyMap<string, MarketSeries>>(
+			new Map([[held.seriesId, held]]),
+		);
+		render(() => (
+			<MetricWidget
+				widget={{
+					type: "market-metric",
+					widgetId: "w-metric",
+					title: "VIX",
+					size: "small",
+					seriesId: "fred:VIXCLS",
+				}}
+				seriesById={byId}
+			/>
+		));
+		fireEvent.click(screen.getByRole("button", { name: /^Open chart: / }));
+		const dialog = await openedDialog();
+		// A reload drops the observations: the viewer stays, saying why.
+		setById(new Map([[held.seriesId, series([])]]));
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBe(dialog);
+		expect(dialog.textContent).toContain("unavailable (this widget holds no observations)");
+		await closeViewer();
+		// Data returning later never reopens a viewer the user closed.
+		setById(new Map([[held.seriesId, held]]));
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
 	});
 });

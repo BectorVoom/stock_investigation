@@ -39,3 +39,36 @@ export function createFrameScheduler(): FrameScheduler {
 		},
 	};
 }
+
+/** Pixels per wheel "line" (`deltaMode` 1), the browsers' usual line height. */
+export const WHEEL_LINE_PX = 16;
+/** Pixels per wheel "page" (`deltaMode` 2). */
+export const WHEEL_PAGE_PX = 800;
+/**
+ * Zoom rate per wheel pixel: one classic mouse notch (100 px) zooms 15 %,
+ * while a trackpad or pinch (many small `ctrl`+wheel deltas) zooms in
+ * proportion to the distance travelled instead of 15 % per event.
+ */
+export const WHEEL_ZOOM_PER_PX = Math.log(1.15) / 100;
+/** Largest zoom one animation frame may apply, either way. */
+export const WHEEL_MAX_FACTOR_PER_FRAME = 2;
+
+/** A wheel delta in pixels, whatever unit the engine reported it in. */
+export function wheelDeltaPx(deltaY: number, deltaMode: number): number {
+	if (!Number.isFinite(deltaY)) return 0;
+	if (deltaMode === 1) return deltaY * WHEEL_LINE_PX;
+	if (deltaMode === 2) return deltaY * WHEEL_PAGE_PX;
+	return deltaY;
+}
+
+/**
+ * Zoom factor for the wheel pixels summed over one frame: `exp(px × k)`
+ * (positive px zoom out, negative in), clamped so a burst can never zoom
+ * more than `WHEEL_MAX_FACTOR_PER_FRAME` in one frame. Zero or non-finite
+ * input is the identity.
+ */
+export function wheelZoomFactor(totalPx: number): number {
+	if (!Number.isFinite(totalPx) || totalPx === 0) return 1;
+	const factor = Math.exp(totalPx * WHEEL_ZOOM_PER_PX);
+	return Math.min(WHEEL_MAX_FACTOR_PER_FRAME, Math.max(1 / WHEEL_MAX_FACTOR_PER_FRAME, factor));
+}

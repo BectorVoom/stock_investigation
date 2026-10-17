@@ -30,6 +30,7 @@ import {
 	logScaleBlocked,
 	plotWidthForSize,
 	seriesColor,
+	unionBarDays,
 	unionOverview,
 } from "@research/ui-registry";
 import {
@@ -39,6 +40,7 @@ import {
 	createSignal,
 	createUniqueId,
 	For,
+	Index,
 	type JSX,
 	Show,
 } from "solid-js";
@@ -146,6 +148,25 @@ function extentOf(series: readonly MarketSeries[]): DayWindow | null {
 	return { from: low, to: high };
 }
 
+/** Index of `day` in ascending `days` by binary search, or null when absent. */
+function indexOfDay(days: readonly number[], day: number): number | null {
+	let low = 0;
+	let high = days.length;
+	while (low < high) {
+		const mid = Math.floor((low + high) / 2);
+		const value = days[mid];
+		if (value !== undefined && value < day) low = mid + 1;
+		else high = mid;
+	}
+	return days[low] === day ? low : null;
+}
+
+/** Resampled bars at one interval plus their union days (memoized per interval). */
+interface IntervalData {
+	readonly entries: readonly { readonly entry: MarketSeries; readonly bars: readonly ChartBar[] }[];
+	readonly union: readonly number[];
+}
+
 function isoOf(day: number): string {
 	const iso = dayNumberToIso(day);
 	return iso.ok ? iso.value : "";
@@ -201,13 +222,22 @@ function IntervalOption(props: {
 	);
 }
 
-export function ChartViewer(props: {
+export interface ChartViewerProps {
 	readonly open: boolean;
 	readonly onClose: () => void;
 	readonly title: string;
 	readonly series: Accessor<readonly MarketSeries[]>;
 	readonly initialPreset: ChartPreset;
-}): JSX.Element {
+	/**
+	 * The button that opened the viewer: focus returns here on close. Passed
+	 * by the entry points from the click's `currentTarget`, because Safari
+	 * and Firefox on macOS never focus a button on a mouse click, so
+	 * `document.activeElement` would be `<body>`.
+	 */
+	readonly opener?: HTMLElement | null;
+}
+
+export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	const fromId = createUniqueId();
 	const toId = createUniqueId();
 
@@ -228,7 +258,11 @@ export function ChartViewer(props: {
 	const [scale, setScale] = createSignal<DetailScale>("linear");
 	const [mode, setMode] = createSignal<DetailValueMode>("value");
 	const [maPeriods, setMaPeriods] = createSignal<readonly number[]>([]);
-	const [crosshair, setCrosshair] = createSignal<number | null>(null);
+	// The crosshair is kept as a day, not a bar index: a zoom or pan rebuilds
+	// the model, and the same day maps to its new index (ADR-0025: +/- zoom
+	// around the crosshair on every step, with the readout kept).
+	const [crosshairDay, setCrosshairDay] = createSignal<number | null>(null);
+	const [twinOpen, setTwinOpen] = createSignal(false);
 	const [rangeError, setRangeError] = createSignal<string | null>(null);
 	const [plotSize, setPlotSize] = createSignal({ width: 640, height: 320 });
 	// True after an automatic Log→Linear fallback, until the next manual
@@ -236,19 +270,23 @@ export function ChartViewer(props: {
 	const [logAutoNote, setLogAutoNote] = createSignal(false);
 
 	// The opener is captured on each closed→open transition, not at mount:
-	// the component may mount closed long before the user opens it.
+	// the component may mount closed long before the user opens it. The
+	// entry points pass their button; the focused element is only a fallback.
 	let opener: HTMLElement | null = null;
 	let wasOpen = false;
 	createEffect(() => {
 		const open = props.open;
 		if (open && !wasOpen) {
-			opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+			const passed = props.opener ?? null;
+			opener =
+				passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 		}
 		wasOpen = open;
 	});
 	const handleClose = (): void => {
+		const target = opener;
 		props.onClose();
-		if (opener !== null) opener.focus();
+		if (target?.isConnected === true) target.focus();
 	};
 
 	const spanDays = createMemo(() => {
@@ -284,14 +322,26 @@ export function ChartViewer(props: {
 		if (choice !== "auto") return choice;
 		return autoInterval(spanDays(), toNativeFrequency(coarsest().word), plotBudget());
 	});
-	const autoLabel = createMemo(() => `Auto (${INTERVAL_LABELS[resolvedInterval()]})`);
-
-	const resampled = createMemo(() =>
-		props.series().map((entry) => ({
-			entry,
-			bars: resampleSeries(toChartPoints(entry.observations), resolvedInterval()),
-		})),
-	);
+	// Resampled bars and their union days, cached per interval for the
+	// current series (ADR-0025 performance): resampling and the union merge
+	// run once per (series, interval), and a window change only binary-searches.
+	const intervalCache = createMemo(() => {
+		const series = props.series();
+		const cache = new Map<ChartInterval, IntervalData>();
+		return (interval: ChartInterval): IntervalData => {
+			const hit = cache.get(interval);
+			if (hit !== undefined) return hit;
+			const entries = series.map((entry) => ({
+				entry,
+				bars: resampleSeries(toChartPoints(entry.observations), interval),
+			}));
+			const data = { entries, union: unionBarDays(entries.map(({ bars }) => bars)) };
+			cache.set(interval, data);
+			return data;
+		};
+	});
+	const intervalData = createMemo(() => intervalCache()(resolvedInterval()));
+	const resampled = createMemo(() => intervalData().entries);
 
 	const singleSeries = createMemo(() => props.series().length === 1);
 
@@ -347,15 +397,7 @@ export function ChartViewer(props: {
 		const interval = resolveIntervalFor(next);
 		const clamped = clampWindow(next, full, minSpanDays());
 		if (!clamped.ok) return;
-		setWindow(ensureTwoBarWindow(clamped.value, barsForInterval(interval), full));
-	};
-
-	/** Bars the candidate window will render at: cached when the interval is unchanged. */
-	const barsForInterval = (interval: ChartInterval): readonly (readonly ChartBar[])[] => {
-		if (interval === resolvedInterval()) return resampled().map(({ bars }) => bars);
-		return props
-			.series()
-			.map((entry) => resampleSeries(toChartPoints(entry.observations), interval));
+		setWindow(ensureTwoBarWindow(clamped.value, intervalCache()(interval).union, full));
 	};
 
 	/** The interval a candidate window resolves at (explicit choice, or Auto for its span). */
@@ -377,11 +419,7 @@ export function ChartViewer(props: {
 		const active = activeWindow();
 		const full = extent();
 		if (active === null || full === null) return;
-		const fixed = ensureTwoBarWindow(
-			active,
-			resampled().map(({ bars }) => bars),
-			full,
-		);
+		const fixed = ensureTwoBarWindow(active, intervalData().union, full);
 		if (fixed.from !== active.from || fixed.to !== active.to) setWindow(fixed);
 	});
 
@@ -428,6 +466,20 @@ export function ChartViewer(props: {
 		const seen = new Set(units());
 		return seen.size <= 1 ? (units()[0] ?? "") : "Mixed units — values share one axis";
 	});
+
+	// The crosshair's bar index in the current model: its day's position,
+	// or none once the day leaves the visible bars (a pan moved past it).
+	const crosshair = createMemo(() => {
+		const day = crosshairDay();
+		const current = model();
+		if (day === null || current === null) return null;
+		return indexOfDay(current.dayAt, day);
+	});
+	const setCrosshair = (index: number | null): void => {
+		const current = model();
+		const day = index === null || current === null ? null : (current.dayAt[index] ?? null);
+		setCrosshairDay(day);
+	};
 
 	const readout = createMemo(() => {
 		const ready = view();
@@ -485,13 +537,12 @@ export function ChartViewer(props: {
 	// correctly against the navigator scale.
 	const overview = createMemo(() => unionOverview(resampled().map(({ bars }) => bars)));
 
-	const navigatorInput = createMemo(() => {
-		const full = extent();
-		const active = activeWindow();
-		const data = overview();
-		if (full === null || active === null || data.days.length === 0) return null;
-		return { extent: full, window: active, days: data.days, values: data.values };
-	});
+	// The navigator reads the overview (stable per interval), the window and
+	// the extent as separate props, so a window change never hands it a new
+	// overview and the overview line is not rebuilt (ADR-0025 performance).
+	const navigatorReady = createMemo(
+		() => extent() !== null && activeWindow() !== null && overview().days.length > 0,
+	);
 
 	const fromIso = createMemo(() => {
 		const active = activeWindow();
@@ -550,9 +601,10 @@ export function ChartViewer(props: {
 	const resetToOpening = (): void => applyPreset(props.initialPreset);
 	const resetToPressed = (): void => applyPreset(pressedPreset() ?? props.initialPreset);
 
+	// A gesture clears the pressed preset but keeps the crosshair day, so a
+	// keyboard zoom keeps anchoring on it and the readout stays.
 	const clearPresetGesture = (): void => {
 		setPressedPreset(null);
-		setCrosshair(null);
 	};
 
 	const onZoom = (anchorDay: number, factor: number): void => {
@@ -622,9 +674,13 @@ export function ChartViewer(props: {
 		);
 	};
 
+	// Rows of the data-table twin, built only while its <details> is open:
+	// a closed twin costs nothing per pan or zoom frame, and an open one is
+	// rendered through <Index>, which updates rows in place instead of
+	// rebuilding every row element per frame (ADR-0025 performance).
 	const twinRows = createMemo(() => {
 		const ready = view();
-		if (ready === null) return [];
+		if (ready === null || !twinOpen()) return [];
 		const rawByKey = new Map(ready.model.rawValues.map((entry) => [entry.key, entry.values]));
 		return ready.model.dayAt.map((day, index) => ({
 			day,
@@ -785,7 +841,11 @@ export function ChartViewer(props: {
 								hoist
 								on:sl-change={onIntervalChange}
 							>
-								<sl-option value="auto">{autoLabel()}</sl-option>
+								{/* Fixed text: Shoelace 2.20's sl-select recomputes its
+								    displayed label only on a selection change or a
+								    slotchange, never when an option's text node is edited
+								    in place — so the resolved interval is shown beside. */}
+								<sl-option value="auto">Auto</sl-option>
 								<For each={INTERVALS}>
 									{({ value, label }) => (
 										<IntervalOption
@@ -797,6 +857,11 @@ export function ChartViewer(props: {
 									)}
 								</For>
 							</sl-select>
+							<Show when={intervalChoice() === "auto"}>
+								<span data-field="auto-interval" class="pb-1.5 text-xs text-slate-600">
+									Auto · {INTERVAL_LABELS[resolvedInterval()]}
+								</span>
+							</Show>
 							<sl-select
 								label="Scale"
 								value={scale()}
@@ -895,20 +960,18 @@ export function ChartViewer(props: {
 										</p>
 									</Show>
 								</section>
-								<Show when={navigatorInput()}>
-									{(input) => (
-										<section aria-label="Overview">
-											<Navigator
-												days={input().days}
-												values={input().values}
-												window={input().window}
-												extent={input().extent}
-												minSpanDays={minSpanDays()}
-												onWindow={onWindow}
-												windowLabel={`Overview of all held data; visible window ${fromIso()} to ${toIso()}`}
-											/>
-										</section>
-									)}
+								<Show when={navigatorReady()}>
+									<section aria-label="Overview">
+										<Navigator
+											days={overview().days}
+											values={overview().values}
+											window={ready().window}
+											extent={extent() ?? ready().window}
+											minSpanDays={minSpanDays()}
+											onWindow={onWindow}
+											windowLabel={`Overview of all held data; visible window ${fromIso()} to ${toIso()}`}
+										/>
+									</section>
 								</Show>
 								<section aria-label="Statistics for the visible window">
 									<div class="overflow-x-auto">
@@ -1012,7 +1075,10 @@ export function ChartViewer(props: {
 										</table>
 									</div>
 								</section>
-								<details class="group mt-1 text-xs">
+								<details
+									class="group mt-1 text-xs"
+									onToggle={(event) => setTwinOpen(event.currentTarget.open)}
+								>
 									<DisclosureSummary>Data table: {props.title}</DisclosureSummary>
 									<div class="overflow-x-auto">
 										<table class="w-full border-collapse text-left text-xs">
@@ -1036,22 +1102,22 @@ export function ChartViewer(props: {
 												</tr>
 											</thead>
 											<tbody>
-												<For each={twinRows()}>
+												<Index each={twinRows()}>
 													{(row) => (
 														<tr class="border-b border-slate-200">
 															<th scope="row" class="py-1 pr-3 font-medium">
-																<time dateTime={row.iso}>{row.iso}</time>
+																<time dateTime={row().iso}>{row().iso}</time>
 															</th>
-															<For each={row.cells}>
+															<Index each={row().cells}>
 																{(cell) => (
 																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{twinCell(cell)}
+																		{twinCell(cell())}
 																	</td>
 																)}
-															</For>
+															</Index>
 														</tr>
 													)}
-												</For>
+												</Index>
 											</tbody>
 										</table>
 									</div>

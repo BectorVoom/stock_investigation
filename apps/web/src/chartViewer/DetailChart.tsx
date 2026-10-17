@@ -7,7 +7,7 @@ import {
 	isValueLabelHidden,
 } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
-import { createFrameScheduler } from "./frame.ts";
+import { createFrameScheduler, wheelDeltaPx, wheelZoomFactor } from "./frame.ts";
 import { buildReadoutText, READOUT_HINT } from "./readout.ts";
 
 /**
@@ -20,7 +20,10 @@ import { buildReadoutText, READOUT_HINT } from "./readout.ts";
  * agrees with the viewBox. Value axis on the right; crosshair with date and
  * value labels plus a readout line; wheel zooms around the pointer, drag
  * pans, double-click resets, and the keyboard covers bars, pan, zoom and
- * reset. Pointer and wheel updates are coalesced to one per animation frame.
+ * reset. Pointer and wheel updates are coalesced to one per animation frame,
+ * each on its own scheduler: the crosshair (latest wins), the drag pan
+ * (accumulated) and the wheel zoom (accumulated wheel distance), so a hover
+ * in the same frame never drops a zoom or a pan.
  * No inline `style` attributes (CSP `style-src 'self'`): colours arrive via
  * `fill`/`stroke` bound to the palette, the halo via `paint-order`.
  */
@@ -46,9 +49,15 @@ export function DetailChart(props: {
 	// references, so the clip id is sanitised to URL-safe characters.
 	const clipId = `cv-clip-${createUniqueId().replace(/[^A-Za-z0-9_-]/g, "")}`;
 	const frame = createFrameScheduler();
+	const panFrame = createFrameScheduler();
+	const wheelFrame = createFrameScheduler();
 	// A queued frame must never fire after unmount (a range change can retire
 	// this chart before its callback runs).
-	onCleanup(() => frame.cancel());
+	onCleanup(() => {
+		frame.cancel();
+		panFrame.cancel();
+		wheelFrame.cancel();
+	});
 	const [announced, setAnnounced] = createSignal("");
 	let container: HTMLDivElement | undefined;
 	let svg: SVGSVGElement | undefined;
@@ -156,7 +165,23 @@ export function DetailChart(props: {
 		if (delta !== 0) props.onPan(delta);
 	};
 
+	/**
+	 * Days per client pixel of the drawable plot (not the whole SVG, whose
+	 * right gutter holds the value axis), so the data under a finger moves
+	 * exactly with it.
+	 */
+	const daysPerClientPx = (boundsWidth: number): number => {
+		const plot = props.model.plot;
+		const viewWidth = props.size.width;
+		if (!(boundsWidth > 0) || !(viewWidth > 0)) return 0;
+		const plotClientWidth = ((plot.right - plot.left) / viewWidth) * boundsWidth;
+		return plotClientWidth > 0 ? spanDays() / plotClientWidth : 0;
+	};
+
 	const onPointerDown = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
+		// Only the primary pointer pans: a second finger of a pinch must not
+		// reset the drag origin and make the chart jump.
+		if (!event.isPrimary) return;
 		if (event.pointerType === "mouse" && event.button !== 0) return;
 		if (!Number.isFinite(event.clientX)) return;
 		dragStartX = event.clientX;
@@ -170,6 +195,7 @@ export function DetailChart(props: {
 	};
 
 	const onPointerMove = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
+		if (!event.isPrimary) return;
 		if (!Number.isFinite(event.clientX)) return;
 		const bounds = event.currentTarget.getBoundingClientRect();
 		const viewX = toViewX(event.clientX - bounds.left, bounds.width);
@@ -181,24 +207,46 @@ export function DetailChart(props: {
 		if (Math.abs(event.clientX - downX) < 4 && Math.abs(event.clientX - start) < 4) return;
 		const dx = event.clientX - lastPanX;
 		lastPanX = event.clientX;
-		const dayPerPx = bounds.width > 0 ? spanDays() / bounds.width : 0;
-		panDebt += -dx * dayPerPx;
-		frame.schedule(flushPan);
+		panDebt += -dx * daysPerClientPx(bounds.width);
+		panFrame.schedule(flushPan);
 	};
 
-	const onPointerUp = (): void => {
+	const onPointerUp = (event: PointerEvent): void => {
+		if (!event.isPrimary) return;
 		endDrag();
 	};
 
 	const onPointerLeave = (
 		event: PointerEvent & { readonly currentTarget: SVGSVGElement },
 	): void => {
+		if (!event.isPrimary) return;
 		if (dragStartX !== null) {
 			endDrag();
 			return;
 		}
 		if (event.buttons !== 0) return;
 		frame.schedule(() => props.onCrosshair(null));
+	};
+
+	// Wheel distance accumulated since the last flushed frame, in pixels,
+	// with the latest pointer position as the anchor: the frame zooms by
+	// exp(distance × k), so a trackpad's many small deltas zoom in proportion
+	// instead of a fixed 15 % per event.
+	let wheelDebtPx = 0;
+	let wheelAnchor: { readonly clientX: number; readonly width: number } | null = null;
+
+	const flushWheel = (): void => {
+		const factor = wheelZoomFactor(wheelDebtPx);
+		const anchorAt = wheelAnchor;
+		wheelDebtPx = 0;
+		wheelAnchor = null;
+		if (factor === 1) return;
+		const middle = Math.round((props.window.from + props.window.to) / 2);
+		const anchor =
+			anchorAt !== null && Number.isFinite(anchorAt.clientX)
+				? dayAtViewX(toViewX(anchorAt.clientX, anchorAt.width))
+				: middle;
+		props.onZoom(anchor, factor);
 	};
 
 	const onWheelNative = (event: WheelEvent): void => {
@@ -210,14 +258,12 @@ export function DetailChart(props: {
 		// Some engines never report pointer coordinates on wheel events; the
 		// zoom then goes around the centre instead of refusing to work.
 		const hasPointer = Number.isFinite(event.clientX) && Number.isFinite(event.clientY);
-		const clientX = hasPointer ? event.clientX - (bounds?.left ?? 0) : Number.NaN;
-		frame.schedule(() => {
-			const middle = Math.round((props.window.from + props.window.to) / 2);
-			const anchor = Number.isFinite(clientX)
-				? dayAtViewX(toViewX(clientX, bounds?.width ?? 0))
-				: middle;
-			props.onZoom(anchor, event.deltaY > 0 ? 1.15 : 1 / 1.15);
-		});
+		wheelAnchor = {
+			clientX: hasPointer ? event.clientX - (bounds?.left ?? 0) : Number.NaN,
+			width: bounds?.width ?? 0,
+		};
+		wheelDebtPx += wheelDeltaPx(event.deltaY, event.deltaMode);
+		wheelFrame.schedule(flushWheel);
 	};
 
 	onMount(() => {

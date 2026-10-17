@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFrameScheduler } from "../src/chartViewer/frame.ts";
+import {
+	createFrameScheduler,
+	WHEEL_MAX_FACTOR_PER_FRAME,
+	wheelDeltaPx,
+	wheelZoomFactor,
+} from "../src/chartViewer/frame.ts";
 
 describe("frame scheduler", () => {
 	const queued: FrameRequestCallback[] = [];
@@ -65,5 +70,28 @@ describe("frame scheduler", () => {
 		expect(() => frame.cancel()).not.toThrow();
 		expect(raf).not.toHaveBeenCalled();
 		expect(caf).not.toHaveBeenCalled();
+	});
+});
+
+describe("wheel zoom factor (fix round 6)", () => {
+	it("normalises pixel, line and page deltas to pixels", () => {
+		expect(wheelDeltaPx(100, 0)).toBe(100);
+		expect(wheelDeltaPx(3, 1)).toBe(48);
+		expect(wheelDeltaPx(1, 2)).toBe(800);
+		expect(wheelDeltaPx(Number.NaN, 0)).toBe(0);
+	});
+
+	it("zooms exponentially in the summed distance, 15 % per 100 px", () => {
+		expect(wheelZoomFactor(100)).toBeCloseTo(1.15, 10);
+		expect(wheelZoomFactor(-100)).toBeCloseTo(1 / 1.15, 10);
+		// Ten 10 px deltas equal one 100 px notch, never ten 15 % steps.
+		expect(wheelZoomFactor(10 * 10)).toBeCloseTo(wheelZoomFactor(100), 10);
+		expect(wheelZoomFactor(0)).toBe(1);
+		expect(wheelZoomFactor(Number.POSITIVE_INFINITY)).toBe(1);
+	});
+
+	it("clamps one frame's zoom either way", () => {
+		expect(wheelZoomFactor(1e6)).toBe(WHEEL_MAX_FACTOR_PER_FRAME);
+		expect(wheelZoomFactor(-1e6)).toBe(1 / WHEEL_MAX_FACTOR_PER_FRAME);
 	});
 });

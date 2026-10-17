@@ -176,6 +176,20 @@ function optionByText(select: Element, text: string): SlOptionElement {
 	return found as SlOptionElement;
 }
 
+/** The resolved Auto interval shown beside the Interval select ("Auto · Weekly"). */
+function autoIntervalText(): string {
+	return document.querySelector('[data-field="auto-interval"]')?.textContent?.trim() ?? "";
+}
+
+/** Opens the data-table twin: its rows render only while it is open. */
+function openTwin(): HTMLDetailsElement {
+	const details = document.querySelector("sl-dialog.chart-viewer details");
+	if (!(details instanceof HTMLDetailsElement)) throw new Error("no data table twin");
+	details.open = true;
+	details.dispatchEvent(new Event("toggle"));
+	return details;
+}
+
 function chartSvg(): SVGSVGElement {
 	const svg = document.querySelector('svg[aria-roledescription="interactive chart"]');
 	if (!(svg instanceof SVGSVGElement)) throw new Error("no interactive chart");
@@ -263,7 +277,8 @@ describe("chart viewer", () => {
 		]);
 		renderViewer([monthly]);
 		const select = intervalSelect();
-		expect(optionByText(select, "Auto (Monthly)").value).toBe("auto");
+		expect(optionByText(select, "Auto").value).toBe("auto");
+		expect(autoIntervalText()).toBe("Auto · Monthly");
 		for (const label of ["Daily — source is monthly", "Weekly — source is monthly"]) {
 			expect(optionByText(select, label).disabled).toBe(true);
 		}
@@ -287,8 +302,7 @@ describe("chart viewer", () => {
 	it("rebases % mode to zero at the first visible bar", () => {
 		renderViewer([vixSeries()]);
 		setSelectValue(valuesSelect(), "percent");
-		const details = document.querySelector("details");
-		if (!(details instanceof HTMLElement)) throw new Error("no data table twin");
+		const details = openTwin();
 		// The first visible bar is 0 %; later bars show signed percents.
 		expect(details.textContent).toContain("0%");
 		expect(details.textContent).toContain("+0.4664%");
@@ -457,8 +471,7 @@ describe("chart viewer", () => {
 		expect(text).toContain("(+2.19%)");
 		expect(text).toContain("rebased +2.6649%");
 		expect(text).not.toContain("21 USD");
-		const details = document.querySelector("details");
-		if (!(details instanceof HTMLElement)) throw new Error("no data table twin");
+		const details = openTwin();
 		expect(details.textContent).toContain("15.41 Index (+2.6649%)");
 		expect(details.textContent).toContain("% change from the first visible bar");
 	});
@@ -491,8 +504,8 @@ describe("chart viewer", () => {
 		const left = Number(handle.getAttribute("x"));
 		// Press the left handle and drag it 20 px right: the start moves by
 		// about three days while the end stays fixed.
-		fireEvent.pointerDown(svg, { clientX: left + 2 });
-		fireEvent.pointerMove(svg, { clientX: left + 22, buttons: 1 });
+		fireEvent.pointerDown(svg, { clientX: left + 2, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: left + 22, buttons: 1, isPrimary: true });
 		await waitFor(() => expect(fromInput().value).not.toBe(before.from), { timeout: 2000 });
 		expect(toInput().value).toBe(before.to);
 		expect(fromInput().value > before.from).toBe(true);
@@ -504,15 +517,17 @@ describe("chart viewer", () => {
 		fireEvent.click(screen.getByRole("button", { name: "1M" }));
 		expect(fromInput().value).toBe("2026-09-08");
 		const svg = chartSvg();
-		// One day per pixel, so three moves of 4, 5 and 6 px pan 15 days.
-		mockRect(svg, { left: 0, top: 0, width: 30, height: 320 });
-		fireEvent.pointerDown(svg, { clientX: 100 });
-		fireEvent.pointerMove(svg, { clientX: 104, buttons: 1 });
-		fireEvent.pointerMove(svg, { clientX: 109, buttons: 1 });
-		fireEvent.pointerMove(svg, { clientX: 115, buttons: 1 });
+		// The SVG is 640 px wide like its viewBox, so its drawable plot is
+		// 568 px (the right gutter holds the value axis): 30 days over 568 px.
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		fireEvent.pointerDown(svg, { clientX: 100, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: 200, buttons: 1, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: 300, buttons: 1, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: 390, buttons: 1, isPrimary: true });
 		expect(frames.queued()).toBe(1);
 		frames.flush();
-		// Three moves of 4, 5 and 6 px at one day per pixel: back 15 days.
+		// 290 px of plot at 30 / 568 days per px is 15.3 days: back 15 days
+		// (scaling by the whole 640 px SVG would pan only 13).
 		expect(fromInput().value).toBe("2026-08-24");
 	});
 
@@ -600,8 +615,8 @@ describe("chart viewer", () => {
 		if (!(svg instanceof SVGSVGElement)) throw new Error("no navigator");
 		mockRect(svg, { left: 0, top: 0, width: 1000, height: 56 });
 		// Press inside the window, then drag: the move queues one frame.
-		fireEvent.pointerDown(svg, { clientX: 500 });
-		fireEvent.pointerMove(svg, { clientX: 520, buttons: 1 });
+		fireEvent.pointerDown(svg, { clientX: 500, isPrimary: true });
+		fireEvent.pointerMove(svg, { clientX: 520, buttons: 1, isPrimary: true });
 		expect(frames.queued()).toBe(1);
 		unmount();
 		expect(() => frames.flush()).not.toThrow();
@@ -616,7 +631,7 @@ describe("chart viewer", () => {
 		]);
 		renderViewer([trendSeries("fred:A280", "Auto probe", "Index", "daily", closes)]);
 		// 279 days need 200 daily bars: over the 189-bar plot budget, so Weekly.
-		expect(optionByText(intervalSelect(), "Auto (Weekly)").value).toBe("auto");
+		expect(autoIntervalText()).toBe("Auto · Weekly");
 	});
 
 	it("draws the horizontal crosshair for a zero value", () => {
@@ -661,7 +676,7 @@ describe("chart viewer", () => {
 			() => expect(optionByText(intervalSelect(), "Daily — source is monthly").disabled).toBe(true),
 			{ timeout: 2000 },
 		);
-		expect(optionByText(intervalSelect(), "Auto (Monthly)").value).toBe("auto");
+		expect(autoIntervalText()).toBe("Auto · Monthly");
 	});
 
 	it("docks the crosshair date label inside the plot at the edges", () => {
@@ -696,5 +711,151 @@ describe("chart viewer", () => {
 		expect(css).toMatch(/\.chart-viewer-gesture[^}]*touch-action: none/s);
 		expect(document.querySelectorAll("svg.chart-viewer-gesture").length).toBe(2);
 		expect(document.querySelector("svg[style]")).toBeNull();
+	});
+
+	it("keeps the closed Interval select on Auto and names the resolved interval beside it (fix round 6)", async () => {
+		renderViewer([longSeries()], "1m");
+		const select = intervalSelect();
+		await waitFor(() => expect(Reflect.get(select, "displayLabel")).toBe("Auto"));
+		expect(autoIntervalText()).toBe("Auto · Daily");
+		// Max resolves Auto to Weekly: the closed select must not keep a stale
+		// "Auto (Daily)" — its label never changes, the text beside it does.
+		fireEvent.click(screen.getByRole("button", { name: "Max" }));
+		await waitFor(() => expect(autoIntervalText()).toBe("Auto · Weekly"));
+		expect(Reflect.get(select, "displayLabel")).toBe("Auto");
+		expect(optionByText(select, "Auto").value).toBe("auto");
+		// An explicit pick hides the Auto note.
+		setSelectValue(select, "monthly");
+		expect(autoIntervalText()).toBe("");
+	});
+
+	it("keeps a wheel zoom when the pointer moves in the same frame (fix round 6)", () => {
+		const frames = mockFrames();
+		renderViewer([longSeries()]);
+		const svg = chartSvg();
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		fireEvent.wheel(svg, { deltaY: -100, clientX: 320, clientY: 100 });
+		fireEvent.pointerMove(svg, { clientX: 330, clientY: 100, buttons: 0, isPrimary: true });
+		frames.flush();
+		// The zoom landed (the window narrowed) and the hover set the readout.
+		expect(fromInput().value > "2025-09-04").toBe(true);
+		expect(readout()).not.toContain("Point at the chart");
+	});
+
+	it("zooms in proportion to the summed wheel distance, not 15 % per event (fix round 6)", () => {
+		const frames = mockFrames();
+		renderViewer([longSeries()]);
+		const svg = chartSvg();
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		// Ten pinch deltas of 1 px in one frame: about 1.4 % in total, while
+		// a per-event 15 % step would have cut the 399-day window to ~347.
+		for (let index = 0; index < 10; index += 1) {
+			fireEvent.wheel(svg, { deltaY: -1, ctrlKey: true, clientX: 320, clientY: 100 });
+		}
+		expect(frames.queued()).toBe(1);
+		frames.flush();
+		const from = isoToDayNumber(fromInput().value);
+		const to = isoToDayNumber(toInput().value);
+		if (!from.ok || !to.ok) throw new Error("bad range");
+		const span = to.value - from.value;
+		expect(span).toBeLessThan(399);
+		expect(span).toBeGreaterThanOrEqual(390);
+		// Lines are normalised to pixels: one line notch zooms like 16 px.
+		fireEvent.wheel(svg, { deltaY: 3, deltaMode: 1, clientX: 320, clientY: 100 });
+		frames.flush();
+		const widened = isoToDayNumber(fromInput().value);
+		if (!widened.ok) throw new Error("bad range");
+		expect(widened.value).toBeLessThan(from.value);
+	});
+
+	it("zooms around the crosshair on every keyboard step and keeps the readout (fix round 6)", () => {
+		renderViewer([longSeries()]);
+		const svg = chartSvg();
+		svg.focus();
+		fireEvent.keyDown(svg, { key: "End" });
+		expect(readout()).toContain("2026-10-08");
+		for (let step = 0; step < 3; step += 1) {
+			fireEvent.keyDown(svg, { key: "+" });
+			// The crosshair stays on its day, so each step anchors there: the
+			// window keeps ending at the crosshair's last bar.
+			expect(toInput().value).toBe("2026-10-08");
+			expect(readout()).toContain("2026-10-08");
+		}
+		expect(fromInput().value > "2026-03-01").toBe(true);
+	});
+
+	it("ignores a second finger while the first one pans (fix round 6)", () => {
+		const frames = mockFrames();
+		renderViewer([longSeries()]);
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		const svg = chartSvg();
+		mockRect(svg, { left: 0, top: 0, width: 640, height: 320 });
+		fireEvent.pointerDown(svg, { clientX: 100, pointerId: 1, isPrimary: true });
+		// The second finger of a pinch: its press and moves change nothing.
+		fireEvent.pointerDown(svg, { clientX: 400, pointerId: 2, isPrimary: false });
+		fireEvent.pointerMove(svg, { clientX: 500, buttons: 1, pointerId: 2, isPrimary: false });
+		fireEvent.pointerMove(svg, { clientX: 390, buttons: 1, pointerId: 1, isPrimary: true });
+		frames.flush();
+		// 290 px of the first finger only: back 15 days, no jump.
+		expect(fromInput().value).toBe("2026-08-24");
+	});
+
+	it("renders data-table rows only while the twin is open, reusing row elements (fix round 6)", () => {
+		renderViewer([longSeries()]);
+		fireEvent.click(screen.getByRole("button", { name: "1M" }));
+		const details = document.querySelector("sl-dialog.chart-viewer details");
+		if (!(details instanceof HTMLDetailsElement)) throw new Error("no data table twin");
+		// Closed: no row is built per pan or zoom frame.
+		expect(details.querySelectorAll("tbody tr")).toHaveLength(0);
+		openTwin();
+		const rows = details.querySelectorAll("tbody tr");
+		expect(rows.length).toBe(31);
+		const firstRow = rows[0];
+		const firstText = firstRow?.textContent;
+		// A pan updates the rows in place instead of rebuilding them.
+		const svg = chartSvg();
+		svg.focus();
+		fireEvent.keyDown(svg, { key: "ArrowLeft", shiftKey: true });
+		const after = details.querySelectorAll("tbody tr");
+		expect(after[0]).toBe(firstRow);
+		expect(after[0]?.textContent).not.toBe(firstText);
+		// Closing drops them again.
+		details.open = false;
+		details.dispatchEvent(new Event("toggle"));
+		expect(details.querySelectorAll("tbody tr")).toHaveLength(0);
+	});
+
+	it("never rebuilds the navigator overview line on a window change (fix round 6)", () => {
+		const reads = { count: 0 };
+		const values = new Proxy(
+			Array.from({ length: 2000 }, (_, index) => 100 + (index % 17)),
+			{
+				get(target, key, receiver) {
+					if (typeof key === "string" && /^\d+$/.test(key)) reads.count += 1;
+					return Reflect.get(target, key, receiver);
+				},
+			},
+		);
+		const days = Array.from({ length: 2000 }, (_, index) => index);
+		const [window, setWindow] = createSignal({ from: 100, to: 200 });
+		render(() => (
+			<Navigator
+				days={days}
+				values={values}
+				window={window()}
+				extent={{ from: 0, to: 1999 }}
+				minSpanDays={1}
+				onWindow={() => {}}
+				windowLabel="Overview"
+			/>
+		));
+		const built = reads.count;
+		expect(built).toBeGreaterThan(0);
+		const windowRect = document.querySelector('rect[fill-opacity="0.12"]');
+		const before = windowRect?.getAttribute("x");
+		setWindow({ from: 900, to: 1000 });
+		expect(windowRect?.getAttribute("x")).not.toBe(before);
+		// The rectangle moved; the 2,000-value overview was not read again.
+		expect(reads.count).toBe(built);
 	});
 });

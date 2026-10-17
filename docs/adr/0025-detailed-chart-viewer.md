@@ -36,7 +36,10 @@ over the current page — Home or the Notebook alike, since both render the
 same widget components (ADR-0024). It is the "app" the widget's tap opens.
 
 Entry points (each a native `<button type="button">`, keyboard reachable,
-accessible name `Open chart: <name>`):
+accessible name computed from its content: a visually hidden `Open chart: `
+prefix followed by the visible text — the values, the row name and symbol,
+the plot's own image name — so the name contains what the button shows, WCAG
+2.5.3; no `aria-label` replaces it, and the content is phrasing only):
 
 | Widget | What opens it | Series shown |
 |---|---|---|
@@ -44,15 +47,20 @@ accessible name `Open chart: <name>`):
 | `market-metric` | the value block (value, change lines, sparkline) | the widget's series |
 | `stock-table` | each row's name cell | that row's series |
 
-A press that turns into a drag never opens it; the grip, actions menu,
-Range select and data-table disclosure keep their own behaviour. The viewer
-opens only for series with at least one observation. It never changes the
-widget or the dashboard: nothing it does is saved.
+A press that turns into a drag never opens it, nor does a press that moves
+4 px or more before its release (selecting the symbol's text); a keyboard
+activation always opens. The grip, actions menu, Range select and data-table
+disclosure keep their own behaviour. The viewer opens only for series with at
+least one observation; once open it stays open until closed — a reload that
+drops the observations shows its "unavailable" state, and data returning
+later never reopens a closed viewer. It never changes the widget or the
+dashboard: nothing it does is saved.
 
 Sizing: full screen below `40rem` wide (HIG full-screen modal on iPhone);
 above it the sheet fills the viewport minus a `1rem` margin on every side.
 `Escape` and the dialog's close button close it; focus returns to the button
-that opened it. Body scroll is locked while it is open (Shoelace does this).
+that opened it (the entry point passes the clicked button, since Safari and
+Firefox on macOS never focus a button on a mouse click). Body scroll is locked while it is open (Shoelace does this).
 
 ### Layout (top to bottom)
 
@@ -74,7 +82,9 @@ that opened it. Body scroll is locked while it is open (Shoelace does this).
      with the reason in the option text ("Daily — source is monthly").
      `Auto` picks the finest allowed interval that keeps the visible bars at
      or below one bar per 3 px of plot width; the chosen interval is named
-     ("Auto (Weekly)").
+     beside the select ("Auto · Weekly"), while the option itself always
+     reads "Auto" (Shoelace's closed select does not refresh its label when
+     an option's text changes in place).
    - **Scale**: `Linear` / `Log`. Log is disabled (with the reason) when any
      visible value is ≤ 0.
    - **Values**: `Value` / `% change` (each series rebased to 0 % at the
@@ -89,9 +99,13 @@ that opened it. Body scroll is locked while it is open (Shoelace does this).
    date axis below with ticks on calendar boundaries picked for the span and
    the measured width — days (`Oct 16`), week Mondays (`Oct 13`), month
    starts (`Aug`, with the year added at January and at the first tick:
-   `Jan 2026`), quarter starts, year starts (`2026`) — keeping the finest
-   step whose labels stay distinct and clear each other, so a tick always
-   marks its boundary's time-proportional x instead of an arbitrary bar. One
+   `Jan 2026`), quarter and half-year starts, year starts every 1, 2, 5, 10,
+   20, 50 … years (`2026`, `1970 1980 …`) — keeping the finest step whose
+   labels stay distinct and clear each other, so a tick always marks its
+   boundary's time-proportional x instead of an arbitrary bar. A window that
+   crosses a calendar year names the year on its first tick and at every
+   year change (`Oct 19, 2025` … `Jan 4, 2026` for day ticks), in every
+   fallback too — never a lone year-less date. One
    line per series from the shared palette (`SERIES_COLORS`); moving averages are thinner dashed lines with
    their own legend entries. Each series' last visible value is marked on
    the value axis. A crosshair (vertical and horizontal line) follows the
@@ -106,25 +120,33 @@ that opened it. Body scroll is locked while it is open (Shoelace does this).
    Open (first), Close (last), Change, % change, High (with date), Low (with
    date), Average, Max drawdown, Bars.
 7. **Data table twin** (`<details>`) of the visible bars at the chosen
-   interval, plus legend, unit, as-of date and source link (UI-007; the
+   interval (rows built only while it is open), plus legend, unit, as-of date and source link (UI-007; the
    shared provenance line). When a series holds exactly 800 observations a
    note says the viewer shows the newest 800 held observations.
 
 ### Interaction (main chart)
 
 - Wheel or trackpad scroll zooms around the pointer; pinch (ctrl+wheel)
-  likewise; drag pans; double-click returns to the pressed preset (or the
-  opening one).
+  likewise. The zoom follows the wheel distance: the deltas of one frame are
+  summed in pixels (lines and pages converted) and zoom by
+  `exp(distance × ln 1.15 / 100)` — 15 % per 100 px mouse notch — clamped to
+  2× per frame, so a trackpad's many small deltas never zoom 15 % each. Drag
+  pans by the plot width (the data under the finger moves with it), and only
+  the primary pointer pans, so a second finger never makes the chart jump;
+  double-click returns to the pressed preset (or the opening one).
 - Keyboard: the chart is focusable (`tabindex="0"`, `role="group"`,
   `aria-roledescription="interactive chart"`, instructions in
   `aria-describedby`). `←`/`→` move the crosshair one bar, `Shift`+`←`/`→`
   pan by a tenth of the window, `+`/`-` zoom in/out around the crosshair (or
-  the centre), `Home`/`End` jump to the first/last visible bar, `0` resets.
+  the centre; the crosshair is held as a day, so every step anchors on it and
+  the readout stays while the day is visible), `Home`/`End` jump to the first/last visible bar, `0` resets.
   A visually hidden polite live region announces the readout after a
   keyboard move.
 - The window is clamped to the held data and never narrower than two bars of
   the current interval (or the whole data when it is shorter).
-- Pointer and wheel updates are coalesced to one per animation frame.
+- Pointer and wheel updates are coalesced to one per animation frame, on
+  separate schedulers for the crosshair, the drag pan and the wheel zoom, so
+  a hover in the same frame never drops a zoom.
 
 ### Algorithms (pure, in `packages/domain/src/market/chartWindow.ts`)
 
@@ -164,13 +186,19 @@ time zones. Fallible functions return `Result` (ADR-0007).
 
 ### Performance
 
-Resampling runs once per (series, interval) over all held data and moving
-averages once per (series, interval, period); a window change only re-slices
-by binary search and rebuilds paths for the visible bars plus one bar either
-side. With more visible bars than plot pixels the path is decimated to the
+Resampling and the union of bar days run once per (series, interval) over
+all held data and moving averages once per (series, interval, period); a
+window change only re-slices by binary search (the two-bar minimum included)
+and rebuilds paths for the visible bars plus one bar either side — the
+moving averages are copied and rebased for that slice only, the navigator's
+overview line is memoized apart from its O(1) window rectangle, and the
+data-table twin builds rows only while open (updating them in place). With more visible bars than plot pixels the path is decimated to the
 min and max per pixel column (the extremes are always drawn). `bun run bench`
 gains cases for resampling, moving averages, window stats and path building
-over 4 × 1,500 points, each with a budget.
+over 4 × 1,500 points, each with a budget, and per-window-change cases
+(two-bar check, navigator rectangle, a 1-month model with three moving
+averages) over 4 × 800 and 4 × 20,000 bars sharing one budget, so work
+proportional to the held bars fails there.
 
 ### Formal verification
 
@@ -196,9 +224,12 @@ property tests, not Lean.
 
 ## Consequences
 
-- One more Home/Notebook surface; Shoelace's `sl-dialog` is already loaded
-  with the widgets, so the lazy Home chunk grows only by the viewer's own code
-  (re-measure as DESIGN_GUIDELINE §13 asks).
+- One more Home/Notebook surface. The viewer is its own lazy chunk
+  (`ChartViewer-*.js`, 35.36 kB / 11.42 kB gzip in the 2026-10-17 build),
+  loaded on the first press of an opener; only the openers stay in the main
+  chunk (552.03 kB / 156.89 kB gzip, against 577.54 kB / 163.88 kB with the
+  viewer statically imported). Shoelace's `sl-dialog` is already loaded with
+  the widgets. Re-measure as DESIGN_GUIDELINE §13 asks.
 - The viewer is honest about the data: no intraday intervals, no candles, no
   volume, at most 800 observations per series. Adding a deeper history or
   intraday bars would need a new provider request and storage budget

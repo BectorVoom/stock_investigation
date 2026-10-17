@@ -1,5 +1,5 @@
 import { clampWindow, type DayWindow } from "@research/domain";
-import { buildNavigatorModel, CHART_INK } from "@research/ui-registry";
+import { buildNavigatorOverview, CHART_INK, navigatorWindowRect } from "@research/ui-registry";
 import { createMemo, createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import { createFrameScheduler } from "./frame.ts";
 
@@ -74,15 +74,27 @@ export function Navigator(props: {
 		}
 	});
 	const width = (): number => measuredWidth();
-	const model = createMemo(() =>
-		buildNavigatorModel({
-			days: props.days,
-			values: props.values,
-			window: props.window,
+	// Two memos (ADR-0025 performance): the overview line depends only on
+	// the held days, values and width, so a pan or zoom never rebuilds it;
+	// the window rectangle is O(1) per window change. The reference memos
+	// stop a parent re-render that passes the same arrays from re-running
+	// the overview.
+	const days = createMemo(() => props.days);
+	const values = createMemo(() => props.values);
+	const overview = createMemo(() =>
+		buildNavigatorOverview({
+			days: days(),
+			values: values(),
 			width: width(),
 			height: NAVIGATOR_HEIGHT,
 		}),
 	);
+	const model = createMemo(() => {
+		const line = overview();
+		if (line === null) return null;
+		const rect = navigatorWindowRect(line, props.window);
+		return { d: line.d, windowLeft: rect.windowLeft, windowWidth: rect.windowWidth };
+	});
 
 	/** ViewBox x to integer day number. */
 	const dayAtX = (x: number): number => {
@@ -109,6 +121,8 @@ export function Navigator(props: {
 	};
 
 	const onPointerDown = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
+		// A second finger never restarts the drag (a pinch would jump it).
+		if (!event.isPrimary) return;
 		if (event.pointerType === "mouse" && event.button !== 0) return;
 		if (!Number.isFinite(event.clientX)) return;
 		const current = model();
@@ -145,7 +159,7 @@ export function Navigator(props: {
 
 	const onPointerMove = (event: PointerEvent & { readonly currentTarget: SVGSVGElement }): void => {
 		const active = drag;
-		if (active === null || event.buttons === 0) return;
+		if (active === null || event.buttons === 0 || !event.isPrimary) return;
 		if (!Number.isFinite(event.clientX)) return;
 		const day = dayAtX(toX(event));
 		if (active.kind === "left") {

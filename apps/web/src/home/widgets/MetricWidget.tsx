@@ -2,8 +2,8 @@ import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
 import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
-import { ChartViewer } from "../../chartViewer/ChartViewer.tsx";
-import { OPEN_CHART_BUTTON_CLASS } from "../../chartViewer/openChart.ts";
+import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
+import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import {
 	changeErrorText,
@@ -25,9 +25,12 @@ import {
  * percent-unit series). A series whose last refresh failed still shows its
  * stored values with an amber "last refresh failed (reason)" note; only a
  * series with no observations is "unavailable (reason)". The value block
- * (value, change lines, sparkline) is a native button ("Open chart: <series
- * title>") that opens the detailed chart viewer (ADR-0025) at the 1y preset;
- * a series with no observations has no button.
+ * (value, change lines, sparkline) is a native button whose name is "Open
+ * chart: <series title>, " followed by the visible values, and it opens the
+ * detailed chart viewer (ADR-0025, lazy chunk) at the 1y preset; a series
+ * with no observations has no button. Once open, the viewer stays open until
+ * closed: a reload that drops the observations shows its "unavailable"
+ * state instead of unmounting it with focus lost.
  */
 export function MetricWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "market-metric" }>;
@@ -35,8 +38,9 @@ export function MetricWidget(props: {
 }): JSX.Element {
 	const series = () => props.seriesById().get(props.widget.seriesId) ?? null;
 	const [viewerOpen, setViewerOpen] = createSignal(false);
-	// The viewer's one series, live through the accessor: empty until a
-	// series with observations is held, so the viewer mounts only while open.
+	let opener: HTMLElement | null = null;
+	// The viewer's one series, live through the accessor: empty while the
+	// series holds no observations (the open viewer then says so).
 	const viewerSeries = createMemo(() => {
 		const entry = series();
 		return entry === null || entry.observations.length === 0 ? [] : [entry];
@@ -52,14 +56,23 @@ export function MetricWidget(props: {
 				when={series()}
 				fallback={<p class="text-sm text-amber-900">unavailable ({unavailableText("NO_DATA")})</p>}
 			>
-				{(entry) => <MetricBody series={entry()} onOpen={() => setViewerOpen(true)} />}
+				{(entry) => (
+					<MetricBody
+						series={entry()}
+						onOpen={(button) => {
+							opener = button;
+							setViewerOpen(true);
+						}}
+					/>
+				)}
 			</Show>
-			<Show when={viewerOpen() && viewerSeries().length > 0}>
-				<ChartViewer
+			<Show when={viewerOpen()}>
+				<LazyChartViewer
 					open
-					title={viewerSeries()[0]?.title ?? props.widget.seriesId}
+					title={series()?.title ?? props.widget.seriesId}
 					series={viewerSeries}
 					initialPreset="1y"
+					opener={opener}
 					onClose={() => setViewerOpen(false)}
 				/>
 			</Show>
@@ -71,7 +84,7 @@ export function MetricWidget(props: {
 
 function MetricBody(props: {
 	readonly series: MarketSeries;
-	readonly onOpen: () => void;
+	readonly onOpen: (button: HTMLButtonElement) => void;
 }): JSX.Element {
 	const summary = createMemo(() => summarizeSeries(props.series));
 	const sparkPoints = createMemo(() => selectRange(toPoints(props.series.observations), "3m"));
@@ -86,17 +99,14 @@ function MetricBody(props: {
 				fallback={<p class="text-sm text-amber-900">unavailable ({missingReason()})</p>}
 			>
 				{(point) => (
-					<button
-						type="button"
-						aria-label={`Open chart: ${props.series.title}`}
-						class={OPEN_CHART_BUTTON_CLASS}
-						onClick={() => props.onOpen()}
-					>
-						<div class="space-y-1">
-							<p class="text-base font-semibold tabular-nums text-slate-900">
+					// Phrasing content only inside the button: block spans, not
+					// div/p, and the visible values form its accessible name.
+					<ChartOpener srPrefix={`Open chart: ${props.series.title}, `} onOpen={props.onOpen}>
+						<span class="block space-y-1">
+							<span class="block text-base font-semibold tabular-nums text-slate-900">
 								{formatValue(point().value)}{" "}
 								<span class="text-xs font-normal text-slate-600">{props.series.unit}</span>
-							</p>
+							</span>
 							<ChangeLine label="Change" change={summary().change} unit={props.series.unit} />
 							<ChangeLine
 								label="1-year change"
@@ -115,8 +125,8 @@ function MetricBody(props: {
 									<path d={spark()} fill="none" stroke={seriesColor(0)} stroke-width="1.5" />
 								</svg>
 							</Show>
-						</div>
-					</button>
+						</span>
+					</ChartOpener>
 				)}
 			</Show>
 			<Show when={stale()}>
@@ -139,7 +149,7 @@ function ChangeLine(props: {
 	const errorText = () =>
 		props.change.ok ? null : `unavailable (${changeErrorText(props.change.error)})`;
 	return (
-		<p class="text-xs tabular-nums text-slate-700">
+		<span class="block text-xs tabular-nums text-slate-700">
 			{props.label}:{" "}
 			<Show when={formatted()} fallback={<span class="italic">{errorText()}</span>}>
 				{(line) => (
@@ -148,6 +158,6 @@ function ChangeLine(props: {
 					</>
 				)}
 			</Show>
-		</p>
+		</span>
 	);
 }
