@@ -132,7 +132,20 @@ test("a research chart preview and its Notebook widget draw the same svg", async
 			[...svg.querySelectorAll('[data-chart-part="y-axis"] text')]
 				.filter((element) => element.getAttribute("data-axis-title") === null)
 				.map((element) => element.textContent ?? "");
+		// ADR-0026: the provenance around the plot reads the same too.
+		const provenance = (svg: SVGSVGElement) => {
+			const figure = svg.closest("figure");
+			return {
+				basisNote: figure?.querySelector("[data-chart-basis-note]")?.textContent ?? null,
+				sources: figure?.querySelector('section[aria-label="Sources"]')?.textContent ?? null,
+				tableCells: [...(figure?.querySelectorAll("details td") ?? [])].map(
+					(cell) => cell.textContent ?? "",
+				),
+			};
+		};
 		return {
+			previewProvenance: provenance(preview),
+			notebookProvenance: provenance(notebookWidget),
 			previewViewBox: preview.getAttribute("viewBox"),
 			notebookViewBox: notebookWidget.getAttribute("viewBox"),
 			previewBars: barsOf(preview),
@@ -155,6 +168,9 @@ test("a research chart preview and its Notebook widget draw the same svg", async
 	expect(compared.notebookYTitle).toBe(compared.previewYTitle);
 	expect(compared.notebookYTicks).toEqual(compared.previewYTicks);
 	expect(compared.notebookMarks).toBe(compared.previewMarks);
+	expect(compared.previewProvenance.basisNote).not.toBeNull();
+	expect(compared.previewProvenance.sources).not.toBeNull();
+	expect(compared.notebookProvenance).toEqual(compared.previewProvenance);
 
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],
