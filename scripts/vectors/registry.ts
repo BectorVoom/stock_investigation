@@ -3,9 +3,17 @@
  * command line; each returned file lands at `vectors/<path>`. Workers add
  * their exporter here (one line each).
  */
+import { dateExporter } from "./date.ts";
 import { domainNewsExporter } from "./domainNews.ts";
+import { feedExporter } from "./feed.ts";
 import { htmlExporter } from "./html.ts";
 import { jsExporter } from "./js.ts";
 import type { VectorExporter } from "./shared.ts";
 
-export const exporters: readonly VectorExporter[] = [jsExporter, domainNewsExporter, htmlExporter];
+export const exporters: readonly VectorExporter[] = [
+	jsExporter,
+	domainNewsExporter,
+	dateExporter,
+	feedExporter,
+	htmlExporter,
+];
