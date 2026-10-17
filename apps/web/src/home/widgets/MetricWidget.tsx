@@ -37,8 +37,11 @@ export function MetricWidget(props: {
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	const series = () => props.seriesById().get(props.widget.seriesId) ?? null;
-	const [viewerOpen, setViewerOpen] = createSignal(false);
-	let opener: HTMLElement | null = null;
+	// One object per press, keyed below: a press while the download failure
+	// shows mounts a fresh viewer, which imports again.
+	const [viewerRequest, setViewerRequest] = createSignal<{
+		readonly opener: HTMLElement;
+	} | null>(null);
 	// The viewer's one series, live through the accessor: empty while the
 	// series holds no observations (the open viewer then says so).
 	const viewerSeries = createMemo(() => {
@@ -57,24 +60,20 @@ export function MetricWidget(props: {
 				fallback={<p class="text-sm text-amber-900">unavailable ({unavailableText("NO_DATA")})</p>}
 			>
 				{(entry) => (
-					<MetricBody
-						series={entry()}
-						onOpen={(button) => {
-							opener = button;
-							setViewerOpen(true);
-						}}
-					/>
+					<MetricBody series={entry()} onOpen={(button) => setViewerRequest({ opener: button })} />
 				)}
 			</Show>
-			<Show when={viewerOpen()}>
-				<LazyChartViewer
-					open
-					title={series()?.title ?? props.widget.seriesId}
-					series={viewerSeries}
-					initialPreset="1y"
-					opener={opener}
-					onClose={() => setViewerOpen(false)}
-				/>
+			<Show when={viewerRequest()} keyed>
+				{(request) => (
+					<LazyChartViewer
+						open
+						title={series()?.title ?? props.widget.seriesId}
+						series={viewerSeries}
+						initialPreset="1y"
+						opener={request.opener}
+						onClose={() => setViewerRequest(null)}
+					/>
+				)}
 			</Show>
 			<TwelveDataSessionNote seriesIds={[props.widget.seriesId]} byId={props.seriesById} />
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />

@@ -50,7 +50,10 @@ the plot's own image name — so the name contains what the button shows, WCAG
 A press that turns into a drag never opens it, nor does a mouse press that
 moves 4 px or more before its release (selecting the symbol's text); a touch
 or pen tap that drifts a few px still opens (touch selects no text, and a
-real touch drag produces no click); a keyboard activation always opens. Each
+real touch drag produces no click). The slop rule is mouse-only by choice: a
+pen can drag-select text in some desktop browsers, and a pen press that
+selected text may then still open the viewer — accepted, since a pen tap's
+natural drift would otherwise be lost. A keyboard activation always opens. Each
 opener is at least 24 × 24 px and 44 × 44 px under a coarse pointer
 (`pointer-coarse:min-h-11 pointer-coarse:min-w-11`, DESIGN_GUIDELINE §14). The grip, actions menu, Range select and data-table
 disclosure keep their own behaviour. The viewer opens only for series with at
@@ -66,12 +69,22 @@ that opened it (the entry point passes the clicked button, since Safari and
 Firefox on macOS never focus a button on a mouse click). If a reload replaced
 that button while the viewer was open, focus goes to the widget's new opener
 with the same `data-chart-opener` key, else to the widget's focusable body —
-never to `<body>`. While the viewer's chunk downloads, the widget shows
-"Loading chart…" (a `status`); if the download fails (offline, or an old
-chunk hash after a new release) or the viewer fails to render, the widget
-shows an inline `alert` — "The chart viewer could not be loaded." with Try
-again (imports the chunk again) and Close (focus back to the opener) — and
-the page and its other widgets stay as they were. Body scroll is locked while it is open (Shoelace does this).
+never to `<body>`. Focus return is captured once, at the press, and handed
+to the viewer, so a reload that replaces the opener while the chunk is still
+downloading changes nothing. While the viewer's chunk downloads, "Loading
+chart…" (a `status`) shows at a fixed place at the top of the viewport —
+where the sheet will appear, in a portal on `<body>`, so it is in view
+whatever part of a tall widget was pressed (a notice after the line chart's
+legend, readout and data table was off screen at 720 px); if the download
+fails (offline, or an old chunk hash after a new release) or the viewer
+fails to render, the same place shows an `alert` — "The chart viewer could
+not be loaded." with Try again (imports the chunk again) and Close (focus
+back to the opener) — focus moves to Try again, pressing the opener again
+also imports again, and the page and its other widgets stay as they were.
+At most one viewer exists: opening one while another is still downloading
+or open supersedes the earlier one (its widget's open state is closed
+without moving focus), so two widgets pressed during one download never
+stack two modal dialogs. Body scroll is locked while it is open (Shoelace does this).
 
 ### Layout (top to bottom)
 
@@ -150,7 +163,11 @@ the page and its other widgets stay as they were. Body scroll is locked while it
   `aria-describedby`). `←`/`→` move the crosshair one bar, `Shift`+`←`/`→`
   pan by a tenth of the window, `+`/`-` zoom in/out around the crosshair (or
   the centre; the crosshair is held as a day, so every step anchors on it and
-  the readout stays while the day is visible), `Home`/`End` jump to the first/last visible bar, `0` resets.
+  the readout stays while the day is visible; a zoom whose Auto interval
+  coarsens widens the window's end to the bar of the crosshair day's bucket
+  — a weekly bar is dated at its week's last observation, after a window
+  that ended on the crosshair day — so the crosshair never vanishes at the
+  right edge), `Home`/`End` jump to the first/last visible bar, `0` resets.
   A visually hidden polite live region announces the readout after a
   keyboard move.
 - The window is clamped to the held data and never narrower than two bars of
@@ -236,9 +253,9 @@ property tests, not Lean.
 ## Consequences
 
 - One more Home/Notebook surface. The viewer is its own lazy chunk
-  (`ChartViewer-*.js`, 35.53 kB / 11.44 kB gzip in the 2026-10-17 build),
+  (`ChartViewer-*.js`, 36.04 kB / 11.61 kB gzip in the 2026-10-17 build),
   loaded on the first press of an opener; only the openers stay in the main
-  chunk (553.48 kB / 157.46 kB gzip, against 577.54 kB / 163.88 kB with the
+  chunk (554.12 kB / 157.66 kB gzip, against 577.54 kB / 163.88 kB with the
   viewer statically imported). Shoelace's `sl-dialog` is already loaded with
   the widgets. Re-measure as DESIGN_GUIDELINE §13 asks.
 - The viewer is honest about the data: no intraday intervals, no candles, no

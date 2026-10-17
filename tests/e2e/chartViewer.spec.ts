@@ -514,6 +514,52 @@ test("viewer layout holds together at phone 390x844", async () => {
 	await page.setViewportSize({ width: 1280, height: 720 });
 });
 
+test("a failed chunk download shows its alert in view with Try again focused, and the opener retries", async ({
+	browser,
+}) => {
+	// A page of its own: the blocked chunk logs network errors that are the
+	// point of this test, not defects the shared page should report, and a
+	// fresh page has not loaded the chunk yet.
+	const failing = await browser.newPage();
+	try {
+		await failing.setViewportSize({ width: 1280, height: 720 });
+		const chunkUrl = /\/assets\/ChartViewer-[^/]*\.js$/;
+		let blocked = 0;
+		await failing.route(chunkUrl, async (route) => {
+			blocked += 1;
+			await route.abort("internetdisconnected");
+		});
+		await failing.goto("/#/home");
+		const open = failing
+			.locator('article[data-widget-id="w-vix-chart"]')
+			.getByRole("button", { name: /^Open chart: Line chart: VIX\./ });
+		await expect(open).toBeVisible({ timeout: 20_000 });
+		await open.click();
+		// The line chart's plot is the opener; the alert is not below the
+		// legend, readout and data table (off screen at 720 px) but in view.
+		const alert = failing.locator("[data-chart-viewer-failure]");
+		await expect(alert).toContainText("The chart viewer could not be loaded.");
+		await expect(alert).toBeInViewport({ ratio: 1 });
+		await expect(alert.getByRole("button", { name: "Try again" })).toBeFocused();
+		// Pressing the opener again while the failure shows imports again.
+		const attempts = blocked;
+		await open.click();
+		await expect.poll(() => blocked, { timeout: 10_000 }).toBeGreaterThan(attempts);
+		await expect(alert).toBeInViewport({ ratio: 1 });
+		await expect(alert.getByRole("button", { name: "Try again" })).toBeFocused();
+		// The network is back: Try again opens the viewer, Escape returns focus.
+		await failing.unroute(chunkUrl);
+		await alert.getByRole("button", { name: "Try again" }).click();
+		await expect(failing.locator("sl-dialog.chart-viewer")).toBeVisible();
+		await expect(alert).toHaveCount(0);
+		await failing.keyboard.press("Escape");
+		await expect(failing.locator("sl-dialog.chart-viewer")).toHaveCount(0);
+		await expect(open).toBeFocused();
+	} finally {
+		await failing.close();
+	}
+});
+
 test("no console errors", async () => {
 	expect(consoleErrors.filter((text) => !text.includes("422") && !text.includes("403"))).toEqual(
 		[],

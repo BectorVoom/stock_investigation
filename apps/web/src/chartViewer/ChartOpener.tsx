@@ -12,9 +12,10 @@ import { OPEN_CHART_BUTTON_CLASS, OPEN_PRESS_SLOP_PX } from "./openChart.ts";
  * only content a `<button>` may hold.
  *
  * A mouse press that travels at least `OPEN_PRESS_SLOP_PX` before its
- * release is a text selection, never an open; touch and pen presses select
- * no text, so a tap that drifts a few px still opens (a real touch drag
- * never produces a click). A keyboard activation (click `detail` 0) always
+ * release is a text selection, never an open. The rule is mouse-only: touch
+ * selects no text, and a touch or pen tap that drifts a few px still opens
+ * (a real touch drag never produces a click); a pen can drag-select text in
+ * some desktop browsers, and such a press may still open — accepted. A keyboard activation (click `detail` 0) always
  * opens. The clicked button itself is handed to `onOpen`, so focus returns
  * there even where a mouse click never focuses a button (Safari, Firefox on
  * macOS); `openerKey` lets focus find the widget's new button after a

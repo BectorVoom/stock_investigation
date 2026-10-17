@@ -1,4 +1,5 @@
 import type { MarketSeries } from "@research/contracts";
+import { WIDGET_BODY_CLASS, WidgetFrame } from "@research/widget-grid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal, ErrorBoundary } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,9 +13,10 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
  * `chunk.fail` is set, importing the viewer module rejects the way a
  * failed dynamic import does; cleared, the real module loads.
  */
-const chunk = vi.hoisted(() => ({ fail: true }));
+const chunk = vi.hoisted(() => ({ fail: true, attempts: 0 }));
 
 vi.mock("../src/chartViewer/ChartViewer.tsx", async (importOriginal) => {
+	chunk.attempts += 1;
 	if (chunk.fail) {
 		throw new TypeError("Failed to fetch dynamically imported module: ChartViewer-x.js");
 	}
@@ -62,6 +64,35 @@ function renderPage(): void {
 			/>
 		</ErrorBoundary>
 	));
+}
+
+/** Two metric widgets in their frames (focusable `.wg-body`), live through `byId`. */
+function renderFramedMetrics(
+	byId: () => ReadonlyMap<string, MarketSeries>,
+	seriesIds: readonly string[],
+): void {
+	render(() => (
+		<>
+			{seriesIds.map((seriesId, index) => {
+				const widget = {
+					type: "market-metric",
+					widgetId: `w-${index}`,
+					title: seriesId,
+					size: "small",
+					seriesId,
+				} as const;
+				return (
+					<WidgetFrame widget={widget}>
+						<MetricWidget widget={widget} seriesById={byId} />
+					</WidgetFrame>
+				);
+			})}
+		</>
+	));
+}
+
+function openViewers(): number {
+	return document.querySelectorAll("sl-dialog.chart-viewer[open]").length;
 }
 
 function opener(): HTMLElement {
@@ -120,6 +151,39 @@ describe("chart viewer chunk that fails to load", () => {
 		await failureAlert();
 	});
 
+	it("shows the failure at a fixed place on the page with Try again focused (fix round 8)", async () => {
+		chunk.fail = true;
+		renderPage();
+		fireEvent.click(opener());
+		// The loading status is not below the widget's content (off screen
+		// in a short viewport) but fixed at the top of the viewport.
+		const status = screen.getByRole("status");
+		expect(status.closest(".fixed")).not.toBeNull();
+		const alert = await failureAlert();
+		expect(alert.classList.contains("fixed")).toBe(true);
+		expect(alert.parentElement?.parentElement).toBe(document.body);
+		// Focus moves to Try again, so a keyboard user lands on the way out.
+		await waitFor(() =>
+			expect(document.activeElement).toBe(within(alert).getByRole("button", { name: "Try again" })),
+		);
+	});
+
+	it("a press on the opener while the failure shows imports again (fix round 8)", async () => {
+		chunk.fail = true;
+		renderPage();
+		const button = opener();
+		fireEvent.click(button);
+		await failureAlert();
+		const attempts = chunk.attempts;
+		fireEvent.click(button);
+		// Answered as a fresh open: the alert gives way to the loading status
+		// while the chunk is imported once more, and the failure returns.
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect(screen.getByRole("status").textContent).toContain("Loading chart…");
+		await failureAlert();
+		expect(chunk.attempts).toBeGreaterThan(attempts);
+	});
+
 	it("Try again imports again and opens the viewer once the chunk loads", async () => {
 		chunk.fail = true;
 		renderPage();
@@ -133,5 +197,65 @@ describe("chart viewer chunk that fails to load", () => {
 		});
 		expect(screen.queryByRole("alert")).toBeNull();
 		expect(document.querySelector('[data-test="other-widget"]')).not.toBeNull();
+	});
+});
+
+// After the describe above: the chunk is loaded, but each open still waits
+// a microtask for it, the window in which a reload or a second press lands.
+describe("chart viewer opened while its chunk is still pending", () => {
+	const GOLD: MarketSeries = { ...VIX, seriesId: "twelve-data:XAU/USD", title: "Gold spot" };
+
+	it("returns focus to the widget's new opener when a reload replaced it during the download (fix round 8)", async () => {
+		chunk.fail = false;
+		const [byId, setById] = createSignal<ReadonlyMap<string, MarketSeries>>(
+			new Map([[VIX.seriesId, VIX]]),
+		);
+		renderFramedMetrics(byId, [VIX.seriesId]);
+		const first = opener();
+		fireEvent.click(first);
+		// A reload before the chunk arrives drops and restores the
+		// observations: the opener button is a new element.
+		setById(new Map([[VIX.seriesId, { ...VIX, observations: [] }]]));
+		setById(new Map([[VIX.seriesId, VIX]]));
+		const second = opener();
+		expect(first.isConnected).toBe(false);
+		expect(second).not.toBe(first);
+		const dialog = await waitFor(
+			() => {
+				const found = document.querySelector("sl-dialog.chart-viewer");
+				if (!(found instanceof HTMLElement)) throw new Error("no viewer yet");
+				return found;
+			},
+			{ timeout: 5000 },
+		);
+		dialog.dispatchEvent(
+			new CustomEvent("sl-request-close", { detail: { source: "close-button" }, cancelable: true }),
+		);
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+		expect(document.activeElement).toBe(second);
+		expect(second.closest(`.${WIDGET_BODY_CLASS}`)).not.toBeNull();
+	});
+
+	it("keeps one viewer when two widgets are pressed during one download (fix round 8)", async () => {
+		chunk.fail = false;
+		const [byId] = createSignal<ReadonlyMap<string, MarketSeries>>(
+			new Map([
+				[VIX.seriesId, VIX],
+				[GOLD.seriesId, GOLD],
+			]),
+		);
+		renderFramedMetrics(byId, [VIX.seriesId, GOLD.seriesId]);
+		const [vix, gold] = screen.getAllByRole("button", { name: /^Open chart: / });
+		if (vix === undefined || gold === undefined) throw new Error("two openers expected");
+		fireEvent.click(vix);
+		fireEvent.click(gold);
+		await waitFor(() => expect(openViewers()).toBe(1), { timeout: 5000 });
+		// Settled: the later press wins, the earlier one is closed for good.
+		await new Promise((resolve) => setTimeout(resolve, 300));
+		expect(openViewers()).toBe(1);
+		expect(document.querySelectorAll("sl-dialog.chart-viewer")).toHaveLength(1);
+		expect(document.querySelector("sl-dialog.chart-viewer")?.getAttribute("label")).toBe(
+			GOLD.title,
+		);
 	});
 });

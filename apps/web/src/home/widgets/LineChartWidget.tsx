@@ -76,8 +76,11 @@ export function LineChartWidget(props: {
 		);
 	});
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
-	const [viewerOpen, setViewerOpen] = createSignal(false);
-	let opener: HTMLElement | null = null;
+	// One object per press, keyed below: a press while the download failure
+	// shows mounts a fresh viewer, which imports again.
+	const [viewerRequest, setViewerRequest] = createSignal<{
+		readonly opener: HTMLElement;
+	} | null>(null);
 	const readout = createMemo((): string | null => {
 		const current = model();
 		const rowIndex = hoveredRow();
@@ -132,10 +135,7 @@ export function LineChartWidget(props: {
 							<ChartOpener
 								srPrefix="Open chart: "
 								openerKey="plot"
-								onOpen={(button) => {
-									opener = button;
-									setViewerOpen(true);
-								}}
+								onOpen={(button) => setViewerRequest({ opener: button })}
 							>
 								<ChartFrame
 									ariaLabel={`Line chart: ${props.widget.title}. ${unit()} by date.`}
@@ -226,15 +226,17 @@ export function LineChartWidget(props: {
 			 * The viewer mounts only while open (ADR-0025): nothing is saved,
 			 * and the opening preset follows the widget's current range.
 			 */}
-			<Show when={viewerOpen()}>
-				<LazyChartViewer
-					open
-					title={props.widget.title}
-					series={usable}
-					initialPreset={initialPresetForRange(props.widget.range)}
-					opener={opener}
-					onClose={() => setViewerOpen(false)}
-				/>
+			<Show when={viewerRequest()} keyed>
+				{(request) => (
+					<LazyChartViewer
+						open
+						title={props.widget.title}
+						series={usable}
+						initialPreset={initialPresetForRange(props.widget.range)}
+						opener={request.opener}
+						onClose={() => setViewerRequest(null)}
+					/>
+				)}
 			</Show>
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />
 		</div>

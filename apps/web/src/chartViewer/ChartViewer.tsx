@@ -176,6 +176,38 @@ export function barIndexForDay(
 	return low < days.length ? low : null;
 }
 
+/**
+ * Widens `window`'s right end to the bar whose bucket holds the crosshair
+ * `day` (fix round 8): a bar of a weekly or coarser interval is dated at its
+ * bucket's last observation, so a zoom that ends the window on the
+ * crosshair day and switches Auto Daily→Weekly would leave that week's bar
+ * after the window's end — hidden, with the crosshair gone and the next
+ * zoom anchored on an invisible day. Clamped to the extent; the window is
+ * returned unchanged when the day lies outside it or its bar is visible.
+ */
+export function includeAnchorBar(
+	window: DayWindow,
+	union: readonly number[],
+	day: number,
+	extent: DayWindow,
+): DayWindow {
+	const from = Math.min(window.from, window.to);
+	const to = Math.max(window.from, window.to);
+	if (!Number.isFinite(day) || day < Math.trunc(from) || day > Math.trunc(to)) return window;
+	let low = 0;
+	let high = union.length;
+	while (low < high) {
+		const mid = Math.floor((low + high) / 2);
+		const value = union[mid];
+		if (value !== undefined && value < day) low = mid + 1;
+		else high = mid;
+	}
+	const bar = union[low];
+	if (bar === undefined || bar <= Math.trunc(to)) return window;
+	const widened = Math.min(bar, Math.trunc(Math.max(extent.from, extent.to)));
+	return widened > to ? { from, to: widened } : window;
+}
+
 /** Resampled bars at one interval plus their union days (memoized per interval). */
 interface IntervalData {
 	readonly entries: readonly { readonly entry: MarketSeries; readonly bars: readonly ChartBar[] }[];
@@ -252,6 +284,13 @@ export interface ChartViewerProps {
 	 * `data-chart-opener` key, else to the widget's body (`focusReturnTarget`).
 	 */
 	readonly opener?: HTMLElement | null;
+	/**
+	 * Focus return captured once at the press (by `LazyChartViewer`): used
+	 * as given instead of capturing `opener` again when the viewer mounts,
+	 * because the chunk may arrive after a reload replaced that button, and
+	 * a detached button no longer knows its widget.
+	 */
+	readonly focusReturn?: FocusReturn;
 }
 
 export function ChartViewer(props: ChartViewerProps): JSX.Element {
@@ -287,17 +326,20 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	const [logAutoNote, setLogAutoNote] = createSignal(false);
 
 	// The opener is captured on each closed→open transition, not at mount:
-	// the component may mount closed long before the user opens it. The
-	// entry points pass their button; the focused element is only a fallback.
+	// the component may mount closed long before the user opens it. A focus
+	// return captured at the press wins; else the entry point's button; the
+	// focused element is only a fallback.
 	let focusReturn: FocusReturn = captureFocusReturn(null);
 	let wasOpen = false;
 	createEffect(() => {
 		const open = props.open;
 		if (open && !wasOpen) {
 			const passed = props.opener ?? null;
-			focusReturn = captureFocusReturn(
-				passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null),
-			);
+			focusReturn =
+				props.focusReturn ??
+				captureFocusReturn(
+					passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null),
+				);
 		}
 		wasOpen = open;
 	});
@@ -409,13 +451,30 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	// widened against real bar positions until it holds at least two bars of
 	// the interval it will render at (a day-count minimum admits bar-less
 	// weekends, and presets and interval switches bypass clamping).
-	const commitWindow = (next: DayWindow): void => {
+	// A zoom passes the crosshair day as `anchorDay`: the window then also
+	// widens to that day's bar at the interval it resolves to, repeated while
+	// the widening moves Auto to a coarser interval (at most once per step).
+	const commitWindow = (next: DayWindow, anchorDay: number | null = null): void => {
 		const full = extent();
 		if (full === null) return;
-		const interval = resolveIntervalFor(next);
+		let interval = resolveIntervalFor(next);
 		const clamped = clampWindow(next, full, minSpanDays());
 		if (!clamped.ok) return;
-		setWindow(ensureTwoBarWindow(clamped.value, intervalCache()(interval).union, full));
+		let candidate = clamped.value;
+		if (anchorDay !== null) {
+			for (let pass = 0; pass < INTERVALS.length; pass += 1) {
+				const widened = includeAnchorBar(
+					candidate,
+					intervalCache()(interval).union,
+					anchorDay,
+					full,
+				);
+				if (widened === candidate) break;
+				candidate = widened;
+				interval = resolveIntervalFor(candidate);
+			}
+		}
+		setWindow(ensureTwoBarWindow(candidate, intervalCache()(interval).union, full));
 	};
 
 	/** The interval a candidate window resolves at (explicit choice, or Auto for its span). */
@@ -632,7 +691,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		if (active === null || full === null) return;
 		const zoomed = zoomWindow(active, anchorDay, factor, full, minSpanDays());
 		if (!zoomed.ok) return;
-		commitWindow(zoomed.value);
+		commitWindow(zoomed.value, crosshairDay());
 		clearPresetGesture();
 	};
 

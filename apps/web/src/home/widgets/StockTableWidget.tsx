@@ -42,12 +42,16 @@ export function StockTableWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "stock-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
-	const [openSeriesId, setOpenSeriesId] = createSignal<string | null>(null);
-	let opener: HTMLElement | null = null;
+	// One object per press, keyed below: a press while the download failure
+	// shows mounts a fresh viewer, which imports again.
+	const [viewerRequest, setViewerRequest] = createSignal<{
+		readonly seriesId: string;
+		readonly opener: HTMLElement;
+	} | null>(null);
 	// The viewer's one series, live through the accessor: empty while the
 	// named series holds no observations (the open viewer then says so).
 	const viewerSeries = createMemo(() => {
-		const id = openSeriesId();
+		const id = viewerRequest()?.seriesId ?? null;
 		const entry = id === null ? undefined : props.seriesById().get(id);
 		return entry === undefined || entry === null || entry.observations.length === 0 ? [] : [entry];
 	});
@@ -85,25 +89,22 @@ export function StockTableWidget(props: {
 							{(seriesId) => (
 								<StockRow
 									series={props.seriesById().get(seriesId) ?? null}
-									onOpen={(button) => {
-										opener = button;
-										setOpenSeriesId(seriesId);
-									}}
+									onOpen={(button) => setViewerRequest({ seriesId, opener: button })}
 								/>
 							)}
 						</For>
 					</tbody>
 				</table>
 			</div>
-			<Show when={openSeriesId()}>
-				{(id) => (
+			<Show when={viewerRequest()} keyed>
+				{(request) => (
 					<LazyChartViewer
 						open
-						title={props.seriesById().get(id())?.title ?? id()}
+						title={props.seriesById().get(request.seriesId)?.title ?? request.seriesId}
 						series={viewerSeries}
 						initialPreset="1y"
-						opener={opener}
-						onClose={() => setOpenSeriesId(null)}
+						opener={request.opener}
+						onClose={() => setViewerRequest(null)}
 					/>
 				)}
 			</Show>

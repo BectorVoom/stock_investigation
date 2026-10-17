@@ -39,7 +39,8 @@ export const OPEN_CHART_BUTTON_CLASS =
  * A mouse press on an opener that travels this far (px) before its release
  * is a text selection, not a click: the release click is ignored (the same
  * 4 px threshold the main chart uses between a click and a drag). Touch and
- * pen presses are exempt — they select no text, and a tap drifts a few px.
+ * pen presses are exempt — a tap drifts a few px; touch selects no text, a
+ * pen may in some desktop browsers (accepted, ADR-0025).
  */
 export const OPEN_PRESS_SLOP_PX = 4;
 

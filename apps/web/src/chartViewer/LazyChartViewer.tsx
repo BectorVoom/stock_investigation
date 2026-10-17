@@ -1,5 +1,13 @@
-import { createResource, ErrorBoundary, type JSX, Show, Suspense } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import {
+	createResource,
+	ErrorBoundary,
+	type JSX,
+	onCleanup,
+	onMount,
+	Show,
+	Suspense,
+} from "solid-js";
+import { Dynamic, Portal } from "solid-js/web";
 import { IconButton, Loading } from "../components/ui.tsx";
 import type { ChartViewer, ChartViewerProps } from "./ChartViewer.tsx";
 import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
@@ -43,16 +51,77 @@ export function preloadChartViewer(): void {
 }
 
 /**
- * Mounted only while the viewer is open. While the chunk downloads the
- * widget shows "Loading chart…" (a `status`); a failed download or a render
- * failure inside the viewer stays inside the widget as an `alert` with
- * Try again (imports again) and Close (closes, focus back to the opener) —
- * it never reaches the page's error boundary nor leaves the opener dead.
+ * The one viewer that may exist (ADR-0025, fix round 8): opening a viewer
+ * while another is still downloading or open supersedes the earlier one —
+ * its widget's open state is closed through its `onClose`, without moving
+ * focus — so two widgets pressed during one download never stack two modal
+ * dialogs with competing focus traps.
+ */
+let currentViewer: { readonly supersede: () => void } | null = null;
+
+/**
+ * The loading and failure notices sit at a fixed place at the top of the
+ * viewport (in a portal on `<body>`, so no widget's clipping or scroll
+ * hides them): where the viewer's sheet will appear, visible whatever part
+ * of the widget the press came from.
+ */
+const NOTICE_PLACE = "fixed inset-x-4 top-4 z-50 mx-auto max-w-md";
+
+/** The failed-download alert; Try again takes focus when it appears. */
+function ViewerFailure(props: {
+	readonly onRetry: () => void;
+	readonly onClose: () => void;
+}): JSX.Element {
+	let retry: HTMLButtonElement | undefined;
+	onMount(() => {
+		// The portal attaches its content in its own effect: focus once the
+		// button is in the document.
+		const focusRetry = (): void => retry?.focus();
+		if (retry?.isConnected === true) focusRetry();
+		else queueMicrotask(focusRetry);
+	});
+	return (
+		<div
+			role="alert"
+			data-chart-viewer-failure=""
+			class={`${NOTICE_PLACE} flex flex-wrap items-center gap-1 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900`}
+		>
+			<p class="mr-auto">The chart viewer could not be loaded.</p>
+			<IconButton
+				label="Try again"
+				icon="arrow-clockwise"
+				ref={(element) => {
+					retry = element;
+				}}
+				onClick={() => props.onRetry()}
+			/>
+			<IconButton label="Close" icon="x-lg" onClick={() => props.onClose()} />
+		</div>
+	);
+}
+
+/**
+ * Mounted only while the viewer is open, once per press of an opener (the
+ * entry points key it on the press, so pressing the opener again while the
+ * failure shows imports again). While the chunk downloads a viewport-fixed
+ * "Loading chart…" (a `status`) answers the press; a failed download or a
+ * render failure inside the viewer becomes a viewport-fixed `alert` with
+ * Try again (imports again; it takes focus) and Close (closes, focus back to
+ * the opener) — it never reaches the page's error boundary nor leaves the
+ * opener dead. Focus return is captured here, once, at the press, and handed
+ * to the viewer, so a reload that replaced the opener during the download
+ * still returns focus to the widget.
  */
 export function LazyChartViewer(props: ChartViewerProps): JSX.Element {
 	const [viewer, { refetch }] = createResource(loadChartViewer);
-	// Captured once: this component mounts on the open it serves.
-	const focusReturn = captureFocusReturn(props.opener ?? null);
+	const focusReturn = props.focusReturn ?? captureFocusReturn(props.opener ?? null);
+	const token = { supersede: () => props.onClose() };
+	const previous = currentViewer;
+	currentViewer = token;
+	previous?.supersede();
+	onCleanup(() => {
+		if (currentViewer === token) currentViewer = null;
+	});
 	const close = (): void => {
 		props.onClose();
 		focusReturnTarget(focusReturn)?.focus();
@@ -60,26 +129,29 @@ export function LazyChartViewer(props: ChartViewerProps): JSX.Element {
 	return (
 		<ErrorBoundary
 			fallback={(_error: unknown, reset) => (
-				<div
-					role="alert"
-					data-chart-viewer-failure=""
-					class="mt-1 flex flex-wrap items-center gap-1 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
-				>
-					<p class="mr-auto">The chart viewer could not be loaded.</p>
-					<IconButton
-						label="Try again"
-						icon="arrow-clockwise"
-						onClick={() => {
+				<Portal>
+					<ViewerFailure
+						onRetry={() => {
 							void refetch();
 							reset();
 						}}
+						onClose={close}
 					/>
-					<IconButton label="Close" icon="x-lg" onClick={close} />
-				</div>
+				</Portal>
 			)}
 		>
-			<Suspense fallback={<Loading label="chart" />}>
-				<Show when={viewer()}>{(component) => <Dynamic component={component()} {...props} />}</Show>
+			<Suspense
+				fallback={
+					<Portal>
+						<div class={`${NOTICE_PLACE} rounded border border-slate-200 bg-white px-3 py-2`}>
+							<Loading label="chart" />
+						</div>
+					</Portal>
+				}
+			>
+				<Show when={viewer()}>
+					{(component) => <Dynamic component={component()} {...props} focusReturn={focusReturn} />}
+				</Show>
 			</Suspense>
 		</ErrorBoundary>
 	);

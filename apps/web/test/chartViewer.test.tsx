@@ -5,7 +5,7 @@ import { type ChartPreset, dayNumberToIso, isoToDayNumber, presetWindow } from "
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { barIndexForDay, ChartViewer } from "../src/chartViewer/ChartViewer.tsx";
+import { barIndexForDay, ChartViewer, includeAnchorBar } from "../src/chartViewer/ChartViewer.tsx";
 import { Navigator, navigatorViewX } from "../src/chartViewer/Navigator.tsx";
 import { OPEN_CHART_BUTTON_CLASS } from "../src/chartViewer/openChart.ts";
 import { ensureHomeIconLibraries } from "../src/home/shoelace.ts";
@@ -807,6 +807,54 @@ describe("chart viewer", () => {
 		fireEvent.keyDown(svg, { key: "+" });
 		expect(toInput().value).toBe("2026-10-08");
 		expect(readout()).not.toBe("");
+	});
+
+	it("keeps a crosshair on the window's last daily bar visible across Auto Daily→Weekly (fix round 8)", () => {
+		renderViewer([longSeries()], "6m");
+		const svg = chartSvg();
+		// The window ends on Tuesday 2026-09-29, and the crosshair sits on
+		// that last visible daily bar.
+		fireEvent.change(toInput(), { target: { value: "2026-09-29" } });
+		svg.focus();
+		fireEvent.keyDown(svg, { key: "End" });
+		expect(autoIntervalText()).toBe("Auto · Daily");
+		expect(readout()).toContain("2026-09-29");
+		fireEvent.keyDown(svg, { key: "-" });
+		fireEvent.keyDown(svg, { key: "-" });
+		// Zooming around that day ends the window on it, but its week's bar is
+		// dated Sunday 2026-10-04 (the week's last observation): the window
+		// widens to that bar instead of hiding it with the crosshair.
+		expect(autoIntervalText()).toBe("Auto · Weekly");
+		expect(toInput().value).toBe("2026-10-04");
+		expect(svg.querySelector('[data-chart-part="crosshair"]')).not.toBeNull();
+		expect(readout()).toContain("2026-10-04");
+		// The next zoom anchors on the visible crosshair: the window keeps
+		// its right end on that bar.
+		fireEvent.keyDown(svg, { key: "-" });
+		expect(toInput().value).toBe("2026-10-04");
+		expect(readout()).toContain("2026-10-04");
+	});
+
+	it("widens a window only to the anchor's bar, clamped to the extent (fix round 8)", () => {
+		// Weekly bars dated at their last observation: days 3, 10, 15.
+		const union = [3, 10, 15];
+		const extent = { from: 0, to: 15 };
+		// Day 8's bar (10) lies after the window's end 8: widened to it.
+		expect(includeAnchorBar({ from: 0, to: 8 }, union, 8, extent)).toEqual({ from: 0, to: 10 });
+		// Its bar already visible, or the day outside the window: unchanged.
+		const visible = { from: 0, to: 12 };
+		expect(includeAnchorBar(visible, union, 8, extent)).toBe(visible);
+		const before = { from: 5, to: 8 };
+		expect(includeAnchorBar(before, union, 2, extent)).toBe(before);
+		expect(includeAnchorBar(before, union, 9, extent)).toBe(before);
+		// Never past the held data.
+		expect(includeAnchorBar({ from: 0, to: 12 }, union, 12, { from: 0, to: 13 })).toEqual({
+			from: 0,
+			to: 13,
+		});
+		// No bar at or after the day: unchanged.
+		const late = { from: 0, to: 20 };
+		expect(includeAnchorBar(late, union, 18, { from: 0, to: 20 })).toBe(late);
 	});
 
 	it("maps a crosshair day to the visible bar whose bucket holds it, only inside the window (fix round 7)", () => {

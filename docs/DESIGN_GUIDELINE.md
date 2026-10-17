@@ -460,13 +460,13 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   slate notice ("To add this widget:" / "To save this widget:") while the
   form is pristine and turns red ("Fix before saving:") once any field has
   changed.
-- Lazy cost, measured: the Home route (`HomeView-*.js` 13.15 kB, 4.69 kB
+- Lazy cost, measured: the Home route (`HomeView-*.js` 13.15 kB, 4.70 kB
   gzip in the 2026-10-17 production build) downloads on the first visit to
   `#/home` only. The chart viewer is its own lazy chunk (`ChartViewer-*.js`
-  35.53 kB, 11.44 kB gzip), downloaded on the first press of an "Open chart"
+  36.04 kB, 11.61 kB gzip), downloaded on the first press of an "Open chart"
   button (its entry points render on every page through the shared
   `WidgetBody`, the viewer only while open); the main chunk (`index-*.js`) is
-  553.48 kB, 157.46 kB gzip, down from 577.54 kB / 163.88 kB gzip with the
+  554.12 kB, 157.66 kB gzip, down from 577.54 kB / 163.88 kB gzip with the
   viewer statically imported. Splitting it changed nothing about zod: in both
   builds zod lives in a shared chunk (`serializer-*.js` before the split,
   `src-*.js` after) that `index-*.js` imports, so ES module order evaluates it
@@ -531,10 +531,14 @@ native buttons named by a hidden "Open chart: " plus their visible content
 (keyboard reachable, no button chrome — they look like the plot, the values,
 the name; WCAG 2.5.3 Label in Name) over the current page, Home or the
 Notebook alike; a mouse press that moves 4 px or more (selecting text) never
-opens, while a touch or pen tap that drifts a few px does; each opener is at
+opens, while a touch or pen tap that drifts a few px does (the slop rule is
+mouse-only; a pen that drag-selects text may still open); each opener is at
 least 24 × 24 px and 44 × 44 px under a coarse pointer. While its lazy chunk
-downloads the widget says "Loading chart…"; a failed download stays inside
-the widget as an alert with Try again and Close. The viewer is the large modal sheet where the series can
+downloads "Loading chart…" shows at a fixed place at the top of the
+viewport (where the sheet will appear, never below a tall widget's content);
+a failed download shows there as an alert with Try again (focused) and
+Close, and pressing the opener again also retries. At most one viewer
+exists: a second open supersedes the first. The viewer is the large modal sheet where the series can
 be analysed: range presets plus exact From/To dates, interval / scale /
 values controls, moving averages for one series, the main chart with
 crosshair and readout, an overview navigator, visible-window statistics and a
