@@ -1,0 +1,822 @@
+{
+	"schema": "completeJobResponse",
+	"cases": [
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":null,\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":1,\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":[\"x\"],\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":{\"length\":1},\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"WRONG-VALUE\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"COMPLETED\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\\u0000\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\tcompleted\\t\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\ncompleted\\n\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\u000bcompleted\\u000b\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\fcompleted\\f\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\rcompleted\\r\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" completed \",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"　completed　\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"﻿completed﻿\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"​completed​\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"᠎completed᠎\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completeda\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completedé\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed😀\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"complete\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"claimed\"|\"planning\"|\"collecting\"|\"analyzing\"|\"verifying\"|\"publishing\"|\"completed\"|\"failed\"|\"cancelled\"|\"partial\"|\"waiting_approval\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"pending\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"claimed\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"claimed\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"planning\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"planning\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"collecting\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"collecting\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"analyzing\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"analyzing\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"verifying\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"verifying\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"publishing\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"publishing\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"failed\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"failed\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"cancelled\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"cancelled\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"partial\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"partial\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"waiting_approval\",\"replayed\":false,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"waiting_approval\",\"replayed\":false,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":null,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replayed"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":\"false\",\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replayed"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":1,\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replayed"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"newArticleCount\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"replayed"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":true,\"newArticleCount\":3}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":true,\"newArticleCount\":3}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":\"3\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":0}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":0}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":4}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":4}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":2}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":2}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":3.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":9007199254740991}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":9007199254740991}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1e+21}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":-0}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":0}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"newArticleCount"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1.0}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":1}"
+		},
+		{
+			"input": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":2e0}",
+			"valid": true,
+			"output": "{\"state\":\"completed\",\"replayed\":false,\"newArticleCount\":2}"
+		}
+	]
+}

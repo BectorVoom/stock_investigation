@@ -14,9 +14,18 @@
 //! shape: zod's abort rules and issue order cannot be expressed by serde.
 
 pub mod agent;
+pub mod api;
+pub mod google_calendar;
+pub mod jobs;
 pub mod json;
+pub mod market;
+pub mod notebook;
 pub mod patterns;
 pub mod primitives;
+pub mod records;
+pub mod ui;
+pub mod watchlist;
+pub mod widgets;
 pub mod zod;
 
 use research_js::json::{ParseError, Value};
@@ -100,9 +109,65 @@ macro_rules! contract {
 }
 
 contract!(
-	agent::AgentDescriptor,
-	agent::AgentRequest,
-	agent::AgentEvent,
+	agent::AgentAvailability,
 	agent::AgentCapabilities,
-	agent::AgentAvailability
+	agent::AgentDescriptor,
+	agent::AgentEvent,
+	agent::AgentRequest,
+	api::ApiErrorBody,
+	api::IssuedRunnerCredential,
+	api::RunnerCredential,
+	google_calendar::GoogleEventBody,
+	jobs::BundleProvenance,
+	jobs::ClaimJobRequest,
+	jobs::ClaimJobResponse,
+	jobs::ClaimedJob,
+	jobs::CompleteJobRequest,
+	jobs::CompleteJobResponse,
+	jobs::ConversationContextMessage,
+	jobs::EventsResponse,
+	jobs::HeartbeatRequest,
+	jobs::HeartbeatResponse,
+	jobs::ResearchBudget,
+	jobs::ResearchBundle,
+	jobs::ResearchRequest,
+	jobs::ResourceUsage,
+	jobs::RunnerEvent,
+	jobs::RunnerEventsRequest,
+	jobs::SourceFetchReport,
+	jobs::SubscribedSourceRef,
+	jobs::WorkspaceComponentSummary,
+	market::MarketObservation,
+	market::MarketSeriesMeta,
+	notebook::Notebook,
+	notebook::NotebookWidget,
+	records::Claim,
+	records::Dataset,
+	records::DatasetCell,
+	records::DatasetColumn,
+	records::DemandScenario,
+	records::Evidence,
+	records::FinancialObservation,
+	records::IngestedArticle,
+	records::InvestorFiling,
+	records::PositionFigures,
+	records::PositionObservation,
+	records::PricingPowerRecord,
+	records::ReportingPeriod,
+	records::Security,
+	records::SupplierLink,
+	ui::UiOperation,
+	watchlist::EarningsEvent,
+	widgets::WidgetCore,
 );
+
+/// `conversationContextSchema` as a contract value.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(transparent)]
+pub struct ConversationContext(pub Vec<jobs::ConversationContextMessage>);
+
+impl Contract for ConversationContext {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		jobs::decode_conversation_context(cx, input).map(Self)
+	}
+}

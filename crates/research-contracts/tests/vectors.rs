@@ -44,6 +44,51 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"agentDescriptor" => agent::AgentDescriptor,
 		"agentRequest" => agent::AgentRequest,
 		"agentEvent" => agent::AgentEvent,
+		"resourceUsage" => jobs::ResourceUsage,
+		"researchBudget" => jobs::ResearchBudget,
+		"researchRequest" => jobs::ResearchRequest,
+		"bundleProvenance" => jobs::BundleProvenance,
+		"ingestedArticle" => records::IngestedArticle,
+		"evidence" => records::Evidence,
+		"claim" => records::Claim,
+		"demandScenario" => records::DemandScenario,
+		"security" => records::Security,
+		"supplierLink" => records::SupplierLink,
+		"reportingPeriod" => records::ReportingPeriod,
+		"financialObservation" => records::FinancialObservation,
+		"positionFigures" => records::PositionFigures,
+		"positionObservation" => records::PositionObservation,
+		"investorFiling" => records::InvestorFiling,
+		"pricingPowerRecord" => records::PricingPowerRecord,
+		"datasetCell" => records::DatasetCell,
+		"datasetColumn" => records::DatasetColumn,
+		"dataset" => records::Dataset,
+		"uiOperation" => ui::UiOperation,
+		"researchBundle" => jobs::ResearchBundle,
+		"sourceFetchReport" => jobs::SourceFetchReport,
+		"subscribedSourceRef" => jobs::SubscribedSourceRef,
+		"claimJobRequest" => jobs::ClaimJobRequest,
+		"workspaceComponentSummary" => jobs::WorkspaceComponentSummary,
+		"conversationContextMessage" => jobs::ConversationContextMessage,
+		"conversationContext" => ConversationContext,
+		"claimedJob" => jobs::ClaimedJob,
+		"claimJobResponse" => jobs::ClaimJobResponse,
+		"heartbeatRequest" => jobs::HeartbeatRequest,
+		"heartbeatResponse" => jobs::HeartbeatResponse,
+		"eventsResponse" => jobs::EventsResponse,
+		"runnerEvent" => jobs::RunnerEvent,
+		"runnerEventsRequest" => jobs::RunnerEventsRequest,
+		"completeJobRequest" => jobs::CompleteJobRequest,
+		"completeJobResponse" => jobs::CompleteJobResponse,
+		"marketSeriesMeta" => market::MarketSeriesMeta,
+		"marketObservation" => market::MarketObservation,
+		"earningsEvent" => watchlist::EarningsEvent,
+		"googleEventBody" => google_calendar::GoogleEventBody,
+		"widgetCore" => widgets::WidgetCore,
+		"notebookWidget" => notebook::NotebookWidget,
+		"notebook" => notebook::Notebook,
+		"issuedRunnerCredential" => api::IssuedRunnerCredential,
+		"apiErrorBody" => api::ApiErrorBody,
 	}
 }
 
@@ -166,6 +211,13 @@ fn decoders_match_zod() {
 	}
 	assert!(total > 0);
 	if !failures.is_empty() {
+		let mut per_schema: BTreeMap<&str, usize> = BTreeMap::new();
+		for failure in &failures {
+			*per_schema
+				.entry(failure.split(':').next().unwrap_or(""))
+				.or_default() += 1;
+		}
+		eprintln!("failures per schema: {per_schema:?}");
 		let shown: Vec<&String> = failures.iter().take(15).collect();
 		panic!(
 			"{} of {total} cases differ from zod:\n{}",

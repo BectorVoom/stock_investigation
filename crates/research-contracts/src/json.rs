@@ -137,7 +137,7 @@ impl Serialize for JsonObject {
 }
 
 /// A `z.record(string, T)` value: entries in JavaScript property order.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Record<T>(pub Vec<(String, T)>);
 
 impl<T: Serialize> Serialize for Record<T> {

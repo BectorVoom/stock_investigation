@@ -33,31 +33,6 @@ pub(crate) fn id(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	run_string(cx, input, ID)
 }
 
-/// `isoDateTimeSchema` decoder.
-pub(crate) fn iso_date_time(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
-	run_string(cx, input, ISO_DATE_TIME)
-}
-
-/// `isoDateSchema` decoder.
-pub(crate) fn iso_date(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
-	run_string(cx, input, ISO_DATE)
-}
-
-/// `httpsUrlSchema` decoder.
-pub(crate) fn https_url(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
-	run_string(cx, input, HTTPS_URL)
-}
-
-/// `shortTextSchema` decoder.
-pub(crate) fn short_text(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
-	run_string(cx, input, SHORT_TEXT)
-}
-
-/// `currencySchema` decoder.
-pub(crate) fn currency(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
-	run_string(cx, input, CURRENCY)
-}
-
 /// `z.string()` decoder.
 pub(crate) fn any_string(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	run_string(cx, input, ANY_STRING)

@@ -1,0 +1,1438 @@
+{
+	"schema": "conversationContextMessage",
+	"cases": [
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":null,\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":1,\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":[\"x\"],\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":{\"length\":1},\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"WRONG-VALUE\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"OWNER\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\\u0000\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\towner\\t\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\nowner\\n\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\u000bowner\\u000b\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\fowner\\f\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\rowner\\r\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" owner \",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"　owner　\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"﻿owner﻿\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"​owner​\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"᠎owner᠎\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"ownera\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owneré\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner😀\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owne\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Which products will see demand growth?\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"text"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"WHICH PRODUCTS WILL SEE DEMAND GROWTH?\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"WHICH PRODUCTS WILL SEE DEMAND GROWTH?\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"which products will see demand growth?\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"which products will see demand growth?\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\\u0000\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\\u0000\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\\tWhich products will see demand growth?\\t\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"\\tWhich products will see demand growth?\\t\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\\nWhich products will see demand growth?\\n\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"\\nWhich products will see demand growth?\\n\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\\u000bWhich products will see demand growth?\\u000b\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"\\u000bWhich products will see demand growth?\\u000b\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\\fWhich products will see demand growth?\\f\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"\\fWhich products will see demand growth?\\f\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"\\rWhich products will see demand growth?\\r\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"\\rWhich products will see demand growth?\\r\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\" Which products will see demand growth? \"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"　Which products will see demand growth?　\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"　Which products will see demand growth?　\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"﻿Which products will see demand growth?﻿\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"﻿Which products will see demand growth?﻿\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"​Which products will see demand growth?​\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"​Which products will see demand growth?​\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"᠎Which products will see demand growth?᠎\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"᠎Which products will see demand growth?᠎\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Which products will see demand growth?😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"W\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"W\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":null,\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":1,\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":[\"x\"],\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":{\"length\":1},\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"WRONG-VALUE\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"ASSISTANT\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\\u0000\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\tassistant\\t\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\nassistant\\n\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\u000bassistant\\u000b\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\fassistant\\f\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"\\rassistant\\r\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\" assistant \",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"　assistant　\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"﻿assistant﻿\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"​assistant​\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"᠎assistant᠎\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistanta\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistanté\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant😀\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistan\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"role"
+					],
+					"message": "Invalid option: expected one of \"owner\"|\"assistant\""
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"owner\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": true,
+			"output": "{\"role\":\"owner\",\"text\":\"Grid storage, mainly.\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"text"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"text"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"GRID STORAGE, MAINLY.\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"GRID STORAGE, MAINLY.\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"grid storage, mainly.\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"grid storage, mainly.\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\\u0000\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\\u0000\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\\tGrid storage, mainly.\\t\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"\\tGrid storage, mainly.\\t\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\\nGrid storage, mainly.\\n\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"\\nGrid storage, mainly.\\n\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\\u000bGrid storage, mainly.\\u000b\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"\\u000bGrid storage, mainly.\\u000b\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\\fGrid storage, mainly.\\f\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"\\fGrid storage, mainly.\\f\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"\\rGrid storage, mainly.\\r\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"\\rGrid storage, mainly.\\r\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\" Grid storage, mainly. \"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"　Grid storage, mainly.　\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"　Grid storage, mainly.　\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"﻿Grid storage, mainly.﻿\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"﻿Grid storage, mainly.﻿\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"​Grid storage, mainly.​\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"​Grid storage, mainly.​\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"᠎Grid storage, mainly.᠎\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"᠎Grid storage, mainly.᠎\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"Grid storage, mainly.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"text"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"role\":\"assistant\",\"text\":\"G\"}",
+			"valid": true,
+			"output": "{\"role\":\"assistant\",\"text\":\"G\"}"
+		}
+	]
+}

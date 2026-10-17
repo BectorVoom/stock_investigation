@@ -1,0 +1,1013 @@
+{
+	"schema": "sourceFetchReport",
+	"cases": [
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":null,\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":1,\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":[\"x\"],\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":{\"length\":1},\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"WRONG-VALUE\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"WRONG-VALUE\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"SRC_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"SRC_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\\u0000\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\tsrc_1\\t\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\nsrc_1\\n\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\u000bsrc_1\\u000b\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\fsrc_1\\f\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\rsrc_1\\r\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"　src_1　\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"﻿src_1﻿\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"​src_1​\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"᠎src_1᠎\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_０\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_٠\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_०\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"s\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"s\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":null,\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":1,\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":[\"x\"],\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":{\"length\":1},\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"WRONG-VALUE\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11t00:05:00z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\\u0000\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\\t2026-10-11T00:05:00Z\\t\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\\n2026-10-11T00:05:00Z\\n\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\\u000b2026-10-11T00:05:00Z\\u000b\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\\f2026-10-11T00:05:00Z\\f\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"\\r2026-10-11T00:05:00Z\\r\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\" 2026-10-11T00:05:00Z \",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"　2026-10-11T00:05:00Z　\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"﻿2026-10-11T00:05:00Z﻿\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"​2026-10-11T00:05:00Z​\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"᠎2026-10-11T00:05:00Z᠎\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"０026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"٠026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"०026-10-11T00:05:00Z\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Za\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Zé\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z😀\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00\",\"errorCode\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fetchedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":\"null-was-here\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":\"null-was-here\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\",\"errorCode\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"errorCode"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"fetchedAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"errorCode"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	]
+}

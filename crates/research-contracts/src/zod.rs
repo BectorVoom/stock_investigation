@@ -1107,7 +1107,11 @@ macro_rules! decode_object {
 					let $field = cx.at_key($key, |cx| ($decoder)(cx, object.get($key)));
 				)*
 				$crate::zod::decode_object!(@unknown $mode, cx, object, [$($tag,)* $($key),*]);
-				(|| Some($head $(:: $tail)* { $($field: $field?),* }))()
+				match ($($field,)*) {
+					($(Some($field),)*) => Some($head $(:: $tail)* { $($field),* }),
+					#[allow(unreachable_patterns)]
+					_ => None,
+				}
 			}
 		}
 	}};
@@ -1117,6 +1121,24 @@ macro_rules! decode_object {
 	(@unknown loose, $cx:ident, $object:ident, [$($key:literal),* $(,)?]) => {};
 }
 pub(crate) use decode_object;
+
+/// Decodes the listed fields of an object that is already known to be an
+/// object (a member of a union whose common fields are decoded elsewhere).
+macro_rules! decode_fields {
+	($cx:expr, $object:expr, $head:ident $(:: $tail:ident)* { $($field:ident : $key:literal => $decoder:expr),* $(,)? }) => {{
+		let cx: &mut $crate::zod::Cx = $cx;
+		let object: &research_js::json::Object = $object;
+		$(
+			let $field = cx.at_key($key, |cx| ($decoder)(cx, object.get($key)));
+		)*
+		match ($($field,)*) {
+					($(Some($field),)*) => Some($head $(:: $tail)* { $($field),* }),
+					#[allow(unreachable_patterns)]
+					_ => None,
+				}
+	}};
+}
+pub(crate) use decode_fields;
 
 #[cfg(test)]
 mod tests {

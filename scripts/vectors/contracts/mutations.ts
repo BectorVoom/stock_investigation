@@ -90,8 +90,9 @@ function nodesOf(root: Json, maxDepth: number): { path: Path; value: Json }[] {
 	const visit = (value: Json, path: Path) => {
 		out.push({ path, value });
 		if (path.length >= maxDepth) return;
-		if (Array.isArray(value)) value.forEach((child, index) => visit(child, [...path, index]));
-		else if (value !== null && typeof value === "object") {
+		if (Array.isArray(value)) {
+			for (const [index, child] of value.entries()) visit(child, [...path, index]);
+		} else if (value !== null && typeof value === "object") {
 			for (const [key, child] of Object.entries(value)) visit(child, [...path, key]);
 		}
 	};
@@ -169,7 +170,10 @@ function stringMutations(schema: z.ZodType, root: Json, path: Path, text: string
 	// Minimum length: the shortest accepted prefix (in code points).
 	if (codePoints.length > 0) {
 		let shortest = codePoints.length;
-		while (shortest > 0 && accepts(schema, root, path, codePoints.slice(0, shortest - 1).join(""))) {
+		while (
+			shortest > 0 &&
+			accepts(schema, root, path, codePoints.slice(0, shortest - 1).join(""))
+		) {
 			shortest -= 1;
 		}
 		out.push(codePoints.slice(0, shortest).join(""));
@@ -181,7 +185,21 @@ function stringMutations(schema: z.ZodType, root: Json, path: Path, text: string
 const TWO_53 = 9007199254740992;
 
 function numberMutations(schema: z.ZodType, root: Json, path: Path, value: number): Json[] {
-	const out: Json[] = [-1, 0, 1, 0.5, 1.5, value + 1, value - 1, value + 0.5, TWO_53 - 1, TWO_53, -TWO_53, 1e21, -1e-7];
+	const out: Json[] = [
+		-1,
+		0,
+		1,
+		0.5,
+		1.5,
+		value + 1,
+		value - 1,
+		value + 0.5,
+		TWO_53 - 1,
+		TWO_53,
+		-TWO_53,
+		1e21,
+		-1e-7,
+	];
 	if (Number.isInteger(value) && accepts(schema, root, path, value)) {
 		const top = searchUp((n) => accepts(schema, root, path, value + n), 0, TWO_53);
 		const bottom = searchUp((n) => accepts(schema, root, path, value - n), 0, TWO_53);
@@ -194,7 +212,9 @@ function numberMutations(schema: z.ZodType, root: Json, path: Path, value: numbe
 function numberTexts(root: Json, path: Path): string[] {
 	const marker = "__NUMBER_MARKER__";
 	const template = JSON.stringify(replaced(root, path, marker));
-	return ["-0", "1e400", "-1e400", "1.0", "2e0"].map((literal) => template.replace(`"${marker}"`, literal));
+	return ["-0", "1e400", "-1e400", "1.0", "2e0"].map((literal) =>
+		template.replace(`"${marker}"`, literal),
+	);
 }
 
 function wrongTypes(value: Json): Json[] {
@@ -239,11 +259,14 @@ export function mutationCases(
 				add(replaced(baseline, [...path, "__proto__"], 1));
 			}
 			if (typeof value === "string") {
-				for (const next of stringMutations(schema, baseline, path, value)) add(replaced(baseline, path, next));
-				for (const option of enumValues(schema, baseline, path)) add(replaced(baseline, path, option));
+				for (const next of stringMutations(schema, baseline, path, value))
+					add(replaced(baseline, path, next));
+				for (const option of enumValues(schema, baseline, path))
+					add(replaced(baseline, path, option));
 			}
 			if (typeof value === "number") {
-				for (const next of numberMutations(schema, baseline, path, value)) add(replaced(baseline, path, next));
+				for (const next of numberMutations(schema, baseline, path, value))
+					add(replaced(baseline, path, next));
 				for (const text of numberTexts(baseline, path)) inputs.add(text);
 			}
 			if (typeof value === "boolean") add(replaced(baseline, path, !value));
@@ -256,7 +279,11 @@ export function mutationCases(
 					const filled = (count: number) => Array.from({ length: count }, () => first);
 					const accepted = accepts(schema, baseline, path, value);
 					if (accepted && cap > value.length) {
-						const top = searchUp((n) => accepts(schema, baseline, path, filled(value.length + n)), 0, cap - value.length);
+						const top = searchUp(
+							(n) => accepts(schema, baseline, path, filled(value.length + n)),
+							0,
+							cap - value.length,
+						);
 						if (value.length + top < cap) {
 							add(replaced(baseline, path, filled(value.length + top)));
 							add(replaced(baseline, path, filled(value.length + top + 1)));

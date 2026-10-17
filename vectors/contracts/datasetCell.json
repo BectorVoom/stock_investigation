@@ -1,0 +1,3794 @@
+{
+	"schema": "datasetCell",
+	"cases": [
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"reason"
+					],
+					"message": "an empty cell must state why the value is unavailable"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"1.5\",\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":\"1.5\",\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":true,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":-1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":0.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":0.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":2.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":2.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740991,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740991,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1e+21,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1e+21,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":-1e-7,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":-1e-7,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":-0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1e400,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1e400,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":2e0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":null,\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":1,\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":[\"x\"],\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":{\"length\":1},\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"basis"
+					],
+					"message": "a number must cite a source or declare itself an assumption or derived value"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"WRONG-VALUE\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"WRONG-VALUE\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"EV_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"EV_1\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\\u0000\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\\tev_1\\t\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\\nev_1\\n\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\\u000bev_1\\u000b\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\\fev_1\\f\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"\\rev_1\\r\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"　ev_1　\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"﻿ev_1﻿\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"​ev_1​\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"᠎ev_1᠎\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_０\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_٠\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_०\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"e\",\"asOf\":\"2026-10-01\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"e\",\"asOf\":\"2026-10-01\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"asOf"
+					],
+					"message": "a sourced number must carry an as-of date"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\\t2026-10-01\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\\n2026-10-01\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\\u000b2026-10-01\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\\f2026-10-01\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"\\r2026-10-01\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-01 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"　2026-10-01　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"﻿2026-10-01﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"​2026-10-01​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"᠎2026-10-01᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"０026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"٠026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"०026-10-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01a\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01é\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-01😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-0\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"reason"
+					],
+					"message": "an empty cell must state why the value is unavailable"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"2\",\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":\"2\",\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":true,\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":-1,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":0,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":1,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":0.5,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":0.5,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":3,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":2.5,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":2.5,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740991,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740991,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740992,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740992,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740992,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740992,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":1e+21,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":1e+21,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":-1e-7,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":-1e-7,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740994,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740994,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740996,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740996,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740990,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740990,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740991,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740991,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":-0,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":1e400,\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1e400,\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.0,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":2e0,\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"basis\":\"derived\"}"
+		},
+		{
+			"input": "{\"v\":2,\"basis\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"basis"
+					],
+					"message": "a number must cite a source or declare itself an assumption or derived value"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"DERIVED\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\\tderived\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\\nderived\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\\u000bderived\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\\fderived\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"\\rderived\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\" derived \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"　derived　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"﻿derived﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"​derived​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"᠎derived᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"deriveda\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derivedé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derived😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"derive\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":2,\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":\"text\"}",
+			"valid": true,
+			"output": "{\"v\":\"text\"}"
+		},
+		{
+			"input": "{\"v\":\"text\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"text\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"reason"
+					],
+					"message": "an empty cell must state why the value is unavailable"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"basis"
+					],
+					"message": "a number must cite a source or declare itself an assumption or derived value"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"\"}",
+			"valid": true,
+			"output": "{\"v\":\"\"}"
+		},
+		{
+			"input": "{\"v\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"v\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"v\":\"TEXT\"}",
+			"valid": true,
+			"output": "{\"v\":\"TEXT\"}"
+		},
+		{
+			"input": "{\"v\":\"text\\u0000\"}",
+			"valid": true,
+			"output": "{\"v\":\"text\\u0000\"}"
+		},
+		{
+			"input": "{\"v\":\"\\ttext\\t\"}",
+			"valid": true,
+			"output": "{\"v\":\"\\ttext\\t\"}"
+		},
+		{
+			"input": "{\"v\":\"\\ntext\\n\"}",
+			"valid": true,
+			"output": "{\"v\":\"\\ntext\\n\"}"
+		},
+		{
+			"input": "{\"v\":\"\\u000btext\\u000b\"}",
+			"valid": true,
+			"output": "{\"v\":\"\\u000btext\\u000b\"}"
+		},
+		{
+			"input": "{\"v\":\"\\ftext\\f\"}",
+			"valid": true,
+			"output": "{\"v\":\"\\ftext\\f\"}"
+		},
+		{
+			"input": "{\"v\":\"\\rtext\\r\"}",
+			"valid": true,
+			"output": "{\"v\":\"\\rtext\\r\"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\" text \"}",
+			"valid": true,
+			"output": "{\"v\":\" text \"}"
+		},
+		{
+			"input": "{\"v\":\"　text　\"}",
+			"valid": true,
+			"output": "{\"v\":\"　text　\"}"
+		},
+		{
+			"input": "{\"v\":\"﻿text﻿\"}",
+			"valid": true,
+			"output": "{\"v\":\"﻿text﻿\"}"
+		},
+		{
+			"input": "{\"v\":\"text\"}",
+			"valid": true,
+			"output": "{\"v\":\"text\"}"
+		},
+		{
+			"input": "{\"v\":\"​text​\"}",
+			"valid": true,
+			"output": "{\"v\":\"​text​\"}"
+		},
+		{
+			"input": "{\"v\":\"᠎text᠎\"}",
+			"valid": true,
+			"output": "{\"v\":\"᠎text᠎\"}"
+		},
+		{
+			"input": "{\"v\":\"textaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"v\":\"textaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"v\":\"textaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"v"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"textéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"v\":\"textéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"v\":\"textééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"v"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"text😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"v\":\"text😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"v\":\"text😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"v"
+					],
+					"message": "Too big: expected string to have <=600 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"null-was-here\",\"reason\":\"No sourced baseline.\"}",
+			"valid": true,
+			"output": "{\"v\":\"null-was-here\",\"reason\":\"No sourced baseline.\"}"
+		},
+		{
+			"input": "{\"v\":0,\"reason\":\"No sourced baseline.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"basis"
+					],
+					"message": "a number must cite a source or declare itself an assumption or derived value"
+				}
+			]
+		},
+		{
+			"input": "{\"reason\":\"No sourced baseline.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reason"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"reason"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"NO SOURCED BASELINE.\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"NO SOURCED BASELINE.\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"no sourced baseline.\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"no sourced baseline.\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.\\u0000\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.\\u0000\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\\tNo sourced baseline.\\t\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"\\tNo sourced baseline.\\t\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\\nNo sourced baseline.\\n\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"\\nNo sourced baseline.\\n\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\\u000bNo sourced baseline.\\u000b\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"\\u000bNo sourced baseline.\\u000b\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\\fNo sourced baseline.\\f\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"\\fNo sourced baseline.\\f\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"\\rNo sourced baseline.\\r\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"\\rNo sourced baseline.\\r\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\" No sourced baseline. \"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\" No sourced baseline. \"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"　No sourced baseline.　\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"　No sourced baseline.　\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"﻿No sourced baseline.﻿\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"﻿No sourced baseline.﻿\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"​No sourced baseline.​\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"​No sourced baseline.​\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"᠎No sourced baseline.᠎\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"᠎No sourced baseline.᠎\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"reason"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"reason"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"No sourced baseline.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"No sourced baseline.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"reason"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"reason\":\"N\"}",
+			"valid": true,
+			"output": "{\"v\":null,\"reason\":\"N\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":null,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"reason"
+					],
+					"message": "an empty cell must state why the value is unavailable"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":\"3\",\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":\"3\",\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":true,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":-1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":0.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":0.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":1.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":4,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":4,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3.5,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740991,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740991,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740992,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":1e+21,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":1e+21,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":-1e-7,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":-1e-7,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":9007199254740996,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":9007199254740996,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740989,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740989,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":-9007199254740990,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":-9007199254740990,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":-0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":1e400,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":-1e400,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"v"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":1.0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":1,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":2e0,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":2,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":null,\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":1,\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":[\"x\"],\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":{\"length\":1},\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"WRONG-VALUE\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"WRONG-VALUE\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"EV_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"EV_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\\u0000\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\\tev_1\\t\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\\nev_1\\n\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\\u000bev_1\\u000b\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\\fev_1\\f\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"\\rev_1\\r\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\" ev_1 \",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"　ev_1　\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"﻿ev_1﻿\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"​ev_1​\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"᠎ev_1᠎\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_０\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_٠\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_०\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"e\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"e\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":null,\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":1,\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":[\"x\"],\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":{\"length\":1},\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"asOf"
+					],
+					"message": "a sourced number must carry an as-of date"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"WRONG-VALUE\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11t00:00:00z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\\u0000\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\\t2026-10-11T00:00:00Z\\t\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\\n2026-10-11T00:00:00Z\\n\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\\u000b2026-10-11T00:00:00Z\\u000b\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\\f2026-10-11T00:00:00Z\\f\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"\\r2026-10-11T00:00:00Z\\r\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\" 2026-10-11T00:00:00Z \",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"　2026-10-11T00:00:00Z　\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"﻿2026-10-11T00:00:00Z﻿\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"​2026-10-11T00:00:00Z​\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"᠎2026-10-11T00:00:00Z᠎\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"０026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"٠026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"०026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Za\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Zé\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z😀\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"asOf"
+					],
+					"message": "Invalid input"
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\"}"
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"ASSUMPTION\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\\tassumption\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\\nassumption\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\\u000bassumption\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\\fassumption\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"\\rassumption\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\" assumption \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"　assumption　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"﻿assumption﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"​assumption​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"᠎assumption᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumptiona\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumptioné\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumption😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"assumptio\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"basis"
+					],
+					"message": "Invalid option: expected one of \"assumption\"|\"derived\""
+				}
+			]
+		},
+		{
+			"input": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"derived\"}",
+			"valid": true,
+			"output": "{\"v\":3,\"sourceId\":\"ev_1\",\"asOf\":\"2026-10-11T00:00:00Z\",\"basis\":\"derived\"}"
+		}
+	]
+}
