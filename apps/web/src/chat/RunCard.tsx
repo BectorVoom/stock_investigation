@@ -7,15 +7,15 @@ import {
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
-import { BudgetFields } from "../components/BudgetFields.tsx";
+import { SpendField } from "../components/SpendField.tsx";
 import { BUTTON, BUTTON_DANGER, BUTTON_PRIMARY, ErrorNotice } from "../components/ui.tsx";
 import {
-	type BudgetDraft,
-	budgetDraftFrom,
 	type CostModelView,
 	costStatement,
-	defaultBudgetDraft,
+	defaultSpendDraft,
 	evaluateBudget,
+	type SpendDraft,
+	spendDraftFrom,
 } from "../settings/agentSettingsModel.ts";
 
 /**
@@ -64,14 +64,18 @@ const STATE_CLASSES: { readonly [S in ResearchRun["state"]]?: string } = {
 	waiting_approval: "border-amber-700 bg-amber-50 text-amber-900",
 };
 
-/** Owner consent to resume a run that asked for more than its budget allowed. */
+/**
+ * Owner consent to resume a run that asked for more than its budget allowed.
+ * The resumed run gets the fixed limits (RUN_LIMITS); the owner sets only the
+ * spend, and only for a backend that can bill (ADR-0029).
+ */
 export function ApprovalForm(props: {
 	readonly run: ResearchRun;
 	readonly costModel: CostModelView;
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
 }): JSX.Element {
-	const [draft, setDraft] = createSignal<BudgetDraft>(
-		props.run.request === null ? defaultBudgetDraft() : budgetDraftFrom(props.run.request.budget),
+	const [draft, setDraft] = createSignal<SpendDraft>(
+		props.run.request === null ? defaultSpendDraft() : spendDraftFrom(props.run.request.budget),
 	);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
 	const [submitting, setSubmitting] = createSignal(false);
@@ -104,13 +108,13 @@ export function ApprovalForm(props: {
 					{(detail) => <span> — {detail()}</span>}
 				</Show>
 			</p>
-			<BudgetFields
-				legend="Limits you approve for the resumed run"
-				draft={draft()}
-				onChange={setDraft}
-				spendEditable={props.costModel !== "plan-limited"}
-				spendConsentRequired={evaluation().spendConsentRequired}
-			/>
+			<Show when={props.costModel !== "plan-limited"}>
+				<SpendField
+					draft={draft()}
+					onChange={setDraft}
+					spendConsentRequired={evaluation().spendConsentRequired}
+				/>
+			</Show>
 			<p class="text-xs text-slate-800">{costStatement(props.costModel)}</p>
 			<Show when={evaluation().problems.length > 0}>
 				<ul class="list-disc pl-5 text-xs text-slate-700">

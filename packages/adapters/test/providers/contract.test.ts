@@ -51,6 +51,8 @@ interface Scenario {
 	readonly deadline?: string;
 	readonly aborted?: boolean;
 	readonly model?: string | null;
+	/** Research tools the request permits (none unless a scenario needs them). */
+	readonly permittedToolIds?: readonly string[];
 }
 
 function cliScenario(
@@ -109,6 +111,15 @@ const SCENARIOS: readonly Scenario[] = [
 		exit: { code: 1 },
 	}),
 	cliScenario("opencode garbage", createOpenCode, { lines: GARBAGE }),
+	cliScenario(
+		"opencode free-tier native tool call",
+		createOpenCode,
+		{ lines: fixtureLines("opencode/free-tier-native-tool-call.jsonl"), hang: true },
+		{
+			model: "opencode/nemotron-3.5-lightning-free",
+			permittedToolIds: ["web.search", "web.fetch_page"],
+		},
+	),
 	cliScenario("opencode not installed", createOpenCode, { spawnErrorCode: "ENOENT" }),
 	cliScenario(
 		"opencode past deadline",
@@ -188,9 +199,11 @@ const SCENARIOS: readonly Scenario[] = [
 
 async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
 	const controller = new AbortController();
-	const request = makeRequest(
-		scenario.deadline === undefined ? {} : { deadline: scenario.deadline },
-	);
+	const request = makeRequest({
+		...(scenario.deadline === undefined ? {} : { deadline: scenario.deadline }),
+		permittedToolIds: [...(scenario.permittedToolIds ?? [])],
+		maxToolCalls: 20,
+	});
 	const defaultModel =
 		scenario.runtime.agentId === "opencode"
 			? "opencode-go/example-model"
@@ -239,11 +252,18 @@ describe("agent event contract", () => {
 
 	it.each(
 		SCENARIOS,
-	)("$name: emits only text, usage and terminal events — tools are mediated by the orchestrator", async (scenario) => {
+	)("$name: emits only text, usage, terminal events and requests for permitted tools — the orchestrator runs every tool", async (scenario) => {
 		const events = await runScenario(scenario);
-		const allowed = new Set(["text.delta", "usage", "completed", "failed"]);
+		const allowed = new Set(["text.delta", "usage", "completed", "failed", "tool.request"]);
+		const permitted = new Set(scenario.permittedToolIds ?? []);
 
 		expect(events.map((event) => event.type).filter((type) => !allowed.has(type))).toEqual([]);
+		// A tool request only ever names a tool the request permits (ADR-0028).
+		expect(
+			events.flatMap((event) =>
+				event.type === "tool.request" && !permitted.has(event.toolId) ? [event.toolId] : [],
+			),
+		).toEqual([]);
 	});
 
 	it.each(
@@ -253,9 +273,13 @@ describe("agent event contract", () => {
 
 		if (events.at(-1)?.type === "completed") {
 			expect(events.filter((event) => event.type === "usage")).toHaveLength(1);
-			expect(events.some((event) => event.type === "text.delta" && event.text.length > 0)).toBe(
-				true,
-			);
+			// A completed turn delivers an answer: text, or tool requests (ADR-0028).
+			expect(
+				events.some(
+					(event) =>
+						(event.type === "text.delta" && event.text.length > 0) || event.type === "tool.request",
+				),
+			).toBe(true);
 		}
 	});
 });

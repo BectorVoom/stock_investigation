@@ -16,10 +16,13 @@ const textList = (maxItems: number, maxLength: number) =>
 const idList = z.array(z.string().max(120)).transform((items) => items.slice(0, 12));
 const quote = z.string().transform((value) => value.trim().slice(0, 400));
 
+/** Tool calls one planning reply may request, however they arrive (JSON or tool requests). */
+export const MAX_TOOL_CALLS_PER_REPLY = 8;
+
 export const planSchema = z.object({
 	toolCalls: z
 		.array(z.object({ toolId: z.string().max(80), args: z.unknown() }))
-		.transform((calls) => calls.slice(0, 8))
+		.transform((calls) => calls.slice(0, MAX_TOOL_CALLS_PER_REPLY))
 		.default([]),
 	done: z.boolean().default(false),
 });

@@ -1520,6 +1520,55 @@ describe("research pipeline: capability negotiation and failure handling (FR-012
 		expect(tools.executed).toEqual(["news.fetch_feed"]);
 		expect(reporter.recorded.tools[0]).toMatchObject({ toolId: "shell.exec", outcome: "denied" });
 	});
+
+	it("takes natively-emitted tool requests as the plan when the reply has no valid JSON (ADR-0028)", async () => {
+		// The live shape: the model starts the JSON, then calls the tool natively,
+		// leaving only its own tool-call markup behind in the text.
+		const brokenText =
+			'{\n  "toolCalls": [\n    {\n      "toolId": "news.fetch_feed",\n      "args": {\n        "sourceId"\n</parameter>\n</function>\n</tool_call>\n';
+		const { run, tools, reporter } = setup([
+			[
+				{ type: "text.delta", text: brokenText },
+				{
+					type: "tool.request",
+					toolId: "news.fetch_feed",
+					args: { sourceId: "src_news" },
+					callId: "c1",
+				},
+				{ type: "completed" },
+			],
+			JSON.stringify({ toolCalls: [], done: true }),
+			analysis(),
+			VERDICT_SUPPORTED,
+		]);
+
+		const outcome = await run();
+
+		expect(outcome.kind).toBe("completed");
+		expect(tools.executed).toEqual(["news.fetch_feed"]);
+		expect(reporter.recorded.notes).not.toContain(
+			"The planning reply was not valid JSON; no tools were run for it.",
+		);
+	});
+
+	it("still reports PLAN_NOT_JSON when a reply has neither valid JSON nor tool requests", async () => {
+		const { run, tools } = setup([
+			[
+				{ type: "text.delta", text: '{"toolCalls": [{"toolId": "news.fetch_feed", "args": {' },
+				{ type: "completed" },
+			],
+			"nope",
+			"[broken",
+			"still not json",
+		]);
+
+		expect(await run()).toMatchObject({
+			kind: "failed",
+			failureCode: "NO_EVIDENCE_COLLECTED",
+			failureDetail: "PLAN_NOT_JSON",
+		});
+		expect(tools.executed).toEqual([]);
+	});
 });
 
 describe("research pipeline: tool-derived records stay referentially sound (DATA-001)", () => {

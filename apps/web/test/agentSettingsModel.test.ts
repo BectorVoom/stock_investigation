@@ -2,16 +2,16 @@ import {
 	agentsResponseSchema,
 	DEFAULT_AGENT_SETTINGS,
 	OPENROUTER_FREE_AGENT_ID,
+	RUN_LIMITS,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	type AgentSettingsDraft,
 	agentOptions,
-	type BudgetDraft,
 	backendRequiresModel,
 	buildModelSelectOptions,
 	costStatement,
-	defaultBudgetDraft,
+	defaultSpendDraft,
 	evaluateAgentSettings,
 	evaluateBudget,
 	FREE_PLAN_NOTE,
@@ -23,6 +23,7 @@ import {
 	modelSelectValue,
 	reportedModels,
 	runnerNotice,
+	type SpendDraft,
 	settingsDraftFrom,
 } from "../src/settings/agentSettingsModel.ts";
 import { AGENT_SETTINGS, AGENTS, NO_RUNNER_AGENTS } from "./fixtures.ts";
@@ -42,8 +43,8 @@ const OPENCODE_AGENTS = agentsResponseSchema.parse({
 	],
 });
 
-function budget(overrides: Partial<BudgetDraft> = {}): BudgetDraft {
-	return { ...defaultBudgetDraft(), ...overrides };
+function budget(overrides: Partial<SpendDraft> = {}): SpendDraft {
+	return { ...defaultSpendDraft(), ...overrides };
 }
 
 const MODELS_AGENTS = agentsResponseSchema.parse({
@@ -118,13 +119,13 @@ describe("cost statement (FR-016)", () => {
 });
 
 describe("budget evaluation", () => {
-	it("accepts the default limits for a plan-limited backend with no spend authorized", () => {
+	it("gives a plan-limited backend the fixed limits with no spend authorized (ADR-0029)", () => {
 		expect(evaluateBudget(budget(), "plan-limited")).toEqual({
 			budget: {
-				maxAgentSteps: 6,
-				maxToolCalls: 20,
-				maxWallClockMs: 600_000,
-				maxInputBytes: 400_000,
+				maxAgentSteps: 12,
+				maxToolCalls: 60,
+				maxWallClockMs: 1_800_000,
+				maxInputBytes: 2_000_000,
 				maxSpendUsd: null,
 			},
 			problems: [],
@@ -189,40 +190,19 @@ describe("budget evaluation", () => {
 		expect(result.spendConsentRequired).toBe(false);
 	});
 
-	it("converts wall-clock minutes to milliseconds", () => {
-		const result = evaluateBudget(budget({ maxWallClockMinutes: "0.5" }), "plan-limited");
-		expect(result.budget?.maxWallClockMs).toBe(30_000);
-	});
-
-	it.each([
-		[{ maxAgentSteps: "0" }, "Max agent steps must be a whole number from 1 to 12."],
-		[{ maxAgentSteps: "13" }, "Max agent steps must be a whole number from 1 to 12."],
-		[{ maxAgentSteps: "2.5" }, "Max agent steps must be a whole number from 1 to 12."],
-		[{ maxToolCalls: "61" }, "Max tool calls must be a whole number from 0 to 60."],
-		[{ maxToolCalls: "" }, "Max tool calls must be a whole number from 0 to 60."],
-		[{ maxWallClockMinutes: "31" }, "Max wall-clock minutes must be a number from 0.5 to 30."],
-		[{ maxInputBytes: "9999" }, "Max input bytes must be a whole number from 10000 to 2000000."],
-	])("rejects out-of-range limits %o", (change, problem) => {
-		const result = evaluateBudget(budget(change), "plan-limited");
-		expect(result.budget).toBeNull();
-		expect(result.problems).toEqual([problem]);
+	it("always pairs the spend with the fixed limits", () => {
+		const result = evaluateBudget(budget({ maxSpendUsd: "2.5", spendConsent: true }), "metered");
+		expect(result.budget).toEqual({ ...RUN_LIMITS, maxSpendUsd: 2.5 });
 	});
 });
 
 describe("settings draft", () => {
-	it("converts stored numbers to editable text", () => {
+	it("converts the stored spend to editable text; the other limits are not edited", () => {
 		expect(settingsDraftFrom(AGENT_SETTINGS)).toEqual({
 			defaultAgentId: "claude-code",
 			models: {},
 			effort: "medium",
-			budget: {
-				maxAgentSteps: "6",
-				maxToolCalls: "20",
-				maxWallClockMinutes: "10",
-				maxInputBytes: "400000",
-				maxSpendUsd: "",
-				spendConsent: false,
-			},
+			budget: { maxSpendUsd: "", spendConsent: false },
 			webAccess: "off",
 		});
 	});
@@ -247,7 +227,11 @@ describe("settings draft", () => {
 		expect(result.costModel).toBe("plan-limited");
 		expect(result.spendEditable).toBe(false);
 		expect(result.modelText).toBe("");
-		expect(result.settings).toEqual(AGENT_SETTINGS);
+		// Saving replaces older stored limits with the fixed ones (ADR-0029).
+		expect(result.settings).toEqual({
+			...AGENT_SETTINGS,
+			budget: { ...RUN_LIMITS, maxSpendUsd: null },
+		});
 	});
 
 	it("cannot save to an unavailable backend", () => {
@@ -350,13 +334,17 @@ describe("settings draft", () => {
 		expect(result.problems).toEqual([]);
 		expect(result.settings?.budget.maxSpendUsd).toBeNull();
 	});
-	it("rejects out-of-range limits", () => {
+	it("rejects an out-of-range spend for a backend that can bill", () => {
 		const result = evaluateAgentSettings(
-			settingsDraft({ budget: budget({ maxAgentSteps: "99" }) }),
+			settingsDraft({
+				defaultAgentId: "openrouter",
+				models: { openrouter: "provider/model" },
+				budget: budget({ maxSpendUsd: "99" }),
+			}),
 			AGENTS,
 		);
 		expect(result.settings).toBeNull();
-		expect(result.problems).toEqual(["Max agent steps must be a whole number from 1 to 12."]);
+		expect(result.problems).toEqual(["Max spend must be greater than 0 and at most 50 USD."]);
 	});
 });
 

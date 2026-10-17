@@ -24,11 +24,12 @@ describe("agentSettingsSchema", () => {
 		expect(DEFAULT_AGENT_SETTINGS.models).toEqual({});
 		expect(DEFAULT_AGENT_SETTINGS.effort).toBe("medium");
 		expect(DEFAULT_AGENT_SETTINGS.webAccess).toBe("public-web");
+		// Every question runs under the fixed limits, each at its maximum (ADR-0029).
 		expect(DEFAULT_AGENT_SETTINGS.budget).toEqual({
-			maxAgentSteps: BUDGET_LIMITS.maxAgentSteps.default,
-			maxToolCalls: BUDGET_LIMITS.maxToolCalls.default,
-			maxWallClockMs: BUDGET_LIMITS.maxWallClockMs.default,
-			maxInputBytes: BUDGET_LIMITS.maxInputBytes.default,
+			maxAgentSteps: BUDGET_LIMITS.maxAgentSteps.max,
+			maxToolCalls: BUDGET_LIMITS.maxToolCalls.max,
+			maxWallClockMs: BUDGET_LIMITS.maxWallClockMs.max,
+			maxInputBytes: BUDGET_LIMITS.maxInputBytes.max,
 			maxSpendUsd: null,
 		});
 	});

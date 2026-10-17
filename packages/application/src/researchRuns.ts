@@ -6,6 +6,7 @@ import {
 	type ResearchRequest,
 	type ResearchRun,
 	type RunRecords,
+	runBudget,
 } from "@research/contracts";
 import {
 	EMPTY_USAGE,
@@ -81,11 +82,12 @@ const MODEL_REQUIRED_AGENT_IDS: readonly string[] = ["opencode", OPENROUTER_FREE
 
 /**
  * The request a retry runs: the original question, horizon and markets on the
- * agent choice saved NOW — backend, model, effort, web access and limits. A
- * failure such as an overloaded model is fixed by choosing another one in
- * Settings, so replaying the old choice would only fail again. With no saved
- * choice the original request runs unchanged. A plan-limited backend never
- * carries a spend allowance, as in the composer.
+ * agent choice saved NOW — backend, model, effort, web access and spend
+ * ceiling — under the fixed limits (RUN_LIMITS, ADR-0029). A failure such as
+ * an overloaded model is fixed by choosing another one in Settings, so
+ * replaying the old choice would only fail again. With no saved choice the
+ * original request runs unchanged. A plan-limited backend never carries a
+ * spend allowance, as in the composer.
  */
 export function retryRequest(
 	original: ResearchRequest,
@@ -100,23 +102,22 @@ export function retryRequest(
 		model: saved.models[agentId] ?? null,
 		effort: saved.effort,
 		webAccess: saved.webAccess,
-		budget:
-			costModelOf(agentId) === "plan-limited"
-				? { ...saved.budget, maxSpendUsd: null }
-				: saved.budget,
+		budget: runBudget(costModelOf(agentId) === "plan-limited" ? null : saved.budget.maxSpendUsd),
 	};
 }
 
 /**
  * Metered spend needs the owner's consent on the composer (AGT-012). A retry
- * is that same consented action only while backend, model and limits are
- * unchanged; any other metered retry must be asked again from the composer.
+ * is that same consented action only while backend, model and spend ceiling
+ * are unchanged; any other metered retry must be asked again from the
+ * composer. The other limits are fixed (ADR-0029), so an older run's
+ * different limits do not count as a change.
  */
 function sameMeteredChoice(original: ResearchRequest, next: ResearchRequest): boolean {
 	return (
 		original.agentId === next.agentId &&
 		original.model === next.model &&
-		JSON.stringify(original.budget) === JSON.stringify(next.budget)
+		original.budget.maxSpendUsd === next.budget.maxSpendUsd
 	);
 }
 

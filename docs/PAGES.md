@@ -332,7 +332,8 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 
 **User actions**
 
-- Choose the default AI backend, its model from a list, effort, per-question limits and web access.
+- Choose the default AI backend, its model from a list, effort and web access, and — only for a
+  backend that can bill — the maximum spend. The other per-question limits are fixed (ADR-0029).
 - Calendar (`#/settings/calendar`): connect, sync (manually, or automatically
   once after connecting and whenever the dates drift — automatic syncing
   pauses after a failed step until a manual sync succeeds) and disconnect

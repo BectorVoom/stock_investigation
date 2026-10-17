@@ -4,16 +4,18 @@ import {
 	BUDGET_LIMITS,
 	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
+	runBudget,
 } from "@research/contracts";
 import type { ResearchBudget } from "../api/client.ts";
 import { type AgentOption, agentOptions } from "../settings/agentSettingsModel.ts";
 
 /**
  * Pure composer rules (FR-012 / FR-016 / AGT-012): the draft holds only what
- * belongs to one question, while backend, model, effort, budget and web
- * access are read from the saved agent settings. The composer shows the
- * backend/model/effort/web-access summary and the consent amount; limits and
- * the cost statement live in Settings → AI agent (owner decision
+ * belongs to one question, while backend, model, effort, spend ceiling and
+ * web access are read from the saved agent settings and the other limits are
+ * fixed (RUN_LIMITS, ADR-0029). The composer shows the
+ * backend/model/effort/web-access summary and the consent amount; the spend
+ * ceiling and the cost statement live in Settings → AI agent (owner decision
  * 2026-10-12). No Solid, no network — unit-tested directly.
  */
 
@@ -96,15 +98,13 @@ export function evaluateComposer(
 		problems.push("Agent settings are still loading.");
 	}
 
-	// The request carries the saved limits. A plan-limited backend never gets
-	// a metered allowance, whatever is stored.
-	const storedBudget = settings?.budget ?? null;
+	// The request carries the fixed limits (RUN_LIMITS, ADR-0029) and the saved
+	// spend ceiling. A plan-limited backend never gets a metered allowance,
+	// whatever is stored.
 	const budget =
-		storedBudget === null || costModel === "plan-limited"
-			? storedBudget === null
-				? null
-				: { ...storedBudget, maxSpendUsd: null }
-			: storedBudget;
+		settings === null
+			? null
+			: runBudget(costModel === "plan-limited" ? null : settings.budget.maxSpendUsd);
 	const spend = budget?.maxSpendUsd ?? null;
 	let spendConsentRequired = false;
 	if (settings !== null && selectedAgent !== null && costModel !== "plan-limited") {
