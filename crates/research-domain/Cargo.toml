@@ -16,7 +16,6 @@ url = { workspace = true }
 unicode-normalization = { workspace = true }
 memchr = { workspace = true }
 thiserror = { workspace = true }
-libm = { workspace = true }
 
 [lints]
 workspace = true

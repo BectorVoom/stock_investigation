@@ -1,8 +1,13 @@
 //! Port of `packages/domain/src/finance/cagr.ts`.
 //!
-//! `**`, `Math.exp` and `Math.log` in V8 are fdlibm ports; the `libm` crate
-//! is the same fdlibm (FreeBSD msun) code, so the last bit agrees with the
-//! TypeScript where the platform libm might not (the vectors pin it).
+//! `**`, `Math.exp` and `Math.log` come from `research_js::math` (V8's
+//! fdlibm results). `exp` and `log` agree with V8 bit for bit; `pow` can
+//! differ in its last bit for a few percent of inputs (documented there), so
+//! a derived growth rate can differ in its last digits — never in the
+//! two-decimal percentage the presentation rounds it to, except at an exact
+//! rounding tie.
+
+use research_js::math;
 
 /// `CagrError`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
@@ -67,13 +72,13 @@ pub fn derive_cagr(
 		return Err(CagrError::NegativeTarget);
 	}
 	let years = target_year - base_year;
-	let direct = libm::pow(target_value / base_value, 1.0 / years) - 1.0;
+	let direct = math::pow(target_value / base_value, 1.0 / years) - 1.0;
 	if direct.is_finite() {
 		return Ok(direct);
 	}
 	// target / base can overflow although the growth rate itself is
 	// representable; log space avoids the intermediate ratio.
-	let via_logs = libm::exp((libm::log(target_value) - libm::log(base_value)) / years) - 1.0;
+	let via_logs = math::exp((math::log(target_value) - math::log(base_value)) / years) - 1.0;
 	if via_logs.is_finite() {
 		Ok(via_logs)
 	} else {
