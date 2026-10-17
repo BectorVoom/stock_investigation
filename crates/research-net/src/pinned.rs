@@ -34,7 +34,7 @@ use hyper_util::rt::TokioIo;
 use crate::core::{BodyError, HopBody, HopHeaders};
 use crate::decode::{ContentDecoder, Encoding, encoding_for};
 use crate::errors::hyper_error_code;
-use crate::pool::{Connection, ConnectionPool, DriverGuard, PoolKey};
+use crate::pool::{Connection, ConnectionPool, DriverGuard, PoolKey, PoolLimits};
 use crate::tls::{ConnectError, PinnedTls};
 
 /// Decoded output produced per body step (bounds a compression bomb's
@@ -196,9 +196,15 @@ impl PinnedHttpsConnect {
 	/// The production connector.
 	#[must_use]
 	pub fn new(tls: PinnedTls) -> Self {
+		Self::with_limits(tls, PoolLimits::default())
+	}
+
+	/// A connector with explicit pool limits (tests shorten the idle timeout).
+	#[must_use]
+	pub fn with_limits(tls: PinnedTls, limits: PoolLimits) -> Self {
 		Self {
 			tls,
-			pool: Arc::new(ConnectionPool::default()),
+			pool: Arc::new(ConnectionPool::new(limits)),
 			opened: AtomicU64::new(0),
 		}
 	}

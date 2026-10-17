@@ -57,6 +57,27 @@ pub(crate) struct Connection {
 /// (validated host name, peer IP).
 pub(crate) type PoolKey = (String, IpAddr);
 
+/// Pool limits; production uses [`PoolLimits::default`] (the constants above).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PoolLimits {
+	/// Idle connections close after this long.
+	pub idle_timeout: Duration,
+	/// Most idle connections kept for one (host, IP).
+	pub max_idle_per_key: usize,
+	/// Most idle connections kept in all.
+	pub max_idle_total: usize,
+}
+
+impl Default for PoolLimits {
+	fn default() -> Self {
+		Self {
+			idle_timeout: IDLE_TIMEOUT,
+			max_idle_per_key: MAX_IDLE_PER_KEY,
+			max_idle_total: MAX_IDLE_TOTAL,
+		}
+	}
+}
+
 struct Idle {
 	connection: Connection,
 	since: Instant,
@@ -74,6 +95,7 @@ struct PoolState {
 #[derive(Default)]
 pub struct ConnectionPool {
 	state: Mutex<PoolState>,
+	limits: PoolLimits,
 }
 
 impl std::fmt::Debug for ConnectionPool {
@@ -85,11 +107,21 @@ impl std::fmt::Debug for ConnectionPool {
 	}
 }
 
-fn expired(idle: &Idle, now: Instant) -> bool {
-	now.saturating_duration_since(idle.since) >= IDLE_TIMEOUT || idle.connection.sender.is_closed()
+fn expired(idle: &Idle, now: Instant, limits: &PoolLimits) -> bool {
+	now.saturating_duration_since(idle.since) >= limits.idle_timeout
+		|| idle.connection.sender.is_closed()
 }
 
 impl ConnectionPool {
+	/// An empty pool with `limits`.
+	#[must_use]
+	pub fn new(limits: PoolLimits) -> Self {
+		Self {
+			state: Mutex::default(),
+			limits,
+		}
+	}
+
 	fn lock(&self) -> MutexGuard<'_, PoolState> {
 		// A panic while holding the lock cannot leave the map inconsistent
 		// for a reader (every mutation is a single push/remove).
@@ -109,7 +141,7 @@ impl ConnectionPool {
 		state
 			.idle
 			.get(&(host.to_owned(), address))
-			.is_some_and(|entries| entries.iter().any(|idle| !expired(idle, now)))
+			.is_some_and(|entries| entries.iter().any(|idle| !expired(idle, now, &self.limits)))
 	}
 
 	/// Takes the most recently used live connection for `key`.
@@ -122,7 +154,7 @@ impl ConnectionPool {
 		let mut removed = 0;
 		while let Some(idle) = entries.pop() {
 			removed += 1;
-			if !expired(&idle, now) {
+			if !expired(&idle, now, &self.limits) {
 				taken = Some(idle.connection);
 				break;
 			}
@@ -144,7 +176,7 @@ impl ConnectionPool {
 			let mut state = self.lock();
 			let entries = state.idle.entry(key).or_default();
 			let mut evicted = 0;
-			if entries.len() >= MAX_IDLE_PER_KEY {
+			if entries.len() >= self.limits.max_idle_per_key.max(1) {
 				// Oldest first: entries are kept in return order.
 				entries.remove(0);
 				evicted += 1;
@@ -154,7 +186,7 @@ impl ConnectionPool {
 				since: Instant::now(),
 			});
 			state.total = state.total + 1 - evicted;
-			while state.total > MAX_IDLE_TOTAL {
+			while state.total > self.limits.max_idle_total {
 				if !evict_oldest(&mut state) {
 					break;
 				}
@@ -175,7 +207,7 @@ impl ConnectionPool {
 		let mut removed = 0;
 		state.idle.retain(|_, entries| {
 			let before = entries.len();
-			entries.retain(|idle| !expired(idle, now));
+			entries.retain(|idle| !expired(idle, now, &self.limits));
 			removed += before - entries.len();
 			!entries.is_empty()
 		});
@@ -184,7 +216,7 @@ impl ConnectionPool {
 			.idle
 			.values()
 			.flatten()
-			.map(|idle| idle.since + IDLE_TIMEOUT)
+			.map(|idle| idle.since + self.limits.idle_timeout)
 			.min();
 		if next.is_none() {
 			state.sweeper_running = false;
