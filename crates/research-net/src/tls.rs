@@ -19,12 +19,14 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 
 use rustls::ClientConfig;
+#[cfg(any(test, feature = "test-seams"))]
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, ServerName};
 use tokio::net::TcpStream;
 use tokio_rustls::TlsConnector;
 use tokio_rustls::client::TlsStream;
 
+use crate::dns::ValidatedAddress;
 use crate::errors::io_error_code;
 
 /// A connection-level failure, as a `describeError` label (`ECONNREFUSED`,
@@ -52,9 +54,11 @@ pub enum TlsSetupError {
 	InvalidRoot,
 }
 
-/// Test seams (`PinnedTlsOverrides` in the TypeScript). Production passes
-/// [`PinnedTlsOverrides::default`]; note what is deliberately absent: there
-/// is no way to switch verification off.
+/// TEST SEAMS (`PinnedTlsOverrides` in the TypeScript), compiled only with
+/// the `test-seams` feature, which the production binary never enables. Note
+/// what is deliberately absent even here: there is no way to switch
+/// verification off.
+#[cfg(any(test, feature = "test-seams"))]
 #[derive(Clone, Debug, Default)]
 pub struct PinnedTlsOverrides {
 	/// Port instead of 443.
@@ -71,18 +75,34 @@ pub struct PinnedTlsOverrides {
 #[derive(Clone)]
 pub struct PinnedTls {
 	connector: TlsConnector,
+	#[cfg(any(test, feature = "test-seams"))]
 	port: u16,
+	#[cfg(any(test, feature = "test-seams"))]
 	dial_loopback: bool,
 }
 
 impl std::fmt::Debug for PinnedTls {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		formatter
-			.debug_struct("PinnedTls")
-			.field("port", &self.port)
-			.field("dial_loopback", &self.dial_loopback)
-			.finish_non_exhaustive()
+		formatter.debug_struct("PinnedTls").finish_non_exhaustive()
 	}
+}
+
+fn client_config(
+	extra_root: Option<CertificateDer<'static>>,
+) -> Result<TlsConnector, TlsSetupError> {
+	let mut roots = rustls::RootCertStore::empty();
+	roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+	if let Some(certificate) = extra_root {
+		roots
+			.add(certificate)
+			.map_err(|_| TlsSetupError::InvalidRoot)?;
+	}
+	let provider = Arc::new(rustls::crypto::ring::default_provider());
+	let config = ClientConfig::builder_with_provider(provider)
+		.with_safe_default_protocol_versions()?
+		.with_root_certificates(roots)
+		.with_no_client_auth();
+	Ok(TlsConnector::from(Arc::new(config)))
 }
 
 impl PinnedTls {
@@ -93,63 +113,75 @@ impl PinnedTls {
 	/// # Errors
 	/// When rustls rejects the configuration (not expected with ring).
 	pub fn new() -> Result<Self, TlsSetupError> {
-		Self::with_overrides(&PinnedTlsOverrides::default())
+		Ok(Self {
+			connector: client_config(None)?,
+			#[cfg(any(test, feature = "test-seams"))]
+			port: 443,
+			#[cfg(any(test, feature = "test-seams"))]
+			dial_loopback: false,
+		})
 	}
 
-	/// [`PinnedTls::new`] with test seams.
+	/// TEST SEAM: [`PinnedTls::new`] with a test port, root and loopback dialing.
 	///
 	/// # Errors
 	/// An invalid extra root, or a rustls configuration error.
+	#[cfg(any(test, feature = "test-seams"))]
 	pub fn with_overrides(overrides: &PinnedTlsOverrides) -> Result<Self, TlsSetupError> {
-		let mut roots = rustls::RootCertStore::empty();
-		roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-		if let Some(pem) = &overrides.extra_root_pem {
-			let certificate = CertificateDer::from_pem_slice(pem.as_bytes())
-				.map_err(|_| TlsSetupError::InvalidRoot)?;
-			roots
-				.add(certificate)
-				.map_err(|_| TlsSetupError::InvalidRoot)?;
-		}
-		let provider = Arc::new(rustls::crypto::ring::default_provider());
-		let config = ClientConfig::builder_with_provider(provider)
-			.with_safe_default_protocol_versions()?
-			.with_root_certificates(roots)
-			.with_no_client_auth();
+		let extra_root = match &overrides.extra_root_pem {
+			Some(pem) => Some(
+				CertificateDer::from_pem_slice(pem.as_bytes())
+					.map_err(|_| TlsSetupError::InvalidRoot)?,
+			),
+			None => None,
+		};
 		Ok(Self {
-			connector: TlsConnector::from(Arc::new(config)),
+			connector: client_config(extra_root)?,
 			port: overrides.port.unwrap_or(443),
 			dial_loopback: overrides.dial_loopback,
 		})
 	}
 
-	/// TCP to `address`, peer check, then TLS with SNI and certificate
-	/// identity = `hostname`.
+	#[cfg(any(test, feature = "test-seams"))]
+	fn dial_target(&self, address: IpAddr) -> SocketAddr {
+		let ip = if self.dial_loopback {
+			IpAddr::V4(Ipv4Addr::LOCALHOST)
+		} else {
+			address
+		};
+		SocketAddr::new(ip, self.port)
+	}
+
+	#[cfg(not(any(test, feature = "test-seams")))]
+	#[allow(clippy::unused_self)]
+	fn dial_target(&self, address: IpAddr) -> SocketAddr {
+		SocketAddr::new(address, 443)
+	}
+
+	/// TCP to the validated address, peer check, then TLS with SNI and
+	/// certificate identity = the host name it was resolved for.
 	///
 	/// # Errors
 	/// Connection, peer-mismatch or TLS failure, as a Node error code.
 	pub async fn connect(
 		&self,
-		hostname: &str,
-		address: IpAddr,
+		address: &ValidatedAddress,
 	) -> Result<TlsStream<TcpStream>, ConnectError> {
-		let dial = if self.dial_loopback {
-			IpAddr::V4(Ipv4Addr::LOCALHOST)
-		} else {
-			address
-		};
-		let tcp = TcpStream::connect(SocketAddr::new(dial, self.port))
+		let dial = self.dial_target(address.ip());
+		let tcp = TcpStream::connect(dial)
 			.await
 			.map_err(|error| ConnectError::code(io_error_code(&error)))?;
 		// Belt and braces: whatever happened below us, refuse to speak to a
-		// peer that is not the address that was validated.
+		// peer that is not the address that was validated — before TLS and
+		// before any request byte.
 		let peer = tcp
 			.peer_addr()
 			.map_err(|error| ConnectError::code(io_error_code(&error)))?;
-		verify_peer(peer.ip(), dial)?;
+		verify_peer(peer.ip(), dial.ip())?;
 		// Node's http client disables Nagle too; small requests go out at once.
 		tcp.set_nodelay(true)
 			.map_err(|error| ConnectError::code(io_error_code(&error)))?;
-		let server_name = ServerName::try_from(hostname.to_owned())
+		let server_name = ServerName::try_from(address.hostname().to_owned())
 			.map_err(|_| ConnectError::code("ERR_TLS_CERT_ALTNAME_INVALID"))?;
 		self.connector
 			.connect(server_name, tcp)
@@ -223,8 +255,10 @@ mod tests {
 	#[test]
 	fn production_configuration_builds_and_dials_port_443() {
 		let tls = PinnedTls::new().unwrap();
-		assert_eq!(tls.port, 443);
-		assert!(!tls.dial_loopback);
+		assert_eq!(
+			tls.dial_target("93.184.216.34".parse().unwrap()),
+			"93.184.216.34:443".parse().unwrap()
+		);
 		assert!(matches!(
 			PinnedTls::with_overrides(&PinnedTlsOverrides {
 				extra_root_pem: Some("not a pem".to_owned()),

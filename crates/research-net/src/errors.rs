@@ -124,6 +124,12 @@ pub fn hyper_error_code(error: &hyper::Error) -> &'static str {
 		}
 		source = cause.source();
 	}
+	// hyper reports a head over `max_header_size` (and too many headers) as
+	// "message head is too large"; `is_parse_too_large` exists only with
+	// hyper's server feature. llhttp's code for it is HPE_HEADER_OVERFLOW.
+	if error.is_parse() && error.to_string().starts_with("message head is too large") {
+		return "HPE_HEADER_OVERFLOW";
+	}
 	if error.is_parse() || error.is_parse_status() {
 		// llhttp's family of parse errors (`HPE_*`).
 		return "HPE_INVALID_CONSTANT";

@@ -34,7 +34,7 @@ use research_net::pool::PoolLimits;
 use research_net::{
 	ConnectError, DEFAULT_USER_AGENT, DnsLookup, NodeSafeFetcher, NodeSafeFetcherOverrides,
 	PinnedConnect, PinnedHttpsConnect, PinnedRequest, PinnedResponse, PinnedTls,
-	PinnedTlsOverrides, create_node_safe_fetcher_with,
+	PinnedTlsOverrides, ValidatedAddress, create_node_safe_fetcher_with,
 };
 use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
@@ -364,6 +364,13 @@ async fn serve(mut stream: Tls, connection: usize, state: &ServerState) {
 				let body = gzip("{\"text\":\"圧縮された応答\"}".as_bytes());
 				respond(&mut stream, "200 OK", &headers, &body).await
 			}
+			"/gzip-padded" => {
+				// Zero padding after the member, then bytes Node never looks at.
+				let mut body = gzip(b"hello");
+				body.extend_from_slice(b"\0\0\0\0garbage");
+				let headers = vec![("content-encoding", "gzip".to_owned())];
+				respond(&mut stream, "200 OK", &headers, &body).await
+			}
 			"/gzip-corrupt" => {
 				let headers = vec![("content-encoding", "gzip".to_owned())];
 				respond(&mut stream, "200 OK", &headers, b"not gzip at all").await
@@ -411,6 +418,36 @@ async fn serve(mut stream: Tls, connection: usize, state: &ServerState) {
 				return;
 			}
 			"/gone" => respond(&mut stream, "410 Gone", &[], b"gone").await,
+			"/many-headers" | "/huge-headers" | "/head-at-limit" | "/head-over-limit" => {
+				// Node counts reason phrase + names + values: "OK" (2) and
+				// "content-length" + "2" (15) here, then the x-* headers.
+				let headers: Vec<(String, String)> = match path.as_str() {
+					"/many-headers" => (0..150)
+						.map(|i| (format!("x-h{i}"), "v".repeat(10)))
+						.collect(),
+					"/huge-headers" => (0..5)
+						.map(|i| (format!("x-h{i}"), "v".repeat(20_000)))
+						.collect(),
+					limit => {
+						let counted = if limit == "/head-at-limit" {
+							16_383
+						} else {
+							16_384
+						};
+						vec![("x-pad".to_owned(), "v".repeat(counted - 2 - 15 - 5))]
+					}
+				};
+				let mut head = String::from("HTTP/1.1 200 OK\r\ncontent-length: 2\r\n");
+				for (name, value) in &headers {
+					head.push_str(&format!("{name}: {value}\r\n"));
+				}
+				head.push_str("\r\nok");
+				let written = stream.write_all(head.as_bytes()).await;
+				match written {
+					Ok(()) => stream.flush().await,
+					Err(error) => Err(error),
+				}
+			}
 			_ => respond(&mut stream, "404 Not Found", &[], b"not found").await,
 		};
 		if result.is_err() {
@@ -452,12 +489,12 @@ impl PinnedConnect for Recording {
 		self.requested
 			.lock()
 			.unwrap()
-			.push((request.hostname.to_owned(), request.address));
+			.push((request.address.hostname().to_owned(), request.address.ip()));
 		self.inner.connect(request).await
 	}
 
-	fn has_idle(&self, hostname: &str, address: IpAddr) -> bool {
-		self.inner.has_idle(hostname, address)
+	fn has_idle(&self, address: &ValidatedAddress) -> bool {
+		self.inner.has_idle(address)
 	}
 }
 
@@ -765,6 +802,21 @@ async fn decodes_gzip_brotli_and_deflate_as_utf8() {
 }
 
 #[tokio::test]
+async fn zero_padding_after_a_gzip_member_ends_the_body_like_node() {
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	assert_eq!(
+		harness
+			.get(&format!("https://{HOST_A}/gzip-padded"), &limits())
+			.await,
+		Ok("hello".to_owned())
+	);
+	// The rest of the message was never read: the connection is not reused.
+	assert_eq!(harness.connector().pool().idle_count(), 0);
+	server.wait_closed(1).await;
+}
+
+#[tokio::test]
 async fn times_out_on_a_stalled_body_and_on_a_server_that_never_answers() {
 	let server = start_server(LEAF_PEM).await;
 	for path in ["/slow", "/never"] {
@@ -920,9 +972,9 @@ async fn reports_a_refused_connection_by_its_code() {
 	})
 	.unwrap();
 	let connect = PinnedHttpsConnect::new(tls);
+	let address = ValidatedAddress::assume_validated(HOST_A, ip(PUBLIC_V4));
 	let request = PinnedRequest {
-		hostname: HOST_A,
-		address: ip(PUBLIC_V4),
+		address: &address,
 		path: "/",
 		headers: research_net::core::HopHeaders {
 			accept: "text/plain",
@@ -938,12 +990,46 @@ async fn reports_a_refused_connection_by_its_code() {
 	);
 }
 
+#[tokio::test]
+async fn applies_nodes_response_header_limits() {
+	// Node accepts more than hyper's default 100 headers, and refuses a head
+	// whose counted bytes reach 16 KiB (llhttp HPE_HEADER_OVERFLOW).
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	let base = format!("https://{HOST_A}");
+	assert_eq!(
+		harness
+			.get(&format!("{base}/many-headers"), &limits())
+			.await,
+		Ok("ok".to_owned())
+	);
+	assert_eq!(
+		harness
+			.get(&format!("{base}/head-at-limit"), &limits())
+			.await,
+		Ok("ok".to_owned())
+	);
+	for path in ["/head-over-limit", "/huge-headers"] {
+		assert_eq!(
+			harness.get(&format!("{base}{path}"), &limits()).await,
+			Err(failure(
+				SafeFetchErrorCode::NetworkError,
+				"HPE_HEADER_OVERFLOW"
+			)),
+			"{path}"
+		);
+	}
+}
+
 /* ---------- pinnedConnect.test.ts ---------- */
+
+static PINNED_ADDRESS: std::sync::LazyLock<ValidatedAddress> = std::sync::LazyLock::new(|| {
+	ValidatedAddress::assume_validated("pinned.synthetic-wire.org", ip(PUBLIC_V4))
+});
 
 fn pinned(path: &str, max_encoded_bytes: usize) -> PinnedRequest<'_> {
 	PinnedRequest {
-		hostname: "pinned.synthetic-wire.org",
-		address: ip(PUBLIC_V4),
+		address: &PINNED_ADDRESS,
 		path,
 		headers: research_net::core::HopHeaders {
 			accept: "text/plain",
@@ -1157,8 +1243,16 @@ async fn a_connection_that_ended_a_response_abnormally_is_never_pooled() {
 		.unwrap();
 	server.wait_closed(cases.len() + 1).await;
 	assert_eq!(harness.connector().pool().idle_count(), 1);
-	assert!(harness.connector().has_idle(HOST_B, ip(PUBLIC_V4_B)));
-	assert!(!harness.connector().has_idle(HOST_A, ip(PUBLIC_V4)));
+	assert!(
+		harness
+			.connector()
+			.has_idle(&ValidatedAddress::assume_validated(HOST_B, ip(PUBLIC_V4_B)))
+	);
+	assert!(
+		!harness
+			.connector()
+			.has_idle(&ValidatedAddress::assume_validated(HOST_A, ip(PUBLIC_V4)))
+	);
 	// The next request opens a fresh connection and works.
 	assert!(
 		harness
@@ -1331,22 +1425,18 @@ async fn measure_fresh_and_reused_search_requests() {
 async fn measure_gdelt_handshake_versus_warm_requests() {
 	use http_body_util::BodyExt as _;
 	let host = "api.gdeltproject.org";
-	let address = tokio::net::lookup_host((host, 443))
-		.await
-		.unwrap()
-		.next()
-		.unwrap()
-		.ip();
+	// The production resolve-and-classify step: the only way to get an address.
+	let address = research_net::resolve_public(host).await.unwrap().remove(0);
 	let tls = PinnedTls::new().unwrap();
 	let started = Instant::now();
-	let stream = tls.connect(host, address).await.unwrap();
+	let stream = tls.connect(&address).await.unwrap();
 	println!(
 		"GDELT TCP+TLS, first: {:.0} ms",
 		started.elapsed().as_secs_f64() * 1_000.0
 	);
 	// A second handshake with the same client config may resume the TLS session.
 	let started = Instant::now();
-	let second = tls.connect(host, address).await.unwrap();
+	let second = tls.connect(&address).await.unwrap();
 	let resumed = second.get_ref().1.handshake_kind();
 	println!(
 		"GDELT TCP+TLS, second: {:.0} ms ({resumed:?})",

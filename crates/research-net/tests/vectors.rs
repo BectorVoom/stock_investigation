@@ -374,3 +374,120 @@ fn failure_json(error: &research_application::ports::SafeFetchError) -> Value {
 	}
 	value
 }
+
+/* ---------- content decoding (Node's zlib / brotli) ---------- */
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DecodeInput {
+	encoding: String,
+	chunks: Vec<String>,
+	max_bytes: usize,
+}
+
+/// Reads the real pinned body as `readBounded` does: decoded bytes over the
+/// cap, or the transport's wire-cap error, are "too large".
+async fn read_decoded(input: &DecodeInput, max_bytes: usize) -> Value {
+	let frames = input
+		.chunks
+		.iter()
+		.map(|chunk| Bytes::from(hex::decode(chunk).unwrap()))
+		.collect();
+	let mut body =
+		research_net::pinned::decoded_body_from_frames(Some(&input.encoding), frames, max_bytes)
+			.unwrap();
+	let mut bytes = Vec::new();
+	while let Some(chunk) = body.next_chunk().await {
+		match chunk {
+			Ok(chunk) => {
+				if bytes.len() + chunk.len() > max_bytes {
+					return json!({ "tooLarge": true });
+				}
+				bytes.extend_from_slice(&chunk);
+			}
+			Err(BodyError::TooLarge) => return json!({ "tooLarge": true }),
+			Err(BodyError::Failed(code)) => return json!({ "error": code }),
+		}
+	}
+	if bytes.len() <= 2_048 {
+		json!({ "ok": hex::encode(&bytes) })
+	} else {
+		json!({ "okLength": bytes.len(), "okSha256": hex::encode(Sha256::digest(&bytes)) })
+	}
+}
+
+/// brotli-decompressor lacks C brotli's METABLOCK_DONE length check, so a
+/// corrupt stream can fail with the other BLOCK_LENGTH name (see decode.rs).
+fn brotli_block_length_name(rust: &Value, node: &Value) -> bool {
+	let name = |value: &Value| {
+		value
+			.get("error")
+			.and_then(Value::as_str)
+			.map(str::to_owned)
+	};
+	matches!(
+		(name(rust), name(node)),
+		(Some(a), Some(b)) if a.starts_with("ERR__ERROR_FORMAT_BLOCK_LENGTH_")
+			&& b.starts_with("ERR__ERROR_FORMAT_BLOCK_LENGTH_")
+	)
+}
+
+/// Node's own result for a few inputs depends on WHEN data reaches its
+/// stream machinery, not on the bytes: `Readable.from(boundedWireBytes(…))`
+/// checks the wire cap as chunks arrive (ahead of decoding), and a decoder
+/// error destroys the stream together with output not yet read. The
+/// exporter feeds everything at once; a socket feeds it over time, where the
+/// TypeScript gives the answer Rust gives. Accepted only in two shapes:
+/// - Node "too large" while the wire itself exceeds the cap (the eager wire
+///   check pre-empted a later decode error or an early end);
+/// - Rust "too large" while Node reports the error the stream really has
+///   (Rust without a cap reports the same code): both are failures; which
+///   one surfaces is the race.
+async fn arrival_order_race(input: &DecodeInput, rust: &Value, node: &Value) -> bool {
+	let wire: usize = input.chunks.iter().map(|chunk| chunk.len() / 2).sum();
+	let too_large = json!({ "tooLarge": true });
+	if *node == too_large && *rust != too_large {
+		return wire > input.max_bytes;
+	}
+	if *rust == too_large && node.get("error").is_some() {
+		return read_decoded(input, usize::MAX).await == *node;
+	}
+	false
+}
+
+#[tokio::test]
+async fn content_decoding_matches_node_zlib_and_brotli() {
+	let cases: Vec<Case<DecodeInput, Value>> =
+		serde_json::from_str(&vector_file("decode.json")).unwrap();
+	assert!(cases.len() >= 1_500);
+	let mut mismatches = Vec::new();
+	let mut races = 0;
+	for (index, case) in cases.iter().enumerate() {
+		let actual = read_decoded(&case.input, case.input.max_bytes).await;
+		if actual == case.output {
+			continue;
+		}
+		if brotli_block_length_name(&actual, &case.output) {
+			continue;
+		}
+		if arrival_order_race(&case.input, &actual, &case.output).await {
+			races += 1;
+			continue;
+		}
+		mismatches.push(format!(
+			"#{index} {} chunks={} max={}: rust {actual} node {}",
+			case.input.encoding,
+			case.input.chunks.len(),
+			case.input.max_bytes,
+			case.output
+		));
+	}
+	assert!(
+		mismatches.is_empty(),
+		"{} mismatches:\n{}",
+		mismatches.len(),
+		mismatches.join("\n")
+	);
+	// Races are corner cases (a cap and a broken stream at once), not the norm.
+	assert!(races * 50 < cases.len(), "{races} arrival-order races");
+}

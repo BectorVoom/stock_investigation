@@ -9,9 +9,21 @@
  * script that is generated lazily (seeded) and recorded, so the Rust replay
  * sees exactly the answers the TypeScript saw.
  */
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pipeline, Readable } from "node:stream";
+import {
+	brotliCompressSync,
+	createBrotliDecompress,
+	createGunzip,
+	createInflate,
+	deflateRawSync,
+	deflateSync,
+	gzipSync,
+	constants as zlibConstants,
+} from "node:zlib";
 import type { ArchivedPage, SafeFetchOptions } from "@research/application";
 import { createFilePageArchive } from "../../packages/adapters/src/node/pageArchive.ts";
 import { isSameIpAddress } from "../../packages/adapters/src/node/pinnedConnect.ts";
@@ -637,6 +649,180 @@ async function pageArchiveCases(): Promise<
 	return cases;
 }
 
+/* ---------- content decoding (pinnedConnect.ts decodedBody + readBounded) ---------- */
+
+type DecodeOutput =
+	| { readonly ok: string }
+	| { readonly okLength: number; readonly okSha256: string }
+	| { readonly tooLarge: true }
+	| { readonly error: string };
+
+/** `boundedWireBytes`: the wire bytes, refused past the ceiling. */
+async function* boundedWire(
+	chunks: readonly Buffer[],
+	maxEncodedBytes: number,
+): AsyncGenerator<Uint8Array> {
+	let wireBytes = 0;
+	for (const chunk of chunks) {
+		wireBytes += chunk.byteLength;
+		if (wireBytes > maxEncodedBytes) throw new ResponseBodyTooLargeError();
+		yield chunk;
+	}
+}
+
+function nodeDecoder(encoding: string) {
+	if (encoding === "gzip" || encoding === "x-gzip") return createGunzip();
+	if (encoding === "deflate") return createInflate();
+	return createBrotliDecompress();
+}
+
+/** What the TypeScript's pinned connect + `readBounded` make of these wire chunks. */
+async function nodeDecode(
+	encoding: string,
+	chunks: readonly Buffer[],
+	maxBytes: number,
+): Promise<DecodeOutput> {
+	const wire = Readable.from(boundedWire(chunks, maxBytes), { objectMode: false });
+	const decoder = nodeDecoder(encoding);
+	pipeline(wire, decoder, () => {});
+	const parts: Buffer[] = [];
+	let total = 0;
+	try {
+		for await (const chunk of decoder as AsyncIterable<Buffer>) {
+			total += chunk.byteLength;
+			if (total > maxBytes) {
+				decoder.destroy();
+				return { tooLarge: true };
+			}
+			parts.push(chunk);
+		}
+	} catch (error) {
+		if (error instanceof ResponseBodyTooLargeError) return { tooLarge: true };
+		const code = (error as { code?: unknown }).code;
+		return { error: typeof code === "string" ? code : "unknown error" };
+	}
+	const bytes = Buffer.concat(parts);
+	return bytes.length <= 2_048
+		? { ok: bytes.toString("hex") }
+		: { okLength: bytes.length, okSha256: createHash("sha256").update(bytes).digest("hex") };
+}
+
+/** Stored (level 0) blocks only for small payloads, so bombs stay small on the wire. */
+function zlibLevel(random: Random, payload: Buffer): number {
+	return pick(random, payload.length <= 4_096 ? [0, 1, 6, 9] : [1, 6, 9]);
+}
+
+function encodeWith(random: Random, encoding: string, payload: Buffer): Buffer {
+	if (encoding === "deflate")
+		return random() < 0.08
+			? deflateRawSync(payload)
+			: deflateSync(payload, { level: zlibLevel(random, payload) });
+	if (encoding === "br") {
+		return brotliCompressSync(payload, {
+			params: { [zlibConstants.BROTLI_PARAM_QUALITY]: pick(random, [0, 4, 11]) },
+		});
+	}
+	return gzipSync(payload, { level: zlibLevel(random, payload) });
+}
+
+function randomPayload(random: Random): Buffer {
+	const roll = random();
+	if (roll < 0.15) return Buffer.alloc(0);
+	if (roll < 0.35) return Buffer.alloc(Math.floor(random() * 300_000));
+	if (roll < 0.7)
+		return Buffer.from("圧縮された応答 compressed answer ".repeat(1 + Math.floor(random() * 80)));
+	return Buffer.from(randomBytes(random, Math.floor(random() * 3_000)));
+}
+
+const TAILS: readonly number[][] = [
+	[0, 0, 0, 0],
+	[0, 0x78],
+	[0x78],
+	[0x78, 0x79, 0x7a],
+	[0x1f, 0x8b],
+	[0],
+	[0, 0x1f, 0x8b, 8],
+];
+
+function splitWire(random: Random, wire: Buffer, boundaries: readonly number[]): Buffer[] {
+	const cuts = new Set<number>(
+		random() < 0.5 ? boundaries.filter((at) => at > 0 && at < wire.length) : [],
+	);
+	const pieces = Math.floor(random() * 6);
+	for (let index = 0; index < pieces; index += 1)
+		cuts.add(1 + Math.floor(random() * Math.max(1, wire.length - 1)));
+	if (wire.length <= 40 && random() < 0.3) for (let at = 1; at < wire.length; at += 1) cuts.add(at);
+	const sorted = [...cuts].filter((at) => at > 0 && at < wire.length).sort((a, b) => a - b);
+	const chunks: Buffer[] = [];
+	let start = 0;
+	for (const at of sorted) {
+		chunks.push(wire.subarray(start, at));
+		start = at;
+	}
+	chunks.push(wire.subarray(start));
+	return chunks.filter((chunk, index) => chunk.length > 0 || index === 0);
+}
+
+async function decodeCases(): Promise<
+	{ input: { encoding: string; chunks: string[]; maxBytes: number }; output: DecodeOutput }[]
+> {
+	const random = seededRandom(0xdec0);
+	const cases: {
+		input: { encoding: string; chunks: string[]; maxBytes: number };
+		output: DecodeOutput;
+	}[] = [];
+	for (let index = 0; index < 1_500; index += 1) {
+		const encoding = pick(random, ["gzip", "gzip", "x-gzip", "deflate", "br"]);
+		const payload = randomPayload(random);
+		let wire = encodeWith(random, encoding, payload);
+		const boundaries = [wire.length];
+		let decodedLength = payload.length;
+		if (encoding !== "br" && encoding !== "deflate" && random() < 0.3) {
+			// Multi-member gzip, sometimes with empty members.
+			const second = random() < 0.4 ? Buffer.alloc(0) : randomPayload(random);
+			wire = Buffer.concat([wire, encodeWith(random, encoding, second)]);
+			boundaries.push(wire.length);
+			decodedLength += second.length;
+		}
+		const mutation = random();
+		if (mutation < 0.25) {
+			wire = Buffer.concat([
+				wire,
+				Buffer.from(
+					random() < 0.8 ? pick(random, TAILS) : randomBytes(random, 1 + Math.floor(random() * 20)),
+				),
+			]);
+		} else if (mutation < 0.4) {
+			wire = wire.subarray(0, Math.floor(random() * wire.length));
+		} else if (mutation < 0.5 && wire.length > 0) {
+			const copy = Buffer.from(wire);
+			const at = Math.floor(random() * copy.length);
+			copy[at] = (copy[at] ?? 0) ^ (1 << Math.floor(random() * 8));
+			wire = copy;
+		}
+		const maxBytes = Math.max(
+			1,
+			pick(random, [
+				decodedLength - 1,
+				decodedLength,
+				decodedLength + 1,
+				wire.length - 1,
+				wire.length,
+				32,
+				100_000,
+				1_000_000,
+			]),
+		);
+		const chunks = splitWire(random, wire, boundaries);
+		const output = await nodeDecode(encoding, chunks, maxBytes);
+		cases.push({
+			input: { encoding, chunks: chunks.map((chunk) => chunk.toString("hex")), maxBytes },
+			output,
+		});
+	}
+	return cases;
+}
+
 export const netExporter: VectorExporter = {
 	name: "net",
 	async build() {
@@ -645,6 +831,7 @@ export const netExporter: VectorExporter = {
 			{ path: "net/same-ip.json", content: sameIpCases() },
 			{ path: "net/hop-core.json", content: await hopCoreCases() },
 			{ path: "net/page-archive.json", content: await pageArchiveCases() },
+			{ path: "net/decode.json", content: await decodeCases() },
 		];
 	},
 };

@@ -35,7 +35,15 @@ hex = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
 
+[features]
+default = []
+# Loopback dialing, extra trusted roots, injected DNS/connections and assumed-
+# valid addresses for tests. NEVER enabled by the production binary
+# (checked by `seam_gate` in src/lib.rs).
+test-seams = []
+
 [dev-dependencies]
+research-net = { workspace = true, features = ["test-seams"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

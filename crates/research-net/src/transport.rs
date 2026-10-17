@@ -35,14 +35,12 @@
 //!    directly bypasses it. OS-level egress filtering remains the stronger
 //!    control and is out of scope here.
 
-use std::net::IpAddr;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use research_domain::news::ip_classification::{IpClass, classify_ip_address};
 
 use crate::core::{HopOutcome, HopRequest, HopResponse, HopTransport, SafeFetchCore};
-use crate::dns::{DnsLookup, LookupError, SystemLookup};
+use crate::dns::{DnsLookup, ResolveError, SystemLookup, ValidatedAddress, resolve_public_with};
 use crate::pinned::{PinnedConnect, PinnedHttpsConnect, PinnedRequest, PinnedResponse};
 use crate::tls::{PinnedTls, TlsSetupError};
 
@@ -52,10 +50,10 @@ pub const MAX_CONNECT_ATTEMPTS: usize = 3;
 /// The production `SafeFetcher` + `SafeBinaryFetcher`.
 pub type NodeSafeFetcher = SafeFetchCore<PinnedHopTransport>;
 
-/// Test seams only (`NodeSafeFetcherOverrides`). Production calls
-/// [`create_node_safe_fetcher`]; an override replaces system DNS or the
-/// pinned TLS connection, so passing one outside tests removes the
-/// corresponding guarantee.
+/// TEST SEAMS only (`NodeSafeFetcherOverrides`), compiled only with the
+/// `test-seams` feature. An override replaces system DNS or the pinned TLS
+/// connection, so it removes the corresponding guarantee.
+#[cfg(any(test, feature = "test-seams"))]
 #[derive(Clone, Default)]
 pub struct NodeSafeFetcherOverrides {
 	/// Replaces the OS resolver.
@@ -65,18 +63,22 @@ pub struct NodeSafeFetcherOverrides {
 }
 
 /// One process-wide fetcher (text and binary share the transport and its
-/// connection pool).
+/// connection pool): OS resolver, verified TLS to port 443, keep-alive pool.
 ///
 /// # Errors
 /// When the TLS configuration cannot be built.
 pub fn create_node_safe_fetcher() -> Result<NodeSafeFetcher, TlsSetupError> {
-	create_node_safe_fetcher_with(NodeSafeFetcherOverrides::default())
+	Ok(SafeFetchCore::new(Arc::new(PinnedHopTransport {
+		lookup: Arc::new(SystemLookup),
+		connect: Arc::new(PinnedHttpsConnect::new(PinnedTls::new()?)),
+	})))
 }
 
-/// [`create_node_safe_fetcher`] with test seams.
+/// TEST SEAM: [`create_node_safe_fetcher`] with replaced parts.
 ///
 /// # Errors
 /// When the TLS configuration cannot be built.
+#[cfg(any(test, feature = "test-seams"))]
 pub fn create_node_safe_fetcher_with(
 	overrides: NodeSafeFetcherOverrides,
 ) -> Result<NodeSafeFetcher, TlsSetupError> {
@@ -92,28 +94,10 @@ pub fn create_node_safe_fetcher_with(
 }
 
 /// The per-hop transport: resolve, classify every answer, then a pinned GET.
+/// Built only by [`create_node_safe_fetcher`] (or the test seam).
 pub struct PinnedHopTransport {
 	lookup: Arc<dyn DnsLookup>,
 	connect: Arc<dyn PinnedConnect>,
-}
-
-impl PinnedHopTransport {
-	/// A transport from explicit parts.
-	#[must_use]
-	pub fn new(lookup: Arc<dyn DnsLookup>, connect: Arc<dyn PinnedConnect>) -> Self {
-		Self { lookup, connect }
-	}
-}
-
-/// Describes the first non-public answer by class only; the address itself
-/// is never echoed (`firstUnsafeClass`).
-fn first_unsafe_class(addresses: &[IpAddr]) -> Option<IpClass> {
-	addresses.iter().find_map(|address| {
-		// The string classifier is the one source of truth (pinned by vectors);
-		// `Display` writes IPv4-mapped IPv6 with its dotted tail, which it parses.
-		let class = classify_ip_address(&address.to_string());
-		(class != IpClass::Public).then_some(class)
-	})
 }
 
 fn to_outcome(response: PinnedResponse) -> HopOutcome {
@@ -129,31 +113,32 @@ fn to_outcome(response: PinnedResponse) -> HopOutcome {
 #[async_trait]
 impl HopTransport for PinnedHopTransport {
 	async fn hop(&self, request: HopRequest<'_>) -> HopOutcome {
-		let addresses = match self.lookup.lookup(request.hostname).await {
+		let addresses = match resolve_public_with(self.lookup.as_ref(), request.hostname).await {
 			Ok(addresses) => addresses,
-			Err(LookupError(code)) => {
+			Err(ResolveError::LookupFailed(code)) => {
 				return HopOutcome::NetworkError {
 					detail: format!("DNS lookup failed: {code}"),
 				};
 			}
+			Err(ResolveError::NoAddresses) => {
+				return HopOutcome::NetworkError {
+					detail: "DNS lookup returned no addresses".to_owned(),
+				};
+			}
+			// Described by class only; the address itself is never echoed.
+			Err(ResolveError::NotPublic(class)) => {
+				return HopOutcome::UnsafeDestination {
+					detail: format!("host resolves to a {} address", class.as_str()),
+				};
+			}
 		};
-		if addresses.is_empty() {
-			return HopOutcome::NetworkError {
-				detail: "DNS lookup returned no addresses".to_owned(),
-			};
-		}
-		if let Some(class) = first_unsafe_class(&addresses) {
-			return HopOutcome::UnsafeDestination {
-				detail: format!("host resolves to a {} address", class.as_str()),
-			};
-		}
 
 		let candidates = addresses.get(..MAX_CONNECT_ATTEMPTS).unwrap_or(&addresses);
 		// ADR-0030 C1: an address with an idle connection goes first (stable),
 		// so DNS round-robin does not defeat reuse; the set of addresses and
 		// their count stay the TypeScript's.
-		let mut ordered: Vec<IpAddr> = candidates.to_vec();
-		ordered.sort_by_key(|address| !self.connect.has_idle(request.hostname, *address));
+		let mut ordered: Vec<&ValidatedAddress> = candidates.iter().collect();
+		ordered.sort_by_key(|address| !self.connect.has_idle(address));
 
 		let path = request.path_and_query();
 		let mut last_failure = "no connection attempted".to_owned();
@@ -162,7 +147,6 @@ impl HopTransport for PinnedHopTransport {
 				break;
 			}
 			let pinned = PinnedRequest {
-				hostname: request.hostname,
 				address,
 				path: &path,
 				headers: request.headers,
@@ -191,6 +175,8 @@ mod tests {
 	use research_application::ports::{
 		SafeFetchError, SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
 	};
+
+	use std::net::IpAddr;
 
 	use super::*;
 	use crate::core::{BodyError, HopBody};
@@ -254,11 +240,11 @@ mod tests {
 			request: PinnedRequest<'_>,
 		) -> Result<PinnedResponse, ConnectError> {
 			self.attempted.lock().unwrap().push((
-				request.hostname.to_owned(),
-				request.address,
+				request.address.hostname().to_owned(),
+				request.address.ip(),
 				request.path.to_owned(),
 			));
-			if let Some(code) = self.refuse.get(&request.address) {
+			if let Some(code) = self.refuse.get(&request.address.ip()) {
 				return Err(ConnectError::code(code));
 			}
 			Ok(PinnedResponse {
@@ -270,8 +256,8 @@ mod tests {
 			})
 		}
 
-		fn has_idle(&self, _hostname: &str, address: IpAddr) -> bool {
-			self.idle.contains(&address)
+		fn has_idle(&self, address: &ValidatedAddress) -> bool {
+			self.idle.contains(&address.ip())
 		}
 	}
 

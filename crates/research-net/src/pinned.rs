@@ -16,7 +16,6 @@
 //! caller's count IS the wire count. Any other `Content-Encoding` is refused.
 //! Only a success body is ever read; anything else is dropped unread.
 
-use std::net::IpAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -33,21 +32,56 @@ use hyper_util::rt::TokioIo;
 
 use crate::core::{BodyError, HopBody, HopHeaders};
 use crate::decode::{ContentDecoder, Encoding, encoding_for};
+use crate::dns::ValidatedAddress;
 use crate::errors::hyper_error_code;
 use crate::pool::{Connection, ConnectionPool, DriverGuard, PoolKey, PoolLimits};
 use crate::tls::{ConnectError, PinnedTls};
 
-/// Decoded output produced per body step (bounds a compression bomb's
-/// expansion between two byte-count checks).
-const DECODE_CHUNK_BYTES: usize = 32 * 1024;
+/// Decoded output produced per decoder call: Node's zlib/brotli chunk size
+/// (`Z_DEFAULT_CHUNK`), so decoded bytes reach the caller's count in the same
+/// steps as in the TypeScript (it also bounds a compression bomb's expansion
+/// between two checks).
+const DECODE_CHUNK_BYTES: usize = 16 * 1024;
+
+/// Node's default `--max-http-header-size` (16 KiB). Node (llhttp) counts
+/// the reason phrase plus every header name and value — not the
+/// `HTTP/1.1 200 ` prefix, the `": "` separators, the CRLFs or leading
+/// whitespace — and fails with `HPE_HEADER_OVERFLOW` once that count reaches
+/// this value (measured against Node 23, see [`node_header_bytes`]).
+pub const NODE_MAX_HEADER_BYTES: usize = 16 * 1024;
+
+/// hyper's own bound on the raw head: wide enough that every head Node
+/// accepts fits (its uncounted framing included), so the exact Node rule is
+/// applied after parsing.
+const RAW_HEAD_LIMIT_BYTES: usize = 64 * 1024;
+
+/// Node has no header-count error; this only bounds hyper's per-response
+/// header table. Above it hyper refuses the head (also `HPE_HEADER_OVERFLOW`),
+/// where Node would keep the first 2,000 headers — a hostile-only case.
+const MAX_RESPONSE_HEADERS: usize = 4_096;
+
+/// The bytes Node counts against [`NODE_MAX_HEADER_BYTES`]. hyper drops
+/// trailing whitespace from values, which Node counts; a head padded that
+/// way can pass here and fail in Node (documented residual).
+fn node_header_bytes(head: &http::response::Parts) -> usize {
+	let reason = head
+		.extensions
+		.get::<hyper::ext::ReasonPhrase>()
+		.map(|phrase| phrase.as_bytes().len())
+		.or_else(|| head.status.canonical_reason().map(str::len))
+		.unwrap_or(0);
+	head.headers.iter().fold(reason, |sum, (name, value)| {
+		sum + name.as_str().len() + value.as_bytes().len()
+	})
+}
 
 /// One GET to a validated address (`PinnedRequest`).
 #[derive(Clone, Copy, Debug)]
 pub struct PinnedRequest<'a> {
-	/// SNI, certificate identity and `Host`. Never resolved again.
-	pub hostname: &'a str,
-	/// The validated public address the socket must connect to.
-	pub address: IpAddr,
+	/// The validated public address the socket must connect to, with the
+	/// host name used for SNI, certificate identity and `Host` (never
+	/// resolved again).
+	pub address: &'a ValidatedAddress,
 	/// Path and query, starting with "/".
 	pub path: &'a str,
 	/// Request headers.
@@ -90,9 +124,9 @@ pub trait PinnedConnect: Send + Sync {
 	/// Sends the request.
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError>;
 
-	/// Whether an idle pooled connection to (`hostname`, `address`) exists;
-	/// the transport tries such addresses first.
-	fn has_idle(&self, _hostname: &str, _address: IpAddr) -> bool {
+	/// Whether an idle pooled connection to `address` (host name and IP)
+	/// exists; the transport tries such addresses first.
+	fn has_idle(&self, _address: &ValidatedAddress) -> bool {
 		false
 	}
 }
@@ -168,7 +202,7 @@ fn build_request(request: &PinnedRequest<'_>) -> Result<Request<Empty<Bytes>>, C
 	let mut builder = Request::builder()
 		.method(Method::GET)
 		.uri(request.path)
-		.header(HOST, value(request.hostname)?)
+		.header(HOST, value(request.address.hostname())?)
 		.header(ACCEPT, value(request.headers.accept)?)
 		.header(USER_AGENT, value(request.headers.user_agent)?);
 	if let Some(authorization) = request.headers.authorization {
@@ -221,10 +255,12 @@ impl PinnedHttpsConnect {
 		self.opened.load(Ordering::Relaxed)
 	}
 
-	async fn open(&self, hostname: &str, address: IpAddr) -> Result<Connection, ConnectError> {
-		let stream = self.tls.connect(hostname, address).await?;
+	async fn open(&self, address: &ValidatedAddress) -> Result<Connection, ConnectError> {
+		let stream = self.tls.connect(address).await?;
 		self.opened.fetch_add(1, Ordering::Relaxed);
 		let (sender, connection) = hyper::client::conn::http1::Builder::new()
+			.max_headers(MAX_RESPONSE_HEADERS)
+			.max_header_size(RAW_HEAD_LIMIT_BYTES)
 			.handshake::<_, Empty<Bytes>>(TokioIo::new(stream))
 			.await
 			.map_err(|error| ConnectError::code(hyper_error_code(&error)))?;
@@ -260,6 +296,11 @@ impl PinnedHttpsConnect {
 			}
 		};
 		let (head, body) = response.into_parts();
+		if node_header_bytes(&head) >= NODE_MAX_HEADER_BYTES {
+			return Err(SendFailure::Failed(ConnectError::code(
+				"HPE_HEADER_OVERFLOW",
+			)));
+		}
 		let status = head.status.as_u16();
 		let location = header_text(&head.headers, &LOCATION);
 		let content_type = header_text(&head.headers, &CONTENT_TYPE);
@@ -289,22 +330,17 @@ impl PinnedHttpsConnect {
 			location,
 			content_type,
 			content_length,
-			body: Box::new(PinnedBody {
-				incoming: body,
-				release: Some(Release {
+			body: Box::new(PinnedBody::new(
+				body,
+				Some(Release {
 					pool: Arc::clone(&self.pool),
 					key,
 					connection,
 					reusable,
 				}),
 				decoder,
-				pending: Bytes::new(),
-				wire_bytes: 0,
-				max_encoded_bytes: request.max_encoded_bytes,
-				wire_done: false,
-				finished: false,
-				buffer: Vec::new(),
-			}),
+				request.max_encoded_bytes,
+			)),
 		})
 	}
 }
@@ -312,8 +348,11 @@ impl PinnedHttpsConnect {
 #[async_trait]
 impl PinnedConnect for PinnedHttpsConnect {
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError> {
-		let key: PoolKey = (request.hostname.to_owned(), request.address);
-		if let Some(idle) = self.pool.take(request.hostname, request.address) {
+		let key: PoolKey = (request.address.hostname().to_owned(), request.address.ip());
+		if let Some(idle) = self
+			.pool
+			.take(request.address.hostname(), request.address.ip())
+		{
 			match self.send(idle, key.clone(), &request).await {
 				Ok(response) => return Ok(response),
 				// The server closed the idle connection: fall through to a fresh one.
@@ -321,15 +360,15 @@ impl PinnedConnect for PinnedHttpsConnect {
 				Err(SendFailure::Failed(error)) => return Err(error),
 			}
 		}
-		let connection = self.open(request.hostname, request.address).await?;
+		let connection = self.open(request.address).await?;
 		match self.send(connection, key, &request).await {
 			Ok(response) => Ok(response),
 			Err(SendFailure::Closed(error) | SendFailure::Failed(error)) => Err(error),
 		}
 	}
 
-	fn has_idle(&self, hostname: &str, address: IpAddr) -> bool {
-		self.pool.has_idle(hostname, address)
+	fn has_idle(&self, address: &ValidatedAddress) -> bool {
+		self.pool.has_idle(address.hostname(), address.ip())
 	}
 }
 
@@ -351,8 +390,68 @@ struct Release {
 	reusable: bool,
 }
 
-struct PinnedBody {
-	incoming: Incoming,
+/// The encoded body as it arrives: data frames, or a failure as a Node code.
+#[async_trait]
+trait WireFrames: Send {
+	async fn next_frame(&mut self) -> Option<Result<Bytes, String>>;
+}
+
+#[async_trait]
+impl WireFrames for Incoming {
+	async fn next_frame(&mut self) -> Option<Result<Bytes, String>> {
+		loop {
+			match self.frame().await? {
+				Err(error) => return Some(Err(hyper_error_code(&error).to_owned())),
+				// Trailers carry no body bytes.
+				Ok(frame) => {
+					if let Ok(data) = frame.into_data() {
+						return Some(Ok(data));
+					}
+				}
+			}
+		}
+	}
+}
+
+/// Scripted wire frames (test seam: the decoding vectors drive the real body).
+#[cfg(any(test, feature = "test-seams"))]
+struct ScriptedWire(std::vec::IntoIter<Bytes>);
+
+#[cfg(any(test, feature = "test-seams"))]
+#[async_trait]
+impl WireFrames for ScriptedWire {
+	async fn next_frame(&mut self) -> Option<Result<Bytes, String>> {
+		self.0.next().map(Ok)
+	}
+}
+
+/// TEST SEAM: the body a 2xx response with `content_encoding` would yield
+/// for these wire frames (the same decoding, wire-byte cap and chunking as
+/// a real connection).
+///
+/// # Errors
+/// `UNSUPPORTED_CONTENT_ENCODING`, like the real connect.
+#[cfg(any(test, feature = "test-seams"))]
+pub fn decoded_body_from_frames(
+	content_encoding: Option<&str>,
+	frames: Vec<Bytes>,
+	max_encoded_bytes: usize,
+) -> Result<Box<dyn HopBody>, ConnectError> {
+	let decoder = match encoding_for(content_encoding) {
+		Encoding::Identity => None,
+		Encoding::Decoded(decoder) => Some(decoder),
+		Encoding::Unsupported => return Err(ConnectError::code("UNSUPPORTED_CONTENT_ENCODING")),
+	};
+	Ok(Box::new(PinnedBody::new(
+		ScriptedWire(frames.into_iter()),
+		None,
+		decoder,
+		max_encoded_bytes,
+	)))
+}
+
+struct PinnedBody<W> {
+	wire: W,
 	/// `Some` until the body ends; dropping it (any early exit) closes the socket.
 	release: Option<Release>,
 	decoder: Option<ContentDecoder>,
@@ -361,11 +460,33 @@ struct PinnedBody {
 	wire_bytes: usize,
 	max_encoded_bytes: usize,
 	wire_done: bool,
+	/// Node ended the decoded stream early (see [`crate::decode::Step::ended`]).
+	decoded_ended: bool,
 	finished: bool,
 	buffer: Vec<u8>,
 }
 
-impl PinnedBody {
+impl<W: WireFrames> PinnedBody<W> {
+	fn new(
+		wire: W,
+		release: Option<Release>,
+		decoder: Option<ContentDecoder>,
+		max_encoded_bytes: usize,
+	) -> Self {
+		Self {
+			wire,
+			release,
+			decoder,
+			pending: Bytes::new(),
+			wire_bytes: 0,
+			max_encoded_bytes,
+			wire_done: false,
+			decoded_ended: false,
+			finished: false,
+			buffer: Vec::new(),
+		}
+	}
+
 	fn fail(&mut self, error: BodyError) -> Option<Result<Bytes, BodyError>> {
 		self.finished = true;
 		self.release = None;
@@ -397,6 +518,13 @@ impl PinnedBody {
 				.map_err(|error| BodyError::Failed(error.0))?;
 			let consumed = step.consumed.min(self.pending.len());
 			let _ = self.pending.split_to(consumed);
+			if step.ended {
+				// The rest of the body is never read, so the connection is not
+				// reusable: `complete` runs with the release dropped.
+				self.decoded_ended = true;
+				self.release = None;
+				self.pending = Bytes::new();
+			}
 			if step.produced > 0 {
 				let produced = step.produced.min(self.buffer.len());
 				return Ok(Some(Bytes::copy_from_slice(
@@ -413,7 +541,7 @@ impl PinnedBody {
 }
 
 #[async_trait]
-impl HopBody for PinnedBody {
+impl<W: WireFrames> HopBody for PinnedBody<W> {
 	async fn next_chunk(&mut self) -> Option<Result<Bytes, BodyError>> {
 		if self.finished {
 			return None;
@@ -425,42 +553,41 @@ impl HopBody for PinnedBody {
 					Ok(None) => {}
 					Err(error) => return self.fail(error),
 				}
+				if self.decoded_ended {
+					return self.complete();
+				}
 				if self.wire_done {
-					let drained = match self.decoder.as_mut() {
-						Some(decoder) => decoder.drain(&mut self.buffer),
-						None => Ok(0),
+					// Node's final Z_FINISH call: output it produces is delivered
+					// only if the stream is complete, or the buffer filled (Node
+					// then pushes and calls again).
+					let Some(decoder) = self.decoder.as_mut() else {
+						return self.complete();
 					};
-					match drained {
-						Ok(0) => {}
-						Ok(produced) => {
-							let produced = produced.min(self.buffer.len());
-							return Some(Ok(Bytes::copy_from_slice(
-								self.buffer.get(..produced).unwrap_or(&[]),
-							)));
-						}
+					let produced = match decoder.drain(&mut self.buffer) {
+						Ok(produced) => produced.min(self.buffer.len()),
 						Err(error) => return self.fail(BodyError::Failed(error.0)),
+					};
+					let complete = decoder.finish();
+					if produced == self.buffer.len() || (produced > 0 && complete.is_ok()) {
+						return Some(Ok(Bytes::copy_from_slice(
+							self.buffer.get(..produced).unwrap_or(&[]),
+						)));
 					}
-					let finished = self.decoder.as_ref().map_or(Ok(()), ContentDecoder::finish);
-					return match finished {
+					return match complete {
 						Ok(()) => self.complete(),
 						Err(error) => self.fail(BodyError::Failed(error.0)),
 					};
 				}
 			}
-			match self.incoming.frame().await {
+			match self.wire.next_frame().await {
 				None => {
 					self.wire_done = true;
 					if self.decoder.is_none() {
 						return self.complete();
 					}
 				}
-				Some(Err(error)) => {
-					return self.fail(BodyError::Failed(hyper_error_code(&error).to_owned()));
-				}
-				Some(Ok(frame)) => {
-					let Ok(data) = frame.into_data() else {
-						continue; // trailers
-					};
+				Some(Err(code)) => return self.fail(BodyError::Failed(code)),
+				Some(Ok(data)) => {
 					if self.decoder.is_none() {
 						if data.is_empty() {
 							continue;
@@ -510,9 +637,12 @@ mod tests {
 
 	#[test]
 	fn builds_the_request_with_the_typescript_header_order() {
+		let address = ValidatedAddress::assume_validated(
+			"pinned.synthetic-wire.org",
+			"93.184.216.34".parse().unwrap(),
+		);
 		let request = PinnedRequest {
-			hostname: "pinned.synthetic-wire.org",
-			address: "93.184.216.34".parse().unwrap(),
+			address: &address,
 			path: "/echo?x=1",
 			headers: HopHeaders {
 				accept: "text/plain",

@@ -807,6 +807,7 @@ dependencies = [
  "research-application",
  "research-domain",
  "research-js",
+ "research-net",
  "rustls",
  "rustls-pki-types",
  "serde",
