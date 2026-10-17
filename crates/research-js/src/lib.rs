@@ -19,6 +19,7 @@ pub mod date;
 pub mod json;
 pub mod json_text;
 pub mod number;
+pub mod text_decoder;
 pub mod uri;
 pub mod utf16;
 pub mod whitespace;

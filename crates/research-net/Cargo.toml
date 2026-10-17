@@ -23,12 +23,22 @@ hyper-util = { workspace = true }
 http = { workspace = true }
 http-body-util = { workspace = true }
 bytes = { workspace = true }
-flate2 = { workspace = true }
+# zlib-rs: a port of zlib itself, so gzip header/CRC handling and error
+# classes match Node's zlib (and it is faster than miniz_oxide).
+flate2 = { workspace = true, features = ["zlib-rs"] }
 brotli-decompressor = { workspace = true }
+futures-util = { workspace = true }
+getrandom = { workspace = true }
 libc = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 thiserror = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
 
 [lints]
 workspace = true
