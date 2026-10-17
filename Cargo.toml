@@ -96,7 +96,7 @@ cast_lossless = "warn"
 # builds, optimised dependencies (faster tests, smaller artifacts).
 [profile.dev]
 debug = false
-incremental = true
+incremental = false
 
 [profile.dev.package."*"]
 opt-level = 1
