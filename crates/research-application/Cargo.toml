@@ -10,6 +10,11 @@ publish.workspace = true
 [dependencies]
 research-js = { workspace = true }
 research-domain = { workspace = true }
+research-contracts = { workspace = true }
+research-agent-core = { workspace = true }
+research-widget-grid = { workspace = true }
+rayon = { workspace = true }
+tokio = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { workspace = true }
 

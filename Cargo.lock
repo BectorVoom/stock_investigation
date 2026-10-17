@@ -719,9 +719,11 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures-util",
+ "memchr",
  "research-contracts",
  "research-domain",
  "research-js",
+ "serde",
  "serde_json",
  "thiserror",
  "tokio",
@@ -733,8 +735,13 @@ name = "research-application"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "rayon",
+ "research-agent-core",
+ "research-contracts",
  "research-domain",
  "research-js",
+ "research-widget-grid",
+ "tokio",
  "tokio-util",
 ]
 
@@ -936,6 +943,7 @@ dependencies = [
  "research-contracts",
  "research-domain",
  "research-feed",
+ "research-finance",
  "research-html",
  "research-js",
  "serde",
