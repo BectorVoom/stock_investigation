@@ -1,0 +1,1717 @@
+{
+	"schema": "reportingPeriod",
+	"cases": [
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":null,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":\"2025\",\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":true,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":-1,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":0,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":0.5,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1.5,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2026,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2026,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2024,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2024,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025.5,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":9007199254740991,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected number to be <=2100"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":9007199254740992,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected number to be <=2100"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":-9007199254740992,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1e+21,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected number to be <=2100"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":-1e-7,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2100,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2100,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2101,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too big: expected number to be <=2100"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1990,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":1990,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":1989,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":-0,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1e400,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":-1e400,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":1.0,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2e0,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalYear"
+					],
+					"message": "Too small: expected number to be >=1990"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":null,\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":1,\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":[\"x\"],\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":{\"length\":1},\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"WRONG-VALUE\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"fy\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\\u0000\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\\tFY\\t\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\\nFY\\n\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\\u000bFY\\u000b\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\\fFY\\f\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"\\rFY\\r\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\" FY \",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"　FY　\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"﻿FY﻿\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"​FY​\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"᠎FY᠎\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FYa\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FYé\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY😀\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"F\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"fiscalPeriod"
+					],
+					"message": "Invalid option: expected one of \"FY\"|\"Q1\"|\"Q2\"|\"Q3\"|\"Q4\"|\"TTM\""
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q1\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q1\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q2\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q2\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q3\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q3\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q4\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"Q4\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"TTM\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": true,
+			"output": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"TTM\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}"
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":null,\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":1,\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":[\"x\"],\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":{\"length\":1},\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"WRONG-VALUE\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\\u0000\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\\t2025-04-01\\t\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\\n2025-04-01\\n\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\\u000b2025-04-01\\u000b\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\\f2025-04-01\\f\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"\\r2025-04-01\\r\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\" 2025-04-01 \",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"　2025-04-01　\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"﻿2025-04-01﻿\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"​2025-04-01​\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"᠎2025-04-01᠎\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"０025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"٠025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"०025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01a\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01é\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01😀\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-0\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodStart"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\\t2026-03-31\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\\n2026-03-31\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\\u000b2026-03-31\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\\f2026-03-31\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"\\r2026-03-31\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\" 2026-03-31 \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"　2026-03-31　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"﻿2026-03-31﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"​2026-03-31​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"᠎2026-03-31᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"０026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"٠026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"०026-03-31\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31a\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31é\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-31😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"fiscalYear\":2025,\"fiscalPeriod\":\"FY\",\"periodStart\":\"2025-04-01\",\"periodEnd\":\"2026-03-3\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		}
+	]
+}

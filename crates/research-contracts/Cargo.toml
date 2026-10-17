@@ -13,6 +13,8 @@ research-domain = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 indexmap = { workspace = true }
+url = { workspace = true }
+rayon = { workspace = true }
 
 [lints]
 workspace = true

@@ -743,10 +743,12 @@ name = "research-contracts"
 version = "0.1.0"
 dependencies = [
  "indexmap",
+ "rayon",
  "research-domain",
  "research-js",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]

@@ -1,0 +1,310 @@
+{
+	"schema": "heartbeatRequest",
+	"cases": [
+		{
+			"input": "{\"leaseGeneration\":3}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":\"3\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":1}"
+		},
+		{
+			"input": "{\"leaseGeneration\":0.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":4}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":4}"
+		},
+		{
+			"input": "{\"leaseGeneration\":2}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":2}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":9007199254740991}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":9007199254740991}"
+		},
+		{
+			"input": "{\"leaseGeneration\":9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1e+21}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1.0}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":1}"
+		},
+		{
+			"input": "{\"leaseGeneration\":2e0}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":2}"
+		}
+	]
+}

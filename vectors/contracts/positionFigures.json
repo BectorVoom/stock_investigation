@@ -1,0 +1,2496 @@
+{
+	"schema": "positionFigures",
+	"cases": [
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":null,\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":1,\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":[\"x\"],\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":{\"length\":1},\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"WRONG-VALUE\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"jp\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\\u0000\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\tJP\\t\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\nJP\\n\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\u000bJP\\u000b\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\fJP\\f\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\rJP\\r\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" JP \",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"　JP　\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"﻿JP﻿\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"​JP​\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"᠎JP᠎\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JPa\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JPé\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP😀\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"J\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"JP\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":null,\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":1,\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":[\"x\"],\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":{\"length\":1},\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"WRONG-VALUE\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"JP-MARGIN-BALANCE\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\\u0000\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\\tjp-margin-balance\\t\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\\njp-margin-balance\\n\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\\u000bjp-margin-balance\\u000b\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\\fjp-margin-balance\\f\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"\\rjp-margin-balance\\r\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\" jp-margin-balance \",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"　jp-margin-balance　\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"﻿jp-margin-balance﻿\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"​jp-margin-balance​\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"᠎jp-margin-balance᠎\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balancea\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balanceé\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance😀\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balanc\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":null,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":\"1200000\",\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":true,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":-1,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":0,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":0,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":0.5,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":0.5,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1.5,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1.5,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200001,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200001,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1199999,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1199999,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000.5,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000.5,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199254740991,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199254740991,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199254740992,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199254740992,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":-9007199254740992,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1e+21,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1e+21,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":-1e-7,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199255940992,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":9007199255940992,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":-0,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":0,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1e400,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":-1e400,\"marginSellBalanceShares\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginBuyBalanceShares"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1.0,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":2e0,\"marginSellBalanceShares\":400000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":2,\"marginSellBalanceShares\":400000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":\"400000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":0}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":0.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":0.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400001}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400001}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":399999}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":399999}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":400000.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199254740991}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199254740991}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199254740992}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199254740992}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1e+21}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1e+21}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199255140992}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":9007199255140992}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":-0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":0}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"marginSellBalanceShares"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1.0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":1}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":2e0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"JP\",\"metric\":\"jp-margin-balance\",\"marginBuyBalanceShares\":1200000,\"marginSellBalanceShares\":2}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":null,\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":1,\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":[\"x\"],\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":{\"length\":1},\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"WRONG-VALUE\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"us\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\\u0000\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\tUS\\t\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\nUS\\n\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\u000bUS\\u000b\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\fUS\\f\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"\\rUS\\r\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\" US \",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"　US　\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"﻿US﻿\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"​US​\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"᠎US᠎\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"USa\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"USé\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US😀\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"U\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"jurisdiction"
+					],
+					"message": "Invalid input: expected \"US\""
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":null,\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":1,\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":[\"x\"],\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":{\"length\":1},\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"WRONG-VALUE\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"US-SHORT-INTEREST\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\\u0000\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\\tus-short-interest\\t\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\\nus-short-interest\\n\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\\u000bus-short-interest\\u000b\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\\fus-short-interest\\f\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"\\rus-short-interest\\r\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\" us-short-interest \",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"　us-short-interest　\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"﻿us-short-interest﻿\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"​us-short-interest​\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"᠎us-short-interest᠎\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interesta\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interesté\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest😀\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interes\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_union",
+					"path": [
+						"metric"
+					],
+					"message": "Invalid discriminator value. Expected 'jp-margin-balance' | 'us-short-interest'"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":null,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":\"9000000\",\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":true,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":-1,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":0,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":0,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":0.5,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":0.5,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1.5,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1.5,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000001,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000001,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":8999999,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":8999999,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000.5,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000.5,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199254740991,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199254740991,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199254740992,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199254740992,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":-9007199254740992,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1e+21,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1e+21,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":-1e-7,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199263740992,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9007199263740992,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":-0,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":0,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1e400,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":-1e400,\"averageDailyVolumeShares\":2250000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"reportedShortInterestShares"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1.0,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":1,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":2e0,\"averageDailyVolumeShares\":2250000}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":2,\"averageDailyVolumeShares\":2250000}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":null}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":null}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":\"2250000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":0}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":0.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":0.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250001}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250001}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2249999}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2249999}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000.5}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2250000.5}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199254740991}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199254740991}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199254740992}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199254740992}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1e+21}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1e+21}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199256990992}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":9007199256990992}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":-0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":0}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"averageDailyVolumeShares"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1.0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":1}"
+		},
+		{
+			"input": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2e0}",
+			"valid": true,
+			"output": "{\"jurisdiction\":\"US\",\"metric\":\"us-short-interest\",\"reportedShortInterestShares\":9000000,\"averageDailyVolumeShares\":2}"
+		}
+	]
+}

@@ -1,0 +1,1639 @@
+{
+	"schema": "marketSeriesMeta",
+	"cases": [
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":null,\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":1,\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":[\"x\"],\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":{\"length\":1},\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"title"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"WRONG-VALUE\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"WRONG-VALUE\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE VOLATILITY INDEX: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE VOLATILITY INDEX: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"cboe volatility index: vix\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"cboe volatility index: vix\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\\u0000\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\\u0000\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"\\tCBOE Volatility Index: VIX\\t\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"\\nCBOE Volatility Index: VIX\\n\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"\\u000bCBOE Volatility Index: VIX\\u000b\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"\\fCBOE Volatility Index: VIX\\f\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"\\rCBOE Volatility Index: VIX\\r\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\" CBOE Volatility Index: VIX \",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"　CBOE Volatility Index: VIX　\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"﻿CBOE Volatility Index: VIX﻿\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"​CBOE Volatility Index: VIX​\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"​CBOE Volatility Index: VIX​\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"᠎CBOE Volatility Index: VIX᠎\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"᠎CBOE Volatility Index: VIX᠎\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIXaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIXéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIXéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIXééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"C\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"C\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":null,\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":1,\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":[\"x\"],\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":{\"length\":1},\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"unit"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"WRONG-VALUE\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"WRONG-VALUE\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"INDEX\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"INDEX\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\\u0000\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\\u0000\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\\tIndex\\t\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\\nIndex\\n\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\\u000bIndex\\u000b\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\\fIndex\\f\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"\\rIndex\\r\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\" Index \",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"　Index　\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"﻿Index﻿\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"​Index​\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"​Index​\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"᠎Index᠎\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"᠎Index᠎\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Indexéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"I\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"I\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":null,\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":1,\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":[\"x\"],\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":{\"length\":1},\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"WRONG-VALUE\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"DAILY\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\\u0000\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\\tdaily\\t\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\\ndaily\\n\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\\u000bdaily\\u000b\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\\fdaily\\f\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"\\rdaily\\r\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\" daily \",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"　daily　\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"﻿daily﻿\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"​daily​\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"᠎daily᠎\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"dailya\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"dailyé\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily😀\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"dail\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"frequency"
+					],
+					"message": "Invalid option: expected one of \"daily\"|\"weekly\"|\"monthly\"|\"quarterly\"|\"annual\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"weekly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"weekly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"monthly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"monthly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"quarterly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"quarterly\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"annual\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"annual\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"unknown\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"unknown\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":null,\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":1,\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":[\"x\"],\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":{\"length\":1},\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"publisher"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"WRONG-VALUE\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"WRONG-VALUE\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"FEDERAL RESERVE BANK OF ST. LOUIS\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"FEDERAL RESERVE BANK OF ST. LOUIS\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"federal reserve bank of st. louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"federal reserve bank of st. louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\\u0000\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\\u0000\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\\tFederal Reserve Bank of St. Louis\\t\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\\nFederal Reserve Bank of St. Louis\\n\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\\u000bFederal Reserve Bank of St. Louis\\u000b\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\\fFederal Reserve Bank of St. Louis\\f\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"\\rFederal Reserve Bank of St. Louis\\r\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\" Federal Reserve Bank of St. Louis \",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"　Federal Reserve Bank of St. Louis　\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"﻿Federal Reserve Bank of St. Louis﻿\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"​Federal Reserve Bank of St. Louis​\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"​Federal Reserve Bank of St. Louis​\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"᠎Federal Reserve Bank of St. Louis᠎\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"᠎Federal Reserve Bank of St. Louis᠎\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louisaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louisaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louisaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louisééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louisééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louiséééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"F\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"F\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"HTTPS://FRED.STLOUISFED.ORG/SERIES/VIXCLS\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"HTTPS://FRED.STLOUISFED.ORG/SERIES/VIXCLS\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/vixcls\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/vixcls\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\\u0000\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\\u0000\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\thttps://fred.stlouisfed.org/series/VIXCLS\\t\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\thttps://fred.stlouisfed.org/series/VIXCLS\\t\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\nhttps://fred.stlouisfed.org/series/VIXCLS\\n\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\nhttps://fred.stlouisfed.org/series/VIXCLS\\n\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\u000bhttps://fred.stlouisfed.org/series/VIXCLS\\u000b\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\u000bhttps://fred.stlouisfed.org/series/VIXCLS\\u000b\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\fhttps://fred.stlouisfed.org/series/VIXCLS\\f\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\fhttps://fred.stlouisfed.org/series/VIXCLS\\f\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\rhttps://fred.stlouisfed.org/series/VIXCLS\\r\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"\\rhttps://fred.stlouisfed.org/series/VIXCLS\\r\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\" https://fred.stlouisfed.org/series/VIXCLS \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"　https://fred.stlouisfed.org/series/VIXCLS　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"﻿https://fred.stlouisfed.org/series/VIXCLS﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"​https://fred.stlouisfed.org/series/VIXCLS​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"᠎https://fred.stlouisfed.org/series/VIXCLS᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLSéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/VIXCLS😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://f\"}",
+			"valid": true,
+			"output": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://f\"}"
+		},
+		{
+			"input": "{\"title\":\"CBOE Volatility Index: VIX\",\"unit\":\"Index\",\"frequency\":\"daily\",\"publisher\":\"Federal Reserve Bank of St. Louis\",\"sourceUrl\":\"https://\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		}
+	]
+}

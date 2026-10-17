@@ -1,0 +1,2549 @@
+{
+	"schema": "datasetColumn",
+	"cases": [
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":null,\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":1,\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":[\"x\"],\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":{\"length\":1},\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"WRONG-VALUE\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"VALUE\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"VALUE\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\\u0000\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\tvalue\\t\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\nvalue\\n\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\u000bvalue\\u000b\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\fvalue\\f\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\rvalue\\r\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" value \",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"　value　\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"﻿value﻿\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"​value​\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"᠎value᠎\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"valueééééééééééééééééééééééééééééééééééé\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"valueéééééééééééééééééééééééééééééééééééé\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"v\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"v\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":null,\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":1,\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":[\"x\"],\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":{\"length\":1},\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"label"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"WRONG-VALUE\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"WRONG-VALUE\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"VALUE\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"VALUE\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\\u0000\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\\u0000\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\\tValue\\t\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"\\tValue\\t\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\\nValue\\n\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"\\nValue\\n\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\\u000bValue\\u000b\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"\\u000bValue\\u000b\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\\fValue\\f\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"\\fValue\\f\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"\\rValue\\r\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"\\rValue\\r\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\" Value \",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"　Value　\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"　Value　\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"﻿Value﻿\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"﻿Value﻿\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"​Value​\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"​Value​\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"᠎Value᠎\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"᠎Value᠎\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Valueaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Valueééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Valueééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Valueéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"V\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"V\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":null,\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":1,\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":[\"x\"],\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":{\"length\":1},\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"WRONG-VALUE\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"NUMBER\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\\u0000\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\\tnumber\\t\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\\nnumber\\n\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\\u000bnumber\\u000b\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\\fnumber\\f\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"\\rnumber\\r\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\" number \",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"　number　\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"﻿number﻿\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"​number​\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"᠎number᠎\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"numbera\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"numberé\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number😀\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"numbe\",\"unit\":\"USD\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"text\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"text\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"date\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"date\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"unit"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"unit"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"usd\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"usd\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\\u0000\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\\u0000\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\tUSD\\t\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\tUSD\\t\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\nUSD\\n\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\nUSD\\n\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\u000bUSD\\u000b\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\u000bUSD\\u000b\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\fUSD\\f\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\fUSD\\f\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\rUSD\\r\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"\\rUSD\\r\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\" USD \"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"　USD　\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"　USD　\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"﻿USD﻿\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"﻿USD﻿\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"​USD​\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"​USD​\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"᠎USD᠎\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"᠎USD᠎\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDééééééééééééééééééééééééééééééééééééé\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USDéééééééééééééééééééééééééééééééééééééé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}"
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"USD😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"unit"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"U\"}",
+			"valid": true,
+			"output": "{\"key\":\"value\",\"label\":\"Value\",\"kind\":\"number\",\"unit\":\"U\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":null,\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":1,\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":[\"x\"],\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":{\"length\":1},\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"key"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"WRONG-VALUE\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"NAME\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"NAME\",\"label\":\"Name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\\u0000\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\tname\\t\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\nname\\n\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\u000bname\\u000b\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\fname\\f\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"\\rname\\r\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\" name \",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"　name　\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"﻿name﻿\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"​name​\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"᠎name᠎\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"nameéééééééééééééééééééééééééééééééééééé\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"nameééééééééééééééééééééééééééééééééééééé\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"key"
+					],
+					"message": "Invalid string: must match pattern /^[A-Za-z][A-Za-z0-9_]{0,39}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"n\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"n\",\"label\":\"Name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":null,\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":1,\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":[\"x\"],\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":{\"length\":1},\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"label"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"label"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"WRONG-VALUE\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"WRONG-VALUE\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"NAME\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"NAME\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\\u0000\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name\\u0000\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\\tName\\t\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"\\tName\\t\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\\nName\\n\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"\\nName\\n\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\\u000bName\\u000b\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"\\u000bName\\u000b\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\\fName\\f\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"\\fName\\f\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"\\rName\\r\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"\\rName\\r\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\" Name \",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"　Name　\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"　Name　\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"﻿Name﻿\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"﻿Name﻿\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"​Name​\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"​Name​\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"᠎Name᠎\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"᠎Name᠎\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Nameaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Nameéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Nameéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Nameééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"label"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"N\",\"kind\":\"text\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"N\",\"kind\":\"text\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"TEXT\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\\ttext\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\\ntext\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\\u000btext\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\\ftext\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"\\rtext\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\" text \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"　text　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"﻿text﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"​text​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"᠎text᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"texta\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"texté\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"text😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"tex\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"kind"
+					],
+					"message": "Invalid option: expected one of \"text\"|\"number\"|\"date\""
+				}
+			]
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"number\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"number\"}"
+		},
+		{
+			"input": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"date\"}",
+			"valid": true,
+			"output": "{\"key\":\"name\",\"label\":\"Name\",\"kind\":\"date\"}"
+		}
+	]
+}

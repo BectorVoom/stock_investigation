@@ -1,0 +1,2621 @@
+{
+	"schema": "supplierLink",
+	"cases": [
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":null,\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":1,\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":[\"x\"],\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":{\"length\":1},\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"WRONG-VALUE\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"WRONG-VALUE\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"SUP_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"SUP_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\\u0000\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\\tsup_1\\t\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\\nsup_1\\n\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\\u000bsup_1\\u000b\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\\fsup_1\\f\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"\\rsup_1\\r\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\" sup_1 \",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"　sup_1　\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"﻿sup_1﻿\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"​sup_1​\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"᠎sup_1᠎\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_０\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_٠\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_०\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"supplierLinkId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"s\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"s\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":null,\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":null,\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":1,\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"scenarioId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":[\"x\"],\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"scenarioId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":{\"length\":1},\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"scenarioId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"scenarioId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"WRONG-VALUE\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"WRONG-VALUE\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"SCN_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"SCN_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\\u0000\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\\tscn_1\\t\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\\nscn_1\\n\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\\u000bscn_1\\u000b\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\\fscn_1\\f\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"\\rscn_1\\r\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\" scn_1 \",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"　scn_1　\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"﻿scn_1﻿\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"​scn_1​\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"᠎scn_1᠎\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_０\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_٠\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_०\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"scenarioId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"s\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"s\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":null,\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"securityId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":1,\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"securityId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":[\"x\"],\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"securityId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":{\"length\":1},\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"securityId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"securityId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"WRONG-VALUE\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"WRONG-VALUE\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"SEC_JP_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"SEC_JP_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\\u0000\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\\tsec_jp_1\\t\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\\nsec_jp_1\\n\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\\u000bsec_jp_1\\u000b\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\\fsec_jp_1\\f\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"\\rsec_jp_1\\r\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\" sec_jp_1 \",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"　sec_jp_1　\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"﻿sec_jp_1﻿\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"​sec_jp_1​\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"᠎sec_jp_1᠎\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_０\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_٠\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_०\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"securityId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"s\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"s\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":null,\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":{},\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":\"xxx\",\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Too small: expected array to have >=1 items"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\",\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"productsOrServices"
+					],
+					"message": "Too big: expected array to have <=12 items"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[null],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[1],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[[\"x\"]],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[{\"length\":1}],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"WRONG-VALUE\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"WRONG-VALUE\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"BATTERY SEPARATORS\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"BATTERY SEPARATORS\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\\u0000\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\\u0000\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\\tBattery separators\\t\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\\nBattery separators\\n\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\\u000bBattery separators\\u000b\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\\fBattery separators\\f\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"\\rBattery separators\\r\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\" Battery separators \"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"　Battery separators　\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"﻿Battery separators﻿\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"​Battery separators​\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"​Battery separators​\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"᠎Battery separators᠎\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"᠎Battery separators᠎\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorséééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorséééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separatorsééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"productsOrServices",
+						0
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"B\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"B\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":null,\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":1,\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":[\"x\"],\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":{\"length\":1},\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"WRONG-VALUE\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"WRONG-VALUE\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"ROUGHLY A THIRD OF SEGMENT REVENUE PER THE CITED FILING.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"ROUGHLY A THIRD OF SEGMENT REVENUE PER THE CITED FILING.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\\u0000\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\\u0000\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\tRoughly a third of segment revenue per the cited filing.\\t\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\tRoughly a third of segment revenue per the cited filing.\\t\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\nRoughly a third of segment revenue per the cited filing.\\n\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\nRoughly a third of segment revenue per the cited filing.\\n\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\u000bRoughly a third of segment revenue per the cited filing.\\u000b\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\u000bRoughly a third of segment revenue per the cited filing.\\u000b\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\fRoughly a third of segment revenue per the cited filing.\\f\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\fRoughly a third of segment revenue per the cited filing.\\f\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\rRoughly a third of segment revenue per the cited filing.\\r\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"\\rRoughly a third of segment revenue per the cited filing.\\r\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\" Roughly a third of segment revenue per the cited filing. \",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"　Roughly a third of segment revenue per the cited filing.　\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"　Roughly a third of segment revenue per the cited filing.　\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"﻿Roughly a third of segment revenue per the cited filing.﻿\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"﻿Roughly a third of segment revenue per the cited filing.﻿\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"​Roughly a third of segment revenue per the cited filing.​\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"​Roughly a third of segment revenue per the cited filing.​\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"᠎Roughly a third of segment revenue per the cited filing.᠎\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"᠎Roughly a third of segment revenue per the cited filing.᠎\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"businessExposure"
+					],
+					"message": "Too big: expected string to have <=1000 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"R\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"R\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":null,\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":{},\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":\"xxx\",\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Too small: expected array to have >=1 items"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\",\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"evidenceIds"
+					],
+					"message": "Too big: expected array to have <=12 items"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[null],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[1],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[[\"x\"]],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[{\"length\":1}],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"WRONG-VALUE\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"WRONG-VALUE\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"EV_1\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"EV_1\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\\u0000\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\\tev_1\\t\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\\nev_1\\n\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\\u000bev_1\\u000b\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\\fev_1\\f\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"\\rev_1\\r\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\" ev_1 \"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"　ev_1　\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"﻿ev_1﻿\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"​ev_1​\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"᠎ev_1᠎\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_０\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_٠\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_०\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"relationshipQuote\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"evidenceIds",
+						0
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"e\"],\"relationshipQuote\":null}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"e\"],\"relationshipQuote\":null}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":\"null-was-here\"}",
+			"valid": true,
+			"output": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":\"null-was-here\"}"
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"],\"relationshipQuote\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"relationshipQuote"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"supplierLinkId\":\"sup_1\",\"scenarioId\":\"scn_1\",\"securityId\":\"sec_jp_1\",\"productsOrServices\":[\"Battery separators\"],\"businessExposure\":\"Roughly a third of segment revenue per the cited filing.\",\"evidenceIds\":[\"ev_1\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"relationshipQuote"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	]
+}

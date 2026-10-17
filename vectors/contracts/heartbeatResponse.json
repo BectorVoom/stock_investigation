@@ -1,0 +1,577 @@
+{
+	"schema": "heartbeatResponse",
+	"cases": [
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":false}",
+			"valid": true,
+			"output": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":false}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":false,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":false,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":null,\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":1,\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":[\"x\"],\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":{\"length\":1},\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"WRONG-VALUE\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11t00:05:00z\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\\u0000\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\\t2026-10-11T00:05:00Z\\t\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\\n2026-10-11T00:05:00Z\\n\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\\u000b2026-10-11T00:05:00Z\\u000b\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\\f2026-10-11T00:05:00Z\\f\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"\\r2026-10-11T00:05:00Z\\r\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\" 2026-10-11T00:05:00Z \",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"　2026-10-11T00:05:00Z　\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"﻿2026-10-11T00:05:00Z﻿\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"​2026-10-11T00:05:00Z​\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"᠎2026-10-11T00:05:00Z᠎\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"０026-10-11T00:05:00Z\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"٠026-10-11T00:05:00Z\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"०026-10-11T00:05:00Z\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Za\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Zé\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z😀\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00\",\"cancelRequested\":false}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"leaseExpiresAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":\"false\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":true}",
+			"valid": true,
+			"output": "{\"leaseExpiresAt\":\"2026-10-11T00:05:00Z\",\"cancelRequested\":true}"
+		}
+	]
+}

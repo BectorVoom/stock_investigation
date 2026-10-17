@@ -1,0 +1,1994 @@
+{
+	"schema": "agentRequest",
+	"cases": [
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":null,\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"runId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":1,\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"runId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":[\"x\"],\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"runId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":{\"length\":1},\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"runId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"runId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"runId"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"WRONG-VALUE\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"WRONG-VALUE\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"RUN_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"RUN_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\\u0000\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\\u0000\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"\\trun_1\\t\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"\\trun_1\\t\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"\\nrun_1\\n\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"\\nrun_1\\n\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"\\u000brun_1\\u000b\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"\\u000brun_1\\u000b\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"\\frun_1\\f\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"\\frun_1\\f\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"\\rrun_1\\r\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"\\rrun_1\\r\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\" run_1 \",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"　run_1　\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"　run_1　\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"﻿run_1﻿\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"﻿run_1﻿\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"​run_1​\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"​run_1​\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"᠎run_1᠎\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"᠎run_1᠎\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_０\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_０\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_٠\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_٠\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_०\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_०\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"runId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"runId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"runId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"r\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"r\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":null,\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"conversationId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":1,\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"conversationId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":[\"x\"],\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"conversationId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":{\"length\":1},\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"conversationId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"conversationId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"conversationId"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"WRONG-VALUE\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"WRONG-VALUE\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"WS_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"WS_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\\u0000\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\\u0000\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\\tws_1\\t\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"\\tws_1\\t\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\\nws_1\\n\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"\\nws_1\\n\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\\u000bws_1\\u000b\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"\\u000bws_1\\u000b\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\\fws_1\\f\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"\\fws_1\\f\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"\\rws_1\\r\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"\\rws_1\\r\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\" ws_1 \",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"　ws_1　\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"　ws_1　\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"﻿ws_1﻿\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"﻿ws_1﻿\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"​ws_1​\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"​ws_1​\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"᠎ws_1᠎\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"᠎ws_1᠎\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_０\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_０\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_٠\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_٠\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_०\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_०\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"conversationId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"conversationId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"conversationId"
+					],
+					"message": "Too big: expected string to have <=96 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"w\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"w\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":null,\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"prompt"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":1,\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"prompt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":[\"x\"],\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"prompt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":{\"length\":1},\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"prompt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"prompt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"prompt"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"WRONG-VALUE\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"WRONG-VALUE\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"ANSWER BRIEFLY.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"ANSWER BRIEFLY.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\\u0000\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\\u0000\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\tAnswer briefly.\\t\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\tAnswer briefly.\\t\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\nAnswer briefly.\\n\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\nAnswer briefly.\\n\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\u000bAnswer briefly.\\u000b\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\u000bAnswer briefly.\\u000b\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\fAnswer briefly.\\f\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\fAnswer briefly.\\f\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\rAnswer briefly.\\r\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"\\rAnswer briefly.\\r\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\" Answer briefly. \",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"　Answer briefly.　\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"　Answer briefly.　\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"﻿Answer briefly.﻿\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"﻿Answer briefly.﻿\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"​Answer briefly.​\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"​Answer briefly.​\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"᠎Answer briefly.᠎\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"᠎Answer briefly.᠎\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"A\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"A\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":null,\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds"
+					],
+					"message": "Invalid input: expected array, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":{},\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds"
+					],
+					"message": "Invalid input: expected array, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":\"xxx\",\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds"
+					],
+					"message": "Invalid input: expected array, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds"
+					],
+					"message": "Invalid input: expected array, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[null,\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[1,\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[[\"x\"],\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[{\"length\":1},\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"WRONG-VALUE\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"WRONG-VALUE\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"NEWS.SEARCH\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"NEWS.SEARCH\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\\u0000\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\\u0000\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\tnews.search\\t\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\tnews.search\\t\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\nnews.search\\n\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\nnews.search\\n\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\u000bnews.search\\u000b\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\u000bnews.search\\u000b\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\fnews.search\\f\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\fnews.search\\f\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\rnews.search\\r\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"\\rnews.search\\r\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\" news.search \",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"　news.search　\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"　news.search　\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"﻿news.search﻿\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"﻿news.search﻿\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"​news.search​\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"​news.search​\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"᠎news.search᠎\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"᠎news.search᠎\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.searchéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						0
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",null],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",1],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",[\"x\"]],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",{\"length\":1}],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"WRONG-VALUE\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"WRONG-VALUE\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"WEB.FETCH_PAGE\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"WEB.FETCH_PAGE\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\\u0000\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\\u0000\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\tweb.fetch_page\\t\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\tweb.fetch_page\\t\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\nweb.fetch_page\\n\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\nweb.fetch_page\\n\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\u000bweb.fetch_page\\u000b\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\u000bweb.fetch_page\\u000b\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\fweb.fetch_page\\f\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\fweb.fetch_page\\f\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\rweb.fetch_page\\r\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"\\rweb.fetch_page\\r\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\" web.fetch_page \"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"　web.fetch_page　\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"　web.fetch_page　\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"﻿web.fetch_page﻿\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"﻿web.fetch_page﻿\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"​web.fetch_page​\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"​web.fetch_page​\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"᠎web.fetch_page᠎\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"᠎web.fetch_page᠎\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_pageééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"permittedToolIds",
+						1
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":null,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":\"20\",\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":true,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":-1,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":0,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":0,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":0.5,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1.5,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":21,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":21,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":19,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":19,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20.5,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":9007199254740991,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":9007199254740991,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":9007199254740992,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":-9007199254740992,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1e+21,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":-1e-7,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":-0,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":0,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1e400,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":-1e400,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1.0,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":1,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":2e0,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":2,\"deadline\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11t00:05:00z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\\t2026-10-11T00:05:00Z\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\\n2026-10-11T00:05:00Z\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\\u000b2026-10-11T00:05:00Z\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\\f2026-10-11T00:05:00Z\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"\\r2026-10-11T00:05:00Z\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"　2026-10-11T00:05:00Z　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"﻿2026-10-11T00:05:00Z﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"​2026-10-11T00:05:00Z​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"᠎2026-10-11T00:05:00Z᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"０026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"٠026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"०026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Za\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Zé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00Z😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"runId\":\"run_1\",\"conversationId\":\"ws_1\",\"prompt\":\"Answer briefly.\",\"permittedToolIds\":[\"news.search\",\"web.fetch_page\"],\"maxToolCalls\":20,\"deadline\":\"2026-10-11T00:05:00\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"deadline"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		}
+	]
+}
