@@ -5,11 +5,14 @@
  */
 import { contractsExporter } from "./contracts.ts";
 import { dateExporter } from "./date.ts";
+import { domainExporter } from "./domain.ts";
 import { domainNewsExporter } from "./domainNews.ts";
 import { feedExporter } from "./feed.ts";
 import { htmlExporter } from "./html.ts";
 import { jsExporter } from "./js.ts";
+import { loggingExporter } from "./logging.ts";
 import type { VectorExporter } from "./shared.ts";
+import { widgetGridExporter } from "./widgetGrid.ts";
 
 export const exporters: readonly VectorExporter[] = [
 	jsExporter,
@@ -18,4 +21,7 @@ export const exporters: readonly VectorExporter[] = [
 	feedExporter,
 	htmlExporter,
 	contractsExporter,
+	domainExporter,
+	loggingExporter,
+	widgetGridExporter,
 ];

@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 research-js = { workspace = true }
+
+[dev-dependencies]
 serde_json = { workspace = true }
 
 [lints]
