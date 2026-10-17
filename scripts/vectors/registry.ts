@@ -5,7 +5,13 @@
  */
 import { dateExporter } from "./date.ts";
 import { domainNewsExporter } from "./domainNews.ts";
+import { feedExporter } from "./feed.ts";
 import { jsExporter } from "./js.ts";
 import type { VectorExporter } from "./shared.ts";
 
-export const exporters: readonly VectorExporter[] = [jsExporter, domainNewsExporter, dateExporter];
+export const exporters: readonly VectorExporter[] = [
+	jsExporter,
+	domainNewsExporter,
+	dateExporter,
+	feedExporter,
+];

@@ -774,9 +774,15 @@ dependencies = [
 name = "research-feed"
 version = "0.1.0"
 dependencies = [
+ "indexmap",
+ "memchr",
+ "rayon",
  "research-application",
  "research-domain",
  "research-js",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

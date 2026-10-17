@@ -11,6 +11,14 @@ publish.workspace = true
 research-js = { workspace = true }
 research-domain = { workspace = true }
 research-application = { workspace = true }
+indexmap = { workspace = true }
+memchr = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rayon = { workspace = true }
 
 [lints]
 workspace = true
