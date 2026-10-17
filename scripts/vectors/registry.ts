@@ -4,7 +4,8 @@
  * their exporter here (one line each).
  */
 import { domainNewsExporter } from "./domainNews.ts";
+import { htmlExporter } from "./html.ts";
 import { jsExporter } from "./js.ts";
 import type { VectorExporter } from "./shared.ts";
 
-export const exporters: readonly VectorExporter[] = [jsExporter, domainNewsExporter];
+export const exporters: readonly VectorExporter[] = [jsExporter, domainNewsExporter, htmlExporter];

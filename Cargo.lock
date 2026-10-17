@@ -739,9 +739,13 @@ dependencies = [
 name = "research-html"
 version = "0.1.0"
 dependencies = [
+ "hex",
  "memchr",
  "rayon",
  "research-js",
+ "serde",
+ "serde_json",
+ "sha2",
  "url",
 ]
 
