@@ -7,23 +7,86 @@
 use research_js::whitespace::{is_js_whitespace, trim};
 
 /// Pushes `line` collapsed and trimmed (`collapseWhitespace(line).trim()` for
-/// a line without `\n`). Returns false when nothing was pushed.
+/// a line without `\n`; with `\n` it acts like `singleLine`). Returns false
+/// when nothing was pushed.
+///
+/// Byte-level: ASCII bytes are classified directly and runs of
+/// non-whitespace are copied in one `push_str`; only non-ASCII characters
+/// are decoded (JavaScript whitespace includes U+00A0, U+3000, U+FEFF, …).
 fn push_line_collapsed_trimmed(out: &mut String, line: &str) -> bool {
+	let bytes = line.as_bytes();
 	let mut wrote = false;
 	let mut pending_space = false;
-	for character in line.chars() {
-		if is_js_whitespace(character) {
-			pending_space = wrote;
+	let mut run_start: Option<usize> = None;
+	let mut index = 0usize;
+	while let Some(&byte) = bytes.get(index) {
+		if (0x21..0x80).contains(&byte) {
+			if run_start.is_none() {
+				if pending_space {
+					out.push(' ');
+					pending_space = false;
+				}
+				run_start = Some(index);
+			}
+			index += plain_prefix_len(bytes.get(index..).unwrap_or(&[]));
+			continue;
+		}
+		let (whitespace, width) = if byte < 0x80 {
+			(
+				matches!(byte, b'\t' | b'\n' | 0x0b | 0x0c | b'\r' | b' '),
+				1,
+			)
 		} else {
+			let character = line
+				.get(index..)
+				.and_then(|rest| rest.chars().next())
+				.unwrap_or('\u{FFFD}');
+			(is_js_whitespace(character), character.len_utf8())
+		};
+		if whitespace {
+			if let Some(start) = run_start.take() {
+				out.push_str(line.get(start..index).unwrap_or(""));
+				wrote = true;
+			}
+			pending_space = wrote;
+		} else if run_start.is_none() {
 			if pending_space {
 				out.push(' ');
 				pending_space = false;
 			}
-			out.push(character);
-			wrote = true;
+			run_start = Some(index);
 		}
+		index += width;
+	}
+	if let Some(start) = run_start {
+		out.push_str(line.get(start..).unwrap_or(""));
+		wrote = true;
 	}
 	wrote
+}
+
+/// Length of the leading run of bytes in `0x21..=0x7F` (printable ASCII:
+/// never whitespace, never part of a multi-byte character), at least 1 when
+/// the first byte is one. Eight bytes per step: a word has no byte below
+/// 0x21 and none at or above 0x80 when both SWAR tests are zero.
+fn plain_prefix_len(bytes: &[u8]) -> usize {
+	const LOW: u64 = 0x2121_2121_2121_2121;
+	const HIGH: u64 = 0x8080_8080_8080_8080;
+	let mut length = 0usize;
+	for chunk in bytes.chunks_exact(8) {
+		let word = u64::from_le_bytes(<[u8; 8]>::try_from(chunk).unwrap_or([0; 8]));
+		if (word & HIGH) != 0 || (word.wrapping_sub(LOW) & !word & HIGH) != 0 {
+			break;
+		}
+		length += 8;
+	}
+	length
+		+ bytes
+			.get(length..)
+			.unwrap_or(&[])
+			.iter()
+			.take_while(|&&byte| (0x21..0x80).contains(&byte))
+			.count()
 }
 
 /// `finalizeBlockLines`: collapse whitespace except newlines, trim every
@@ -215,6 +278,16 @@ mod tests {
 		assert_eq!(finalize_block_lines(" \n \n"), "");
 		assert_eq!(finalize_block_lines("x\u{a0}\u{3000}y\u{85}"), "x y\u{85}");
 		assert_eq!(finalize_block_lines("\u{feff}a\u{feff}"), "a");
+	}
+
+	#[test]
+	fn measures_plain_ascii_runs() {
+		assert_eq!(plain_prefix_len(b"abcdefghij k"), 10);
+		assert_eq!(plain_prefix_len(b"abcdefgh\x7f\x80"), 9);
+		assert_eq!(plain_prefix_len(b"abc\x00defghijk"), 3);
+		assert_eq!(plain_prefix_len(b"abcdefg\xc3\xa9"), 7);
+		assert_eq!(plain_prefix_len(b" a"), 0);
+		assert_eq!(plain_prefix_len(b""), 0);
 	}
 
 	#[test]
