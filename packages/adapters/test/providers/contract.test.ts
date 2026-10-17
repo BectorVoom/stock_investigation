@@ -161,7 +161,11 @@ const SCENARIOS: readonly Scenario[] = [
 	openRouterScenario("openrouter mid-stream error", () =>
 		sse(fixtureText("openrouter/midstream-error.sse")),
 	),
-	openRouterScenario("openrouter 429", () => new Response("{}", { status: 429 })),
+	// A Retry-After beyond what a turn waits out: reported at once, with no backoff to wait for.
+	openRouterScenario(
+		"openrouter 429",
+		() => new Response("{}", { status: 429, headers: { "Retry-After": "3600" } }),
+	),
 	openRouterScenario("openrouter garbage", () =>
 		sse(GARBAGE.map((line) => `data: ${line}\n\n`).join("")),
 	),

@@ -45,9 +45,17 @@
  *   `finish_reason: "length"`. A turn that ends that way is reported as
  *   PROVIDER_OUTPUT_TRUNCATED (not retryable: the same cap would cut it off
  *   again), never as a completed answer.
- * - No fallback: the request names exactly one model and no `models` list, and
- *   the adapter never retries (AGT-012). OpenRouter may still route the SAME
- *   model to another upstream provider, at that provider's price.
+ * - No fallback: the request names exactly one model and no `models` list
+ *   (AGT-012). OpenRouter may still route the SAME model to another upstream
+ *   provider, at that provider's price.
+ * - Transient rejections: when the provider refuses the request before any
+ *   output — a network error, HTTP 429 / 5xx, or an error chunk ahead of any
+ *   content (live-verified 2026-10-17: a free Nvidia model answered HTTP 200
+ *   with `{"error":{"code":503,"message":"Upstream error from Nvidia: Service
+ *   temporarily overloaded"}}` as its first chunk) — the SAME request is sent
+ *   again after a backoff (REJECTION_RETRY), within the turn's deadline.
+ *   Nothing was generated, so nothing is billed. Once any content arrived the
+ *   turn is never retried.
  * - The API key is read from OPENROUTER_API_KEY, sent only in the
  *   Authorization header to the fixed origin below, never logged and never
  *   placed in an event; redirects are refused so it cannot be forwarded.
@@ -81,6 +89,7 @@ import {
 	type ProviderFailure,
 	parseJsonLine,
 	preflightTurn,
+	type Raced,
 	raceStop,
 	settle,
 	type TurnGuard,
@@ -254,10 +263,93 @@ async function* readBody(
 }
 
 /**
+ * Transient rejections retried inside one turn. Only a request the provider
+ * turned away before it generated anything is sent again — the same request
+ * to the same model — so a retry is never billed and never falls back to
+ * another model (AGT-008, AGT-012). Free models in particular are often
+ * "temporarily overloaded" upstream for a few seconds; without this, the
+ * job's own retries are spent within a second of each other.
+ */
+export const REJECTION_RETRY = {
+	maxRetries: 3,
+	baseDelayMs: 2_000,
+	/** A longer Retry-After (e.g. a spent daily free quota) is not waited out inside a turn. */
+	maxDelayMs: 30_000,
+	/** Time the turn must still have after a wait, or the retried request could not finish. */
+	minRemainingMs: 30_000,
+} as const;
+
+function isTransientRejection(failure: ProviderFailure): boolean {
+	return (
+		failure.code === PROVIDER_FAILURES.PROVIDER_UNAVAILABLE.code ||
+		failure.code === PROVIDER_FAILURES.PROVIDER_RATE_LIMITED.code
+	);
+}
+
+/**
+ * The wait before retry number `retryIndex` (0-based): the provider's
+ * Retry-After when given, otherwise exponential backoff. `null` means do not
+ * retry — retries are used up, the provider asks for too long a wait, or the
+ * turn's deadline leaves no room for another request.
+ */
+export function rejectionRetryDelayMs(
+	retryIndex: number,
+	retryAfterMs: number | null,
+	remainingMs: number,
+): number | null {
+	if (retryIndex >= REJECTION_RETRY.maxRetries) return null;
+	const delayMs = retryAfterMs ?? REJECTION_RETRY.baseDelayMs * 2 ** retryIndex;
+	if (delayMs > REJECTION_RETRY.maxDelayMs) return null;
+	if (remainingMs - delayMs < REJECTION_RETRY.minRemainingMs) return null;
+	return delayMs;
+}
+
+/** Reads a Retry-After header: delay-seconds or an HTTP date. `null` when absent or unreadable. */
+export function parseRetryAfterMs(value: string | null, nowEpochMs: number): number | null {
+	if (value === null) return null;
+	const trimmed = value.trim();
+	if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1_000;
+	// An HTTP date always names its weekday; this keeps "-5" from parsing as a year.
+	if (!/^[A-Za-z]{3}, /.test(trimmed)) return null;
+	const at = Date.parse(trimmed);
+	return Number.isFinite(at) ? Math.max(0, at - nowEpochMs) : null;
+}
+
+/** Waits `ms`, returning early when the turn is stopped; the timer never outlives the wait. */
+async function waitOrStop(guard: TurnGuard, ms: number): Promise<Raced<void>> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const elapsed = new Promise<void>((resolve) => {
+		timer = setTimeout(resolve, ms);
+	});
+	try {
+		return await raceStop(guard, elapsed);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+/**
+ * How one request ended. `rejected`: the provider refused it before any
+ * output, nothing was yielded yet, and `events` are what the turn reports if
+ * it is not retried.
+ */
+type AttemptEnd =
+	| { readonly kind: "finished" }
+	| {
+			readonly kind: "rejected";
+			readonly failure: ProviderFailure;
+			readonly retryAfterMs: number | null;
+			readonly events: readonly AgentEvent[];
+	  };
+
+const FINISHED: AttemptEnd = { kind: "finished" };
+
+/**
  * One streaming chat completion, shared by the metered and the free runtime.
  * When `freeCostEnforcement` is true any chunk reporting a cost above 0 fails
  * the turn closed with PROVIDER_FREE_MODEL_CHARGED and the usage is otherwise
  * always unknown (null); when false the provider's cost is reported as-is.
+ * A transient rejection before any output is retried (REJECTION_RETRY).
  */
 async function* runChatCompletion(
 	environment: ProviderEnvironment,
@@ -270,129 +362,187 @@ async function* runChatCompletion(
 	const guard = createTurnGuard(context.signal, deadlineEpochMs, Date.now());
 	const idle = createIdleWatch(guard);
 	try {
-		idle.touch();
-		const responded = await raceStop(
-			guard,
-			settle(
-				// Called through the environment so the runner controls the transport.
-				environment.fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${config.apiKey}`,
-						"Content-Type": "application/json",
-						Accept: "text/event-stream",
-					},
-					body: JSON.stringify({
-						model: config.model,
-						messages: [{ role: "user", content: request.prompt }],
-						stream: true,
-						max_completion_tokens: MAX_COMPLETION_TOKENS,
-						usage: { include: true },
-						reasoning: { effort: context.effort },
-					}),
-					redirect: "error",
-					signal: guard.signal,
-				}),
-			),
-		);
-		if (responded.kind === "stopped") {
-			// The request may have reached the provider, so the cost is unknown rather than absent.
-			yield usageEvent(null);
-			yield failedEvent(failureForStop(responded.reason));
-			return;
-		}
-		if (!responded.value.ok) {
-			yield failedEvent(PROVIDER_FAILURES.PROVIDER_UNAVAILABLE);
-			return;
-		}
-		const response = responded.value.value;
-		if (!response.ok) {
-			// Rejected before generation started: nothing was produced, so no usage is reported.
-			await settle(response.body?.cancel() ?? Promise.resolve());
-			yield failedEvent(failureForHttpStatus(response.status));
-			return;
-		}
-		if (response.body === null) {
-			yield usageEvent(null);
-			yield failedEvent(PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID);
-			return;
-		}
-
-		const bodyState: BodyReadState = { receivedBytes: 0, tooLarge: false, readFailed: false };
-		let knownCostUsd: number | null = null;
-		let freeChargedCost: number | null = null;
-		let emittedTextChars = 0;
-		let malformedLines = 0;
-		let sawEnd = false;
-		let truncated = false;
-		let failure: ProviderFailure | null = null;
-		const sseLines = splitLines(
-			readBody(response.body, guard, idle.touch, bodyState),
-			MAX_SSE_LINE_CHARS,
-		);
-		for await (const line of sseLines) {
-			const verdict = interpretSseLine(line);
-			if (verdict.kind === "done") {
-				sawEnd = true;
-				break;
+		for (let retryIndex = 0; ; retryIndex += 1) {
+			const end = yield* attemptChatCompletion(
+				environment,
+				config,
+				request,
+				context,
+				guard,
+				idle,
+				freeCostEnforcement,
+			);
+			if (end.kind === "finished") return;
+			const delayMs = isTransientRejection(end.failure)
+				? rejectionRetryDelayMs(retryIndex, end.retryAfterMs, deadlineEpochMs - Date.now())
+				: null;
+			if (delayMs === null) {
+				yield* end.events;
+				return;
 			}
-			if (verdict.kind === "failed") {
-				failure = verdict.failure;
-				break;
-			}
-			if (verdict.kind === "malformed") {
-				malformedLines += 1;
-				if (malformedLines > MAX_MALFORMED_LINES) {
-					failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID;
-					break;
-				}
-			}
-			if (verdict.kind !== "chunk") continue;
-			if (verdict.knownCostUsd !== undefined) knownCostUsd = verdict.knownCostUsd;
-			if (freeCostEnforcement && (verdict.knownCostUsd ?? 0) > 0) {
-				freeChargedCost = verdict.knownCostUsd ?? 0;
-				break;
-			}
-			if (verdict.finished) sawEnd = true;
-			if (verdict.truncated) truncated = true;
-			if (verdict.text.length > 0) {
-				emittedTextChars += verdict.text.length;
-				if (emittedTextChars > MAX_OUTPUT_TEXT_CHARS) {
-					failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TOO_LARGE;
-					break;
-				}
-				yield textDeltaEvent(verdict.text);
+			// The wait is ours, not the provider's silence: the idle watch restarts with the next request.
+			idle.clear();
+			const waited = await waitOrStop(guard, delayMs);
+			if (waited.kind === "stopped") {
+				// Nothing is in flight during the wait, so there is no usage to report.
+				yield failedEvent(failureForStop(waited.reason));
+				return;
 			}
 		}
-
-		if (freeCostEnforcement && freeChargedCost !== null) {
-			yield usageEvent(freeChargedCost);
-			yield failedEvent(PROVIDER_FAILURES.PROVIDER_FREE_MODEL_CHARGED);
-			return;
-		}
-		const stopReason = guard.reason();
-		if (stopReason !== null) failure = failureForStop(stopReason);
-		else if (failure === null && bodyState.tooLarge) {
-			failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TOO_LARGE;
-		} else if (failure === null && bodyState.readFailed) {
-			failure = PROVIDER_FAILURES.PROVIDER_UNAVAILABLE;
-		} else if (failure === null && !sawEnd) {
-			// The connection closed without [DONE] or a finish_reason: the answer is truncated.
-			failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID;
-		} else if (failure === null && truncated) {
-			// Stopped at MAX_COMPLETION_TOKENS, possibly inside reasoning with no visible text at
-			// all. Checked before "empty" so a capped turn is never retried into the same cap.
-			failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TRUNCATED;
-		} else if (failure === null && emittedTextChars === 0) {
-			failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_EMPTY;
-		}
-		yield usageEvent(freeCostEnforcement ? null : knownCostUsd);
-		yield failure === null ? COMPLETED_EVENT : failedEvent(failure);
 	} finally {
 		idle.clear();
 		// Also aborts the HTTP request when the consumer stops iterating early.
 		guard.stop("finished");
 	}
+}
+
+async function* attemptChatCompletion(
+	environment: ProviderEnvironment,
+	config: OpenRouterConfig,
+	request: AgentRequest,
+	context: AgentRunContext,
+	guard: TurnGuard,
+	idle: { touch(): void },
+	freeCostEnforcement: boolean,
+): AsyncGenerator<AgentEvent, AttemptEnd> {
+	idle.touch();
+	const responded = await raceStop(
+		guard,
+		settle(
+			// Called through the environment so the runner controls the transport.
+			environment.fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${config.apiKey}`,
+					"Content-Type": "application/json",
+					Accept: "text/event-stream",
+				},
+				body: JSON.stringify({
+					model: config.model,
+					messages: [{ role: "user", content: request.prompt }],
+					stream: true,
+					max_completion_tokens: MAX_COMPLETION_TOKENS,
+					usage: { include: true },
+					reasoning: { effort: context.effort },
+				}),
+				redirect: "error",
+				signal: guard.signal,
+			}),
+		),
+	);
+	if (responded.kind === "stopped") {
+		// The request may have reached the provider, so the cost is unknown rather than absent.
+		yield usageEvent(null);
+		yield failedEvent(failureForStop(responded.reason));
+		return FINISHED;
+	}
+	if (!responded.value.ok) {
+		const failure = PROVIDER_FAILURES.PROVIDER_UNAVAILABLE;
+		return { kind: "rejected", failure, retryAfterMs: null, events: [failedEvent(failure)] };
+	}
+	const response = responded.value.value;
+	if (!response.ok) {
+		// Rejected before generation started: nothing was produced, so no usage is reported.
+		await settle(response.body?.cancel() ?? Promise.resolve());
+		const failure = failureForHttpStatus(response.status);
+		return {
+			kind: "rejected",
+			failure,
+			retryAfterMs: parseRetryAfterMs(response.headers.get("retry-after"), Date.now()),
+			events: [failedEvent(failure)],
+		};
+	}
+	if (response.body === null) {
+		yield usageEvent(null);
+		yield failedEvent(PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID);
+		return FINISHED;
+	}
+
+	const bodyState: BodyReadState = { receivedBytes: 0, tooLarge: false, readFailed: false };
+	let knownCostUsd: number | null = null;
+	let freeChargedCost: number | null = null;
+	let emittedTextChars = 0;
+	let malformedLines = 0;
+	let sawChunk = false;
+	let sawEnd = false;
+	let truncated = false;
+	let failure: ProviderFailure | null = null;
+	/** An error chunk that arrived before any content: the provider refused the request. */
+	let rejectedBeforeOutput: ProviderFailure | null = null;
+	const sseLines = splitLines(
+		readBody(response.body, guard, idle.touch, bodyState),
+		MAX_SSE_LINE_CHARS,
+	);
+	for await (const line of sseLines) {
+		const verdict = interpretSseLine(line);
+		if (verdict.kind === "done") {
+			sawEnd = true;
+			break;
+		}
+		if (verdict.kind === "failed") {
+			if (!sawChunk) rejectedBeforeOutput = verdict.failure;
+			else failure = verdict.failure;
+			break;
+		}
+		if (verdict.kind === "malformed") {
+			malformedLines += 1;
+			if (malformedLines > MAX_MALFORMED_LINES) {
+				failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID;
+				break;
+			}
+		}
+		if (verdict.kind !== "chunk") continue;
+		sawChunk = true;
+		if (verdict.knownCostUsd !== undefined) knownCostUsd = verdict.knownCostUsd;
+		if (freeCostEnforcement && (verdict.knownCostUsd ?? 0) > 0) {
+			freeChargedCost = verdict.knownCostUsd ?? 0;
+			break;
+		}
+		if (verdict.finished) sawEnd = true;
+		if (verdict.truncated) truncated = true;
+		if (verdict.text.length > 0) {
+			emittedTextChars += verdict.text.length;
+			if (emittedTextChars > MAX_OUTPUT_TEXT_CHARS) {
+				failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TOO_LARGE;
+				break;
+			}
+			yield textDeltaEvent(verdict.text);
+		}
+	}
+
+	if (freeCostEnforcement && freeChargedCost !== null) {
+		yield usageEvent(freeChargedCost);
+		yield failedEvent(PROVIDER_FAILURES.PROVIDER_FREE_MODEL_CHARGED);
+		return FINISHED;
+	}
+	const stopReason = guard.reason();
+	if (stopReason === null && rejectedBeforeOutput !== null) {
+		// The error chunk carries no usage, so the cost of this request is unknown.
+		return {
+			kind: "rejected",
+			failure: rejectedBeforeOutput,
+			retryAfterMs: null,
+			events: [usageEvent(null), failedEvent(rejectedBeforeOutput)],
+		};
+	}
+	if (stopReason !== null) failure = failureForStop(stopReason);
+	else if (failure === null && bodyState.tooLarge) {
+		failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TOO_LARGE;
+	} else if (failure === null && bodyState.readFailed) {
+		failure = PROVIDER_FAILURES.PROVIDER_UNAVAILABLE;
+	} else if (failure === null && !sawEnd) {
+		// The connection closed without [DONE] or a finish_reason: the answer is truncated.
+		failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID;
+	} else if (failure === null && truncated) {
+		// Stopped at MAX_COMPLETION_TOKENS, possibly inside reasoning with no visible text at
+		// all. Checked before "empty" so a capped turn is never retried into the same cap.
+		failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_TRUNCATED;
+	} else if (failure === null && emittedTextChars === 0) {
+		failure = PROVIDER_FAILURES.PROVIDER_OUTPUT_EMPTY;
+	}
+	yield usageEvent(freeCostEnforcement ? null : knownCostUsd);
+	yield failure === null ? COMPLETED_EVENT : failedEvent(failure);
+	return FINISHED;
 }
 
 export function createOpenRouterRuntime(environment: ProviderEnvironment): AgentRuntime {

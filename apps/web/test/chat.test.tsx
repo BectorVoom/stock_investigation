@@ -1253,6 +1253,20 @@ describe("chat run controls", () => {
 		expect(nulled.querySelector('[data-field="failure-hint"]')).toBeNull();
 	});
 
+	it.each([
+		["PROVIDER_UNAVAILABLE", "overloaded or could not be reached"],
+		["PROVIDER_RATE_LIMITED", "limiting requests"],
+	])("hints a next step for %s", async (failureCode, hint) => {
+		server.runs = [makeRun({ runId: "run_provider", state: "failed", failureCode })];
+		mountApp(backend);
+
+		const failed = await screen.findByRole("article", { name: "Run run_provider" });
+		expect(failed.querySelector('[data-field="failure-code"]')?.textContent).toBe(failureCode);
+		const shown = failed.querySelector('[data-field="failure-hint"]')?.textContent;
+		expect(shown).toContain(hint);
+		expect(shown).toContain("choose another model in Settings");
+	});
+
 	it("shows the approval request and resumes with the approved budget", async () => {
 		server.runs = [
 			makeRun({

@@ -1,0 +1,4 @@
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-1792201335-amI9KRCwI4HRIU6r0UOe","object":"chat.completion.chunk","created":1792201335,"model":"nvidia/nemotron-3-ultra-550b-a55b:free","provider":"Nvidia","choices":[],"error":{"code":503,"message":"Upstream error from Nvidia: Service temporarily overloaded","metadata":{"error_type":"provider_overloaded"}}}
+
