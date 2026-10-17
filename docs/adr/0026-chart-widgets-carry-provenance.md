@@ -51,22 +51,35 @@ widget that carries its provenance, the owner chose the latter.
   the chart (`packages/application/src/chartSources.ts`).
 - **"Add to Notebook"** converts a line or bar chart only when the conversion
   is lossless — now including provenance: the same rows, values, basis,
-  source and as-of per cell, the same `sourceIds`, and every cited record
-  present in the conversation. Otherwise the chart stays a `research` widget.
-  Candlestick charts stay `research` (candles are not a line).
-- **Editing:** the content editor keeps a point's provenance only while its
-  label and value are unchanged; an edited or new point has none (and is
-  marked so), and copies no longer cited are dropped.
-- **AI agents never add provenance.** The record check proves a copy is real,
-  not that a number came from it, so an agent could otherwise attach a real
-  citation to a number it made up. For the notebook assistant (runner
-  pre-check and API apply, `applyNotebookCommands`) and the Home MCP server
-  (before its PUT), every chart point an agent writes with a basis, source or
-  as-of date must already be on the page, identical, and every chart
-  `sourceIds` entry must already be cited there (`chartProvenanceAddedTo`);
-  copies a changed series no longer cites are dropped
-  (`pruneUncitedChartSources`). The assistant's prompt shows a chart's
-  citations but not the evidence copies and says not to add provenance.
+  source and as-of per cell, the same `sourceIds`, every cited record present
+  in the conversation, and no empty cell with a stated reason (a widget point
+  cannot carry "not disclosed in the 10-K", which Chat's data table shows).
+  Otherwise the chart stays a `research` widget. Candlestick charts stay
+  `research` (candles are not a line).
+- **Editing:** the content editor keeps a point's provenance only while the
+  chart's unit and the point's series, label and value are unchanged; an
+  edited or new point has none (and is marked so), the chart's own
+  `sourceIds` go once no such point remains, and copies no longer cited are
+  dropped.
+- **AI agents keep only the provenance they carried over unchanged.** The
+  record check proves a copy is real, not that a number came from it, so
+  what the notebook assistant (`applyNotebookCommands`, runner pre-check and
+  API apply) or the Home MCP server (before its PUT) writes is normalised by
+  `withEarnedChartProvenance`: a point keeps its basis, source and as-of date
+  only in the same widget, the same series and the same unit, with the same
+  label (occurrence) and value — or when the whole chart is an unchanged copy
+  of one on the page (a duplicate). The chart's own `sourceIds` stay only
+  while such a point remains; copies nobody cites go. Everything else is
+  written without provenance ("basis not stated") rather than refused, so a
+  turn that changes a chart's numbers or unit still succeeds. An agent's
+  draft is reconciled first (`reconcileChartDraft`: a citation without a copy
+  loses its source, an uncited copy goes). The assistant's prompt shows a
+  chart's citations but not the evidence copies and says not to add
+  provenance.
+- **Deleting a conversation keeps the evidence chart copies cite** on Home
+  and in every other notebook (one set-based query,
+  `listChartEvidenceIds`), so Undo, Reset-Undo and cut-and-paste of such a
+  chart keep passing the record check.
 
 ## Consequences
 
@@ -79,5 +92,8 @@ widget that carries its provenance, the owner chose the latter.
 - Chart widgets saved before this decision have no provenance and render as
   "basis not stated"; re-adding the chart from Chat brings its provenance.
 - Deleting a conversation never breaks a saved chart: it renders from its
-  copies. Pasting such a chart elsewhere is refused only if its records are
-  gone from the owner's store.
+  copies, and the records they cite are kept.
+- The Notebook chart's data table labels its columns with the series names
+  and the chart's unit, and its x column with the x-axis title; a Chat
+  table uses the dataset's column labels and units, which may be worded
+  differently. The cells, markers and citations are the same.

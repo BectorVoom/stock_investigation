@@ -180,6 +180,7 @@ function service(
 	unitOfWork: ResearchUnitOfWork,
 	audit: AuditLog,
 	clock: Clock,
+	chartCitedEvidence: readonly string[] = [],
 ): WorkspaceService {
 	return createWorkspaceService({
 		workspaces,
@@ -190,6 +191,10 @@ function service(
 		ids: ids(),
 		audit,
 		unitOfWork,
+		chartEvidence: {
+			listChartEvidenceIds: async (_ownerId, exceptWorkspaceId) =>
+				exceptWorkspaceId === "ws_doomed" ? chartCitedEvidence : [],
+		},
 	});
 }
 
@@ -307,6 +312,21 @@ describe("workspace remove (application)", () => {
 		expect(input?.keepEvidenceIds).toEqual(["ev_keep"]);
 		expect(input?.keepClaimIds).toEqual(["cl_keep"]);
 		expect(audit.entries.map((entry) => entry.action)).toEqual(["workspace.remove"]);
+	});
+
+	it("keeps evidence that chart widgets elsewhere still carry copies of (ADR-0026)", async () => {
+		const time = fixedClock();
+		const workspaces = memoryWorkspaces();
+		const at = time.clock.nowIso();
+		await workspaces.insert(OWNER, record(stateWith("ws_doomed", "doomed-widget"), "Doomed", at));
+		await workspaces.insert(OWNER, record(stateWith("ws_kept", "survivor-widget"), "Kept", at));
+		const unitOfWork = stubUnitOfWork("deleted");
+		const services = service(workspaces, unitOfWork, auditing(), time.clock, [
+			"ev_chart",
+			"ev_keep",
+		]);
+		expect((await services.remove(OWNER, "ws_doomed")).ok).toBe(true);
+		expect(unitOfWork.seen[0]?.keepEvidenceIds).toEqual(["ev_keep", "ev_chart"]);
 	});
 
 	it("maps a missing conversation to NOT_FOUND without auditing", async () => {

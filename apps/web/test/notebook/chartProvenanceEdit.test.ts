@@ -29,16 +29,20 @@ const chart = parsed;
 
 describe("chart provenance through edits and copies (ADR-0026)", () => {
 	it("keeps provenance on unchanged points and drops it from changed or new ones", () => {
-		const edited = carryChartProvenance(chart, [
-			{
-				name: "Price",
-				points: [
-					{ x: "Mon", y: 10 },
-					{ x: "Tue", y: 12 },
-					{ x: "Wed", y: 13 },
-				],
-			},
-		]);
+		const edited = carryChartProvenance(
+			chart,
+			[
+				{
+					name: "Price",
+					points: [
+						{ x: "Mon", y: 10 },
+						{ x: "Tue", y: 12 },
+						{ x: "Wed", y: 13 },
+					],
+				},
+			],
+			"USD",
+		);
 		expect(edited.series[0]?.points).toEqual([
 			{ x: "Mon", y: 10, sourceId: evidence.evidenceId, asOf: "2026-10-07" },
 			{ x: "Tue", y: 12 },
@@ -49,11 +53,37 @@ describe("chart provenance through edits and copies (ADR-0026)", () => {
 	});
 
 	it("drops the copy of a source no point cites any more", () => {
-		const edited = carryChartProvenance(chart, [{ name: "Price", points: [{ x: "Mon", y: 99 }] }]);
+		const edited = carryChartProvenance(
+			chart,
+			[{ name: "Price", points: [{ x: "Mon", y: 99 }] }],
+			"USD",
+		);
 		expect(edited.sources).toBeUndefined();
 		expect(widgetCoreSchema.safeParse({ ...chart, sources: undefined, ...edited }).success).toBe(
 			true,
 		);
+	});
+
+	it("drops every point's provenance when the unit changes: the numbers mean something else", () => {
+		const edited = carryChartProvenance(
+			chart,
+			[
+				{
+					name: "Price",
+					points: [
+						{ x: "Mon", y: 10 },
+						{ x: "Tue", y: 11 },
+					],
+				},
+			],
+			"%",
+		);
+		expect(edited.series[0]?.points).toEqual([
+			{ x: "Mon", y: 10 },
+			{ x: "Tue", y: 11 },
+		]);
+		expect(edited.sources).toBeUndefined();
+		expect(edited.sourceIds).toBeUndefined();
 	});
 
 	it("duplicates a chart with its provenance and source copies", () => {

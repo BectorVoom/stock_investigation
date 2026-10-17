@@ -189,10 +189,11 @@ type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
 
 /**
  * ADR-0026: an edited chart keeps a point's provenance (basis, source, as-of)
- * only while the point is unchanged — the same series name, the same label
- * (its n-th occurrence in that series) and the same value. An edited or new
- * point has none, so it is marked "basis not stated" rather than borrowing a
- * citation. The chart's own `sourceIds` stay; copies no longer cited go.
+ * only while the point is unchanged — the same unit, the same series name,
+ * the same label (its n-th occurrence in that series) and the same value. An
+ * edited or new point has none, so it is marked "basis not stated" rather
+ * than borrowing a citation. The chart's own `sourceIds` stay only while such
+ * a point remains; copies no longer cited go.
  */
 export function carryChartProvenance(
 	previous: ChartWidgetCore,
@@ -200,7 +201,9 @@ export function carryChartProvenance(
 		readonly name: string;
 		readonly points: readonly { readonly x: string; readonly y: number }[];
 	}[],
+	unit: string,
 ): Pick<ChartWidgetCore, "series" | "sourceIds" | "sources"> {
+	const sameUnit = unit === previous.unit;
 	const keyOf = (x: string, occurrence: number) => `${occurrence}\u0000${x}`;
 	const before = new Map(
 		previous.series.map((entry) => {
@@ -222,16 +225,23 @@ export function carryChartProvenance(
 			points: entry.points.map((point) => {
 				const occurrence = seen.get(point.x) ?? 0;
 				seen.set(point.x, occurrence + 1);
-				const kept = old?.get(keyOf(point.x, occurrence));
+				const kept = sameUnit ? old?.get(keyOf(point.x, occurrence)) : undefined;
 				return kept !== undefined && kept.y === point.y ? { ...kept } : { x: point.x, y: point.y };
 			}),
 		};
 	});
-	const cited = new Set(chartWidgetCitedIds({ sourceIds: previous.sourceIds, series }));
+	const anyKept = series.some((entry) =>
+		entry.points.some(
+			(point) =>
+				point.basis !== undefined || point.sourceId !== undefined || point.asOf !== undefined,
+		),
+	);
+	const sourceIds = anyKept ? [...(previous.sourceIds ?? [])] : [];
+	const cited = new Set(chartWidgetCitedIds({ sourceIds, series }));
 	const sources = (previous.sources ?? []).filter((source) => cited.has(source.evidenceId));
 	return {
 		series,
-		...(previous.sourceIds === undefined ? {} : { sourceIds: [...previous.sourceIds] }),
+		...(sourceIds.length === 0 ? {} : { sourceIds }),
 		...(sources.length === 0 ? {} : { sources }),
 	};
 }

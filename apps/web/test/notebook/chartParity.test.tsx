@@ -190,35 +190,21 @@ describe("chart parity between Chat previews and Notebook widgets", () => {
 		expect(notebook.container.querySelectorAll("path[data-bar]")).toHaveLength(3);
 	});
 
-	it("draws a two-series line chart with a gap through the same svg without bridging it", () => {
+	it("keeps a line chart with a stated gap as a research widget, never bridging the gap", () => {
 		const component = lineView.state.components[0];
 		if (component === undefined) throw new Error("line component is missing");
 		const chat = render(() => (
 			<WorkspaceComponentView component={component} context={lineContext()} registry={registry} />
 		));
-		const chatSvg = chat.container.querySelector('svg[role="img"]');
-		if (!(chatSvg instanceof SVGElement)) throw new Error("no chat chart svg");
-		const chatMarks = chatSvg.querySelector('[data-chart-part="marks"]')?.innerHTML ?? "";
-		const chatTitles = axisTitles(chat.container);
-		const chatTicks = yTickLabels(chat.container);
 		// MSFT has two isolated points around a gap, so no line may connect across it.
 		const msft = chat.container.querySelector('[data-series="MSFT"]');
 		expect(msft?.querySelectorAll("path")).toHaveLength(0);
 		expect(msft?.querySelectorAll("circle")).toHaveLength(2);
 		cleanup();
 
-		const core = widgetFromComponent(component, lineView);
-		if (core?.type !== "chart") throw new Error("expected a chart widget");
-		const notebook = render(() => <ChartWidget widget={core} />);
-		const notebookSvg = notebook.container.querySelector('svg[role="img"]');
-		if (!(notebookSvg instanceof SVGElement)) throw new Error("no notebook chart svg");
-		expect(notebookSvg.getAttribute("viewBox")).toBe(chatSvg.getAttribute("viewBox"));
-		expect(notebookSvg.querySelector('[data-chart-part="marks"]')?.innerHTML).toBe(chatMarks);
-		expect(axisTitles(notebook.container)).toEqual(chatTitles);
-		expect(yTickLabels(notebook.container)).toEqual(chatTicks);
-		const notebookMsft = notebook.container.querySelector('[data-series="MSFT"]');
-		expect(notebookMsft?.querySelectorAll("path")).toHaveLength(0);
-		expect(notebookMsft?.querySelectorAll("circle")).toHaveLength(2);
+		// The gap's stated reason shows in Chat's data table; a widget point cannot
+		// carry it, so "Add to Notebook" keeps this chart as a research widget.
+		expect(widgetFromComponent(component, lineView)?.type).toBe("research");
 	});
 
 	it("carries provenance: the same basis note, cell markers, citations and Sources as Chat (ADR-0026)", () => {

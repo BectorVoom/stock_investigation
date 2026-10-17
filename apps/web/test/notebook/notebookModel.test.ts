@@ -103,7 +103,7 @@ describe("notebook model", () => {
 						{
 							date: { v: "2026-10-08" },
 							aapl: { v: 340.42, sourceId: "ev_a", asOf: "2026-10-08" },
-							msft: { v: null, reason: "market closed" },
+							msft: { v: 532.1, basis: "derived" },
 						},
 					],
 				},
@@ -140,9 +140,28 @@ describe("notebook model", () => {
 		expect(core.chartType).toBe("line");
 		expect(core.unit).toBe("USD");
 		expect(core.series.map((entry) => entry.name)).toEqual(["AAPL", "MSFT"]);
-		// A null cell is not plotted, never drawn as 0.
-		expect(core.series[0]?.points).toHaveLength(2);
-		expect(core.series[1]?.points).toHaveLength(1);
+		// Each value keeps its provenance, and the chart its cited record (ADR-0026).
+		expect(core.series[0]?.points[0]).toEqual({
+			x: "2026-10-07",
+			y: 336.67,
+			sourceId: "ev_a",
+			asOf: "2026-10-07",
+		});
+		expect(core.series[1]?.points[1]).toEqual({ x: "2026-10-08", y: 532.1, basis: "derived" });
+		expect(core.sourceIds).toEqual(["ev_a"]);
+		expect(core.sources?.map((source) => source.evidenceId)).toEqual(["ev_a"]);
+
+		// A stated gap ("market closed") cannot be carried by a widget point.
+		const gapped: WorkspaceView = {
+			...view,
+			datasets: view.datasets.map((dataset) => ({
+				...dataset,
+				rows: dataset.rows.map((row, index) =>
+					index === 1 ? { ...row, msft: { v: null, reason: "market closed" } } : row,
+				),
+			})),
+		};
+		expect(widgetFromComponent(component, gapped)?.type).toBe("research");
 		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 

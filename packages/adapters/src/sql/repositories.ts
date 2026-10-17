@@ -4,6 +4,7 @@ import type {
 	AuditLog,
 	CalendarFeedRecord,
 	CalendarFeedRepository,
+	ChartEvidenceReferences,
 	ChatRepository,
 	EarningsRepository,
 	EnqueueResult,
@@ -1826,6 +1827,40 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 			const previous: GoogleCalendarLink =
 				current === null ? disconnectedGoogleLink(at) : toGoogleCalendarLink(current);
 			await upsert(ownerId, { ...applyGoogleLinkPatch(previous, patch), updatedAt: at });
+		},
+	};
+}
+
+const evidenceIdRowSchema = z.object({ evidence_id: z.string().min(1) });
+
+export function createChartEvidenceReferences(db: SqlDatabase): ChartEvidenceReferences {
+	return {
+		async listChartEvidenceIds(ownerId, exceptWorkspaceId) {
+			// One set-based statement over Home and every other notebook (no
+			// N+1): a chart's `sources` copies name exactly the ids it cites.
+			// Unreadable bodies are skipped via `json_valid`, never fatal.
+			const { results } = await db
+				.prepare(
+					`SELECT DISTINCT evidence_id FROM (
+						SELECT json_extract(s.value, '$.evidenceId') AS evidence_id
+						FROM workspace_notebooks AS n, json_each(n.body_json, '$.widgets') AS w,
+							json_each(json_extract(w.value, '$.sources')) AS s
+						WHERE n.owner_id = ?1 AND n.workspace_id != ?2 AND json_valid(n.body_json)
+							AND json_extract(w.value, '$.type') = 'chart'
+						UNION
+						SELECT json_extract(s.value, '$.evidenceId') AS evidence_id
+						FROM home_dashboards AS h, json_each(h.dashboard_json, '$.widgets') AS w,
+							json_each(json_extract(w.value, '$.sources')) AS s
+						WHERE h.owner_id = ?1 AND json_valid(h.dashboard_json)
+							AND json_extract(w.value, '$.type') = 'chart'
+					) WHERE evidence_id IS NOT NULL`,
+				)
+				.bind(ownerId, exceptWorkspaceId)
+				.all();
+			return results.flatMap((row) => {
+				const parsed = evidenceIdRowSchema.safeParse(row);
+				return parsed.success ? [parsed.data.evidence_id] : [];
+			});
 		},
 	};
 }

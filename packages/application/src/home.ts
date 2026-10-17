@@ -126,14 +126,19 @@ export function createHomeService(deps: HomeServiceDeps) {
 			dashboard: HomeDashboard,
 			expectedVersion: number,
 		): Promise<UseCaseResult<HomeDashboardResponse>> {
-			const previous = await deps.dashboard.get(ownerId);
-			const sourceProblem = await chartSourceProblem(
-				deps.records,
-				ownerId,
-				dashboard.widgets,
-				previous === null || previous === "unreadable" ? [] : previous.dashboard.widgets,
-			);
-			if (sourceProblem !== null) return fail("VALIDATION_FAILED", sourceProblem);
+			// Only a dashboard whose charts carry source copies is checked (ADR-0026).
+			if (
+				dashboard.widgets.some((widget) => widget.type === "chart" && widget.sources !== undefined)
+			) {
+				const previous = await deps.dashboard.get(ownerId);
+				const sourceProblem = await chartSourceProblem(
+					deps.records,
+					ownerId,
+					dashboard.widgets,
+					previous === null || previous === "unreadable" ? [] : previous.dashboard.widgets,
+				);
+				if (sourceProblem !== null) return fail("VALIDATION_FAILED", sourceProblem);
+			}
 			const now = deps.clock.nowIso();
 			const result = await deps.dashboard.put(ownerId, dashboard, expectedVersion, now);
 			if (result === "version-conflict") {
