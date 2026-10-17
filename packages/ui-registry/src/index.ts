@@ -39,6 +39,12 @@ export {
 	xAxisModel,
 } from "./charts/chartMath.ts";
 export {
+	chartWidgetSeries,
+	chartWidgetSources,
+	chartWidgetToGuardedDataset,
+	chartWidgetXAxisTitle,
+} from "./charts/chartWidgetDataset.ts";
+export {
 	type BuildDetailChartInput,
 	buildDetailChartModel,
 	buildNavigatorModel,
@@ -71,12 +77,6 @@ export {
 	unionOverview,
 	VALUE_LABEL_HEIGHT,
 } from "./charts/detailChartModel.ts";
-export {
-	chartWidgetSeries,
-	chartWidgetSources,
-	chartWidgetToGuardedDataset,
-	chartWidgetXAxisTitle,
-} from "./charts/chartWidgetDataset.ts";
 export {
 	buildHomeLineModel,
 	type HomeLineModel,

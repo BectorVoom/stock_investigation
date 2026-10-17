@@ -75,6 +75,10 @@ import { parseJpxWorkbook } from "../packages/adapters/src/finance/jpxWorkbook.t
 import { htmlToMarkdown } from "../packages/adapters/src/tools/htmlToMarkdown.ts";
 import { seriesColor } from "../packages/ui-registry/src/charts/chartMath.ts";
 import {
+	chartWidgetSeries,
+	chartWidgetToGuardedDataset,
+} from "../packages/ui-registry/src/charts/chartWidgetDataset.ts";
+import {
 	type BuildDetailChartInput,
 	buildDetailChartModel,
 	buildNavigatorOverview,
@@ -84,10 +88,6 @@ import {
 	unionBarDays,
 	unionOverview,
 } from "../packages/ui-registry/src/charts/detailChartModel.ts";
-import {
-	chartWidgetSeries,
-	chartWidgetToGuardedDataset,
-} from "../packages/ui-registry/src/charts/chartWidgetDataset.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
 import { buildLineModel } from "../packages/ui-registry/src/charts/lineModel.ts";
 
