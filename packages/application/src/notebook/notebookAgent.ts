@@ -7,6 +7,7 @@ import {
 	type NotebookWidget,
 	type NotebookWidgetOrigin,
 	notebookCapacityProblem,
+	reconcileChartDraft,
 	WIDGET_TYPE_META,
 	WIDGET_TYPES,
 	type WidgetCore,
@@ -15,6 +16,7 @@ import {
 	widgetContentSchema,
 	widgetCoreSchema,
 	widgetSeriesIds,
+	withEarnedChartProvenance,
 } from "@research/contracts";
 import {
 	createWidgetAgentHost,
@@ -81,13 +83,16 @@ function buildCore(
 	context: NotebookAgentContext,
 ): Result<WidgetCore, string> {
 	// Generic fields win over same-named config keys, so config cannot smuggle them in.
-	const parsed = widgetCoreSchema.safeParse({
+	const assembled = {
 		...draft.config,
 		widgetId: draft.widgetId,
 		title: draft.title,
 		size: draft.size,
 		type,
-	});
+	};
+	const parsed = widgetCoreSchema.safeParse(
+		type === "chart" ? reconcileChartDraft(assembled) : assembled,
+	);
 	if (!parsed.success) {
 		const issue = parsed.error.issues[0];
 		const field =
@@ -358,7 +363,10 @@ export async function applyNotebookCommands(
 	// the turn's result, since only the whole notebook can exceed it.
 	const capacity = notebookCapacityProblem(widgets, notebook.widgets);
 	if (capacity !== null) return err({ index: commands.length - 1, failure: capacity });
-	return ok({ widgets, snapshot, changes });
+	// ADR-0026: provenance the assistant did not carry over unchanged is
+	// removed, so a real citation never ends up on a number it wrote.
+	const earned = withEarnedChartProvenance(widgets, notebook.widgets.map(toNotebookWidgetCore));
+	return ok({ widgets: earned, snapshot, changes });
 }
 
 /**

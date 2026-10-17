@@ -7,6 +7,7 @@ import {
 	MARKET_LIMITS,
 } from "@research/contracts";
 import { distinctDashboardSeriesIds, err, ok } from "@research/domain";
+import { chartSourceProblem } from "./chartSources.ts";
 import { fail, type UseCaseError, type UseCaseResult } from "./errors.ts";
 import { MARKET_CATALOG } from "./marketCatalog.ts";
 import {
@@ -23,6 +24,7 @@ import type {
 	JobRepository,
 	MarketRepository,
 	NotebookRepository,
+	ResearchRecordRepository,
 } from "./ports.ts";
 
 export interface HomeServiceDeps {
@@ -33,6 +35,8 @@ export interface HomeServiceDeps {
 	readonly notebooks: NotebookRepository;
 	readonly clock: Clock;
 	readonly audit: AuditLog;
+	/** The owner's evidence, which a chart widget's source copies must equal (ADR-0026). */
+	readonly records: Pick<ResearchRecordRepository, "resolve">;
 }
 
 /**
@@ -122,6 +126,19 @@ export function createHomeService(deps: HomeServiceDeps) {
 			dashboard: HomeDashboard,
 			expectedVersion: number,
 		): Promise<UseCaseResult<HomeDashboardResponse>> {
+			// Only a dashboard whose charts carry source copies is checked (ADR-0026).
+			if (
+				dashboard.widgets.some((widget) => widget.type === "chart" && widget.sources !== undefined)
+			) {
+				const previous = await deps.dashboard.get(ownerId);
+				const sourceProblem = await chartSourceProblem(
+					deps.records,
+					ownerId,
+					dashboard.widgets,
+					previous === null || previous === "unreadable" ? [] : previous.dashboard.widgets,
+				);
+				if (sourceProblem !== null) return fail("VALIDATION_FAILED", sourceProblem);
+			}
 			const now = deps.clock.nowIso();
 			const result = await deps.dashboard.put(ownerId, dashboard, expectedVersion, now);
 			if (result === "version-conflict") {

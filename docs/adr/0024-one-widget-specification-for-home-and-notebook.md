@@ -138,3 +138,17 @@ as the notebook assistant does; the series help stays with the market types.
   saves.
 - The Lean `Dashboard` model is unchanged: it abstracts widget content and
   the Home bound stays 24.
+
+*Amended 2026-10-17:* the `chart` widget draws through the registry's shared
+plot (`LinePlot` / `BarPlot` in `@research/ui-registry`, the same code as the
+Chat preview) and carries optional axis titles (`xLabel`, `yLabel`) plus an
+optional x column kind (`xKind`: `"text"` (absent) / `"number"` / `"date"`,
+kept from the source x column so line charts position dates and numbers by
+value; bars stay categorical). A chart component becomes a `chart` widget only
+when the conversion is lossless (round-trip: guard, convert, rebuild, same
+rows in the same order, same series, no withheld series); otherwise — and
+always for `candlestick-chart`, whose picture is candles — it becomes a
+`research` widget, identical by construction. Repeated x labels are separate
+rows keyed by (label, occurrence index). The same day, ADR-0026 gave the
+`chart` widget its numbers' provenance (basis, source, as-of, evidence copies)
+and made it render through the registry's `ChartShell`.

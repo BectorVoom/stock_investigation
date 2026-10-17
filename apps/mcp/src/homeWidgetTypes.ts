@@ -3,6 +3,7 @@ import {
 	type HomeWidget,
 	type HomeWidgetType,
 	homeWidgetSchema,
+	reconcileChartDraft,
 	WIDGET_TYPE_META,
 	widgetAgentDescription,
 	widgetContentSchema,
@@ -45,13 +46,16 @@ interface DraftWidget {
  * sentence naming the offending field, so the agent knows what to change.
  */
 function buildHomeWidget(type: HomeWidgetType, draft: DraftWidget): Result<HomeWidget, string> {
-	const parsed = homeWidgetSchema.safeParse({
+	const assembled = {
 		...draft.config,
 		widgetId: draft.widgetId,
 		title: draft.title,
 		size: draft.size,
 		type,
-	});
+	};
+	const parsed = homeWidgetSchema.safeParse(
+		type === "chart" ? reconcileChartDraft(assembled) : assembled,
+	);
 	if (!parsed.success) {
 		const issue = parsed.error.issues[0];
 		if (issue === undefined) {

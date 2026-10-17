@@ -1080,6 +1080,15 @@ export interface SafeBinaryFetcher {
  * `node:sqlite`); a non-SQLite engine implements these ports in a new adapter
  * directory instead of reusing the SQL.
  */
+/**
+ * ADR-0026: evidence a chart widget's copy cites, on Home and in every
+ * notebook but one, so deleting a conversation keeps the records those
+ * copies are checked against (Undo, cut and paste keep working).
+ */
+export interface ChartEvidenceReferences {
+	listChartEvidenceIds(ownerId: string, exceptWorkspaceId: string): Promise<readonly string[]>;
+}
+
 export interface Persistence {
 	readonly sources: SourceRepository;
 	readonly articles: ArticleRepository;
@@ -1093,6 +1102,7 @@ export interface Persistence {
 	readonly homeDashboard: HomeDashboardRepository;
 	readonly market: MarketRepository;
 	readonly notebooks: NotebookRepository;
+	readonly chartEvidence: ChartEvidenceReferences;
 	readonly watchlist: WatchlistRepository;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;

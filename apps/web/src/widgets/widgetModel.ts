@@ -1,4 +1,4 @@
-import type { WidgetCore, WidgetSize } from "@research/contracts";
+import { chartWidgetCitedIds, type WidgetCore, type WidgetSize } from "@research/contracts";
 import {
 	applyWidgetLayoutEdit,
 	type WidgetBase,
@@ -102,8 +102,15 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 				unit: widget.unit,
 				series: widget.series.map((entry) => ({
 					name: entry.name,
-					points: entry.points.map((point) => ({ x: point.x, y: point.y })),
+					points: entry.points.map((point) => ({ ...point })),
 				})),
+				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
+				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
+				...(widget.xKind === undefined ? {} : { xKind: widget.xKind }),
+				...(widget.sourceIds === undefined ? {} : { sourceIds: [...widget.sourceIds] }),
+				...(widget.sources === undefined
+					? {}
+					: { sources: widget.sources.map((source) => ({ ...source })) }),
 			};
 		case "table":
 			return {
@@ -176,4 +183,65 @@ export function removeWidgets<W extends WidgetBase>(
 ): readonly W[] {
 	const removed = new Set(widgetIds);
 	return widgets.filter((widget) => !removed.has(widget.widgetId));
+}
+
+type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
+
+/**
+ * ADR-0026: an edited chart keeps a point's provenance (basis, source, as-of)
+ * only while the point is unchanged — the same unit, the same series name,
+ * the same label (its n-th occurrence in that series) and the same value. An
+ * edited or new point has none, so it is marked "basis not stated" rather
+ * than borrowing a citation. The chart's own `sourceIds` stay only while such
+ * a point remains; copies no longer cited go.
+ */
+export function carryChartProvenance(
+	previous: ChartWidgetCore,
+	edited: readonly {
+		readonly name: string;
+		readonly points: readonly { readonly x: string; readonly y: number }[];
+	}[],
+	unit: string,
+): Pick<ChartWidgetCore, "series" | "sourceIds" | "sources"> {
+	const sameUnit = unit === previous.unit;
+	const keyOf = (x: string, occurrence: number) => `${occurrence}\u0000${x}`;
+	const before = new Map(
+		previous.series.map((entry) => {
+			const seen = new Map<string, number>();
+			const points = new Map<string, ChartWidgetCore["series"][number]["points"][number]>();
+			for (const point of entry.points) {
+				const occurrence = seen.get(point.x) ?? 0;
+				seen.set(point.x, occurrence + 1);
+				points.set(keyOf(point.x, occurrence), point);
+			}
+			return [entry.name, points] as const;
+		}),
+	);
+	const series = edited.map((entry) => {
+		const old = before.get(entry.name);
+		const seen = new Map<string, number>();
+		return {
+			name: entry.name,
+			points: entry.points.map((point) => {
+				const occurrence = seen.get(point.x) ?? 0;
+				seen.set(point.x, occurrence + 1);
+				const kept = sameUnit ? old?.get(keyOf(point.x, occurrence)) : undefined;
+				return kept !== undefined && kept.y === point.y ? { ...kept } : { x: point.x, y: point.y };
+			}),
+		};
+	});
+	const anyKept = series.some((entry) =>
+		entry.points.some(
+			(point) =>
+				point.basis !== undefined || point.sourceId !== undefined || point.asOf !== undefined,
+		),
+	);
+	const sourceIds = anyKept ? [...(previous.sourceIds ?? [])] : [];
+	const cited = new Set(chartWidgetCitedIds({ sourceIds, series }));
+	const sources = (previous.sources ?? []).filter((source) => cited.has(source.evidenceId));
+	return {
+		series,
+		...(sourceIds.length === 0 ? {} : { sourceIds }),
+		...(sources.length === 0 ? {} : { sources }),
+	};
 }

@@ -15,7 +15,12 @@ import type {
 } from "@research/contracts";
 import { type JobState, ok, type ResourceUsage } from "@research/domain";
 import { z } from "zod";
-import type { Clock, NotebookAssistTurnInput, PipelineReporter } from "../src/index.ts";
+import type {
+	Clock,
+	NotebookAssistTurnInput,
+	PipelineReporter,
+	ResearchRecordRepository,
+} from "../src/index.ts";
 
 export const RUN_ID = "run_test";
 
@@ -325,5 +330,18 @@ export function assistInput(
 		conversationContext: options.conversationContext ?? [],
 		signal: options.signal ?? controller.signal,
 		allowUnverifiedToolIsolation: options.allowUnverifiedToolIsolation ?? false,
+	};
+}
+
+/** The owner's evidence store for ADR-0026's source check: only these records resolve. */
+export function recordsWith(
+	evidence: readonly Evidence[] = [],
+): Pick<ResearchRecordRepository, "resolve"> {
+	return {
+		resolve: async (_ownerId, lookup) => ({
+			datasets: [],
+			evidence: evidence.filter((record) => lookup.evidenceIds.includes(record.evidenceId)),
+			claims: [],
+		}),
 	};
 }

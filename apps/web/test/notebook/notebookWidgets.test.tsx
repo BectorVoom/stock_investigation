@@ -50,39 +50,50 @@ describe("notebook widget bodies", () => {
 		expect(document.body.textContent).not.toContain("42.5");
 	});
 
-	it("renders a small chart as a sparkline with a summary and a data table", () => {
-		const fixtures = notebookFixtures();
-		const small = { ...fixtures.chart, size: "small" as const };
-		render(() => <WidgetBody widget={small} view={null} registry={registry} {...BODY_DEFAULTS} />);
-		const svg = document.querySelector("svg[role='img']");
-		if (!(svg instanceof SVGElement)) throw new Error("no chart svg");
-		expect(svg.getAttribute("aria-label")).toContain("Line chart");
-		expect(svg.getAttribute("aria-label")).toContain("Base");
-		// Small: no axes, no legend.
-		expect(document.querySelector('[aria-label="Legend"]')).toBeNull();
-		expect(svg.querySelector("line")).toBeNull();
-		expect(screen.getByText(/Data table:/)).toBeDefined();
-	});
-
-	it("renders axes with first/last labels and the unit when medium", () => {
+	it("renders a chart through the shared plot with axes, legend, readout and a data table", () => {
 		const fixtures = notebookFixtures();
 		render(() => (
 			<WidgetBody widget={fixtures.chart} view={null} registry={registry} {...BODY_DEFAULTS} />
 		));
-		expect(document.body.textContent).toContain("2026");
-		expect(document.body.textContent).toContain("2027");
-		expect(document.body.textContent).toContain("Unit: GWh");
+		const svg = document.querySelector("svg[role='img']");
+		if (!(svg instanceof SVGElement)) throw new Error("no chart svg");
+		expect(svg.getAttribute("viewBox")).toBe("0 0 640 320");
+		expect(svg.getAttribute("aria-label")).toContain("Line chart");
+		expect(svg.getAttribute("aria-label")).toContain("Base");
+		expect(svg.querySelector('[data-axis-title="y"]')?.textContent).toBe("GWh");
+		expect(document.querySelector('[aria-label="Legend"]')?.textContent).toContain("Base");
+		expect(document.querySelector('[aria-label="Legend"]')?.textContent).toContain("High");
+		expect(document.querySelector('[data-chart-part="readout"]')?.textContent).toContain(
+			"data table below lists every value",
+		);
+		expect(screen.getByText(/Data table:/)).toBeDefined();
+		// No size-specific markup: the same plot at every size, no visible title.
+		expect(
+			document.querySelector('[data-widget-body="chart"]')?.getAttribute("data-chart-size"),
+		).toBeNull();
+		expect(document.body.textContent).not.toContain("Unit: GWh");
 	});
 
-	it("renders a legend and a live readout when large", () => {
+	it("renders the same chart plot at small and large sizes", () => {
 		const fixtures = notebookFixtures();
+		const small = { ...fixtures.chart, size: "small" as const };
+		const { unmount } = render(() => (
+			<WidgetBody widget={small} view={null} registry={registry} {...BODY_DEFAULTS} />
+		));
+		const smallSvg = document.querySelector("svg[role='img']");
+		if (!(smallSvg instanceof SVGElement)) throw new Error("no small chart svg");
+		const smallMarks = smallSvg.querySelector('[data-chart-part="marks"]')?.innerHTML ?? "";
+		const smallViewBox = smallSvg.getAttribute("viewBox");
+		unmount();
+		cleanup();
+
 		const large = { ...fixtures.chart, size: "large" as const };
 		render(() => <WidgetBody widget={large} view={null} registry={registry} {...BODY_DEFAULTS} />);
-		const legend = document.querySelector('[aria-label="Legend"]');
-		if (!(legend instanceof HTMLElement)) throw new Error("no chart legend");
-		expect(legend.textContent).toContain("Base");
-		expect(legend.textContent).toContain("High");
-		expect(document.body.textContent).toContain("data table below lists every value");
+		const largeSvg = document.querySelector("svg[role='img']");
+		if (!(largeSvg instanceof SVGElement)) throw new Error("no large chart svg");
+		expect(largeSvg.getAttribute("viewBox")).toBe(smallViewBox);
+		expect(largeSvg.querySelector('[data-chart-part="marks"]')?.innerHTML).toBe(smallMarks);
+		expect(document.querySelector('[aria-label="Legend"]')?.textContent).toContain("Base");
 	});
 
 	it("renders a table with a caption and right-aligned numbers", () => {

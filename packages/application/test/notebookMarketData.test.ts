@@ -20,7 +20,7 @@ import type {
 	NotebookRepository,
 	StoredMarketSeries,
 } from "../src/ports.ts";
-import { fixedClock } from "./support.ts";
+import { fixedClock, recordsWith } from "./support.ts";
 
 const OWNER = "owner_1";
 const WORKSPACE = "ws_1";
@@ -188,6 +188,7 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 			notebooks,
 			clock: fixedClock().clock,
 			audit: AUDIT,
+			records: recordsWith(),
 		});
 	}
 
@@ -283,6 +284,7 @@ describe("notebook market data (ADR-0021)", () => {
 			hasher: { sha256Hex: async () => "hash" },
 			rateLimiter: { consume: async () => true },
 			audit: AUDIT,
+			records: recordsWith(),
 		});
 	}
 

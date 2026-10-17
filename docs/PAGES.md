@@ -255,7 +255,15 @@ Ask research questions and read the answers, with their sources and run progress
   edited in the same form, and reloaded only when the named series change —
   a series never refreshed queues one market-data refresh by itself. A tap on
   a price widget opens the same detailed chart viewer as on Home (its plot,
-  value block or row name; nothing it does is saved). The
+  value block or row name; nothing it does is saved). A
+  `chart` widget carries its own series and draws through the same shared
+  plot as the Chat preview it was saved from (same viewBox, ticks, axis
+  titles, marks, legend and readout; `xLabel` / `yLabel` plus `xKind` keep the
+  axis titles and date/number x positioning, and only a lossless conversion
+  becomes a `chart` — otherwise `research`). It also carries each value's
+  provenance (ADR-0026): the same basis note, cell markers, citations and
+  Sources list as in Chat; a chart without provenance (owner- or
+  assistant-made) is marked "basis not stated". The
   earnings calendar reads the Watchlist page's stocks with its own refresh
   button. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header

@@ -38,6 +38,9 @@ import {
  *    and a Markdown file for that page exists in the development pages
  *    directory, beginning with the page's heading rather than site
  *    navigation.
+ * 2b. A question no subscribed source covers (the gold price) completes
+ *    through `web.search` instead of failing with NO_EVIDENCE_COLLECTED
+ *    (ADR-0025).
  * 3. Upgraded state: after a restart with a fresh database that has a run
  *    but no saved settings (created through the API), a question can be
  *    sent without visiting Settings.
@@ -63,6 +66,13 @@ const QUESTION_2 =
 	"Use the web.fetch_page tool to open the public web page at " +
 	PAGE_URL +
 	" and quote its main heading, then say in one sentence what the page is about.";
+/**
+ * A research question no subscribed source covers (ADR-0025): the owner's
+ * gold questions failed with NO_EVIDENCE_COLLECTED because the model had
+ * nothing to ask for, so it must now search. ("Please create gold chart."
+ * itself goes to the notebook assistant, see `composerTarget.ts`.)
+ */
+const QUESTION_SEARCH = "How has the gold price moved this year, and what is driving it?";
 const QUESTION_3 =
 	"Which products or services could see demand growth over the next 3 to 5 years " +
 	"based on recent US energy news?";
@@ -419,6 +429,40 @@ test.describe("live positive path through the real backend (spends real quota)",
 				`the archived body does not start with article text:\n${markdown.slice(0, 300)}`,
 			).toBe(true);
 		}
+	});
+
+	test("a question no subscribed source covers searches the web and completes", async () => {
+		test.setTimeout(900_000);
+		const page = activePage();
+		try {
+			const composer = page.getByRole("form", { name: "Research composer" });
+			const thread = page.getByRole("list", { name: "Messages" });
+			// Counted from what is already there, so the test also holds when
+			// run on its own after the fresh-state test (`-g`).
+			const completedBefore = await thread.locator('[data-run-state="completed"]').count();
+			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_SEARCH);
+			await composer.getByRole("button", { name: "Send question" }).click();
+			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
+				completedBefore + 1,
+				{ timeout: 720_000 },
+			);
+		} catch (error) {
+			await dumpDiagnostics("search question", dataDirA);
+			throw error;
+		}
+		// The evidence came from the search tool: its executed step is in the
+		// run's progress (the list leaves progress out; the run itself has it).
+		const runs = (await apiJson("GET", "/api/v1/research-runs")) as { runs: unknown };
+		const list = Array.isArray(runs.runs) ? runs.runs : [];
+		const searchRun = list.find(
+			(entry: unknown) =>
+				typeof entry === "object" &&
+				entry !== null &&
+				JSON.stringify(entry).includes(QUESTION_SEARCH),
+		);
+		expect(searchRun, "the search question's run is not listed").toBeDefined();
+		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searchRun, "runId")}`);
+		expect(JSON.stringify(detail)).toMatch(/web\.search: executed/);
 	});
 
 	test("a past chat is renamed and then deleted with its runs", async () => {

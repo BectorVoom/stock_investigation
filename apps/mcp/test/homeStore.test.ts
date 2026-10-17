@@ -1,4 +1,4 @@
-import { DEFAULT_HOME_DASHBOARD } from "@research/contracts";
+import { DEFAULT_HOME_DASHBOARD, homeWidgetSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { createHomeDashboardStore, type HomeStoreFetch } from "../src/homeStore.ts";
 
@@ -58,6 +58,33 @@ describe("createHomeDashboardStore", () => {
 			expect(read.error.code).toBe("STORE_UNAVAILABLE");
 			expect(read.error.message).toContain(API_ORIGIN);
 		}
+	});
+
+	it("writes an agent's new chart numbers without provenance it did not carry over (ADR-0026)", async () => {
+		const borrowed = homeWidgetSchema.parse({
+			widgetId: "w_chart",
+			type: "chart",
+			title: "Borrowed",
+			size: "medium",
+			chartType: "line",
+			unit: "USD",
+			series: [{ name: "P", points: [{ x: "Mon", y: 99, basis: "assumption" }] }],
+		});
+		const puts: unknown[] = [];
+		const backend = recordingFetch((_url, init) => {
+			if (init.method === "PUT") {
+				const body: unknown = JSON.parse(String(init.body));
+				puts.push(body);
+				return jsonResponse(dashboardBody(5));
+			}
+			return jsonResponse(dashboardBody(4));
+		});
+		const store = createHomeDashboardStore({ apiOrigin: API_ORIGIN, fetch: backend.fetch });
+		const written = await store.write([...DEFAULT_HOME_DASHBOARD.widgets, borrowed], 4);
+		expect(written.ok).toBe(true);
+		// The page it started from is read first, then the PUT carries the bare point.
+		expect(backend.calls.map((call) => call.init.method)).toEqual(["GET", "PUT"]);
+		expect(JSON.stringify(puts[0])).toContain('"points":[{"x":"Mon","y":99}]');
 	});
 
 	it("writes with Origin, the CSRF header and the expected version", async () => {

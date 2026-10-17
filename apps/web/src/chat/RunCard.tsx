@@ -18,6 +18,28 @@ import {
 	evaluateBudget,
 } from "../settings/agentSettingsModel.ts";
 
+/**
+ * One-sentence hint for a run that collected nothing (ADR-0025). Only for
+ * `NO_EVIDENCE_COLLECTED`; other codes keep no hint. The Settings mention
+ * appears only when the run's own request says web access was off — no new
+ * API field is added for this.
+ */
+export function noEvidenceHint(run: ResearchRun): string | null {
+	if (run.failureCode !== "NO_EVIDENCE_COLLECTED") return null;
+	switch (run.failureDetail) {
+		case "NO_TOOL_REQUESTED":
+			return run.request?.webAccess === "off"
+				? "The assistant found no tool that fits this question. If web access is off in Settings, turn it on so it can search the web."
+				: "The assistant found no tool that fits this question. Try naming a company, ticker or topic.";
+		case "TOOLS_RETURNED_NOTHING":
+			return "The tools ran but found nothing on this question. Try naming a company, ticker or topic.";
+		case "PLAN_NOT_JSON":
+			return "The model's plan could not be read. Try again or choose another model in Settings.";
+		default:
+			return null;
+	}
+}
+
 const RETRYABLE_STATES: readonly ResearchRun["state"][] = ["failed", "cancelled", "partial"];
 
 const STATE_CLASSES: { readonly [S in ResearchRun["state"]]?: string } = {
@@ -140,6 +162,7 @@ export function RunCard(props: {
 	// line below, so the word would only repeat them. Every other state keeps
 	// its badge. The state stays on `data-run-state` and in the status region.
 	const showStateBadge = () => props.run.state !== "completed" && props.run.state !== "failed";
+	const failureHint = () => noEvidenceHint(props.run);
 
 	return (
 		<article
@@ -204,6 +227,13 @@ export function RunCard(props: {
 						)}
 					</Show>
 				</p>
+				<Show when={failureHint()}>
+					{(hint) => (
+						<p data-field="failure-hint" class="mt-1 text-xs text-slate-700">
+							{hint()}
+						</p>
+					)}
+				</Show>
 			</Show>
 			<Show when={RETRYABLE_STATES.includes(props.run.state)}>
 				<div class="mt-2 flex flex-wrap gap-2">

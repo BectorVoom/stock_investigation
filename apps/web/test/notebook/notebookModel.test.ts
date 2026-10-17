@@ -103,7 +103,7 @@ describe("notebook model", () => {
 						{
 							date: { v: "2026-10-08" },
 							aapl: { v: 340.42, sourceId: "ev_a", asOf: "2026-10-08" },
-							msft: { v: null, reason: "market closed" },
+							msft: { v: 532.1, basis: "derived" },
 						},
 					],
 				},
@@ -140,13 +140,77 @@ describe("notebook model", () => {
 		expect(core.chartType).toBe("line");
 		expect(core.unit).toBe("USD");
 		expect(core.series.map((entry) => entry.name)).toEqual(["AAPL", "MSFT"]);
-		// A null cell is not plotted, never drawn as 0.
-		expect(core.series[0]?.points).toHaveLength(2);
-		expect(core.series[1]?.points).toHaveLength(1);
+		// Each value keeps its provenance, and the chart its cited record (ADR-0026).
+		expect(core.series[0]?.points[0]).toEqual({
+			x: "2026-10-07",
+			y: 336.67,
+			sourceId: "ev_a",
+			asOf: "2026-10-07",
+		});
+		expect(core.series[1]?.points[1]).toEqual({ x: "2026-10-08", y: 532.1, basis: "derived" });
+		expect(core.sourceIds).toEqual(["ev_a"]);
+		expect(core.sources?.map((source) => source.evidenceId)).toEqual(["ev_a"]);
+
+		// A stated gap ("market closed") cannot be carried by a widget point.
+		const gapped: WorkspaceView = {
+			...view,
+			datasets: view.datasets.map((dataset) => ({
+				...dataset,
+				rows: dataset.rows.map((row, index) =>
+					index === 1 ? { ...row, msft: { v: null, reason: "market closed" } } : row,
+				),
+			})),
+		};
+		expect(widgetFromComponent(component, gapped)?.type).toBe("research");
 		expect(widgetCoreSchema.safeParse(core).success).toBe(true);
 	});
 
-	it("converts a candlestick component to a line chart of the close", () => {
+	it("keeps a bar chart as a research widget when the registry would refuse its props or cut its unit", () => {
+		const viewWith = (
+			props: WorkspaceView["state"]["components"][number]["props"],
+		): WorkspaceView => ({
+			...WORKSPACE_VIEW,
+			datasets: [
+				{
+					datasetId: "ds_bar",
+					title: "Growth",
+					createdAt: "2026-10-03T00:00:00Z",
+					columns: [
+						{ key: "scenario", label: "Scenario", kind: "text" },
+						{ key: "base", label: "Base", kind: "number", unit: "%" },
+					],
+					rows: [{ scenario: { v: "AI" }, base: { v: 16.5, basis: "derived" } }],
+				},
+			],
+			state: {
+				...WORKSPACE_VIEW.state,
+				components: [{ componentId: "bar_1", componentType: "bar-chart", schemaVersion: 1, props }],
+			},
+		});
+		const props = {
+			title: "Growth",
+			datasetRef: "ds_bar",
+			categoryKey: "scenario",
+			series: [{ key: "base", label: "Base" }],
+			xLabel: "Scenario",
+			yLabel: "Growth",
+			yUnit: "% per year",
+			sourceIds: [],
+		};
+		const typeOf = (view: WorkspaceView): string | undefined => {
+			const component = view.state.components[0];
+			if (component === undefined) throw new Error("bar_1 is missing");
+			return widgetFromComponent(component, view)?.type;
+		};
+		expect(typeOf(viewWith(props))).toBe("chart");
+		// No yUnit: the registry shows "cannot render", so no chart widget may claim the same picture.
+		const { yUnit: _dropped, ...withoutUnit } = props;
+		expect(typeOf(viewWith(withoutUnit))).toBe("research");
+		// 30 characters fit the chart props (40) but not a widget unit (24).
+		expect(typeOf(viewWith({ ...props, yUnit: "percent per year, compounded" }))).toBe("research");
+	});
+
+	it("keeps a candlestick component as a research widget (candles are not a close-price line)", () => {
 		const view: WorkspaceView = {
 			...WORKSPACE_VIEW,
 			datasets: [
@@ -197,10 +261,8 @@ describe("notebook model", () => {
 		const component = view.state.components[0];
 		if (component === undefined) throw new Error("candle_1 is missing");
 		const core = widgetFromComponent(component, view);
-		if (core?.type !== "chart") throw new Error("expected a chart widget");
-		expect(core.chartType).toBe("line");
-		expect(core.series).toHaveLength(1);
-		expect(core.series[0]?.points).toEqual([{ x: "2026-10-07", y: 336.67 }]);
+		if (core?.type !== "research") throw new Error("expected a research widget");
+		expect(core.componentId).toBe("candle_1");
 	});
 
 	it("keeps any other component as a research widget with its title", () => {

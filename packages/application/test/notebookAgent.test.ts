@@ -117,6 +117,94 @@ describe("applyNotebookCommands", () => {
 		]);
 	});
 
+	it("keeps a chart's provenance through an update but never lets the assistant add any (ADR-0026)", async () => {
+		const source = {
+			evidenceId: "ev_1",
+			sourceUrl: "https://example.com/a",
+			title: "Outlook",
+			publisher: "Example",
+			publishedAt: null,
+			retrievedAt: NOW,
+			effectiveAt: null,
+			excerpt: null,
+			checksum: "d".repeat(64),
+			sourceClass: "news",
+		} as const;
+		const sourced = { x: "Grid", y: 4, sourceId: "ev_1", asOf: "2026-10-01" };
+		const cited: NotebookWidget = {
+			widgetId: "w-c",
+			size: "medium",
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+			type: "chart",
+			title: "Growth",
+			chartType: "bar",
+			unit: "%",
+			series: [{ name: "Base", points: [sourced, { x: "AI", y: 16.5, basis: "assumption" }] }],
+			sources: [{ ...source }],
+		};
+		const start = notebookOf([cited]);
+
+		// Replacing the series with plain numbers drops the copy nobody cites any more.
+		const replaced = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "update",
+					widgetId: "w-c",
+					config: { series: [{ name: "Base", points: [{ x: "AI", y: 20 }] }] },
+				},
+			],
+			context(),
+		);
+		if (!replaced.ok) throw new Error(`expected success: ${replaced.error.failure.message}`);
+		const updated = replaced.value.widgets[0];
+		expect(updated?.type === "chart" ? updated.sources : "not a chart").toBeUndefined();
+
+		// Keeping the sourced point as it is stays allowed…
+		const kept = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "update",
+					widgetId: "w-c",
+					config: { series: [{ name: "Base", points: [sourced] }] },
+				},
+			],
+			context(),
+		);
+		expect(kept.ok).toBe(true);
+
+		// …but a changed number, a changed unit or a new chart loses it: a real
+		// citation never ends up on a number the assistant wrote.
+		const stripped = async (command: unknown) => {
+			const applied = await applyNotebookCommands(start, [command], context());
+			if (!applied.ok) throw new Error(`expected success: ${applied.error.failure.message}`);
+			return applied.value.widgets.flatMap((widget) => (widget.type === "chart" ? [widget] : []));
+		};
+		const changed = await stripped({
+			kind: "update",
+			widgetId: "w-c",
+			config: { series: [{ name: "Base", points: [{ ...sourced, y: 40 }] }] },
+		});
+		expect(changed[0]?.series[0]?.points).toEqual([{ x: "Grid", y: 40 }]);
+		expect(changed[0]?.sources).toBeUndefined();
+		const reUnited = await stripped({ kind: "update", widgetId: "w-c", config: { unit: "USD" } });
+		expect(reUnited[0]?.series[0]?.points).toEqual([
+			{ x: "Grid", y: 4 },
+			{ x: "AI", y: 16.5 },
+		]);
+		const added = await stripped({
+			kind: "add",
+			type: "chart",
+			title: "Copy",
+			config: { chartType: "bar", unit: "%", series: [{ name: "Base", points: [sourced] }] },
+		});
+		expect(added[1]?.series[0]?.points).toEqual([{ x: "Grid", y: 4 }]);
+	});
+
 	it("adds every market type through its config", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

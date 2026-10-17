@@ -29,6 +29,8 @@ import {
 	notebookSchema,
 	type ResearchBundle,
 	researchBundleSchema,
+	WIDGET_LIMITS,
+	type WidgetCore,
 } from "@research/contracts";
 import {
 	applyDashboardEdit,
@@ -82,7 +84,12 @@ import {
 	unionBarDays,
 	unionOverview,
 } from "../packages/ui-registry/src/charts/detailChartModel.ts";
+import {
+	chartWidgetSeries,
+	chartWidgetToGuardedDataset,
+} from "../packages/ui-registry/src/charts/chartWidgetDataset.ts";
 import { buildHomeLineModel } from "../packages/ui-registry/src/charts/homeLineModel.ts";
+import { buildLineModel } from "../packages/ui-registry/src/charts/lineModel.ts";
 
 interface Case {
 	readonly name: string;
@@ -581,6 +588,7 @@ const homeBenchService = createHomeService({
 	},
 	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
 	audit: { record: async () => undefined },
+	records: { resolve: async () => ({ datasets: [], evidence: [], claims: [] }) },
 });
 
 // A notebook at both maxima: 200 widgets, close to the content byte cap,
@@ -791,6 +799,24 @@ function chartWindowFixture(count: number) {
 const CHART_WINDOW_800 = chartWindowFixture(800);
 const CHART_WINDOW_20K = chartWindowFixture(20_000);
 
+/** The largest chart widget the contract allows; each series starts one label later. */
+const NOTEBOOK_BENCH_CHART = {
+	widgetId: "w_bench_chart",
+	type: "chart",
+	title: "Bench chart",
+	size: "large",
+	chartType: "line",
+	unit: "USD",
+	xKind: "date",
+	series: Array.from({ length: WIDGET_LIMITS.maxChartSeries }, (_, seriesIndex) => ({
+		name: `Series ${seriesIndex + 1}`,
+		points: Array.from({ length: WIDGET_LIMITS.maxChartPoints }, (_, pointIndex) => ({
+			x: new Date(Date.UTC(2020, 0, 1 + seriesIndex + pointIndex)).toISOString().slice(0, 10),
+			y: 100 + seriesIndex + Math.sin(pointIndex / 9) * 10,
+		})),
+	})),
+} satisfies Extract<WidgetCore, { readonly type: "chart" }>;
+
 const cases: Case[] = [
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
@@ -985,6 +1011,18 @@ const cases: Case[] = [
 			htmlToMarkdown(deepNestingHtml, {
 				baseUrl: "https://news.example.org/a/1",
 				maxChars: 20_000,
+			}),
+	},
+	{
+		// Runs on every render of a Notebook chart widget (ADR-0024, 2026-10-17):
+		// the order-preserving row merge plus the shared line model, at the
+		// contract's largest chart, with staggered labels so the merge has work.
+		name: "rebuild a 6 x 400-point Notebook chart widget as a dataset and line model",
+		budgetMs: 10,
+		run: () =>
+			buildLineModel(chartWidgetToGuardedDataset(NOTEBOOK_BENCH_CHART), {
+				xKey: "x",
+				series: chartWidgetSeries(NOTEBOOK_BENCH_CHART),
 			}),
 	},
 	{

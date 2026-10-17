@@ -57,12 +57,13 @@ describe("research tool catalogue", () => {
 		expect(tools.map((tool) => tool.toolId)).toEqual([
 			"news.fetch_feed",
 			"news.fetch_article",
+			"web.search",
 			"finance.sec_company_financials",
 			"filings.sec_13f_holdings",
 			"positions.us_short_interest",
 			"positions.jp_margin_balance",
 		]);
-		expect(registry.list()).toHaveLength(6);
+		expect(registry.list()).toHaveLength(7);
 		for (const tool of tools) {
 			expect(tool.version).toMatch(/^\d+\.\d+\.\d+$/);
 			expect(tool.permission).toBe("research-read");
@@ -96,12 +97,14 @@ describe("research tool catalogue", () => {
 		}
 		// Without an archive there is nowhere to keep a retrieved page (DATA-010).
 		expect(registry.get("web.fetch_page")).toBeUndefined();
+		// The search tool writes nothing to disk, so it is registered either way (ADR-0025).
+		expect(registry.get("web.search")?.networkAllowlist).toEqual({ kind: "public-web" });
 	});
 
 	it("registers web.fetch_page only when a page archive is configured", () => {
 		const { tools, registry } = setupWithArchive();
 		expect(tools.map((tool) => tool.toolId)).toContain("web.fetch_page");
-		expect(registry.list()).toHaveLength(7);
+		expect(registry.list()).toHaveLength(8);
 		const web = registry.get("web.fetch_page");
 		expect(web).toMatchObject({
 			version: "1.0.0",

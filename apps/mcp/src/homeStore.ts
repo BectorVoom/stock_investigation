@@ -1,9 +1,12 @@
 import {
 	apiErrorBodySchema,
+	asHomeWidget,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
 	type HomeWidget,
+	hasChartProvenance,
 	homeDashboardResponseSchema,
+	withEarnedChartProvenance,
 } from "@research/contracts";
 import type {
 	WidgetAgentFailure,
@@ -67,6 +70,10 @@ export function createHomeDashboardStore(
 	const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 	const dashboardUrl = `${apiOrigin}/api/v1/home/dashboard`;
 
+	// The dashboard as last read or written, so a write can be checked
+	// against the page the agent's commands started from (ADR-0026).
+	let lastSeen: WidgetLayoutRecord<HomeWidget, number> | null = null;
+
 	const read = async (): Promise<
 		Result<WidgetLayoutRecord<HomeWidget, number>, WidgetAgentFailure>
 	> => {
@@ -85,13 +92,28 @@ export function createHomeDashboardStore(
 		if (response.status !== 200 || body === null) return err(badAnswer(apiOrigin, response.status));
 		const parsed = homeDashboardResponseSchema.safeParse(body);
 		if (!parsed.success) return err(badAnswer(apiOrigin, response.status));
-		return ok({ widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version });
+		lastSeen = { widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version };
+		return ok(lastSeen);
 	};
 
 	const write = async (
 		widgets: readonly HomeWidget[],
 		revision: number,
 	): Promise<Result<WidgetLayoutRecord<HomeWidget, number>, WidgetAgentFailure>> => {
+		// ADR-0026: provenance the agent did not carry over unchanged is
+		// removed before the write. Only a page that carries provenance at all
+		// needs the page it started from; ordinary writes cost no extra request.
+		let toWrite = widgets;
+		if (hasChartProvenance(widgets)) {
+			if (lastSeen === null || lastSeen.revision !== revision) {
+				const current = await read();
+				if (!current.ok) return current;
+			}
+			toWrite = withEarnedChartProvenance(widgets, lastSeen?.widgets ?? []).flatMap((widget) => {
+				const home = asHomeWidget(widget);
+				return home === null ? [] : [home];
+			});
+		}
 		let response: Response;
 		try {
 			response = await fetchImpl(dashboardUrl, {
@@ -103,7 +125,7 @@ export function createHomeDashboardStore(
 					[CSRF_HEADER]: CSRF_HEADER_VALUE,
 				},
 				body: JSON.stringify({
-					dashboard: { schemaVersion: 2, widgets: [...widgets] },
+					dashboard: { schemaVersion: 2, widgets: [...toWrite] },
 					expectedVersion: revision,
 				}),
 				signal: AbortSignal.timeout(timeoutMs),
@@ -116,7 +138,8 @@ export function createHomeDashboardStore(
 		if (response.status === 200 && body !== null) {
 			const parsed = homeDashboardResponseSchema.safeParse(body);
 			if (parsed.success) {
-				return ok({ widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version });
+				lastSeen = { widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version };
+				return ok(lastSeen);
 			}
 			return err(badAnswer(apiOrigin, response.status));
 		}

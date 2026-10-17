@@ -203,6 +203,16 @@ export const STABLE_FAILURE_CODE_PATTERN = /^[A-Z][A-Z0-9_]{1,59}$/;
 export const stableFailureCodeSchema = z.string().regex(STABLE_FAILURE_CODE_PATTERN);
 export const TOOL_ERROR_FALLBACK_CODE = "TOOL_ERROR";
 
+/**
+ * The failure codes a `failureDetail` may accompany: the most frequent tool
+ * error with `ALL_TOOL_CALLS_FAILED` (finding 10), why nothing was collected
+ * with `NO_EVIDENCE_COLLECTED` (ADR-0025). One list for the run view, the
+ * completion and the stored row, so they cannot disagree.
+ */
+export function failureCodeTakesDetail(failureCode: string | null): boolean {
+	return failureCode === "ALL_TOOL_CALLS_FAILED" || failureCode === "NO_EVIDENCE_COLLECTED";
+}
+
 /** A tool error code that does not match the stable shape becomes `TOOL_ERROR`. */
 export function sanitizeToolErrorCode(code: string): string {
 	return STABLE_FAILURE_CODE_PATTERN.test(code) ? code : TOOL_ERROR_FALLBACK_CODE;
@@ -225,9 +235,11 @@ export const researchRunSchema = z
 		failureCode: z.string().max(80).nullable(),
 		/**
 		 * Short stable code carried alongside `failureCode` when every executed
-		 * tool call failed (e.g. TIMEOUT with `ALL_TOOL_CALLS_FAILED`). Null
+		 * tool call failed (e.g. TIMEOUT with `ALL_TOOL_CALLS_FAILED`), or why
+		 * nothing was collected with `NO_EVIDENCE_COLLECTED` (`NO_TOOL_REQUESTED`,
+		 * `PLAN_NOT_JSON`, `TOOLS_RETURNED_NOTHING`, ADR-0025). Null
 		 * otherwise; never free text from a tool. Tied to `failureCode` below:
-		 * non-null only with `ALL_TOOL_CALLS_FAILED` (ARCH-005).
+		 * non-null only with `ALL_TOOL_CALLS_FAILED` or `NO_EVIDENCE_COLLECTED` (ARCH-005).
 		 */
 		failureDetail: stableFailureCodeSchema.nullable(),
 		approvalRequest: z
@@ -241,8 +253,9 @@ export const researchRunSchema = z
 		updatedAt: isoDateTimeSchema,
 		progress: z.array(runProgressEntrySchema).max(200),
 	})
-	.refine((run) => run.failureDetail === null || run.failureCode === "ALL_TOOL_CALLS_FAILED", {
-		message: "failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED",
+	.refine((run) => run.failureDetail === null || failureCodeTakesDetail(run.failureCode), {
+		message:
+			"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
 		path: ["failureDetail"],
 	});
 export type ResearchRun = z.infer<typeof researchRunSchema>;
@@ -602,8 +615,9 @@ const failedCompletionSchema = z
 		failureCode: z.string().min(1).max(80),
 		/**
 		 * Most frequent tool error code when `failureCode` is
-		 * `ALL_TOOL_CALLS_FAILED` (finding 10): a stable code, never free
-		 * text; tied to `failureCode` so a stale detail cannot accompany
+		 * `ALL_TOOL_CALLS_FAILED` (finding 10), or why nothing was collected
+		 * when it is `NO_EVIDENCE_COLLECTED` (ADR-0025): a stable code, never
+		 * free text; tied to `failureCode` so a stale detail cannot accompany
 		 * another code.
 		 */
 		failureDetail: stableFailureCodeSchema.nullish(),
@@ -613,9 +627,10 @@ const failedCompletionSchema = z
 		(completion) =>
 			completion.failureDetail === null ||
 			completion.failureDetail === undefined ||
-			completion.failureCode === "ALL_TOOL_CALLS_FAILED",
+			failureCodeTakesDetail(completion.failureCode),
 		{
-			message: "failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED",
+			message:
+				"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
 			path: ["failureDetail"],
 		},
 	);

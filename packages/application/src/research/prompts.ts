@@ -8,7 +8,11 @@ import type {
 } from "@research/contracts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
-export const PROMPT_VERSION = "research-v4";
+export const PROMPT_VERSION = "research-v5";
+
+/** One planning retry note (ADR-0025): sent once when the first plan asks for no tools. */
+export const PLANNING_REMINDER =
+	"Nothing has been collected yet. Request at least one tool call; if no subscribed source fits, search.";
 
 /**
  * UTF-8 byte budgets for the planning prompt's sections. The whole prompt must
@@ -109,6 +113,8 @@ export function planningPrompt(input: {
 	readonly conversationContext: readonly ConversationContextMessage[];
 	readonly fenceToken: string;
 	readonly promptBudgetBytes: number;
+	/** Short pipeline note placed just before the Return line (ADR-0025 reminder). */
+	readonly reminder?: string | null;
 }): string {
 	const tools = fitToolCatalog(input.tools);
 	const sources = fitSourceList(input.sources);
@@ -125,13 +131,20 @@ ${tools}
 ${sourcesBlock}
 Collected so far:
 `;
+	const reminderBlock =
+		input.reminder === null || input.reminder === undefined || input.reminder === ""
+			? ""
+			: `\nNote from the pipeline: ${input.reminder}\n`;
 	const tail = `
 
 Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
+While nothing has been collected, return at least one tool call: done with no calls is only for when evidence has been collected or every listed tool has been tried.
+When no subscribed source fits the question, use a search tool if one is listed, with short keyword queries (2-6 words, not the whole question), and read promising results with the page tool.${reminderBlock}
 Return: {"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}`;
 	// The collected section gets whatever the fixed sections leave of the
 	// budget, fence wrapper included; it is trimmed from its tail first (with
-	// notice). Terminates: constant string operations.
+	// notice). Terminates: constant string operations. The reminder is part of
+	// the fixed tail, so the ceiling holds by construction.
 	const fenceOverheadBytes = promptBytes(
 		fenceUntrustedText("collected tool output", "", input.fenceToken),
 	);

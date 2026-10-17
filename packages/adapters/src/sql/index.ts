@@ -8,6 +8,7 @@ import type {
 	ArticleRepository,
 	AuditLog,
 	CalendarFeedRepository,
+	ChartEvidenceReferences,
 	ChatRepository,
 	EarningsRepository,
 	GoogleCalendarRepository,
@@ -31,6 +32,7 @@ import {
 	createArticleRepository,
 	createAuditLog,
 	createCalendarFeedRepository,
+	createChartEvidenceReferences,
 	createChatRepository,
 	createEarningsRepository,
 	createGoogleCalendarRepository,
@@ -66,6 +68,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const homeDashboard: HomeDashboardRepository = createHomeDashboardRepository(db);
 	const market: MarketRepository = createMarketRepository(db);
 	const notebooks: NotebookRepository = createNotebookRepository(db);
+	const chartEvidence: ChartEvidenceReferences = createChartEvidenceReferences(db);
 	const watchlist: WatchlistRepository = createWatchlistRepository(db);
 	const earnings: EarningsRepository = createEarningsRepository(db);
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
@@ -86,6 +89,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		homeDashboard,
 		market,
 		notebooks,
+		chartEvidence,
 		watchlist,
 		earnings,
 		calendarFeed,
