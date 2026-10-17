@@ -175,20 +175,21 @@ pub struct VerifiedClaim {
 pub fn normalize_for_match(text: &str) -> String {
 	if text.is_ascii() {
 		// NFKC is the identity on ASCII and lower-casing is byte-wise: one pass.
-		let mut normalized = String::with_capacity(text.len());
+		let mut normalized = Vec::with_capacity(text.len());
 		let mut pending_space = false;
 		for byte in text.bytes() {
 			if matches!(byte, b'\t' | b'\n' | 0x0B | 0x0C | b'\r' | b' ') {
 				pending_space = !normalized.is_empty();
 			} else {
 				if pending_space {
-					normalized.push(' ');
+					normalized.push(b' ');
 					pending_space = false;
 				}
-				normalized.push(char::from(byte.to_ascii_lowercase()));
+				normalized.push(byte.to_ascii_lowercase());
 			}
 		}
-		return normalized;
+		// Only ASCII bytes were pushed, so this never fails.
+		return String::from_utf8(normalized).unwrap_or_default();
 	}
 	let composed = nfkc(text);
 	let lower = composed.to_lowercase();
@@ -609,5 +610,83 @@ mod tests {
 		assert!(!is_passage_of("cathodes", text));
 		assert!(mentions(text, "BATTERY inc"));
 		assert!(!mentions(text, " \t"));
+	}
+
+	/// The `scripts/bench.ts` case "verify 80 claims x 6 links against 80 x
+	/// 4 KB evidence" (budget 10 ms). Run with
+	/// `cargo test -p research-domain --release --lib bench_ -- --ignored --nocapture`.
+	#[test]
+	#[ignore = "timing; run in release"]
+	fn bench_verify_80_claims() {
+		const SENTENCE: &str =
+			"Orders for grid storage reached 100 GWh in 2026, up from 70 GWh a year earlier. ";
+		let evidence: Vec<EvidenceText> = (0..80)
+			.map(|index| EvidenceText {
+				evidence_id: format!("run_bench_ev{index}"),
+				retrieved_text: format!(
+					"{} Item {index} shipped {} units.",
+					SENTENCE.repeat(48),
+					index * 7 + 3
+				),
+			})
+			.collect();
+		let claims: Vec<DraftClaim> = (0..80)
+			.map(|index| DraftClaim {
+				claim_id: format!("run_bench_cl{index}"),
+				text: format!(
+					"Item {} shipped {} units in 2026.",
+					index % 80,
+					(index % 80) * 7 + 3
+				),
+				claim_type: ClaimType::Observation,
+				links: (0..6)
+					.map(|offset| DraftEvidenceLink {
+						evidence_id: format!("run_bench_ev{}", (index + offset) % 80),
+						relation: EvidenceRelation::Supports,
+						quote: Some("Orders for grid storage reached 100 GWh in 2026".to_owned()),
+					})
+					.collect(),
+			})
+			.collect();
+		let median = |run: &dyn Fn() -> Vec<VerifiedClaim>| {
+			for _ in 0..5 {
+				std::hint::black_box(run());
+			}
+			let mut samples: Vec<f64> = (0..25)
+				.map(|_| {
+					let started = std::time::Instant::now();
+					std::hint::black_box(run());
+					started.elapsed().as_secs_f64() * 1000.0
+				})
+				.collect();
+			samples.sort_by(f64::total_cmp);
+			samples[12]
+		};
+		let sequential = || {
+			let index = EvidenceIndex {
+				by_id: evidence
+					.iter()
+					.map(|item| {
+						(
+							item.evidence_id.clone(),
+							PreparedText::new(&item.retrieved_text),
+						)
+					})
+					.collect(),
+			};
+			claims
+				.iter()
+				.map(|claim| verify_claim(claim, &index))
+				.collect::<Vec<_>>()
+		};
+		let parallel = || verify_claims(&claims, &evidence);
+		assert_eq!(sequential(), parallel());
+		for _ in 0..3 {
+			println!(
+				"verify 80 claims: sequential {:.3} ms, parallel {:.3} ms",
+				median(&sequential),
+				median(&parallel)
+			);
+		}
 	}
 }
