@@ -60,8 +60,8 @@ describe("createHomeDashboardStore", () => {
 		}
 	});
 
-	it("refuses a write that attaches a source to a new number, before any PUT (ADR-0026)", async () => {
-		const sourced = homeWidgetSchema.parse({
+	it("writes an agent's new chart numbers without provenance it did not carry over (ADR-0026)", async () => {
+		const borrowed = homeWidgetSchema.parse({
 			widgetId: "w_chart",
 			type: "chart",
 			title: "Borrowed",
@@ -70,16 +70,21 @@ describe("createHomeDashboardStore", () => {
 			unit: "USD",
 			series: [{ name: "P", points: [{ x: "Mon", y: 99, basis: "assumption" }] }],
 		});
+		const puts: unknown[] = [];
 		const backend = recordingFetch((_url, init) => {
-			if (init.method === "PUT") throw new Error("the store must not PUT");
+			if (init.method === "PUT") {
+				const body: unknown = JSON.parse(String(init.body));
+				puts.push(body);
+				return jsonResponse(dashboardBody(5));
+			}
 			return jsonResponse(dashboardBody(4));
 		});
 		const store = createHomeDashboardStore({ apiOrigin: API_ORIGIN, fetch: backend.fetch });
-		const written = await store.write([...DEFAULT_HOME_DASHBOARD.widgets, sourced], 4);
-		if (written.ok) throw new Error("expected a refusal");
-		expect(written.error.code).toBe("INVALID_WIDGET");
-		expect(written.error.message).toContain('chart "Borrowed"');
-		expect(backend.calls.map((call) => call.init.method)).toEqual(["GET"]);
+		const written = await store.write([...DEFAULT_HOME_DASHBOARD.widgets, borrowed], 4);
+		expect(written.ok).toBe(true);
+		// The page it started from is read first, then the PUT carries the bare point.
+		expect(backend.calls.map((call) => call.init.method)).toEqual(["GET", "PUT"]);
+		expect(JSON.stringify(puts[0])).toContain('"points":[{"x":"Mon","y":99}]');
 	});
 
 	it("writes with Origin, the CSRF header and the expected version", async () => {

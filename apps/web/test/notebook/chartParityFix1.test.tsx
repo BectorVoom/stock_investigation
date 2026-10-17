@@ -224,7 +224,7 @@ describe("fix round 1: chart parity defects", () => {
 		expect(container.querySelectorAll("table tbody tr")).toHaveLength(2);
 	});
 
-	it("D5a: a gap in the first series stays a chart with the same picture", () => {
+	it("D5a: a stated gap stays research; a widget gap keeps its place in the row order", () => {
 		const dataset = {
 			datasetId: "ds_gap",
 			title: "Gap",
@@ -268,10 +268,39 @@ describe("fix round 1: chart parity defects", () => {
 			yLabel: "Price",
 			widgetId: "w-gap",
 		});
-		expect(converted?.type).toBe("chart");
-		// The rebuilt rows keep the source order, so the gap stays in the middle.
-		if (converted?.type !== "chart") throw new Error("expected a chart widget");
-		const rebuilt = chartWidgetToGuardedDataset(converted);
+		// The gap's stated reason ("market closed") shows in Chat's data table and
+		// a widget point cannot carry it, so the chart stays a research widget.
+		expect(converted).toBeNull();
+
+		// A widget with the same gap still keeps the rows in order, so the gap
+		// stays in the middle and is never bridged.
+		const widget = widgetCoreSchema.parse({
+			widgetId: "w-gap",
+			type: "chart",
+			title: "Gap",
+			size: "medium",
+			chartType: "line",
+			unit: "USD",
+			series: [
+				{
+					name: "A",
+					points: [
+						{ x: "2026-10-07", y: 1 },
+						{ x: "2026-10-09", y: 3 },
+					],
+				},
+				{
+					name: "B",
+					points: [
+						{ x: "2026-10-07", y: 10 },
+						{ x: "2026-10-08", y: 11 },
+						{ x: "2026-10-09", y: 12 },
+					],
+				},
+			],
+		});
+		if (widget.type !== "chart") throw new Error("expected a chart widget");
+		const rebuilt = chartWidgetToGuardedDataset(widget);
 		expect(
 			rebuilt.dataset.rows.map((row) => {
 				const cell = row.x;

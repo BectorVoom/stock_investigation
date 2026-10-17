@@ -161,7 +161,7 @@ describe("applyNotebookCommands", () => {
 		);
 		if (!replaced.ok) throw new Error(`expected success: ${replaced.error.failure.message}`);
 		const updated = replaced.value.widgets[0];
-		expect(updated?.type === "chart" ? updated.sources : "not a chart").toEqual([]);
+		expect(updated?.type === "chart" ? updated.sources : "not a chart").toBeUndefined();
 
 		// Keeping the sourced point as it is stays allowed…
 		const kept = await applyNotebookCommands(
@@ -177,21 +177,32 @@ describe("applyNotebookCommands", () => {
 		);
 		expect(kept.ok).toBe(true);
 
-		// …but a real citation on a changed number is refused.
-		const borrowed = await applyNotebookCommands(
-			start,
-			[
-				{
-					kind: "update",
-					widgetId: "w-c",
-					config: { series: [{ name: "Base", points: [{ ...sourced, y: 40 }] }] },
-				},
-			],
-			context(),
-		);
-		if (borrowed.ok) throw new Error("expected the turn to be refused");
-		expect(borrowed.error.failure.code).toBe("INVALID_COMMAND");
-		expect(borrowed.error.failure.message).toContain('chart "Growth"');
+		// …but a changed number, a changed unit or a new chart loses it: a real
+		// citation never ends up on a number the assistant wrote.
+		const stripped = async (command: unknown) => {
+			const applied = await applyNotebookCommands(start, [command], context());
+			if (!applied.ok) throw new Error(`expected success: ${applied.error.failure.message}`);
+			return applied.value.widgets.flatMap((widget) => (widget.type === "chart" ? [widget] : []));
+		};
+		const changed = await stripped({
+			kind: "update",
+			widgetId: "w-c",
+			config: { series: [{ name: "Base", points: [{ ...sourced, y: 40 }] }] },
+		});
+		expect(changed[0]?.series[0]?.points).toEqual([{ x: "Grid", y: 40 }]);
+		expect(changed[0]?.sources).toBeUndefined();
+		const reUnited = await stripped({ kind: "update", widgetId: "w-c", config: { unit: "USD" } });
+		expect(reUnited[0]?.series[0]?.points).toEqual([
+			{ x: "Grid", y: 4 },
+			{ x: "AI", y: 16.5 },
+		]);
+		const added = await stripped({
+			kind: "add",
+			type: "chart",
+			title: "Copy",
+			config: { chartType: "bar", unit: "%", series: [{ name: "Base", points: [sourced] }] },
+		});
+		expect(added[1]?.series[0]?.points).toEqual([{ x: "Grid", y: 4 }]);
 	});
 
 	it("adds every market type through its config", async () => {

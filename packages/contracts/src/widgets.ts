@@ -2,7 +2,6 @@ import {
 	type DashboardWidget,
 	dashboardWidgetSeriesIds,
 	distinctDashboardSeriesIds,
-	type JsonObject,
 } from "@research/domain";
 import { z } from "zod";
 import {
@@ -292,97 +291,6 @@ export function chartWidgetCitedIds(widget: {
 	return [...ids];
 }
 
-type ChartPointLike = {
-	readonly x: string;
-	readonly y: number;
-	readonly basis?: string;
-	readonly sourceId?: string;
-	readonly asOf?: string;
-};
-type ChartLike = {
-	readonly type: string;
-	readonly title: string;
-	readonly sourceIds?: readonly string[];
-	readonly series?: readonly { readonly points: readonly ChartPointLike[] }[];
-};
-
-function hasProvenance(point: ChartPointLike): boolean {
-	return point.basis !== undefined || point.sourceId !== undefined || point.asOf !== undefined;
-}
-
-function provenanceKey(point: ChartPointLike): string {
-	return JSON.stringify([
-		point.x,
-		point.y,
-		point.basis ?? null,
-		point.sourceId ?? null,
-		point.asOf ?? null,
-	]);
-}
-
-/**
- * ADR-0026: an AI agent (the notebook assistant, the Home MCP server) never
- * adds provenance. Every chart point it writes with a basis, source or as-of
- * date must already be on the page, identical (label, value and provenance),
- * and every chart `sourceIds` entry must already be cited there — so a real
- * citation cannot be attached to a number the agent made up. Returns the
- * title of the first chart that breaks the rule, or null.
- */
-export function chartProvenanceAddedTo(
-	next: readonly ChartLike[],
-	previous: readonly ChartLike[],
-): string | null {
-	const knownPoints = new Set<string>();
-	const knownSourceIds = new Set<string>();
-	for (const widget of previous) {
-		if (widget.type !== "chart") continue;
-		for (const id of widget.sourceIds ?? []) knownSourceIds.add(id);
-		for (const series of widget.series ?? []) {
-			for (const point of series.points) {
-				if (hasProvenance(point)) knownPoints.add(provenanceKey(point));
-			}
-		}
-	}
-	for (const widget of next) {
-		if (widget.type !== "chart") continue;
-		if ((widget.sourceIds ?? []).some((id) => !knownSourceIds.has(id))) return widget.title;
-		for (const series of widget.series ?? []) {
-			for (const point of series.points) {
-				if (hasProvenance(point) && !knownPoints.has(provenanceKey(point))) return widget.title;
-			}
-		}
-	}
-	return null;
-}
-
-/** Why an agent's write that adds provenance to a chart is refused (ADR-0026). */
-export function chartProvenanceRefusal(title: string): string {
-	return `chart "${title}" would gain a source, basis or as-of date; only values copied from research carry them, so keep such points exactly as they are and add new points without them.`;
-}
-
-const chartCitationsShape = z.object({
-	sourceIds: z.array(z.string()).optional(),
-	series: z.array(z.object({ points: z.array(z.object({ sourceId: z.string().optional() })) })),
-	sources: z.array(z.object({ evidenceId: z.string() })),
-});
-
-/**
- * An agent's chart config with the source copies its series no longer cite
- * left out, so changing a chart's numbers does not fail the "one copy per
- * citation" rule; a config of any other shape is returned as it is.
- */
-export function pruneUncitedChartSources(config: JsonObject): JsonObject {
-	const shape = chartCitationsShape.safeParse(config);
-	const sources = config.sources;
-	if (!shape.success || !Array.isArray(sources)) return config;
-	const cited = new Set(chartWidgetCitedIds(shape.data));
-	const kept = sources.filter((_, index) => {
-		const id = shape.data.sources[index]?.evidenceId;
-		return id !== undefined && cited.has(id);
-	});
-	return { ...config, sources: kept };
-}
-
 /** A chart carries exactly one copy of each record it cites, and no uncited copy. */
 export const widgetChartSourcesMatch = (widget: {
 	readonly type: string;
@@ -436,6 +344,152 @@ export const widgetCoreSchema = z
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
 	.refine(widgetChartSourcesMatch, widgetChartSourcesMatchIssue);
 export type WidgetCore = z.infer<typeof widgetCoreSchema>;
+
+/* ---------- Chart provenance under AI agents (ADR-0026) ---------- */
+
+type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
+type ChartPoint = ChartWidgetCore["series"][number]["points"][number];
+
+/** The chart shape without the citation rule, to read an agent's draft before reconciling it. */
+const chartDraftSchema = z.strictObject({ ...C, ...S.chart });
+
+function hasProvenance(point: ChartPoint): boolean {
+	return point.basis !== undefined || point.sourceId !== undefined || point.asOf !== undefined;
+}
+
+function withoutProvenance(point: ChartPoint): ChartPoint {
+	return { x: point.x, y: point.y };
+}
+
+/**
+ * The chart with its citations and copies made consistent: a copy no point
+ * or `sourceIds` entry cites is dropped, and a citation without a copy (an
+ * agent cannot see or write copies) loses its source; empty lists are left
+ * out. Pure; the input is not changed.
+ */
+function reconciled(chart: ChartWidgetCore): ChartWidgetCore {
+	const copies = new Map((chart.sources ?? []).map((copy) => [copy.evidenceId, copy] as const));
+	const series = chart.series.map((entry) => ({
+		...entry,
+		points: entry.points.map((point): ChartPoint => {
+			if (point.sourceId === undefined || copies.has(point.sourceId)) return point;
+			const { sourceId: _id, asOf: _asOf, ...rest } = point;
+			return rest;
+		}),
+	}));
+	const sourceIds = (chart.sourceIds ?? []).filter((id) => copies.has(id));
+	const cited = new Set(chartWidgetCitedIds({ sourceIds, series }));
+	const sources = [...copies.values()].filter((copy) => cited.has(copy.evidenceId));
+	const { sourceIds: _ids, sources: _copies, ...rest } = chart;
+	return {
+		...rest,
+		series,
+		...(sourceIds.length === 0 ? {} : { sourceIds }),
+		...(sources.length === 0 ? {} : { sources }),
+	};
+}
+
+/**
+ * An agent's chart draft (config merged over the stored widget) with its
+ * citations reconciled, so changing a chart's numbers never fails the "one
+ * copy per citation" rule; any other input is returned as it is, for the
+ * strict schema to report.
+ */
+export function reconcileChartDraft(input: unknown): unknown {
+	const draft = chartDraftSchema.safeParse(input);
+	return draft.success ? reconciled(draft.data) : input;
+}
+
+/** Whether any chart among `widgets` carries provenance (a basis, a source or a citation). */
+export function hasChartProvenance(widgets: readonly WidgetCore[]): boolean {
+	return widgets.some(
+		(widget) =>
+			widget.type === "chart" &&
+			((widget.sourceIds?.length ?? 0) > 0 ||
+				widget.series.some((entry) => entry.points.some(hasProvenance))),
+	);
+}
+
+function chartContentKey(chart: ChartWidgetCore): string {
+	return JSON.stringify([chart.unit, chart.series, chart.sourceIds ?? []]);
+}
+
+function pointKey(seriesName: string, occurrence: number, point: ChartPoint): string {
+	return JSON.stringify([
+		seriesName,
+		occurrence,
+		point.x,
+		point.y,
+		point.basis ?? null,
+		point.sourceId ?? null,
+		point.asOf ?? null,
+	]);
+}
+
+/** Every provenance-carrying point of a chart, keyed by series, label occurrence and content. */
+function provenanceKeys(chart: ChartWidgetCore): ReadonlySet<string> {
+	const keys = new Set<string>();
+	for (const entry of chart.series) {
+		const seen = new Map<string, number>();
+		for (const point of entry.points) {
+			const occurrence = seen.get(point.x) ?? 0;
+			seen.set(point.x, occurrence + 1);
+			if (hasProvenance(point)) keys.add(pointKey(entry.name, occurrence, point));
+		}
+	}
+	return keys;
+}
+
+/**
+ * ADR-0026: what an AI agent (the notebook assistant, the Home MCP server)
+ * writes keeps only the provenance it carried over unchanged. The record
+ * check proves a copy is real, not that a number came from it, so a point
+ * keeps its basis, source and as-of date only in the same widget, the same
+ * series and the same unit, with the same label (occurrence) and value — or
+ * when the whole chart is an unchanged copy of one on the page (a
+ * duplicate). The chart's own `sourceIds` stay only while such a point
+ * remains, and copies no longer cited go. Everything else is written without
+ * provenance, so it shows as "basis not stated".
+ */
+export function withEarnedChartProvenance(
+	next: readonly WidgetCore[],
+	previous: readonly WidgetCore[],
+): WidgetCore[] {
+	const before = new Map<string, ChartWidgetCore>();
+	const contents = new Set<string>();
+	for (const widget of previous) {
+		if (widget.type !== "chart") continue;
+		before.set(widget.widgetId, widget);
+		contents.add(chartContentKey(widget));
+	}
+	return next.map((widget): WidgetCore => {
+		if (widget.type !== "chart") return widget;
+		if (contents.has(chartContentKey(widget))) return reconciled(widget);
+		const old = before.get(widget.widgetId);
+		const kept = old !== undefined && old.unit === widget.unit ? provenanceKeys(old) : new Set();
+		let anyKept = false;
+		const series = widget.series.map((entry) => {
+			const seen = new Map<string, number>();
+			return {
+				...entry,
+				points: entry.points.map((point) => {
+					const occurrence = seen.get(point.x) ?? 0;
+					seen.set(point.x, occurrence + 1);
+					if (!hasProvenance(point)) return point;
+					if (kept.has(pointKey(entry.name, occurrence, point))) {
+						anyKept = true;
+						return point;
+					}
+					return withoutProvenance(point);
+				}),
+			};
+		});
+		const oldIds = new Set(old?.sourceIds ?? []);
+		const sourceIds = anyKept ? (widget.sourceIds ?? []).filter((id) => oldIds.has(id)) : [];
+		const { sourceIds: _ids, ...rest } = widget;
+		return reconciled({ ...rest, series, ...(sourceIds.length === 0 ? {} : { sourceIds }) });
+	});
+}
 
 /** A widget of one of the live market types. */
 export type MarketWidgetCore = Extract<WidgetCore, { readonly type: MarketWidgetType }>;

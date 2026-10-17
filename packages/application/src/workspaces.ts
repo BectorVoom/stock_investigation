@@ -16,6 +16,7 @@ import { fail, type UseCaseResult } from "./errors.ts";
 import type {
 	AppliedCommand,
 	AuditLog,
+	ChartEvidenceReferences,
 	ChatRepository,
 	Clock,
 	IdGenerator,
@@ -47,6 +48,8 @@ export interface WorkspaceServiceDeps {
 	readonly ids: IdGenerator;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;
+	/** Evidence that chart widgets' copies cite, kept when a conversation goes (ADR-0026). */
+	readonly chartEvidence: ChartEvidenceReferences;
 }
 
 export interface SubmittedCommand {
@@ -278,10 +281,11 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps) {
 				sourceIds: referenced.flatMap((refs) => refs.sourceIds),
 				claims: referenced.flatMap((refs) => refs.claims ?? []),
 			});
+			const chartCited = await deps.chartEvidence.listChartEvidenceIds(ownerId, workspaceId);
 			const outcome = await deps.unitOfWork.deleteWorkspace({
 				ownerId,
 				workspaceId,
-				keepEvidenceIds: [...lookup.evidenceIds],
+				keepEvidenceIds: [...new Set([...lookup.evidenceIds, ...chartCited])],
 				keepDatasetIds: [...lookup.datasetIds],
 				keepClaimIds: [...lookup.claimIds],
 			});

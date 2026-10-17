@@ -159,7 +159,7 @@ export function ContentWidgetEditor(props: {
 				size: widgetSize,
 				chartType: chartType(),
 				unit: chartUnit(),
-				...carryChartProvenance(widget, series),
+				...carryChartProvenance(widget, series, chartUnit()),
 				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
 				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
 				...(widget.xKind === undefined ? {} : { xKind: widget.xKind }),

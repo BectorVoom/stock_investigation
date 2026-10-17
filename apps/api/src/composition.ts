@@ -149,6 +149,7 @@ export function createServices(
 			ids,
 			audit: persistence.audit,
 			unitOfWork: persistence.unitOfWork,
+			chartEvidence: persistence.chartEvidence,
 		}),
 		credentials: createRunnerCredentialService({
 			credentials: persistence.runnerCredentials,

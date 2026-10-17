@@ -158,7 +158,9 @@ function xTextOf(cell: { readonly v: string | number | null } | undefined): stri
 function sameCell(source: DatasetCell | undefined, rebuilt: DatasetCell | undefined): boolean {
 	const value = numberOrNull(source);
 	if (value !== numberOrNull(rebuilt)) return false;
-	if (value === null) return true;
+	// An empty cell's stated reason shows in the data table (hard gate 6);
+	// the widget cannot carry it, so a reason makes the conversion lossy.
+	if (value === null) return source?.reason === rebuilt?.reason;
 	return (
 		source?.basis === rebuilt?.basis &&
 		source?.sourceId === rebuilt?.sourceId &&

@@ -1,11 +1,12 @@
 import {
 	apiErrorBodySchema,
+	asHomeWidget,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
-	chartProvenanceAddedTo,
-	chartProvenanceRefusal,
 	type HomeWidget,
+	hasChartProvenance,
 	homeDashboardResponseSchema,
+	withEarnedChartProvenance,
 } from "@research/contracts";
 import type {
 	WidgetAgentFailure,
@@ -99,17 +100,19 @@ export function createHomeDashboardStore(
 		widgets: readonly HomeWidget[],
 		revision: number,
 	): Promise<Result<WidgetLayoutRecord<HomeWidget, number>, WidgetAgentFailure>> => {
-		// Only a page that carries provenance at all needs the page it started
-		// from; ordinary writes cost no extra request.
-		if (chartProvenanceAddedTo(widgets, []) !== null) {
+		// ADR-0026: provenance the agent did not carry over unchanged is
+		// removed before the write. Only a page that carries provenance at all
+		// needs the page it started from; ordinary writes cost no extra request.
+		let toWrite = widgets;
+		if (hasChartProvenance(widgets)) {
 			if (lastSeen === null || lastSeen.revision !== revision) {
 				const current = await read();
 				if (!current.ok) return current;
 			}
-			const gained = chartProvenanceAddedTo(widgets, lastSeen?.widgets ?? []);
-			if (gained !== null) {
-				return err({ code: "INVALID_WIDGET", message: chartProvenanceRefusal(gained) });
-			}
+			toWrite = withEarnedChartProvenance(widgets, lastSeen?.widgets ?? []).flatMap((widget) => {
+				const home = asHomeWidget(widget);
+				return home === null ? [] : [home];
+			});
 		}
 		let response: Response;
 		try {
@@ -122,7 +125,7 @@ export function createHomeDashboardStore(
 					[CSRF_HEADER]: CSRF_HEADER_VALUE,
 				},
 				body: JSON.stringify({
-					dashboard: { schemaVersion: 2, widgets: [...widgets] },
+					dashboard: { schemaVersion: 2, widgets: [...toWrite] },
 					expectedVersion: revision,
 				}),
 				signal: AbortSignal.timeout(timeoutMs),

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-	chartProvenanceAddedTo,
 	type Evidence,
-	pruneUncitedChartSources,
+	reconcileChartDraft,
+	type WidgetCore,
 	widgetCoreSchema,
+	withEarnedChartProvenance,
 } from "../src/index.ts";
 
 const SOURCE: Evidence = {
@@ -65,51 +66,80 @@ describe("chart widget provenance (ADR-0026)", () => {
 		expect(widgetCoreSchema.safeParse(plain).success).toBe(true);
 	});
 
-	it("lets an agent keep provenance but never add it", () => {
-		const previous = [widgetCoreSchema.parse(chart())];
-		expect(chartProvenanceAddedTo(previous, previous)).toBeNull();
-		// The same point moved to another chart is still the same point.
-		expect(
-			chartProvenanceAddedTo(
-				[{ ...chart(), title: "Copy" }].map((w) => widgetCoreSchema.parse(w)),
-				previous,
-			),
-		).toBeNull();
-		const borrowed = widgetCoreSchema.parse(
+	it("keeps an agent's provenance only where it carried a point over unchanged", () => {
+		const previous = [widgetCoreSchema.parse(chart({ sourceIds: ["ev_1"] }))];
+		const pointsOf = (widgets: readonly WidgetCore[]) =>
+			widgets.flatMap((widget) =>
+				widget.type === "chart" ? widget.series.flatMap((entry) => entry.points) : [],
+			);
+		// Untouched, and an exact duplicate under a new id: everything stays.
+		expect(withEarnedChartProvenance(previous, previous)).toEqual(previous);
+		const duplicate = widgetCoreSchema.parse(chart({ widgetId: "w_2", sourceIds: ["ev_1"] }));
+		expect(withEarnedChartProvenance([duplicate], previous)).toEqual([duplicate]);
+
+		// A changed value, a changed unit, a renamed series, another chart: stripped.
+		const changedValue = widgetCoreSchema.parse(
 			chart({
-				title: "Borrowed",
+				sourceIds: ["ev_1"],
 				series: [
-					{ name: "Base", points: [{ x: "Grid", y: 99, sourceId: "ev_1", asOf: "2026-10-01" }] },
+					{
+						name: "Base",
+						points: [
+							{ x: "AI", y: 16.5, basis: "assumption" },
+							{ x: "Grid", y: 40, sourceId: "ev_1", asOf: "2026-10-01" },
+						],
+					},
 				],
 			}),
 		);
-		expect(chartProvenanceAddedTo([borrowed], previous)).toBe("Borrowed");
-		const cited = widgetCoreSchema.parse(chart({ title: "Cited", sourceIds: ["ev_1"] }));
-		expect(chartProvenanceAddedTo([cited], previous)).toBe("Cited");
-		// New points without provenance are always fine.
-		const plain = widgetCoreSchema.parse(
+		const [kept] = withEarnedChartProvenance([changedValue], previous);
+		expect(pointsOf(kept === undefined ? [] : [kept])).toEqual([
+			{ x: "AI", y: 16.5, basis: "assumption" },
+			{ x: "Grid", y: 40 },
+		]);
+		if (kept?.type !== "chart") throw new Error("expected a chart");
+		// A point carried over keeps the chart's own citation, so its copy stays.
+		expect(kept.sourceIds).toEqual(["ev_1"]);
+		expect(kept.sources).toEqual([SOURCE]);
+
+		for (const changed of [
+			chart({ unit: "USD", sourceIds: ["ev_1"] }),
 			chart({
-				title: "Plain",
+				sourceIds: ["ev_1"],
+				series: [{ name: "Bear", points: [{ x: "AI", y: 16.5, basis: "assumption" }] }],
+			}),
+			chart({ widgetId: "w_other", title: "Other", unit: "USD", sourceIds: ["ev_1"] }),
+		]) {
+			const [result] = withEarnedChartProvenance([widgetCoreSchema.parse(changed)], previous);
+			if (result?.type !== "chart") throw new Error("expected a chart");
+			expect(pointsOf([result]).every((point) => Object.keys(point).length === 2)).toBe(true);
+			expect(result.sourceIds).toBeUndefined();
+			expect(result.sources).toBeUndefined();
+			expect(widgetCoreSchema.safeParse(result).success).toBe(true);
+		}
+	});
+
+	it("reconciles an agent's draft: copies nobody cites go, citations without a copy lose their source", () => {
+		const draft = reconcileChartDraft(
+			chart({
 				series: [{ name: "Base", points: [{ x: "AI", y: 1 }] }],
+				sources: [SOURCE],
+			}),
+		);
+		expect(widgetCoreSchema.parse(draft)).not.toHaveProperty("sources");
+		const added = reconcileChartDraft(
+			chart({
+				sourceIds: ["ev_9"],
+				series: [
+					{ name: "Base", points: [{ x: "Grid", y: 4, sourceId: "ev_9", asOf: "2026-10-01" }] },
+				],
 				sources: undefined,
 			}),
 		);
-		expect(chartProvenanceAddedTo([plain], [])).toBeNull();
-	});
-
-	it("drops the copies an agent's new series no longer cite", () => {
-		const config = {
-			series: [{ name: "Base", points: [{ x: "AI", y: 1 }] }],
-			sources: [{ ...SOURCE }],
-		};
-		expect(pruneUncitedChartSources(config)).toEqual({ ...config, sources: [] });
-		const stillCited = {
-			series: [
-				{ name: "Base", points: [{ x: "Grid", y: 4, sourceId: "ev_1", asOf: "2026-10-01" }] },
-			],
-			sources: [{ ...SOURCE }],
-		};
-		expect(pruneUncitedChartSources(stillCited)).toEqual(stillCited);
-		expect(pruneUncitedChartSources({ text: "not a chart" })).toEqual({ text: "not a chart" });
+		const parsed = widgetCoreSchema.parse(added);
+		if (parsed.type !== "chart") throw new Error("expected a chart");
+		expect(parsed.series[0]?.points).toEqual([{ x: "Grid", y: 4 }]);
+		expect(parsed.sourceIds).toBeUndefined();
+		expect(reconcileChartDraft({ type: "text" })).toEqual({ type: "text" });
 	});
 });
