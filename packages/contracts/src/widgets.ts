@@ -2,6 +2,7 @@ import {
 	type DashboardWidget,
 	dashboardWidgetSeriesIds,
 	distinctDashboardSeriesIds,
+	type JsonObject,
 } from "@research/domain";
 import { z } from "zod";
 import {
@@ -10,7 +11,8 @@ import {
 	marketRangeSchema,
 	marketSeriesIdSchema,
 } from "./market.ts";
-import { idSchema, isoDateSchema } from "./primitives.ts";
+import { idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
+import { evidenceSchema } from "./records.ts";
 
 /**
  * The one widget specification of the app (ADR-0024): every type, its
@@ -34,6 +36,9 @@ export const WIDGET_LIMITS = {
 	maxChartSeries: 6,
 	maxChartPoints: 400,
 	maxPointLabelChars: 40,
+	/** Evidence copies one chart widget may carry (ADR-0026); a research component cites at most 40. */
+	maxChartSources: 60,
+	maxChartSourceIds: 40,
 	maxTableColumns: 12,
 	maxTableRows: 200,
 	maxCellChars: 200,
@@ -124,11 +129,25 @@ export const WIDGET_CORE_SHAPE = {
 export const WIDGET_TEXT_MARKDOWN =
 	"Markdown subset: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`, [label](https://…) links, - bullet lists, 1. numbered lists, - [ ] / - [x] to-dos, > quotes, ``` code blocks, --- dividers; blank line between paragraphs. No HTML, images or tables.";
 
-export const widgetChartPointSchema = z.strictObject({
-	/** Category or date label on the x axis. */
-	x: z.string().trim().min(1).max(WIDGET_LIMITS.maxPointLabelChars),
-	y: finiteNumberSchema,
-});
+/**
+ * One plotted value with the provenance a dataset cell has (ADR-0026): an
+ * `assumption` or `derived` basis, or a cited source with its as-of date. A
+ * point with neither is shown as a number whose basis is not stated.
+ */
+export const widgetChartPointSchema = z
+	.strictObject({
+		/** Category or date label on the x axis. */
+		x: z.string().trim().min(1).max(WIDGET_LIMITS.maxPointLabelChars),
+		y: finiteNumberSchema,
+		basis: z.enum(["assumption", "derived"]).optional(),
+		/** An evidence id this widget carries a copy of in `sources`. */
+		sourceId: idSchema.optional(),
+		asOf: z.union([isoDateSchema, isoDateTimeSchema]).optional(),
+	})
+	.refine((point) => point.sourceId === undefined || point.asOf !== undefined, {
+		message: "a sourced value must carry an as-of date",
+		path: ["asOf"],
+	});
 
 export const widgetChartSeriesSchema = z.strictObject({
 	name: z.string().trim().min(1).max(WIDGET_LIMITS.maxTitleChars),
@@ -167,6 +186,14 @@ export const WIDGET_CONTENT_SHAPES = {
 		xLabel: chartAxisLabelSchema,
 		yLabel: chartAxisLabelSchema,
 		xKind: chartXKindSchema,
+		/** The chart's own citations, as a research component's `sourceIds`. */
+		sourceIds: z.array(idSchema).max(WIDGET_LIMITS.maxChartSourceIds).optional(),
+		/**
+		 * A copy of every evidence record the chart cites (points and
+		 * `sourceIds`), so it renders the same on any page. The API accepts a
+		 * copy only when it equals the owner's stored record (ADR-0026).
+		 */
+		sources: z.array(evidenceSchema).max(WIDGET_LIMITS.maxChartSources).optional(),
 	},
 	/** Structured rows; every row has exactly one cell per column. */
 	table: {
@@ -253,6 +280,131 @@ export const widgetRowsMatchColumns = (widget: {
 }): boolean =>
 	widget.type !== "table" ||
 	(widget.rows ?? []).every((row) => row.length === (widget.columns ?? []).length);
+/** Every evidence id a `chart` widget cites: its `sourceIds`, then its points', first appearance first. */
+export function chartWidgetCitedIds(widget: {
+	readonly sourceIds?: readonly string[];
+	readonly series: readonly { readonly points: readonly { readonly sourceId?: string }[] }[];
+}): readonly string[] {
+	const ids = new Set(widget.sourceIds ?? []);
+	for (const series of widget.series) {
+		for (const point of series.points) if (point.sourceId !== undefined) ids.add(point.sourceId);
+	}
+	return [...ids];
+}
+
+type ChartPointLike = {
+	readonly x: string;
+	readonly y: number;
+	readonly basis?: string;
+	readonly sourceId?: string;
+	readonly asOf?: string;
+};
+type ChartLike = {
+	readonly type: string;
+	readonly title: string;
+	readonly sourceIds?: readonly string[];
+	readonly series?: readonly { readonly points: readonly ChartPointLike[] }[];
+};
+
+function hasProvenance(point: ChartPointLike): boolean {
+	return point.basis !== undefined || point.sourceId !== undefined || point.asOf !== undefined;
+}
+
+function provenanceKey(point: ChartPointLike): string {
+	return JSON.stringify([
+		point.x,
+		point.y,
+		point.basis ?? null,
+		point.sourceId ?? null,
+		point.asOf ?? null,
+	]);
+}
+
+/**
+ * ADR-0026: an AI agent (the notebook assistant, the Home MCP server) never
+ * adds provenance. Every chart point it writes with a basis, source or as-of
+ * date must already be on the page, identical (label, value and provenance),
+ * and every chart `sourceIds` entry must already be cited there — so a real
+ * citation cannot be attached to a number the agent made up. Returns the
+ * title of the first chart that breaks the rule, or null.
+ */
+export function chartProvenanceAddedTo(
+	next: readonly ChartLike[],
+	previous: readonly ChartLike[],
+): string | null {
+	const knownPoints = new Set<string>();
+	const knownSourceIds = new Set<string>();
+	for (const widget of previous) {
+		if (widget.type !== "chart") continue;
+		for (const id of widget.sourceIds ?? []) knownSourceIds.add(id);
+		for (const series of widget.series ?? []) {
+			for (const point of series.points) {
+				if (hasProvenance(point)) knownPoints.add(provenanceKey(point));
+			}
+		}
+	}
+	for (const widget of next) {
+		if (widget.type !== "chart") continue;
+		if ((widget.sourceIds ?? []).some((id) => !knownSourceIds.has(id))) return widget.title;
+		for (const series of widget.series ?? []) {
+			for (const point of series.points) {
+				if (hasProvenance(point) && !knownPoints.has(provenanceKey(point))) return widget.title;
+			}
+		}
+	}
+	return null;
+}
+
+/** Why an agent's write that adds provenance to a chart is refused (ADR-0026). */
+export function chartProvenanceRefusal(title: string): string {
+	return `chart "${title}" would gain a source, basis or as-of date; only values copied from research carry them, so keep such points exactly as they are and add new points without them.`;
+}
+
+const chartCitationsShape = z.object({
+	sourceIds: z.array(z.string()).optional(),
+	series: z.array(z.object({ points: z.array(z.object({ sourceId: z.string().optional() })) })),
+	sources: z.array(z.object({ evidenceId: z.string() })),
+});
+
+/**
+ * An agent's chart config with the source copies its series no longer cite
+ * left out, so changing a chart's numbers does not fail the "one copy per
+ * citation" rule; a config of any other shape is returned as it is.
+ */
+export function pruneUncitedChartSources(config: JsonObject): JsonObject {
+	const shape = chartCitationsShape.safeParse(config);
+	const sources = config.sources;
+	if (!shape.success || !Array.isArray(sources)) return config;
+	const cited = new Set(chartWidgetCitedIds(shape.data));
+	const kept = sources.filter((_, index) => {
+		const id = shape.data.sources[index]?.evidenceId;
+		return id !== undefined && cited.has(id);
+	});
+	return { ...config, sources: kept };
+}
+
+/** A chart carries exactly one copy of each record it cites, and no uncited copy. */
+export const widgetChartSourcesMatch = (widget: {
+	readonly type: string;
+	readonly sourceIds?: readonly string[];
+	readonly series?: readonly { readonly points: readonly { readonly sourceId?: string }[] }[];
+	readonly sources?: readonly { readonly evidenceId: string }[];
+}): boolean => {
+	if (widget.type !== "chart" || widget.series === undefined) return true;
+	const cited = chartWidgetCitedIds({ sourceIds: widget.sourceIds, series: widget.series });
+	const copies = (widget.sources ?? []).map((source) => source.evidenceId);
+	const copySet = new Set(copies);
+	return (
+		copySet.size === copies.length &&
+		copies.length === cited.length &&
+		cited.every((id) => copySet.has(id))
+	);
+};
+export const widgetChartSourcesMatchIssue = {
+	message: "a chart must carry exactly one copy of each source it cites, and no other",
+	path: ["sources"],
+};
+
 export const widgetRowsMatchColumnsIssue = {
 	message: "every table row needs exactly one cell per column",
 	path: ["rows"],
@@ -281,7 +433,8 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
-	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue);
+	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
+	.refine(widgetChartSourcesMatch, widgetChartSourcesMatchIssue);
 export type WidgetCore = z.infer<typeof widgetCoreSchema>;
 
 /** A widget of one of the live market types. */
@@ -307,7 +460,8 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
-	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue);
+	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
+	.refine(widgetChartSourcesMatch, widgetChartSourcesMatchIssue);
 export type HomeWidget = z.infer<typeof homeWidgetSchema>;
 
 export function isHomeWidgetType(type: string): type is HomeWidgetType {

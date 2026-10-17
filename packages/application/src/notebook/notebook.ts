@@ -27,6 +27,7 @@ import {
 	type ResearchRun,
 } from "@research/contracts";
 import { EMPTY_USAGE, err, ok, type Result } from "@research/domain";
+import { chartSourceProblem } from "../chartSources.ts";
 import { fail, type UseCaseResult } from "../errors.ts";
 import type { HomeDataDigest } from "../home.ts";
 import { assembleMarketSeries, fetchMarketRefreshStatus, seriesStampsFor } from "../marketData.ts";
@@ -41,6 +42,7 @@ import type {
 	MarketRepository,
 	NotebookRepository,
 	RateLimiter,
+	ResearchRecordRepository,
 	ResearchUnitOfWork,
 	SettingsRepository,
 	WorkspaceRepository,
@@ -71,6 +73,8 @@ export interface NotebookServiceDeps {
 	readonly hasher: Hasher;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
+	/** The owner's evidence, which a chart widget's source copies must equal (ADR-0026). */
+	readonly records: Pick<ResearchRecordRepository, "resolve">;
 }
 
 export interface NotebookAssistResult {
@@ -242,6 +246,13 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 			}
 			const capacity = notebookCapacityProblem(notebook.widgets, previous.widgets);
 			if (capacity !== null) return fail("INVALID_NOTEBOOK", capacity.message);
+			const sourceProblem = await chartSourceProblem(
+				deps.records,
+				ownerId,
+				notebook.widgets,
+				previous.widgets,
+			);
+			if (sourceProblem !== null) return fail("INVALID_NOTEBOOK", sourceProblem);
 			const now = deps.clock.nowIso();
 			// New widgets keep the client's origin — except an `assistant`
 			// origin, which only the assistant path may claim (rewritten here).
@@ -568,6 +579,8 @@ export interface NotebookCompletionDeps {
 	readonly notebooks: NotebookRepository;
 	readonly workspaces: WorkspaceRepository;
 	readonly ids: IdGenerator;
+	/** The owner's evidence, which a chart widget's source copies must equal (ADR-0026). */
+	readonly records: Pick<ResearchRecordRepository, "resolve">;
 }
 
 export interface NotebookCompletionEffects {
@@ -648,6 +661,15 @@ export async function notebookAssistedEffects(
 		return ok(
 			failedTurn({ code: applied.error.failure.code, message: applied.error.failure.message }),
 		);
+	}
+	const sourceProblem = await chartSourceProblem(
+		deps.records,
+		job.ownerId,
+		applied.value.widgets,
+		current.widgets,
+	);
+	if (sourceProblem !== null) {
+		return ok(failedTurn({ code: "INVALID_NOTEBOOK", message: sourceProblem }));
 	}
 	const stamped = stampNotebook(current, applied.value.widgets, now, () => ({
 		kind: "assistant",

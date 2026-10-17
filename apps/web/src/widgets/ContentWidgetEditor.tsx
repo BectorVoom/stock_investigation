@@ -17,6 +17,7 @@ import {
 	Switch,
 } from "solid-js";
 import { BUTTON, BUTTON_PRIMARY, INPUT, LABEL } from "../components/ui.tsx";
+import { carryChartProvenance } from "./widgetModel.ts";
 
 interface ChartSeriesDraft {
 	name: string;
@@ -158,7 +159,7 @@ export function ContentWidgetEditor(props: {
 				size: widgetSize,
 				chartType: chartType(),
 				unit: chartUnit(),
-				series,
+				...carryChartProvenance(widget, series),
 				...(widget.xLabel === undefined ? {} : { xLabel: widget.xLabel }),
 				...(widget.yLabel === undefined ? {} : { yLabel: widget.yLabel }),
 				...(widget.xKind === undefined ? {} : { xKind: widget.xKind }),

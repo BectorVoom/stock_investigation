@@ -149,4 +149,6 @@ when the conversion is lossless (round-trip: guard, convert, rebuild, same
 rows in the same order, same series, no withheld series); otherwise — and
 always for `candlestick-chart`, whose picture is candles — it becomes a
 `research` widget, identical by construction. Repeated x labels are separate
-rows keyed by (label, occurrence index).
+rows keyed by (label, occurrence index). The same day, ADR-0026 gave the
+`chart` widget its numbers' provenance (basis, source, as-of, evidence copies)
+and made it render through the registry's `ChartShell`.

@@ -151,6 +151,20 @@ export function ChartFrame(props: {
 	);
 }
 
+/**
+ * "<y title> by <x title>. " for a chart's accessible name, leaving out what
+ * is missing (a Notebook chart may have no axis titles; a registry chart
+ * always has both).
+ */
+export function axesPhrase(yAxisTitle: string, xAxisTitle: string): string {
+	const y = yAxisTitle.trim();
+	const x = xAxisTitle.trim();
+	if (y.length > 0 && x.length > 0) return `${y} by ${x}. `;
+	if (y.length > 0) return `${y}. `;
+	if (x.length > 0) return `By ${x}. `;
+	return "";
+}
+
 export interface LegendItem {
 	readonly label: string;
 	readonly color: string;
@@ -284,6 +298,11 @@ export function ChartShell(props: {
 	 */
 	readonly legend?: JSX.Element;
 	readonly readout?: string | null;
+	/**
+	 * True for a Notebook / Home `chart` widget: no widget shows a title
+	 * (ADR-0024); its frame's accessible name is the title.
+	 */
+	readonly headingHidden?: boolean;
 	readonly children: JSX.Element;
 }): JSX.Element {
 	// The data-table twin's cells cite too, so their ids number before the
@@ -295,7 +314,9 @@ export function ChartShell(props: {
 	return (
 		<CitationScope sourceIdsInOrder={sourceIdsInOrder()}>
 			<figure class="m-0">
-				<h3 class="text-sm font-semibold text-slate-900">{props.title}</h3>
+				<Show when={props.headingHidden !== true}>
+					<h3 class="text-sm font-semibold text-slate-900">{props.title}</h3>
+				</Show>
 				<Show when={props.data} fallback={<DataUnavailable datasetRef={props.datasetRef} />}>
 					{(data) => (
 						<>

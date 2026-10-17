@@ -118,6 +118,7 @@ export function createServices(
 			hasher,
 			rateLimiter: persistence.rateLimiter,
 			audit: persistence.audit,
+			records: persistence.records,
 		}),
 		runnerJobs: createRunnerJobService({
 			jobs: persistence.jobs,
@@ -170,6 +171,7 @@ export function createServices(
 			notebooks: persistence.notebooks,
 			clock,
 			audit: persistence.audit,
+			records: persistence.records,
 		}),
 		watchlist: createWatchlistService({
 			watchlist: persistence.watchlist,

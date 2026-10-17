@@ -5,7 +5,7 @@ import { WidgetFrame } from "@research/widget-grid";
 // The package stylesheet: without it a frame is unstyled markup. Home loads
 // it in its own lazy chunk, so every page that renders a frame imports it.
 import "@research/widget-grid/styles.css";
-import { For, type JSX, Show } from "solid-js";
+import { createMemo, For, type JSX, Show } from "solid-js";
 import { IconButton } from "../components/ui.tsx";
 import { widgetFromComponent } from "../notebook/notebookModel.ts";
 
@@ -79,7 +79,9 @@ export function ComponentPreview(props: {
 	readonly saving: boolean;
 	readonly onAdd: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 }): JSX.Element {
-	const core = () => widgetFromComponent(props.component, props.view);
+	// One conversion per component and view (it parses, guards and round-trips
+	// the dataset), not one per read of the action's `when`.
+	const core = createMemo(() => widgetFromComponent(props.component, props.view));
 	const add = () => {
 		const widget = core();
 		if (widget === null) return;

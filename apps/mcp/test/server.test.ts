@@ -171,7 +171,14 @@ function snapshotWidgets(result: JsonObject): SnapshotWidget[] {
 	}
 	if (result.isError === true) throw new Error(`the tool failed: ${first.text}`);
 	const snapshot: unknown = JSON.parse(first.text);
-	if (!isJsonObject(snapshot) || !Array.isArray(snapshot.widgets)) {
+	// A plain shape check: `isJsonObject` bounds the depth of untrusted agent
+	// input, and the snapshot's chart config schema (ADR-0026) nests deeper.
+	if (
+		typeof snapshot !== "object" ||
+		snapshot === null ||
+		!("widgets" in snapshot) ||
+		!Array.isArray(snapshot.widgets)
+	) {
 		throw new Error("a snapshot has no widgets");
 	}
 	return snapshot.widgets.map(widgetView);

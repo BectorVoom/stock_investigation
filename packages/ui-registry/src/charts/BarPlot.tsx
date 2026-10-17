@@ -1,7 +1,7 @@
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { formatNumber } from "../format.ts";
 import type { BarModel } from "./barModel.ts";
-import { ChartFrame, ChartLegend } from "./ChartFrame.tsx";
+import { axesPhrase, ChartFrame, ChartLegend } from "./ChartFrame.tsx";
 
 /**
  * The shared bar plot: ChartFrame + marks + legend + hover readout.
@@ -33,13 +33,13 @@ export function BarPlot(props: {
 			const value = values[seriesIndex];
 			return `${series.label}: ${value === null || value === undefined ? "unavailable" : `${formatNumber(value)} ${props.yUnit}`}`;
 		});
-		return `${props.xLabel} ${current.rowLabels[rowIndex] ?? "unavailable"} — ${parts.join(" · ")}`;
+		return `${[props.xLabel, current.rowLabels[rowIndex] ?? "unavailable"].filter((part) => part.length > 0).join(" ")} — ${parts.join(" · ")}`;
 	});
 
 	return (
 		<>
 			<ChartFrame
-				ariaLabel={`Bar chart: ${props.title}. ${yAxisTitle()} by ${props.xLabel}. Series: ${props.model.legend
+				ariaLabel={`Bar chart: ${props.title}. ${axesPhrase(yAxisTitle(), props.xLabel)}Series: ${props.model.legend
 					.map((series) => series.label)
 					.join(", ")}.`}
 				plot={props.model.plot}

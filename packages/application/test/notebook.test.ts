@@ -7,6 +7,7 @@
 import type {
 	AgentSettings,
 	ChatMessage,
+	Evidence,
 	Notebook,
 	NotebookAssistRequest,
 	NotebookTurn,
@@ -34,9 +35,21 @@ import type {
 	SettingsRepository,
 	WorkspaceRepository,
 } from "../src/ports.ts";
-import { fixedClock } from "./support.ts";
+import { chartWidget, fixedClock, recordsWith } from "./support.ts";
 
 const OWNER = "owner_1";
+const STORED_EVIDENCE: Evidence = {
+	evidenceId: "ev_stored",
+	sourceUrl: "https://example.com/report",
+	title: "Storage outlook",
+	publisher: "Example",
+	publishedAt: null,
+	retrievedAt: "2026-10-01T00:00:00.000Z",
+	effectiveAt: null,
+	excerpt: null,
+	checksum: "a".repeat(64),
+	sourceClass: "news",
+};
 const WORKSPACE = "ws_1";
 const NOW = "2026-10-14T00:00:00.000Z";
 
@@ -282,7 +295,7 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 	};
 }
 
-function service(f: Fakes, rateLimiter?: RateLimiter) {
+function service(f: Fakes, rateLimiter?: RateLimiter, records = recordsWith()) {
 	return createNotebookService({
 		notebooks: f.notebooks,
 		workspaces: f.workspaces,
@@ -301,6 +314,7 @@ function service(f: Fakes, rateLimiter?: RateLimiter) {
 		hasher: { sha256Hex: async (text) => `hash:${text.length}` },
 		rateLimiter: rateLimiter ?? { consume: async () => true },
 		audit: f.audit,
+		records,
 	});
 }
 
@@ -408,6 +422,48 @@ describe("putNotebook", () => {
 			"INVALID_NOTEBOOK",
 		);
 		expect(message).toContain("850 KB");
+	});
+
+	it("saves a chart whose source copy equals the owner's record and refuses an altered one (ADR-0026)", async () => {
+		const record = STORED_EVIDENCE;
+		const cited = (title: string): NotebookWidget => ({
+			...chartWidget("w-c", { title }),
+			type: "chart",
+			chartType: "bar",
+			unit: "%",
+			series: [
+				{
+					name: "Base",
+					points: [{ x: "AI", y: 16.5, sourceId: record.evidenceId, asOf: "2026-10-01" }],
+				},
+			],
+			sources: [record],
+		});
+		const f = fakes();
+		unwrap(
+			await service(f, undefined, recordsWith([record])).putNotebook(
+				OWNER,
+				WORKSPACE,
+				{ widgets: [cited("Growth")] },
+				0,
+			),
+		);
+		expect(f.notebookStore.putCalls).toHaveLength(1);
+
+		const forged = {
+			...cited("Forged"),
+			sources: [{ ...record, title: "A better-sounding report" }],
+		};
+		const message = expectFail(
+			await service(fakes(), undefined, recordsWith([record])).putNotebook(
+				OWNER,
+				WORKSPACE,
+				{ widgets: [forged] },
+				0,
+			),
+			"INVALID_NOTEBOOK",
+		);
+		expect(message).toContain('Chart "Forged"');
 	});
 
 	it("rejects a research widget that names no canvas component, naming the widget", async () => {
@@ -857,7 +913,7 @@ describe("notebookAssistedEffects", () => {
 		};
 		const effects = unwrap(
 			await notebookAssistedEffects(
-				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids, records: recordsWith() },
 				job(),
 				{
 					outcome: "notebook-assisted",
@@ -910,7 +966,7 @@ describe("notebookAssistedEffects", () => {
 		};
 		const effects = unwrap(
 			await notebookAssistedEffects(
-				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids, records: recordsWith() },
 				job(),
 				{
 					outcome: "notebook-assisted",
@@ -945,7 +1001,7 @@ describe("notebookAssistedEffects", () => {
 		const size = textWidget("w-1").size;
 		const effects = unwrap(
 			await notebookAssistedEffects(
-				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids, records: recordsWith() },
 				job(),
 				{
 					outcome: "notebook-assisted",
@@ -983,7 +1039,7 @@ describe("notebookAssistedEffects", () => {
 		};
 		const effects = unwrap(
 			await notebookAssistedEffects(
-				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids, records: recordsWith() },
 				job(),
 				{
 					outcome: "notebook-assisted",
@@ -1020,7 +1076,7 @@ describe("notebookAssistedEffects", () => {
 		};
 		const effects = unwrap(
 			await notebookAssistedEffects(
-				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids },
+				{ notebooks: f.notebooks, workspaces: f.workspaces, ids: f.ids, records: recordsWith() },
 				job(),
 				{
 					outcome: "notebook-assisted",

@@ -92,12 +92,14 @@ export function buildBarModel(data: GuardedDataset, spec: BarChartSpec): BarMode
 		}),
 	);
 
+	// One lookup map per series: a per-row `find` is quadratic on a long chart.
+	const valueMaps = extracted.map(
+		(series) => new Map(series.points.map((point) => [point.rowIndex, point.value] as const)),
+	);
 	const valuesByRow = new Map(
 		dataset.rows.map((_, rowIndex) => [
 			rowIndex,
-			extracted.map(
-				(series) => series.points.find((point) => point.rowIndex === rowIndex)?.value ?? null,
-			),
+			valueMaps.map((values) => values.get(rowIndex) ?? null),
 		]),
 	);
 

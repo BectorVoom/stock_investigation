@@ -10,7 +10,7 @@ import type {
 	StoredMarketObservation,
 	StoredMarketSeries,
 } from "../src/ports.ts";
-import { fixedClock } from "./support.ts";
+import { fixedClock, recordsWith } from "./support.ts";
 
 const OWNER = "owner_1";
 
@@ -53,6 +53,7 @@ function serviceWith(dashboard: HomeDashboardRepository, market: MarketRepositor
 		notebooks: NOTEBOOKS,
 		clock: fixedClock().clock,
 		audit: AUDIT,
+		records: recordsWith(),
 	});
 }
 
@@ -280,6 +281,7 @@ describe("home getData (FR-017)", () => {
 			notebooks: NOTEBOOKS,
 			clock: fixedClock().clock,
 			audit: AUDIT,
+			records: recordsWith(),
 		});
 		const data = unwrapOk(await service.getData(OWNER));
 		expect(data.refresh).toEqual({

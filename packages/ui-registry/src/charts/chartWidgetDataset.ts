@@ -1,7 +1,19 @@
-import { DATASET_LIMITS, type WidgetCore } from "@research/contracts";
+import { DATASET_LIMITS, type DatasetCell, type WidgetCore } from "@research/contracts";
 import { type GuardedDataset, guardDataset, type PresentedLabels } from "../datasetGuard.ts";
+import type { SourceMap } from "../parts/SourceLinks.tsx";
 
 type ChartWidget = Extract<WidgetCore, { readonly type: "chart" }>;
+type ChartPoint = ChartWidget["series"][number]["points"][number];
+
+/** A point as a dataset cell, provenance included (ADR-0026): the same markers and citations as Chat. */
+function cellOf(point: ChartPoint): DatasetCell {
+	return {
+		v: point.y,
+		...(point.basis === undefined ? {} : { basis: point.basis }),
+		...(point.sourceId === undefined ? {} : { sourceId: point.sourceId }),
+		...(point.asOf === undefined ? {} : { asOf: point.asOf }),
+	};
+}
 
 /**
  * Placeholder creation time for the rebuilt dataset. The dataset schema
@@ -143,11 +155,11 @@ export function chartWidgetToGuardedDataset(widget: ChartWidget): GuardedDataset
 	const rowOrder = orderedRowKeys(widget.series);
 	const bySeries = widget.series.map((series) => {
 		const seen = new Map<string, number>();
-		const byKey = new Map<string, number>();
+		const byKey = new Map<string, ChartPoint>();
 		for (const point of series.points) {
 			const occurrence = seen.get(point.x) ?? 0;
 			seen.set(point.x, occurrence + 1);
-			byKey.set(rowKeyText({ label: point.x, occurrence }), point.y);
+			byKey.set(rowKeyText({ label: point.x, occurrence }), point);
 		}
 		return byKey;
 	});
@@ -159,13 +171,11 @@ export function chartWidgetToGuardedDataset(widget: ChartWidget): GuardedDataset
 
 	const rows = rowOrder.map((key) => {
 		const text = rowKeyText(key);
-		const row: Record<string, { readonly v: string | number | null; readonly reason?: string }> = {
-			x: { v: xValue(key.label) },
-		};
+		const row: Record<string, DatasetCell> = { x: { v: xValue(key.label) } };
 		for (const [seriesIndex, byKey] of bySeries.entries()) {
-			const value = byKey.get(text);
+			const point = byKey.get(text);
 			row[`s${seriesIndex}`] =
-				value === undefined ? { v: null, reason: "no value for this label" } : { v: value };
+				point === undefined ? { v: null, reason: "no value for this label" } : cellOf(point);
 		}
 		return row;
 	});
@@ -204,4 +214,9 @@ export function chartWidgetSeries(widget: ChartWidget): readonly {
 		key: `s${index}`,
 		label: series.name,
 	}));
+}
+
+/** The evidence copies a `chart` widget carries, keyed by id, for its citations and Sources list. */
+export function chartWidgetSources(widget: ChartWidget): SourceMap {
+	return new Map((widget.sources ?? []).map((source) => [source.evidenceId, source] as const));
 }

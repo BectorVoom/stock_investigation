@@ -1,10 +1,12 @@
-import type { ChatMessage, WorkspaceView } from "@research/contracts";
+import type { ChatMessage, DatasetCell, Evidence, WorkspaceView } from "@research/contracts";
 import {
 	barChartPropsSchema,
+	chartWidgetCitedIds,
 	lineChartPropsSchema,
 	NOTEBOOK_LIMITS,
 	WIDGET_TYPE_META,
 	type WidgetCore,
+	widgetCoreSchema,
 } from "@research/contracts";
 import {
 	chartWidgetToGuardedDataset,
@@ -16,6 +18,7 @@ import { newWidgetId } from "../widgets/widgetModel.ts";
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
 type ChartWidgetCore = Extract<WidgetCore, { readonly type: "chart" }>;
+type ChartPoint = ChartWidgetCore["series"][number]["points"][number];
 
 function truncateText(text: string, max: number): string {
 	return text.length > max ? text.slice(0, max) : text;
@@ -95,11 +98,11 @@ function pointsFromDataset(
 	dataset: WorkspaceDataset,
 	xKey: string,
 	series: readonly ChartSeriesInput[],
-): { readonly name: string; readonly points: { readonly x: string; readonly y: number }[] }[] {
+): { readonly name: string; readonly points: ChartPoint[] }[] {
 	return series
 		.slice(0, NOTEBOOK_LIMITS.maxChartSeries)
 		.map((entry) => {
-			const points: { readonly x: string; readonly y: number }[] = [];
+			const points: ChartPoint[] = [];
 			for (const row of dataset.rows) {
 				if (points.length >= NOTEBOOK_LIMITS.maxChartPoints) break;
 				const xCell = row[xKey]?.v;
@@ -112,7 +115,15 @@ function pointsFromDataset(
 							? truncateText(String(xCell), NOTEBOOK_LIMITS.maxPointLabelChars)
 							: null;
 				if (x === null || x.trim().length === 0) continue;
-				points.push({ x, y: yCell });
+				const cell = row[entry.key];
+				// The value's provenance travels with it (ADR-0026).
+				points.push({
+					x,
+					y: yCell,
+					...(cell?.basis === undefined ? {} : { basis: cell.basis }),
+					...(cell?.sourceId === undefined ? {} : { sourceId: cell.sourceId }),
+					...(cell?.asOf === undefined ? {} : { asOf: cell.asOf }),
+				});
 			}
 			return {
 				name: truncateText(entry.label, NOTEBOOK_LIMITS.maxTitleChars),
@@ -141,6 +152,18 @@ function axisLabel(value: string): string | undefined {
 function xTextOf(cell: { readonly v: string | number | null } | undefined): string | null {
 	if (cell === undefined || cell.v === null) return null;
 	return typeof cell.v === "number" ? String(cell.v) : cell.v;
+}
+
+/** The same plotted number (or none) with the same basis, source and as-of date. */
+function sameCell(source: DatasetCell | undefined, rebuilt: DatasetCell | undefined): boolean {
+	const value = numberOrNull(source);
+	if (value !== numberOrNull(rebuilt)) return false;
+	if (value === null) return true;
+	return (
+		source?.basis === rebuilt?.basis &&
+		source?.sourceId === rebuilt?.sourceId &&
+		source?.asOf === rebuilt?.asOf
+	);
 }
 
 /** A plottable number or null (never 0 for missing, never text). */
@@ -172,6 +195,10 @@ export function losslessChartWidget(args: {
 	readonly unit: string;
 	readonly xLabel: string | undefined;
 	readonly yLabel: string | undefined;
+	/** The component's own citations. */
+	readonly sourceIds: readonly string[];
+	/** The conversation's evidence, where every cited record must be found. */
+	readonly evidence: readonly Evidence[];
 	readonly widgetId: string;
 }): ChartWidgetCore | null {
 	const guarded = guardDataset(args.dataset, presentedSeriesLabels(args.series));
@@ -189,7 +216,16 @@ export function losslessChartWidget(args: {
 	const sourceColumn = args.dataset.columns.find((column) => column.key === args.xKey);
 	if (sourceColumn === undefined) return null;
 	const xKind = sourceColumn.kind;
-	const candidate: ChartWidgetCore = {
+	const cited = chartWidgetCitedIds({ sourceIds: args.sourceIds, series: converted });
+	const evidenceById = new Map(args.evidence.map((record) => [record.evidenceId, record] as const));
+	const sources = cited.flatMap((id) => {
+		const record = evidenceById.get(id);
+		return record === undefined ? [] : [record];
+	});
+	// A citation whose record is not in the conversation would show as
+	// "Source unavailable" in the Notebook but resolve in Chat.
+	if (sources.length !== cited.length) return null;
+	const draft: ChartWidgetCore = {
 		widgetId: args.widgetId,
 		type: "chart",
 		title: args.title,
@@ -200,7 +236,14 @@ export function losslessChartWidget(args: {
 		...(args.xLabel === undefined ? {} : { xLabel: args.xLabel }),
 		...(args.yLabel === undefined ? {} : { yLabel: args.yLabel }),
 		...(xKind === "text" ? {} : { xKind }),
+		...(args.sourceIds.length === 0 ? {} : { sourceIds: [...args.sourceIds] }),
+		...(sources.length === 0 ? {} : { sources }),
 	};
+	// The stored shape's own rules (trimmed names, limits, one copy per
+	// citation): a candidate it refuses could not be saved.
+	const parsed = widgetCoreSchema.safeParse(draft);
+	if (!parsed.success || parsed.data.type !== "chart") return null;
+	const candidate = parsed.data;
 	const rebuilt = chartWidgetToGuardedDataset(candidate);
 	if (rebuilt.withheldColumns.size > 0) return null;
 	const sourceRows = guarded.dataset.rows;
@@ -211,8 +254,7 @@ export function losslessChartWidget(args: {
 		if (rebuiltRow === undefined) return null;
 		if (xTextOf(sourceRow[args.xKey]) !== xTextOf(rebuiltRow.x)) return null;
 		for (const [seriesIndex, entry] of args.series.entries()) {
-			if (numberOrNull(sourceRow[entry.key]) !== numberOrNull(rebuiltRow[`s${seriesIndex}`]))
-				return null;
+			if (!sameCell(sourceRow[entry.key], rebuiltRow[`s${seriesIndex}`])) return null;
 		}
 	}
 	return candidate;
@@ -226,6 +268,7 @@ function chartPropsOf(component: WorkspaceComponent): {
 	readonly xLabel: string;
 	readonly yLabel: string;
 	readonly yUnit: string;
+	readonly sourceIds: readonly string[];
 } | null {
 	if (component.componentType === "line-chart") {
 		const parsed = lineChartPropsSchema.safeParse(component.props);
@@ -272,11 +315,6 @@ export function widgetFromComponent(
 			// refuse cannot be "the same graph", so they stay a research widget.
 			const chart = chartPropsOf(component);
 			if (chart === null) return researchFallback(component, widgetId);
-			// A unit longer than a widget's would be cut, renaming the y axis: not
-			// the same picture. (Axis titles fit: the props cap them below the widget's.)
-			if (chart.yUnit.length > NOTEBOOK_LIMITS.maxUnitChars) {
-				return researchFallback(component, widgetId);
-			}
 			const converted = losslessChartWidget({
 				dataset,
 				xKey: chart.xKey,
@@ -286,6 +324,8 @@ export function widgetFromComponent(
 				unit: chart.yUnit,
 				xLabel: axisLabel(chart.xLabel),
 				yLabel: axisLabel(chart.yLabel),
+				sourceIds: chart.sourceIds,
+				evidence: view.sources,
 				widgetId,
 			});
 			return converted ?? researchFallback(component, widgetId);
