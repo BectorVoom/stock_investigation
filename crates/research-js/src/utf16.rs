@@ -16,6 +16,17 @@ pub fn utf16_len(text: &str) -> usize {
 	text.chars().map(char::len_utf16).sum()
 }
 
+/// `a < b` ordering of JavaScript strings: by UTF-16 code units. It differs
+/// from Rust's `str` ordering (code points) when a character above U+FFFF
+/// meets one in U+E000–U+FFFF: the surrogate pair sorts first in JavaScript.
+#[must_use]
+pub fn compare(a: &str, b: &str) -> std::cmp::Ordering {
+	if a.is_ascii() && b.is_ascii() {
+		return a.cmp(b);
+	}
+	a.encode_utf16().cmp(b.encode_utf16())
+}
+
 /// Byte offset of the character boundary at or after UTF-16 offset `units`,
 /// plus whether that offset fell inside a surrogate pair.
 fn byte_offset(text: &str, units: usize) -> (usize, bool) {
