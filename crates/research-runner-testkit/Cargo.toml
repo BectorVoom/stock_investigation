@@ -1,0 +1,14 @@
+[package]
+name = "research-runner-testkit"
+description = "E2E seams for the Rust runner (scripted agent, fixture fetchers); never a dependency of research-runner"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+research-runner = { workspace = true }
+
+[lints]
+workspace = true

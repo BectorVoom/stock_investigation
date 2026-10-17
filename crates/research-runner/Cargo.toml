@@ -1,0 +1,31 @@
+[package]
+name = "research-runner"
+description = "The local runner: polls the Worker API and executes claimed jobs (ADR-0030)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "research-runner"
+path = "src/main.rs"
+
+[dependencies]
+research-js = { workspace = true }
+research-effects = { workspace = true }
+research-domain = { workspace = true }
+research-contracts = { workspace = true }
+research-agent-core = { workspace = true }
+research-application = { workspace = true }
+research-net = { workspace = true }
+research-feed = { workspace = true }
+research-tools = { workspace = true }
+research-providers = { workspace = true }
+research-finance = { workspace = true }
+research-google = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+
+[lints]
+workspace = true

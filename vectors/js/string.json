@@ -1,0 +1,9423 @@
+{
+	"whitespace": [
+		9,
+		10,
+		11,
+		12,
+		13,
+		32,
+		160,
+		5760,
+		8192,
+		8193,
+		8194,
+		8195,
+		8196,
+		8197,
+		8198,
+		8199,
+		8200,
+		8201,
+		8202,
+		8232,
+		8233,
+		8239,
+		8287,
+		12288,
+		65279
+	],
+	"length": [
+		{
+			"input": "",
+			"output": 0
+		},
+		{
+			"input": "plain ascii",
+			"output": 11
+		},
+		{
+			"input": "é accent",
+			"output": 8
+		},
+		{
+			"input": "😀 emoji",
+			"output": 8
+		},
+		{
+			"input": "a😀b😀c",
+			"output": 7
+		},
+		{
+			"input": "日本語のテキスト",
+			"output": 8
+		},
+		{
+			"input": "﻿bom",
+			"output": 4
+		},
+		{
+			"input": "nel",
+			"output": 4
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"output": 20
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"output": 27
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"output": 12
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"output": 17
+		},
+		{
+			"input": "-_.!~*'()",
+			"output": 9
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"output": 14
+		}
+	],
+	"trim": [
+		{
+			"input": "",
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"output": "plain ascii"
+		},
+		{
+			"input": "é accent",
+			"output": "é accent"
+		},
+		{
+			"input": "😀 emoji",
+			"output": "😀 emoji"
+		},
+		{
+			"input": "a😀b😀c",
+			"output": "a😀b😀c"
+		},
+		{
+			"input": "日本語のテキスト",
+			"output": "日本語のテキスト"
+		},
+		{
+			"input": "﻿bom",
+			"output": "bom"
+		},
+		{
+			"input": "nel",
+			"output": "nel"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"output": "x y"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"output": "quote \" backslash \\ slash /"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"output": "a&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "-_.!~*'()",
+			"output": "-_.!~*'()"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+		}
+	],
+	"collapse": [
+		{
+			"input": "",
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"output": "plain ascii"
+		},
+		{
+			"input": "é accent",
+			"output": "é accent"
+		},
+		{
+			"input": "😀 emoji",
+			"output": "😀 emoji"
+		},
+		{
+			"input": "a😀b😀c",
+			"output": "a😀b😀c"
+		},
+		{
+			"input": "日本語のテキスト",
+			"output": "日本語のテキスト"
+		},
+		{
+			"input": "﻿bom",
+			"output": " bom"
+		},
+		{
+			"input": "nel",
+			"output": "nel"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"output": " x y "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"output": "quote \" backslash \\ slash /"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"output": "\u0000\u0001\b \u001f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"output": "a&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "-_.!~*'()",
+			"output": "-_.!~*'()"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+		}
+	],
+	"slice": [
+		{
+			"input": "",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "",
+			"start": 0,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 1,
+			"output": "p"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 2,
+			"output": "pl"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 3,
+			"output": "pla"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 4,
+			"output": "plai"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 5,
+			"output": "plain"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 6,
+			"output": "plain "
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 7,
+			"output": "plain a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 8,
+			"output": "plain as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 9,
+			"output": "plain asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 10,
+			"output": "plain asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 11,
+			"output": "plain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 0,
+			"end": 12,
+			"output": "plain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 2,
+			"output": "l"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 3,
+			"output": "la"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 4,
+			"output": "lai"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 5,
+			"output": "lain"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 6,
+			"output": "lain "
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 7,
+			"output": "lain a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 8,
+			"output": "lain as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 9,
+			"output": "lain asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 10,
+			"output": "lain asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 11,
+			"output": "lain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 1,
+			"end": 12,
+			"output": "lain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 3,
+			"output": "a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 4,
+			"output": "ai"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 5,
+			"output": "ain"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 6,
+			"output": "ain "
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 7,
+			"output": "ain a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 8,
+			"output": "ain as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 9,
+			"output": "ain asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 10,
+			"output": "ain asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 11,
+			"output": "ain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 2,
+			"end": 12,
+			"output": "ain ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 4,
+			"output": "i"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 5,
+			"output": "in"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 6,
+			"output": "in "
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 7,
+			"output": "in a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 8,
+			"output": "in as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 9,
+			"output": "in asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 10,
+			"output": "in asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 11,
+			"output": "in ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 3,
+			"end": 12,
+			"output": "in ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 5,
+			"output": "n"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 6,
+			"output": "n "
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 7,
+			"output": "n a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 8,
+			"output": "n as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 9,
+			"output": "n asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 10,
+			"output": "n asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 11,
+			"output": "n ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 4,
+			"end": 12,
+			"output": "n ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 6,
+			"output": " "
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 7,
+			"output": " a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 8,
+			"output": " as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 9,
+			"output": " asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 10,
+			"output": " asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 11,
+			"output": " ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 5,
+			"end": 12,
+			"output": " ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 7,
+			"output": "a"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 8,
+			"output": "as"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 9,
+			"output": "asc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 10,
+			"output": "asci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 11,
+			"output": "ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 6,
+			"end": 12,
+			"output": "ascii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 8,
+			"output": "s"
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 9,
+			"output": "sc"
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 10,
+			"output": "sci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 11,
+			"output": "scii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 7,
+			"end": 12,
+			"output": "scii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 8,
+			"end": 9,
+			"output": "c"
+		},
+		{
+			"input": "plain ascii",
+			"start": 8,
+			"end": 10,
+			"output": "ci"
+		},
+		{
+			"input": "plain ascii",
+			"start": 8,
+			"end": 11,
+			"output": "cii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 8,
+			"end": 12,
+			"output": "cii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 9,
+			"end": 10,
+			"output": "i"
+		},
+		{
+			"input": "plain ascii",
+			"start": 9,
+			"end": 11,
+			"output": "ii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 9,
+			"end": 12,
+			"output": "ii"
+		},
+		{
+			"input": "plain ascii",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 10,
+			"end": 11,
+			"output": "i"
+		},
+		{
+			"input": "plain ascii",
+			"start": 10,
+			"end": 12,
+			"output": "i"
+		},
+		{
+			"input": "plain ascii",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"start": 11,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 1,
+			"output": "é"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 2,
+			"output": "é "
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 3,
+			"output": "é a"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 4,
+			"output": "é ac"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 5,
+			"output": "é acc"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 6,
+			"output": "é acce"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 7,
+			"output": "é accen"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 8,
+			"output": "é accent"
+		},
+		{
+			"input": "é accent",
+			"start": 0,
+			"end": 9,
+			"output": "é accent"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 2,
+			"output": " "
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 3,
+			"output": " a"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 4,
+			"output": " ac"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 5,
+			"output": " acc"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 6,
+			"output": " acce"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 7,
+			"output": " accen"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 8,
+			"output": " accent"
+		},
+		{
+			"input": "é accent",
+			"start": 1,
+			"end": 9,
+			"output": " accent"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 3,
+			"output": "a"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 4,
+			"output": "ac"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 5,
+			"output": "acc"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 6,
+			"output": "acce"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 7,
+			"output": "accen"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 8,
+			"output": "accent"
+		},
+		{
+			"input": "é accent",
+			"start": 2,
+			"end": 9,
+			"output": "accent"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 4,
+			"output": "c"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 5,
+			"output": "cc"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 6,
+			"output": "cce"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 7,
+			"output": "ccen"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 8,
+			"output": "ccent"
+		},
+		{
+			"input": "é accent",
+			"start": 3,
+			"end": 9,
+			"output": "ccent"
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 5,
+			"output": "c"
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 6,
+			"output": "ce"
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 7,
+			"output": "cen"
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 8,
+			"output": "cent"
+		},
+		{
+			"input": "é accent",
+			"start": 4,
+			"end": 9,
+			"output": "cent"
+		},
+		{
+			"input": "é accent",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 5,
+			"end": 6,
+			"output": "e"
+		},
+		{
+			"input": "é accent",
+			"start": 5,
+			"end": 7,
+			"output": "en"
+		},
+		{
+			"input": "é accent",
+			"start": 5,
+			"end": 8,
+			"output": "ent"
+		},
+		{
+			"input": "é accent",
+			"start": 5,
+			"end": 9,
+			"output": "ent"
+		},
+		{
+			"input": "é accent",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 6,
+			"end": 7,
+			"output": "n"
+		},
+		{
+			"input": "é accent",
+			"start": 6,
+			"end": 8,
+			"output": "nt"
+		},
+		{
+			"input": "é accent",
+			"start": 6,
+			"end": 9,
+			"output": "nt"
+		},
+		{
+			"input": "é accent",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 7,
+			"end": 8,
+			"output": "t"
+		},
+		{
+			"input": "é accent",
+			"start": 7,
+			"end": 9,
+			"output": "t"
+		},
+		{
+			"input": "é accent",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "é accent",
+			"start": 8,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 1,
+			"output": "�"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 2,
+			"output": "😀"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 3,
+			"output": "😀 "
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 4,
+			"output": "😀 e"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 5,
+			"output": "😀 em"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 6,
+			"output": "😀 emo"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 7,
+			"output": "😀 emoj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 8,
+			"output": "😀 emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 0,
+			"end": 9,
+			"output": "😀 emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 2,
+			"output": "�"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 3,
+			"output": "� "
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 4,
+			"output": "� e"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 5,
+			"output": "� em"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 6,
+			"output": "� emo"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 7,
+			"output": "� emoj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 8,
+			"output": "� emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 1,
+			"end": 9,
+			"output": "� emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 3,
+			"output": " "
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 4,
+			"output": " e"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 5,
+			"output": " em"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 6,
+			"output": " emo"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 7,
+			"output": " emoj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 8,
+			"output": " emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 2,
+			"end": 9,
+			"output": " emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 4,
+			"output": "e"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 5,
+			"output": "em"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 6,
+			"output": "emo"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 7,
+			"output": "emoj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 8,
+			"output": "emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 3,
+			"end": 9,
+			"output": "emoji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 5,
+			"output": "m"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 6,
+			"output": "mo"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 7,
+			"output": "moj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 8,
+			"output": "moji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 4,
+			"end": 9,
+			"output": "moji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 5,
+			"end": 6,
+			"output": "o"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 5,
+			"end": 7,
+			"output": "oj"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 5,
+			"end": 8,
+			"output": "oji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 5,
+			"end": 9,
+			"output": "oji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 6,
+			"end": 7,
+			"output": "j"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 6,
+			"end": 8,
+			"output": "ji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 6,
+			"end": 9,
+			"output": "ji"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 7,
+			"end": 8,
+			"output": "i"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 7,
+			"end": 9,
+			"output": "i"
+		},
+		{
+			"input": "😀 emoji",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "😀 emoji",
+			"start": 8,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 1,
+			"output": "a"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 2,
+			"output": "a�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 3,
+			"output": "a😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 4,
+			"output": "a😀b"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 5,
+			"output": "a😀b�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 6,
+			"output": "a😀b😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 7,
+			"output": "a😀b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 0,
+			"end": 8,
+			"output": "a😀b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 2,
+			"output": "�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 3,
+			"output": "😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 4,
+			"output": "😀b"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 5,
+			"output": "😀b�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 6,
+			"output": "😀b😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 7,
+			"output": "😀b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 1,
+			"end": 8,
+			"output": "😀b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 3,
+			"output": "�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 4,
+			"output": "�b"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 5,
+			"output": "�b�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 6,
+			"output": "�b😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 7,
+			"output": "�b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 2,
+			"end": 8,
+			"output": "�b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 4,
+			"output": "b"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 5,
+			"output": "b�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 6,
+			"output": "b😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 7,
+			"output": "b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 3,
+			"end": 8,
+			"output": "b😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 4,
+			"end": 5,
+			"output": "�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 4,
+			"end": 6,
+			"output": "😀"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 4,
+			"end": 7,
+			"output": "😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 4,
+			"end": 8,
+			"output": "😀c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 5,
+			"end": 6,
+			"output": "�"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 5,
+			"end": 7,
+			"output": "�c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 5,
+			"end": 8,
+			"output": "�c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 6,
+			"end": 7,
+			"output": "c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 6,
+			"end": 8,
+			"output": "c"
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "a😀b😀c",
+			"start": 7,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 1,
+			"output": "日"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 2,
+			"output": "日本"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 3,
+			"output": "日本語"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 4,
+			"output": "日本語の"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 5,
+			"output": "日本語のテ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 6,
+			"output": "日本語のテキ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 7,
+			"output": "日本語のテキス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 8,
+			"output": "日本語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 0,
+			"end": 9,
+			"output": "日本語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 2,
+			"output": "本"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 3,
+			"output": "本語"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 4,
+			"output": "本語の"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 5,
+			"output": "本語のテ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 6,
+			"output": "本語のテキ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 7,
+			"output": "本語のテキス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 8,
+			"output": "本語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 1,
+			"end": 9,
+			"output": "本語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 3,
+			"output": "語"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 4,
+			"output": "語の"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 5,
+			"output": "語のテ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 6,
+			"output": "語のテキ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 7,
+			"output": "語のテキス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 8,
+			"output": "語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 2,
+			"end": 9,
+			"output": "語のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 4,
+			"output": "の"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 5,
+			"output": "のテ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 6,
+			"output": "のテキ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 7,
+			"output": "のテキス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 8,
+			"output": "のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 3,
+			"end": 9,
+			"output": "のテキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 5,
+			"output": "テ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 6,
+			"output": "テキ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 7,
+			"output": "テキス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 8,
+			"output": "テキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 4,
+			"end": 9,
+			"output": "テキスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 5,
+			"end": 6,
+			"output": "キ"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 5,
+			"end": 7,
+			"output": "キス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 5,
+			"end": 8,
+			"output": "キスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 5,
+			"end": 9,
+			"output": "キスト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 6,
+			"end": 7,
+			"output": "ス"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 6,
+			"end": 8,
+			"output": "スト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 6,
+			"end": 9,
+			"output": "スト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 7,
+			"end": 8,
+			"output": "ト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 7,
+			"end": 9,
+			"output": "ト"
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "日本語のテキスト",
+			"start": 8,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 1,
+			"output": "﻿"
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 2,
+			"output": "﻿b"
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 3,
+			"output": "﻿bo"
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 4,
+			"output": "﻿bom"
+		},
+		{
+			"input": "﻿bom",
+			"start": 0,
+			"end": 5,
+			"output": "﻿bom"
+		},
+		{
+			"input": "﻿bom",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 1,
+			"end": 2,
+			"output": "b"
+		},
+		{
+			"input": "﻿bom",
+			"start": 1,
+			"end": 3,
+			"output": "bo"
+		},
+		{
+			"input": "﻿bom",
+			"start": 1,
+			"end": 4,
+			"output": "bom"
+		},
+		{
+			"input": "﻿bom",
+			"start": 1,
+			"end": 5,
+			"output": "bom"
+		},
+		{
+			"input": "﻿bom",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 2,
+			"end": 3,
+			"output": "o"
+		},
+		{
+			"input": "﻿bom",
+			"start": 2,
+			"end": 4,
+			"output": "om"
+		},
+		{
+			"input": "﻿bom",
+			"start": 2,
+			"end": 5,
+			"output": "om"
+		},
+		{
+			"input": "﻿bom",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 3,
+			"end": 4,
+			"output": "m"
+		},
+		{
+			"input": "﻿bom",
+			"start": 3,
+			"end": 5,
+			"output": "m"
+		},
+		{
+			"input": "﻿bom",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "﻿bom",
+			"start": 4,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 2,
+			"output": "n"
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 3,
+			"output": "ne"
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 4,
+			"output": "nel"
+		},
+		{
+			"input": "nel",
+			"start": 0,
+			"end": 5,
+			"output": "nel"
+		},
+		{
+			"input": "nel",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 1,
+			"end": 2,
+			"output": "n"
+		},
+		{
+			"input": "nel",
+			"start": 1,
+			"end": 3,
+			"output": "ne"
+		},
+		{
+			"input": "nel",
+			"start": 1,
+			"end": 4,
+			"output": "nel"
+		},
+		{
+			"input": "nel",
+			"start": 1,
+			"end": 5,
+			"output": "nel"
+		},
+		{
+			"input": "nel",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 2,
+			"end": 3,
+			"output": "e"
+		},
+		{
+			"input": "nel",
+			"start": 2,
+			"end": 4,
+			"output": "el"
+		},
+		{
+			"input": "nel",
+			"start": 2,
+			"end": 5,
+			"output": "el"
+		},
+		{
+			"input": "nel",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 3,
+			"end": 4,
+			"output": "l"
+		},
+		{
+			"input": "nel",
+			"start": 3,
+			"end": 5,
+			"output": "l"
+		},
+		{
+			"input": "nel",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "nel",
+			"start": 4,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 1,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 2,
+			"output": " \t"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 3,
+			"output": " \t\n"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 4,
+			"output": " \t\n\u000b"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 5,
+			"output": " \t\n\u000b\f"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 6,
+			"output": " \t\n\u000b\f\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 7,
+			"output": " \t\n\u000b\f\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 8,
+			"output": " \t\n\u000b\f\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 9,
+			"output": " \t\n\u000b\f\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 10,
+			"output": " \t\n\u000b\f\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 11,
+			"output": " \t\n\u000b\f\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 12,
+			"output": " \t\n\u000b\f\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 13,
+			"output": " \t\n\u000b\f\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 14,
+			"output": " \t\n\u000b\f\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 15,
+			"output": " \t\n\u000b\f\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 16,
+			"output": " \t\n\u000b\f\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 17,
+			"output": " \t\n\u000b\f\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 18,
+			"output": " \t\n\u000b\f\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 19,
+			"output": " \t\n\u000b\f\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 20,
+			"output": " \t\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 0,
+			"end": 21,
+			"output": " \t\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 2,
+			"output": "\t"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 3,
+			"output": "\t\n"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 4,
+			"output": "\t\n\u000b"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 5,
+			"output": "\t\n\u000b\f"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 6,
+			"output": "\t\n\u000b\f\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 7,
+			"output": "\t\n\u000b\f\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 8,
+			"output": "\t\n\u000b\f\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 9,
+			"output": "\t\n\u000b\f\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 10,
+			"output": "\t\n\u000b\f\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 11,
+			"output": "\t\n\u000b\f\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 12,
+			"output": "\t\n\u000b\f\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 13,
+			"output": "\t\n\u000b\f\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 14,
+			"output": "\t\n\u000b\f\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 15,
+			"output": "\t\n\u000b\f\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 16,
+			"output": "\t\n\u000b\f\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 17,
+			"output": "\t\n\u000b\f\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 18,
+			"output": "\t\n\u000b\f\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 19,
+			"output": "\t\n\u000b\f\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 20,
+			"output": "\t\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 1,
+			"end": 21,
+			"output": "\t\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 3,
+			"output": "\n"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 4,
+			"output": "\n\u000b"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 5,
+			"output": "\n\u000b\f"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 6,
+			"output": "\n\u000b\f\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 7,
+			"output": "\n\u000b\f\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 8,
+			"output": "\n\u000b\f\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 9,
+			"output": "\n\u000b\f\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 10,
+			"output": "\n\u000b\f\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 11,
+			"output": "\n\u000b\f\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 12,
+			"output": "\n\u000b\f\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 13,
+			"output": "\n\u000b\f\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 14,
+			"output": "\n\u000b\f\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 15,
+			"output": "\n\u000b\f\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 16,
+			"output": "\n\u000b\f\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 17,
+			"output": "\n\u000b\f\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 18,
+			"output": "\n\u000b\f\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 19,
+			"output": "\n\u000b\f\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 20,
+			"output": "\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 2,
+			"end": 21,
+			"output": "\n\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 4,
+			"output": "\u000b"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 5,
+			"output": "\u000b\f"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 6,
+			"output": "\u000b\f\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 7,
+			"output": "\u000b\f\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 8,
+			"output": "\u000b\f\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 9,
+			"output": "\u000b\f\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 10,
+			"output": "\u000b\f\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 11,
+			"output": "\u000b\f\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 12,
+			"output": "\u000b\f\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 13,
+			"output": "\u000b\f\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 14,
+			"output": "\u000b\f\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 15,
+			"output": "\u000b\f\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 16,
+			"output": "\u000b\f\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 17,
+			"output": "\u000b\f\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 18,
+			"output": "\u000b\f\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 19,
+			"output": "\u000b\f\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 20,
+			"output": "\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 3,
+			"end": 21,
+			"output": "\u000b\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 5,
+			"output": "\f"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 6,
+			"output": "\f\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 7,
+			"output": "\f\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 8,
+			"output": "\f\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 9,
+			"output": "\f\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 10,
+			"output": "\f\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 11,
+			"output": "\f\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 12,
+			"output": "\f\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 13,
+			"output": "\f\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 14,
+			"output": "\f\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 15,
+			"output": "\f\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 16,
+			"output": "\f\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 17,
+			"output": "\f\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 18,
+			"output": "\f\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 19,
+			"output": "\f\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 20,
+			"output": "\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 4,
+			"end": 21,
+			"output": "\f\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 6,
+			"output": "\r"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 7,
+			"output": "\r "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 8,
+			"output": "\r  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 9,
+			"output": "\r   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 10,
+			"output": "\r    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 11,
+			"output": "\r     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 12,
+			"output": "\r      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 13,
+			"output": "\r       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 14,
+			"output": "\r        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 15,
+			"output": "\r        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 16,
+			"output": "\r        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 17,
+			"output": "\r        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 18,
+			"output": "\r        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 19,
+			"output": "\r        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 20,
+			"output": "\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 5,
+			"end": 21,
+			"output": "\r        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 7,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 8,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 9,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 10,
+			"output": "    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 11,
+			"output": "     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 12,
+			"output": "      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 13,
+			"output": "       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 14,
+			"output": "        "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 15,
+			"output": "        　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 16,
+			"output": "        　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 17,
+			"output": "        　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 18,
+			"output": "        　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 19,
+			"output": "        　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 20,
+			"output": "        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 6,
+			"end": 21,
+			"output": "        　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 8,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 9,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 10,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 11,
+			"output": "    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 12,
+			"output": "     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 13,
+			"output": "      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 14,
+			"output": "       "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 15,
+			"output": "       　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 16,
+			"output": "       　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 17,
+			"output": "       　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 18,
+			"output": "       　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 19,
+			"output": "       　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 20,
+			"output": "       　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 7,
+			"end": 21,
+			"output": "       　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 9,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 10,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 11,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 12,
+			"output": "    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 13,
+			"output": "     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 14,
+			"output": "      "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 15,
+			"output": "      　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 16,
+			"output": "      　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 17,
+			"output": "      　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 18,
+			"output": "      　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 19,
+			"output": "      　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 20,
+			"output": "      　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 8,
+			"end": 21,
+			"output": "      　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 10,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 11,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 12,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 13,
+			"output": "    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 14,
+			"output": "     "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 15,
+			"output": "     　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 16,
+			"output": "     　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 17,
+			"output": "     　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 18,
+			"output": "     　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 19,
+			"output": "     　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 20,
+			"output": "     　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 9,
+			"end": 21,
+			"output": "     　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 11,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 12,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 13,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 14,
+			"output": "    "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 15,
+			"output": "    　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 16,
+			"output": "    　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 17,
+			"output": "    　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 18,
+			"output": "    　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 19,
+			"output": "    　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 20,
+			"output": "    　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 10,
+			"end": 21,
+			"output": "    　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 12,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 13,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 14,
+			"output": "   "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 15,
+			"output": "   　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 16,
+			"output": "   　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 17,
+			"output": "   　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 18,
+			"output": "   　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 19,
+			"output": "   　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 20,
+			"output": "   　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 11,
+			"end": 21,
+			"output": "   　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 13,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 14,
+			"output": "  "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 15,
+			"output": "  　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 16,
+			"output": "  　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 17,
+			"output": "  　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 18,
+			"output": "  　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 19,
+			"output": "  　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 20,
+			"output": "  　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 12,
+			"end": 21,
+			"output": "  　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 13,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 14,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 15,
+			"output": " 　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 16,
+			"output": " 　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 17,
+			"output": " 　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 18,
+			"output": " 　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 19,
+			"output": " 　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 20,
+			"output": " 　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 13,
+			"end": 21,
+			"output": " 　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 14,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 15,
+			"output": "　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 16,
+			"output": "　﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 17,
+			"output": "　﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 18,
+			"output": "　﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 19,
+			"output": "　﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 20,
+			"output": "　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 14,
+			"end": 21,
+			"output": "　﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 15,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 16,
+			"output": "﻿"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 17,
+			"output": "﻿x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 18,
+			"output": "﻿x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 19,
+			"output": "﻿x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 20,
+			"output": "﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 15,
+			"end": 21,
+			"output": "﻿x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 16,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 17,
+			"output": "x"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 18,
+			"output": "x "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 19,
+			"output": "x y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 20,
+			"output": "x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 16,
+			"end": 21,
+			"output": "x y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 17,
+			"end": 17,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 17,
+			"end": 18,
+			"output": " "
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 17,
+			"end": 19,
+			"output": " y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 17,
+			"end": 20,
+			"output": " y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 17,
+			"end": 21,
+			"output": " y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 18,
+			"end": 18,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 18,
+			"end": 19,
+			"output": "y"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 18,
+			"end": 20,
+			"output": "y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 18,
+			"end": 21,
+			"output": "y　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 19,
+			"end": 19,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 19,
+			"end": 20,
+			"output": "　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 19,
+			"end": 21,
+			"output": "　"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 20,
+			"end": 20,
+			"output": ""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"start": 20,
+			"end": 21,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 1,
+			"output": "q"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 2,
+			"output": "qu"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 3,
+			"output": "quo"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 4,
+			"output": "quot"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 5,
+			"output": "quote"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 6,
+			"output": "quote "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 7,
+			"output": "quote \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 8,
+			"output": "quote \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 9,
+			"output": "quote \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 10,
+			"output": "quote \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 11,
+			"output": "quote \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 12,
+			"output": "quote \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 13,
+			"output": "quote \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 14,
+			"output": "quote \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 15,
+			"output": "quote \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 16,
+			"output": "quote \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 17,
+			"output": "quote \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 18,
+			"output": "quote \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 19,
+			"output": "quote \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 20,
+			"output": "quote \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 21,
+			"output": "quote \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 22,
+			"output": "quote \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 23,
+			"output": "quote \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 24,
+			"output": "quote \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 25,
+			"output": "quote \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 26,
+			"output": "quote \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 27,
+			"output": "quote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 0,
+			"end": 28,
+			"output": "quote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 2,
+			"output": "u"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 3,
+			"output": "uo"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 4,
+			"output": "uot"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 5,
+			"output": "uote"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 6,
+			"output": "uote "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 7,
+			"output": "uote \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 8,
+			"output": "uote \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 9,
+			"output": "uote \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 10,
+			"output": "uote \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 11,
+			"output": "uote \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 12,
+			"output": "uote \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 13,
+			"output": "uote \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 14,
+			"output": "uote \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 15,
+			"output": "uote \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 16,
+			"output": "uote \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 17,
+			"output": "uote \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 18,
+			"output": "uote \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 19,
+			"output": "uote \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 20,
+			"output": "uote \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 21,
+			"output": "uote \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 22,
+			"output": "uote \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 23,
+			"output": "uote \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 24,
+			"output": "uote \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 25,
+			"output": "uote \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 26,
+			"output": "uote \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 27,
+			"output": "uote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 1,
+			"end": 28,
+			"output": "uote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 3,
+			"output": "o"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 4,
+			"output": "ot"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 5,
+			"output": "ote"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 6,
+			"output": "ote "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 7,
+			"output": "ote \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 8,
+			"output": "ote \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 9,
+			"output": "ote \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 10,
+			"output": "ote \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 11,
+			"output": "ote \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 12,
+			"output": "ote \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 13,
+			"output": "ote \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 14,
+			"output": "ote \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 15,
+			"output": "ote \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 16,
+			"output": "ote \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 17,
+			"output": "ote \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 18,
+			"output": "ote \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 19,
+			"output": "ote \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 20,
+			"output": "ote \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 21,
+			"output": "ote \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 22,
+			"output": "ote \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 23,
+			"output": "ote \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 24,
+			"output": "ote \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 25,
+			"output": "ote \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 26,
+			"output": "ote \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 27,
+			"output": "ote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 2,
+			"end": 28,
+			"output": "ote \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 4,
+			"output": "t"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 5,
+			"output": "te"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 6,
+			"output": "te "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 7,
+			"output": "te \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 8,
+			"output": "te \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 9,
+			"output": "te \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 10,
+			"output": "te \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 11,
+			"output": "te \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 12,
+			"output": "te \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 13,
+			"output": "te \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 14,
+			"output": "te \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 15,
+			"output": "te \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 16,
+			"output": "te \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 17,
+			"output": "te \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 18,
+			"output": "te \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 19,
+			"output": "te \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 20,
+			"output": "te \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 21,
+			"output": "te \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 22,
+			"output": "te \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 23,
+			"output": "te \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 24,
+			"output": "te \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 25,
+			"output": "te \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 26,
+			"output": "te \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 27,
+			"output": "te \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 3,
+			"end": 28,
+			"output": "te \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 5,
+			"output": "e"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 6,
+			"output": "e "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 7,
+			"output": "e \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 8,
+			"output": "e \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 9,
+			"output": "e \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 10,
+			"output": "e \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 11,
+			"output": "e \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 12,
+			"output": "e \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 13,
+			"output": "e \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 14,
+			"output": "e \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 15,
+			"output": "e \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 16,
+			"output": "e \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 17,
+			"output": "e \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 18,
+			"output": "e \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 19,
+			"output": "e \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 20,
+			"output": "e \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 21,
+			"output": "e \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 22,
+			"output": "e \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 23,
+			"output": "e \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 24,
+			"output": "e \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 25,
+			"output": "e \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 26,
+			"output": "e \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 27,
+			"output": "e \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 4,
+			"end": 28,
+			"output": "e \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 6,
+			"output": " "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 7,
+			"output": " \""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 8,
+			"output": " \" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 9,
+			"output": " \" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 10,
+			"output": " \" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 11,
+			"output": " \" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 12,
+			"output": " \" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 13,
+			"output": " \" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 14,
+			"output": " \" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 15,
+			"output": " \" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 16,
+			"output": " \" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 17,
+			"output": " \" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 18,
+			"output": " \" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 19,
+			"output": " \" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 20,
+			"output": " \" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 21,
+			"output": " \" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 22,
+			"output": " \" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 23,
+			"output": " \" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 24,
+			"output": " \" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 25,
+			"output": " \" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 26,
+			"output": " \" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 27,
+			"output": " \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 5,
+			"end": 28,
+			"output": " \" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 7,
+			"output": "\""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 8,
+			"output": "\" "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 9,
+			"output": "\" b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 10,
+			"output": "\" ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 11,
+			"output": "\" bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 12,
+			"output": "\" back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 13,
+			"output": "\" backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 14,
+			"output": "\" backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 15,
+			"output": "\" backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 16,
+			"output": "\" backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 17,
+			"output": "\" backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 18,
+			"output": "\" backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 19,
+			"output": "\" backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 20,
+			"output": "\" backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 21,
+			"output": "\" backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 22,
+			"output": "\" backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 23,
+			"output": "\" backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 24,
+			"output": "\" backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 25,
+			"output": "\" backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 26,
+			"output": "\" backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 27,
+			"output": "\" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 6,
+			"end": 28,
+			"output": "\" backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 8,
+			"output": " "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 9,
+			"output": " b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 10,
+			"output": " ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 11,
+			"output": " bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 12,
+			"output": " back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 13,
+			"output": " backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 14,
+			"output": " backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 15,
+			"output": " backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 16,
+			"output": " backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 17,
+			"output": " backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 18,
+			"output": " backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 19,
+			"output": " backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 20,
+			"output": " backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 21,
+			"output": " backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 22,
+			"output": " backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 23,
+			"output": " backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 24,
+			"output": " backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 25,
+			"output": " backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 26,
+			"output": " backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 27,
+			"output": " backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 7,
+			"end": 28,
+			"output": " backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 9,
+			"output": "b"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 10,
+			"output": "ba"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 11,
+			"output": "bac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 12,
+			"output": "back"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 13,
+			"output": "backs"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 14,
+			"output": "backsl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 15,
+			"output": "backsla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 16,
+			"output": "backslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 17,
+			"output": "backslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 18,
+			"output": "backslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 19,
+			"output": "backslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 20,
+			"output": "backslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 21,
+			"output": "backslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 22,
+			"output": "backslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 23,
+			"output": "backslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 24,
+			"output": "backslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 25,
+			"output": "backslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 26,
+			"output": "backslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 27,
+			"output": "backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 8,
+			"end": 28,
+			"output": "backslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 10,
+			"output": "a"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 11,
+			"output": "ac"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 12,
+			"output": "ack"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 13,
+			"output": "acks"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 14,
+			"output": "acksl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 15,
+			"output": "acksla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 16,
+			"output": "ackslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 17,
+			"output": "ackslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 18,
+			"output": "ackslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 19,
+			"output": "ackslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 20,
+			"output": "ackslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 21,
+			"output": "ackslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 22,
+			"output": "ackslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 23,
+			"output": "ackslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 24,
+			"output": "ackslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 25,
+			"output": "ackslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 26,
+			"output": "ackslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 27,
+			"output": "ackslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 9,
+			"end": 28,
+			"output": "ackslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 11,
+			"output": "c"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 12,
+			"output": "ck"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 13,
+			"output": "cks"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 14,
+			"output": "cksl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 15,
+			"output": "cksla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 16,
+			"output": "ckslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 17,
+			"output": "ckslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 18,
+			"output": "ckslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 19,
+			"output": "ckslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 20,
+			"output": "ckslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 21,
+			"output": "ckslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 22,
+			"output": "ckslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 23,
+			"output": "ckslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 24,
+			"output": "ckslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 25,
+			"output": "ckslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 26,
+			"output": "ckslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 27,
+			"output": "ckslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 10,
+			"end": 28,
+			"output": "ckslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 12,
+			"output": "k"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 13,
+			"output": "ks"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 14,
+			"output": "ksl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 15,
+			"output": "ksla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 16,
+			"output": "kslas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 17,
+			"output": "kslash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 18,
+			"output": "kslash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 19,
+			"output": "kslash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 20,
+			"output": "kslash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 21,
+			"output": "kslash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 22,
+			"output": "kslash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 23,
+			"output": "kslash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 24,
+			"output": "kslash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 25,
+			"output": "kslash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 26,
+			"output": "kslash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 27,
+			"output": "kslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 11,
+			"end": 28,
+			"output": "kslash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 13,
+			"output": "s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 14,
+			"output": "sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 15,
+			"output": "sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 16,
+			"output": "slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 17,
+			"output": "slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 18,
+			"output": "slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 19,
+			"output": "slash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 20,
+			"output": "slash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 21,
+			"output": "slash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 22,
+			"output": "slash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 23,
+			"output": "slash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 24,
+			"output": "slash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 25,
+			"output": "slash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 26,
+			"output": "slash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 27,
+			"output": "slash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 12,
+			"end": 28,
+			"output": "slash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 13,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 14,
+			"output": "l"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 15,
+			"output": "la"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 16,
+			"output": "las"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 17,
+			"output": "lash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 18,
+			"output": "lash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 19,
+			"output": "lash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 20,
+			"output": "lash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 21,
+			"output": "lash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 22,
+			"output": "lash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 23,
+			"output": "lash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 24,
+			"output": "lash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 25,
+			"output": "lash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 26,
+			"output": "lash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 27,
+			"output": "lash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 13,
+			"end": 28,
+			"output": "lash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 14,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 15,
+			"output": "a"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 16,
+			"output": "as"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 17,
+			"output": "ash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 18,
+			"output": "ash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 19,
+			"output": "ash \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 20,
+			"output": "ash \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 21,
+			"output": "ash \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 22,
+			"output": "ash \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 23,
+			"output": "ash \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 24,
+			"output": "ash \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 25,
+			"output": "ash \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 26,
+			"output": "ash \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 27,
+			"output": "ash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 14,
+			"end": 28,
+			"output": "ash \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 15,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 16,
+			"output": "s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 17,
+			"output": "sh"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 18,
+			"output": "sh "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 19,
+			"output": "sh \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 20,
+			"output": "sh \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 21,
+			"output": "sh \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 22,
+			"output": "sh \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 23,
+			"output": "sh \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 24,
+			"output": "sh \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 25,
+			"output": "sh \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 26,
+			"output": "sh \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 27,
+			"output": "sh \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 15,
+			"end": 28,
+			"output": "sh \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 16,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 17,
+			"output": "h"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 18,
+			"output": "h "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 19,
+			"output": "h \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 20,
+			"output": "h \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 21,
+			"output": "h \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 22,
+			"output": "h \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 23,
+			"output": "h \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 24,
+			"output": "h \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 25,
+			"output": "h \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 26,
+			"output": "h \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 27,
+			"output": "h \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 16,
+			"end": 28,
+			"output": "h \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 17,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 18,
+			"output": " "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 19,
+			"output": " \\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 20,
+			"output": " \\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 21,
+			"output": " \\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 22,
+			"output": " \\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 23,
+			"output": " \\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 24,
+			"output": " \\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 25,
+			"output": " \\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 26,
+			"output": " \\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 27,
+			"output": " \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 17,
+			"end": 28,
+			"output": " \\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 18,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 19,
+			"output": "\\"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 20,
+			"output": "\\ "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 21,
+			"output": "\\ s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 22,
+			"output": "\\ sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 23,
+			"output": "\\ sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 24,
+			"output": "\\ slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 25,
+			"output": "\\ slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 26,
+			"output": "\\ slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 27,
+			"output": "\\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 18,
+			"end": 28,
+			"output": "\\ slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 19,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 20,
+			"output": " "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 21,
+			"output": " s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 22,
+			"output": " sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 23,
+			"output": " sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 24,
+			"output": " slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 25,
+			"output": " slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 26,
+			"output": " slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 27,
+			"output": " slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 19,
+			"end": 28,
+			"output": " slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 20,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 21,
+			"output": "s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 22,
+			"output": "sl"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 23,
+			"output": "sla"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 24,
+			"output": "slas"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 25,
+			"output": "slash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 26,
+			"output": "slash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 27,
+			"output": "slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 20,
+			"end": 28,
+			"output": "slash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 21,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 22,
+			"output": "l"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 23,
+			"output": "la"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 24,
+			"output": "las"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 25,
+			"output": "lash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 26,
+			"output": "lash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 27,
+			"output": "lash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 21,
+			"end": 28,
+			"output": "lash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 22,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 23,
+			"output": "a"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 24,
+			"output": "as"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 25,
+			"output": "ash"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 26,
+			"output": "ash "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 27,
+			"output": "ash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 22,
+			"end": 28,
+			"output": "ash /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 23,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 24,
+			"output": "s"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 25,
+			"output": "sh"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 26,
+			"output": "sh "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 27,
+			"output": "sh /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 23,
+			"end": 28,
+			"output": "sh /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 24,
+			"end": 24,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 24,
+			"end": 25,
+			"output": "h"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 24,
+			"end": 26,
+			"output": "h "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 24,
+			"end": 27,
+			"output": "h /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 24,
+			"end": 28,
+			"output": "h /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 25,
+			"end": 25,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 25,
+			"end": 26,
+			"output": " "
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 25,
+			"end": 27,
+			"output": " /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 25,
+			"end": 28,
+			"output": " /"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 26,
+			"end": 26,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 26,
+			"end": 27,
+			"output": "/"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 26,
+			"end": 28,
+			"output": "/"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 27,
+			"end": 27,
+			"output": ""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"start": 27,
+			"end": 28,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 1,
+			"output": "\u0000"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 2,
+			"output": "\u0000\u0001"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 3,
+			"output": "\u0000\u0001\b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 4,
+			"output": "\u0000\u0001\b\t"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 5,
+			"output": "\u0000\u0001\b\t\n"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 6,
+			"output": "\u0000\u0001\b\t\n\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 7,
+			"output": "\u0000\u0001\b\t\n\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 8,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 9,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 10,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 11,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 12,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 0,
+			"end": 13,
+			"output": "\u0000\u0001\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 2,
+			"output": "\u0001"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 3,
+			"output": "\u0001\b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 4,
+			"output": "\u0001\b\t"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 5,
+			"output": "\u0001\b\t\n"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 6,
+			"output": "\u0001\b\t\n\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 7,
+			"output": "\u0001\b\t\n\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 8,
+			"output": "\u0001\b\t\n\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 9,
+			"output": "\u0001\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 10,
+			"output": "\u0001\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 11,
+			"output": "\u0001\b\t\n\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 12,
+			"output": "\u0001\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 1,
+			"end": 13,
+			"output": "\u0001\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 3,
+			"output": "\b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 4,
+			"output": "\b\t"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 5,
+			"output": "\b\t\n"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 6,
+			"output": "\b\t\n\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 7,
+			"output": "\b\t\n\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 8,
+			"output": "\b\t\n\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 9,
+			"output": "\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 10,
+			"output": "\b\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 11,
+			"output": "\b\t\n\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 12,
+			"output": "\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 2,
+			"end": 13,
+			"output": "\b\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 4,
+			"output": "\t"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 5,
+			"output": "\t\n"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 6,
+			"output": "\t\n\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 7,
+			"output": "\t\n\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 8,
+			"output": "\t\n\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 9,
+			"output": "\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 10,
+			"output": "\t\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 11,
+			"output": "\t\n\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 12,
+			"output": "\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 3,
+			"end": 13,
+			"output": "\t\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 5,
+			"output": "\n"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 6,
+			"output": "\n\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 7,
+			"output": "\n\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 8,
+			"output": "\n\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 9,
+			"output": "\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 10,
+			"output": "\n\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 11,
+			"output": "\n\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 12,
+			"output": "\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 4,
+			"end": 13,
+			"output": "\n\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 6,
+			"output": "\u000b"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 7,
+			"output": "\u000b\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 8,
+			"output": "\u000b\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 9,
+			"output": "\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 10,
+			"output": "\u000b\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 11,
+			"output": "\u000b\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 12,
+			"output": "\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 5,
+			"end": 13,
+			"output": "\u000b\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 7,
+			"output": "\f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 8,
+			"output": "\f\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 9,
+			"output": "\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 10,
+			"output": "\f\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 11,
+			"output": "\f\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 12,
+			"output": "\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 6,
+			"end": 13,
+			"output": "\f\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 8,
+			"output": "\r"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 9,
+			"output": "\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 10,
+			"output": "\r\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 11,
+			"output": "\r\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 12,
+			"output": "\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 7,
+			"end": 13,
+			"output": "\r\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 9,
+			"output": "\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 10,
+			"output": "\u001f"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 11,
+			"output": "\u001f "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 12,
+			"output": "\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 8,
+			"end": 13,
+			"output": "\u001f  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 9,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 9,
+			"end": 11,
+			"output": " "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 9,
+			"end": 12,
+			"output": "  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 9,
+			"end": 13,
+			"output": "  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 10,
+			"end": 11,
+			"output": " "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 10,
+			"end": 12,
+			"output": "  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 10,
+			"end": 13,
+			"output": "  "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 11,
+			"end": 12,
+			"output": " "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 11,
+			"end": 13,
+			"output": " "
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 12,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"start": 12,
+			"end": 13,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 1,
+			"output": "a"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 2,
+			"output": "a&"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 3,
+			"output": "a&b"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 4,
+			"output": "a&b="
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 5,
+			"output": "a&b=c"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 6,
+			"output": "a&b=c/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 7,
+			"output": "a&b=c/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 8,
+			"output": "a&b=c/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 9,
+			"output": "a&b=c/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 10,
+			"output": "a&b=c/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 11,
+			"output": "a&b=c/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 12,
+			"output": "a&b=c/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 13,
+			"output": "a&b=c/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 14,
+			"output": "a&b=c/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 15,
+			"output": "a&b=c/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 16,
+			"output": "a&b=c/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 17,
+			"output": "a&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 0,
+			"end": 18,
+			"output": "a&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 2,
+			"output": "&"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 3,
+			"output": "&b"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 4,
+			"output": "&b="
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 5,
+			"output": "&b=c"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 6,
+			"output": "&b=c/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 7,
+			"output": "&b=c/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 8,
+			"output": "&b=c/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 9,
+			"output": "&b=c/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 10,
+			"output": "&b=c/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 11,
+			"output": "&b=c/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 12,
+			"output": "&b=c/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 13,
+			"output": "&b=c/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 14,
+			"output": "&b=c/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 15,
+			"output": "&b=c/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 16,
+			"output": "&b=c/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 17,
+			"output": "&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 1,
+			"end": 18,
+			"output": "&b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 3,
+			"output": "b"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 4,
+			"output": "b="
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 5,
+			"output": "b=c"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 6,
+			"output": "b=c/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 7,
+			"output": "b=c/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 8,
+			"output": "b=c/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 9,
+			"output": "b=c/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 10,
+			"output": "b=c/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 11,
+			"output": "b=c/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 12,
+			"output": "b=c/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 13,
+			"output": "b=c/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 14,
+			"output": "b=c/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 15,
+			"output": "b=c/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 16,
+			"output": "b=c/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 17,
+			"output": "b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 2,
+			"end": 18,
+			"output": "b=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 4,
+			"output": "="
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 5,
+			"output": "=c"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 6,
+			"output": "=c/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 7,
+			"output": "=c/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 8,
+			"output": "=c/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 9,
+			"output": "=c/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 10,
+			"output": "=c/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 11,
+			"output": "=c/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 12,
+			"output": "=c/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 13,
+			"output": "=c/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 14,
+			"output": "=c/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 15,
+			"output": "=c/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 16,
+			"output": "=c/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 17,
+			"output": "=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 3,
+			"end": 18,
+			"output": "=c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 5,
+			"output": "c"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 6,
+			"output": "c/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 7,
+			"output": "c/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 8,
+			"output": "c/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 9,
+			"output": "c/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 10,
+			"output": "c/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 11,
+			"output": "c/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 12,
+			"output": "c/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 13,
+			"output": "c/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 14,
+			"output": "c/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 15,
+			"output": "c/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 16,
+			"output": "c/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 17,
+			"output": "c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 4,
+			"end": 18,
+			"output": "c/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 6,
+			"output": "/"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 7,
+			"output": "/d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 8,
+			"output": "/d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 9,
+			"output": "/d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 10,
+			"output": "/d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 11,
+			"output": "/d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 12,
+			"output": "/d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 13,
+			"output": "/d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 14,
+			"output": "/d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 15,
+			"output": "/d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 16,
+			"output": "/d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 17,
+			"output": "/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 5,
+			"end": 18,
+			"output": "/d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 7,
+			"output": "d"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 8,
+			"output": "d?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 9,
+			"output": "d?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 10,
+			"output": "d?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 11,
+			"output": "d?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 12,
+			"output": "d?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 13,
+			"output": "d?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 14,
+			"output": "d?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 15,
+			"output": "d?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 16,
+			"output": "d?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 17,
+			"output": "d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 6,
+			"end": 18,
+			"output": "d?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 8,
+			"output": "?"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 9,
+			"output": "?e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 10,
+			"output": "?e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 11,
+			"output": "?e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 12,
+			"output": "?e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 13,
+			"output": "?e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 14,
+			"output": "?e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 15,
+			"output": "?e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 16,
+			"output": "?e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 17,
+			"output": "?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 7,
+			"end": 18,
+			"output": "?e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 9,
+			"output": "e"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 10,
+			"output": "e#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 11,
+			"output": "e#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 12,
+			"output": "e#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 13,
+			"output": "e#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 14,
+			"output": "e#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 15,
+			"output": "e#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 16,
+			"output": "e#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 17,
+			"output": "e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 8,
+			"end": 18,
+			"output": "e#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 10,
+			"output": "#"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 11,
+			"output": "#f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 12,
+			"output": "#f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 13,
+			"output": "#f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 14,
+			"output": "#f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 15,
+			"output": "#f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 16,
+			"output": "#f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 17,
+			"output": "#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 9,
+			"end": 18,
+			"output": "#f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 11,
+			"output": "f"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 12,
+			"output": "f "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 13,
+			"output": "f g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 14,
+			"output": "f g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 15,
+			"output": "f g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 16,
+			"output": "f g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 17,
+			"output": "f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 10,
+			"end": 18,
+			"output": "f g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 12,
+			"output": " "
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 13,
+			"output": " g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 14,
+			"output": " g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 15,
+			"output": " g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 16,
+			"output": " g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 17,
+			"output": " g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 11,
+			"end": 18,
+			"output": " g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 13,
+			"output": "g"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 14,
+			"output": "g+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 15,
+			"output": "g+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 16,
+			"output": "g+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 17,
+			"output": "g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 12,
+			"end": 18,
+			"output": "g+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 13,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 14,
+			"output": "+"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 15,
+			"output": "+h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 16,
+			"output": "+h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 17,
+			"output": "+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 13,
+			"end": 18,
+			"output": "+h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 14,
+			"end": 14,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 14,
+			"end": 15,
+			"output": "h"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 14,
+			"end": 16,
+			"output": "h%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 14,
+			"end": 17,
+			"output": "h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 14,
+			"end": 18,
+			"output": "h%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 15,
+			"end": 15,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 15,
+			"end": 16,
+			"output": "%"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 15,
+			"end": 17,
+			"output": "%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 15,
+			"end": 18,
+			"output": "%i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 16,
+			"end": 16,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 16,
+			"end": 17,
+			"output": "i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 16,
+			"end": 18,
+			"output": "i"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 17,
+			"end": 17,
+			"output": ""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"start": 17,
+			"end": 18,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 1,
+			"output": "-"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 2,
+			"output": "-_"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 3,
+			"output": "-_."
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 4,
+			"output": "-_.!"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 5,
+			"output": "-_.!~"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 6,
+			"output": "-_.!~*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 7,
+			"output": "-_.!~*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 8,
+			"output": "-_.!~*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 9,
+			"output": "-_.!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 0,
+			"end": 10,
+			"output": "-_.!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 2,
+			"output": "_"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 3,
+			"output": "_."
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 4,
+			"output": "_.!"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 5,
+			"output": "_.!~"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 6,
+			"output": "_.!~*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 7,
+			"output": "_.!~*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 8,
+			"output": "_.!~*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 9,
+			"output": "_.!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 1,
+			"end": 10,
+			"output": "_.!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 3,
+			"output": "."
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 4,
+			"output": ".!"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 5,
+			"output": ".!~"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 6,
+			"output": ".!~*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 7,
+			"output": ".!~*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 8,
+			"output": ".!~*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 9,
+			"output": ".!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 2,
+			"end": 10,
+			"output": ".!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 4,
+			"output": "!"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 5,
+			"output": "!~"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 6,
+			"output": "!~*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 7,
+			"output": "!~*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 8,
+			"output": "!~*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 9,
+			"output": "!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 3,
+			"end": 10,
+			"output": "!~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 5,
+			"output": "~"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 6,
+			"output": "~*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 7,
+			"output": "~*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 8,
+			"output": "~*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 9,
+			"output": "~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 4,
+			"end": 10,
+			"output": "~*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 6,
+			"output": "*"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 7,
+			"output": "*'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 8,
+			"output": "*'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 9,
+			"output": "*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 5,
+			"end": 10,
+			"output": "*'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 6,
+			"end": 7,
+			"output": "'"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 6,
+			"end": 8,
+			"output": "'("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 6,
+			"end": 9,
+			"output": "'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 6,
+			"end": 10,
+			"output": "'()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 7,
+			"end": 8,
+			"output": "("
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 7,
+			"end": 9,
+			"output": "()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 7,
+			"end": 10,
+			"output": "()"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 8,
+			"end": 9,
+			"output": ")"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 8,
+			"end": 10,
+			"output": ")"
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "-_.!~*'()",
+			"start": 9,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 0,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 1,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 2,
+			"output": "𝔘"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 3,
+			"output": "𝔘�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 4,
+			"output": "𝔘𝔫"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 5,
+			"output": "𝔘𝔫�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 6,
+			"output": "𝔘𝔫𝔦"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 7,
+			"output": "𝔘𝔫𝔦�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 8,
+			"output": "𝔘𝔫𝔦𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 9,
+			"output": "𝔘𝔫𝔦𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 10,
+			"output": "𝔘𝔫𝔦𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 11,
+			"output": "𝔘𝔫𝔦𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 12,
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 13,
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 14,
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 0,
+			"end": 15,
+			"output": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 1,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 2,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 3,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 4,
+			"output": "�𝔫"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 5,
+			"output": "�𝔫�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 6,
+			"output": "�𝔫𝔦"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 7,
+			"output": "�𝔫𝔦�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 8,
+			"output": "�𝔫𝔦𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 9,
+			"output": "�𝔫𝔦𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 10,
+			"output": "�𝔫𝔦𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 11,
+			"output": "�𝔫𝔦𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 12,
+			"output": "�𝔫𝔦𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 13,
+			"output": "�𝔫𝔦𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 14,
+			"output": "�𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 1,
+			"end": 15,
+			"output": "�𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 2,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 3,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 4,
+			"output": "𝔫"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 5,
+			"output": "𝔫�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 6,
+			"output": "𝔫𝔦"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 7,
+			"output": "𝔫𝔦�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 8,
+			"output": "𝔫𝔦𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 9,
+			"output": "𝔫𝔦𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 10,
+			"output": "𝔫𝔦𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 11,
+			"output": "𝔫𝔦𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 12,
+			"output": "𝔫𝔦𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 13,
+			"output": "𝔫𝔦𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 14,
+			"output": "𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 2,
+			"end": 15,
+			"output": "𝔫𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 3,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 4,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 5,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 6,
+			"output": "�𝔦"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 7,
+			"output": "�𝔦�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 8,
+			"output": "�𝔦𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 9,
+			"output": "�𝔦𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 10,
+			"output": "�𝔦𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 11,
+			"output": "�𝔦𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 12,
+			"output": "�𝔦𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 13,
+			"output": "�𝔦𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 14,
+			"output": "�𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 3,
+			"end": 15,
+			"output": "�𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 4,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 5,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 6,
+			"output": "𝔦"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 7,
+			"output": "𝔦�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 8,
+			"output": "𝔦𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 9,
+			"output": "𝔦𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 10,
+			"output": "𝔦𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 11,
+			"output": "𝔦𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 12,
+			"output": "𝔦𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 13,
+			"output": "𝔦𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 14,
+			"output": "𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 4,
+			"end": 15,
+			"output": "𝔦𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 5,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 6,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 7,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 8,
+			"output": "�𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 9,
+			"output": "�𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 10,
+			"output": "�𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 11,
+			"output": "�𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 12,
+			"output": "�𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 13,
+			"output": "�𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 14,
+			"output": "�𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 5,
+			"end": 15,
+			"output": "�𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 6,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 7,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 8,
+			"output": "𝔠"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 9,
+			"output": "𝔠�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 10,
+			"output": "𝔠𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 11,
+			"output": "𝔠𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 12,
+			"output": "𝔠𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 13,
+			"output": "𝔠𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 14,
+			"output": "𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 6,
+			"end": 15,
+			"output": "𝔠𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 7,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 8,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 9,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 10,
+			"output": "�𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 11,
+			"output": "�𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 12,
+			"output": "�𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 13,
+			"output": "�𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 14,
+			"output": "�𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 7,
+			"end": 15,
+			"output": "�𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 8,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 9,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 10,
+			"output": "𝔬"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 11,
+			"output": "𝔬�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 12,
+			"output": "𝔬𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 13,
+			"output": "𝔬𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 14,
+			"output": "𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 8,
+			"end": 15,
+			"output": "𝔬𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 9,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 10,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 11,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 12,
+			"output": "�𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 13,
+			"output": "�𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 14,
+			"output": "�𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 9,
+			"end": 15,
+			"output": "�𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 10,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 11,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 12,
+			"output": "𝔡"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 13,
+			"output": "𝔡�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 14,
+			"output": "𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 10,
+			"end": 15,
+			"output": "𝔡𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 11,
+			"end": 11,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 11,
+			"end": 12,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 11,
+			"end": 13,
+			"output": "��"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 11,
+			"end": 14,
+			"output": "�𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 11,
+			"end": 15,
+			"output": "�𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 12,
+			"end": 12,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 12,
+			"end": 13,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 12,
+			"end": 14,
+			"output": "𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 12,
+			"end": 15,
+			"output": "𝔢"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 13,
+			"end": 13,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 13,
+			"end": 14,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 13,
+			"end": 15,
+			"output": "�"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 14,
+			"end": 14,
+			"output": ""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"start": 14,
+			"end": 15,
+			"output": ""
+		}
+	],
+	"encodeURIComponent": [
+		{
+			"input": "",
+			"output": ""
+		},
+		{
+			"input": "plain ascii",
+			"output": "plain%20ascii"
+		},
+		{
+			"input": "é accent",
+			"output": "%C3%A9%20accent"
+		},
+		{
+			"input": "😀 emoji",
+			"output": "%F0%9F%98%80%20emoji"
+		},
+		{
+			"input": "a😀b😀c",
+			"output": "a%F0%9F%98%80b%F0%9F%98%80c"
+		},
+		{
+			"input": "日本語のテキスト",
+			"output": "%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%81%AE%E3%83%86%E3%82%AD%E3%82%B9%E3%83%88"
+		},
+		{
+			"input": "﻿bom",
+			"output": "%EF%BB%BFbom"
+		},
+		{
+			"input": "nel",
+			"output": "%C2%85nel"
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"output": "%20%09%0A%0B%0C%0D%C2%A0%E1%9A%80%E2%80%80%E2%80%8A%E2%80%A8%E2%80%A9%E2%80%AF%E2%81%9F%E3%80%80%EF%BB%BFx%20y%E3%80%80"
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"output": "quote%20%22%20backslash%20%5C%20slash%20%2F"
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"output": "%00%01%08%09%0A%0B%0C%0D%1F%7F%E2%80%A8%E2%80%A9"
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"output": "a%26b%3Dc%2Fd%3Fe%23f%20g%2Bh%25i"
+		},
+		{
+			"input": "-_.!~*'()",
+			"output": "-_.!~*'()"
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"output": "%F0%9D%94%98%F0%9D%94%AB%F0%9D%94%A6%F0%9D%94%A0%F0%9D%94%AC%F0%9D%94%A1%F0%9D%94%A2"
+		}
+	],
+	"jsonQuote": [
+		{
+			"input": "",
+			"output": "\"\""
+		},
+		{
+			"input": "plain ascii",
+			"output": "\"plain ascii\""
+		},
+		{
+			"input": "é accent",
+			"output": "\"é accent\""
+		},
+		{
+			"input": "😀 emoji",
+			"output": "\"😀 emoji\""
+		},
+		{
+			"input": "a😀b😀c",
+			"output": "\"a😀b😀c\""
+		},
+		{
+			"input": "日本語のテキスト",
+			"output": "\"日本語のテキスト\""
+		},
+		{
+			"input": "﻿bom",
+			"output": "\"﻿bom\""
+		},
+		{
+			"input": "nel",
+			"output": "\"nel\""
+		},
+		{
+			"input": " \t\n\u000b\f\r        　﻿x y　",
+			"output": "\" \\t\\n\\u000b\\f\\r        　﻿x y　\""
+		},
+		{
+			"input": "quote \" backslash \\ slash /",
+			"output": "\"quote \\\" backslash \\\\ slash /\""
+		},
+		{
+			"input": "\u0000\u0001\b\t\n\u000b\f\r\u001f  ",
+			"output": "\"\\u0000\\u0001\\b\\t\\n\\u000b\\f\\r\\u001f  \""
+		},
+		{
+			"input": "a&b=c/d?e#f g+h%i",
+			"output": "\"a&b=c/d?e#f g+h%i\""
+		},
+		{
+			"input": "-_.!~*'()",
+			"output": "\"-_.!~*'()\""
+		},
+		{
+			"input": "𝔘𝔫𝔦𝔠𝔬𝔡𝔢",
+			"output": "\"𝔘𝔫𝔦𝔠𝔬𝔡𝔢\""
+		}
+	]
+}

@@ -1,0 +1,17 @@
+[package]
+name = "research-application"
+description = "Runner-side use cases (research pipeline, notebook assist, ingest) and the ports adapters implement"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+research-js = { workspace = true }
+research-domain = { workspace = true }
+async-trait = { workspace = true }
+tokio-util = { workspace = true }
+
+[lints]
+workspace = true

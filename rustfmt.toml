@@ -1,0 +1,3 @@
+# Matches Biome's TypeScript style (tabs, 100 columns).
+hard_tabs = true
+max_width = 100

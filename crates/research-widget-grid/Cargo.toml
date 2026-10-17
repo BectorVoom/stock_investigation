@@ -1,0 +1,16 @@
+[package]
+name = "research-widget-grid"
+description = "Notebook widget layout and agent commands (port of packages/widget-grid core + agent)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+research-js = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true
