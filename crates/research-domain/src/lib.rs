@@ -11,5 +11,5 @@ pub mod jobs;
 pub mod market;
 pub mod news;
 pub mod text;
-pub mod watchlist;
 pub mod time;
+pub mod watchlist;
