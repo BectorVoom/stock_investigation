@@ -1,4 +1,9 @@
-import { DATASET_LIMITS, widgetCoreSchema } from "@research/contracts";
+import {
+	DATASET_LIMITS,
+	datasetSchema,
+	widgetCoreSchema,
+	workspaceViewSchema,
+} from "@research/contracts";
 import {
 	buildLineModel,
 	ChartNotices,
@@ -117,7 +122,7 @@ describe("fix round 1: chart parity defects", () => {
 		expect(middle - first).toBeGreaterThan(last - middle);
 
 		// widgetFromComponent fills xKind from the source x column.
-		const view = {
+		const view = workspaceViewSchema.parse({
 			...WORKSPACE_VIEW,
 			datasets: [
 				{
@@ -159,8 +164,9 @@ describe("fix round 1: chart parity defects", () => {
 						},
 					},
 				],
+				layout: { order: ["line_date"], columns: 1 },
 			},
-		} as typeof WORKSPACE_VIEW;
+		});
 		const component = view.state.components[0];
 		if (component === undefined) throw new Error("line_date is missing");
 		const core = widgetFromComponent(component, view);
@@ -247,7 +253,9 @@ describe("fix round 1: chart parity defects", () => {
 			],
 		} as const;
 		const converted = losslessChartWidget({
-			dataset: dataset as never,
+			dataset: datasetSchema.parse(dataset),
+			sourceIds: [],
+			evidence: [],
 			xKey: "d",
 			series: [
 				{ key: "a", label: "A" },
@@ -293,7 +301,9 @@ describe("fix round 1: chart parity defects", () => {
 			],
 		} as const;
 		const converted = losslessChartWidget({
-			dataset: dataset as never,
+			dataset: datasetSchema.parse(dataset),
+			sourceIds: [],
+			evidence: [],
 			xKey: "d",
 			series: [{ key: "a", label: "A" }],
 			chartType: "line",
@@ -327,7 +337,9 @@ describe("fix round 1: chart parity defects", () => {
 			],
 		} as const;
 		const converted = losslessChartWidget({
-			dataset: dataset as never,
+			dataset: datasetSchema.parse(dataset),
+			sourceIds: [],
+			evidence: [],
 			xKey: "q",
 			series: [{ key: "a", label: "A" }],
 			chartType: "line",
@@ -338,9 +350,9 @@ describe("fix round 1: chart parity defects", () => {
 			widgetId: "w-repeat",
 		});
 		if (converted?.type !== "chart") throw new Error("expected a chart widget");
-		expect(converted.series[0]?.points).toEqual([
-			{ x: "Q1", y: 10 },
-			{ x: "Q1", y: 20 },
+		expect(converted.series[0]?.points.map((point) => [point.x, point.y])).toEqual([
+			["Q1", 10],
+			["Q1", 20],
 		]);
 	});
 
@@ -361,7 +373,9 @@ describe("fix round 1: chart parity defects", () => {
 			],
 		} as const;
 		const converted = losslessChartWidget({
-			dataset: dataset as never,
+			dataset: datasetSchema.parse(dataset),
+			sourceIds: [],
+			evidence: [],
 			xKey: "d",
 			series: [{ key: "m", label: "Balance" }],
 			chartType: "line",
@@ -373,7 +387,7 @@ describe("fix round 1: chart parity defects", () => {
 		});
 		expect(converted).toBeNull();
 		// And the guarded source really does withhold it (so Chat withholds too).
-		const guarded = guardDataset(dataset as never, new Map([["m", ["Balance"]]]));
+		const guarded = guardDataset(datasetSchema.parse(dataset), new Map([["m", ["Balance"]]]));
 		expect(guarded.withheldColumns.size).toBe(1);
 	});
 
@@ -396,7 +410,9 @@ describe("fix round 1: chart parity defects", () => {
 			],
 		} as const;
 		const converted = losslessChartWidget({
-			dataset: dataset as never,
+			dataset: datasetSchema.parse(dataset),
+			sourceIds: [],
+			evidence: [],
 			xKey: "d",
 			series: [
 				{ key: "a", label: "A" },

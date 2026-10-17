@@ -2,6 +2,8 @@ import {
 	apiErrorBodySchema,
 	CSRF_HEADER,
 	CSRF_HEADER_VALUE,
+	chartProvenanceAddedTo,
+	chartProvenanceRefusal,
 	type HomeWidget,
 	homeDashboardResponseSchema,
 } from "@research/contracts";
@@ -67,6 +69,10 @@ export function createHomeDashboardStore(
 	const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 	const dashboardUrl = `${apiOrigin}/api/v1/home/dashboard`;
 
+	// The dashboard as last read or written, so a write can be checked
+	// against the page the agent's commands started from (ADR-0026).
+	let lastSeen: WidgetLayoutRecord<HomeWidget, number> | null = null;
+
 	const read = async (): Promise<
 		Result<WidgetLayoutRecord<HomeWidget, number>, WidgetAgentFailure>
 	> => {
@@ -85,13 +91,26 @@ export function createHomeDashboardStore(
 		if (response.status !== 200 || body === null) return err(badAnswer(apiOrigin, response.status));
 		const parsed = homeDashboardResponseSchema.safeParse(body);
 		if (!parsed.success) return err(badAnswer(apiOrigin, response.status));
-		return ok({ widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version });
+		lastSeen = { widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version };
+		return ok(lastSeen);
 	};
 
 	const write = async (
 		widgets: readonly HomeWidget[],
 		revision: number,
 	): Promise<Result<WidgetLayoutRecord<HomeWidget, number>, WidgetAgentFailure>> => {
+		// Only a page that carries provenance at all needs the page it started
+		// from; ordinary writes cost no extra request.
+		if (chartProvenanceAddedTo(widgets, []) !== null) {
+			if (lastSeen === null || lastSeen.revision !== revision) {
+				const current = await read();
+				if (!current.ok) return current;
+			}
+			const gained = chartProvenanceAddedTo(widgets, lastSeen?.widgets ?? []);
+			if (gained !== null) {
+				return err({ code: "INVALID_WIDGET", message: chartProvenanceRefusal(gained) });
+			}
+		}
 		let response: Response;
 		try {
 			response = await fetchImpl(dashboardUrl, {
@@ -116,7 +135,8 @@ export function createHomeDashboardStore(
 		if (response.status === 200 && body !== null) {
 			const parsed = homeDashboardResponseSchema.safeParse(body);
 			if (parsed.success) {
-				return ok({ widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version });
+				lastSeen = { widgets: [...parsed.data.dashboard.widgets], revision: parsed.data.version };
+				return ok(lastSeen);
 			}
 			return err(badAnswer(apiOrigin, response.status));
 		}

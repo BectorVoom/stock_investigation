@@ -302,7 +302,10 @@ titles kept from the Chat component it was saved from, and its optional
 `xKind` (`text` / `number` / `date`, absent is `text`) keeps date/number x
 positioning for line charts. A chart component is saved as a `chart` widget
 only when the conversion is lossless (otherwise a `research` widget, identical
-by construction); candlestick charts always save as `research`.
+by construction); candlestick charts always save as `research`. It renders
+inside the registry's `ChartShell` with the heading hidden, and carries its
+numbers' provenance (ADR-0026), so its basis note, data-table markers,
+citations and Sources list read exactly as the Chat chart's.
 
 ## 11. How this is enforced
 

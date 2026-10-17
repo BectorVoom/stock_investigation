@@ -3,6 +3,7 @@ import {
 	type HomeWidget,
 	type HomeWidgetType,
 	homeWidgetSchema,
+	pruneUncitedChartSources,
 	WIDGET_TYPE_META,
 	widgetAgentDescription,
 	widgetContentSchema,
@@ -46,7 +47,7 @@ interface DraftWidget {
  */
 function buildHomeWidget(type: HomeWidgetType, draft: DraftWidget): Result<HomeWidget, string> {
 	const parsed = homeWidgetSchema.safeParse({
-		...draft.config,
+		...(type === "chart" ? pruneUncitedChartSources(draft.config) : draft.config),
 		widgetId: draft.widgetId,
 		title: draft.title,
 		size: draft.size,

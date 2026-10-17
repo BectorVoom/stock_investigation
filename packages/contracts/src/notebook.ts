@@ -6,6 +6,8 @@ import {
 	WIDGET_CORE_SHAPE,
 	WIDGET_LIMITS,
 	type WidgetCore,
+	widgetChartSourcesMatch,
+	widgetChartSourcesMatchIssue,
 	widgetContentBytes,
 	widgetRowsMatchColumns,
 	widgetRowsMatchColumnsIssue,
@@ -90,7 +92,8 @@ export const notebookWidgetSchema = z
 		z.strictObject({ ...C, ...M, ...S["earnings-calendar"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
-	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue);
+	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
+	.refine(widgetChartSourcesMatch, widgetChartSourcesMatchIssue);
 export type NotebookWidget = z.infer<typeof notebookWidgetSchema>;
 
 export const notebookSchema = z

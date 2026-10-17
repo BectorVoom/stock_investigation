@@ -1,6 +1,6 @@
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { formatNumber, truncateLabel } from "../format.ts";
-import { ChartFrame, ChartLegend } from "./ChartFrame.tsx";
+import { axesPhrase, ChartFrame, ChartLegend } from "./ChartFrame.tsx";
 import { CHART_INK } from "./chartMath.ts";
 import type { LineModel } from "./lineModel.ts";
 
@@ -33,13 +33,13 @@ export function LinePlot(props: {
 			const value = series.valueByRow.get(rowIndex);
 			return `${series.label}: ${value === undefined ? "unavailable" : `${formatNumber(value)} ${props.yUnit}`}`;
 		});
-		return `${props.xLabel} ${current.rowLabels[rowIndex] ?? "unavailable"} — ${values.join(" · ")}`;
+		return `${[props.xLabel, current.rowLabels[rowIndex] ?? "unavailable"].filter((part) => part.length > 0).join(" ")} — ${values.join(" · ")}`;
 	});
 
 	return (
 		<>
 			<ChartFrame
-				ariaLabel={`Line chart: ${props.title}. ${yAxisTitle()} by ${props.xLabel}. Series: ${props.model.series
+				ariaLabel={`Line chart: ${props.title}. ${axesPhrase(yAxisTitle(), props.xLabel)}Series: ${props.model.series
 					.map((series) => series.label)
 					.join(", ")}.`}
 				plot={props.model.plot}

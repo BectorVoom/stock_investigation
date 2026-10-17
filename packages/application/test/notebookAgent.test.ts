@@ -117,6 +117,83 @@ describe("applyNotebookCommands", () => {
 		]);
 	});
 
+	it("keeps a chart's provenance through an update but never lets the assistant add any (ADR-0026)", async () => {
+		const source = {
+			evidenceId: "ev_1",
+			sourceUrl: "https://example.com/a",
+			title: "Outlook",
+			publisher: "Example",
+			publishedAt: null,
+			retrievedAt: NOW,
+			effectiveAt: null,
+			excerpt: null,
+			checksum: "d".repeat(64),
+			sourceClass: "news",
+		} as const;
+		const sourced = { x: "Grid", y: 4, sourceId: "ev_1", asOf: "2026-10-01" };
+		const cited: NotebookWidget = {
+			widgetId: "w-c",
+			size: "medium",
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+			type: "chart",
+			title: "Growth",
+			chartType: "bar",
+			unit: "%",
+			series: [{ name: "Base", points: [sourced, { x: "AI", y: 16.5, basis: "assumption" }] }],
+			sources: [{ ...source }],
+		};
+		const start = notebookOf([cited]);
+
+		// Replacing the series with plain numbers drops the copy nobody cites any more.
+		const replaced = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "update",
+					widgetId: "w-c",
+					config: { series: [{ name: "Base", points: [{ x: "AI", y: 20 }] }] },
+				},
+			],
+			context(),
+		);
+		if (!replaced.ok) throw new Error(`expected success: ${replaced.error.failure.message}`);
+		const updated = replaced.value.widgets[0];
+		expect(updated?.type === "chart" ? updated.sources : "not a chart").toEqual([]);
+
+		// Keeping the sourced point as it is stays allowed…
+		const kept = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "update",
+					widgetId: "w-c",
+					config: { series: [{ name: "Base", points: [sourced] }] },
+				},
+			],
+			context(),
+		);
+		expect(kept.ok).toBe(true);
+
+		// …but a real citation on a changed number is refused.
+		const borrowed = await applyNotebookCommands(
+			start,
+			[
+				{
+					kind: "update",
+					widgetId: "w-c",
+					config: { series: [{ name: "Base", points: [{ ...sourced, y: 40 }] }] },
+				},
+			],
+			context(),
+		);
+		if (borrowed.ok) throw new Error("expected the turn to be refused");
+		expect(borrowed.error.failure.code).toBe("INVALID_COMMAND");
+		expect(borrowed.error.failure.message).toContain('chart "Growth"');
+	});
+
 	it("adds every market type through its config", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

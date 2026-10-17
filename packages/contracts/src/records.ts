@@ -494,23 +494,23 @@ export const datasetCellSchema = z
 	});
 export type DatasetCell = z.infer<typeof datasetCellSchema>;
 
-export const datasetColumnSchema = z.strictObject({
-	key: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,39}$/),
-	label: z.string().min(1).max(80),
-	kind: z.enum(["text", "number", "date"]),
-	/** Mandatory for number columns so no financial figure is rendered unit-less (UI-007). */
-	unit: z.string().min(1).max(40).optional(),
-});
-
 /**
- * Bounds the dataset the Notebook `chart` widget rebuilds from (`chartWidgetDataset.ts` in `@research/ui-registry`):
- * column labels and number units. The numbers match `datasetColumnSchema` above,
- * so the widget's rebuild can never exceed what a stored dataset allows.
+ * Bounds of a dataset column, named so code that builds a dataset (the
+ * Notebook `chart` widget's rebuild, `chartWidgetDataset.ts`) uses the same
+ * numbers the schema below enforces.
  */
 export const DATASET_LIMITS = {
 	maxColumnLabelChars: 80,
 	maxColumnUnitChars: 40,
 } as const;
+
+export const datasetColumnSchema = z.strictObject({
+	key: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,39}$/),
+	label: z.string().min(1).max(DATASET_LIMITS.maxColumnLabelChars),
+	kind: z.enum(["text", "number", "date"]),
+	/** Mandatory for number columns so no financial figure is rendered unit-less (UI-007). */
+	unit: z.string().min(1).max(DATASET_LIMITS.maxColumnUnitChars).optional(),
+});
 
 export const datasetSchema = z
 	.strictObject({

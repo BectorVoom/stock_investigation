@@ -221,6 +221,84 @@ describe("chart parity between Chat previews and Notebook widgets", () => {
 		expect(notebookMsft?.querySelectorAll("circle")).toHaveLength(2);
 	});
 
+	it("carries provenance: the same basis note, cell markers, citations and Sources as Chat (ADR-0026)", () => {
+		const evidence = WORKSPACE_VIEW.sources[0];
+		if (evidence === undefined) throw new Error("the fixture has no evidence");
+		const dataset = datasetSchema.parse({
+			datasetId: "ds_sourced",
+			title: "Sourced prices",
+			createdAt: "2026-10-17T00:00:00Z",
+			columns: [
+				{ key: "date", label: "Date", kind: "date" },
+				{ key: "px", label: "Price", kind: "number", unit: "USD" },
+			],
+			rows: [
+				{
+					date: { v: "2026-10-07" },
+					px: { v: 10, sourceId: evidence.evidenceId, asOf: "2026-10-07" },
+				},
+				{ date: { v: "2026-10-08" }, px: { v: 11, basis: "assumption" } },
+				{ date: { v: "2026-10-09" }, px: { v: 12, basis: "derived" } },
+			],
+		});
+		const component = {
+			componentId: "run_1_sourced",
+			componentType: "line-chart",
+			schemaVersion: 1,
+			props: {
+				title: "Sourced prices",
+				datasetRef: "ds_sourced",
+				xKey: "date",
+				series: [{ key: "px", label: "Price" }],
+				xLabel: "Date",
+				yLabel: "Price",
+				yUnit: "USD",
+				sourceIds: [evidence.evidenceId],
+			},
+		} as const;
+		const view = workspaceViewSchema.parse({
+			...WORKSPACE_VIEW,
+			datasets: [dataset],
+			state: {
+				...WORKSPACE_VIEW.state,
+				components: [component],
+				layout: { order: ["run_1_sourced"], columns: 1 },
+			},
+		});
+		const parsedComponent = view.state.components[0];
+		if (parsedComponent === undefined) throw new Error("sourced component is missing");
+		const context: RenderContext = {
+			datasets: new Map([[dataset.datasetId, dataset]]),
+			sources: new Map([[evidence.evidenceId, evidence]]),
+			selection: null,
+			onSelect: () => {},
+		};
+		const provenanceOf = (root: ParentNode) => ({
+			basisNote: root.querySelector("[data-chart-basis-note]")?.textContent ?? null,
+			sources: root.querySelector('section[aria-label="Sources"]')?.textContent ?? null,
+			marks: root.querySelector('[data-chart-part="marks"]')?.innerHTML ?? null,
+			tableCells: texts(root, "details td"),
+		});
+		const chat = render(() => (
+			<WorkspaceComponentView component={parsedComponent} context={context} registry={registry} />
+		));
+		const inChat = provenanceOf(chat.container);
+		expect(inChat.basisNote).toContain("1 assumption");
+		expect(inChat.sources).toContain("1 source");
+		cleanup();
+
+		const core = widgetFromComponent(parsedComponent, view);
+		if (core?.type !== "chart") throw new Error("expected a chart widget");
+		expect(core.sources?.map((source) => source.evidenceId)).toEqual([evidence.evidenceId]);
+		const notebook = render(() => <ChartWidget widget={core} />);
+		expect(provenanceOf(notebook.container)).toEqual(inChat);
+		cleanup();
+
+		// A citation the conversation cannot resolve stays a research widget.
+		const missing = workspaceViewSchema.parse({ ...view, sources: [] });
+		expect(widgetFromComponent(parsedComponent, missing)?.type).toBe("research");
+	});
+
 	it("lines up series with different x labels by label and never draws a missing value as 0", () => {
 		const widget = widgetCoreSchema.parse({
 			widgetId: "w-mixed",

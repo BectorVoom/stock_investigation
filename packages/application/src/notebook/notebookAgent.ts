@@ -1,4 +1,6 @@
 import {
+	chartProvenanceAddedTo,
+	chartProvenanceRefusal,
 	type MarketWidgetCore,
 	NOTEBOOK_LIMITS,
 	type Notebook,
@@ -7,6 +9,7 @@ import {
 	type NotebookWidget,
 	type NotebookWidgetOrigin,
 	notebookCapacityProblem,
+	pruneUncitedChartSources,
 	WIDGET_TYPE_META,
 	WIDGET_TYPES,
 	type WidgetCore,
@@ -82,7 +85,7 @@ function buildCore(
 ): Result<WidgetCore, string> {
 	// Generic fields win over same-named config keys, so config cannot smuggle them in.
 	const parsed = widgetCoreSchema.safeParse({
-		...draft.config,
+		...(type === "chart" ? pruneUncitedChartSources(draft.config) : draft.config),
 		widgetId: draft.widgetId,
 		title: draft.title,
 		size: draft.size,
@@ -358,6 +361,13 @@ export async function applyNotebookCommands(
 	// the turn's result, since only the whole notebook can exceed it.
 	const capacity = notebookCapacityProblem(widgets, notebook.widgets);
 	if (capacity !== null) return err({ index: commands.length - 1, failure: capacity });
+	const gained = chartProvenanceAddedTo(widgets, notebook.widgets);
+	if (gained !== null) {
+		return err({
+			index: commands.length - 1,
+			failure: { code: "INVALID_COMMAND", message: chartProvenanceRefusal(gained) },
+		});
+	}
 	return ok({ widgets, snapshot, changes });
 }
 

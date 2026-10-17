@@ -1,4 +1,4 @@
-import { DEFAULT_HOME_DASHBOARD } from "@research/contracts";
+import { DEFAULT_HOME_DASHBOARD, homeWidgetSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { createHomeDashboardStore, type HomeStoreFetch } from "../src/homeStore.ts";
 
@@ -58,6 +58,28 @@ describe("createHomeDashboardStore", () => {
 			expect(read.error.code).toBe("STORE_UNAVAILABLE");
 			expect(read.error.message).toContain(API_ORIGIN);
 		}
+	});
+
+	it("refuses a write that attaches a source to a new number, before any PUT (ADR-0026)", async () => {
+		const sourced = homeWidgetSchema.parse({
+			widgetId: "w_chart",
+			type: "chart",
+			title: "Borrowed",
+			size: "medium",
+			chartType: "line",
+			unit: "USD",
+			series: [{ name: "P", points: [{ x: "Mon", y: 99, basis: "assumption" }] }],
+		});
+		const backend = recordingFetch((_url, init) => {
+			if (init.method === "PUT") throw new Error("the store must not PUT");
+			return jsonResponse(dashboardBody(4));
+		});
+		const store = createHomeDashboardStore({ apiOrigin: API_ORIGIN, fetch: backend.fetch });
+		const written = await store.write([...DEFAULT_HOME_DASHBOARD.widgets, sourced], 4);
+		if (written.ok) throw new Error("expected a refusal");
+		expect(written.error.code).toBe("INVALID_WIDGET");
+		expect(written.error.message).toContain('chart "Borrowed"');
+		expect(backend.calls.map((call) => call.init.method)).toEqual(["GET"]);
 	});
 
 	it("writes with Origin, the CSRF header and the expected version", async () => {

@@ -40,6 +40,7 @@ export {
 } from "./charts/chartMath.ts";
 export {
 	chartWidgetSeries,
+	chartWidgetSources,
 	chartWidgetToGuardedDataset,
 	chartWidgetXAxisTitle,
 } from "./charts/chartWidgetDataset.ts";

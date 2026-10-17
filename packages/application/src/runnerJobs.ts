@@ -1085,7 +1085,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.failureDetail = null;
 					patch.approvalRequest = null;
 					const built = await notebookAssistedEffects(
-						{ notebooks: deps.notebooks, workspaces: deps.workspaces, ids: deps.ids },
+						{
+							notebooks: deps.notebooks,
+							workspaces: deps.workspaces,
+							ids: deps.ids,
+							records: deps.records,
+						},
 						job,
 						request,
 						now,
