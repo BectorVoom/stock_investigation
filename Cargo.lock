@@ -665,6 +665,7 @@ dependencies = [
  "research-js",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
