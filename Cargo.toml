@@ -42,6 +42,7 @@ async-trait = "0.1"
 base64 = "0.22"
 brotli-decompressor = "5"
 bytes = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 flate2 = "1"
 futures-util = "0.3"
 hex = "0.4"

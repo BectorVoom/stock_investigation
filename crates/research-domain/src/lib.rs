@@ -5,3 +5,4 @@
 //! canonical_url}` (net worker) and `news::feed` (feed worker).
 
 pub mod news;
+pub mod time;

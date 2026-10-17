@@ -8,6 +8,8 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+# The operating system's time zone for local-time `Date.parse` (Node uses ICU's).
+chrono = { workspace = true }
 
 [dev-dependencies]
 serde = { workspace = true }
