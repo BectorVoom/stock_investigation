@@ -4,6 +4,7 @@ import {
 	agentsResponseSchema,
 	DEFAULT_AGENT_SETTINGS,
 	OPENROUTER_FREE_AGENT_ID,
+	RUN_LIMITS,
 } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -133,7 +134,16 @@ describe("Agent settings: loading", () => {
 		const section = screen.getByRole("region", { name: "AI agent" });
 		expect(section.textContent).toContain("These are the defaults — they have not been saved yet.");
 		expect(field("Effort").value).toBe("medium");
-		expect(field("Max agent steps").value).toBe("6");
+		// The per-question limits are fixed and not shown (ADR-0029); only the spend is asked.
+		expect(section.textContent).not.toContain("Limits for each question");
+		for (const removed of [
+			"Max agent steps",
+			"Max tool calls",
+			"Max wall-clock minutes",
+			"Max input bytes",
+		]) {
+			expect(screen.queryByLabelText(removed)).toBeNull();
+		}
 		expect(field("Max spend (USD)").value).toBe("");
 		expect(webAccessCheckbox().checked).toBe(true);
 		expect(saveButton().disabled).toBe(true);
@@ -170,14 +180,13 @@ describe("Agent settings: loading", () => {
 });
 
 describe("Agent settings: saving", () => {
-	it("saves the chosen backend, model, effort, limits and web access in the contract shape", async () => {
+	it("saves the chosen backend, model, effort and web access with the fixed limits in the contract shape", async () => {
 		mount();
 		await sectionReady();
 		chooseBackend("claude-code");
 		chooseOther();
 		typeModelId("custom/model");
 		fireEvent.change(screen.getByLabelText("Effort"), { target: { value: "high" } });
-		fireEvent.input(screen.getByLabelText("Max agent steps"), { target: { value: "4" } });
 		fireEvent.click(
 			screen.getByRole("checkbox", { name: "Allow the agent to open public web pages" }),
 		);
@@ -189,13 +198,7 @@ describe("Agent settings: saving", () => {
 			defaultAgentId: "claude-code",
 			models: { "claude-code": "custom/model" },
 			effort: "high",
-			budget: {
-				maxAgentSteps: 4,
-				maxToolCalls: 20,
-				maxWallClockMs: 600_000,
-				maxInputBytes: 400_000,
-				maxSpendUsd: null,
-			},
+			budget: { ...RUN_LIMITS, maxSpendUsd: null },
 			webAccess: "off",
 		});
 		// Nothing left to save.
@@ -260,9 +263,9 @@ describe("Agent settings: saving", () => {
 		// Storing the spend needs no consent checkbox: saving is allowed.
 		expect(saveButton().disabled).toBe(false);
 
-		// Plan-limited: no spend is stored and the field is disabled.
+		// Plan-limited: no spend is stored and the field is not shown.
 		chooseBackend("claude-code");
-		expect(field("Max spend (USD)").disabled).toBe(true);
+		expect(screen.queryByLabelText("Max spend (USD)")).toBeNull();
 		expect(document.querySelector('[data-cost-statement="plan-limited"]')).not.toBeNull();
 	});
 
@@ -274,14 +277,14 @@ describe("Agent settings: saving", () => {
 		expect(saveButton().disabled).toBe(false);
 	});
 
-	it("blocks saving with invalid numbers and says what is wrong", async () => {
+	it("blocks saving with an invalid spend and says what is wrong", async () => {
 		mount();
 		await sectionReady();
-		chooseBackend("claude-code");
-		fireEvent.input(screen.getByLabelText("Max agent steps"), { target: { value: "99" } });
+		chooseBackend("openrouter");
+		fireEvent.input(field("Max spend (USD)"), { target: { value: "99" } });
 		expect(saveButton().disabled).toBe(true);
 		expect(screen.getByRole("list", { name: "Before you can save" }).textContent).toContain(
-			"Max agent steps must be a whole number from 1 to 12.",
+			"Max spend must be greater than 0 and at most 50 USD.",
 		);
 	});
 
@@ -400,7 +403,10 @@ describe("Agent settings: carried-over choices", () => {
 
 		fireEvent.click(saveButton());
 		await screen.findByText(/Saved /);
-		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toEqual(AGENT_SETTINGS);
+		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toEqual({
+			...AGENT_SETTINGS,
+			budget: { ...RUN_LIMITS, maxSpendUsd: null },
+		});
 		// Saving returns to the saved state: nothing left to save.
 		await waitFor(() => expect(saveButton().disabled).toBe(true));
 	});

@@ -1,4 +1,4 @@
-import { createResearchRunRequestSchema, type ResearchRun } from "@research/contracts";
+import { createResearchRunRequestSchema, type ResearchRun, RUN_LIMITS } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1267,7 +1267,7 @@ describe("chat run controls", () => {
 		expect(shown).toContain("choose another model in Settings");
 	});
 
-	it("shows the approval request and resumes with the approved budget", async () => {
+	it("shows the approval request and resumes under the fixed limits (ADR-0029)", async () => {
 		server.runs = [
 			makeRun({
 				runId: "run_5",
@@ -1283,7 +1283,9 @@ describe("chat run controls", () => {
 		const form = await screen.findByRole("form", { name: "Approve run run_5" });
 		expect(form.textContent).toContain("MAX_TOOL_CALLS");
 		expect(form.textContent).toContain("needs 15 more tool calls");
-		fireEvent.input(within(form).getByLabelText("Max tool calls"), { target: { value: "35" } });
+		// The limits are not edited any more; a plan-limited backend asks for no spend either.
+		expect(within(form).queryByLabelText("Max tool calls")).toBeNull();
+		expect(within(form).queryByLabelText("Max spend (USD)")).toBeNull();
 		fireEvent.click(within(form).getByRole("button", { name: "Approve and resume" }));
 
 		await waitFor(() =>
@@ -1292,13 +1294,7 @@ describe("chat run controls", () => {
 			).toBe("pending"),
 		);
 		expect(backend.requestsTo("POST", /approve$/)[0]?.body).toEqual({
-			budget: {
-				maxAgentSteps: 6,
-				maxToolCalls: 35,
-				maxWallClockMs: 600_000,
-				maxInputBytes: 400_000,
-				maxSpendUsd: null,
-			},
+			budget: { ...RUN_LIMITS, maxSpendUsd: null },
 		});
 	});
 });
@@ -1623,8 +1619,9 @@ describe("conversation local state across polls (finding 3)", () => {
 		));
 
 		const form = await screen.findByRole("form", { name: "Approve run run_a" });
-		fireEvent.input(within(form).getByLabelText("Max tool calls"), { target: { value: "35" } });
-		expect((within(form).getByLabelText("Max tool calls") as HTMLInputElement).value).toBe("35");
+		// No runner reported this backend, so its cost model is unknown and the spend is asked.
+		fireEvent.input(within(form).getByLabelText("Max spend (USD)"), { target: { value: "2.5" } });
+		expect((within(form).getByLabelText("Max spend (USD)") as HTMLInputElement).value).toBe("2.5");
 
 		// Another run finishes, and every snapshot is a fresh object (as every
 		// poll delivers): the approval draft being typed must survive. The
@@ -1648,8 +1645,8 @@ describe("conversation local state across polls (finding 3)", () => {
 		await screen.findByRole("article", { name: "Run run_b" });
 		const liveForm = screen.getByRole("form", { name: "Approve run run_a" });
 		expect(liveForm).toBe(form);
-		expect((within(liveForm).getByLabelText("Max tool calls") as HTMLInputElement).value).toBe(
-			"35",
+		expect((within(liveForm).getByLabelText("Max spend (USD)") as HTMLInputElement).value).toBe(
+			"2.5",
 		);
 	});
 });

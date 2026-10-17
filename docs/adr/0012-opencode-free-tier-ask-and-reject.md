@@ -1,6 +1,8 @@
 # ADR-0012: OpenCode free-tier models via ask-and-reject
 
-**Status:** Accepted · **Date:** 2026-10-12
+**Status:** Accepted · **Date:** 2026-10-12 · Decision 3 amended by
+[ADR-0027](0027-opencode-free-tier-continues-after-rejected-calls.md): a
+rejected call no longer ends the turn
 
 ## Context
 

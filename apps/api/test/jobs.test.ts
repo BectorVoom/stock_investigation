@@ -2,6 +2,7 @@ import {
 	completeJobResponseSchema,
 	conversationResponseSchema,
 	heartbeatResponseSchema,
+	RUN_LIMITS,
 	researchRunListResponseSchema,
 	researchRunResponseSchema,
 	runRecordsResponseSchema,
@@ -783,8 +784,8 @@ describe("cancel, retry, approval (FR-014)", () => {
 				model: "opencode/nemotron-3.5-lightning-free",
 				effort: "high",
 				webAccess: "public-web",
-				// A plan-limited backend never carries a spend allowance.
-				budget: { ...BUDGET, maxSpendUsd: null },
+				// The fixed limits (ADR-0029); a plan-limited backend never carries a spend allowance.
+				budget: { ...RUN_LIMITS, maxSpendUsd: null },
 			});
 		});
 
@@ -832,7 +833,7 @@ describe("cancel, retry, approval (FR-014)", () => {
 			expect(await errorCode(refused)).toBe("SPEND_CONSENT_REQUIRED");
 		});
 
-		it("retries a metered run whose backend, model and limits are unchanged", async () => {
+		it("retries a metered run whose backend, model and spend are unchanged, under the fixed limits", async () => {
 			const harness = createHarness();
 			const workspaceId = await createWorkspace(harness);
 			const budget = { ...BUDGET, maxSpendUsd: 1.5 };
@@ -853,7 +854,8 @@ describe("cancel, retry, approval (FR-014)", () => {
 
 			expect(retried.run.request?.agentId).toBe("openrouter");
 			expect(retried.run.request?.effort).toBe("high");
-			expect(retried.run.request?.budget).toEqual(budget);
+			// The older run's limits differed; only the spend carries the consent (ADR-0029).
+			expect(retried.run.request?.budget).toEqual({ ...RUN_LIMITS, maxSpendUsd: 1.5 });
 		});
 	});
 

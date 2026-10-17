@@ -1,4 +1,5 @@
 import type { AgentEvent } from "@research/contracts";
+import type { JsonValue } from "@research/domain";
 import {
 	isCommandNotFound,
 	MAX_TERMINATION_MS,
@@ -27,6 +28,18 @@ export type LineVerdict =
 	| { readonly kind: "ignored" }
 	| { readonly kind: "malformed" }
 	| { readonly kind: "text"; readonly text: string }
+	/**
+	 * A research-tool request for the orchestrator, which authorizes and runs
+	 * it under its own policy (ADR-0003). Nothing ran inside the CLI.
+	 */
+	| {
+			readonly kind: "tool.request";
+			readonly toolId: string;
+			readonly args: JsonValue;
+			readonly callId: string;
+	  }
+	/** The turn is complete before the CLI exits: stop the process and report success. */
+	| { readonly kind: "finished" }
 	/** Ends the turn immediately and terminates the process (e.g. a tool was used). */
 	| { readonly kind: "fatal"; readonly failure: ProviderFailure };
 
@@ -145,6 +158,7 @@ export async function* runCliTurn(
 	let emittedTextChars = 0;
 	let malformedLines = 0;
 	let fatal: ProviderFailure | null = null;
+	let finishedEarly = false;
 	let reaping: Promise<void> | null = null;
 	const stopAndReap = (): Promise<void> => {
 		guard.stop("finished");
@@ -152,7 +166,7 @@ export async function* runCliTurn(
 		return reaping;
 	};
 	try {
-		while (fatal === null) {
+		while (fatal === null && !finishedEarly) {
 			const next = await raceStop(guard, settle(lines.next()));
 			if (next.kind === "stopped") break;
 			// A stream that errors has simply ended; the exit status decides what that means.
@@ -173,6 +187,15 @@ export async function* runCliTurn(
 					break;
 				}
 				yield textDeltaEvent(verdict.text);
+			} else if (verdict.kind === "tool.request") {
+				yield {
+					type: "tool.request",
+					toolId: verdict.toolId,
+					args: verdict.args,
+					callId: verdict.callId,
+				};
+			} else if (verdict.kind === "finished") {
+				finishedEarly = true;
 			} else if (verdict.kind === "fatal") {
 				fatal = verdict.failure;
 			} else if (verdict.kind === "malformed") {
@@ -185,6 +208,14 @@ export async function* runCliTurn(
 			await stopAndReap();
 			yield usageEvent(null);
 			yield failedEvent(fatal);
+			return;
+		}
+		if (finishedEarly && guard.reason() === null) {
+			// The interpreter has everything the turn needs; the CLI would only
+			// start another model step. Its exit status no longer decides anything.
+			await stopAndReap();
+			yield usageEvent(null);
+			yield COMPLETED_EVENT;
 			return;
 		}
 		// Checked explicitly so a cancellation is never reported as whatever the dying process printed.

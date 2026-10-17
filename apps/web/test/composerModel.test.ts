@@ -2,6 +2,7 @@ import {
 	type AgentSettings,
 	agentsResponseSchema,
 	OPENROUTER_FREE_AGENT_ID,
+	RUN_LIMITS,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
@@ -47,12 +48,13 @@ const METERED_SETTINGS = settings({
 });
 
 describe("composer evaluation", () => {
-	it("builds the research request from the saved agent settings", () => {
+	it("builds the research request from the saved agent settings under the fixed limits", () => {
 		const result = evaluateComposer(draft(), AGENTS, AGENT_SETTINGS, WORKSPACE_ID);
 		expect(result.problems).toEqual([]);
 		expect(result.model).toBeNull();
 		expect(result.spendConsentRequired).toBe(false);
-		expect(result.budget).toEqual(AGENT_SETTINGS.budget);
+		// Older stored limits (6 steps, 20 tool calls, ...) no longer apply (ADR-0029).
+		expect(result.budget).toEqual({ ...RUN_LIMITS, maxSpendUsd: null });
 		expect(result.request).toEqual({
 			workspaceId: WORKSPACE_ID,
 			question: "Where will storage demand grow?",
@@ -61,7 +63,7 @@ describe("composer evaluation", () => {
 			effort: "medium",
 			horizonYears: 5,
 			markets: ["JP", "US"],
-			budget: AGENT_SETTINGS.budget,
+			budget: { ...RUN_LIMITS, maxSpendUsd: null },
 			webAccess: "off",
 		});
 	});

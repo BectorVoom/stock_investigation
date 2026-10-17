@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createOpenCodeRuntime } from "../../src/providers/index.ts";
 import {
 	buildOpenCodeConfigContent,
+	MAX_REJECTED_TOOL_CALLS,
 	OPENCODE_CONFIG_CONTENT,
 	OPENCODE_FREE_TIER_CONFIG_CONTENT,
 	OPENCODE_FREE_TIER_GATED_PERMISSIONS,
@@ -80,7 +81,8 @@ describe("opencode invocation", () => {
 			"--agent",
 			"research-text",
 			"--model",
-			MODEL,
+			// The run's effort is OpenCode's reasoning variant.
+			`${MODEL}#medium`,
 		]);
 		// Never auto-approve, never attach to a shared or remote server.
 		for (const forbidden of ["--auto", "--server", "--continue", "--session", "--file"]) {
@@ -151,7 +153,7 @@ describe("opencode invocation", () => {
 		const events = await collect(runtime.run(makeRequest(), makeContext({ model: null })));
 
 		expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
-		expect(valueAfter(itemAt(fake.spawns, 0).args, "--model")).toBe("opencode-go/from-env");
+		expect(valueAfter(itemAt(fake.spawns, 0).args, "--model")).toBe("opencode-go/from-env#medium");
 		expect(itemAt(fake.spawns, 0).env).not.toHaveProperty("OPENCODE_MODEL");
 		expect((await runtime.probe()).capabilities.model).toBe("opencode-go/from-env");
 	});
@@ -287,6 +289,105 @@ describe("opencode stream interpretation", () => {
 	});
 });
 
+describe("opencode effort variant", () => {
+	it.each([
+		"low",
+		"medium",
+		"high",
+	] as const)("sends effort %s as the model's reasoning variant", async (effort) => {
+		const { fake, runtime } = runtimeFor(fixtureLines("opencode/ok.jsonl"));
+
+		await collect(runtime.run(makeRequest(), makeContext({ model: MODEL, effort })));
+
+		expect(valueAfter(itemAt(fake.spawns, 0).args, "--model")).toBe(`${MODEL}#${effort}`);
+	});
+
+	it("keeps a variant the owner wrote into the model id", async () => {
+		const { fake, runtime } = runtimeFor(fixtureLines("opencode/ok.jsonl"));
+
+		await collect(
+			runtime.run(makeRequest(), makeContext({ model: `${MODEL}#high`, effort: "low" })),
+		);
+
+		expect(valueAfter(itemAt(fake.spawns, 0).args, "--model")).toBe(`${MODEL}#high`);
+	});
+
+	function variantRuntime(accepted: readonly string[]) {
+		// Recorded live 2026-10-17: provider.no-route "Variant unavailable for <model>: <variant>".
+		const fake = createFakeProcessRunner((spec) => {
+			const argument = valueAfter(spec.args, "--model") ?? "";
+			const variant = argument.includes("#") ? argument.slice(argument.indexOf("#") + 1) : null;
+			return variant === null || accepted.includes(variant)
+				? { lines: fixtureLines("opencode/ok.jsonl") }
+				: { lines: fixtureLines("opencode/variant-unavailable.jsonl"), exit: { code: 1 } };
+		});
+		const runtime = createOpenCodeRuntime(makeEnvironment({ processRunner: fake.runner }), {
+			writeConfigFile: () => Promise.resolve(),
+		});
+		return { fake, runtime };
+	}
+
+	it("falls back from a missing medium to low, and goes straight to low next time", async () => {
+		// glm-5.3-flash-free and deepseek-v4.1-flash-free offer low, high and max, but no medium.
+		const { fake, runtime } = variantRuntime(["low", "high", "max"]);
+
+		const first = await collect(runtime.run(makeRequest(), makeContext({ model: MODEL })));
+		const second = await collect(runtime.run(makeRequest(), makeContext({ model: MODEL })));
+
+		for (const events of [first, second]) {
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+			expect(usageEvents(events)).toHaveLength(1);
+		}
+		expect(fake.spawns.map((spawn) => valueAfter(spawn.args, "--model"))).toEqual([
+			`${MODEL}#medium`,
+			`${MODEL}#low`,
+			`${MODEL}#low`,
+		]);
+	});
+
+	it("falls back from high to max", async () => {
+		const { fake, runtime } = variantRuntime(["max"]);
+
+		await collect(runtime.run(makeRequest(), makeContext({ model: MODEL, effort: "high" })));
+
+		expect(fake.spawns.map((spawn) => valueAfter(spawn.args, "--model"))).toEqual([
+			`${MODEL}#high`,
+			`${MODEL}#max`,
+		]);
+	});
+
+	it("runs without a variant only when the model offers none of the candidates, and remembers that", async () => {
+		const { fake, runtime } = variantRuntime([]);
+
+		const first = await collect(runtime.run(makeRequest(), makeContext({ model: MODEL })));
+		const second = await collect(runtime.run(makeRequest(), makeContext({ model: MODEL })));
+
+		for (const events of [first, second]) {
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+			expect(usageEvents(events)).toHaveLength(1);
+		}
+		expect(fake.spawns.map((spawn) => valueAfter(spawn.args, "--model"))).toEqual([
+			`${MODEL}#medium`,
+			`${MODEL}#low`,
+			MODEL,
+			MODEL,
+		]);
+	});
+
+	it("reports a variant the owner wrote that the model does not offer", async () => {
+		const { fake, runtime } = variantRuntime(["low"]);
+
+		const events = await collect(
+			runtime.run(makeRequest(), makeContext({ model: `${MODEL}#ultra` })),
+		);
+
+		expect(fake.spawns).toHaveLength(1);
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_VARIANT_UNAVAILABLE", retryable: false },
+		]);
+	});
+});
+
 describe("opencode tool-use guard", () => {
 	it.each([
 		[
@@ -319,49 +420,267 @@ describe("opencode tool-use guard", () => {
 		expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
 	});
 
-	it.each([
-		[
-			"a rejected read call",
-			line({
-				type: "tool_use",
-				part: { type: "tool", tool: "read", state: { status: "error" } },
-			}),
-		],
-		[
-			"a rejected shell call with provider text",
-			line({
-				type: "tool_use",
-				part: {
-					type: "tool",
-					tool: "shell",
-					state: {
-						status: "error",
-						error:
-							"This non-interactive run cannot ask the user for permission, so the request was rejected",
-						input: { command: "echo hi" },
-					},
-				},
-			}),
-		],
-	])("reports %s as PROVIDER_TOOL_CALL_REJECTED without surfacing provider text", async (_label, toolLine) => {
-		const fake = createFakeProcessRunner({
-			lines: [textPart("before"), toolLine, textPart("after")],
-			hang: true,
-		});
+	const rejectedRead = line({
+		type: "tool_use",
+		part: { type: "tool", tool: "read", state: { status: "error" } },
+	});
+	const rejectedShellWithProviderText = line({
+		type: "tool_use",
+		part: {
+			type: "tool",
+			tool: "shell",
+			state: {
+				status: "error",
+				error:
+					"This non-interactive run cannot ask the user for permission, so the request was rejected",
+				input: { command: "echo hi" },
+			},
+		},
+	});
+
+	function freeTierRuntime(script: Parameters<typeof createFakeProcessRunner>[0]) {
+		const fake = createFakeProcessRunner(script);
 		const runtime = createOpenCodeRuntime(makeEnvironment({ processRunner: fake.runner }), {
 			writeConfigFile: () => Promise.resolve(),
+		});
+		return { fake, runtime };
+	}
+
+	it.each([
+		["a rejected read call", rejectedRead],
+		["a rejected shell call with provider text", rejectedShellWithProviderText],
+	])("lets a free-tier turn answer after %s, without surfacing provider text", async (_label, toolLine) => {
+		// The live shape: the rejected call ends a step, and the next step carries the answer.
+		const { runtime } = freeTierRuntime({
+			lines: [
+				line({ type: "step_start", part: { type: "step-start" } }),
+				toolLine,
+				line({ type: "step_finish", part: { type: "step-finish" } }),
+				line({ type: "step_start", part: { type: "step-start" } }),
+				textPart("the answer"),
+			],
 		});
 
 		const events = await collect(runtime.run(makeRequest(), makeContext({ model: FREE_MODEL })));
 
-		expect(textOf(events)).toBe("before");
+		expect(textOf(events)).toBe("the answer");
+		expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+		// SEC-010: the provider's message text and tool inputs never leave the adapter.
+		expect(JSON.stringify(events)).not.toContain("non-interactive");
+		expect(JSON.stringify(events)).not.toContain("echo hi");
+	});
+
+	it("stops a free-tier turn that keeps calling tools past the bound", async () => {
+		const { fake, runtime } = freeTierRuntime({
+			lines: [
+				...Array.from({ length: MAX_REJECTED_TOOL_CALLS + 1 }, () => rejectedRead),
+				textPart("too late"),
+			],
+			hang: true,
+		});
+
+		const events = await collect(runtime.run(makeRequest(), makeContext({ model: FREE_MODEL })));
+
+		expect(textOf(events)).toBe("");
 		expect(terminalEvents(events)).toEqual([
 			{ type: "failed", code: "PROVIDER_TOOL_CALL_REJECTED", retryable: false },
 		]);
 		expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
-		// SEC-010: the provider's message text and tool inputs never leave the adapter.
-		expect(JSON.stringify(events)).not.toContain("non-interactive");
-		expect(JSON.stringify(events)).not.toContain("echo hi");
+	});
+
+	it("reports a free-tier turn that only called tools and never answered as PROVIDER_TOOL_CALL_REJECTED", async () => {
+		const { runtime } = freeTierRuntime({ lines: [rejectedRead] });
+
+		const events = await collect(runtime.run(makeRequest(), makeContext({ model: FREE_MODEL })));
+
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_TOOL_CALL_REJECTED", retryable: false },
+		]);
+	});
+
+	describe("native research-tool calls (ADR-0028)", () => {
+		const RESEARCH_REQUEST = makeRequest({
+			permittedToolIds: ["web.search", "web.fetch_page"],
+			maxToolCalls: 20,
+		});
+
+		function nativeCall(
+			tool: string,
+			input: unknown,
+			overrides: { executed?: boolean; id?: string } = {},
+		): string {
+			return line({
+				type: "tool_use",
+				part: {
+					type: "tool",
+					id: overrides.id ?? `call-${tool}`,
+					tool,
+					state: {
+						status: "error",
+						input,
+						error: `No tool named "${tool}" is currently available.`,
+						metadata: { providerCall: { executed: overrides.executed ?? false } },
+					},
+				},
+			});
+		}
+		const stepFinish = line({
+			type: "step_finish",
+			part: { type: "step-finish", reason: "tool-calls" },
+		});
+
+		it("hands the recorded native web.search call to the orchestrator and ends the turn at that step", async () => {
+			// Recorded live 2026-10-17 (opencode v2.0.32, nemotron-3.5-lightning-free): web.search,
+			// then web.fetch_page in a second step, then a give-up text after 12 minutes.
+			const { fake, runtime } = freeTierRuntime({
+				lines: fixtureLines("opencode/free-tier-native-tool-call.jsonl"),
+				hang: true,
+			});
+
+			const events = await collect(
+				runtime.run(RESEARCH_REQUEST, makeContext({ model: FREE_MODEL })),
+			);
+
+			expect(events.filter((event) => event.type === "tool.request")).toEqual([
+				{
+					type: "tool.request",
+					toolId: "web.search",
+					args: { query: "increasing demand services global market 2026" },
+					callId: "call-c01aa090-e149-4ade-b299-2245b366426c",
+				},
+			]);
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+			// The later steps were never waited for: the process was stopped after the first one.
+			expect(textOf(events)).toBe("");
+			expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
+			// SEC-010: the provider's rejection text never leaves the adapter.
+			expect(JSON.stringify(events)).not.toContain("No tool named");
+		});
+
+		it("reports every permitted call of one step before ending the turn", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [
+					nativeCall("web.search", { query: "cloud demand japan" }, { id: "call-1" }),
+					nativeCall("web.fetch_page", { url: "https://example.com/" }, { id: "call-2" }),
+					stepFinish,
+					textPart("never reached"),
+				],
+				hang: true,
+			});
+
+			const events = await collect(
+				runtime.run(RESEARCH_REQUEST, makeContext({ model: FREE_MODEL })),
+			);
+
+			expect(
+				events.filter((event) => event.type === "tool.request").map((event) => event.callId),
+			).toEqual(["call-1", "call-2"]);
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+		});
+
+		it("skips a native call to a tool the run does not permit, and lets the model answer", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [
+					nativeCall("sec.filings", { cik: "1" }),
+					stepFinish,
+					textPart('{"toolCalls":[],"done":true}'),
+				],
+			});
+
+			const events = await collect(
+				runtime.run(RESEARCH_REQUEST, makeContext({ model: FREE_MODEL })),
+			);
+
+			expect(events.some((event) => event.type === "tool.request")).toBe(false);
+			expect(textOf(events)).toBe('{"toolCalls":[],"done":true}');
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+		});
+
+		it("never turns arguments that are not a JSON object into a request", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [nativeCall("web.search", "cloud demand"), stepFinish, textPart("answer")],
+			});
+
+			const events = await collect(
+				runtime.run(RESEARCH_REQUEST, makeContext({ model: FREE_MODEL })),
+			);
+
+			expect(events.some((event) => event.type === "tool.request")).toBe(false);
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+		});
+
+		it("stops requesting at the run's remaining tool-call budget", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [
+					nativeCall("web.search", { query: "a" }, { id: "call-1" }),
+					nativeCall("web.search", { query: "b" }, { id: "call-2" }),
+					stepFinish,
+				],
+				hang: true,
+			});
+
+			const events = await collect(
+				runtime.run(
+					makeRequest({ permittedToolIds: ["web.search"], maxToolCalls: 1 }),
+					makeContext({ model: FREE_MODEL }),
+				),
+			);
+
+			expect(events.filter((event) => event.type === "tool.request")).toHaveLength(1);
+			expect(terminalEvents(events)).toEqual([{ type: "completed" }]);
+		});
+
+		it("fails closed on a permitted call that the CLI reports as executed", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [nativeCall("web.search", { query: "a" }, { executed: true }), stepFinish],
+				hang: true,
+			});
+
+			const events = await collect(
+				runtime.run(RESEARCH_REQUEST, makeContext({ model: FREE_MODEL })),
+			);
+
+			expect(events.some((event) => event.type === "tool.request")).toBe(false);
+			expect(terminalEvents(events)).toEqual([
+				{ type: "failed", code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
+			]);
+		});
+
+		it("never accepts a native call from a plan-model run, where no tool is sent", async () => {
+			const { runtime } = freeTierRuntime({
+				lines: [nativeCall("web.search", { query: "a" }), stepFinish],
+				hang: true,
+			});
+
+			const events = await collect(runtime.run(RESEARCH_REQUEST, makeContext({ model: MODEL })));
+
+			expect(events.some((event) => event.type === "tool.request")).toBe(false);
+			expect(terminalEvents(events)).toEqual([
+				{ type: "failed", code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
+			]);
+		});
+	});
+
+	it("still fails closed on a free-tier tool event that was not rejected", async () => {
+		const { fake, runtime } = freeTierRuntime({
+			lines: [
+				rejectedRead,
+				line({
+					type: "tool_use",
+					part: { type: "tool", tool: "read", state: { status: "completed" } },
+				}),
+				textPart("after"),
+			],
+			hang: true,
+		});
+
+		const events = await collect(runtime.run(makeRequest(), makeContext({ model: FREE_MODEL })));
+
+		expect(textOf(events)).toBe("");
+		expect(terminalEvents(events)).toEqual([
+			{ type: "failed", code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
+		]);
+		expect(itemAt(fake.spawns, 0).signal.aborted).toBe(true);
 	});
 
 	it("treats a rejected tool event in a plan-model run as an isolation violation (no tool is sent there)", async () => {

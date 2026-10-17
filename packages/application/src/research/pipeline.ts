@@ -56,6 +56,7 @@ import {
 	draftPricingPowerSchema,
 	draftScenarioSchema,
 	draftSupplierSchema,
+	MAX_TOOL_CALLS_PER_REPLY,
 	planSchema,
 	verdictsSchema,
 } from "./draft.ts";
@@ -577,8 +578,17 @@ export async function runResearchPipeline(
 		}
 		uiProposals.push(...planned.value.uiProposals);
 		const json = extractJsonObject(planned.value.text);
-		const plan = json.ok ? planSchema.safeParse(json.value) : null;
-		if (plan === null || !plan.success) {
+		const parsedPlan = json.ok ? planSchema.safeParse(json.value) : null;
+		// ADR-0028: a backend may deliver the plan as tool requests instead of
+		// JSON text (a model that calls the listed research tools natively).
+		// Those requests ARE the plan; they are authorized below like any other.
+		const plan =
+			parsedPlan?.success === true
+				? parsedPlan.data
+				: planned.value.toolRequests.length > 0
+					? { toolCalls: [], done: false }
+					: null;
+		if (plan === null) {
 			invalidPlanCount += 1;
 			await deps.reporter.note("The planning reply was not valid JSON; no tools were run for it.");
 			continue;
@@ -587,7 +597,10 @@ export async function runResearchPipeline(
 			await deps.reporter.state("collecting");
 			reachedCollecting = true;
 		}
-		const calls = [...plan.data.toolCalls, ...planned.value.toolRequests];
+		const calls = [...plan.toolCalls, ...planned.value.toolRequests].slice(
+			0,
+			MAX_TOOL_CALLS_PER_REPLY,
+		);
 		validPlanCount += 1;
 		requestedToolCalls += calls.length;
 		// ADR-0025 reminder: a valid plan that asks for nothing while nothing
@@ -672,7 +685,7 @@ export async function runResearchPipeline(
 			await deps.reporter.tool(label, "executed", `${output.evidence.length} evidence item(s)`);
 		}
 		await deps.reporter.usage(usage);
-		if (plan.data.done || calls.length === 0) break;
+		if (plan.done || calls.length === 0) break;
 	}
 	if (!reachedCollecting) await deps.reporter.state("collecting");
 

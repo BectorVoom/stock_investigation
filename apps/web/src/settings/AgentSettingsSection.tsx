@@ -16,7 +16,7 @@ import {
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
-import { BudgetFields } from "../components/BudgetFields.tsx";
+import { SpendField } from "../components/SpendField.tsx";
 import {
 	BUTTON_PRIMARY,
 	ErrorNotice,
@@ -481,14 +481,15 @@ export function AgentSettingsSection(props: {
 							</Select>
 						</div>
 
-						<BudgetFields
-							legend="Limits for each question"
-							draft={current().budget}
-							onChange={(budget) => setDraft({ ...current(), budget })}
-							spendEditable={evaluation()?.spendEditable ?? false}
-							spendConsentRequired={false}
-							showConsent={false}
-						/>
+						{/* Per-question limits are fixed (ADR-0029); only a billing backend asks for a spend ceiling. */}
+						<Show when={evaluation()?.spendEditable ?? false}>
+							<SpendField
+								draft={current().budget}
+								onChange={(budget) => setDraft({ ...current(), budget })}
+								spendConsentRequired={false}
+								showConsent={false}
+							/>
+						</Show>
 
 						<div>
 							<label for={webAccessId} class="flex items-start gap-2 text-xs text-slate-900">

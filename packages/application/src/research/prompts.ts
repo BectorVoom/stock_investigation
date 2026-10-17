@@ -6,6 +6,7 @@ import type {
 	SubscribedSourceRef,
 	WorkspaceComponentSummary,
 } from "@research/contracts";
+import { MAX_TOOL_CALLS_PER_REPLY } from "./draft.ts";
 
 /** Bump when any prompt text changes; stored with every run for reproducibility (AGT-010). */
 export const PROMPT_VERSION = "research-v5";
@@ -126,7 +127,7 @@ ${GROUND_RULES}
 
 ${describeRequest(input.request, input.nowIso)}${conversationSection(input.conversationContext, input.fenceToken)}
 
-Research tools you may request (at most ${input.remainingToolCalls} more calls in total, at most 8 per reply):
+Research tools you may request (at most ${input.remainingToolCalls} more calls in total, at most ${MAX_TOOL_CALLS_PER_REPLY} per reply):
 ${tools}
 ${sourcesBlock}
 Collected so far:

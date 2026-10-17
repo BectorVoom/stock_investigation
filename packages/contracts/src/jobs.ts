@@ -90,6 +90,24 @@ export const BUDGET_LIMITS = {
 	maxSpendUsd: { min: 0, max: 50 },
 } as const;
 
+/**
+ * The fixed ceilings every question runs under (owner decision 2026-10-17,
+ * ADR-0029): the per-question limits are no longer edited, and each one is
+ * at its maximum. Only the spend ceiling stays the owner's — it is their
+ * consent to metered cost (AGT-012).
+ */
+export const RUN_LIMITS = {
+	maxAgentSteps: BUDGET_LIMITS.maxAgentSteps.max,
+	maxToolCalls: BUDGET_LIMITS.maxToolCalls.max,
+	maxWallClockMs: BUDGET_LIMITS.maxWallClockMs.max,
+	maxInputBytes: BUDGET_LIMITS.maxInputBytes.max,
+} as const;
+
+/** A question's budget: the fixed limits plus the owner's spend ceiling (null = none). */
+export function runBudget(maxSpendUsd: number | null): ResearchBudget {
+	return { ...RUN_LIMITS, maxSpendUsd };
+}
+
 export const researchBudgetSchema = z.strictObject({
 	maxAgentSteps: z
 		.number()

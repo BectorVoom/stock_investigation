@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { agentIdSchema } from "./agent.ts";
-import { BUDGET_LIMITS, effortSchema, researchBudgetSchema, webAccessSchema } from "./jobs.ts";
+import { effortSchema, researchBudgetSchema, runBudget, webAccessSchema } from "./jobs.ts";
 import { isoDateTimeSchema } from "./primitives.ts";
 
 /** Re-exported so existing imports from settings keep working; defined in jobs.ts (ARCH-004). */
@@ -17,7 +17,10 @@ export const agentSettingsSchema = z
 		/** Model per backend id, e.g. { opencode: "provider/model" }. A backend without an entry uses its own default. */
 		models: z.record(agentIdSchema, z.string().trim().min(1).max(100)),
 		effort: effortSchema,
-		/** Ceilings applied to each new question. maxSpendUsd null = no metered spend authorized. */
+		/**
+		 * Kept for stored records; only `maxSpendUsd` is the owner's (null = no
+		 * metered spend authorized). Every question runs under RUN_LIMITS.
+		 */
 		budget: researchBudgetSchema,
 		/** Whether the agent may open public web pages (the web.fetch_page tool). */
 		webAccess: webAccessSchema,
@@ -32,13 +35,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
 	defaultAgentId: null,
 	models: {},
 	effort: "medium",
-	budget: {
-		maxAgentSteps: BUDGET_LIMITS.maxAgentSteps.default,
-		maxToolCalls: BUDGET_LIMITS.maxToolCalls.default,
-		maxWallClockMs: BUDGET_LIMITS.maxWallClockMs.default,
-		maxInputBytes: BUDGET_LIMITS.maxInputBytes.default,
-		maxSpendUsd: null,
-	},
+	budget: runBudget(null),
 	webAccess: "public-web",
 };
 

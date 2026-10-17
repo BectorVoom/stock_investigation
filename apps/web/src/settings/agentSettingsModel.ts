@@ -8,6 +8,7 @@ import {
 	isOpenRouterFreeModelId,
 	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
+	runBudget,
 	type WebAccess,
 } from "@research/contracts";
 import type { ResearchBudget } from "../api/client.ts";
@@ -25,40 +26,23 @@ import { formatInstant } from "../lib/format.ts";
 /** "unknown" = no runner has reported this backend, so how it bills is not known. */
 export type CostModelView = AgentDescriptor["costModel"] | "unknown";
 
-/** Form draft: numbers stay as typed text until they validate. */
-export interface BudgetDraft {
-	readonly maxAgentSteps: string;
-	readonly maxToolCalls: string;
-	readonly maxWallClockMinutes: string;
-	readonly maxInputBytes: string;
+/**
+ * The only per-question ceiling the owner edits: the maximum spend, which is
+ * their consent to metered cost (AGT-012). The other limits are fixed
+ * (RUN_LIMITS, ADR-0029). The amount stays as typed text until it validates.
+ */
+export interface SpendDraft {
 	/** Empty = no metered spend authorized. */
 	readonly maxSpendUsd: string;
 	readonly spendConsent: boolean;
 }
 
-export const WALL_CLOCK_MINUTES = {
-	min: BUDGET_LIMITS.maxWallClockMs.min / 60_000,
-	max: BUDGET_LIMITS.maxWallClockMs.max / 60_000,
-	default: BUDGET_LIMITS.maxWallClockMs.default / 60_000,
-} as const;
-
-export function defaultBudgetDraft(): BudgetDraft {
-	return {
-		maxAgentSteps: String(BUDGET_LIMITS.maxAgentSteps.default),
-		maxToolCalls: String(BUDGET_LIMITS.maxToolCalls.default),
-		maxWallClockMinutes: String(WALL_CLOCK_MINUTES.default),
-		maxInputBytes: String(BUDGET_LIMITS.maxInputBytes.default),
-		maxSpendUsd: "",
-		spendConsent: false,
-	};
+export function defaultSpendDraft(): SpendDraft {
+	return { maxSpendUsd: "", spendConsent: false };
 }
 
-export function budgetDraftFrom(budget: ResearchBudget): BudgetDraft {
+export function spendDraftFrom(budget: ResearchBudget): SpendDraft {
 	return {
-		maxAgentSteps: String(budget.maxAgentSteps),
-		maxToolCalls: String(budget.maxToolCalls),
-		maxWallClockMinutes: String(budget.maxWallClockMs / 60_000),
-		maxInputBytes: String(budget.maxInputBytes),
 		maxSpendUsd: budget.maxSpendUsd === null ? "" : String(budget.maxSpendUsd),
 		// Consent is never carried over: it is given again for each submission.
 		spendConsent: false,
@@ -263,33 +247,8 @@ export function costStatement(costModel: CostModelView): string {
 	return "Cost model unknown until a runner reports this backend. No metered (paid) spend is authorized unless you set a maximum spend and confirm consent.";
 }
 
-interface IntegerField {
-	readonly label: string;
-	readonly min: number;
-	readonly max: number;
-}
-
-function parseBounded(
-	text: string,
-	field: IntegerField,
-	wholeNumber: boolean,
-): { readonly value: number } | { readonly problem: string } {
-	const value = text.trim() === "" ? Number.NaN : Number(text);
-	if (
-		!Number.isFinite(value) ||
-		(wholeNumber && !Number.isInteger(value)) ||
-		value < field.min ||
-		value > field.max
-	) {
-		return {
-			problem: `${field.label} must be ${wholeNumber ? "a whole number" : "a number"} from ${field.min} to ${field.max}.`,
-		};
-	}
-	return { value };
-}
-
 export interface BudgetEvaluation {
-	/** The validated budget, or null while any field is invalid or consent is missing. */
+	/** The question's budget (fixed limits plus the spend), or null while the spend is invalid or consent is missing. */
 	readonly budget: ResearchBudget | null;
 	readonly problems: readonly string[];
 	/** True when the consent checkbox must be shown and ticked. */
@@ -297,7 +256,7 @@ export interface BudgetEvaluation {
 }
 
 export function evaluateBudget(
-	draft: BudgetDraft,
+	draft: SpendDraft,
 	costModel: CostModelView,
 	options: { readonly requireConsent?: boolean } = {},
 ): BudgetEvaluation {
@@ -306,33 +265,6 @@ export function evaluateBudget(
 	// the one-time consent again for each run.
 	const requireConsent = options.requireConsent ?? true;
 	const problems: string[] = [];
-	const read = (text: string, field: IntegerField, wholeNumber = true): number | null => {
-		const parsed = parseBounded(text, field, wholeNumber);
-		if ("problem" in parsed) {
-			problems.push(parsed.problem);
-			return null;
-		}
-		return parsed.value;
-	};
-
-	const maxAgentSteps = read(draft.maxAgentSteps, {
-		label: "Max agent steps",
-		...BUDGET_LIMITS.maxAgentSteps,
-	});
-	const maxToolCalls = read(draft.maxToolCalls, {
-		label: "Max tool calls",
-		...BUDGET_LIMITS.maxToolCalls,
-	});
-	const wallClockMinutes = read(
-		draft.maxWallClockMinutes,
-		{ label: "Max wall-clock minutes", ...WALL_CLOCK_MINUTES },
-		false,
-	);
-	const maxInputBytes = read(draft.maxInputBytes, {
-		label: "Max input bytes",
-		...BUDGET_LIMITS.maxInputBytes,
-	});
-
 	const spendText = draft.maxSpendUsd.trim();
 	let maxSpendUsd: number | null = null;
 	let spendConsentRequired = false;
@@ -358,23 +290,8 @@ export function evaluateBudget(
 	if (spendConsentRequired && requireConsent && !draft.spendConsent) {
 		problems.push("Confirm consent to metered spend before submitting.");
 	}
-
-	const complete =
-		problems.length === 0 &&
-		maxAgentSteps !== null &&
-		maxToolCalls !== null &&
-		wallClockMinutes !== null &&
-		maxInputBytes !== null;
 	return {
-		budget: complete
-			? {
-					maxAgentSteps,
-					maxToolCalls,
-					maxWallClockMs: Math.round(wallClockMinutes * 60_000),
-					maxInputBytes,
-					maxSpendUsd,
-				}
-			: null,
+		budget: problems.length === 0 ? runBudget(maxSpendUsd) : null,
 		problems,
 		spendConsentRequired,
 	};
@@ -388,7 +305,7 @@ export interface AgentSettingsDraft {
 	/** Model text per backend id; a backend without an entry uses its own default. */
 	readonly models: Readonly<Record<string, string>>;
 	readonly effort: ResearchRequest["effort"];
-	readonly budget: BudgetDraft;
+	readonly budget: SpendDraft;
 	readonly webAccess: WebAccess;
 }
 
@@ -397,7 +314,7 @@ export function settingsDraftFrom(settings: AgentSettings): AgentSettingsDraft {
 		defaultAgentId: settings.defaultAgentId ?? "",
 		models: { ...settings.models },
 		effort: settings.effort,
-		budget: budgetDraftFrom(settings.budget),
+		budget: spendDraftFrom(settings.budget),
 		webAccess: settings.webAccess,
 	};
 }
@@ -528,10 +445,6 @@ export function isSettingsDraftChanged(
 		draft.effort !== fresh.effort ||
 		draft.webAccess !== fresh.webAccess ||
 		!modelsEqual(draft.models, fresh.models) ||
-		draft.budget.maxAgentSteps !== fresh.budget.maxAgentSteps ||
-		draft.budget.maxToolCalls !== fresh.budget.maxToolCalls ||
-		draft.budget.maxWallClockMinutes !== fresh.budget.maxWallClockMinutes ||
-		draft.budget.maxInputBytes !== fresh.budget.maxInputBytes ||
 		draft.budget.maxSpendUsd !== fresh.budget.maxSpendUsd
 	);
 }
