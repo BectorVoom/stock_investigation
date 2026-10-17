@@ -7,5 +7,11 @@ import { domainExporter } from "./domain.ts";
 import { jsExporter } from "./js.ts";
 import { loggingExporter } from "./logging.ts";
 import type { VectorExporter } from "./shared.ts";
+import { widgetGridExporter } from "./widgetGrid.ts";
 
-export const exporters: readonly VectorExporter[] = [jsExporter, domainExporter, loggingExporter];
+export const exporters: readonly VectorExporter[] = [
+	jsExporter,
+	domainExporter,
+	loggingExporter,
+	widgetGridExporter,
+];

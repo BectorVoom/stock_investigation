@@ -854,8 +854,8 @@ name = "research-widget-grid"
 version = "0.1.0"
 dependencies = [
  "research-js",
- "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]
