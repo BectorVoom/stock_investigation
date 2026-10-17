@@ -10995,6 +10995,271 @@
 					"message": "auth URL must be the runner's Google sign-in link"
 				}
 			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&state=again\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&extra=1\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4#frag\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4#\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4#\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://user:pw@accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A0%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A99999%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A99999%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A100000%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=none&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%E2%82%AC&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%E2%82%AC&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=co%64e&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=co%64e&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code+&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&st%61te=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&st%61te=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=plain&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=aaaaaaaaaaaaaaa\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=http%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"event",
+						"url"
+					],
+					"message": "auth URL must be the runner's Google sign-in link"
+				}
+			]
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&&\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4&&\"}}"
+		},
+		{
+			"input": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?&response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}",
+			"valid": true,
+			"output": "{\"seq\":0,\"at\":\"2026-10-11T00:00:00Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?&response_type=code&client_id=x&redirect_uri=http%3A%2F%2F127.0.0.1%3A49152%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=q7Zk2mVh0xJt4Yb9Lw3Rn8Uc5Df1Gs6Pa0Oe2Ix7Hy4\"}}"
 		}
 	]
 }

@@ -3442,6 +3442,236 @@
 			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://news.example.com/articles/1\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"other\"}",
 			"valid": true,
 			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://news.example.com/articles/1\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"other\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://例え.jp/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://例え.jp/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://xn--r8jz45g.jp/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://xn--r8jz45g.jp/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://[::1]/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://[::1]/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://[::1\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://127.0.0.1:443/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://127.0.0.1:443/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https:example.com\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https:example.com\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https:/example.com\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https:/example.com\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://exa mple.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com/a b\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com/a b\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"HTTPS://EXAMPLE.COM/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"HTTPS://EXAMPLE.COM/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com:65535/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com:65535/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com:65536/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://%41.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://%41.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://a%2Fb.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com\\\\path\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com\\\\path\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\" https://example.com/ \",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\" https://example.com/ \",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"\\thttps://exa\\nmple.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"\\thttps://exa\\nmple.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://.\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://.\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://a..b/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://a..b/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://xn--/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://ex%00ample.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com#\\u0000\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://example.com#\\u0000\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://user@example.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://user@example.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"http://example.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"ftp://example.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://😀.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://😀.com/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://0x7f.1/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://0x7f.1/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://999.999.999.999/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"sourceUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://1.2.3/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}",
+			"valid": true,
+			"output": "{\"evidenceId\":\"ev_1\",\"sourceUrl\":\"https://1.2.3/\",\"title\":\"Battery makers expand capacity\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"effectiveAt\":null,\"excerpt\":\"Three suppliers announced new plants.\",\"checksum\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sourceClass\":\"news\"}"
 		}
 	]
 }

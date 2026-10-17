@@ -431,6 +431,94 @@ function contextOfBytes(perMessage: string, count: number): string {
 	return JSON.stringify(Array.from({ length: count }, () => ({ role: "owner", text: perMessage })));
 }
 
+const googleConnect = { kind: "google-calendar", ...lease, action: "connect" };
+const googleSync = {
+	kind: "google-calendar",
+	...lease,
+	action: "sync",
+	calendarId: "cal",
+	desiredDigest: "b".repeat(64),
+	events: [],
+};
+const GOOGLE_JOB_EDGES: string[] = [
+	{ ...googleConnect, calendarId: null },
+	{ ...googleConnect, calendarId: "cal", desiredDigest: "b".repeat(64), events: [] },
+	{ ...googleConnect, action: "disconnect", events: [] },
+	{ ...googleSync, calendarId: undefined },
+	{ ...googleSync, desiredDigest: undefined, events: undefined },
+	{ ...googleSync, calendarId: "", desiredDigest: "B".repeat(64) },
+	{ ...googleSync, events: Array.from({ length: 400 }, () => eventBody) },
+	{ ...googleSync, events: Array.from({ length: 401 }, () => eventBody) },
+].map((value) => JSON.stringify(value));
+
+function withUrl(url: string): string {
+	return JSON.stringify({ seq: 0, at: T0, event: { type: "google-auth-url", url } });
+}
+const SIGN_IN_EDGES: string[] = [
+	`${SIGN_IN_URL}&state=again`,
+	`${SIGN_IN_URL}&extra=1`,
+	`${SIGN_IN_URL}#frag`,
+	`${SIGN_IN_URL}#`,
+	SIGN_IN_URL.replace("https://", "https://user:pw@"),
+	SIGN_IN_URL.replace("%3A49152", "%3A0"),
+	SIGN_IN_URL.replace("%3A49152", "%3A99999"),
+	SIGN_IN_URL.replace("%3A49152", "%3A100000"),
+	SIGN_IN_URL.replace("access_type=offline&", ""),
+	SIGN_IN_URL.replace("prompt=consent&", "prompt=none&"),
+	SIGN_IN_URL.replace("client_id=x", `client_id=${"x".repeat(200)}`),
+	SIGN_IN_URL.replace("client_id=x", `client_id=${"x".repeat(201)}`),
+	SIGN_IN_URL.replace("client_id=x", "client_id="),
+	SIGN_IN_URL.replace("client_id=x", "client_id=%E2%82%AC"),
+	SIGN_IN_URL.replace("response_type=code", "response_type=co%64e"),
+	SIGN_IN_URL.replace("response_type=code", "response_type=code+"),
+	SIGN_IN_URL.replace("&state=", "&st%61te="),
+	SIGN_IN_URL.replace("code_challenge_method=S256", "code_challenge_method=plain"),
+	SIGN_IN_URL.replace(/code_challenge=[^&]+/, `code_challenge=${"a".repeat(42)}`),
+	SIGN_IN_URL.replace(/state=[^&]+/, `state=${"a".repeat(15)}`),
+	SIGN_IN_URL.replace(/state=[^&]+/, `state=${"a".repeat(128)}`),
+	SIGN_IN_URL.replace(/state=[^&]+/, `state=${"a".repeat(129)}`),
+	SIGN_IN_URL.replace("scope=https", "scope=http"),
+	`${SIGN_IN_URL}&`,
+	`${SIGN_IN_URL}&&`,
+	SIGN_IN_URL.replace("?", "?&"),
+].map(withUrl);
+
+function withSourceUrl(url: string): string {
+	return JSON.stringify({ ...(json(fx.evidence) as Record<string, Json>), sourceUrl: url });
+}
+const URL_EDGES: string[] = [
+	"https://例え.jp/",
+	"https://xn--r8jz45g.jp/",
+	"https://[::1]/",
+	"https://[::1",
+	"https://127.0.0.1:443/",
+	"https:example.com",
+	"https:/example.com",
+	"https://exa mple.com/",
+	"https://example.com/a b",
+	"HTTPS://EXAMPLE.COM/",
+	"https://example.com:65535/",
+	"https://example.com:65536/",
+	"https://%41.com/",
+	"https://a%2Fb.com/",
+	"https://example.com\\path",
+	" https://example.com/ ",
+	"\thttps://exa\nmple.com/",
+	"https://",
+	"https://.",
+	"https://a..b/",
+	"https://xn--/",
+	"https://ex%00ample.com/",
+	"https://example.com#\u0000",
+	"https://user@example.com/",
+	"http://example.com/",
+	"ftp://example.com/",
+	"https://😀.com/",
+	"https://0x7f.1/",
+	"https://999.999.999.999/",
+	"https://1.2.3/",
+].map(withSourceUrl);
+
 const COMPOSITE: MutationOptions = { maxDepth: 3, maxCases: 1500 };
 
 export const SCHEMAS: readonly SchemaEntry[] = [
@@ -484,7 +572,12 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.ingestedArticleSchema,
 		baselines: [json(fx.ingestedArticle)],
 	},
-	{ name: "evidence", schema: contracts.evidenceSchema, baselines: [json(fx.evidence)] },
+	{
+		name: "evidence",
+		schema: contracts.evidenceSchema,
+		baselines: [json(fx.evidence)],
+		extra: URL_EDGES,
+	},
 	{
 		name: "claim",
 		schema: contracts.claimSchema,
@@ -631,6 +724,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.claimedJobSchema,
 		baselines: claimedJobs,
 		options: COMPOSITE,
+		extra: GOOGLE_JOB_EDGES,
 	},
 	{
 		name: "claimJobResponse",
@@ -656,7 +750,12 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: z.object({ cancelRequested: z.boolean() }),
 		baselines: [{ cancelRequested: true }, { cancelRequested: false, extra: 1, more: { a: 1 } }],
 	},
-	{ name: "runnerEvent", schema: contracts.runnerEventSchema, baselines: runnerEvents },
+	{
+		name: "runnerEvent",
+		schema: contracts.runnerEventSchema,
+		baselines: runnerEvents,
+		extra: SIGN_IN_EDGES,
+	},
 	{
 		name: "runnerEventsRequest",
 		schema: contracts.runnerEventsRequestSchema,
