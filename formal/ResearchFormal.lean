@@ -11,3 +11,4 @@ import ResearchFormal.Calendar
 import ResearchFormal.MonthGrid
 import ResearchFormal.GoogleSync
 import ResearchFormal.DragTarget
+import ResearchFormal.ChartWindow

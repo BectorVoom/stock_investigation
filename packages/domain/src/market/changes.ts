@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "../result.ts";
+import { isoToDayNumber } from "./chartWindow.ts";
 
 export interface MarketPoint {
 	readonly observedOn: string;
@@ -52,22 +53,9 @@ export function latestChange(
 export type YearChangeError = "NO_BASE_OBSERVATION" | "BASE_TOO_OLD" | "NON_FINITE";
 
 function isoToDays(iso: string): number | null {
-	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-	if (match === null) return null;
-	const year = Number(match[1]);
-	const month = Number(match[2]);
-	const day = Number(match[3]);
-	if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
-	const ms = Date.UTC(year, month - 1, day);
-	const check = new Date(ms);
-	if (
-		check.getUTCFullYear() !== year ||
-		check.getUTCMonth() !== month - 1 ||
-		check.getUTCDate() !== day
-	) {
-		return null;
-	}
-	return Math.floor(ms / 86_400_000);
+	// Same civil arithmetic as the chart viewer day numbers (chartWindow.ts).
+	const day = isoToDayNumber(iso);
+	return day.ok ? day.value : null;
 }
 
 function subtractOneYear(iso: string): string | null {
