@@ -5,6 +5,7 @@
  */
 import { domainExporter } from "./domain.ts";
 import { jsExporter } from "./js.ts";
+import { loggingExporter } from "./logging.ts";
 import type { VectorExporter } from "./shared.ts";
 
-export const exporters: readonly VectorExporter[] = [jsExporter, domainExporter];
+export const exporters: readonly VectorExporter[] = [jsExporter, domainExporter, loggingExporter];
