@@ -1321,3 +1321,73 @@ async fn measure_fresh_and_reused_search_requests() {
 		}
 	}
 }
+
+/// `cargo test -p research-net --test network measure_gdelt -- --ignored --nocapture`:
+/// the handshake cost on api.gdeltproject.org versus requests on the open
+/// connection (GDELT answers even `robots.txt` with a non-2xx, which the pool
+/// never keeps, so this drives one pinned connection directly).
+#[tokio::test]
+#[ignore = "real network"]
+async fn measure_gdelt_handshake_versus_warm_requests() {
+	use http_body_util::BodyExt as _;
+	let host = "api.gdeltproject.org";
+	let address = tokio::net::lookup_host((host, 443))
+		.await
+		.unwrap()
+		.next()
+		.unwrap()
+		.ip();
+	let tls = PinnedTls::new().unwrap();
+	let started = Instant::now();
+	let stream = tls.connect(host, address).await.unwrap();
+	println!(
+		"GDELT TCP+TLS, first: {:.0} ms",
+		started.elapsed().as_secs_f64() * 1_000.0
+	);
+	// A second handshake with the same client config may resume the TLS session.
+	let started = Instant::now();
+	let second = tls.connect(host, address).await.unwrap();
+	let resumed = second.get_ref().1.handshake_kind();
+	println!(
+		"GDELT TCP+TLS, second: {:.0} ms ({resumed:?})",
+		started.elapsed().as_secs_f64() * 1_000.0
+	);
+	drop(second);
+	let (mut sender, connection) = hyper::client::conn::http1::handshake::<
+		_,
+		http_body_util::Empty<bytes::Bytes>,
+	>(hyper_util::rt::TokioIo::new(stream))
+	.await
+	.unwrap();
+	tokio::spawn(connection);
+	let gaps = [0_u64, 1, 3, 5];
+	for gap in gaps {
+		tokio::time::sleep(Duration::from_secs(gap)).await;
+		if sender.is_closed() {
+			println!("GDELT closed the idle connection within {gap} s");
+			break;
+		}
+		let request = http::Request::get("/robots.txt")
+			.header("host", host)
+			.header(
+				"user-agent",
+				"research-workspace/1.0 (personal research tool)",
+			)
+			.body(http_body_util::Empty::new())
+			.unwrap();
+		let started = Instant::now();
+		sender.ready().await.unwrap();
+		let response = sender.send_request(request).await.unwrap();
+		let status = response.status();
+		let keep_alive = format!(
+			"connection={:?} keep-alive={:?}",
+			response.headers().get("connection"),
+			response.headers().get("keep-alive")
+		);
+		response.into_body().collect().await.unwrap();
+		println!(
+			"GDELT request on open connection after {gap} s idle: {:.0} ms (HTTP {status}, {keep_alive})",
+			started.elapsed().as_secs_f64() * 1_000.0
+		);
+	}
+}
