@@ -588,3 +588,33 @@ impl WidgetCore {
 		)
 	}
 }
+
+/// `chartDraftSchema`: the chart shape without the citation rule (an agent's
+/// draft before reconciling it).
+pub(crate) fn decode_chart_draft(cx: &mut Cx, input: Option<&Value>) -> Option<WidgetCore> {
+	let object = crate::zod::object_input(cx, input)?;
+	let widget_id = cx.at_key("widgetId", |cx| id(cx, object.get("widgetId")));
+	let title = cx.at_key("title", |cx| {
+		run_string(cx, object.get("title"), WIDGET_TITLE)
+	});
+	let size = cx.at_key("size", |cx| WidgetSize::decode(cx, object.get("size")));
+	let tag = cx.at_key("type", |cx| {
+		crate::zod::literal("chart")(cx, object.get("type"))
+	});
+	let chart_tag = WidgetType::VALUES
+		.iter()
+		.position(|value| *value == "chart")
+		.unwrap_or(2);
+	let content = WidgetContent::decode_fields(cx, object, chart_tag);
+	let mut known: Vec<&str> = CORE_KEYS.to_vec();
+	known.push("type");
+	known.extend_from_slice(CONTENT_KEYS.get(chart_tag).copied().unwrap_or_default());
+	unrecognized(cx, object, &known);
+	tag?;
+	Some(WidgetCore {
+		widget_id: widget_id?,
+		title: title?,
+		size: size?,
+		content: content?,
+	})
+}

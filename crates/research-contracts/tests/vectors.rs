@@ -238,3 +238,112 @@ fn truncate(text: &str) -> String {
 		text.to_owned()
 	}
 }
+
+fn decode_all<T: Contract>(value: &Value) -> Vec<T> {
+	value
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|item| {
+			research_contracts::validate::<T>(item).unwrap_or_else(|error| panic!("{error}"))
+		})
+		.collect()
+}
+
+fn stringify_expected(value: &Value) -> String {
+	research_js::json::stringify(value)
+}
+
+#[test]
+fn widget_rules_match_typescript() {
+	use research_contracts::notebook::NotebookWidget;
+	use research_contracts::widget_rules::{
+		notebook_capacity_problem, notebook_content_bytes, reconcile_chart_draft,
+		with_earned_chart_provenance,
+	};
+	use research_contracts::widgets::WidgetCore;
+
+	let file = read_json(&format!("{}/functions/widgetRules.json", vector_dir()));
+	let file = file.as_object().unwrap();
+	let get = |case: &Value, key: &str| case.as_object().unwrap().get(key).unwrap().clone();
+
+	let reconcile = file.get("reconcileChartDraft").unwrap().as_array().unwrap();
+	assert!(reconcile.len() > 300);
+	for case in reconcile {
+		let output = reconcile_chart_draft(&get(case, "input"));
+		assert_eq!(
+			research_js::json::stringify(&output),
+			stringify_expected(&get(case, "output")),
+			"reconcileChartDraft({})",
+			research_js::json::stringify(&get(case, "input"))
+		);
+	}
+
+	let earned = file
+		.get("withEarnedChartProvenance")
+		.unwrap()
+		.as_array()
+		.unwrap();
+	assert!(earned.len() > 300);
+	for case in earned {
+		let next: Vec<WidgetCore> = decode_all(&get(case, "next"));
+		let previous: Vec<WidgetCore> = decode_all(&get(case, "previous"));
+		let output = with_earned_chart_provenance(next, &previous);
+		assert_eq!(
+			to_js_json(&output).unwrap(),
+			stringify_expected(&get(case, "output")),
+			"withEarnedChartProvenance next={}",
+			research_js::json::stringify(&get(case, "next"))
+		);
+	}
+
+	for case in file
+		.get("notebookCapacityProblem")
+		.unwrap()
+		.as_array()
+		.unwrap()
+	{
+		let next: Vec<WidgetCore> = decode_all(&get(case, "next"));
+		let previous: Vec<NotebookWidget> = decode_all(&get(case, "previous"));
+		let problem = notebook_capacity_problem(&next, &previous);
+		assert_eq!(
+			to_js_json(&problem).unwrap(),
+			stringify_expected(&get(case, "output"))
+		);
+	}
+
+	for case in file.get("contentBytes").unwrap().as_array().unwrap() {
+		let count = |key: &str| {
+			research_js::number::to_js_string(get(case, key).as_f64().unwrap())
+				.parse::<usize>()
+				.unwrap()
+		};
+		let chars = count("chars");
+		let text = |index: usize| {
+			format!(
+				r#"{{"widgetId":"t-{index}","type":"text","title":"T","size":"large","text":"{}"}}"#,
+				"あ".repeat(chars)
+			)
+		};
+		let next: Vec<WidgetCore> = (0..count("nextCount"))
+			.map(|index| research_contracts::parse::<WidgetCore>(&text(index)).unwrap())
+			.collect();
+		let previous: Vec<NotebookWidget> = (0..count("previousCount"))
+			.map(|index| {
+				let core = text(index);
+				let stored = format!(
+					r#"{},"createdAt":"2026-10-14T00:00:00.000Z","updatedAt":"2026-10-14T00:00:00.000Z","revision":2,"origin":{{"kind":"assistant","messageId":null,"runId":"run_1","componentId":null}}}}"#,
+					core.trim_end_matches('}')
+				);
+				research_contracts::parse::<NotebookWidget>(&stored).unwrap()
+			})
+			.collect();
+		assert_eq!(notebook_content_bytes(&next), count("nextBytes"));
+		assert_eq!(notebook_content_bytes(&previous), count("previousBytes"));
+		let problem = notebook_capacity_problem(&next, &previous);
+		assert_eq!(
+			to_js_json(&problem).unwrap(),
+			stringify_expected(&get(case, "output"))
+		);
+	}
+}

@@ -5,6 +5,7 @@
  * `JSON.parse` / `JSON.stringify` vectors of `research_js::json`.
  */
 
+import { functionVectors } from "./contracts/functions.ts";
 import { jsonVectors } from "./contracts/json.ts";
 import { evaluate, mutationCases } from "./contracts/mutations.ts";
 import { SCHEMAS } from "./contracts/schemas.ts";
@@ -19,6 +20,7 @@ export const contractsExporter: VectorExporter = {
 			for (const text of entry.extra ?? []) cases.push(evaluate(entry.schema, text));
 			files.push({ path: `contracts/${entry.name}.json`, content: { schema: entry.name, cases } });
 		}
+		files.push({ path: "contracts/functions/widgetRules.json", content: functionVectors() });
 		files.push({ path: "contracts/index.json", content: SCHEMAS.map((entry) => entry.name) });
 		return files;
 	},

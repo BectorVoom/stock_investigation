@@ -25,6 +25,7 @@ pub mod primitives;
 pub mod records;
 pub mod ui;
 pub mod watchlist;
+pub mod widget_rules;
 pub mod widgets;
 pub mod zod;
 
@@ -169,5 +170,118 @@ pub struct ConversationContext(pub Vec<jobs::ConversationContextMessage>);
 impl Contract for ConversationContext {
 	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		jobs::decode_conversation_context(cx, input).map(Self)
+	}
+}
+
+/// Re-validates an outgoing payload with the decoder of its schema (the
+/// Worker parses it with zod): serialises it as JavaScript would and decodes
+/// it again. Meant for debug builds and tests of the producers.
+///
+/// # Errors
+/// zod's issues when the payload would be rejected.
+pub fn check_outgoing<T: Contract + serde::Serialize>(value: &T) -> Result<(), ContractError> {
+	let text = json::to_js_json(value).map_err(|error| {
+		ContractError::Json(ParseError {
+			offset: 0,
+			reason: if error.is_io() {
+				"serialisation failed"
+			} else {
+				"unserialisable value"
+			},
+		})
+	})?;
+	parse::<T>(&text).map(|_| ())
+}
+
+/// `claimJobResponseSchema.safeParse(JSON.parse(text))`.
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_claim_job_response(text: &str) -> Result<jobs::ClaimJobResponse, ContractError> {
+	parse(text)
+}
+
+/// `heartbeatResponseSchema.safeParse(JSON.parse(text))`.
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_heartbeat_response(text: &str) -> Result<jobs::HeartbeatResponse, ContractError> {
+	parse(text)
+}
+
+/// The events response (non-strict `{cancelRequested}`).
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_events_response(text: &str) -> Result<jobs::EventsResponse, ContractError> {
+	parse(text)
+}
+
+/// `completeJobResponseSchema.safeParse(JSON.parse(text))`.
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_complete_job_response(text: &str) -> Result<jobs::CompleteJobResponse, ContractError> {
+	parse(text)
+}
+
+/// `issuedRunnerCredentialSchema.safeParse(JSON.parse(text))`.
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_issued_runner_credential(
+	text: &str,
+) -> Result<api::IssuedRunnerCredential, ContractError> {
+	parse(text)
+}
+
+/// `apiErrorBodySchema.safeParse(JSON.parse(text))`.
+///
+/// # Errors
+/// As [`parse`].
+pub fn parse_api_error_body(text: &str) -> Result<api::ApiErrorBody, ContractError> {
+	parse(text)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn outgoing_payloads_are_checked_by_the_same_decoders() {
+		let usage = jobs::ResourceUsage::default();
+		let cancelled = jobs::CompleteJobRequest::Cancelled {
+			lease_generation: 1,
+			usage: usage.clone(),
+		};
+		assert!(check_outgoing(&cancelled).is_ok());
+		let stale = jobs::CompleteJobRequest::Failed {
+			lease_generation: 0,
+			usage,
+			failure_code: "X".to_owned(),
+			failure_detail: Tri::Value("TIMEOUT".to_owned()),
+			retryable: false,
+		};
+		let Err(ContractError::Invalid(issues)) = check_outgoing(&stale) else {
+			panic!("a zero lease generation and a stray detail must be rejected");
+		};
+		let paths: Vec<String> = issues.iter().map(|issue| issue.path_string(".")).collect();
+		assert_eq!(paths, ["leaseGeneration", "failureDetail"]);
+	}
+
+	#[test]
+	fn parses_bodies_with_javascript_semantics() {
+		let body = "\u{FEFF}{\"cancelRequested\":false,\"cancelRequested\":true,\"extra\":1}";
+		let parsed = parse_bytes::<jobs::EventsResponse>(body.as_bytes());
+		assert_eq!(
+			parsed,
+			Ok(jobs::EventsResponse {
+				cancel_requested: true
+			})
+		);
+		assert!(matches!(
+			parse_heartbeat_response("{"),
+			Err(ContractError::Json(_))
+		));
 	}
 }
