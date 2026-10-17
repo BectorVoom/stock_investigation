@@ -435,6 +435,60 @@ describe("notebook market widget bodies", () => {
 		cleanup();
 	});
 
+	it("opens the chart viewer from a notebook market widget, like on Home (ADR-0025)", async () => {
+		const api = createApiClient({ fetch: backend.fetch });
+		const fixtures = marketFixtures();
+		const market = stubMarket(defaultHomeSeries(false), null, api);
+
+		render(() => (
+			<WidgetBody
+				widget={fixtures.chart}
+				view={null}
+				registry={registry}
+				market={market}
+				{...BODY_DEFAULTS}
+			/>
+		));
+		// The same Home component, so the same opener with the widget title.
+		const open = screen.getByRole("button", { name: /^Open chart: Line chart: VIX chart\./ });
+		fireEvent.click(open);
+		// The viewer is its own lazy chunk: it renders once the chunk loads.
+		const dialog = await waitFor(() => {
+			const found = document.querySelector("sl-dialog.chart-viewer");
+			if (!(found instanceof HTMLElement)) throw new Error("the chart viewer did not open");
+			return found;
+		});
+		expect(dialog.textContent).toContain("CBOE Volatility Index: VIX");
+		// The 1y opening preset over the three fixture days.
+		const dates = [...dialog.querySelectorAll('input[type="date"]')].filter(
+			(input): input is HTMLInputElement => input instanceof HTMLInputElement,
+		);
+		expect(dates.map((input) => input.value)).toEqual(["2026-10-06", "2026-10-08"]);
+		// Closing unmounts the viewer.
+		fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+		await waitFor(() => expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull());
+
+		cleanup();
+		render(() => (
+			<WidgetBody
+				widget={fixtures.stocks}
+				view={null}
+				registry={registry}
+				market={market}
+				{...BODY_DEFAULTS}
+			/>
+		));
+		// The stock-table row opens its own series only.
+		fireEvent.click(screen.getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ }));
+		const rowDialog = await waitFor(() => {
+			const found = document.querySelector("sl-dialog.chart-viewer");
+			if (!(found instanceof HTMLElement)) throw new Error("the row viewer did not open");
+			return found;
+		});
+		expect(rowDialog.textContent).toContain("AAPL (NASDAQ)");
+		expect(rowDialog.textContent).not.toContain("MSFT (NASDAQ)");
+	});
+
 	it("shows Home's own unavailable and loading states without data", () => {
 		const api = createApiClient({ fetch: backend.fetch });
 		const fixtures = marketFixtures();

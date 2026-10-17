@@ -450,6 +450,179 @@ def b32Vectors : List String :=
     jsonObj [("bytes", jsonNatList bytes),
       ("chars", jsonNatList (encodeB32 bytes))]
 
+/-! ## Chart viewer (`ChartWindow.lean`, ADR-0025) -/
+
+def cIntervalName : CInterval → String
+  | .daily => "daily"
+  | .weekly => "weekly"
+  | .monthly => "monthly"
+  | .quarterly => "quarterly"
+  | .yearly => "yearly"
+
+def cPresetName : CPreset → String
+  | .w1 => "1w"
+  | .m1 => "1m"
+  | .m3 => "3m"
+  | .m6 => "6m"
+  | .ytd => "ytd"
+  | .y1 => "1y"
+  | .y3 => "3y"
+  | .y5 => "5y"
+  | .max => "max"
+
+def cPointJson (p : CPoint) : String :=
+  jsonObj [("day", jsonInt p.day), ("date", jsonStr (isoOfAbs p.day)),
+    ("value", jsonNat p.val)]
+
+def cBarJson (b : CBar) : String :=
+  jsonObj [("day", jsonInt b.day), ("date", jsonStr (isoOfAbs b.day)),
+    ("open", jsonNat b.open_), ("high", jsonNat b.high),
+    ("low", jsonNat b.low), ("close", jsonNat b.close),
+    ("count", jsonNat b.count)]
+
+/-- Boundaries: a week split (Sat/Sun/Mon), month ends (incl. Feb in a
+    common year), quarter and year ends. -/
+def chartTriples : List (CInterval × List Int) :=
+  [(.weekly, [2, 3, 4]), (.weekly, [9, 10, 11]),
+   (.monthly, [30, 31, 32]), (.monthly, [58, 59, 60]), (.monthly, [364, 365, 366]),
+   (.quarterly, [89, 90, 91]), (.quarterly, [364, 365, 366]),
+   (.yearly, [364, 365, 366]), (.yearly, [729, 730, 731]),
+   (.daily, [5, 6, 7])]
+
+/-- Every point list of length 0..2 over the boundary days × values {0, 1, 2}
+    (unsorted orders included: both sides sort). -/
+def chartPointLists (days : List Int) : List (List CPoint) :=
+  let alphabet := days.flatMap fun d => [0, 1, 2].map fun v => CPoint.mk d v
+  [[]] ++ (alphabet.map fun a => [a])
+    ++ (alphabet.flatMap fun a => alphabet.map fun b => [a, b])
+
+def resampleVec (iv : CInterval) (pts : List CPoint) : String :=
+  jsonObj [("interval", jsonStr (cIntervalName iv)),
+    ("points", jsonArr (pts.map cPointJson)),
+    ("bars", jsonArr ((resampleSorted iv (sortPoints pts)).map cBarJson))]
+
+def chartResampleVectors : List String :=
+  chartTriples.flatMap fun (iv, days) => (chartPointLists days).map (resampleVec iv)
+
+def windowJson (w : Window) : String :=
+  jsonObj [("from", jsonInt w.lo), ("to", jsonInt w.hi)]
+
+def presetVec (preset : CPreset) (first last : Int) : String :=
+  let r := presetWindow preset first last
+  jsonObj [("preset", jsonStr (cPresetName preset)),
+    ("firstDay", jsonInt first), ("lastDay", jsonInt last),
+    ("from", jsonInt r.lo), ("to", jsonInt r.hi)]
+
+def chartPresetVectors : List String := Id.run do
+  let mut out := []
+  for preset in ([.w1, .m1, .m3, .m6, .ytd, .y1, .y3, .y5, .max] : List CPreset) do
+    for last in ([gridDaysFromCivil 2024 3 31, gridDaysFromCivil 2024 6 15,
+        gridDaysFromCivil 2023 2 28] : List Int) do
+      for first in ([gridDaysFromCivil 2020 1 1, last - 100, last] : List Int) do
+        out := presetVec preset first last :: out
+  return out.reverse
+
+def clampVec (a b lo hi : Int) (minSpan : Nat) : String :=
+  let r := clampWindow ⟨a, b⟩ ⟨lo, hi⟩ minSpan
+  jsonObj [("window", windowJson ⟨a, b⟩), ("extent", windowJson ⟨lo, hi⟩),
+    ("minSpan", jsonNat minSpan), ("from", jsonInt r.lo), ("to", jsonInt r.hi)]
+
+def chartClampVectors : List String := Id.run do
+  let mut out := []
+  for a in ([-1, 0, 2] : List Int) do
+    for b in ([-1, 0, 2, 4] : List Int) do
+      for hi in ([1, 4] : List Int) do
+        for minSpan in ([0, 1, 5] : List Nat) do
+          out := clampVec a b 0 hi minSpan :: out
+  return out.reverse
+
+def panVec (a b delta lo hi : Int) : String :=
+  let r := panWindow ⟨a, b⟩ delta ⟨lo, hi⟩
+  jsonObj [("window", windowJson ⟨a, b⟩), ("delta", jsonInt delta),
+    ("extent", windowJson ⟨lo, hi⟩),
+    ("from", jsonInt r.lo), ("to", jsonInt r.hi)]
+
+def chartPanVectors : List String := Id.run do
+  let mut out := []
+  for a in ([-1, 0, 2] : List Int) do
+    for b in ([-1, 0, 2, 4] : List Int) do
+      for delta in ([-3, 0, 2] : List Int) do
+        for hi in ([1, 4] : List Int) do
+          out := panVec a b delta 0 hi :: out
+  return out.reverse
+
+/-- Zoom vectors with the float-agreement filter: the TypeScript computes the
+    anchor shift in floating point, so vectors where the exact division is
+    integral (but neither trivially zero nor full-span, where the float result
+    is exact) are skipped — the unit tests cover those cases instead. -/
+def zoomVec (a b anchor : Int) (num den : Nat) (lo hi : Int) (minSpan : Nat) :
+    Option String :=
+  let s := zoomNewSpan ((b - a).toNat) num den minSpan ((hi - lo).toNat)
+  let ae := min (max anchor lo) hi
+  let spanN := (b - a).toNat
+  let offN := (min (max (ae - a) 0) (b - a)).toNat
+  if spanN ≠ 0 ∧ offN ≠ 0 ∧ offN ≠ spanN ∧ (offN * s) % spanN == 0 then none
+  else
+    let r := zoomWindow ⟨a, b⟩ anchor num den ⟨lo, hi⟩ minSpan
+    some (jsonObj [("window", windowJson ⟨a, b⟩), ("anchor", jsonInt anchor),
+      ("factorNum", jsonNat num), ("factorDen", jsonNat den),
+      ("extent", windowJson ⟨lo, hi⟩), ("minSpan", jsonNat minSpan),
+      ("from", jsonInt r.lo), ("to", jsonInt r.hi)])
+
+def chartZoomVectors : List String := Id.run do
+  let mut out := []
+  for ab in ([(-1, -1), (-1, 2), (0, 0), (0, 2), (0, 4), (2, 2), (2, 5)] :
+      List (Int × Int)) do
+    for anchor in ([-1, 0, 2, 4] : List Int) do
+      for numDen in ([(1, 2), (1, 1), (2, 1), (3, 2)] : List (Nat × Nat)) do
+        for hi in ([3, 6] : List Int) do
+          for minSpan in ([0, 2] : List Nat) do
+            match zoomVec ab.1 ab.2 anchor numDen.1 numDen.2 0 hi minSpan with
+            | none => continue
+            | some v => out := v :: out
+  return out.reverse
+
+/-- Sorted day lists of length 0..3 over {0, 1, 2} (duplicates included). -/
+def chartDayLists : List (List Int) :=
+  [[]] ++ [[0], [1], [2]]
+  ++ [[0, 0], [0, 1], [0, 2], [1, 1], [1, 2], [2, 2]]
+  ++ [[0, 0, 0], [0, 0, 1], [0, 0, 2], [0, 1, 1], [0, 1, 2], [0, 2, 2],
+      [1, 1, 1], [1, 1, 2], [1, 2, 2], [2, 2, 2]]
+
+def sliceVec (days : List Int) (a b : Int) : String :=
+  let idx := sliceIdx days a b
+  jsonObj [("days", jsonIntList days), ("from", jsonInt a), ("to", jsonInt b),
+    ("start", jsonNat idx.1), ("end", jsonNat idx.2)]
+
+def chartSliceVectors : List String := Id.run do
+  let mut out := []
+  for days in chartDayLists do
+    for a in ([-1, 0, 1, 2, 3] : List Int) do
+      for b in ([-1, 0, 1, 2, 3] : List Int) do
+        out := sliceVec days a b :: out
+  return out.reverse
+
+/-- Value lists of length 0..3 over {0, 1, 2} against periods 0..4
+    (period 0 is outside the model: the implementation fails closed). -/
+def chartValueLists : List (List Nat) :=
+  [[]] ++ [[0], [1], [2]]
+  ++ [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]]
+  ++ ([0, 1, 2].flatMap fun a => [0, 1, 2].flatMap fun b =>
+      [0, 1, 2].map fun c => [a, b, c])
+
+def maVec (values : List Nat) (period : Nat) : String :=
+  jsonObj [("values", jsonNatList values), ("period", jsonNat period),
+    ("mask", match period with
+      | 0 => "null"
+      | _ + 1 => jsonArr ((maMask values period).map fun set => if set then "true" else "false"))]
+
+def chartMaVectors : List String := Id.run do
+  let mut out := []
+  for values in chartValueLists do
+    for period in ([0, 1, 2, 3, 4] : List Nat) do
+      out := maVec values period :: out
+  return out.reverse
+
 /-! ## Drop-target decision (`DragTarget.lean`) -/
 
 /-- Small alphabet: two same-size neighbours (`dragR0`, `dragR1`, with a
@@ -542,5 +715,12 @@ def main : IO Unit := do
   IO.println ("\"monthGrid\": [\n" ++ ",\n".intercalate monthGridVectors ++ "\n],")
   IO.println ("\"syncPlan\": [\n" ++ ",\n".intercalate syncPlanVectors ++ "\n],")
   IO.println ("\"base32hex\": [\n" ++ ",\n".intercalate b32Vectors ++ "\n],")
+  IO.println ("\"chartResample\": [\n" ++ ",\n".intercalate chartResampleVectors ++ "\n],")
+  IO.println ("\"chartPreset\": [\n" ++ ",\n".intercalate chartPresetVectors ++ "\n],")
+  IO.println ("\"chartClamp\": [\n" ++ ",\n".intercalate chartClampVectors ++ "\n],")
+  IO.println ("\"chartPan\": [\n" ++ ",\n".intercalate chartPanVectors ++ "\n],")
+  IO.println ("\"chartZoom\": [\n" ++ ",\n".intercalate chartZoomVectors ++ "\n],")
+  IO.println ("\"chartSlice\": [\n" ++ ",\n".intercalate chartSliceVectors ++ "\n],")
+  IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
   IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n]")
   IO.println "}"

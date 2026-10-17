@@ -1,6 +1,17 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { SafeLink } from "@research/ui-registry";
-import { type Accessor, createMemo, For, type JSX, Match, Show, Switch } from "solid-js";
+import {
+	type Accessor,
+	createMemo,
+	createSignal,
+	For,
+	type JSX,
+	Match,
+	Show,
+	Switch,
+} from "solid-js";
+import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
+import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import {
 	changeErrorText,
@@ -15,15 +26,35 @@ import {
 /**
  * One row per series (price table): Series · Last close · Change ·
  * Change % · As of · Source. The row header is the series name, with the
- * symbol in monospace as secondary text. Every cell carries a value or an
+ * symbol in monospace as secondary text. Each name cell with observations is
+ * a native button named "Open chart: " plus the visible name and symbol (so
+ * the row header keeps both) that opens the detailed chart viewer (ADR-0025,
+ * lazy chunk) for that row's series at the 1y preset; a series without
+ * observations has no button. Every cell carries a value or an
  * explicit "unavailable (reason)" — never blank, never 0. A series whose
  * last refresh failed still shows its stored values with an amber
- * "last refresh failed (reason)" note row beneath it.
+ * "last refresh failed (reason)" note row beneath it. The viewer mounts only
+ * while open, after the table (a dialog inside `<tbody>` would break the
+ * table), stays open until closed (a reload that drops the row's
+ * observations shows its "unavailable" state), and nothing it does is saved.
  */
 export function StockTableWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "stock-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	// One object per press, keyed below: a press while the download failure
+	// shows mounts a fresh viewer, which imports again.
+	const [viewerRequest, setViewerRequest] = createSignal<{
+		readonly seriesId: string;
+		readonly opener: HTMLElement;
+	} | null>(null);
+	// The viewer's one series, live through the accessor: empty while the
+	// named series holds no observations (the open viewer then says so).
+	const viewerSeries = createMemo(() => {
+		const id = viewerRequest()?.seriesId ?? null;
+		const entry = id === null ? undefined : props.seriesById().get(id);
+		return entry === undefined || entry === null || entry.observations.length === 0 ? [] : [entry];
+	});
 	return (
 		<>
 			<div class="overflow-x-auto">
@@ -55,18 +86,38 @@ export function StockTableWidget(props: {
 					</thead>
 					<tbody>
 						<For each={props.widget.seriesIds}>
-							{(seriesId) => <StockRow series={props.seriesById().get(seriesId) ?? null} />}
+							{(seriesId) => (
+								<StockRow
+									series={props.seriesById().get(seriesId) ?? null}
+									onOpen={(button) => setViewerRequest({ seriesId, opener: button })}
+								/>
+							)}
 						</For>
 					</tbody>
 				</table>
 			</div>
+			<Show when={viewerRequest()} keyed>
+				{(request) => (
+					<LazyChartViewer
+						open
+						title={props.seriesById().get(request.seriesId)?.title ?? request.seriesId}
+						series={viewerSeries}
+						initialPreset="1y"
+						opener={request.opener}
+						onClose={() => setViewerRequest(null)}
+					/>
+				)}
+			</Show>
 			<TwelveDataSessionNote seriesIds={props.widget.seriesIds} byId={props.seriesById} />
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />
 		</>
 	);
 }
 
-function StockRow(props: { readonly series: MarketSeries | null }): JSX.Element {
+function StockRow(props: {
+	readonly series: MarketSeries | null;
+	readonly onOpen: (button: HTMLButtonElement) => void;
+}): JSX.Element {
 	const summary = createMemo(() => (props.series === null ? null : summarizeSeries(props.series)));
 	const ready = createMemo(() => {
 		const entry = props.series;
@@ -80,6 +131,8 @@ function StockRow(props: { readonly series: MarketSeries | null }): JSX.Element 
 	});
 	const missingReason = () => props.series?.unavailable?.reason ?? unavailableText("NO_DATA");
 	const stale = () => (props.series === null ? null : staleFailureReason(props.series));
+	// The viewer opens only for a series with observations (ADR-0025).
+	const openable = () => (props.series?.observations.length ?? 0) > 0;
 	return (
 		<Show
 			when={props.series}
@@ -95,10 +148,28 @@ function StockRow(props: { readonly series: MarketSeries | null }): JSX.Element 
 				<>
 					<tr class="border-b border-slate-200 align-top">
 						<th scope="row" class="py-1 pr-3 font-medium">
-							<span class="block">{entry().title}</span>{" "}
-							<span class="block font-mono text-2xs font-normal text-slate-600">
-								{entry().symbol}
-							</span>
+							<Show
+								when={openable()}
+								fallback={
+									<>
+										<span class="block">{entry().title}</span>{" "}
+										<span class="block font-mono text-2xs font-normal text-slate-600">
+											{entry().symbol}
+										</span>
+									</>
+								}
+							>
+								<ChartOpener
+									srPrefix="Open chart: "
+									openerKey={entry().seriesId}
+									onOpen={props.onOpen}
+								>
+									<span class="block">{entry().title}</span>{" "}
+									<span class="block font-mono text-2xs font-normal text-slate-600">
+										{entry().symbol}
+									</span>
+								</ChartOpener>
+							</Show>
 						</th>
 						<Show
 							when={ready()}

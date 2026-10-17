@@ -53,6 +53,14 @@ accessible name), and Home takes every type except a research result.
 - Remove a widget (at once, no dialog; Undo restores it).
 - Reset to the default arrangement (after confirmation; Undo restores it).
 - Queue a market-data refresh for the local runner.
+- Open a price widget's detailed chart viewer (ADR-0025): the line-chart plot
+  (all its series, opening at the widget's range), a metric's value block
+  (its series, 1y) or a stock-table row's name (that row's series, 1y) —
+  each an "Open chart" button. The viewer offers range presets plus exact
+  From/To dates, interval / scale / values controls, moving averages, the
+  main chart with crosshair and readout, an overview navigator,
+  visible-window statistics and a data-table twin; Escape closes it with
+  focus returned. Nothing it does is saved.
 - (Elsewhere) Have an AI agent arrange the widgets through the MCP server
   (`docs/OPERATIONS.md`); edits made elsewhere — another tab, an agent —
   appear on this page when its tab becomes visible again.
@@ -64,7 +72,9 @@ former label); the per-widget actions open a text menu with leading icons.
 
 - The arranged widgets (metric, line-chart, stock-table, indicator-table):
   latest values with unit, as-of date, change and source link, or
-  "unavailable (reason)" when a series has no usable data. Widgets come in
+  "unavailable (reason)" when a series has no usable data. A tap on a price
+  widget opens the detailed chart viewer at the right place (the plot, the
+  value block, the row's series — see the actions above). Widgets come in
   three fixed sizes on equal grid cells with a fixed row height — Small
   1 × 1 (17rem, 272 px), Medium 2 × 2 (35rem, 560 px), Large full width × 2
   (35rem, 560 px) — as white cards with a faint
@@ -248,7 +258,9 @@ Ask research questions and read the answers, with their sources and run progress
   numbers, units, as-of dates, sources and unavailable states); they are
   added from the Add menu through Home's form (series, range, days ahead),
   edited in the same form, and reloaded only when the named series change —
-  a series never refreshed queues one market-data refresh by itself. A
+  a series never refreshed queues one market-data refresh by itself. A tap on
+  a price widget opens the same detailed chart viewer as on Home (its plot,
+  value block or row name; nothing it does is saved). A
   `chart` widget carries its own series and draws through the same shared
   plot as the Chat preview it was saved from (same viewBox, ticks, axis
   titles, marks, legend and readout; `xLabel` / `yLabel` plus `xKind` keep the

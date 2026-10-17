@@ -45,6 +45,39 @@ export {
 	chartWidgetXAxisTitle,
 } from "./charts/chartWidgetDataset.ts";
 export {
+	type BuildDetailChartInput,
+	buildDetailChartModel,
+	buildNavigatorModel,
+	buildNavigatorOverview,
+	type DateAxisStep,
+	type DetailChartModel,
+	type DetailLastMarker,
+	type DetailMaOverlayInput,
+	type DetailMaPath,
+	type DetailScale,
+	type DetailSeriesInput,
+	type DetailSeriesPath,
+	type DetailSeriesValues,
+	type DetailValueMode,
+	type DetailValueTag,
+	type DetailXTick,
+	decimateToWidth,
+	ensureTwoBarWindow,
+	isValueLabelHidden,
+	type LogGateInput,
+	layoutTagCenters,
+	logScaleBlocked,
+	type NavigatorInput,
+	type NavigatorModel,
+	type NavigatorOverview,
+	type NavigatorOverviewInput,
+	navigatorWindowRect,
+	plotWidthForSize,
+	unionBarDays,
+	unionOverview,
+	VALUE_LABEL_HEIGHT,
+} from "./charts/detailChartModel.ts";
+export {
 	buildHomeLineModel,
 	type HomeLineModel,
 	type HomeLinePath,
@@ -78,7 +111,7 @@ export {
 	type PresentedLabels,
 	resolveDataset,
 } from "./datasetGuard.ts";
-export { formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
+export { formatAxisTick, formatIsoDate, formatNumber, safeHttpsUrl } from "./format.ts";
 export { ClaimStatusBadge, ClaimTypeBadge } from "./parts/Badges.tsx";
 export {
 	CitationChip,

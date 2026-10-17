@@ -471,15 +471,29 @@ the app's way; the policy itself is never relaxed (see ADR-0015).
   slate notice ("To add this widget:" / "To save this widget:") while the
   form is pristine and turns red ("Fix before saving:") once any field has
   changed.
-- Lazy cost, measured: the Home chunk (`HomeView-*.js` 187.75 kB, 52.17 kB
-  gzip, plus `HomeView-*.css` 14.96 kB in the 2026-10-13 production build)
-  downloads on the first visit to `#/home` only; re-measure if the kit
-  version or the imported set changes (see ADR-0015).
+- Lazy cost, measured: the Home route (`HomeView-*.js` 13.15 kB, 4.70 kB
+  gzip in the 2026-10-17 production build) downloads on the first visit to
+  `#/home` only. The chart viewer is its own lazy chunk (`ChartViewer-*.js`
+  36.04 kB, 11.61 kB gzip), downloaded on the first press of an "Open chart"
+  button (its entry points render on every page through the shared
+  `WidgetBody`, the viewer only while open); the main chunk (`index-*.js`) is
+  554.12 kB, 157.66 kB gzip, down from 577.54 kB / 163.88 kB gzip with the
+  viewer statically imported. Splitting it changed nothing about zod: in both
+  builds zod lives in a shared chunk (`serializer-*.js` before the split,
+  `src-*.js` after) that `index-*.js` imports, so ES module order evaluates it
+  before `zodJitless.ts` runs — a pre-existing ordering, not one the split
+  introduced (see the next item). Re-measure if the kit version or the
+  imported set changes (see ADR-0015 and ADR-0025).
 - Zod runs `jitless` in the SPA (`apps/web/src/zodJitless.ts`, imported
   first in `main.tsx`): zod's `new Function` probe is reported as a
   Content-Security-Policy violation by strict engines, and the SPA's small
   payloads never need JIT parsing — at the cost of slower schema parsing in
   the browser. The Worker and Node paths keep their own configuration.
+  Known gap (open): the production build puts zod in a shared chunk that the
+  entry chunk imports, and an imported chunk evaluates before the importing
+  module's own body, so schemas created at module level in that chunk exist
+  before `config({ jitless: true })` runs; "imported first" holds for the
+  source order, not for the bundled evaluation order.
 
 ## 14. Widgets (Apple Human Interface Guidelines)
 
@@ -519,3 +533,26 @@ The other Home widgets (metric, line-chart, stock-table, indicator-table)
 follow the same guideline through the Home rework of section 13 (ADR-0017:
 fixed sizes, hairlines, icon-only buttons, drag to reposition); their content
 — tables, controls and provenance — is as sections 6 and 13 state it.
+
+### Chart viewer (ADR-0025)
+
+"The app" a price widget's tap opens: the line-chart plot, a metric's value
+block (value, change lines, sparkline) and each stock-table name cell are
+native buttons named by a hidden "Open chart: " plus their visible content
+(keyboard reachable, no button chrome — they look like the plot, the values,
+the name; WCAG 2.5.3 Label in Name) over the current page, Home or the
+Notebook alike; a mouse press that moves 4 px or more (selecting text) never
+opens, while a touch or pen tap that drifts a few px does (the slop rule is
+mouse-only; a pen that drag-selects text may still open); each opener is at
+least 24 × 24 px and 44 × 44 px under a coarse pointer. While its lazy chunk
+downloads "Loading chart…" shows at a fixed place at the top of the
+viewport (where the sheet will appear, never below a tall widget's content);
+a failed download shows there as an alert with Try again (focused) and
+Close, and pressing the opener again also retries. At most one viewer
+exists: a second open supersedes the first. The viewer is the large modal sheet where the series can
+be analysed: range presets plus exact From/To dates, interval / scale /
+values controls, moving averages for one series, the main chart with
+crosshair and readout, an overview navigator, visible-window statistics and a
+data-table twin with provenance. Escape and its close button close it with
+focus returned to the opener; a press that turns into a widget drag never
+opens it. Nothing it does is saved.

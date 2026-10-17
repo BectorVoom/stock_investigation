@@ -18,6 +18,7 @@ export * from "./jobs/lease.ts";
 export * from "./jobs/stateMachine.ts";
 export * from "./json.ts";
 export * from "./market/changes.ts";
+export * from "./market/chartWindow.ts";
 export * from "./market/dashboard.ts";
 export * from "./market/rateWindow.ts";
 export * from "./market/seriesId.ts";

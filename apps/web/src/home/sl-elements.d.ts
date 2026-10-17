@@ -45,6 +45,12 @@ export interface SlOptionProps extends SlCommon {
 	readonly disabled?: boolean;
 }
 
+/** The imperative handle of an `sl-option` (its current value and disabled state). */
+export interface SlOptionElement extends HTMLElement {
+	value: string;
+	disabled: boolean;
+}
+
 export interface SlInputProps extends SlCommon {
 	readonly label?: string;
 	readonly value?: string;
