@@ -206,11 +206,16 @@ Ask research questions and read the answers, with their sources and run progress
   right-aligned bubbles, assistant answers as plain text with "Copy answer",
   "Add to Notebook" and "Evidence" actions, each research run as an inline card directly after
   the owner message whose `runId` matches it (a state badge for every state
-  except completed and failed, latest progress, `Stop`, a failure reason,
+  except completed and failed, latest progress, `Stop`, a failure reason
+  with a next-step hint where one exists (no evidence collected, provider
+  unavailable or rate-limited),
   `Retry`, the approval form; no "Run details" and no "Evidence" button on
   the card — the records drawer opens from the "Evidence" action under an
-  answer; a completed run's card is hidden, since its answer follows), and
-  unmatched unfinished or failed runs grouped under "Earlier runs".
+  answer; a completed run's card is hidden, since its answer follows, and so
+  is a retried run's, since its retry follows and the old failure would only
+  repeat an error the retry answers), and unmatched unfinished or failed runs
+  grouped under "Earlier runs". Retrying also clears an earlier "The run could
+  not be retried." notice.
 - Each research result directly after the assistant answer of the run that
   produced it, as a widget-styled preview (the same frame as Notebook widgets,
   fixed height): the rendered component with item selection plus an "Add to

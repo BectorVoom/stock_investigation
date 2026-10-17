@@ -1141,6 +1141,38 @@ describe("chat run controls", () => {
 		await screen.findByRole("article", { name: "Run run_4" });
 		const retry = backend.requestsTo("POST", /retry$/)[0];
 		expect(retry?.headers["idempotency-key"]).toMatch(/^idem-[0-9a-f-]{36}$/);
+		// The retry answers the old failure, so its error line leaves the screen.
+		await waitFor(() => expect(screen.queryByRole("article", { name: "Run run_3" })).toBeNull());
+		expect(screen.queryByText("BUDGET_MAX_TOOL_CALLS")).toBeNull();
+	});
+
+	it("clears a failed retry's notice when the owner retries again", async () => {
+		server.runs = [
+			makeRun({ runId: "run_3", state: "failed", failureCode: "BUDGET_MAX_TOOL_CALLS" }),
+		];
+		let attempts = 0;
+		backend.on("POST", /research-runs\/run_3\/retry$/, () => {
+			attempts += 1;
+			return attempts === 1
+				? errorResponse(500, "INTERNAL", "database unavailable")
+				: jsonResponse(
+						{ run: makeRun({ runId: "run_4", state: "pending", retryOfRunId: "run_3" }) },
+						{ status: 202 },
+					);
+		});
+		mountApp(backend);
+
+		const failed = await screen.findByRole("article", { name: "Run run_3" });
+		fireEvent.click(within(failed).getByRole("button", { name: "Retry run" }));
+		await screen.findByText("The run could not be retried.");
+
+		fireEvent.click(
+			within(screen.getByRole("article", { name: "Run run_3" })).getByRole("button", {
+				name: "Retry run",
+			}),
+		);
+		await screen.findByRole("article", { name: "Run run_4" });
+		expect(screen.queryByText("The run could not be retried.")).toBeNull();
 	});
 
 	it("shows the tool error alongside ALL_TOOL_CALLS_FAILED", async () => {
@@ -1219,6 +1251,20 @@ describe("chat run controls", () => {
 		);
 		const nulled = await screen.findByRole("article", { name: "Run run_hint_null" });
 		expect(nulled.querySelector('[data-field="failure-hint"]')).toBeNull();
+	});
+
+	it.each([
+		["PROVIDER_UNAVAILABLE", "overloaded or could not be reached"],
+		["PROVIDER_RATE_LIMITED", "limiting requests"],
+	])("hints a next step for %s", async (failureCode, hint) => {
+		server.runs = [makeRun({ runId: "run_provider", state: "failed", failureCode })];
+		mountApp(backend);
+
+		const failed = await screen.findByRole("article", { name: "Run run_provider" });
+		expect(failed.querySelector('[data-field="failure-code"]')?.textContent).toBe(failureCode);
+		const shown = failed.querySelector('[data-field="failure-hint"]')?.textContent;
+		expect(shown).toContain(hint);
+		expect(shown).toContain("choose another model in Settings");
 	});
 
 	it("shows the approval request and resumes with the approved budget", async () => {
@@ -1666,6 +1712,33 @@ describe("retry placement in the thread (finding 4)", () => {
 		await screen.findByRole("article", { name: "Run run_4" });
 		expect(runOrder()).toEqual(["Run run_3", "Run run_4"]);
 		expect(screen.queryByRole("region", { name: "Earlier runs" })).toBeNull();
+		// The retried run's card is hidden: its failure would repeat an error the retry answers.
+		const retried = screen.getByRole("article", { name: "Run run_3", hidden: true });
+		expect(retried.closest("li")?.hidden).toBe(true);
+	});
+
+	it("hides an earlier run once it was retried", async () => {
+		cleanup();
+		render(() => (
+			<Conversation
+				conversation={{ ...CONVERSATION, messages: [], hasEarlier: false }}
+				runs={[
+					makeRun({ runId: "run_3", state: "failed", failureCode: "BUDGET_MAX_TOOL_CALLS" }),
+					makeRun({
+						runId: "run_4",
+						state: "pending",
+						provenance: null,
+						retryOfRunId: "run_3",
+						createdAt: "2026-10-05T00:00:00Z",
+					}),
+				]}
+				onOpenRecords={() => {}}
+			/>
+		));
+		const earlier = await screen.findByRole("region", { name: "Earlier runs" });
+		expect(within(earlier).getByRole("article", { name: "Run run_4" })).toBeTruthy();
+		expect(within(earlier).queryByRole("article", { name: "Run run_3" })).toBeNull();
+		expect(screen.queryByText("BUDGET_MAX_TOOL_CALLS")).toBeNull();
 	});
 
 	it("keeps the retry card after its answer arrives", async () => {
@@ -1697,11 +1770,13 @@ describe("retry placement in the thread (finding 4)", () => {
 		const retry = screen.getByRole("article", { name: "Run run_4", hidden: true });
 		expect(retry.getAttribute("data-run-state")).toBe("completed");
 		expect(retry.closest("li")?.hidden).toBe(true);
-		// Neither ordinary ending shows a state badge; the failure keeps its alert line.
+		// Neither ordinary ending shows a state badge.
 		expect(retry.querySelector('[data-field="state"]')).toBeNull();
-		const failed = screen.getByRole("article", { name: "Run run_3" });
+		// The retried failure no longer shows its alert line: the retry answered it.
+		const failed = screen.getByRole("article", { name: "Run run_3", hidden: true });
 		expect(failed.querySelector('[data-field="state"]')).toBeNull();
-		expect(failed.querySelector('[role="alert"]')?.textContent).toContain("BUDGET_MAX_TOOL_CALLS");
+		expect(failed.closest("li")?.hidden).toBe(true);
+		expect(screen.queryByRole("alert")).toBeNull();
 	});
 
 	it("an assistant message alone never earns a run an inline place", async () => {

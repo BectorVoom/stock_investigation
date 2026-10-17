@@ -395,6 +395,14 @@ export function Conversation(props: {
 		}
 		return grouped;
 	});
+	/**
+	 * Runs the owner already retried. Their failure line and Retry button
+	 * would repeat an error the retry has answered, so their cards are hidden
+	 * (kept in the DOM, like a completed run's) and the retry speaks instead.
+	 */
+	const retriedRunIds = createMemo(() => new Set(retriesByTarget().keys()));
+	const cardShown = (run: ResearchRun): boolean =>
+		runCardVisible(run) && !retriedRunIds().has(run.runId);
 	// Only owner messages decide that a run has an inline place (finding 4):
 	// an assistant message carrying a run id never does.
 	const ownerRunIds = createMemo(() => {
@@ -424,13 +432,13 @@ export function Conversation(props: {
 		}
 		return ids;
 	});
-	// Completed research runs are left out: their cards are hidden, and a heading
-	// over nothing but hidden cards would be an empty section. Notebook-assist
+	// Completed and retried research runs are left out: their cards are hidden,
+	// and a heading over nothing but hidden cards would be an empty section. Notebook-assist
 	// runs show only while queued or running (their reply and turn card speak
 	// afterwards), so finished ones stay out of here too.
 	const earlierRunIds = createMemo(() =>
 		listedRuns()
-			.filter((run) => runCardVisible(run) && !placedInlineIds().has(run.runId))
+			.filter((run) => cardShown(run) && !placedInlineIds().has(run.runId))
 			.map((run) => run.runId),
 	);
 	/** Result previews grouped by producing run (`${runId}_` prefix). */
@@ -551,11 +559,12 @@ export function Conversation(props: {
 				{(current) => (
 					// A completed research run has nothing left to show (no badge, no
 					// action; its answer follows), so its card is hidden rather
-					// than left as an empty box. It stays in the DOM: the state
+					// than left as an empty box; so is a retried run's, whose
+					// retry follows it. It stays in the DOM: the state
 					// is still readable on `data-run-state`. A finished
 					// notebook-assist run mounts no card at all: its assistant
 					// reply and turn card below speak for it.
-					<li aria-label="Run status" hidden={!runCardVisible(current())}>
+					<li aria-label="Run status" hidden={!cardShown(current())}>
 						<Show when={runCardMounted(current())} fallback={null}>
 							<RunCard
 								run={current()}

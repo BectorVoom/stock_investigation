@@ -40,6 +40,22 @@ export function noEvidenceHint(run: ResearchRun): string | null {
 	}
 }
 
+/**
+ * A next step for a provider that turned the run away. The runner already
+ * retried after a backoff, so "a few minutes" is the honest wait; another
+ * model is the way out when one model's upstream stays overloaded.
+ */
+export function providerFailureHint(run: ResearchRun): string | null {
+	switch (run.failureCode) {
+		case "PROVIDER_UNAVAILABLE":
+			return "The model's provider is overloaded or could not be reached. Retry in a few minutes, or choose another model in Settings.";
+		case "PROVIDER_RATE_LIMITED":
+			return "The model's provider is limiting requests (free models have per-minute and daily limits). Retry later, or choose another model in Settings.";
+		default:
+			return null;
+	}
+}
+
 const RETRYABLE_STATES: readonly ResearchRun["state"][] = ["failed", "cancelled", "partial"];
 
 const STATE_CLASSES: { readonly [S in ResearchRun["state"]]?: string } = {
@@ -162,7 +178,7 @@ export function RunCard(props: {
 	// line below, so the word would only repeat them. Every other state keeps
 	// its badge. The state stays on `data-run-state` and in the status region.
 	const showStateBadge = () => props.run.state !== "completed" && props.run.state !== "failed";
-	const failureHint = () => noEvidenceHint(props.run);
+	const failureHint = () => noEvidenceHint(props.run) ?? providerFailureHint(props.run);
 
 	return (
 		<article
