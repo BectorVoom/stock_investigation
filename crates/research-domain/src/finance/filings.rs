@@ -2,37 +2,27 @@
 //! end-of-quarter holdings, not trades (FR-008 / DATA-007): changes are
 //! "reported position" changes with no execution date.
 
-/// `ReportedPositionChange`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ReportedPositionChange {
-	/// `newly-reported-holding`.
-	NewlyReportedHolding,
-	/// `increase-in-reported-position`.
-	IncreaseInReportedPosition,
-	/// `decrease-in-reported-position`.
-	DecreaseInReportedPosition,
-	/// `no-longer-reported`.
-	NoLongerReported,
-	/// `unchanged-reported-position`.
-	UnchangedReportedPosition,
-	/// `not-reported`.
-	NotReported,
+use crate::literal::js_literal_enum;
+
+js_literal_enum! {
+	/// `ReportedPositionChange`.
+	pub enum ReportedPositionChange {
+		/// `newly-reported-holding`.
+		NewlyReportedHolding = "newly-reported-holding",
+		/// `increase-in-reported-position`.
+		IncreaseInReportedPosition = "increase-in-reported-position",
+		/// `decrease-in-reported-position`.
+		DecreaseInReportedPosition = "decrease-in-reported-position",
+		/// `no-longer-reported`.
+		NoLongerReported = "no-longer-reported",
+		/// `unchanged-reported-position`.
+		UnchangedReportedPosition = "unchanged-reported-position",
+		/// `not-reported`.
+		NotReported = "not-reported",
+	}
 }
 
 impl ReportedPositionChange {
-	/// The TypeScript literal.
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::NewlyReportedHolding => "newly-reported-holding",
-			Self::IncreaseInReportedPosition => "increase-in-reported-position",
-			Self::DecreaseInReportedPosition => "decrease-in-reported-position",
-			Self::NoLongerReported => "no-longer-reported",
-			Self::UnchangedReportedPosition => "unchanged-reported-position",
-			Self::NotReported => "not-reported",
-		}
-	}
-
 	/// `reportedPositionChangePhrase`: short wording that never implies a
 	/// dated transaction.
 	#[must_use]

@@ -118,7 +118,6 @@ contract!(
 	api::ApiErrorBody,
 	api::IssuedRunnerCredential,
 	api::RunnerCredential,
-	google_calendar::GoogleEventBody,
 	jobs::BundleProvenance,
 	jobs::ClaimJobRequest,
 	jobs::ClaimJobResponse,
@@ -129,10 +128,8 @@ contract!(
 	jobs::EventsResponse,
 	jobs::HeartbeatRequest,
 	jobs::HeartbeatResponse,
-	jobs::ResearchBudget,
 	jobs::ResearchBundle,
 	jobs::ResearchRequest,
-	jobs::ResourceUsage,
 	jobs::RunnerEvent,
 	jobs::RunnerEventsRequest,
 	jobs::SourceFetchReport,
@@ -151,15 +148,46 @@ contract!(
 	records::FinancialObservation,
 	records::IngestedArticle,
 	records::InvestorFiling,
-	records::PositionFigures,
 	records::PositionObservation,
 	records::PricingPowerRecord,
-	records::ReportingPeriod,
 	records::Security,
 	records::SupplierLink,
 	ui::UiOperation,
 	watchlist::EarningsEvent,
 	widgets::WidgetCore,
+);
+
+/// Implements [`Contract`] for a literal union defined once in
+/// `research-domain` (ARCH-013): zod's `z.enum` over its `VALUES`, in order.
+macro_rules! literal_contract {
+	($($ty:ty),* $(,)?) => {
+		$(impl $crate::Contract for $ty {
+			fn decode(cx: &mut $crate::zod::Cx, input: Option<&research_js::json::Value>) -> Option<Self> {
+				$crate::zod::run_enum(cx, input, <$ty>::VALUES)
+					.and_then(|index| <$ty>::ALL.get(index).copied())
+			}
+		})*
+	};
+}
+
+literal_contract!(
+	research_domain::evidence::verify_claims::ClaimStatus,
+	research_domain::evidence::verify_claims::ClaimType,
+	research_domain::evidence::verify_claims::EvidenceRelation,
+	research_domain::finance::demand_scenario::DemandQuantityKind,
+	research_domain::finance::filings::ReportedPositionChange,
+	research_domain::finance::positions::PositionMetric,
+	research_domain::finance::pricing_power::PricingPowerClassification,
+	research_domain::finance::pricing_power::PricingPowerInputName,
+	research_domain::finance::types::AccountingStandard,
+	research_domain::finance::types::ActualOrEstimate,
+	research_domain::finance::types::FiscalPeriod,
+	research_domain::finance::types::Market,
+	research_domain::jobs::state_machine::JobState,
+	research_domain::market::series_id::MarketProviderId,
+	research_domain::news::feed::LicensePolicy,
+	research_domain::watchlist::limits::EarningsSourceId,
+	research_domain::watchlist::stock_id::WatchMarket,
 );
 
 /// `conversationContextSchema` as a contract value.
@@ -249,10 +277,10 @@ mod tests {
 
 	#[test]
 	fn outgoing_payloads_are_checked_by_the_same_decoders() {
-		let usage = jobs::ResourceUsage::default();
+		let usage = jobs::EMPTY_USAGE;
 		let cancelled = jobs::CompleteJobRequest::Cancelled {
 			lease_generation: 1,
-			usage: usage.clone(),
+			usage,
 		};
 		assert!(check_outgoing(&cancelled).is_ok());
 		let stale = jobs::CompleteJobRequest::Failed {

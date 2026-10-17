@@ -3,7 +3,7 @@
 use research_js::json::Value;
 
 use crate::patterns;
-use crate::zod::{Cx, StrCheck, js_enum, run_string};
+use crate::zod::{Cx, StrCheck, run_string};
 
 /// `idSchema`.
 pub(crate) const ID: &[StrCheck] = &[StrCheck::Regex(&patterns::ID, Some("invalid id"))];
@@ -38,10 +38,5 @@ pub(crate) fn any_string(cx: &mut Cx, input: Option<&Value>) -> Option<String> {
 	run_string(cx, input, ANY_STRING)
 }
 
-js_enum! {
-	/// `marketSchema`.
-	pub enum Market {
-		Jp = "JP",
-		Us = "US",
-	}
-}
+/// `marketSchema` (defined once, in the domain).
+pub use research_domain::finance::types::Market;

@@ -9,16 +9,19 @@ use crate::zod::{
 	Cx, StrCheck, decode_object, js_enum, number, number_literals, run_string, string, tuple2,
 };
 
-/// `MARKET_LIMITS` (the dashboard numbers are the domain's `DASHBOARD_LIMITS`).
+/// `MARKET_LIMITS`: the dashboard numbers are the domain's
+/// [`DASHBOARD_LIMITS`], the refresh numbers are the contract's own.
 pub mod limits {
+	use research_domain::market::dashboard::DASHBOARD_LIMITS;
+
 	/// Widgets on Home.
-	pub const MAX_WIDGETS: usize = 24;
+	pub const MAX_WIDGETS: usize = DASHBOARD_LIMITS.max_widgets;
 	/// Distinct series one page's market widgets may name.
-	pub const MAX_SERIES: usize = 30;
+	pub const MAX_SERIES: usize = DASHBOARD_LIMITS.max_series;
 	/// Series of one line chart.
-	pub const MAX_LINE_CHART_SERIES: usize = 4;
+	pub const MAX_LINE_CHART_SERIES: usize = DASHBOARD_LIMITS.max_line_chart_series;
 	/// Series of one table widget.
-	pub const MAX_TABLE_SERIES: usize = 12;
+	pub const MAX_TABLE_SERIES: usize = DASHBOARD_LIMITS.max_table_series;
 	/// Distinct series one market refresh fetches.
 	pub const MAX_TRACKED_SERIES: usize = 60;
 	/// Observations one series carries in a completion.
@@ -26,88 +29,28 @@ pub mod limits {
 	/// Observations stored per series.
 	pub const MAX_STORED_OBSERVATIONS: usize = 1500;
 	/// Shortest widget title.
-	pub const MIN_WIDGET_TITLE: usize = 1;
+	pub const MIN_WIDGET_TITLE: usize = DASHBOARD_LIMITS.min_widget_title;
 	/// Longest widget title (one rule for every widget, ADR-0024).
-	pub const MAX_WIDGET_TITLE: usize = 120;
+	pub const MAX_WIDGET_TITLE: usize = DASHBOARD_LIMITS.max_widget_title;
 }
 
-js_enum! {
-	/// `marketProviderIdSchema`.
-	pub enum MarketProviderId {
-		Fred = "fred",
-		TwelveData = "twelve-data",
-	}
-}
+pub use research_domain::market::dashboard::DASHBOARD_LIMITS;
+/// `marketProviderIdSchema`, `parseMarketSeriesId` and `formatMarketSeriesId`
+/// are the domain's (`market/seriesId.ts`).
+pub use research_domain::market::series_id::{
+	MarketProviderId, MarketSeriesId, SeriesIdError, format_market_series_id,
+	parse_market_series_id,
+};
 
-/// A parsed `"<provider>:<symbol>"` series id.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MarketSeriesIdParts<'a> {
-	/// The provider.
-	pub provider: MarketProviderId,
-	/// The provider's symbol.
-	pub symbol: &'a str,
-}
-
-const fn is_upper_digit(byte: u8) -> bool {
-	byte.is_ascii_uppercase() || byte.is_ascii_digit()
-}
-
-/// FRED: `/^[A-Z0-9]{1,25}$/`.
-fn is_fred_symbol(symbol: &str) -> bool {
-	(1..=25).contains(&symbol.len()) && symbol.bytes().all(is_upper_digit)
-}
-
-/// Twelve Data: `/^[A-Z0-9][A-Z0-9./-]{0,19}(:[A-Z0-9]{2,10})?$/`.
-fn is_twelve_data_symbol(symbol: &str) -> bool {
-	let (head, exchange) = match symbol.split_once(':') {
-		Some((head, exchange)) => (head, Some(exchange)),
-		None => (symbol, None),
-	};
-	let head_ok = head.as_bytes().split_first().is_some_and(|(first, rest)| {
-		is_upper_digit(*first)
-			&& rest.len() <= 19
-			&& rest
-				.iter()
-				.all(|byte| is_upper_digit(*byte) || matches!(byte, b'.' | b'/' | b'-'))
-	});
-	let exchange_ok = exchange.is_none_or(|exchange| {
-		(2..=10).contains(&exchange.len()) && exchange.bytes().all(is_upper_digit)
-	});
-	head_ok && exchange_ok
-}
-
-/// `parseMarketSeriesId` (domain `market/seriesId.ts`): splits at the first
-/// `:` (which must not be the first character) and checks the
-/// provider-specific symbol shape.
-#[must_use]
-pub fn parse_market_series_id(value: &str) -> Option<MarketSeriesIdParts<'_>> {
-	let (provider, symbol) = value
-		.split_once(':')
-		.filter(|(provider, _)| !provider.is_empty())?;
-	match provider {
-		"fred" if is_fred_symbol(symbol) => Some(MarketSeriesIdParts {
-			provider: MarketProviderId::Fred,
-			symbol,
-		}),
-		"twelve-data" if is_twelve_data_symbol(symbol) => Some(MarketSeriesIdParts {
-			provider: MarketProviderId::TwelveData,
-			symbol,
-		}),
-		_ => None,
-	}
-}
-
-/// `formatMarketSeriesId`.
-#[must_use]
-pub fn format_market_series_id(provider: MarketProviderId, symbol: &str) -> String {
-	format!("{}:{symbol}", provider.as_str())
-}
+/// The parsed `"<provider>:<symbol>"` series id (the domain's
+/// [`MarketSeriesId`], under its former contracts name).
+pub type MarketSeriesIdParts<'a> = MarketSeriesId<'a>;
 
 /// `marketSeriesIdSchema`.
 pub(crate) const MARKET_SERIES_ID: &[StrCheck] = &[
 	StrCheck::Max(64),
 	StrCheck::Refine(
-		|value| parse_market_series_id(value).is_some(),
+		|value| parse_market_series_id(value).is_ok(),
 		"invalid market series id",
 	),
 ];

@@ -1,26 +1,14 @@
 //! Port of `packages/domain/src/watchlist/stockId.ts`.
 
-use serde::{Deserialize, Serialize};
+use crate::literal::js_literal_enum;
 
-/// The market of a watched stock.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum WatchMarket {
-	/// `US`.
-	#[serde(rename = "US")]
-	Us,
-	/// `JP`.
-	#[serde(rename = "JP")]
-	Jp,
-}
-
-impl WatchMarket {
-	/// The TypeScript literal (`"US"` / `"JP"`).
-	#[must_use]
-	pub const fn as_str(self) -> &'static str {
-		match self {
-			Self::Us => "US",
-			Self::Jp => "JP",
-		}
+js_literal_enum! {
+	/// The market of a watched stock.
+	pub enum WatchMarket {
+		/// `US`.
+		Us = "US",
+		/// `JP`.
+		Jp = "JP",
 	}
 }
 

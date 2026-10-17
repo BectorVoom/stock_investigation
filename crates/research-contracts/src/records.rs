@@ -3,9 +3,9 @@
 //! position observations, investor filings, pricing power and datasets.
 
 use research_js::json::Value;
-use serde::ser::SerializeMap;
 use serde::{Serialize, Serializer};
 
+use crate::Contract;
 use crate::json::Record;
 use crate::patterns;
 use crate::primitives::{
@@ -19,13 +19,8 @@ use crate::zod::{
 
 /* ---------- News ---------- */
 
-js_enum! {
-	/// `licensePolicySchema`.
-	pub enum LicensePolicy {
-		HeadlineAndLinkOnly = "headline-and-link-only",
-		ShortExcerptPermitted = "short-excerpt-permitted",
-	}
-}
+/// `licensePolicySchema` (the domain's, DATA-010).
+pub use research_domain::news::feed::LicensePolicy;
 
 const TITLE_300: &[StrCheck] = &[StrCheck::Min(1), StrCheck::Max(300)];
 const SHA256: &[StrCheck] = &[StrCheck::Regex(&patterns::SHA256_HEX, None)];
@@ -128,33 +123,11 @@ impl Evidence {
 	}
 }
 
-js_enum! {
-	/// `claimTypeSchema`.
-	pub enum ClaimType {
-		Observation = "observation",
-		Inference = "inference",
-		Hypothesis = "hypothesis",
-		Forecast = "forecast",
-	}
-}
-
-js_enum! {
-	/// `evidenceRelationSchema`.
-	pub enum EvidenceRelation {
-		Supports = "supports",
-		Contradicts = "contradicts",
-		Context = "context",
-	}
-}
-
-js_enum! {
-	/// `claimStatusSchema`.
-	pub enum ClaimStatus {
-		Supported = "supported",
-		Unsupported = "unsupported",
-		Conflicting = "conflicting",
-	}
-}
+/// `claimTypeSchema`, `evidenceRelationSchema`, `claimStatusSchema` and
+/// `claimIssueSchema` are the domain's (`evidence/verifyClaims.ts`).
+pub use research_domain::evidence::verify_claims::{
+	ClaimIssue, ClaimStatus, ClaimType, EvidenceRelation,
+};
 
 const MAX_400: &[StrCheck] = &[StrCheck::Max(400)];
 
@@ -181,48 +154,6 @@ impl EvidenceLink {
 	}
 }
 
-/// `claimIssueSchema`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "code")]
-pub enum ClaimIssue {
-	/// Cites an evidence id that does not exist.
-	#[serde(rename = "UNKNOWN_EVIDENCE", rename_all = "camelCase")]
-	UnknownEvidence {
-		/// The id (≤ 200).
-		evidence_id: String,
-	},
-	/// The quote is not in the evidence.
-	#[serde(rename = "QUOTE_NOT_FOUND", rename_all = "camelCase")]
-	QuoteNotFound {
-		/// The id (≤ 200).
-		evidence_id: String,
-	},
-	/// The quote is too short.
-	#[serde(rename = "QUOTE_TOO_SHORT", rename_all = "camelCase")]
-	QuoteTooShort {
-		/// The id (≤ 200).
-		evidence_id: String,
-	},
-	/// A quote is missing.
-	#[serde(rename = "MISSING_QUOTE", rename_all = "camelCase")]
-	MissingQuote {
-		/// The id (≤ 200).
-		evidence_id: String,
-	},
-	/// A number is not in the evidence.
-	#[serde(rename = "NUMBER_NOT_IN_EVIDENCE", rename_all = "camelCase")]
-	NumberNotInEvidence {
-		/// The number as written (≤ 40).
-		number_text: String,
-	},
-	/// No supporting evidence.
-	#[serde(rename = "NO_SUPPORTING_EVIDENCE")]
-	NoSupportingEvidence,
-	/// Not independently verified.
-	#[serde(rename = "NOT_INDEPENDENTLY_VERIFIED")]
-	NotIndependentlyVerified,
-}
-
 const MAX_200: &[StrCheck] = &[StrCheck::Max(200)];
 const MAX_40: &[StrCheck] = &[StrCheck::Max(40)];
 const CLAIM_ISSUE_CODES: &[&str] = &[
@@ -235,9 +166,8 @@ const CLAIM_ISSUE_CODES: &[&str] = &[
 	"NOT_INDEPENDENTLY_VERIFIED",
 ];
 
-impl ClaimIssue {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+impl Contract for ClaimIssue {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		run_discriminated(cx, input, "code", CLAIM_ISSUE_CODES, |cx, tag| match tag {
 			0 => decode_object!(cx, input, strict, ["code"], Self::UnknownEvidence {
 				evidence_id: "evidenceId" => string(MAX_200),
@@ -307,17 +237,10 @@ const ASSUMPTIONS: &[ArrCheck] = &[ArrCheck::Max(12)];
 const UNIT_80: &[StrCheck] = &[StrCheck::Min(1), StrCheck::Max(80)];
 const YEAR: &[NumCheck] = &[NumCheck::Int, NumCheck::Gte(1990.0), NumCheck::Lte(2100.0)];
 
-/// One case (bear/base/bull) of a scenario.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ScenarioCase {
-	/// Target value.
-	pub target_value: f64,
-	/// Assumptions (≤ 12 of 1..400).
-	pub assumptions: Vec<String>,
-}
+/// One case (bear/base/bull) of a scenario (the domain's).
+pub use research_domain::finance::demand_scenario::ScenarioCase;
 
-impl ScenarioCase {
+impl Contract for ScenarioCase {
 	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			target_value: "targetValue" => number(&[]),
@@ -326,14 +249,8 @@ impl ScenarioCase {
 	}
 }
 
-js_enum! {
-	/// What a scenario quantifies.
-	pub enum QuantityKind {
-		UnitDemand = "unit-demand",
-		Revenue = "revenue",
-		Price = "price",
-	}
-}
+/// What a scenario quantifies (the domain's `DemandQuantityKind`).
+pub use research_domain::finance::demand_scenario::DemandQuantityKind as QuantityKind;
 
 /// `derivedCagr` of a scenario.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -598,37 +515,16 @@ impl SupplierLink {
 
 /* ---------- Financial observations ---------- */
 
-js_enum! {
-	/// Fiscal period.
-	pub enum FiscalPeriod {
-		Fy = "FY",
-		Q1 = "Q1",
-		Q2 = "Q2",
-		Q3 = "Q3",
-		Q4 = "Q4",
-		Ttm = "TTM",
-	}
-}
+/// Fiscal periods, reporting periods, accounting standards and
+/// actual-or-estimate are the domain's (`finance/types.ts`).
+pub use research_domain::finance::types::{
+	AccountingStandard, ActualOrEstimate, FiscalPeriod, ReportingPeriod,
+};
 
-/// `reportingPeriodSchema`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReportingPeriod {
-	/// Fiscal year (1990..2100).
-	pub fiscal_year: u64,
-	/// Fiscal period.
-	pub fiscal_period: FiscalPeriod,
-	/// Start date.
-	pub period_start: String,
-	/// End date.
-	pub period_end: String,
-}
-
-impl ReportingPeriod {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+impl Contract for ReportingPeriod {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
-			fiscal_year: "fiscalYear" => uint(YEAR),
+			fiscal_year: "fiscalYear" => number(YEAR),
 			fiscal_period: "fiscalPeriod" => FiscalPeriod::decode,
 			period_start: "periodStart" => string(ISO_DATE),
 			period_end: "periodEnd" => string(ISO_DATE),
@@ -655,24 +551,6 @@ js_enum! {
 		Ratio = "ratio",
 		Currency = "currency",
 		CurrencyPerShare = "currency-per-share",
-	}
-}
-
-js_enum! {
-	/// Accounting standard.
-	pub enum AccountingStandard {
-		UsGaap = "US-GAAP",
-		Ifrs = "IFRS",
-		Jgaap = "JGAAP",
-		Other = "OTHER",
-	}
-}
-
-js_enum! {
-	/// Actual or estimate.
-	pub enum ActualOrEstimate {
-		Actual = "actual",
-		Estimate = "estimate",
 	}
 }
 
@@ -863,74 +741,10 @@ impl FinancialObservation {
 
 /* ---------- Positions ---------- */
 
-js_enum! {
-	/// Position metric.
-	pub enum PositionMetric {
-		JpMarginBalance = "jp-margin-balance",
-		UsShortInterest = "us-short-interest",
-	}
-}
-
-/// `positionFiguresSchema` (discriminated on `metric`; `jurisdiction` comes
-/// first in the parsed value).
-#[derive(Debug, Clone, PartialEq)]
-pub enum PositionFigures {
-	/// JP margin balances.
-	JpMarginBalance {
-		/// Margin buy balance (shares).
-		margin_buy_balance_shares: f64,
-		/// Margin sell balance (shares).
-		margin_sell_balance_shares: f64,
-	},
-	/// US short interest.
-	UsShortInterest {
-		/// Reported short interest (shares).
-		reported_short_interest_shares: f64,
-		/// Average daily volume (shares), when known.
-		average_daily_volume_shares: Option<f64>,
-	},
-}
-
-impl PositionFigures {
-	/// The metric of these figures.
-	#[must_use]
-	pub const fn metric(&self) -> PositionMetric {
-		match self {
-			Self::JpMarginBalance { .. } => PositionMetric::JpMarginBalance,
-			Self::UsShortInterest { .. } => PositionMetric::UsShortInterest,
-		}
-	}
-}
-
-impl Serialize for PositionFigures {
-	fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-		let mut map = serializer.serialize_map(Some(4))?;
-		match self {
-			Self::JpMarginBalance {
-				margin_buy_balance_shares,
-				margin_sell_balance_shares,
-			} => {
-				map.serialize_entry("jurisdiction", "JP")?;
-				map.serialize_entry("metric", "jp-margin-balance")?;
-				map.serialize_entry("marginBuyBalanceShares", margin_buy_balance_shares)?;
-				map.serialize_entry("marginSellBalanceShares", margin_sell_balance_shares)?;
-			}
-			Self::UsShortInterest {
-				reported_short_interest_shares,
-				average_daily_volume_shares,
-			} => {
-				map.serialize_entry("jurisdiction", "US")?;
-				map.serialize_entry("metric", "us-short-interest")?;
-				map.serialize_entry(
-					"reportedShortInterestShares",
-					reported_short_interest_shares,
-				)?;
-				map.serialize_entry("averageDailyVolumeShares", average_daily_volume_shares)?;
-			}
-		}
-		map.end()
-	}
-}
+/// Position metrics and figures are the domain's (`finance/positions.ts`).
+pub use research_domain::finance::positions::{
+	JpMarginBalanceFigures, PositionFigures, PositionMetric, UsShortInterestFigures,
+};
 
 const SHARES: &[NumCheck] = &[NumCheck::Gte(0.0)];
 
@@ -948,9 +762,10 @@ struct UsFigures {
 	average_daily_volume_shares: Option<f64>,
 }
 
-impl PositionFigures {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+/// `positionFiguresSchema` (discriminated on `metric`; `jurisdiction` comes
+/// first in the parsed value).
+impl Contract for PositionFigures {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		run_discriminated(cx, input, "metric", PositionMetric::VALUES, |cx, tag| {
 			if tag == 0 {
 				let figures = decode_object!(cx, input, strict, ["metric"], JpFigures {
@@ -961,10 +776,10 @@ impl PositionFigures {
 				let JpFigures {
 					jurisdiction: (), ..
 				} = figures;
-				Some(Self::JpMarginBalance {
+				Some(Self::JpMarginBalance(JpMarginBalanceFigures {
 					margin_buy_balance_shares: figures.margin_buy_balance_shares,
 					margin_sell_balance_shares: figures.margin_sell_balance_shares,
-				})
+				}))
 			} else {
 				let figures = decode_object!(cx, input, strict, ["metric"], UsFigures {
 					jurisdiction: "jurisdiction" => literal("US"),
@@ -974,10 +789,10 @@ impl PositionFigures {
 				let UsFigures {
 					jurisdiction: (), ..
 				} = figures;
-				Some(Self::UsShortInterest {
+				Some(Self::UsShortInterest(UsShortInterestFigures {
 					reported_short_interest_shares: figures.reported_short_interest_shares,
 					average_daily_volume_shares: figures.average_daily_volume_shares,
-				})
+				}))
 			}
 		})
 	}
@@ -1072,17 +887,8 @@ impl PositionObservation {
 
 /* ---------- Investor filings ---------- */
 
-js_enum! {
-	/// `reportedPositionChangeSchema`.
-	pub enum ReportedPositionChange {
-		NewlyReportedHolding = "newly-reported-holding",
-		IncreaseInReportedPosition = "increase-in-reported-position",
-		DecreaseInReportedPosition = "decrease-in-reported-position",
-		NoLongerReported = "no-longer-reported",
-		UnchangedReportedPosition = "unchanged-reported-position",
-		NotReported = "not-reported",
-	}
-}
+/// `reportedPositionChangeSchema` (the domain's, `finance/filings.ts`).
+pub use research_domain::finance::filings::ReportedPositionChange;
 
 js_enum! {
 	/// Filer identifier schemes.
@@ -1188,31 +994,15 @@ impl InvestorFiling {
 
 /* ---------- Pricing power ---------- */
 
-/// `pricingPowerInputsSchema`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PricingPowerInputs {
-	/// Revenue growth (%).
-	pub revenue_growth_pct: Option<f64>,
-	/// Price realisation (%).
-	pub price_realization_pct: Option<f64>,
-	/// Volume growth (%).
-	pub volume_growth_pct: Option<f64>,
-	/// Mix effect (%).
-	pub mix_effect_pct: Option<f64>,
-	/// FX effect (%).
-	pub fx_effect_pct: Option<f64>,
-	/// Input cost change (%).
-	pub input_cost_change_pct: Option<f64>,
-	/// Gross margin change (bps).
-	pub gross_margin_change_bps: Option<f64>,
-	/// Operating margin change (bps).
-	pub operating_margin_change_bps: Option<f64>,
-	/// Management commentary evidence (≤ 12).
-	pub management_commentary_evidence_ids: Vec<String>,
-}
+/// Pricing power inputs, classification and assessment are the domain's
+/// (`finance/pricingPower.ts`); `PricingPowerMissingInput` is its
+/// `PricingPowerInputName`.
+pub use research_domain::finance::pricing_power::{
+	PricingPowerAssessment, PricingPowerClassification,
+	PricingPowerInputName as PricingPowerMissingInput, PricingPowerInputs,
+};
 
-impl PricingPowerInputs {
+impl Contract for PricingPowerInputs {
 	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			revenue_growth_pct: "revenueGrowthPct" => nullable(number(&[])),
@@ -1228,42 +1018,7 @@ impl PricingPowerInputs {
 	}
 }
 
-js_enum! {
-	/// Pricing power classification.
-	pub enum PricingPowerClassification {
-		CorroboratedPriceRealization = "corroborated-price-realization",
-		PriceRealizationUncorroborated = "price-realization-uncorroborated",
-		PriceIncreaseOffsetByVolumeLoss = "price-increase-offset-by-volume-loss",
-		PriceIncreaseAbsorbedByCosts = "price-increase-absorbed-by-costs",
-		NoPriceRealization = "no-price-realization",
-		MarginImprovementWithoutPriceEvidence = "margin-improvement-without-price-evidence",
-		InsufficientData = "insufficient-data",
-	}
-}
-
-js_enum! {
-	/// An input a pricing power assessment lacked.
-	pub enum PricingPowerMissingInput {
-		PriceRealizationPct = "priceRealizationPct",
-		VolumeGrowthPct = "volumeGrowthPct",
-		GrossMarginChangeBps = "grossMarginChangeBps",
-		ManagementCommentary = "managementCommentary",
-	}
-}
-
-/// `pricingPowerAssessmentSchema` (computed by the domain).
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PricingPowerAssessment {
-	/// Classification.
-	pub classification: PricingPowerClassification,
-	/// Missing inputs.
-	pub missing_inputs: Vec<PricingPowerMissingInput>,
-	/// Unexplained revenue residual (%).
-	pub unexplained_revenue_residual_pct: Option<f64>,
-}
-
-impl PricingPowerAssessment {
+impl Contract for PricingPowerAssessment {
 	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			classification: "classification" => PricingPowerClassification::decode,

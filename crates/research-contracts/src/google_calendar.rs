@@ -1,8 +1,8 @@
 //! Google Calendar sync (`packages/contracts/src/googleCalendar.ts`, FR-019).
 
 use research_js::json::Value;
-use serde::Serialize;
 
+use crate::Contract;
 use crate::patterns;
 use crate::primitives::{HTTPS_URL, ISO_DATE};
 use crate::watchlist::{PERIOD_KEY, parse_stock_id};
@@ -186,71 +186,43 @@ const SOURCE_TITLE: &[StrCheck] = &[StrCheck::Trim, StrCheck::Min(1), StrCheck::
 const EVENT_STOCK_ID: &[StrCheck] = &[
 	StrCheck::Max(64),
 	StrCheck::Refine(
-		|value| parse_stock_id(value).is_some(),
+		|value| parse_stock_id(value).is_ok(),
 		"invalid watchlist stock id",
 	),
 ];
 
-/// The private extended properties of a synced event.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GoogleEventPrivateProperties {
-	/// Always `"earnings"` (serialised as such).
-	#[serde(serialize_with = "earnings_literal")]
-	pub research_workspace: (),
-	/// The watchlist stock id.
-	pub stock_id: String,
-	/// The period key.
-	pub period_key: String,
-}
+/// The private extended properties of a synced event (the domain's
+/// `GooglePrivateProperties`, under its contracts name).
+pub type GoogleEventPrivateProperties = GooglePrivateProperties;
 
-fn earnings_literal<S: serde::Serializer>(_: &(), serializer: S) -> Result<S::Ok, S::Error> {
-	serializer.serialize_str("earnings")
-}
+/// `googleEventBodySchema`: one desired Google event as claimed for a sync
+/// (defined once, in the domain's Google sync plan).
+pub use research_domain::calendar::google_sync::{GoogleEventBody, GooglePrivateProperties};
 
-impl GoogleEventPrivateProperties {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+/// The `researchWorkspace` literal every managed event carries.
+const RESEARCH_WORKSPACE: &str = "earnings";
+
+impl Contract for GooglePrivateProperties {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
-			research_workspace: "researchWorkspace" => literal("earnings"),
+			research_workspace: "researchWorkspace" => |cx: &mut Cx, input| {
+				literal(RESEARCH_WORKSPACE)(cx, input).map(|()| RESEARCH_WORKSPACE.to_owned())
+			},
 			stock_id: "stockId" => string(EVENT_STOCK_ID),
 			period_key: "periodKey" => string(PERIOD_KEY),
 		})
 	}
 }
 
-/// `googleEventBodySchema`: one desired Google event as claimed for a sync.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GoogleEventBody {
-	/// 32 base32hex characters.
-	pub id: String,
-	/// Summary (1..300).
-	pub summary: String,
-	/// Description (1..2000).
-	pub description: String,
-	/// All-day start date.
-	pub start_date: String,
-	/// All-day end date.
-	pub end_date: String,
-	/// Private extended properties.
-	pub private_properties: GoogleEventPrivateProperties,
-	/// Source title (trimmed, 1..200).
-	pub source_title: String,
-	/// https source URL.
-	pub source_url: String,
-}
-
-impl GoogleEventBody {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+impl Contract for GoogleEventBody {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			id: "id" => string(EVENT_ID),
 			summary: "summary" => string(SUMMARY),
 			description: "description" => string(DESCRIPTION),
 			start_date: "startDate" => string(ISO_DATE),
 			end_date: "endDate" => string(ISO_DATE),
-			private_properties: "privateProperties" => GoogleEventPrivateProperties::decode,
+			private_properties: "privateProperties" => GooglePrivateProperties::decode,
 			source_title: "sourceTitle" => string(SOURCE_TITLE),
 			source_url: "sourceUrl" => string(HTTPS_URL),
 		})

@@ -2,15 +2,16 @@
 
 use serde::{Deserialize, Serialize};
 
-/// A market the workspace covers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Market {
-	/// Japan.
-	#[serde(rename = "JP")]
-	Jp,
-	/// United States.
-	#[serde(rename = "US")]
-	Us,
+use crate::literal::js_literal_enum;
+
+js_literal_enum! {
+	/// A market the workspace covers (`marketSchema`).
+	pub enum Market {
+		/// Japan.
+		Jp = "JP",
+		/// United States.
+		Us = "US",
+	}
 }
 
 /// An amount in an ISO 4217 currency.
@@ -22,44 +23,36 @@ pub struct Money {
 	pub currency: String,
 }
 
-/// `AccountingStandard`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum AccountingStandard {
-	/// `US-GAAP`.
-	#[serde(rename = "US-GAAP")]
-	UsGaap,
-	/// `IFRS`.
-	#[serde(rename = "IFRS")]
-	Ifrs,
-	/// `JGAAP`.
-	#[serde(rename = "JGAAP")]
-	Jgaap,
-	/// `OTHER`.
-	#[serde(rename = "OTHER")]
-	Other,
+js_literal_enum! {
+	/// `AccountingStandard`.
+	pub enum AccountingStandard {
+		/// `US-GAAP`.
+		UsGaap = "US-GAAP",
+		/// `IFRS`.
+		Ifrs = "IFRS",
+		/// `JGAAP`.
+		Jgaap = "JGAAP",
+		/// `OTHER`.
+		Other = "OTHER",
+	}
 }
 
-/// `FiscalPeriod`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum FiscalPeriod {
-	/// Full year.
-	#[serde(rename = "FY")]
-	Fy,
-	/// First quarter.
-	#[serde(rename = "Q1")]
-	Q1,
-	/// Second quarter.
-	#[serde(rename = "Q2")]
-	Q2,
-	/// Third quarter.
-	#[serde(rename = "Q3")]
-	Q3,
-	/// Fourth quarter.
-	#[serde(rename = "Q4")]
-	Q4,
-	/// Trailing twelve months.
-	#[serde(rename = "TTM")]
-	Ttm,
+js_literal_enum! {
+	/// `FiscalPeriod`.
+	pub enum FiscalPeriod {
+		/// Full year.
+		Fy = "FY",
+		/// First quarter.
+		Q1 = "Q1",
+		/// Second quarter.
+		Q2 = "Q2",
+		/// Third quarter.
+		Q3 = "Q3",
+		/// Fourth quarter.
+		Q4 = "Q4",
+		/// Trailing twelve months.
+		Ttm = "TTM",
+	}
 }
 
 /// `ReportingPeriod`.
@@ -76,14 +69,14 @@ pub struct ReportingPeriod {
 	pub period_end: String,
 }
 
-/// `ActualOrEstimate`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ActualOrEstimate {
-	/// Reported.
-	Actual,
-	/// Estimated.
-	Estimate,
+js_literal_enum! {
+	/// `ActualOrEstimate`.
+	pub enum ActualOrEstimate {
+		/// Reported.
+		Actual = "actual",
+		/// Estimated.
+		Estimate = "estimate",
+	}
 }
 
 /// `AdjustmentBasis`.

@@ -8,6 +8,7 @@ pub mod calendar;
 pub mod evidence;
 pub mod finance;
 pub mod jobs;
+mod literal;
 pub mod market;
 pub mod news;
 pub mod text;

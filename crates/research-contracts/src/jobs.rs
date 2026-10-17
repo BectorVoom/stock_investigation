@@ -5,6 +5,7 @@
 use research_js::json::Value;
 use serde::Serialize;
 
+use crate::Contract;
 use crate::agent::{AgentDescriptor, agent_id};
 use crate::google_calendar::{
 	AUTH_URL, DESIRED_DIGEST, GOOGLE_SYNC_MAX_EVENTS, GoogleCalendarAction, GoogleEventBody,
@@ -33,23 +34,16 @@ use crate::zod::{
 	run_array, run_discriminated, run_string, string, uint, unrecognized,
 };
 
-js_enum! {
-	/// `jobStateSchema` (`JOB_STATES`).
-	pub enum JobState {
-		Pending = "pending",
-		Claimed = "claimed",
-		Planning = "planning",
-		Collecting = "collecting",
-		Analyzing = "analyzing",
-		Verifying = "verifying",
-		Publishing = "publishing",
-		Completed = "completed",
-		Failed = "failed",
-		Cancelled = "cancelled",
-		Partial = "partial",
-		WaitingApproval = "waiting_approval",
-	}
-}
+/// The job lifecycle is the domain's (`packages/contracts` re-exports it so
+/// the Worker, the runner and the SPA share one transition matrix).
+pub use research_domain::jobs::state_machine::{
+	IllegalTransition, JOB_STATES, JobState, LEASED_JOB_STATES, TERMINAL_JOB_STATES, transition_job,
+};
+
+/// Budgets, usage and the cost summary are the domain's (`jobs/budget.ts`).
+pub use research_domain::jobs::budget::{
+	CostStatus, CostSummary, EMPTY_USAGE, ResearchBudget, ResourceUsage,
+};
 
 js_enum! {
 	/// `leasedJobStateSchema` (`LEASED_JOB_STATES`).
@@ -106,37 +100,21 @@ pub mod run_limits {
 	pub const MAX_INPUT_BYTES: u64 = budget_limits::MAX_INPUT_BYTES.1;
 }
 
-/// `researchBudgetSchema`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ResearchBudget {
-	/// Agent steps (1..12).
-	pub max_agent_steps: u64,
-	/// Tool calls (0..60).
-	pub max_tool_calls: u64,
-	/// Wall clock (30 000..1 800 000 ms).
-	pub max_wall_clock_ms: u64,
-	/// Input bytes (10 000..2 000 000).
-	pub max_input_bytes: u64,
-	/// Spend ceiling (0..50 USD); null = no metered spend authorised.
-	pub max_spend_usd: Option<f64>,
+/// `runBudget(maxSpendUsd)`: the fixed limits plus the owner's spend ceiling.
+#[must_use]
+pub const fn run_budget(max_spend_usd: Option<f64>) -> ResearchBudget {
+	ResearchBudget {
+		max_agent_steps: run_limits::MAX_AGENT_STEPS,
+		max_tool_calls: run_limits::MAX_TOOL_CALLS,
+		max_wall_clock_ms: run_limits::MAX_WALL_CLOCK_MS,
+		max_input_bytes: run_limits::MAX_INPUT_BYTES,
+		max_spend_usd,
+	}
 }
 
-impl ResearchBudget {
-	/// `runBudget(maxSpendUsd)`: the fixed limits plus the owner's spend ceiling.
-	#[must_use]
-	pub const fn run_budget(max_spend_usd: Option<f64>) -> Self {
-		Self {
-			max_agent_steps: run_limits::MAX_AGENT_STEPS,
-			max_tool_calls: run_limits::MAX_TOOL_CALLS,
-			max_wall_clock_ms: run_limits::MAX_WALL_CLOCK_MS,
-			max_input_bytes: run_limits::MAX_INPUT_BYTES,
-			max_spend_usd,
-		}
-	}
-
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+/// `researchBudgetSchema`.
+impl Contract for ResearchBudget {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			max_agent_steps: "maxAgentSteps" => uint(&[NumCheck::Int, NumCheck::Gte(1.0), NumCheck::Lte(12.0)]),
 			max_tool_calls: "maxToolCalls" => uint(&[NumCheck::Int, NumCheck::Gte(0.0), NumCheck::Lte(60.0)]),
@@ -150,26 +128,9 @@ impl ResearchBudget {
 const NON_NEGATIVE_INT: &[NumCheck] = &[NumCheck::Int, NumCheck::Gte(0.0)];
 const POSITIVE_INT: &[NumCheck] = &[NumCheck::Int, NumCheck::Gt(0.0)];
 
-/// `resourceUsageSchema` (the domain's `ResourceUsage`; defined here until
-/// the domain crate's type is merged in).
-#[derive(Debug, Clone, PartialEq, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ResourceUsage {
-	/// Agent steps.
-	pub agent_steps: u64,
-	/// Tool calls.
-	pub tool_calls: u64,
-	/// Input bytes.
-	pub input_bytes: u64,
-	/// Sum of the costs the provider actually reported.
-	pub known_cost_usd: f64,
-	/// True once any step ran whose cost the provider could not report.
-	pub has_unmetered_usage: bool,
-}
-
-impl ResourceUsage {
-	/// zod decoder.
-	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+/// `resourceUsageSchema`.
+impl Contract for ResourceUsage {
+	fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
 		decode_object!(cx, input, strict, [], Self {
 			agent_steps: "agentSteps" => uint(NON_NEGATIVE_INT),
 			tool_calls: "toolCalls" => uint(NON_NEGATIVE_INT),
@@ -1748,5 +1709,19 @@ impl CompleteJobResponse {
 			replayed: "replayed" => boolean,
 			new_article_count: "newArticleCount" => uint(NON_NEGATIVE_INT),
 		})
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn leased_job_states_are_the_domain_list() {
+		let domain: Vec<&str> = LEASED_JOB_STATES
+			.iter()
+			.map(|state| state.as_str())
+			.collect();
+		assert_eq!(LeasedJobState::VALUES, domain.as_slice());
 	}
 }
