@@ -173,7 +173,8 @@ Ask research questions and read the answers, with their sources and run progress
   or keep its proposed removals.
 - Jump from a widget to where it came from (its chat message).
 - Watch a run's progress.
-- Cancel, retry or approve a run.
+- Cancel, retry or approve a run. A retry runs on the backend and model saved
+  in Settings → AI agent now, not the ones the failed run used.
 - Copy an answer.
 - Open the evidence records of a run.
 - Select an item inside a result component (e.g. a table row).

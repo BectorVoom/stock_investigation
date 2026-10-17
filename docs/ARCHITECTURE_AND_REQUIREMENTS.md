@@ -210,6 +210,17 @@ pipeline excludes every tool whose network allowlist is `public-web` unless the
 request says `webAccess: "public-web"`, and the planning prompt lists only
 permitted tools (ADR-0009).
 
+`Retry run` (`POST /api/v1/research-runs/:id/retry`) queues a new run with the
+original question, horizon and markets on the agent choice saved in Settings →
+AI agent at the moment of the retry — backend, model, effort, web access and
+limits — so a failure such as an overloaded model is fixed by choosing another
+model and retrying. With nothing saved the original request is replayed. A
+retry onto a metered backend is accepted only when backend, model and limits
+equal the original run's, whose consent it repeats; otherwise it is refused
+with `SPEND_CONSENT_REQUIRED` and the question must be asked again from the
+composer (AGT-012). A saved OpenCode or OpenRouter (free models) backend
+without a model is refused with `VALIDATION_FAILED`.
+
 ### 6.2 Tool policy
 
 All tools have stable ID/version, input/output schemas, timeout, permission, cost category, side-effect classification and network allowlist. Research agents run with **no shell execution, arbitrary file write or unbounded network access by default**. Where a CLI cannot reliably enforce tool restrictions, isolate it in a disposable OS/container sandbox with restricted mounts, network and process privileges, or mark that backend unsupported for untrusted-source research.

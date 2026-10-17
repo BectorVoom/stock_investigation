@@ -738,6 +738,125 @@ describe("cancel, retry, approval (FR-014)", () => {
 		expect(await errorCode(refused)).toBe("ILLEGAL_TRANSITION");
 	});
 
+	describe("a retry runs on the agent choice saved now", () => {
+		const BUDGET = researchRequest("ws_x").budget;
+
+		async function queueAndCancel(
+			harness: ReturnType<typeof createHarness>,
+			workspaceId: string,
+			overrides: Parameters<typeof researchRequest>[1] = {},
+		): Promise<string> {
+			const queued = await body(
+				await harness.call(
+					"POST",
+					"/research-runs",
+					researchRequest(workspaceId, overrides),
+					idempotencyKey(),
+				),
+				researchRunResponseSchema,
+			);
+			await harness.call("POST", `/research-runs/${queued.run.runId}/cancel`);
+			return queued.run.runId;
+		}
+
+		const retry = (harness: ReturnType<typeof createHarness>, runId: string) =>
+			harness.call("POST", `/research-runs/${runId}/retry`, undefined, idempotencyKey());
+
+		it("switches backend, model, effort and web access to the saved settings, keeping the question", async () => {
+			const harness = createHarness();
+			const workspaceId = await createWorkspace(harness);
+			const runId = await queueAndCancel(harness, workspaceId);
+			await harness.call("PUT", "/settings/agent", {
+				defaultAgentId: "opencode",
+				models: { opencode: "opencode/nemotron-3.5-lightning-free" },
+				effort: "high",
+				budget: { ...BUDGET, maxSpendUsd: 2 },
+				webAccess: "public-web",
+			});
+
+			const retried = await body(await retry(harness, runId), researchRunResponseSchema);
+
+			const original = researchRequest(workspaceId);
+			expect(retried.run.request).toEqual({
+				...original,
+				agentId: "opencode",
+				model: "opencode/nemotron-3.5-lightning-free",
+				effort: "high",
+				webAccess: "public-web",
+				// A plan-limited backend never carries a spend allowance.
+				budget: { ...BUDGET, maxSpendUsd: null },
+			});
+		});
+
+		it("replays the original request when nothing is saved", async () => {
+			const harness = createHarness();
+			const workspaceId = await createWorkspace(harness);
+			const runId = await queueAndCancel(harness, workspaceId);
+
+			const retried = await body(await retry(harness, runId), researchRunResponseSchema);
+
+			expect(retried.run.request).toEqual(researchRequest(workspaceId));
+		});
+
+		it("refuses a saved backend that needs a model but has none", async () => {
+			const harness = createHarness();
+			const workspaceId = await createWorkspace(harness);
+			const runId = await queueAndCancel(harness, workspaceId);
+			await harness.call("PUT", "/settings/agent", {
+				defaultAgentId: "opencode",
+				models: {},
+				effort: "medium",
+				budget: BUDGET,
+				webAccess: "off",
+			});
+
+			const refused = await retry(harness, runId);
+
+			expect(await errorCode(refused)).toBe("VALIDATION_FAILED");
+		});
+
+		it("never moves a retry onto metered spend the owner did not consent to for this run", async () => {
+			const harness = createHarness();
+			const workspaceId = await createWorkspace(harness);
+			const runId = await queueAndCancel(harness, workspaceId);
+			await harness.call("PUT", "/settings/agent", {
+				defaultAgentId: "openrouter",
+				models: { openrouter: "example/model" },
+				effort: "medium",
+				budget: { ...BUDGET, maxSpendUsd: 1.5 },
+				webAccess: "off",
+			});
+
+			const refused = await retry(harness, runId);
+
+			expect(await errorCode(refused)).toBe("SPEND_CONSENT_REQUIRED");
+		});
+
+		it("retries a metered run whose backend, model and limits are unchanged", async () => {
+			const harness = createHarness();
+			const workspaceId = await createWorkspace(harness);
+			const budget = { ...BUDGET, maxSpendUsd: 1.5 };
+			const runId = await queueAndCancel(harness, workspaceId, {
+				agentId: "openrouter",
+				model: "example/model",
+				budget,
+			});
+			await harness.call("PUT", "/settings/agent", {
+				defaultAgentId: "openrouter",
+				models: { openrouter: "example/model" },
+				effort: "high",
+				budget,
+				webAccess: "off",
+			});
+
+			const retried = await body(await retry(harness, runId), researchRunResponseSchema);
+
+			expect(retried.run.request?.agentId).toBe("openrouter");
+			expect(retried.run.request?.effort).toBe("high");
+			expect(retried.run.request?.budget).toEqual(budget);
+		});
+	});
+
 	it("parks a run for owner approval and resumes it under the approved budget", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);

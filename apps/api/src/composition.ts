@@ -97,6 +97,7 @@ export function createServices(
 			workspaces: persistence.workspaces,
 			records: persistence.records,
 			runnerStatus: persistence.runnerStatus,
+			settings: persistence.settings,
 			unitOfWork: persistence.unitOfWork,
 			clock,
 			ids,

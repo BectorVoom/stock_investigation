@@ -1,6 +1,8 @@
 import {
+	type AgentSettings,
 	BASELINE_AGENT_IDS,
 	type CostModel,
+	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
 	type ResearchRun,
 	type RunRecords,
@@ -30,6 +32,7 @@ import type {
 	ResearchRecordRepository,
 	ResearchUnitOfWork,
 	RunnerStatusRepository,
+	SettingsRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
 import { toRunView } from "./runView.ts";
@@ -46,6 +49,8 @@ export interface ResearchRunServiceDeps {
 	readonly workspaces: WorkspaceRepository;
 	readonly records: ResearchRecordRepository;
 	readonly runnerStatus: RunnerStatusRepository;
+	/** The saved agent choice a retry runs on (Settings → AI agent). */
+	readonly settings: Pick<SettingsRepository, "getAgentSettings">;
 	readonly unitOfWork: ResearchUnitOfWork;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
@@ -64,6 +69,55 @@ export interface CreatedRun {
 
 function isBaselineAgent(agentId: string): boolean {
 	return (BASELINE_AGENT_IDS as readonly string[]).includes(agentId);
+}
+
+interface CostModels {
+	readonly known: (agentId: string) => boolean;
+	readonly of: (agentId: string) => CostModel;
+}
+
+/** Backends that cannot run without a model chosen in Settings (same rule as the composer). */
+const MODEL_REQUIRED_AGENT_IDS: readonly string[] = ["opencode", OPENROUTER_FREE_AGENT_ID];
+
+/**
+ * The request a retry runs: the original question, horizon and markets on the
+ * agent choice saved NOW — backend, model, effort, web access and limits. A
+ * failure such as an overloaded model is fixed by choosing another one in
+ * Settings, so replaying the old choice would only fail again. With no saved
+ * choice the original request runs unchanged. A plan-limited backend never
+ * carries a spend allowance, as in the composer.
+ */
+export function retryRequest(
+	original: ResearchRequest,
+	saved: AgentSettings | null,
+	costModelOf: (agentId: string) => CostModel,
+): ResearchRequest {
+	if (saved === null || saved.defaultAgentId === null) return original;
+	const agentId = saved.defaultAgentId;
+	return {
+		...original,
+		agentId,
+		model: saved.models[agentId] ?? null,
+		effort: saved.effort,
+		webAccess: saved.webAccess,
+		budget:
+			costModelOf(agentId) === "plan-limited"
+				? { ...saved.budget, maxSpendUsd: null }
+				: saved.budget,
+	};
+}
+
+/**
+ * Metered spend needs the owner's consent on the composer (AGT-012). A retry
+ * is that same consented action only while backend, model and limits are
+ * unchanged; any other metered retry must be asked again from the composer.
+ */
+function sameMeteredChoice(original: ResearchRequest, next: ResearchRequest): boolean {
+	return (
+		original.agentId === next.agentId &&
+		original.model === next.model &&
+		JSON.stringify(original.budget) === JSON.stringify(next.budget)
+	);
 }
 
 export function createResearchRunService(deps: ResearchRunServiceDeps) {
@@ -165,6 +219,17 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		return ok({ run: await view(job), replayed: false });
 	}
 
+	/** Cost model by agent id, as the runner last reported it (openrouter is metered by default). */
+	async function costModels(ownerId: string): Promise<CostModels> {
+		const status = await deps.runnerStatus.get(ownerId);
+		const reported = (agentId: string) => status?.agents.find((agent) => agent.agentId === agentId);
+		return {
+			known: (agentId) => reported(agentId) !== undefined || isBaselineAgent(agentId),
+			of: (agentId) =>
+				reported(agentId)?.costModel ?? (agentId === "openrouter" ? "metered" : "plan-limited"),
+		};
+	}
+
 	/**
 	 * A backend is usable when it is one of the four baseline ids or a runner has
 	 * reported it. A metered backend additionally needs an explicit spend ceiling:
@@ -174,14 +239,13 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		ownerId: string,
 		agentId: string,
 		budget: ResearchBudget,
+		knownModels?: CostModels,
 	): Promise<UseCaseResult<void>> {
-		const status = await deps.runnerStatus.get(ownerId);
-		const reported = status?.agents.find((agent) => agent.agentId === agentId);
-		if (reported === undefined && !isBaselineAgent(agentId)) {
+		const models = knownModels ?? (await costModels(ownerId));
+		if (!models.known(agentId)) {
 			return fail("UNKNOWN_AGENT", `Agent backend "${agentId}" is not registered.`);
 		}
-		const costModel: CostModel =
-			reported?.costModel ?? (agentId === "openrouter" ? "metered" : "plan-limited");
+		const costModel = models.of(agentId);
 		if (costModel === "metered" && (budget.maxSpendUsd === null || budget.maxSpendUsd <= 0)) {
 			return fail(
 				"SPEND_CONSENT_REQUIRED",
@@ -429,19 +493,32 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					original.state,
 				);
 			}
-			if (original.request !== null && "agentId" in original.request) {
-				const agent = await checkAgentAndConsent(
-					ownerId,
-					original.request.agentId,
-					original.request.budget,
-				);
+			let request = original.request;
+			if (request !== null && "agentId" in request) {
+				const models = await costModels(ownerId);
+				const saved = await deps.settings.getAgentSettings(ownerId);
+				const next = retryRequest(request, saved?.settings ?? null, models.of);
+				if (MODEL_REQUIRED_AGENT_IDS.includes(next.agentId) && next.model === null) {
+					return fail(
+						"VALIDATION_FAILED",
+						"The backend saved in Settings → AI agent needs a model; choose one there and retry.",
+					);
+				}
+				if (models.of(next.agentId) === "metered" && !sameMeteredChoice(request, next)) {
+					return fail(
+						"SPEND_CONSENT_REQUIRED",
+						"The backend saved in Settings → AI agent is metered and differs from this run's; ask the question again from the composer to confirm the spend.",
+					);
+				}
+				const agent = await checkAgentAndConsent(ownerId, next.agentId, next.budget, models);
 				if (!agent.ok) return agent;
+				request = next;
 			}
 			const admitted = await admit(ownerId);
 			if (!admitted.ok) return admitted;
 			const job = newJob(ownerId, {
 				kind: original.kind,
-				request: original.request,
+				request,
 				workspaceId: original.workspaceId,
 				retryOfRunId: original.runId,
 				// A retry has no owner message of its own: it inherits the
