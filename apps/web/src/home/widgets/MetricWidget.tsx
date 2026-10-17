@@ -101,7 +101,11 @@ function MetricBody(props: {
 				{(point) => (
 					// Phrasing content only inside the button: block spans, not
 					// div/p, and the visible values form its accessible name.
-					<ChartOpener srPrefix={`Open chart: ${props.series.title}, `} onOpen={props.onOpen}>
+					<ChartOpener
+						srPrefix={`Open chart: ${props.series.title}, `}
+						openerKey={props.series.seriesId}
+						onOpen={props.onOpen}
+					>
 						<span class="block space-y-1">
 							<span class="block text-base font-semibold tabular-nums text-slate-900">
 								{formatValue(point().value)}{" "}

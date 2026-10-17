@@ -158,7 +158,11 @@ function StockRow(props: {
 									</>
 								}
 							>
-								<ChartOpener srPrefix="Open chart: " onOpen={props.onOpen}>
+								<ChartOpener
+									srPrefix="Open chart: "
+									openerKey={entry().seriesId}
+									onOpen={props.onOpen}
+								>
 									<span class="block">{entry().title}</span>{" "}
 									<span class="block font-mono text-2xs font-normal text-slate-600">
 										{entry().symbol}

@@ -144,8 +144,10 @@ test("Weekly intervals show fewer bars in the data table", async () => {
 	const twin = dialog.locator("details", { hasText: "Data table:" });
 	const twinOpen = await twin.evaluate((element) => (element as HTMLDetailsElement).open);
 	if (!twinOpen) await twin.locator("summary").click();
+	// The twin builds its rows on the `toggle` event, which fires after the
+	// click resolves: wait for them instead of counting at once.
+	await expect.poll(async () => tableRowCount(), { timeout: 10_000 }).toBe(5);
 	const dailyRows = await tableRowCount();
-	expect(dailyRows).toBe(5);
 
 	await setSlValue('sl-dialog.chart-viewer sl-select[label="Interval"]', "weekly");
 	await expect.poll(async () => tableRowCount(), { timeout: 10_000 }).toBeLessThan(dailyRows);

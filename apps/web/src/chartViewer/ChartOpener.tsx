@@ -11,15 +11,20 @@ import { OPEN_CHART_BUTTON_CLASS, OPEN_PRESS_SLOP_PX } from "./openChart.ts";
  * replacing them. Children must be phrasing content (spans, an SVG), the
  * only content a `<button>` may hold.
  *
- * A press that travels at least `OPEN_PRESS_SLOP_PX` before its release is
- * a text selection or a stray drag, never an open; a keyboard activation
- * (click `detail` 0) always opens. The clicked button itself is handed to
- * `onOpen`, so focus returns there even where a mouse click never focuses a
- * button (Safari, Firefox on macOS).
+ * A mouse press that travels at least `OPEN_PRESS_SLOP_PX` before its
+ * release is a text selection, never an open; touch and pen presses select
+ * no text, so a tap that drifts a few px still opens (a real touch drag
+ * never produces a click). A keyboard activation (click `detail` 0) always
+ * opens. The clicked button itself is handed to `onOpen`, so focus returns
+ * there even where a mouse click never focuses a button (Safari, Firefox on
+ * macOS); `openerKey` lets focus find the widget's new button after a
+ * reload re-rendered it.
  */
 export function ChartOpener(props: {
 	/** Visually hidden text read before the visible content ("Open chart: "). */
 	readonly srPrefix: string;
+	/** Unique within the widget (the series id, or "plot"): `data-chart-opener` (`CHART_OPENER_ATTRIBUTE`). */
+	readonly openerKey: string;
 	readonly onOpen: (button: HTMLButtonElement) => void;
 	readonly children: JSX.Element;
 }): JSX.Element {
@@ -28,9 +33,13 @@ export function ChartOpener(props: {
 		<button
 			type="button"
 			class={OPEN_CHART_BUTTON_CLASS}
+			data-chart-opener={props.openerKey}
 			onPointerDown={(event) => {
 				pressedAt =
-					event.isPrimary && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+					event.pointerType === "mouse" &&
+					event.isPrimary &&
+					Number.isFinite(event.clientX) &&
+					Number.isFinite(event.clientY)
 						? { x: event.clientX, y: event.clientY }
 						: null;
 				preloadChartViewer();

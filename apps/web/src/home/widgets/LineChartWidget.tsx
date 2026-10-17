@@ -131,6 +131,7 @@ export function LineChartWidget(props: {
 						<>
 							<ChartOpener
 								srPrefix="Open chart: "
+								openerKey="plot"
 								onOpen={(button) => {
 									opener = button;
 									setViewerOpen(true);

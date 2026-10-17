@@ -1087,6 +1087,9 @@ const cases: Case[] = [
 		budgetMs: 15,
 		run: () => buildDetailChartModel(CHART_BENCH_DETAIL_INPUT),
 	},
+	// These cases time the per-window-change work on precomputed (memoized)
+	// bars and union; that the viewer really reuses them across pans and
+	// zooms is asserted by apps/web/test/chartViewerCaching.test.tsx.
 	...[
 		{ label: "4 x 800", fixture: CHART_WINDOW_800 },
 		{ label: "4 x 20,000", fixture: CHART_WINDOW_20K },

@@ -5,8 +5,9 @@ import { type ChartPreset, dayNumberToIso, isoToDayNumber, presetWindow } from "
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ChartViewer } from "../src/chartViewer/ChartViewer.tsx";
+import { barIndexForDay, ChartViewer } from "../src/chartViewer/ChartViewer.tsx";
 import { Navigator, navigatorViewX } from "../src/chartViewer/Navigator.tsx";
+import { OPEN_CHART_BUTTON_CLASS } from "../src/chartViewer/openChart.ts";
 import { ensureHomeIconLibraries } from "../src/home/shoelace.ts";
 import type { SlOptionElement } from "../src/home/sl-elements.d.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
@@ -782,6 +783,124 @@ describe("chart viewer", () => {
 			expect(readout()).toContain("2026-10-08");
 		}
 		expect(fromInput().value > "2026-03-01").toBe(true);
+	});
+
+	it("keeps the crosshair on its week's bar across an Auto Daily→Weekly switch (fix round 7)", () => {
+		renderViewer([longSeries()], "6m");
+		const svg = chartSvg();
+		svg.focus();
+		fireEvent.keyDown(svg, { key: "End" });
+		fireEvent.keyDown(svg, { key: "ArrowLeft" });
+		// Wednesday 2026-10-07, a daily bar.
+		expect(autoIntervalText()).toBe("Auto · Daily");
+		expect(readout()).toContain("2026-10-07");
+		fireEvent.keyDown(svg, { key: "-" });
+		fireEvent.keyDown(svg, { key: "-" });
+		// Zoomed out far enough for weekly bars, each dated at its week's last
+		// observation: the crosshair moves to the bar of 2026-10-07's week
+		// (dated Thursday 2026-10-08) instead of vanishing.
+		expect(autoIntervalText()).toBe("Auto · Weekly");
+		expect(svg.querySelector('[data-chart-part="crosshair"]')).not.toBeNull();
+		expect(readout()).toContain("2026-10-08");
+		// The next zoom still anchors on it: the window keeps its right end
+		// instead of narrowing around the centre.
+		fireEvent.keyDown(svg, { key: "+" });
+		expect(toInput().value).toBe("2026-10-08");
+		expect(readout()).not.toBe("");
+	});
+
+	it("maps a crosshair day to the visible bar whose bucket holds it, only inside the window (fix round 7)", () => {
+		// Weekly bars dated at their last observation: Fri 3rd, Fri 10th, Wed 15th.
+		const days = [3, 10, 15];
+		const window = { from: 0, to: 15 };
+		expect(barIndexForDay(days, 3, window)).toBe(0);
+		expect(barIndexForDay(days, 7, window)).toBe(1);
+		expect(barIndexForDay(days, 10, window)).toBe(1);
+		expect(barIndexForDay(days, 12, window)).toBe(2);
+		// After the last visible bar, or outside the window: none.
+		expect(barIndexForDay(days, 16, { from: 0, to: 20 })).toBeNull();
+		expect(barIndexForDay(days, 2, { from: 3, to: 15 })).toBeNull();
+		expect(barIndexForDay(days, 12, { from: 0, to: 11 })).toBeNull();
+		// A reversed window is normalised.
+		expect(barIndexForDay(days, 7, { from: 15, to: 0 })).toBe(1);
+	});
+
+	it("returns focus to the widget's new opener when a reload replaced the old one (fix round 7)", () => {
+		const body = document.createElement("div");
+		body.className = "wg-body";
+		body.tabIndex = 0;
+		const first = document.createElement("button");
+		first.setAttribute("data-chart-opener", "fred:VIXCLS");
+		first.textContent = "Open chart";
+		body.appendChild(first);
+		document.body.appendChild(body);
+		try {
+			const onClose = vi.fn();
+			const [current] = createSignal([vixSeries()]);
+			render(() => (
+				<ChartViewer
+					open
+					title="Test chart"
+					series={current}
+					initialPreset="max"
+					opener={first}
+					onClose={onClose}
+				/>
+			));
+			// A reload re-rendered the widget body: the old button is gone.
+			first.remove();
+			const second = document.createElement("button");
+			second.setAttribute("data-chart-opener", "fred:VIXCLS");
+			second.textContent = "Open chart";
+			body.appendChild(second);
+			chartSvg().focus();
+			fireEvent.click(screen.getByRole("button", { name: "Close" }));
+			expect(onClose).toHaveBeenCalledTimes(1);
+			expect(document.activeElement).toBe(second);
+		} finally {
+			body.remove();
+		}
+	});
+
+	it("returns focus to the widget body when the opener is gone and none replaced it (fix round 7)", () => {
+		const body = document.createElement("div");
+		body.className = "wg-body";
+		body.tabIndex = 0;
+		const first = document.createElement("button");
+		first.setAttribute("data-chart-opener", "fred:VIXCLS");
+		first.textContent = "Open chart";
+		body.appendChild(first);
+		document.body.appendChild(body);
+		try {
+			const [current] = createSignal([vixSeries()]);
+			render(() => (
+				<ChartViewer
+					open
+					title="Test chart"
+					series={current}
+					initialPreset="max"
+					opener={first}
+					onClose={() => {}}
+				/>
+			));
+			first.remove();
+			chartSvg().focus();
+			fireEvent.click(screen.getByRole("button", { name: "Close" }));
+			expect(document.activeElement).toBe(body);
+		} finally {
+			body.remove();
+		}
+	});
+
+	it("gives every opener a 24 px floor and a 44 px target on coarse pointers (fix round 7)", () => {
+		for (const token of [
+			"min-h-6",
+			"min-w-6",
+			"pointer-coarse:min-h-11",
+			"pointer-coarse:min-w-11",
+		]) {
+			expect(OPEN_CHART_BUTTON_CLASS.split(" ")).toContain(token);
+		}
 	});
 
 	it("ignores a second finger while the first one pans (fix round 6)", () => {

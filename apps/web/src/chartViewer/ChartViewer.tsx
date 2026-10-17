@@ -57,6 +57,7 @@ import "../home/shoelace.ts";
 import type { SlSelectElement } from "../home/sl-elements.d.ts";
 import { DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
+import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
 import { buildReadoutText } from "./readout.ts";
 
 /**
@@ -148,8 +149,22 @@ function extentOf(series: readonly MarketSeries[]): DayWindow | null {
 	return { from: low, to: high };
 }
 
-/** Index of `day` in ascending `days` by binary search, or null when absent. */
-function indexOfDay(days: readonly number[], day: number): number | null {
+/**
+ * The visible bar whose bucket holds `day`: the first bar dated on or after
+ * it (binary search over the ascending visible `days`), while `day` lies in
+ * the window. A bar of a weekly or coarser interval is dated at its bucket's
+ * last day, so a mid-week crosshair day kept across an Auto Daily→Weekly
+ * switch lands on its week's bar instead of vanishing. Null when the day
+ * left the window (a pan moved past it) or follows the last visible bar.
+ */
+export function barIndexForDay(
+	days: readonly number[],
+	day: number,
+	window: DayWindow,
+): number | null {
+	const from = Math.min(Math.trunc(window.from), Math.trunc(window.to));
+	const to = Math.max(Math.trunc(window.from), Math.trunc(window.to));
+	if (day < from || day > to) return null;
 	let low = 0;
 	let high = days.length;
 	while (low < high) {
@@ -158,7 +173,7 @@ function indexOfDay(days: readonly number[], day: number): number | null {
 		if (value !== undefined && value < day) low = mid + 1;
 		else high = mid;
 	}
-	return days[low] === day ? low : null;
+	return low < days.length ? low : null;
 }
 
 /** Resampled bars at one interval plus their union days (memoized per interval). */
@@ -232,7 +247,9 @@ export interface ChartViewerProps {
 	 * The button that opened the viewer: focus returns here on close. Passed
 	 * by the entry points from the click's `currentTarget`, because Safari
 	 * and Firefox on macOS never focus a button on a mouse click, so
-	 * `document.activeElement` would be `<body>`.
+	 * `document.activeElement` would be `<body>`. If a reload replaced the
+	 * button meanwhile, focus goes to the widget's new opener with the same
+	 * `data-chart-opener` key, else to the widget's body (`focusReturnTarget`).
 	 */
 	readonly opener?: HTMLElement | null;
 }
@@ -272,21 +289,22 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	// The opener is captured on each closed→open transition, not at mount:
 	// the component may mount closed long before the user opens it. The
 	// entry points pass their button; the focused element is only a fallback.
-	let opener: HTMLElement | null = null;
+	let focusReturn: FocusReturn = captureFocusReturn(null);
 	let wasOpen = false;
 	createEffect(() => {
 		const open = props.open;
 		if (open && !wasOpen) {
 			const passed = props.opener ?? null;
-			opener =
-				passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+			focusReturn = captureFocusReturn(
+				passed ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null),
+			);
 		}
 		wasOpen = open;
 	});
 	const handleClose = (): void => {
-		const target = opener;
+		const saved = focusReturn;
 		props.onClose();
-		if (target?.isConnected === true) target.focus();
+		focusReturnTarget(saved)?.focus();
 	};
 
 	const spanDays = createMemo(() => {
@@ -467,13 +485,13 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		return seen.size <= 1 ? (units()[0] ?? "") : "Mixed units — values share one axis";
 	});
 
-	// The crosshair's bar index in the current model: its day's position,
-	// or none once the day leaves the visible bars (a pan moved past it).
+	// The crosshair's bar index in the current model: the bar whose bucket
+	// holds its day, or none once the day leaves the window (a pan moved past it).
 	const crosshair = createMemo(() => {
 		const day = crosshairDay();
-		const current = model();
-		if (day === null || current === null) return null;
-		return indexOfDay(current.dayAt, day);
+		const ready = view();
+		if (day === null || ready === null) return null;
+		return barIndexForDay(ready.model.dayAt, day, ready.window);
 	});
 	const setCrosshair = (index: number | null): void => {
 		const current = model();

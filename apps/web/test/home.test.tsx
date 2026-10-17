@@ -4,6 +4,7 @@ import {
 	type MarketSeries,
 	WIDGET_TYPE_META,
 } from "@research/contracts";
+import { WIDGET_BODY_CLASS, WidgetFrame } from "@research/widget-grid";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1963,17 +1964,58 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
 		const open = within(table).getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ });
 		// Selecting "AAPL" with the mouse: pressed, moved 20 px, released on it.
-		fireEvent.pointerDown(open, { clientX: 10, clientY: 10, isPrimary: true });
+		fireEvent.pointerDown(open, {
+			clientX: 10,
+			clientY: 10,
+			isPrimary: true,
+			pointerType: "mouse",
+		});
 		fireEvent.click(open, { clientX: 30, clientY: 10, detail: 1 });
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
-		// A tap that stays within 4 px opens.
-		fireEvent.pointerDown(open, { clientX: 10, clientY: 10, isPrimary: true });
+		// A mouse press that moved 6 px is still a selection, not a click.
+		fireEvent.pointerDown(open, {
+			clientX: 10,
+			clientY: 10,
+			isPrimary: true,
+			pointerType: "mouse",
+		});
+		fireEvent.click(open, { clientX: 16, clientY: 10, detail: 1 });
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+		// A click that stays within 4 px opens.
+		fireEvent.pointerDown(open, {
+			clientX: 10,
+			clientY: 10,
+			isPrimary: true,
+			pointerType: "mouse",
+		});
 		fireEvent.click(open, { clientX: 12, clientY: 11, detail: 1 });
 		await openedDialog();
 		await closeViewer();
 		// A keyboard activation (click detail 0) always opens.
 		fireEvent.click(open, { detail: 0 });
+		await openedDialog();
+		await closeViewer();
+	});
+
+	it("opens on a touch or pen tap that drifted a few px: the press slop is for the mouse only (fix round 7)", async () => {
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		const table = within(widgetById("w-watchlist")).getByRole("table", { name: /Watchlist/ });
+		const open = within(table).getByRole("button", { name: /^Open chart: AAPL \(NASDAQ\)/ });
+		// A finger lands, drifts 6 px and lifts: a tap, since touch selects no text.
+		fireEvent.pointerDown(open, {
+			clientX: 10,
+			clientY: 10,
+			isPrimary: true,
+			pointerType: "touch",
+		});
+		fireEvent.click(open, { clientX: 16, clientY: 10, detail: 1 });
+		await openedDialog();
+		await closeViewer();
+		fireEvent.pointerDown(open, { clientX: 10, clientY: 10, isPrimary: true, pointerType: "pen" });
+		fireEvent.click(open, { clientX: 10, clientY: 16, detail: 1 });
 		await openedDialog();
 		await closeViewer();
 	});
@@ -2001,28 +2043,81 @@ describe("chart viewer entry points (ADR-0025)", () => {
 		const [byId, setById] = createSignal<ReadonlyMap<string, MarketSeries>>(
 			new Map([[held.seriesId, held]]),
 		);
+		const widget = {
+			type: "market-metric",
+			widgetId: "w-metric",
+			title: "VIX",
+			size: "small",
+			seriesId: "fred:VIXCLS",
+		} as const;
 		render(() => (
-			<MetricWidget
-				widget={{
-					type: "market-metric",
-					widgetId: "w-metric",
-					title: "VIX",
-					size: "small",
-					seriesId: "fred:VIXCLS",
-				}}
-				seriesById={byId}
-			/>
+			<WidgetFrame widget={widget}>
+				<MetricWidget widget={widget} seriesById={byId} />
+			</WidgetFrame>
 		));
+		const body = document.querySelector(`.${WIDGET_BODY_CLASS}`);
+		if (!(body instanceof HTMLElement)) throw new Error("no widget body");
 		fireEvent.click(screen.getByRole("button", { name: /^Open chart: / }));
 		const dialog = await openedDialog();
 		// A reload drops the observations: the viewer stays, saying why.
 		setById(new Map([[held.seriesId, series([])]]));
 		expect(document.querySelector("sl-dialog.chart-viewer")).toBe(dialog);
 		expect(dialog.textContent).toContain("unavailable (this widget holds no observations)");
+		expect(screen.queryByRole("button", { name: /^Open chart: / })).toBeNull();
 		await closeViewer();
+		// The opener is gone: focus lands on the widget's body, never <body>.
+		expect(document.activeElement).toBe(body);
 		// Data returning later never reopens a viewer the user closed.
 		setById(new Map([[held.seriesId, held]]));
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		expect(document.querySelector("sl-dialog.chart-viewer")).toBeNull();
+	});
+
+	it("returns focus to the new opener when the data came back while the viewer was open (fix round 7)", async () => {
+		const held: MarketSeries = {
+			seriesId: "fred:VIXCLS",
+			provider: "fred",
+			symbol: "VIXCLS",
+			title: "CBOE Volatility Index: VIX",
+			unit: "Index",
+			frequency: "daily",
+			publisher: "Federal Reserve Bank of St. Louis",
+			sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
+			lastRefreshedAt: "2026-10-12T11:50:00Z",
+			retrievedAt: "2026-10-12T11:50:00Z",
+			unavailable: null,
+			observations: [
+				["2026-10-06", 15.01],
+				["2026-10-07", 15.08],
+				["2026-10-08", 15.41],
+			],
+		};
+		const [byId, setById] = createSignal<ReadonlyMap<string, MarketSeries>>(
+			new Map([[held.seriesId, held]]),
+		);
+		const widget = {
+			type: "market-metric",
+			widgetId: "w-metric",
+			title: "VIX",
+			size: "small",
+			seriesId: "fred:VIXCLS",
+		} as const;
+		render(() => (
+			<WidgetFrame widget={widget}>
+				<MetricWidget widget={widget} seriesById={byId} />
+			</WidgetFrame>
+		));
+		const first = screen.getByRole("button", { name: /^Open chart: / });
+		fireEvent.click(first);
+		await openedDialog();
+		// One reload drops the series, the next brings it back: the widget
+		// renders a new opener button while the viewer is still open.
+		setById(new Map([[held.seriesId, { ...held, observations: [] }]]));
+		setById(new Map([[held.seriesId, held]]));
+		const second = screen.getByRole("button", { name: /^Open chart: / });
+		expect(second).not.toBe(first);
+		expect(first.isConnected).toBe(false);
+		await closeViewer();
+		expect(document.activeElement).toBe(second);
 	});
 });
