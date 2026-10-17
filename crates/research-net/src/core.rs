@@ -315,6 +315,25 @@ fn validate_hop(
 	})
 }
 
+/// `new URL(location, base)` as Node's URL parser (Ada) computes it, or
+/// `None` where `URL.canParse` is false. Ada differs from the `url` crate in
+/// one observable way: a location with no path or query of its own (empty,
+/// or only a fragment, after the WHATWG trimming) does not inherit an EMPTY
+/// base query — `new URL("", "https://a.b/?")` is `https://a.b/`. Pinned by
+/// `vectors/net/hop-core.json`.
+fn resolve_location(base: &Url, location: &str) -> Option<Url> {
+	let mut next = base.join(location).ok()?;
+	let significant = location
+		.trim_matches(|character: char| character <= ' ')
+		.chars()
+		.find(|character| !matches!(character, '\t' | '\n' | '\r'));
+	let inherits_query = significant.is_none_or(|first| first == '#');
+	if inherits_query && base.query() == Some("") && next.query() == Some("") {
+		next.set_query(None);
+	}
+	Some(next)
+}
+
 enum BodyRead {
 	Complete(Vec<u8>),
 	TooLarge,
@@ -516,7 +535,7 @@ pub async fn fetch_raw_bytes(
 				);
 			};
 			// Relative locations resolve against the hop that issued them, then get the full policy.
-			let Ok(next) = target.url.join(&location) else {
+			let Some(next) = resolve_location(&target.url, &location) else {
 				return fail(
 					SafeFetchErrorCode::UnsafeRedirect,
 					format!("redirect {} rejected: MALFORMED_URL", hop + 1),

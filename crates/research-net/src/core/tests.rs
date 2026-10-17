@@ -622,3 +622,22 @@ fn prints_counts_like_javascript() {
 	assert_eq!(normalize_host("WWW.Example.ORG."), "www.example.org");
 	assert_eq!(normalize_host("a.."), "a.");
 }
+
+#[test]
+fn resolves_locations_like_node() {
+	let resolve = |location: &str, base: &str| {
+		resolve_location(&Url::parse(base).unwrap(), location).map(String::from)
+	};
+	let some = |text: &str| Some(text.to_owned());
+	assert_eq!(resolve("", "https://a.b/?"), some("https://a.b/"));
+	assert_eq!(resolve("\t", "https://a.b/?"), some("https://a.b/"));
+	assert_eq!(resolve("\n#y\t", "https://a.b/?"), some("https://a.b/#y"));
+	assert_eq!(resolve("?", "https://a.b/?"), some("https://a.b/?"));
+	assert_eq!(resolve("?#x", "https://a.b/?"), some("https://a.b/?#x"));
+	assert_eq!(resolve("", "https://a.b/?q"), some("https://a.b/?q"));
+	assert_eq!(
+		resolve("hello", "https://a.b/x/y"),
+		some("https://a.b/x/hello")
+	);
+	assert_eq!(resolve("https://bad host/", "https://a.b/"), None);
+}
