@@ -66,8 +66,9 @@ widget that carries its provenance, the owner chose the latter.
   what the notebook assistant (`applyNotebookCommands`, runner pre-check and
   API apply) or the Home MCP server (before its PUT) writes is normalised by
   `withEarnedChartProvenance`: a point keeps its basis, source and as-of date
-  only in the same widget, the same series and the same unit, with the same
-  label (occurrence) and value — or when the whole chart is an unchanged copy
+  only in the same widget, the same series and the same meaning (unit, both
+  axis titles and the x kind; not the hidden title), with the same label
+  (occurrence) and value — or when the whole chart is an unchanged copy
   of one on the page (a duplicate). The chart's own `sourceIds` stay only
   while such a point remains; copies nobody cites go. Everything else is
   written without provenance ("basis not stated") rather than refused, so a
@@ -92,7 +93,11 @@ widget that carries its provenance, the owner chose the latter.
 - Chart widgets saved before this decision have no provenance and render as
   "basis not stated"; re-adding the chart from Chat brings its provenance.
 - Deleting a conversation never breaks a saved chart: it renders from its
-  copies, and the records they cite are kept.
+  copies, and the records they cite are kept while a chart on Home or in
+  another notebook carries a copy. One order still fails: remove a sourced
+  chart from Home, delete its conversation, then Undo — the records went with
+  the conversation, so the restoring save is refused with a sentence saying
+  so; add the chart again from another conversation that cites them.
 - The Notebook chart's data table labels its columns with the series names
   and the chart's unit, and its x column with the x-axis title; a Chat
   table uses the dataset's column labels and units, which may be worded
