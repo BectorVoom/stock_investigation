@@ -1,0 +1,2767 @@
+{
+	"schema": "ingestedArticle",
+	"cases": [
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":null,\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":1,\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":[\"x\"],\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":{\"length\":1},\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"WRONG-VALUE\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"WRONG-VALUE\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"SRC_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"SRC_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\\u0000\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\tsrc_1\\t\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\nsrc_1\\n\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\u000bsrc_1\\u000b\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\fsrc_1\\f\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\rsrc_1\\r\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"　src_1　\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"﻿src_1﻿\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"​src_1​\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"᠎src_1᠎\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_０\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_٠\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_०\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"s\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"s\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":null,\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":1,\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":[\"x\"],\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":{\"length\":1},\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"WRONG-VALUE\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"HTTPS://NEWS.EXAMPLE.COM/ARTICLES/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"HTTPS://NEWS.EXAMPLE.COM/ARTICLES/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\\u0000\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\\u0000\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\thttps://news.example.com/articles/1\\t\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\thttps://news.example.com/articles/1\\t\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\nhttps://news.example.com/articles/1\\n\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\nhttps://news.example.com/articles/1\\n\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\u000bhttps://news.example.com/articles/1\\u000b\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\u000bhttps://news.example.com/articles/1\\u000b\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\fhttps://news.example.com/articles/1\\f\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\fhttps://news.example.com/articles/1\\f\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\rhttps://news.example.com/articles/1\\r\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\rhttps://news.example.com/articles/1\\r\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/articles/1 \",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"　https://news.example.com/articles/1　\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"﻿https://news.example.com/articles/1﻿\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"​https://news.example.com/articles/1​\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"᠎https://news.example.com/articles/1᠎\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/０\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/０\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/٠\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/٠\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/०\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/०\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Too big: expected string to have <=2048 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://n\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://n\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "custom",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "must be an https URL"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":null,\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":1,\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":[\"x\"],\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":{\"length\":1},\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"publisher"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"WRONG-VALUE\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"WRONG-VALUE\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"EXAMPLE MEDIA\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"EXAMPLE MEDIA\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"example media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"example media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\\u0000\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\\u0000\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\\tExample Media\\t\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\\nExample Media\\n\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\\u000bExample Media\\u000b\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\\fExample Media\\f\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"\\rExample Media\\r\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\" Example Media \",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"　Example Media　\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"﻿Example Media﻿\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"​Example Media​\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"​Example Media​\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"᠎Example Media᠎\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"᠎Example Media᠎\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Mediaéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"publisher"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"E\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"E\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":null,\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":1,\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":[\"x\"],\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":{\"length\":1},\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"title"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"WRONG-VALUE\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"WRONG-VALUE\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"BATTERY MAKERS EXPAND CAPACITY\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"BATTERY MAKERS EXPAND CAPACITY\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\\u0000\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\\u0000\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\tBattery makers expand capacity\\t\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\tBattery makers expand capacity\\t\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\nBattery makers expand capacity\\n\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\nBattery makers expand capacity\\n\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\u000bBattery makers expand capacity\\u000b\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\u000bBattery makers expand capacity\\u000b\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\fBattery makers expand capacity\\f\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\fBattery makers expand capacity\\f\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\rBattery makers expand capacity\\r\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"\\rBattery makers expand capacity\\r\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\" Battery makers expand capacity \",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"　Battery makers expand capacity　\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"　Battery makers expand capacity　\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"﻿Battery makers expand capacity﻿\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"﻿Battery makers expand capacity﻿\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"​Battery makers expand capacity​\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"​Battery makers expand capacity​\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"᠎Battery makers expand capacity᠎\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"᠎Battery makers expand capacity᠎\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacityééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"title"
+					],
+					"message": "Too big: expected string to have <=300 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"B\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"B\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":null,\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":null,\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":1,\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":[\"x\"],\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":{\"length\":1},\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"WRONG-VALUE\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11t00:00:00z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\\u0000\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\\t2026-10-11T00:00:00Z\\t\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\\n2026-10-11T00:00:00Z\\n\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\\u000b2026-10-11T00:00:00Z\\u000b\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\\f2026-10-11T00:00:00Z\\f\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"\\r2026-10-11T00:00:00Z\\r\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\" 2026-10-11T00:00:00Z \",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"　2026-10-11T00:00:00Z　\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"﻿2026-10-11T00:00:00Z﻿\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"​2026-10-11T00:00:00Z​\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"᠎2026-10-11T00:00:00Z᠎\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"０026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"٠026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"०026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Za\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Zé\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z😀\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"publishedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":null,\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":1,\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":[\"x\"],\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":{\"length\":1},\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"WRONG-VALUE\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11t00:05:00z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\\u0000\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\\t2026-10-11T00:05:00Z\\t\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\\n2026-10-11T00:05:00Z\\n\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\\u000b2026-10-11T00:05:00Z\\u000b\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\\f2026-10-11T00:05:00Z\\f\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"\\r2026-10-11T00:05:00Z\\r\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\" 2026-10-11T00:05:00Z \",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"　2026-10-11T00:05:00Z　\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"﻿2026-10-11T00:05:00Z﻿\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"​2026-10-11T00:05:00Z​\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"᠎2026-10-11T00:05:00Z᠎\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"０026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"٠026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"०026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Za\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Zé\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z😀\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"retrievedAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":null,\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":1,\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":[\"x\"],\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":{\"length\":1},\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"WRONG-VALUE\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\u0000\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\\taaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\t\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\\u000baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\u000b\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\\faaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\f\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"\\raaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\r\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"　aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa　\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"﻿aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa﻿\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"​aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa​\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"᠎aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa᠎\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaé\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"contentFingerprint"
+					],
+					"message": "Invalid string: must match pattern /^[0-9a-f]{64}$/"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":\"null-was-here\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":\"null-was-here\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"excerpt\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"excerpt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/articles/1\",\"publisher\":\"Example Media\",\"title\":\"Battery makers expand capacity\",\"publishedAt\":\"2026-10-11T00:00:00Z\",\"retrievedAt\":\"2026-10-11T00:05:00Z\",\"contentFingerprint\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"excerpt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		}
+	]
+}

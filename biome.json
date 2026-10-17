@@ -15,7 +15,9 @@
 			"!examples/fixtures",
 			"!packages/adapters/test/finance/fixtures",
 			"!formal/vectors.json",
-			"!formal/.lake"
+			"!formal/.lake",
+			"!vectors",
+			"!target"
 		]
 	},
 	"formatter": {

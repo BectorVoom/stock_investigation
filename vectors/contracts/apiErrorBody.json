@@ -1,0 +1,1923 @@
+{
+	"schema": "apiErrorBody",
+	"cases": [
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"},\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"},\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error"
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error"
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":\"x\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error"
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error"
+					],
+					"message": "Invalid input: expected object, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\",\"zzUnknownKey\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"error"
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\",\"__proto__\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"error"
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":null,\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":1,\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":[\"x\"],\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":{\"length\":1},\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"WRONG-VALUE\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"stale_lease\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\\u0000\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\tSTALE_LEASE\\t\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\nSTALE_LEASE\\n\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\u000bSTALE_LEASE\\u000b\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\fSTALE_LEASE\\f\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\rSTALE_LEASE\\r\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" STALE_LEASE \",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"　STALE_LEASE　\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"﻿STALE_LEASE﻿\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"​STALE_LEASE​\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"᠎STALE_LEASE᠎\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASEa\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASEé\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE😀\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEAS\",\"message\":\"The lease is stale.\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"CSRF_REJECTED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"CSRF_REJECTED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"VALIDATION_FAILED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"VALIDATION_FAILED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"RATE_LIMITED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"RATE_LIMITED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"CONFLICT\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"CONFLICT\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"IDEMPOTENCY_KEY_REUSED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"IDEMPOTENCY_KEY_REUSED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNSAFE_URL\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNSAFE_URL\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"FETCH_FAILED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"FETCH_FAILED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOT_A_FEED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOT_A_FEED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"DUPLICATE_SOURCE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"DUPLICATE_SOURCE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNKNOWN_AGENT\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNKNOWN_AGENT\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"SPEND_CONSENT_REQUIRED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"SPEND_CONSENT_REQUIRED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"ILLEGAL_TRANSITION\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"ILLEGAL_TRANSITION\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"VERSION_CONFLICT\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"VERSION_CONFLICT\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INTEGRITY_VIOLATION\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INTEGRITY_VIOLATION\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNSUPPORTED_EXPORT_VERSION\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNSUPPORTED_EXPORT_VERSION\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STORED_DASHBOARD_UNREADABLE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STORED_DASHBOARD_UNREADABLE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STORED_NOTEBOOK_UNREADABLE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STORED_NOTEBOOK_UNREADABLE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INVALID_NOTEBOOK\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INVALID_NOTEBOOK\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INVALID_NOTEBOOK_SELECTION\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INVALID_NOTEBOOK_SELECTION\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOTHING_TO_UNDO\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOTHING_TO_UNDO\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"AGENT_NOT_CONFIGURED\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"AGENT_NOT_CONFIGURED\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOTEBOOK_ASSIST_ACTIVE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOTEBOOK_ASSIST_ACTIVE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INTERNAL\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INTERNAL\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":null}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":[\"x\"]}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":{\"length\":1}}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"WRONG-VALUE\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"WRONG-VALUE\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"THE LEASE IS STALE.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"THE LEASE IS STALE.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"the lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"the lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\\u0000\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\\u0000\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\tThe lease is stale.\\t\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\tThe lease is stale.\\t\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\nThe lease is stale.\\n\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\nThe lease is stale.\\n\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\u000bThe lease is stale.\\u000b\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\u000bThe lease is stale.\\u000b\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\fThe lease is stale.\\f\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\fThe lease is stale.\\f\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\rThe lease is stale.\\r\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"\\rThe lease is stale.\\r\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\" The lease is stale. \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"　The lease is stale.　\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"　The lease is stale.　\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"﻿The lease is stale.﻿\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"﻿The lease is stale.﻿\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"The lease is stale.\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"​The lease is stale.​\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"​The lease is stale.​\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"᠎The lease is stale.᠎\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"᠎The lease is stale.᠎\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"},\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"},\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\",\"zzUnknownKey\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"error"
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\",\"__proto__\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"error"
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":null,\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":1,\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":[\"x\"],\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":{\"length\":1},\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"WRONG-VALUE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"ui_command_rejected\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\\u0000\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\tUI_COMMAND_REJECTED\\t\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\nUI_COMMAND_REJECTED\\n\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\u000bUI_COMMAND_REJECTED\\u000b\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\fUI_COMMAND_REJECTED\\f\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"\\rUI_COMMAND_REJECTED\\r\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\" UI_COMMAND_REJECTED \",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"　UI_COMMAND_REJECTED　\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"﻿UI_COMMAND_REJECTED﻿\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"​UI_COMMAND_REJECTED​\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"᠎UI_COMMAND_REJECTED᠎\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTEDa\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTEDé\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED😀\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"error",
+						"code"
+					],
+					"message": "Invalid option: expected one of \"UNAUTHENTICATED\"|\"FORBIDDEN\"|\"CSRF_REJECTED\"|\"NOT_FOUND\"|\"VALIDATION_FAILED\"|\"PAYLOAD_TOO_LARGE\"|\"RATE_LIMITED\"|\"CONFLICT\"|\"IDEMPOTENCY_KEY_REUSED\"|\"UNSAFE_URL\"|\"FETCH_FAILED\"|\"NOT_A_FEED\"|\"DUPLICATE_SOURCE\"|\"UNKNOWN_AGENT\"|\"SPEND_CONSENT_REQUIRED\"|\"ILLEGAL_TRANSITION\"|\"STALE_LEASE\"|\"UI_COMMAND_REJECTED\"|\"VERSION_CONFLICT\"|\"INTEGRITY_VIOLATION\"|\"UNSUPPORTED_EXPORT_VERSION\"|\"STORED_DASHBOARD_UNREADABLE\"|\"STORED_NOTEBOOK_UNREADABLE\"|\"INVALID_NOTEBOOK\"|\"INVALID_NOTEBOOK_SELECTION\"|\"NOTHING_TO_UNDO\"|\"AGENT_NOT_CONFIGURED\"|\"NOTEBOOK_ASSIST_ACTIVE\"|\"INTERNAL\""
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNAUTHENTICATED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"CSRF_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"CSRF_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"VALIDATION_FAILED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"VALIDATION_FAILED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"PAYLOAD_TOO_LARGE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"RATE_LIMITED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"RATE_LIMITED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"CONFLICT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"CONFLICT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"IDEMPOTENCY_KEY_REUSED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"IDEMPOTENCY_KEY_REUSED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNSAFE_URL\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNSAFE_URL\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"FETCH_FAILED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"FETCH_FAILED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOT_A_FEED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOT_A_FEED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"DUPLICATE_SOURCE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"DUPLICATE_SOURCE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNKNOWN_AGENT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNKNOWN_AGENT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"SPEND_CONSENT_REQUIRED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"SPEND_CONSENT_REQUIRED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"ILLEGAL_TRANSITION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"ILLEGAL_TRANSITION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STALE_LEASE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"VERSION_CONFLICT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"VERSION_CONFLICT\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INTEGRITY_VIOLATION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INTEGRITY_VIOLATION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UNSUPPORTED_EXPORT_VERSION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UNSUPPORTED_EXPORT_VERSION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STORED_DASHBOARD_UNREADABLE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STORED_DASHBOARD_UNREADABLE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"STORED_NOTEBOOK_UNREADABLE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"STORED_NOTEBOOK_UNREADABLE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INVALID_NOTEBOOK\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INVALID_NOTEBOOK\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INVALID_NOTEBOOK_SELECTION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INVALID_NOTEBOOK_SELECTION\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOTHING_TO_UNDO\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOTHING_TO_UNDO\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"AGENT_NOT_CONFIGURED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"AGENT_NOT_CONFIGURED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"NOTEBOOK_ASSIST_ACTIVE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"NOTEBOOK_ASSIST_ACTIVE\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"INTERNAL\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"INTERNAL\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":null,\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":1,\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":[\"x\"],\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":{\"length\":1},\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"message"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"WRONG-VALUE\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"WRONG-VALUE\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"X\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"X\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\\u0000\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\\u0000\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\tx\\t\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\tx\\t\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\nx\\n\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\nx\\n\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\u000bx\\u000b\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\u000bx\\u000b\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\fx\\f\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\fx\\f\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\rx\\r\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"\\rx\\r\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\" x \",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"　x　\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"　x　\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"﻿x﻿\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"﻿x﻿\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"​x​\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"​x​\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"᠎x᠎\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"᠎x᠎\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":null}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"detail"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"detail"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":[\"x\"]}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"detail"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":{\"length\":1}}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"error",
+						"detail"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"WRONG-VALUE\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"WRONG-VALUE\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"unknown_component\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"unknown_component\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\\u0000\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\\u0000\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\tUNKNOWN_COMPONENT\\t\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\tUNKNOWN_COMPONENT\\t\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\nUNKNOWN_COMPONENT\\n\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\nUNKNOWN_COMPONENT\\n\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\u000bUNKNOWN_COMPONENT\\u000b\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\u000bUNKNOWN_COMPONENT\\u000b\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\fUNKNOWN_COMPONENT\\f\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\fUNKNOWN_COMPONENT\\f\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\rUNKNOWN_COMPONENT\\r\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"\\rUNKNOWN_COMPONENT\\r\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\" UNKNOWN_COMPONENT \"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"　UNKNOWN_COMPONENT　\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"　UNKNOWN_COMPONENT　\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"﻿UNKNOWN_COMPONENT﻿\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"﻿UNKNOWN_COMPONENT﻿\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"UNKNOWN_COMPONENT\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"​UNKNOWN_COMPONENT​\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"​UNKNOWN_COMPONENT​\"}}"
+		},
+		{
+			"input": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"᠎UNKNOWN_COMPONENT᠎\"}}",
+			"valid": true,
+			"output": "{\"error\":{\"code\":\"UI_COMMAND_REJECTED\",\"message\":\"x\",\"detail\":\"᠎UNKNOWN_COMPONENT᠎\"}}"
+		}
+	]
+}

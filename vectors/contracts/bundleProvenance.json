@@ -1,0 +1,1584 @@
+{
+	"schema": "bundleProvenance",
+	"cases": [
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":null,\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":1,\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":[\"x\"],\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":{\"length\":1},\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"WRONG-VALUE\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"CLAUDE-CODE\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\\u0000\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\\tclaude-code\\t\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\\nclaude-code\\n\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\\u000bclaude-code\\u000b\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\\fclaude-code\\f\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"\\rclaude-code\\r\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\" claude-code \",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"　claude-code　\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"﻿claude-code﻿\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"​claude-code​\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"᠎claude-code᠎\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-codeaaaaaaaaaaaaaaaaaaaaa\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-codeaaaaaaaaaaaaaaaaaaaaa\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-codeaaaaaaaaaaaaaaaaaaaaaa\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-codeééééééééééééééééééééé\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-codeéééééééééééééééééééééé\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"cl\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"cl\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"c\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"agentId"
+					],
+					"message": "invalid agent id"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":\"null-was-here\",\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":\"null-was-here\",\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":0,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"providerModel"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"providerModel"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":null,\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":1,\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":[\"x\"],\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":{\"length\":1},\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"WRONG-VALUE\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"WRONG-VALUE\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"RESEARCH-V1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"RESEARCH-V1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\\u0000\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\\u0000\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\tresearch-v1\\t\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\tresearch-v1\\t\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\nresearch-v1\\n\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\nresearch-v1\\n\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\u000bresearch-v1\\u000b\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\u000bresearch-v1\\u000b\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\fresearch-v1\\f\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\fresearch-v1\\f\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\rresearch-v1\\r\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"\\rresearch-v1\\r\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\" research-v1 \",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"　research-v1　\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"　research-v1　\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"﻿research-v1﻿\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"﻿research-v1﻿\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"​research-v1​\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"​research-v1​\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"᠎research-v1᠎\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"᠎research-v1᠎\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v０\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v０\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v٠\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v٠\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v०\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v०\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1ééééééééééééééééééééééééééééé\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1ééééééééééééééééééééééééééééé\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1éééééééééééééééééééééééééééééé\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"promptVersion"
+					],
+					"message": "Too big: expected string to have <=40 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"r\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"r\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":null,\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions"
+					],
+					"message": "Invalid input: expected record, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":[],\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions"
+					],
+					"message": "Invalid input: expected record, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":\"x\",\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions"
+					],
+					"message": "Invalid input: expected record, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions"
+					],
+					"message": "Invalid input: expected record, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\",\"zzUnknownKey\":1},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions",
+						"zzUnknownKey"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\",\"__proto__\":1},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":null},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":1},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":[\"x\"]},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":{\"length\":1}},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"WRONG-VALUE\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"WRONG-VALUE\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\\u0000\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\\u0000\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\t1.0.0\\t\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\t1.0.0\\t\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\n1.0.0\\n\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\n1.0.0\\n\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\u000b1.0.0\\u000b\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\u000b1.0.0\\u000b\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\f1.0.0\\f\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\f1.0.0\\f\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\r1.0.0\\r\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"\\r1.0.0\\r\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\" 1.0.0 \"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"　1.0.0　\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"　1.0.0　\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"﻿1.0.0﻿\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"﻿1.0.0﻿\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"​1.0.0​\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"​1.0.0​\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"᠎1.0.0᠎\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"᠎1.0.0᠎\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"０.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"０.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"٠.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"٠.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"०.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"०.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0aaaaaaaaaaaaaaa\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0aaaaaaaaaaaaaaa\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0aaaaaaaaaaaaaaaa\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Too big: expected string to have <=20 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0ééééééééééééééé\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0ééééééééééééééé\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0éééééééééééééééé\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Too big: expected string to have <=20 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}"
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"toolVersions",
+						"news.search"
+					],
+					"message": "Too big: expected string to have <=20 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11t00:05:00z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\\t2026-10-11T00:05:00Z\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\\n2026-10-11T00:05:00Z\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\\u000b2026-10-11T00:05:00Z\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\\f2026-10-11T00:05:00Z\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"\\r2026-10-11T00:05:00Z\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\" 2026-10-11T00:05:00Z \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"　2026-10-11T00:05:00Z　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"﻿2026-10-11T00:05:00Z﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"​2026-10-11T00:05:00Z​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"᠎2026-10-11T00:05:00Z᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"０026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"٠026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"०026-10-11T00:05:00Z\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Za\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Zé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00Z😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"claude-code\",\"providerModel\":null,\"promptVersion\":\"research-v1\",\"toolVersions\":{\"news.search\":\"1.0.0\"},\"dataCutoffAt\":\"2026-10-11T00:05:00\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"dataCutoffAt"
+					],
+					"message": "Invalid ISO datetime"
+				}
+			]
+		},
+		{
+			"input": "{\"agentId\":\"codex\",\"providerModel\":null,\"promptVersion\":\"v\",\"toolVersions\":{\"b\":\"1\",\"10\":\"2\",\"a\":\"3\",\"2\":\"4\",\"__proto__\":\"x\"},\"dataCutoffAt\":\"2026-10-11T00:00:00Z\"}",
+			"valid": true,
+			"output": "{\"agentId\":\"codex\",\"providerModel\":null,\"promptVersion\":\"v\",\"toolVersions\":{\"2\":\"4\",\"10\":\"2\",\"b\":\"1\",\"a\":\"3\"},\"dataCutoffAt\":\"2026-10-11T00:00:00Z\"}"
+		}
+	]
+}

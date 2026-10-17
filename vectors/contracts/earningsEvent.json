@@ -1,0 +1,1709 @@
+{
+	"schema": "earningsEvent",
+	"cases": [
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":null,\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodKey"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":1,\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodKey"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":[\"x\"],\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodKey"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":{\"length\":1},\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodKey"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"periodKey"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"WRONG-VALUE\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-Q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\\u0000\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\\t2026-q4\\t\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\\n2026-q4\\n\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\\u000b2026-q4\\u000b\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\\f2026-q4\\f\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"\\r2026-q4\\r\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\" 2026-q4 \",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"　2026-q4　\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"﻿2026-q4﻿\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"​2026-q4​\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"᠎2026-q4᠎\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"０026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"٠026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"०026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4ééééééééééééééééééééééééééééééééééééééééé\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4éééééééééééééééééééééééééééééééééééééééééé\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"periodKey"
+					],
+					"message": "period key must match [a-z0-9-]{1,48}"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":null,\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":null,\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":1,\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":[\"x\"],\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":{\"length\":1},\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"WRONG-VALUE\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\\u0000\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\\t2026-10-29\\t\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\\n2026-10-29\\n\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\\u000b2026-10-29\\u000b\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\\f2026-10-29\\f\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"\\r2026-10-29\\r\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\" 2026-10-29 \",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"　2026-10-29　\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"﻿2026-10-29﻿\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"​2026-10-29​\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"᠎2026-10-29᠎\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"０026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"٠026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"०026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29a\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29é\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29😀\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-2\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"announcementDate"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":null,\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":1,\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":[\"x\"],\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":{\"length\":1},\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"WRONG-VALUE\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"WRONG-VALUE\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\\u0000\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\\u0000\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\\tQ4 2026\\t\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\\nQ4 2026\\n\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\\u000bQ4 2026\\u000b\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\\fQ4 2026\\f\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"\\rQ4 2026\\r\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\" Q4 2026 \",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"　Q4 2026　\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"﻿Q4 2026﻿\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"​Q4 2026​\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"​Q4 2026​\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"᠎Q4 2026᠎\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"᠎Q4 2026᠎\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q０ 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q０ 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q٠ 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q٠ 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q० 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q० 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"fiscalPeriodLabel"
+					],
+					"message": "Too big: expected string to have <=80 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":\"null-was-here\",\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"fiscalPeriodEnd"
+					],
+					"message": "Invalid ISO date"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":0,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodEnd"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"fiscalPeriodEnd"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"AFTER-CLOSE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\\tafter-close\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\\nafter-close\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\\u000bafter-close\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\\fafter-close\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"\\rafter-close\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\" after-close \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"　after-close　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"﻿after-close﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"​after-close​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"᠎after-close᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-closea\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-closeé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-close😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"after-clos\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"timing"
+					],
+					"message": "Invalid option: expected one of \"before-open\"|\"after-close\"|\"during-session\"|\"unknown\""
+				}
+			]
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"before-open\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"before-open\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"during-session\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"during-session\"}"
+		},
+		{
+			"input": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"unknown\"}",
+			"valid": true,
+			"output": "{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-29\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":null,\"timing\":\"unknown\"}"
+		}
+	]
+}

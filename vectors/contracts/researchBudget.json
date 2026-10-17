@@ -1,0 +1,2697 @@
+{
+	"schema": "researchBudget",
+	"cases": [
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":null,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":\"6\",\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":true,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":0,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":1,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":0.5,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1.5,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":7,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":7,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":5,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":5,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6.5,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":9007199254740991,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":9007199254740992,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-9007199254740992,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1e+21,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1e-7,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":13,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-0,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1e400,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1e400,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1.0,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":1,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":2e0,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":2,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":null,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":\"20\",\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":true,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":-1,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":1,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":1,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":0.5,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":1.5,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":21,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":21,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":19,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":19,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20.5,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":9007199254740991,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":9007199254740992,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":-9007199254740992,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":1e+21,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":-1e-7,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":60,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":60,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":61,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":-0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":1e400,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":-1e400,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":1.0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":1,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":2e0,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":2,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":null,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":\"600000\",\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":true,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":-1,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":0,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":0.5,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1.5,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600001,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600001,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":599999,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":599999,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000.5,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":9007199254740991,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":9007199254740992,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":-9007199254740992,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1e+21,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":-1e-7,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1800000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1800000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1800001,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":30000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":30000,\"maxInputBytes\":400000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":29999,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":-0,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1e400,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":-1e400,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":1.0,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":2e0,\"maxInputBytes\":400000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":null,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":\"400000\",\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":true,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":-1,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":0,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":1,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":0.5,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":1.5,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400001,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400001,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":399999,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":399999,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000.5,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":9007199254740991,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":9007199254740992,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":-9007199254740992,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":1e+21,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":-1e-7,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":2000000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":2000000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":2000001,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":10000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":10000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":9999,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":-0,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":1e400,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":-1e400,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":1.0,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":2e0,\"maxSpendUsd\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":\"null-was-here\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":0}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000,\"maxSpendUsd\":0}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":6,\"maxToolCalls\":20,\"maxWallClockMs\":600000,\"maxInputBytes\":400000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":null,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":\"12\",\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":true,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":0,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":1,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":0.5,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1.5,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":13,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":11,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":11,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12.5,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":9007199254740991,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":9007199254740992,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-9007199254740992,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1e+21,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too big: expected number to be <=12"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1e-7,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-0,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Too small: expected number to be >=1"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1e400,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":-1e400,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxAgentSteps"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":1.0,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":1,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":2e0,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":2,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":null,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":\"60\",\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":true,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":-1,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":1,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":1,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":0.5,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":1.5,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":61,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":59,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":59,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60.5,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":9007199254740991,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":9007199254740992,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":-9007199254740992,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":1e+21,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Too big: expected number to be <=60"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":-1e-7,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":-0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":1e400,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":-1e400,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxToolCalls"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":1.0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":1,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":2e0,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":2,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":null,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":\"1800000\",\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":true,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":-1,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":0,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":0.5,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1.5,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800001,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1799999,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1799999,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000.5,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":9007199254740991,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":9007199254740992,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":-9007199254740992,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1e+21,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too big: expected number to be <=1800000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":-1e-7,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":30000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":30000,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":29999,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":-0,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1e400,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":-1e400,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1.0,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":2e0,\"maxInputBytes\":2000000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxWallClockMs"
+					],
+					"message": "Too small: expected number to be >=30000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":null,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":\"2000000\",\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":true,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":-1,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":0,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":0.5,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1.5,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000001,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1999999,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1999999,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000.5,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":9007199254740991,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":9007199254740992,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":-9007199254740992,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1e+21,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				},
+				{
+					"code": "too_big",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too big: expected number to be <=2000000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":-1e-7,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":10000,\"maxSpendUsd\":12.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":10000,\"maxSpendUsd\":12.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":9999,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":-0,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1e400,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":-1e400,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":1.0,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2e0,\"maxSpendUsd\":12.5}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxInputBytes"
+					],
+					"message": "Too small: expected number to be >=10000"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":null}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":null}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":\"12.5\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":-1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":0}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":0}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":0.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":0.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":13.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":13.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":11.5}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":11.5}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":13}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":13}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":9007199254740991}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too big: expected number to be <=50"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too big: expected number to be <=50"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":-9007199254740992}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1e+21}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too big: expected number to be <=50"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":-1e-7}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":-0}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":0}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":-1e400}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"maxSpendUsd"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1.0}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":1}"
+		},
+		{
+			"input": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":2e0}",
+			"valid": true,
+			"output": "{\"maxAgentSteps\":12,\"maxToolCalls\":60,\"maxWallClockMs\":1800000,\"maxInputBytes\":2000000,\"maxSpendUsd\":2}"
+		}
+	]
+}

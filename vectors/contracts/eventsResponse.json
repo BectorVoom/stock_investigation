@@ -1,0 +1,412 @@
+{
+	"schema": "eventsResponse",
+	"cases": [
+		{
+			"input": "{\"cancelRequested\":true}",
+			"valid": true,
+			"output": "{\"cancelRequested\":true}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":true,\"zzUnknownKey\":1}",
+			"valid": true,
+			"output": "{\"cancelRequested\":true}"
+		},
+		{
+			"input": "{\"cancelRequested\":true,\"__proto__\":1}",
+			"valid": true,
+			"output": "{\"cancelRequested\":true}"
+		},
+		{
+			"input": "{\"cancelRequested\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":\"true\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":false}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1},\"zzUnknownKey\":1}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1},\"__proto__\":1}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":null,\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":\"false\",\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":1,\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"cancelRequested"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"cancelRequested\":true,\"extra\":1,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":true}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":null,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":\"1\",\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":true,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-1,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":0,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":0.5,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1.5,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":2,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":9007199254740991,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":9007199254740992,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-9007199254740992,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1e+21,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-1e-7,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-9007199254740991,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-0,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1e400,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":-1e400,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1.0,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":2e0,\"more\":{\"a\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":null}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":[]}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":\"x\"}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1,\"zzUnknownKey\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1,\"__proto__\":1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":null}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":\"1\"}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":true}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-1}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":0}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":0.5}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1.5}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":2}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":9007199254740991}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":9007199254740992}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-9007199254740992}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1e+21}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-1e-7}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-9007199254740991}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-0}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1e400}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":-1e400}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":1.0}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		},
+		{
+			"input": "{\"cancelRequested\":false,\"extra\":1,\"more\":{\"a\":2e0}}",
+			"valid": true,
+			"output": "{\"cancelRequested\":false}"
+		}
+	]
+}

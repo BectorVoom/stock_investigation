@@ -22,3 +22,5 @@ test-results-real
 # data/ or data-dev/; this covers a hand run with the default path.
 google-token.json
 google-token.json.*.tmp
+# Rust runner build output (ADR-0030); CARGO_TARGET_DIR may point elsewhere.
+/target

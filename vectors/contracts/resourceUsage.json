@@ -1,0 +1,971 @@
+{
+	"schema": "resourceUsage",
+	"cases": [
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true,\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true,\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":null,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":\"3\",\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":true,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":-1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":0.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":1.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":4,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":4,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":9007199254740991,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":9007199254740991,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":9007199254740992,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":-9007199254740992,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":1e+21,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":-1e-7,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":-0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":1e400,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":-1e400,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":1.0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":2e0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":null,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":\"7\",\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":true,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":-1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":0.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":1.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":8,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":8,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":6,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":6,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":9007199254740991,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":9007199254740991,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":9007199254740992,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":-9007199254740992,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":1e+21,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":-1e-7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":-0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":1e400,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":-1e400,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":1.0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":2e0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":2,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":null,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":\"120000\",\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":true,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120001,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120001,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":119999,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":119999,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740991,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740991,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740992,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-9007199254740992,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1e+21,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1e-7,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1e400,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1e400,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1.0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":2e0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":2,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":null,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":\"0\",\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":true,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0.5,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0.5,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.5,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.5,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740991,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740991,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740992,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740992,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-9007199254740992,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e+21,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e+21,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1e-7,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e400,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1e400,\"hasUnmeteredUsage\":true}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":2e0,\"hasUnmeteredUsage\":true}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":2,\"hasUnmeteredUsage\":true}"
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":\"true\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false}",
+			"valid": true,
+			"output": "{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false}"
+		}
+	]
+}

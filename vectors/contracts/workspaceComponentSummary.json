@@ -1,0 +1,617 @@
+{
+	"schema": "workspaceComponentSummary",
+	"cases": [
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":null,\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":1,\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":[\"x\"],\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":{\"length\":1},\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"WRONG-VALUE\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"WRONG-VALUE\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"TABLE_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"TABLE_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\\u0000\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\\u0000\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"\\ttable_1\\t\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\\ttable_1\\t\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"\\ntable_1\\n\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\\ntable_1\\n\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"\\u000btable_1\\u000b\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\\u000btable_1\\u000b\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"\\ftable_1\\f\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\\ftable_1\\f\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"\\rtable_1\\r\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"\\rtable_1\\r\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\" table_1 \",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"　table_1　\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"　table_1　\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"﻿table_1﻿\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"﻿table_1﻿\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"​table_1​\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"​table_1​\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"᠎table_1᠎\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"᠎table_1᠎\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_０\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_０\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_٠\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_٠\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_०\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_०\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":null,\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentType"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":1,\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentType"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":[\"x\"],\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentType"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":{\"length\":1},\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentType"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"title\":\"Demand\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"componentType"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"WRONG-VALUE\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"WRONG-VALUE\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"DATA-TABLE\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"DATA-TABLE\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\\u0000\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\\u0000\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\\tdata-table\\t\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\\tdata-table\\t\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\\ndata-table\\n\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\\ndata-table\\n\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\\u000bdata-table\\u000b\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\\u000bdata-table\\u000b\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\\fdata-table\\f\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\\fdata-table\\f\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"\\rdata-table\\r\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"\\rdata-table\\r\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\" data-table \",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"　data-table　\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"　data-table　\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"﻿data-table﻿\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"﻿data-table﻿\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"​data-table​\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"​data-table​\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"᠎data-table᠎\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"᠎data-table᠎\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":null}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":null}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"WRONG-VALUE\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"WRONG-VALUE\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"DEMAND\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"DEMAND\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\\u0000\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\\u0000\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\tDemand\\t\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\tDemand\\t\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\nDemand\\n\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\nDemand\\n\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\u000bDemand\\u000b\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\u000bDemand\\u000b\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\fDemand\\f\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\fDemand\\f\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\rDemand\\r\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"\\rDemand\\r\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\" Demand \"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"　Demand　\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"　Demand　\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"﻿Demand﻿\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"﻿Demand﻿\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"Demand\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"​Demand​\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"​Demand​\"}"
+		},
+		{
+			"input": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"᠎Demand᠎\"}",
+			"valid": true,
+			"output": "{\"componentId\":\"table_1\",\"componentType\":\"data-table\",\"title\":\"᠎Demand᠎\"}"
+		}
+	]
+}

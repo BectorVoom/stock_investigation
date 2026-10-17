@@ -1,0 +1,1498 @@
+{
+	"schema": "subscribedSourceRef",
+	"cases": [
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":null,\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":1,\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":[\"x\"],\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":{\"length\":1},\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"sourceId"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"WRONG-VALUE\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"WRONG-VALUE\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"SRC_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"SRC_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\\u0000\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\tsrc_1\\t\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\nsrc_1\\n\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\u000bsrc_1\\u000b\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\fsrc_1\\f\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"\\rsrc_1\\r\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\" src_1 \",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"　src_1　\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"﻿src_1﻿\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"​src_1​\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"᠎src_1᠎\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_０\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_٠\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_०\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_format",
+					"path": [
+						"sourceId"
+					],
+					"message": "invalid id"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"s\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"s\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":null,\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":1,\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":[\"x\"],\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":{\"length\":1},\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"canonicalUrl"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"WRONG-VALUE\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"WRONG-VALUE\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"HTTPS://NEWS.EXAMPLE.COM/RSS\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"HTTPS://NEWS.EXAMPLE.COM/RSS\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\\u0000\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\\u0000\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\thttps://news.example.com/rss\\t\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\thttps://news.example.com/rss\\t\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\nhttps://news.example.com/rss\\n\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\nhttps://news.example.com/rss\\n\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\u000bhttps://news.example.com/rss\\u000b\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\u000bhttps://news.example.com/rss\\u000b\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\fhttps://news.example.com/rss\\f\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\fhttps://news.example.com/rss\\f\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\rhttps://news.example.com/rss\\r\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"\\rhttps://news.example.com/rss\\r\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\" https://news.example.com/rss \",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"　https://news.example.com/rss　\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"　https://news.example.com/rss　\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"﻿https://news.example.com/rss﻿\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"﻿https://news.example.com/rss﻿\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"​https://news.example.com/rss​\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"​https://news.example.com/rss​\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"᠎https://news.example.com/rss᠎\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"᠎https://news.example.com/rss᠎\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":null,\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":1,\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":[\"x\"],\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":{\"length\":1},\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"publisher"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"WRONG-VALUE\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"WRONG-VALUE\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"EXAMPLE MEDIA\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"EXAMPLE MEDIA\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"example media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"example media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\\u0000\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\\u0000\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\tExample Media\\t\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\tExample Media\\t\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\nExample Media\\n\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\nExample Media\\n\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\u000bExample Media\\u000b\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\u000bExample Media\\u000b\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\fExample Media\\f\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\fExample Media\\f\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\rExample Media\\r\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"\\rExample Media\\r\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\" Example Media \",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"　Example Media　\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"　Example Media　\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"﻿Example Media﻿\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"﻿Example Media﻿\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"​Example Media​\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"​Example Media​\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"᠎Example Media᠎\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"᠎Example Media᠎\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":null,\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":1,\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":[\"x\"],\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":{\"length\":1},\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"title"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"WRONG-VALUE\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"WRONG-VALUE\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"EXAMPLE WIRE\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"EXAMPLE WIRE\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"example wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"example wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\\u0000\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\\u0000\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\tExample Wire\\t\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\tExample Wire\\t\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\nExample Wire\\n\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\nExample Wire\\n\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\u000bExample Wire\\u000b\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\u000bExample Wire\\u000b\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\fExample Wire\\f\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\fExample Wire\\f\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\rExample Wire\\r\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"\\rExample Wire\\r\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\" Example Wire \",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"　Example Wire　\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"　Example Wire　\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"﻿Example Wire﻿\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"﻿Example Wire﻿\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"​Example Wire​\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"​Example Wire​\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"᠎Example Wire᠎\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"᠎Example Wire᠎\",\"licensePolicy\":\"headline-and-link-only\"}"
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"HEADLINE-AND-LINK-ONLY\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\\theadline-and-link-only\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\\nheadline-and-link-only\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\\u000bheadline-and-link-only\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\\fheadline-and-link-only\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"\\rheadline-and-link-only\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\" headline-and-link-only \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"　headline-and-link-only　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"﻿headline-and-link-only﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"​headline-and-link-only​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"᠎headline-and-link-only᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-onlya\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-onlyé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-only😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"headline-and-link-onl\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"licensePolicy"
+					],
+					"message": "Invalid option: expected one of \"headline-and-link-only\"|\"short-excerpt-permitted\""
+				}
+			]
+		},
+		{
+			"input": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"short-excerpt-permitted\"}",
+			"valid": true,
+			"output": "{\"sourceId\":\"src_1\",\"canonicalUrl\":\"https://news.example.com/rss\",\"publisher\":\"Example Media\",\"title\":\"Example Wire\",\"licensePolicy\":\"short-excerpt-permitted\"}"
+		}
+	]
+}
