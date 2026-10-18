@@ -108,16 +108,27 @@ Not adopted (would change semantics): a search-result cache (cached hits
 would misstate `retrievedAt`, DATA-002), pre-warming GDELT/Wikipedia
 connections when a run starts (reveals runs that never search).
 
-## Known defects carried over unchanged (decide separately)
+## Known defects (found while porting; all fixed in both runners)
 
-Found while writing the specs; the port keeps them so parity can be proved,
-and each is fixed in both languages by its own change if the owner agrees:
-F1 a Google grant is neither stored nor revoked when writing the token file
-fails during connect (`apps/runner/src/googleCalendar.ts`); F2 the SEC slot
-sleep ignores cancellation; F3 JPX shared strings keep phonetic `<rPh>` runs;
-F4 the Twelve Data unit is returned untrimmed; F5 a disconnect without a
-token file reports `planning → analyzing`; F6 a dead numeric branch for JPX
-code cells; F7 sync uses the token file's calendar id, not the claim's.
+The first port kept these so parity could be proved; the owner then decided
+to fix each in the TypeScript and the Rust runner alike, so the two stay
+identical. Each fix has a vitest case, regenerated conformance vectors that
+the Rust replays prove, and its own commit:
+
+- F1 a Google grant was neither stored nor revoked when writing the token file
+  failed during connect: it is now revoked before the fault propagates (`492f887`).
+- F2 the SEC slot sleep ignored cancellation: it now ends on cancel (`bd70420`).
+- F3 JPX shared strings kept phonetic `<rPh>` runs: they are now ignored, as
+  Excel shows the cell (`52b7419`).
+- F4 the Twelve Data unit was returned untrimmed: it is trimmed (`3c23410`).
+- F5 a disconnect without a token file reported `planning → analyzing`: it now
+  walks `collecting` too (`46da1a9`).
+- F6 a dead numeric branch for JPX code cells: removed, no behaviour change
+  (`05a28e3`).
+- F7 sync ignored the claim's calendar id: it now uses the claim's id and falls
+  back to the token file's only when the claim carries `null` (`46da1a9`).
+- An empty progress note was queued and refused by the Worker forever
+  (`text` is `min(1)`): it is no longer enqueued (`99eb42c`).
 
 ## Consequences
 

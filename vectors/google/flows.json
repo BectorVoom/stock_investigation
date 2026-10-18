@@ -124,6 +124,136 @@
 		}
 	},
 	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_1\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"tokenFileBlocked": true,
+		"output": {
+			"completion": {
+				"threw": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
 		"clientConfigured": false,
 		"tokenFile": null,
 		"browser": {
@@ -3483,7 +3613,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -3722,7 +3852,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -3925,7 +4055,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -4089,6 +4219,186 @@
 	},
 	{
 		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_claim",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_claim",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_claim\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_claim/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_claim/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_claim",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 1,
+				"updated": 0,
+				"deleted": 0,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_claim",
+						"inserted": 1,
+						"updated": 0,
+						"deleted": 0,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_claim",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_claim/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_claim/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
 		"tokenFile": null,
 		"browser": {
 			"kind": "none"
@@ -4106,7 +4416,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": []
 		},
@@ -4177,7 +4487,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": []
 		},
@@ -4251,7 +4561,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": []
 		},
@@ -4612,7 +4922,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -4772,7 +5082,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": []
 		},
@@ -4858,7 +5168,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": []
 		},
@@ -4944,7 +5254,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5082,7 +5392,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5244,7 +5554,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5451,7 +5761,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5585,7 +5895,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5719,7 +6029,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5853,7 +6163,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -5987,7 +6297,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -6135,7 +6445,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -6297,7 +6607,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -6459,7 +6769,7 @@
 			"heartbeatIntervalMs": 20000,
 			"sources": [],
 			"action": "sync",
-			"calendarId": "cal_1",
+			"calendarId": "cal_stored",
 			"desiredDigest": "abababababababababababababababababababababababababababababababab",
 			"events": [
 				{
@@ -6900,6 +7210,7 @@
 			},
 			"states": [
 				"planning",
+				"collecting",
 				"analyzing",
 				"verifying",
 				"publishing"
@@ -6961,6 +7272,7 @@
 			},
 			"states": [
 				"planning",
+				"collecting",
 				"analyzing",
 				"verifying",
 				"publishing"
@@ -7232,6 +7544,7 @@
 			},
 			"states": [
 				"planning",
+				"collecting",
 				"analyzing",
 				"verifying",
 				"publishing"

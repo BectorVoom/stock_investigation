@@ -376,17 +376,17 @@ async fn connect_listening(
 	if cancel.is_cancelled() {
 		return Ok(give_back(env, job, &tokens.refresh_token, aborted(job)).await);
 	}
-	// F1: a write failure propagates without revoking this new grant, as TypeScript does.
-	write_google_token_file(
-		env.token_file,
-		&GoogleTokenRecord {
-			refresh_token: tokens.refresh_token,
-			calendar_id: calendar_id.clone(),
-			scope: GOOGLE_CALENDAR_SCOPE.to_owned(),
-			saved_at: env.clock.now_iso(),
-		},
-	)
-	.await?;
+	// F1: a grant that could not be stored is given back before the fault propagates.
+	let record = GoogleTokenRecord {
+		refresh_token: tokens.refresh_token.clone(),
+		calendar_id: calendar_id.clone(),
+		scope: GOOGLE_CALENDAR_SCOPE.to_owned(),
+		saved_at: env.clock.now_iso(),
+	};
+	if let Err(error) = write_google_token_file(env.token_file, &record).await {
+		give_back(env, job, &tokens.refresh_token, aborted(job)).await;
+		return Err(error.into());
+	}
 	env.logger.info(
 		"google_connected",
 		&[
@@ -451,8 +451,13 @@ async fn sync(
 		cancel,
 	};
 	reporter.state(JobState::Analyzing).await;
-	// F7: sync uses the token file's id, even if the claim carries a different calendar id.
-	let mut calendar_id = stored.calendar_id.clone();
+	// The claim names the calendar the API believes is connected; the token
+	// file's id is the fallback for a claim that carries none (null).
+	let mut calendar_id = job
+		.calendar_id
+		.value()
+		.unwrap_or(&stored.calendar_id)
+		.clone();
 	let existing = match calls.get_calendar(&calendar_id).await {
 		Err(error) => return Ok(call_failed(job, error, cancel)),
 		Ok(Some(_)) => match calls.list_managed_events(&calendar_id).await {
@@ -549,8 +554,9 @@ async fn disconnect(
 	reporter.state(JobState::Planning).await;
 	let stored = read_google_token_file(env.token_file).await;
 	let mut revoked = false;
+	// Every job walks planning, collecting, analyzing, verifying, publishing.
+	reporter.state(JobState::Collecting).await;
 	if let Some(stored) = &stored {
-		reporter.state(JobState::Collecting).await;
 		if !cancel.is_cancelled() {
 			revoked = revoke_token(env.http, &stored.refresh_token, cancel).await;
 		}
@@ -566,7 +572,6 @@ async fn disconnect(
 			("revoked", LogValue::Bool(revoked)),
 		],
 	);
-	// F5: without a token record this goes planning -> analyzing, skipping collecting.
 	for state in [
 		JobState::Analyzing,
 		JobState::Verifying,

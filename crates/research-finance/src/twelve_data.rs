@@ -101,7 +101,7 @@ impl MarketSeriesSource for TwelveDataSeriesSource {
 					} else {
 						format!("{symbol} ({exchange})")
 					},
-					currency.to_owned(),
+					trim(currency).to_owned(),
 				)
 			} else if let Some((base, quote)) = symbol
 				.split_once('/')

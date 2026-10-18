@@ -308,13 +308,20 @@ async function executeConnect(
 		}
 		// Stopped while talking to Google: nothing is stored.
 		if (signal.aborted) return giveBack(aborted(job));
-		await writeGoogleTokenFile(env.google.config.tokenFile, {
-			version: 1,
-			refreshToken,
-			calendarId,
-			scope: GOOGLE_CALENDAR_SCOPE,
-			savedAt: env.clock.nowIso(),
-		});
+		try {
+			await writeGoogleTokenFile(env.google.config.tokenFile, {
+				version: 1,
+				refreshToken,
+				calendarId,
+				scope: GOOGLE_CALENDAR_SCOPE,
+				savedAt: env.clock.nowIso(),
+			});
+		} catch (error) {
+			// The grant was not stored, so it is given back before the fault
+			// propagates (the job then ends as a retryable runner error).
+			await giveBack(failed(job, "GOOGLE_REQUEST_FAILED", false));
+			throw error;
+		}
 		env.logger.info("google_connected", { runId: job.runId, calendarId });
 		await reporter.state("publishing");
 		return {
@@ -396,9 +403,11 @@ async function executeSync(
 		return callFailed(job, initial.error.code);
 	}
 	await reporter.state("analyzing");
-	let calendarId = stored.calendarId;
+	// The claim names the calendar the API believes is connected; the token
+	// file's id is the fallback for a claim that carries none (null).
+	let calendarId = job.calendarId ?? stored.calendarId;
 	let existing: readonly ManagedCalendarEvent[] = [];
-	const checked = await getCalendar(calls, stored.calendarId);
+	const checked = await getCalendar(calls, calendarId);
 	if (!checked.ok) {
 		if (signal.aborted) return aborted(job);
 		return callFailed(job, checked.error.code);
@@ -507,8 +516,9 @@ async function executeDisconnect(
 	await reporter.state("planning");
 	const stored = await readGoogleTokenFile(env.google.config.tokenFile);
 	let revoked = false;
+	// Every job walks planning, collecting, analyzing, verifying, publishing.
+	await reporter.state("collecting");
 	if (stored !== null) {
-		await reporter.state("collecting");
 		// Best effort: a failed revoke still deletes the local token file
 		// and completes with `revoked: false`. Revocation takes the token
 		// only — no client credentials are needed.

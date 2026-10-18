@@ -680,15 +680,15 @@ fn sec_client_primitives_match_typescript() {
 	report(&failures);
 }
 
-/// Records every sleep and, like the TypeScript client's, ignores cancellation (F2).
+/// Records every sleep and requires the wait to be cancellable, like the TypeScript client's (F2).
 struct RecordingSleeper(EventLog);
 
 #[async_trait::async_trait]
 impl Sleeper for RecordingSleeper {
 	async fn sleep(&self, ms: u64, cancel: Option<&CancellationToken>) {
 		assert!(
-			cancel.is_none(),
-			"the SEC wait must not be cancellable (F2)"
+			cancel.is_some(),
+			"the SEC wait must end on cancellation (F2)"
 		);
 		self.0.push(json!({"sleep": ms}));
 	}

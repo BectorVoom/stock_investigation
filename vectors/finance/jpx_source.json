@@ -228,6 +228,9 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
 					}
 				],
 				"output": [
@@ -296,7 +299,7 @@
 					},
 					{
 						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/aaa-att/kessan09_1009.xlsx",
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
 							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 							"maxBytes": 4194304,
 							"timeoutMs": 60000,
@@ -315,7 +318,7 @@
 					},
 					{
 						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
 							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 							"maxBytes": 4194304,
 							"timeoutMs": 60000,
@@ -1077,22 +1080,81 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/aaa-att/kessan09_1009.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": "AB",
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-second-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
+						}
+					},
+					{
+						"ok": {
+							"name": "Toyota Motor Corp.",
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-fourth-quarter",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-third-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": "2027-03-31",
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
-						}
-					},
-					{
-						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					}
 				]
@@ -3825,7 +3887,7 @@
 								{
 									"periodKey": "fy2027-03-31-first-quarter",
 									"announcementDate": null,
-									"fiscalPeriodLabel": "First quarterかな",
+									"fiscalPeriodLabel": "First quarter",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								},
@@ -4296,7 +4358,7 @@
 								{
 									"periodKey": "fy2027-03-31-2-second",
 									"announcementDate": "2027-01-15",
-									"fiscalPeriodLabel": "第2四半期 Secondかな",
+									"fiscalPeriodLabel": "第2四半期 Second",
 									"fiscalPeriodEnd": "2027-03-31",
 									"timing": "unknown"
 								}
@@ -8979,22 +9041,89 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": "46477",
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": "46477",
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]
@@ -9634,7 +9763,7 @@
 				"output": [
 					{
 						"ok": {
-							"name": "SoftBank Group Corp.  かな",
+							"name": "SoftBank Group Corp.",
 							"events": [
 								{
 									"periodKey": "fy2026-11-05-third-quarter",
@@ -11722,6 +11851,9 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
 					}
 				],
 				"output": [
@@ -11788,7 +11920,7 @@
 					},
 					{
 						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ddd-att/kessan12_1212.xlsx",
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
 							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 							"maxBytes": 4194304,
 							"timeoutMs": 60000,
@@ -12218,6 +12350,9 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
 					}
 				],
 				"output": [
@@ -13332,7 +13467,7 @@
 					{
 						"err": {
 							"code": "NO_SCHEDULED_DATE",
-							"name": null
+							"name": "&lol; &amp;"
 						}
 					}
 				]
@@ -14157,17 +14292,72 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ddd-att/kessan12_1212.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": "トヨタ",
+							"events": [
+								{
+									"periodKey": "fy2026-11-05-first-quarter",
+									"announcementDate": "2026-10-29",
+									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodEnd": "2026-11-05",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-11-06",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": "SoftBank Group Corp."
 						}
 					}
 				]
@@ -14277,36 +14467,55 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
-					},
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ddd-att/kessan12_1212.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-fourth-quarter",
+									"announcementDate": "2027-03-31",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-first-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-full-year",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					}
 				]
@@ -15411,22 +15620,66 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-third-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-third-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					}
 				]
@@ -17410,6 +17663,44 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
@@ -18961,22 +19252,75 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-29",
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]
@@ -19034,44 +19378,6 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
-					},
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
-					},
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
 					}
 				],
 				"output": [
@@ -19080,9 +19386,9 @@
 							"name": null,
 							"events": [
 								{
-									"periodKey": "fy2026-06-30-fourth-quarter",
-									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Fourth Quarter",
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19094,9 +19400,9 @@
 							"name": null,
 							"events": [
 								{
-									"periodKey": "fy2026-06-30-fourth-quarter",
-									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Fourth Quarter",
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -19108,9 +19414,9 @@
 							"name": null,
 							"events": [
 								{
-									"periodKey": "fy2026-06-30-fourth-quarter",
-									"announcementDate": "2026-10-29",
-									"fiscalPeriodLabel": "Fourth Quarter",
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Full year",
 									"fiscalPeriodEnd": "2026-06-30",
 									"timing": "unknown"
 								}
@@ -20447,22 +20753,100 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-06-30-full-year",
+									"announcementDate": "2026-10-29",
+									"fiscalPeriodLabel": "Full year",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-first-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-first-quarter",
+									"announcementDate": "2027-03-31",
+									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2027-03-31",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-third-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]
@@ -20503,36 +20887,48 @@
 						"bytes": "UEsDBBQAAAAAAAAAAAA2RWF8lwsAAJcLAAAYAAAAeGwvd29ya3NoZWV0cy9zaGVldDEueG1sPD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48d29ya3NoZWV0PjxzaGVldERhdGE+PHJvdyByPSIxIj48YyByPSJBMSIgcz0iMSIgdD0icyI+PHY+NTwvdj48L2M+PC9yb3c+PHJvdyByPSIyIj48L3Jvdz48cm93IHI9IjMiLz48cm93IHI9IjQiPjxjIHI9IkE0Ii8+PC9yb3c+PHJvdyByPSI1Ij48YyByPSJENSIgcz0iMyIgdD0icyI+PHY+MDwvdj48L2M+PGMgcj0iRjUiIHM9IjMiIHQ9InMiPjx2PjE8L3Y+PC9jPjxjIHI9Ikc1IiBzPSIzIiB0PSJzIj48dj4yPC92PjwvYz48YyByPSJINSIgcz0iMyIgdD0icyI+PHY+Mzwvdj48L2M+PGMgcj0iSTUiIHM9IjMiIHQ9InMiPjx2PjQ8L3Y+PC9jPjwvcm93Pjxyb3cgcj0iNiI+PGMgcj0iRzYiIHM9IjMiIHQ9InMiPjx2Pjg8L3Y+PC9jPjxjIHI9Ikg2IiBzPSIzIiB0PSJzIj48dj42PC92PjwvYz48YyByPSJENiIgcz0iMyI+PHY+NDU3Nzg8L3Y+PC9jPjxjIHI9Ikk2IiBzPSIzIiB0PSJzIj48dj43PC92PjwvYz48YyByPSJGNiIgcz0iMyI+PHY+NDYyMDM8L3Y+PC9jPjwvcm93Pjxyb3cgcj0iNyI+PGMgcj0iRDciIHM9IjMiPjx2PjQ2NDkzPC92PjwvYz48YyByPSJJNyIgcz0iMyIgdD0iaW5saW5lU3RyIj48aXM+PHQ+U29ueSAmYW1wOyBDbyAmbHQ7R3JvdXAmZ3Q7PC90PjwvaXM+PC9jPjxjIHI9Ikg3IiBzPSIzIiB0PSJzIj48dj45PC92PjwvYz48YyByPSJGNyIgcz0iMyIgdD0ibiI+PHY+NDYyMDM8L3Y+PC9jPjxjIHI9Ikc3IiBzPSIzIiB0PSJzIj48dj44PC92PjwvYz48L3Jvdz48cm93IHI9IjgiPjxjIHI9Ikg4IiBzPSIzIiB0PSJzIj48dj4xMDwvdj48L2M+PGMgcj0iRDgiIHM9IjMiPjx2PjQ2NDk0PC92PjwvYz48YyByPSJJOCIgcz0iMyIgdD0icyI+PHY+MTE8L3Y+PC9jPjxjIHI9Ikc4IiBzPSIzIiB0PSJzIj48dj44PC92PjwvYz48YyByPSJGOCIgcz0iMyIgdD0ibiI+PHY+NDYxMTI8L3Y+PC9jPjwvcm93Pjxyb3cgcj0iOSI+PGMgcj0iRzkiIHM9IjMiIHQ9InMiPjx2PjEyPC92PjwvYz48YyByPSJGOSIgcz0iMyI+PHY+NDYyMDM8L3Y+PC9jPjxjIHI9Ikk5IiBzPSIzIiB0PSJpbmxpbmVTdHIiPjxpcz48dD7lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI3lkI08L3Q+PC9pcz48L2M+PGMgcj0iRDkiIHM9IjMiPjx2PjQ2NDk0PC92PjwvYz48YyByPSJIOSIgcz0iMyIgdD0icyI+PHY+Njwvdj48L2M+PC9yb3c+PHJvdyByPSIxMCI+PGMgcj0iSDEwIiBzPSIzIi8+PGMgcj0iRjEwIiBzPSIzIiB0PSJzdHIiPjx2PjQ2NDc3PC92PjwvYz48YyByPSJEMTAiIHM9IjMiPjx2PjQ2MzI0PC92PjwvYz48YyByPSJHMTAiIHM9IjMiIHQ9InMiPjx2PjEzPC92PjwvYz48YyByPSJJMTAiIHM9IjMiIHQ9InMiPjx2PjExPC92PjwvYz48L3Jvdz48cm93IHI9IjExIj48YyByPSJJMTEiIHM9IjMiIHQ9ImlubGluZVN0ciI+PGlzPjx0PngmIzExMTQxMTI7eTwvdD48L2lzPjwvYz48YyByPSJEMTEiIHM9IjMiPjx2PjQ2NDAyPC92PjwvYz48YyByPSJIMTEiIHM9IjMiIHQ9ImlubGluZVN0ciI+PGlzPjx0PjcyMDM8L3Q+PC9pcz48L2M+PGMgcj0iRzExIiBzPSIzIiB0PSJzIj48dj4xNDwvdj48L2M+PGMgcj0iRjExIiBzPSIzIj48dj40NjExMjwvdj48L2M+PC9yb3c+PHJvdyByPSIxMiI+PGMgcj0iRzEyIiBzPSIzIiB0PSJzIj48dj4xMjwvdj48L2M+PGMgcj0iSDEyIiBzPSIzIiB0PSJzIj48dj45PC92PjwvYz48YyByPSJJMTIiIHM9IjMiIHQ9ImlubGluZVN0ciI+PGlzPjx0Pk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk48L3Q+PC9pcz48L2M+PGMgcj0iRjEyIiBzPSIzIiB0PSJuIj48dj40NjQ3Nzwvdj48L2M+PGMgcj0iRDEyIiBzPSIzIj48dj40NjQ5NDwvdj48L2M+PC9yb3c+PC9zaGVldERhdGE+PC93b3Jrc2hlZXQ+UEsDBBQAAAAIAAAAAADs5kYpWwEAAKECAAAUAAAAeGwvc2hhcmVkU3RyaW5ncy54bWytks9KAlEUxvdB73C4gjubMTNHnBnJPwNtwtAWLceZmzOgd+jeOzFbdWNE0E4SIQKDSBCinUg9zOjYY4TmQm6162wOfL+P7xwOR80HrSZcYcpcj2gouScjwMTybJc0NHRWMxIKyusqYxwszydcQ8k00lXm6irXo9fpctJf3k8/H5/n095iMoj6T7s7VcvBtt/ENpRMjhlceBTKJiUuaTA4IsTziYVbmHCmSlxXpVXYdmA0fIiGY5DAcJllNuEcmzSBiS26t7B06puUYypaws5b2J2F3WuQoOjZWOTz2WA5el/c3YIEx4z5GE7M1g9X2PkIO6Ow2wu7Y5Fls8qBqB3FY0FJkeVcQSQAhudT7sBmXwDRcZhJK6KW2ZdTohaPBSm5qOTWvbzpBSMn+mqOS224/P08VWx55E8a/HOt82nFAVbX0OrP6hpKovWB2zdh++V7Pq04my0kxrj+BVBLAQIUABQAAAAAAAAAAAA2RWF8lwsAAJcLAAAYAAAAAAAAAAAAAAAAAAAAAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWxQSwECFAAUAAAACAAAAAAA7OZGKVsBAAChAgAAFAAAAAAAAAAAAAAAAADNCwAAeGwvc2hhcmVkU3RyaW5ncy54bWxQSwUGAAAAAAIAAgCIAAAAWg0AAAAA"
 					}
 				],
-				"events": [
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/aaa-att/kessan09_1009.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
-					}
-				],
+				"events": [],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2027-03-31",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2027-03-31-third-quarter",
+									"announcementDate": null,
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2026-03-31-second-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Second quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-fourth-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]
@@ -22165,8 +22561,24 @@
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": "トヨタ",
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-fourth-quarter",
+									"announcementDate": "2026-11-06",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]
@@ -22402,7 +22814,7 @@
 								{
 									"periodKey": "fy2026-03-31-third-quarter",
 									"announcementDate": "2026-11-05",
-									"fiscalPeriodLabel": "Third quarterかな",
+									"fiscalPeriodLabel": "Third quarter",
 									"fiscalPeriodEnd": "2026-03-31",
 									"timing": "unknown"
 								},
@@ -22684,13 +23096,23 @@
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-third-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "Third quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								}
+							]
 						}
 					},
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					}
 				]
@@ -22720,31 +23142,12 @@
 						"bytes": "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"
 					}
 				],
-				"events": [
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/aaa-att/kessan09_1009.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
-					}
-				],
+				"events": [],
 				"output": [
 					{
 						"err": {
-							"code": "SOURCE_FAILED"
+							"code": "NO_SCHEDULED_DATE",
+							"name": null
 						}
 					}
 				]
@@ -23349,6 +23752,44 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/bbb-att/kessan10_1010.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
+					},
+					{
+						"before": true
+					},
+					{
+						"fetch": {
+							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ccc-att/kessan11_1111.xlsx",
+							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+							"maxBytes": 4194304,
+							"timeoutMs": 60000,
+							"allowedHosts": [
+								"www.jpx.co.jp"
+							],
+							"userAgent": null,
+							"authorization": null,
+							"finnhubToken": null,
+							"includeErrorBody": false,
+							"hasSignal": true
+						}
 					}
 				],
 				"output": [
@@ -23425,31 +23866,35 @@
 							"includeErrorBody": false,
 							"hasSignal": true
 						}
-					},
-					{
-						"before": true
-					},
-					{
-						"fetch": {
-							"url": "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/ddd-att/kessan12_1212.xlsx",
-							"accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-							"maxBytes": 4194304,
-							"timeoutMs": 60000,
-							"allowedHosts": [
-								"www.jpx.co.jp"
-							],
-							"userAgent": null,
-							"authorization": null,
-							"finnhubToken": null,
-							"includeErrorBody": false,
-							"hasSignal": true
-						}
 					}
 				],
 				"output": [
 					{
-						"err": {
-							"code": "SOURCE_FAILED"
+						"ok": {
+							"name": null,
+							"events": [
+								{
+									"periodKey": "fy2027-03-31-fourth-quarter",
+									"announcementDate": "2026-10-13",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2027-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-03-31-first-quarter",
+									"announcementDate": "2026-11-05",
+									"fiscalPeriodLabel": "First quarter",
+									"fiscalPeriodEnd": "2026-03-31",
+									"timing": "unknown"
+								},
+								{
+									"periodKey": "fy2026-06-30-fourth-quarter",
+									"announcementDate": "2027-01-15",
+									"fiscalPeriodLabel": "Fourth Quarter",
+									"fiscalPeriodEnd": "2026-06-30",
+									"timing": "unknown"
+								}
+							]
 						}
 					}
 				]

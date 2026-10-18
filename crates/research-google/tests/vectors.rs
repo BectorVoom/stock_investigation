@@ -996,6 +996,10 @@ async fn google_flows_match_typescript() {
 			use std::os::unix::fs::PermissionsExt;
 			std::fs::set_permissions(&token_path, std::fs::Permissions::from_mode(0o600)).unwrap();
 		}
+		if has(case, "tokenFileBlocked").and_then(Value::as_bool) == Some(true) {
+			// A directory in the token file's place: writing the record fails.
+			std::fs::create_dir_all(&token_path).unwrap();
+		}
 		let shared = Arc::new(FlowShared {
 			cancel: CancellationToken::new(),
 			abort_at: optional_text(case, "abortAt").map(str::to_owned),
@@ -1106,10 +1110,11 @@ async fn google_flows_match_typescript() {
 					.unwrap();
 				None
 			} else {
+				// A fault that escapes is part of the contract (a failed token write).
 				Some(
 					execute_google_calendar(&job, &env, &shared.cancel, &reporter, &sender)
 						.await
-						.unwrap(),
+						.map_err(|_| ()),
 				)
 			}
 		};
@@ -1145,7 +1150,11 @@ async fn google_flows_match_typescript() {
 		});
 		let urls = sender.urls.lock().unwrap().clone();
 		let actual = json!({
-			"completion": completion.as_ref().map_or(Json::Null, |c| serde_json::to_value(c).unwrap()),
+			"completion": match &completion {
+				None => Json::Null,
+				Some(Ok(c)) => serde_json::to_value(c).unwrap(),
+				Some(Err(())) => json!({"threw": true}),
+			},
 			"states": reporter.states.lock().unwrap().clone(),
 			"logs": logger.0.lock().unwrap().clone(),
 			"requests": http.requests.lock().unwrap().clone(),

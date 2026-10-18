@@ -243,10 +243,10 @@ impl SecClient for PacedSecClient {
 			*next = slot.saturating_add(SEC_MIN_REQUEST_INTERVAL_MS);
 			slot.saturating_sub(now)
 		};
-		// F2: this wait intentionally ignores cancellation, matching TypeScript.
+		// A stopped job must not keep waiting for its slot; the fetch below sees the same token.
 		if delay > 0 {
 			self.sleep
-				.sleep(u64::try_from(delay).unwrap_or(0), None)
+				.sleep(u64::try_from(delay).unwrap_or(0), request.cancel)
 				.await;
 		}
 		let cancel = request.cancel.cloned().unwrap_or_default();

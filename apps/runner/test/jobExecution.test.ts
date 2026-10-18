@@ -1,4 +1,5 @@
-import type { CompleteJobRequest } from "@research/contracts";
+import type { ClaimedJob, CompleteJobRequest } from "@research/contracts";
+import { EMPTY_USAGE } from "@research/domain";
 import type { EventLogger, LogFields } from "@research/effects";
 import { silentEventLogger } from "@research/effects";
 import { describe, expect, it } from "vitest";
@@ -272,6 +273,44 @@ describe("news ingestion jobs (FR-003)", () => {
 			sourceId: "src_news",
 			errorCode: "TIMEOUT",
 		});
+	});
+});
+
+describe("progress notes", () => {
+	it("never queues a note the Worker would refuse, which would block every later event", async () => {
+		const { api, calls } = createFakeApi();
+		const harness = createDeps(api);
+		const job: Extract<ClaimedJob, { kind: "google-calendar" }> = {
+			kind: "google-calendar",
+			runId: RUN_ID,
+			leaseGeneration: 3,
+			leaseExpiresAt: "2026-10-11T00:01:30.000Z",
+			attempt: 1,
+			heartbeatIntervalMs: 20_000,
+			sources: [],
+			action: "disconnect",
+		};
+		await executeJob(
+			job,
+			{
+				...harness.deps,
+				executeGoogleCalendar: async (claimed, _env, _signal, reporter) => {
+					await reporter.note("");
+					await reporter.note("kept");
+					return {
+						outcome: "google-calendar-disconnected",
+						leaseGeneration: claimed.leaseGeneration,
+						usage: EMPTY_USAGE,
+						revoked: false,
+					};
+				},
+			},
+			never,
+		);
+		const notes = calls.events
+			.flatMap((request) => request.events)
+			.flatMap((entry) => (entry.event.type === "note" ? [entry.event.text] : []));
+		expect(notes).toEqual(["kept"]);
 	});
 });
 

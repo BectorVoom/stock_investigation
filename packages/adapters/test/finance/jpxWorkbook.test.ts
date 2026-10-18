@@ -168,6 +168,27 @@ describe("parseJpxWorkbook", () => {
 		]);
 	});
 
+	it("reads shared strings as Excel shows them, without phonetic <rPh> readings (F3)", () => {
+		const phonetic = (text: string, reading: string): string =>
+			`<si><r><rPr><b/></rPr><t>${text}</t></r><rPh sb="0" eb="2"><t>${reading}</t></rPh><phoneticPr fontId="1"/></si>`;
+		const shared = `<sst>${STRINGS.map((text, index) =>
+			index === 3 || index === 8 ? phonetic(text, "ｶﾅ") : `<si><t>${text}</t></si>`,
+		).join("")}</sst>`;
+		const sheet = sheetXml(
+			row(
+				6,
+				numericCell("A6", "46331") +
+					numericCell("B6", "7203") +
+					sharedCell("D6", 8) +
+					numericCell("E6", "46477") +
+					sharedCell("I6", 10),
+			),
+		);
+		// Header "Issue Name" carries a reading too: it must still be recognised.
+		const rows = expectOk(parseJpxWorkbook(sheet, shared));
+		expect(rows.map((entry) => entry.name)).toEqual(["Toyota Motor Corp."]);
+	});
+
 	it("keeps Undecided rows dateless and trims trailing spaces from names", () => {
 		const sheet = sheetXml(
 			row(

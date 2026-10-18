@@ -1788,6 +1788,29 @@ async fn notes_and_tool_events_are_truncated_in_utf16_units_at_a_char_boundary()
 }
 
 #[tokio::test]
+async fn an_empty_note_is_not_queued_because_the_worker_would_refuse_it_forever() {
+	use research_application::reporter::PipelineReporter;
+	let api = FakeApi::new(ApiScript::default());
+	let harness = harness(Arc::clone(&api), Options::default());
+	let job = market_job(&[], 20_000);
+	let core = crate::job_execution::test_core(&harness.deps, &job);
+	core.note("").await;
+	assert_eq!(core.queue_snapshot().await, (0, 0));
+	core.note("kept").await;
+	core.state(JobState::Planning).await;
+	let sent = api.calls().events;
+	let notes: Vec<_> = sent
+		.iter()
+		.flat_map(|request| request.events.iter())
+		.filter_map(|event| match &event.event {
+			RunnerEventBody::Note { text } => Some(text.clone()),
+			_ => None,
+		})
+		.collect();
+	assert_eq!(notes, ["kept"]);
+}
+
+#[tokio::test]
 async fn a_non_lifecycle_state_is_a_fault_not_an_event() {
 	use research_application::reporter::PipelineReporter;
 	let api = FakeApi::new(ApiScript::default());

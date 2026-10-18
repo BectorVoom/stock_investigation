@@ -62,8 +62,8 @@ export interface SecClientDeps {
 	readonly clock: Clock;
 	/** e.g. "Jane Doe research jane@example.com". null = SEC access is not configured. */
 	readonly userAgent: string | null;
-	/** Injected in tests; defaults to a real timer. */
-	readonly sleep?: (ms: number) => Promise<void>;
+	/** Injected in tests; defaults to a real timer. Resolves early when `signal` aborts. */
+	readonly sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
 }
 
 const NOT_CONFIGURED_DETAIL =
@@ -105,9 +105,19 @@ function translateFetchError(error: SafeFetchError): SecError {
 	return secError("FETCH_FAILED", `${error.code}: ${error.detail}`, retryable);
 }
 
-function defaultSleep(ms: number): Promise<void> {
+function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
 	return new Promise((resolve) => {
-		setTimeout(resolve, ms);
+		if (signal?.aborted === true) {
+			resolve();
+			return;
+		}
+		const done = (): void => {
+			clearTimeout(timer);
+			signal?.removeEventListener("abort", done);
+			resolve();
+		};
+		const timer = setTimeout(done, ms);
+		signal?.addEventListener("abort", done, { once: true });
 	});
 }
 
@@ -116,11 +126,12 @@ export function createSecClient(deps: SecClientDeps): SecClient {
 	let nextSlotMs = 0;
 
 	/** Reserves the next request slot synchronously, so concurrent callers queue up in order. */
-	async function waitForSlot(): Promise<void> {
+	async function waitForSlot(signal: AbortSignal | undefined): Promise<void> {
 		const nowMs = deps.clock.nowMs();
 		const slotMs = Math.max(nowMs, nextSlotMs);
 		nextSlotMs = slotMs + SEC_MIN_REQUEST_INTERVAL_MS;
-		if (slotMs > nowMs) await sleep(slotMs - nowMs);
+		// A stopped job must not keep waiting for its slot; the fetch then sees the same signal.
+		if (slotMs > nowMs) await sleep(slotMs - nowMs, signal);
 	}
 
 	return {
@@ -128,7 +139,7 @@ export function createSecClient(deps: SecClientDeps): SecClient {
 			if (!isUsableSecUserAgent(deps.userAgent)) {
 				return err(secError("NOT_CONFIGURED", NOT_CONFIGURED_DETAIL));
 			}
-			await waitForSlot();
+			await waitForSlot(request.signal);
 			const options: SafeFetchOptions = {
 				maxBytes: request.maxBytes,
 				timeoutMs: SEC_TIMEOUT_MS,

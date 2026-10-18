@@ -5,7 +5,7 @@
  * for the 5-minute timeout, and a secrets scan over every captured log
  * line, sent event and completion (security check 1).
  */
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GoogleHttpRequest, GoogleHttpResult } from "@research/adapters/google";
@@ -632,6 +632,28 @@ describe("a grant that is not kept is given back", () => {
 		}
 	});
 
+	it("revokes the new grant when the token file cannot be written, then fails", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, GRANTED),
+			"POST /calendar/v3/calendars": json(200, { id: "cal_1" }),
+			"POST /revoke": json(200, {}),
+		});
+		try {
+			// A directory in the token file's place makes the atomic rename fail.
+			await mkdir(harness.tokenFile);
+			await expect(connectThroughCallback(harness)).rejects.toThrow();
+			const revoke = harness.httpCalls.find((call) => call.path === "/revoke");
+			expect(revoke?.body).toBe(`token=${REFRESH_TOKEN}`);
+			expect(harness.logs.find((line) => line.event === "google_grant_discarded")?.fields).toEqual({
+				runId: "run_google",
+				revoked: true,
+			});
+			expect(harness.logs.some((line) => line.event === "google_connected")).toBe(false);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
 	it("revokes the grant when the granted scope is not the one requested", async () => {
 		const harness = await googleHarness({
 			"POST /token": json(200, { ...GRANTED, scope: "openid" }),
@@ -916,6 +938,55 @@ describe("sync execution", () => {
 		}
 	});
 
+	it("syncs the calendar the claim names, not the token file's", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, { access_token: ACCESS_TOKEN }),
+			"GET /calendar/v3/calendars/cal_claim": json(200, { id: "cal_claim" }),
+			"GET /calendar/v3/calendars/cal_claim/events": json(200, { items: [] }),
+			"POST /calendar/v3/calendars/cal_claim/events": json(200, { id: "a".repeat(32) }),
+		});
+		try {
+			await storedToken(harness);
+			const completion = await executeGoogleCalendar(
+				{ ...syncJob([BODY_A]), calendarId: "cal_claim" },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({
+				outcome: "google-calendar-synced",
+				calendarId: "cal_claim",
+				inserted: 1,
+			});
+			expect(harness.httpCalls.some((call) => call.path.includes("cal_1"))).toBe(false);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("falls back to the token file's calendar when the claim carries none (null)", async () => {
+		const harness = await googleHarness({
+			...managedRoutes(),
+			"POST /calendar/v3/calendars/cal_1/events": json(200, { id: "b".repeat(32) }),
+			"PUT /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
+			"DELETE /calendar/v3/calendars/cal_1/events/cccccccccccccccccccccccccccccccc": json(200, {}),
+		});
+		try {
+			await storedToken(harness);
+			const completion = await executeGoogleCalendar(
+				{ ...syncJob([BODY_A]), calendarId: null },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({ outcome: "google-calendar-synced", calendarId: "cal_1" });
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
 	it("fails auth-expired with no token file, or on invalid_grant", async () => {
 		const missing = await googleHarness({});
 		try {
@@ -1017,6 +1088,31 @@ describe("disconnect execution", () => {
 			);
 			expect(completion).toMatchObject({ outcome: "google-calendar-disconnected", revoked: false });
 			expect(await readGoogleTokenFile(harness.tokenFile)).toBe(null);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("disconnect without a token file", () => {
+	it("walks every leased state in order, like any other job", async () => {
+		const harness = await googleHarness({});
+		try {
+			const completion = await executeGoogleCalendar(
+				{ ...CONNECT, action: "disconnect" },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({ outcome: "google-calendar-disconnected", revoked: false });
+			expect(harness.states).toEqual([
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing",
+			]);
 		} finally {
 			await rm(harness.dir, { recursive: true, force: true });
 		}

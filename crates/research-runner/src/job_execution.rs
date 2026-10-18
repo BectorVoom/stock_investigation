@@ -321,11 +321,11 @@ impl PipelineReporter for JobReporter {
 	}
 
 	async fn note(&self, text: &str) {
-		// TS DEFECT, ported as is (ADR-0030 "known defects"): an empty note is queued
-		// like any other, the Worker refuses it (`text` is `min(1)`) with
-		// VALIDATION_FAILED, the batch stays queued and every later flush fails
-		// the same way, so no further progress reaches the Worker. The pipelines
-		// never report an empty note today.
+		// The Worker refuses an empty note (`text` is `min(1)`) and a refused batch
+		// stays queued, so one empty note would block every later event.
+		if text.is_empty() {
+			return;
+		}
 		self.core.progress.note.fetch_add(1, Ordering::Relaxed);
 		let mut queue = self.core.queue.lock().await;
 		// `text.slice(0, 500)`: never a lone surrogate, so at most 500 units at a char boundary.

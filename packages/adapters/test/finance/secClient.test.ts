@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	createSecClient,
 	isUsableSecUserAgent,
@@ -103,6 +103,47 @@ describe("SEC client: fair-access request spacing", () => {
 		for (const windowStart of startedAt) {
 			const inWindow = startedAt.filter((at) => at >= windowStart && at < windowStart + 1000);
 			expect(inWindow.length).toBeLessThanOrEqual(10);
+		}
+	});
+
+	it("hands the request's signal to the sleep, so a stop ends the wait", async () => {
+		const signals: (AbortSignal | undefined)[] = [];
+		const client = createSecClient({
+			fetcher: createScriptedFetcher({ [URL_A]: { text: "{}" } }),
+			clock: { nowMs: () => 5_000, nowIso: () => "" },
+			userAgent: SEC_USER_AGENT,
+			sleep: async (_ms, signal) => {
+				signals.push(signal);
+			},
+		});
+		const stop = new AbortController();
+		await client.fetchDocument(URL_A, REQUEST);
+		await client.fetchDocument(URL_A, { ...REQUEST, signal: stop.signal });
+		expect(signals).toEqual([stop.signal]);
+	});
+
+	it("the default wait ends at once when the request is cancelled (F2)", async () => {
+		vi.useFakeTimers();
+		try {
+			const client = createSecClient({
+				fetcher: createScriptedFetcher({ [URL_A]: { text: "{}" } }),
+				clock: { nowMs: () => 5_000, nowIso: () => "" },
+				userAgent: SEC_USER_AGENT,
+			});
+			await client.fetchDocument(URL_A, REQUEST);
+			const stop = new AbortController();
+			let finished = false;
+			const queued = client.fetchDocument(URL_A, { ...REQUEST, signal: stop.signal }).then(() => {
+				finished = true;
+			});
+			await vi.advanceTimersByTimeAsync(10);
+			expect(finished).toBe(false);
+			stop.abort();
+			// No timer is advanced: the wait must end by itself.
+			await queued;
+			expect(finished).toBe(true);
+		} finally {
+			vi.useRealTimers();
 		}
 	});
 

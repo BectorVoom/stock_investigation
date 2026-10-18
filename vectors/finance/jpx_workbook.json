@@ -275,8 +275,16 @@
 						"periodKey": "fy2027-03-31-fourth-quarter"
 					},
 					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
 						"code": "7203",
-						"name": "トヨタかな",
+						"name": "トヨタ",
 						"announcementDate": "2026-10-29",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "First quarter",
@@ -315,7 +323,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><r><t>F</t></r><r><t>iscal Year-end</t></r></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>未定_Undecided</t></si><si><t>7203</t></si><si><t>Toyota Motor Corp.</t></si><si><t>Second quarter</t></si><si><t>A&#0;B</t></si><si><t>First quarter</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -528,7 +536,7 @@
 					},
 					{
 						"code": "130A",
-						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNかな",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "First quarter",
@@ -543,6 +551,14 @@
 			"output": {
 				"ok": true,
 				"value": [
+					{
+						"code": "9984",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
 					{
 						"code": "6758",
 						"name": "AB",
@@ -828,8 +844,81 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"I2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C2\" s=\"3\" t=\"inlineStr\"><is><t>決算期末\r\nFiscal Year-end</t></is></c><c r=\"A2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"E2\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c></row><row r=\"3\"><c r=\"E3\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"I3\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"A3\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"J3\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"C3\" s=\"3\" t=\"str\"><v>2958465</v></c></row><row r=\"4\"><c r=\"C4\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"I4\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"J4\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"A4\" s=\"3\" t=\"n\"><v>46400</v></c><c r=\"E4\" s=\"3\" t=\"s\"><v>5</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"Z5\" s=\"2\"/><c r=\"I5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J5\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A5\" s=\"3\"><v>46493</v></c></row><row r=\"6\"><c r=\"E6\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"A6\" s=\"3\"><v>46324</v></c><c r=\"J6\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"C6\" s=\"3\" t=\"n\"><v>46477</v></c></row><row r=\"7\"><c r=\"J7\" s=\"3\"><v>130A</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"C7\" s=\"3\"><v>46112</v></c><c r=\"A7\" s=\"3\"><v>46308</v></c><c r=\"I7\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"8\"><c r=\"E8\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A8\" s=\"3\"><v>46402</v></c><c r=\"I8\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"J8\" s=\"3\"><v>7203</v></c><c r=\"C8\" s=\"3\" t=\"str\"><v>46203</v></c></row><row r=\"9\"><c r=\"E9\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A9\" s=\"3\"><v>46493</v></c><c r=\"J9\" s=\"3\"><v>9984</v></c><c r=\"C9\" s=\"3\"><v>46477</v></c></row><row r=\"10\"><c r=\"I10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"A10\" s=\"3\"><v>46308</v></c><c r=\"C10\" s=\"3\"><v>46112</v></c><c r=\"J10\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E10\" s=\"3\" t=\"s\"><v>14</v></c></row><row r=\"11\"><c r=\"J11\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"A11\" s=\"3\"><v>45778</v></c><c r=\"E11\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"I11\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"C11\" s=\"3\" t=\"n\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"15\"><si><t>Issue Name</t></si><si><t>Scheduled Dates for Earnings Announcements</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>コード\r\nCode</t></si><si><t>タイトル</t></si><si><t>Toyota Motor Corp.</t></si><si><t>  Fourth Quarter  </t></si><si><t>9984</t></si><si><t></t></si><si><t>A&#xD800;B</t></si><si><t>6758</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Third quarter</t></si><si><r><t>F</t></r><r><t>irst quarter</t></r></si><si><t>SoftBank Group Corp.  </t></si><si><t>Second quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "9999-12-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy9999-12-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2027-01-13",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "AB",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -1158,7 +1247,7 @@
 					},
 					{
 						"code": "7203",
-						"name": "SoftBank Group Corp.  かな",
+						"name": "SoftBank Group Corp.",
 						"announcementDate": "2027-04-16",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Second quarter",
@@ -1212,7 +1301,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"18\"><si><t>Issue Name</t></si><si><t>コード / Code</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t xml:space=\"preserve\">決算期末\r\nFiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>Third quarter</t></si><si><t>130A</t></si><si><t>&#x30C8;&#x30E8;&#x30BF;</t></si><si><t xml:space=\"preserve\">9984</t></si><si><t>Second quarter</t></si><si><t>&lol; &amp;amp;</t></si><si><t>未定_Undecided</t></si><si><t></t></si><si><t>  Fourth Quarter  </t></si><si><t>Full year</t></si><si><t>7203</t></si><si><t>x&#1114112;y</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -1227,8 +1316,17 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"/><row r=\"3\"><c r=\"A3\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"4\"><c r=\"A4\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"5\"><c r=\"F5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"A5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"D5\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"A6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"B6\" s=\"3\"><v>46331.5</v></c><c r=\"D6\" s=\"3\"><v>46494</v></c><c r=\"F6\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"7\"><c r=\"J7\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"B7\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"D7\" s=\"3\"><v>46494</v></c><c r=\"A7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"F7\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"8\"><c r=\"B8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"F8\" s=\"3\"/><c r=\"J8\" s=\"3\" t=\"inlineStr\"><is><t>&#x30C8;&#x30E8;&#x30BF;</t></is></c><c r=\"D8\" s=\"3\"><v>46493</v></c><c r=\"A8\" s=\"3\" t=\"s\"><v>11</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"12\"><si><t>コード\r\nCode</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Issue Name</t></si><si><t> Scheduled Dates for Earnings Announcements </t></si><si><t>決算期末 / Fiscal Year-end</t></si><si><t>タイトル</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>130A</t></si><si><t>  </t></si><si><t>First quarter</t></si><si><t>6758</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>A&#0;B</t></si><si><r><t>F</t></r><r><t>ull year</t></r></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MALFORMED_WORKBOOK"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -1437,7 +1535,7 @@
 						"name": "トヨタ",
 						"announcementDate": "2025-05-01",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2027-03-31-third-quarter"
 					},
 					{
@@ -1477,7 +1575,7 @@
 						"name": null,
 						"announcementDate": "2027-01-15",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2027-03-31-third-quarter"
 					}
 				]
@@ -1614,6 +1712,22 @@
 					},
 					{
 						"code": "7203",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "7203",
 						"name": "&lol; &amp;",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2026-06-30",
@@ -1627,6 +1741,14 @@
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
 					},
 					{
 						"code": "9984",
@@ -1886,7 +2008,7 @@
 					},
 					{
 						"code": "7203",
-						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名かな",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
 						"announcementDate": "2027-04-17",
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "Fourth Quarter",
@@ -2102,8 +2224,17 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"><c r=\"A3\"/></row><row r=\"4\"><c r=\"A4\"/></row><row r=\"5\"></row><row r=\"6\"><c r=\"A6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"K6\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></is></c><c r=\"H6\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"7\"><c r=\"D7\" s=\"3\"><v>9984</v></c><c r=\"I7\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"H7\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"K7\" s=\"3\"><v>46324</v></c><c r=\"A7\" s=\"3\" t=\"s\"><v>5</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"6\"><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算期末 / Fiscal Year-end</t></si><si><r><t>コ</t></r><r><t>ード\r\nCode</t></r></si><si><t>Issue Name</t></si><si><t>タイトル</t></si><si><t>Second quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -2134,7 +2265,7 @@
 						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 						"announcementDate": "2027-03-31",
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2026-03-31-third-quarter"
 					},
 					{
@@ -2150,7 +2281,7 @@
 						"name": "Sony & Co <Group>",
 						"announcementDate": "2027-04-17",
 						"fiscalPeriodEnd": "2026-06-30",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2026-06-30-third-quarter"
 					},
 					{
@@ -2176,8 +2307,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"/><row r=\"4\"/><row r=\"5\"><c r=\"A5\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"6\"><c r=\"H6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"7\"><c r=\"B7\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"D7\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"I7\" s=\"3\"><v>45778</v></c><c r=\"H7\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"8\"><c r=\"D8\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"H8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"I8\" s=\"3\"><v>46308</v></c></row><row r=\"9\"><c r=\"D9\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"B9\" s=\"3\"/><c r=\"I9\" s=\"3\"><v>46307</v></c><c r=\"E9\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H9\" s=\"3\" t=\"s\"><v>6</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>会社名\nIssue Name</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>決算期末 / Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>コード / Code</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>タイトル</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Third quarter</t></si><si><t>6758</t></si><si><t>&lol; &amp;amp;</t></si><si><t>First quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -2191,7 +2339,7 @@
 						"name": "SoftBank Group Corp.",
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-06-30",
-						"fiscalPeriodLabel": "Second quarterかな",
+						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2026-06-30-second-quarter"
 					},
 					{
@@ -2199,7 +2347,7 @@
 						"name": "&lol; &amp;",
 						"announcementDate": "2027-04-17",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarterかな",
+						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2027-03-31-second-quarter"
 					}
 				]
@@ -2265,7 +2413,7 @@
 						"name": "AB",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2026-03-31-third-quarter"
 					},
 					{
@@ -2273,7 +2421,7 @@
 						"name": "AB",
 						"announcementDate": "2026-10-13",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2027-03-31-third-quarter"
 					},
 					{
@@ -2281,7 +2429,7 @@
 						"name": null,
 						"announcementDate": "2026-10-13",
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2026-03-31-third-quarter"
 					},
 					{
@@ -2340,8 +2488,65 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"I1\" s=\"3\" t=\"s\"><v>0</v></c><c s=\"3\" t=\"s\"><v>1</v></c><c r=\"G1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"B1\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"J1\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></is></c></row><row r=\"2\"><c r=\"B2\" s=\"3\"><v>46203</v></c><c r=\"J2\" s=\"3\"><v>45778</v></c><c r=\"G2\" s=\"3\"><v>130a</v></c><c r=\"I2\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"J3\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"I3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"G3\" s=\"3\" t=\"inlineStr\"><is><t>7203</t></is></c><c r=\"B3\" s=\"3\" t=\"str\"><v>46112</v></c></row><row r=\"4\"><c r=\"I4\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"J4\" s=\"3\"><v>46307</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"B4\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"C4\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"J5\" s=\"3\" t=\"n\"><v>46331</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"G5\" s=\"3\"><v>7203</v></c><c r=\"B5\" s=\"3\"><v>2958465</v></c></row><row r=\"6\"><c r=\"J6\" s=\"3\"><v>46493</v></c><c r=\"G6\" s=\"3\"><v>6758</v></c><c r=\"C6\" s=\"3\" t=\"inlineStr\"><is><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></is></c><c r=\"I6\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"B6\" s=\"3\"><v>46112</v></c></row><row r=\"7\"><c r=\"I7\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"B7\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"G7\" s=\"3\"><v>130A</v></c><c r=\"J7\" s=\"3\"><v>46402</v></c></row><row r=\"7\"/><row r=\"8\"><c r=\"C8\" s=\"3\" t=\"inlineStr\"><is><t>A&#xD800;B</t></is></c><c r=\"B8\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"J8\" s=\"3\"><v>46332</v></c><c r=\"I8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>13</v></c></row><row r=\"9\"><c r=\"C9\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"J9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"B9\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"G9\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"I9\" s=\"3\" t=\"s\"><v>17</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"18\"><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>コード / Code</t></si><si><t>決算期末 / Fiscal Year-end</t></si><si><t>A&#0;B</t></si><si><r><t>x</t></r><r><t>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</t></r></si><si><t>First quarter</t></si><si><t>9984</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><r><t>F</t></r><r><t>ull year</t></r></si><si><t></t></si><si><t>Second quarter</t></si><si><t>Third quarter</t></si><si><t>7203</t></si><si><t>未定_Undecided</t></si><si><t>130A</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>  Fourth Quarter  </t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "46112",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "46112",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "2958465",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "9999-12-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy9999-12-31-second-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "46112",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "46477",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "46477",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "46112",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -2469,8 +2674,49 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"E1\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"C1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"F1\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"G1\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"2\"><c r=\"G2\" s=\"3\"><v>-5</v></c><c r=\"F2\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A2\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"E2\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"3\"><c r=\"G3\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"C3\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"F3\" s=\"3\"/><c r=\"E3\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"A3\" s=\"3\" t=\"str\"><v>46203</v></c></row><row r=\"4\"><c r=\"G4\" s=\"3\"><v>46308</v></c><c r=\"E4\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"A4\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"F4\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"C4\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"G5\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"F5\" s=\"3\"><v>7203</v></c><c r=\"A5\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"6\"><c r=\"E6\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"A6\" s=\"3\"><v>46112</v></c><c r=\"G6\" s=\"3\"><v>46493</v></c><c r=\"F6\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"6\"/><row r=\"7\"><c r=\"E7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"C7\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"G7\" s=\"3\"><v>46402</v></c><c r=\"F7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"A7\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"8\"><c r=\"F8\" s=\"3\"><v>9984</v></c><c r=\"G8\" s=\"3\"><v>46493</v></c><c r=\"A8\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>7</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"16\"><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>会社名\nIssue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Fiscal Year/Quarter</t></si><si><t>コード / Code</t></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t xml:space=\"preserve\">6758</t></si><si><t>Nintendo Co., Ltd.</t></si><si><t>Second quarter</t></si><si><t>未定_Undecided</t></si><si><t>Toyota Motor Corp.</t></si><si><t>  Fourth Quarter  </t></si><si><t>9984</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>A&#xD800;B</t></si><si><t>First quarter</t></si><si><t>130A</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -2807,6 +3053,14 @@
 						"periodKey": "fy2026-03-31-third-quarter"
 					},
 					{
+						"code": "130A",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
 						"code": "6758",
 						"name": "xy",
 						"announcementDate": "2027-03-31",
@@ -2874,7 +3128,7 @@
 				"value": [
 					{
 						"code": "6758",
-						"name": "かな",
+						"name": null,
 						"announcementDate": "2026-11-05",
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Second quarter",
@@ -2914,7 +3168,7 @@
 					},
 					{
 						"code": "130A",
-						"name": "Sony & Co <Group>かな",
+						"name": "Sony & Co <Group>",
 						"announcementDate": "2026-11-06",
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Third quarter",
@@ -3321,12 +3575,36 @@
 				"ok": true,
 				"value": [
 					{
+						"code": "7203",
+						"name": "&lol; &amp;",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "1919-09-20",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy1919-09-20-second-quarter"
+					},
+					{
 						"code": "9984",
 						"name": "SoftBank Group Corp.",
 						"announcementDate": "2025-05-01",
 						"fiscalPeriodEnd": "1927-05-02",
 						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy1927-05-02-fourth-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "xy",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "1919-09-20",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy1919-09-20-third-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "1919-09-20",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy1919-09-20-full-year"
 					}
 				]
 			}
@@ -3336,7 +3614,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>会社名\nIssue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></si><si><t>コード / Code</t></si><si><t>タイトル</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>First quarter</t></si><si><t>130A</t></si><si><t>  Fourth Quarter  </t></si><si><t>6758</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><r><t> </t></r><r><t> </t></r></si><si><t>Full year</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>A&#0;B</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -3351,16 +3629,74 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"/><row r=\"3\"/><row r=\"4\"><c r=\"B4\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"C4\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"H4\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"A4\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"J4\" s=\"3\" t=\"inlineStr\"><is><t>コード\r\nCode</t></is></c></row><row r=\"5\"><c r=\"H5\" s=\"3\"><v>46203</v></c><c r=\"A5\" s=\"3\"><v>46402</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"J5\" s=\"3\"><v>9984</v></c><c r=\"C5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"B6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H6\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"J6\" s=\"3\"><v>7203</v></c><c r=\"A6\" s=\"3\"><v>46000</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"7\"><c r=\"H7\" s=\"3\"><v>46477</v></c><c r=\"J7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"B7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A7\" s=\"3\"><v>45778</v></c></row><row r=\"8\"><c r=\"A8\" s=\"3\"><v>45778</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H8\" s=\"3\"><v>46112</v></c><c r=\"J8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"9\"><c r=\"J9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"B9\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"H9\" s=\"3\"><v>46112</v></c><c r=\"A9\" s=\"3\"><v>46402</v></c><c r=\"C9\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"10\"><c r=\"B10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"J10\" s=\"3\"><v>9984</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"A10\" s=\"3\"><v>45778</v></c><c r=\"H10\" s=\"3\"><v>46112</v></c></row><row r=\"11\"><c r=\"H11\" s=\"3\"><v>46477</v></c><c r=\"C11\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"B11\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"A11\" s=\"3\"><v>46494</v></c><c r=\"J11\" s=\"3\"><v>A123</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>Issue Name</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><r><t>タ</t></r><r><t>イトル</t></r></si><si><t>x&#1114112;y</t></si><si><r><t>S</t></r><r><t>econd quarter</t></r></si><si><t>&#x30C8;&#x30E8;&#x30BF;</t></si><si><r><t> </t></r><r><t> Fourth Quarter  </t></r></si><si><r><t>1</t></r><r><t>30A</t></r></si><si><t>7203</t></si><si><t>9984</t></si><si><t>A&#0;B</t></si><si><t></t></si><si><t>Full year</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "xy",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "トヨタ",
+						"announcementDate": "2025-12-09",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "トヨタ",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					}
+				]
 			}
 		},
 		{
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"/><row r=\"3\"/><row r=\"4\"><c r=\"B4\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"C4\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"H4\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"A4\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"J4\" s=\"3\" t=\"inlineStr\"><is><t>コード\r\nCode</t></is></c></row><row r=\"5\"><c r=\"H5\" s=\"3\"><v>46203</v></c><c r=\"A5\" s=\"3\"><v>46402</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"J5\" s=\"3\"><v>9984</v></c><c r=\"C5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"B6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H6\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"J6\" s=\"3\"><v>7203</v></c><c r=\"A6\" s=\"3\"><v>46000</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"7\"><c r=\"H7\" s=\"3\"><v>46477</v></c><c r=\"J7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"B7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A7\" s=\"3\"><v>45778</v></c></row><row r=\"8\"><c r=\"A8\" s=\"3\"><v>45778</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H8\" s=\"3\"><v>46112</v></c><c r=\"J8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"9\"><c r=\"J9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"B9\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"H9\" s=\"3\"><v>46112</v></c><c r=\"A9\" s=\"3\"><v>46402</v></c><c r=\"C9\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"10\"><c r=\"B10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"J10\" s=\"3\"><v>9984</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"A10\" s=\"3\"><v>45778</v></c><c r=\"H10\" s=\"3\"><v>46112</v></c></row><row r=\"11\"><c r=\"H11\" s=\"3\"><v>46477</v></c><c r=\"C11\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"B11\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"A11\" s=\"3\"><v>46494</v></c><c r=\"J11\" s=\"3\"><v>A123</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>Issue Name</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><r><t>タ</t></r><r><t>イトル</t></r></si><si><t>x&#1114112;y</t></si><si><r><t>S</t></r><r><t>econd quarter</t></r></si>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "xy",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -3436,10 +3772,10 @@
 					},
 					{
 						"code": "6758",
-						"name": "かな",
+						"name": null,
 						"announcementDate": "2026-10-29",
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Third quarterかな",
+						"fiscalPeriodLabel": "Third quarter",
 						"periodKey": "fy2026-03-31-third-quarter"
 					},
 					{
@@ -3622,12 +3958,28 @@
 				"ok": true,
 				"value": [
 					{
+						"code": "130A",
+						"name": "Sony & Co <Group>",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
 						"code": "9984",
 						"name": "Sony & Co <Group>",
 						"announcementDate": "2027-01-15",
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "Full year",
 						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
 					}
 				]
 			}
@@ -3823,8 +4175,17 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C1\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"H1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"B1\" s=\"3\" t=\"inlineStr\"><is><t>会社名\nIssue Name</t></is></c><c r=\"F1\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year-end</t></is></c></row><row r=\"2\"><c r=\"A2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"B2\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"H2\" s=\"3\"><v>46324</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"F2\" s=\"3\" t=\"n\"><v>46203</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"6\"><si><t>コード / Code</t></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><t>6758</t></si><si><t xml:space=\"preserve\">A&#0;B</t></si><si><t>Second quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -3913,8 +4274,57 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"B2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"E2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"H2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"K2\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"E3\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"K3\" s=\"3\"><v>46494</v></c><c r=\"B3\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"4\"><c r=\"B4\" s=\"3\"><v>46477</v></c><c r=\"J4\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"H4\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"K4\" s=\"3\"><v>46308</v></c><c r=\"E4\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"5\"><c r=\"E5\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"K5\" s=\"3\"><v>46308</v></c><c r=\"B5\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"H5\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"J5\" s=\"3\"/></row><row r=\"6\"><c r=\"J6\" s=\"3\"><v>9984</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"K6\" s=\"3\"><v>46307</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"B6\" s=\"3\"><v>46203</v></c></row><row r=\"7\"><c r=\"B7\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"J7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"H7\" s=\"3\" t=\"inlineStr\"><is><t></t></is></c><c r=\"K7\" s=\"3\" t=\"n\"><v>46331</v></c></row><row r=\"8\"><c r=\"K8\" s=\"3\"><v>46307</v></c><c r=\"B8\" s=\"3\"><v>46203</v></c><c r=\"J8\" s=\"3\"><v>7203</v></c><c r=\"H8\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c><c r=\"E8\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"9\"><c r=\"J9\" s=\"3\"><v>7203</v></c><c r=\"B9\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"E9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"H9\" s=\"3\" t=\"inlineStr\"><is><t>Sony &amp; Co &lt;Group&gt;</t></is></c><c r=\"K9\" s=\"3\"><v>46494</v></c></row><row r=\"9\"/></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"15\"><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>コード / Code</t></si><si><t>会社名\nIssue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>9984</t></si><si><t></t></si><si><r><t>F</t></r><r><t>ull year</t></r></si><si><t>130A</t></si><si><r><t>名</t></r><r><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></r></si><si><t>  Fourth Quarter  </t></si><si><t>Toyota Motor Corp.</t></si><si><t>Third quarter</t></si><si><t>First quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "xy",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -4291,8 +4701,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"2\"/><row r=\"3\"><c r=\"A3\"/></row><row r=\"4\"/><row r=\"5\"><c r=\"C5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"D5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"J5\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"C6\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c><c r=\"D6\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"J6\" s=\"3\"><v>46493</v></c><c r=\"I6\" s=\"3\"><v>7203</v></c><c r=\"Z6\" s=\"2\"/><c r=\"F6\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"7\"><c r=\"D7\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"J7\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"I7\" s=\"3\"/><c r=\"C7\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"8\"><c r=\"D8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"F8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"I8\" s=\"3\"><v>7203</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"Z8\" s=\"2\"/><c r=\"J8\" s=\"3\"><v>46324</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"9\"><si><t>Issue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t xml:space=\"preserve\">Fiscal Year/Quarter</t></si><si><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></si><si><t>コード\r\nCode</t></si><si><t>タイトル</t></si><si><t>Second quarter</t></si><si><t>A&#xD800;B</t></si><si><t>&lol; &amp;amp;</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "AB",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -4416,12 +4843,28 @@
 						"periodKey": "fy2026-03-31-fourth-quarter"
 					},
 					{
+						"code": "6758",
+						"name": "&lol; &amp;",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
 						"code": "130A",
 						"name": null,
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
 					}
 				]
 			}
@@ -4577,7 +5020,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"18\"><si><t>会社名\nIssue Name</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Fiscal Year/Quarter</t></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>タイトル</t></si><si><t>Full year</t></si><si><t>7203</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Second quarter</t></si><si><t>未定_Undecided</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>130A</t></si><si><r><t>N</t></r><r><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></r></si><si><t>  Fourth Quarter  </t></si><si><t>x&#1114112;y</t></si><si><t></t></si><si><t>Third quarter</t></si><si><r><t>&</t></r><r><t>#x30C8;&#x30E8;&#x30BF;</t></r></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -4674,8 +5117,57 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"D1\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"G1\" s=\"3\" t=\"inlineStr\"><is><t>会社名\nIssue Name</t></is></c><c r=\"B1\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"K1\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"C1\" s=\"3\" t=\"inlineStr\"><is><t>決算期末 / Fiscal Year-end</t></is></c></row><row r=\"2\"><c r=\"B2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"C2\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"D2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"K2\" s=\"3\"><v>45778</v></c><c r=\"G2\" s=\"3\" t=\"inlineStr\"><is><t>  </t></is></c></row><row r=\"3\"><c r=\"B3\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"K3\" s=\"3\"><v>46477</v></c><c r=\"C3\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"D3\" s=\"3\"><v>12345</v></c></row><row r=\"4\"><c r=\"B4\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"C4\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"K4\" s=\"3\"><v>45778</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"D4\" s=\"3\"><v>7203</v></c></row><row r=\"5\"><c r=\"K5\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"D5\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"G5\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"C5\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"6\"><c r=\"D6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"K6\" s=\"3\" t=\"n\"><v>46331</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"C6\" s=\"3\"><v>46477</v></c><c r=\"G6\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"7\"><c r=\"B7\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"G7\" s=\"3\" t=\"inlineStr\"><is><t>Toyota Motor Corp.</t></is></c><c r=\"K7\" s=\"3\"><v>46308</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"C7\" s=\"3\" t=\"str\"><v>46112</v></c></row><row r=\"8\"><c r=\"G8\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c><c r=\"B8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D8\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"K8\" s=\"3\"><v>46308</v></c><c r=\"C8\" s=\"3\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>コード / Code</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><t>6758</t></si><si><t>Full year</t></si><si><t>Second quarter</t></si><si><t>Nintendo Co., Ltd.</t></si><si><t>  Fourth Quarter  </t></si><si><t>First quarter</t></si><si><t>9984</t></si><si><t>A&#0;B</t></si><si><t>130a</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -4861,8 +5353,65 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"></row><row r=\"3\"></row><row r=\"4\"><c r=\"F4\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>1</v></c><c s=\"3\" t=\"s\"><v>2</v></c><c r=\"H4\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"J4\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"5\"><c r=\"G5\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"F5\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"C5\" s=\"3\"><v>46324</v></c><c r=\"J5\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H5\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"6\"><c r=\"J6\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"C6\" s=\"3\"><v>46331</v></c><c r=\"F6\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"G6\" s=\"3\" t=\"inlineStr\"><is><t></t></is></c></row><row r=\"7\"><c r=\"G7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"J7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H7\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"C7\" s=\"3\"><v>46493</v></c><c r=\"Z7\" s=\"2\"/><c r=\"F7\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"8\"><c r=\"J8\" s=\"3\"><v>130A</v></c><c r=\"H8\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"F8\" s=\"3\"><v>46477</v></c><c r=\"C8\" s=\"3\"><v>46402</v></c></row><row r=\"9\"><c r=\"F9\" s=\"3\"><v>46203</v></c><c r=\"H9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"J9\" s=\"3\"><v>6758</v></c><c r=\"G9\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c><c r=\"C9\" s=\"3\"><v>46324</v></c></row><row r=\"10\"><c r=\"C10\" s=\"3\"><v>46307</v></c><c r=\"G10\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"H10\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"F10\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"J10\" s=\"3\" t=\"s\"><v>14</v></c></row><row r=\"11\"><c r=\"F11\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"G11\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"H11\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"C11\" s=\"3\"><v>45778</v></c><c r=\"J11\" s=\"3\" t=\"s\"><v>16</v></c></row><row r=\"12\"><c r=\"F12\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"H12\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"C12\" s=\"3\"><v>46308</v></c><c r=\"J12\" s=\"3\"/><c r=\"G12\" s=\"3\" t=\"s\"><v>18</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"19\"><si><t>決算期末\r\nFiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>Fiscal Year/Quarter</t></si><si><r><t>コ</t></r><r><t>ード / Code</t></r></si><si><t>タイトル</t></si><si><t>130A</t></si><si><t>Toyota Motor Corp.</t></si><si><t>  Fourth Quarter  </t></si><si><t>6758</t></si><si><t>Full year</t></si><si><t></t></si><si><t>A&#0;B</t></si><si><t>Third quarter</t></si><si><t>7203</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>9984</t></si><si><t>x&#1114112;y</t></si><si><t>&lol; &amp;amp;</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "130A",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "AB",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "xy",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "xy",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -5015,8 +5564,81 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><rows><row r=\"1\"><c><v>1</v></c></row></rows><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"><c r=\"A3\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"4\"><c r=\"A4\"/></row><row r=\"5\"/><row r=\"6\"><c r=\"J6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G6\" s=\"3\" t=\"inlineStr\"><is><t>Scheduled Dates for Earnings Announcements</t></is></c><c r=\"A6\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"7\"><c r=\"C7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"A7\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"F7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"J7\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"8\"><c r=\"F8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"J8\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"A8\" s=\"3\"><v>46203</v></c><c r=\"G8\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"Z8\" s=\"2\"/><c r=\"C8\" s=\"3\"><v>9984</v></c></row><row r=\"9\"><c r=\"G9\" s=\"3\"><v>46402</v></c><c r=\"A9\" s=\"3\"><v>46112</v></c><c r=\"F9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"C9\" s=\"3\"><v>9984</v></c></row><row r=\"10\"><c r=\"J10\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"F10\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"G10\" s=\"3\"><v>46493</v></c><c r=\"A10\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"11\"><c r=\"J11\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"G11\" s=\"3\"><v>46307</v></c><c r=\"F11\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"A11\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"C11\" s=\"3\"><v>130A</v></c></row><row r=\"12\"><c r=\"J12\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"C12\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"A12\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"F12\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"G12\" s=\"3\"><v>46494</v></c></row><row r=\"13\"><c r=\"C13\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"F13\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"G13\" s=\"3\"><v>46477</v></c><c r=\"A13\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"J13\" s=\"3\" t=\"s\"><v>14</v></c></row><row r=\"14\"><c r=\"C14\" s=\"3\"><v>7203</v></c><c r=\"A14\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"G14\" s=\"3\"><v>46324</v></c><c r=\"F14\" s=\"3\" t=\"s\"><v>15</v></c></row><row r=\"15\"><c r=\"G15\" s=\"3\"><v>46494</v></c><c r=\"C15\" s=\"3\" t=\"inlineStr\"><is><t>6758</t></is></c><c r=\"J15\" s=\"3\" t=\"inlineStr\"><is><t>&#x30C8;&#x30E8;&#x30BF;</t></is></c><c r=\"F15\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"A15\" s=\"3\" t=\"str\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"17\"><si><t>Issue Name</t></si><si><r><t>コ</t></r><r><t>ード\r\nCode</t></r></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><r><t>決</t></r><r><t>算期末\r\nFiscal Year-end</t></r></si><si><t>タイトル</t></si><si><t>未定_Undecided</t></si><si><t>130A</t></si><si><t xml:space=\"preserve\">Sony &amp; Co &lt;Group&gt;</t></si><si><t>Second quarter</t></si><si><t>Q1/2027</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><r><t>F</t></r><r><t>ull year</t></r></si><si><t>7203</t></si><si><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></si><si><t>Nintendo Co., Ltd.</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Third quarter</t></si><si><t>First quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "130A",
+						"name": "Sony & Co <Group>",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Q1/2027",
+						"periodKey": "fy2026-06-30-q1-2027"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "&lol; &amp;",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "トヨタ",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -5059,6 +5681,14 @@
 				"ok": true,
 				"value": [
 					{
+						"code": "6758",
+						"name": "トヨタ",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
 						"code": "9984",
 						"name": "トヨタ",
 						"announcementDate": "2027-03-31",
@@ -5073,6 +5703,14 @@
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
 					}
 				]
 			}
@@ -5090,6 +5728,14 @@
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "First quarter",
 						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
 					}
 				]
 			}
@@ -5098,8 +5744,17 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"><c r=\"A3\"/></row><row r=\"4\"/><row r=\"5\"><c r=\"A5\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"6\"><c r=\"I6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F6\" s=\"3\" t=\"s\"><v>2</v></c><c s=\"3\" t=\"s\"><v>3</v></c><c r=\"J6\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"7\"><c r=\"C7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D7\" s=\"3\" t=\"inlineStr\"><is><t>Nintendo Co., Ltd.</t></is></c><c r=\"F7\" s=\"3\"/><c r=\"I7\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"J7\" s=\"3\"><v>45778</v></c></row><row r=\"8\"><c r=\"Z8\" s=\"2\"/><c r=\"C8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"D8\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"F8\" s=\"3\"><v>130A</v></c><c r=\"I8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"J8\" s=\"3\"><v>45778</v></c></row><row r=\"9\"><c r=\"F9\" s=\"3\" t=\"inlineStr\"><is><t>7203</t></is></c><c r=\"J9\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"D9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"I9\" s=\"3\"><v>46331.0</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>決算期末 / Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>Code</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>  Fourth Quarter  </t></si><si><r><t> </t></r><r><t> </t></r></si><si><t>Third quarter</t></si><si><t>未定_Undecided</t></si><si><t>Toyota Motor Corp.</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-11-05",
+						"fiscalPeriodLabel": "Toyota Motor Corp.",
+						"periodKey": "fy2026-11-05-toyota-motor-corp"
+					}
+				]
 			}
 		},
 		{
@@ -5148,7 +5803,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Issue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Third quarter</t></si><si><t>未定_Undecided</t></si><si><t>6758</t></si><si><t></t></si><si><t>Full year</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -5236,8 +5891,33 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"><c r=\"G2\" s=\"3\" t=\"inlineStr\"><is><t>決算期末 / Fiscal Year-end</t></is></c><c r=\"K2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F2\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"J2\" s=\"3\" t=\"s\"><v>2</v></c></row><row r=\"3\"><c r=\"J3\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"K3\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"F3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"C3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"G3\" s=\"3\" t=\"n\"><v>46203</v></c></row><row r=\"4\"><c r=\"C4\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J4\" s=\"3\"><v>45778</v></c><c r=\"G4\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"K4\" s=\"3\"><v>6758</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\" t=\"inlineStr\"><is><t>  </t></is></c><c r=\"J5\" s=\"3\" t=\"str\"><v>0x10</v></c><c r=\"K5\" s=\"3\"><v>A123</v></c><c r=\"F5\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"G5\" s=\"3\" t=\"str\"><v>46203</v></c></row><row r=\"6\"><c r=\"F6\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"K6\" s=\"3\"><v>9984</v></c><c r=\"G6\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"C6\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c><c r=\"J6\" s=\"3\"><v>46402</v></c></row><row r=\"7\"><c r=\"F7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"C7\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"G7\" s=\"3\"><v>46112</v></c><c r=\"K7\" s=\"3\"><v>2914</v></c><c r=\"J7\" s=\"3\" t=\"n\"><v>2958465</v></c></row><row r=\"8\"><c r=\"F8\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"K8\" s=\"3\"><v>7203</v></c><c r=\"J8\" s=\"3\" t=\"n\"><v>-5</v></c><c r=\"G8\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"9\"><c r=\"F9\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"K9\" s=\"3\"><v>AB</v></c><c r=\"C9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"J9\" s=\"3\"><v>46307</v></c><c r=\"G9\" s=\"3\"><v>46203</v></c></row><row r=\"10\"><c r=\"K10\" s=\"3\"><v>9984</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"F10\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"Z10\" s=\"2\"/><c r=\"G10\" s=\"3\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"15\"><si><t>Code</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>未定_Undecided</t></si><si><r><t>2</t></r><r><t>914</t></r></si><si><t>Toyota Motor Corp.</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>First quarter</t></si><si><t></t></si><si><t>Full year</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Third quarter</t></si><si><t>Second quarter</t></si><si><t>x&#1114112;y</t></si><si><t>  Fourth Quarter  </t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "2914",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "2914",
+						"name": "&lol; &amp;",
+						"announcementDate": "9999-12-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-03-31-third-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -5358,8 +6038,8 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"E2\" s=\"3\" t=\"s\"><v>0</v></c><c s=\"3\" t=\"s\"><v>1</v></c><c r=\"G2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"H2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"D2\" s=\"3\" t=\"s\"><v>4</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"6\"><si><t>会社名\nIssue Name</t></si><si><t>決算期末 / Fiscal Year-end</t></si><si><t>コード / Code</t></si><si><t>種別\nFiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Scheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": []
 			}
 		},
 		{
@@ -5373,8 +6053,16 @@
 						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Fourth Quarter  かな",
+						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
 					},
 					{
 						"code": "6758",
@@ -5383,6 +6071,14 @@
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Full year",
 						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "7203",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
 					},
 					{
 						"code": "9984",
@@ -5399,8 +6095,57 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"D2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"E2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"K2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"F2\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"D3\" s=\"3\"><v>46402</v></c><c r=\"F3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"G3\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"K3\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"E3\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"4\"><c r=\"K4\" s=\"3\" t=\"n\"><v>2958466</v></c><c r=\"D4\" s=\"3\"><v>46493</v></c><c r=\"F4\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E4\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"G4\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"5\"><c r=\"D5\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"K5\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"G5\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"6\"><c r=\"G6\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"E6\" s=\"3\"><v>6758</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"K6\" s=\"3\"><v>46203</v></c></row><row r=\"7\"><c r=\"E7\" s=\"3\"><v>9984</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"F7\" s=\"3\" t=\"inlineStr\"><is><t>SoftBank Group Corp.  </t></is></c><c r=\"D7\" s=\"3\"><v>46493</v></c><c r=\"K7\" s=\"3\" t=\"n\"><v>46203</v></c></row><row r=\"8\"><c r=\"F8\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"D8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"K8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"9\"><c r=\"K9\" s=\"3\"><v>46112</v></c><c r=\"F9\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"D9\" s=\"3\" t=\"str\"><v>46331.0</v></c><c r=\"E9\" s=\"3\"><v>7203</v></c><c r=\"G9\" s=\"3\" t=\"s\"><v>16</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"17\"><si><t xml:space=\"preserve\">決算発表予定日\nScheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><r><t>I</t></r><r><t>ssue Name</t></r></si><si><t>タイトル</t></si><si><t>7203</t></si><si><t>x&#1114112;y</t></si><si><t>Second quarter</t></si><si><t>&#x30C8;&#x30E8;&#x30BF;</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>未定_Undecided</t></si><si><t>First quarter</t></si><si><r><t>T</t></r><r><t>hird quarter</t></r></si><si><t>130A</t></si><si><t>A&#xD800;B</t></si><si><t>A&#0;B</t></si><si><t>  Fourth Quarter  </t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "xy",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "AB",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "AB",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -5411,7 +6156,7 @@
 				"value": [
 					{
 						"code": "9984",
-						"name": "ABかな",
+						"name": "AB",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Full year",
@@ -5432,8 +6177,57 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"D2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"I2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"E2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"H2\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"E3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"H3\" s=\"3\"><v>9984</v></c><c r=\"C3\" s=\"3\"><v>45778</v></c><c r=\"D3\" s=\"3\" t=\"n\"><v>46112</v></c></row><row r=\"4\"><c r=\"E4\" s=\"3\" t=\"inlineStr\"><is><t>Sony &amp; Co &lt;Group&gt;</t></is></c><c r=\"C4\" s=\"3\"><v>46493</v></c><c r=\"I4\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H4\" s=\"3\" t=\"inlineStr\"><is><t>130A</t></is></c><c r=\"D4\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\"><v>46402</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"H5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"D5\" s=\"3\"><v>46477</v></c></row><row r=\"5\"/><row r=\"6\"><c r=\"D6\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"H6\" s=\"3\"><v>130A</v></c><c r=\"C6\" s=\"3\"><v>45778</v></c></row><row r=\"7\"><c r=\"C7\" s=\"3\"><v>46324</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"D7\" s=\"3\"><v>46112</v></c><c r=\"H7\" s=\"3\"><v>6758</v></c><c r=\"I7\" s=\"3\" t=\"s\"><v>13</v></c></row><row r=\"8\"><c r=\"C8\" s=\"3\"><v>46307</v></c><c r=\"E8\" s=\"3\" t=\"inlineStr\"><is><t>&lol; &amp;amp;</t></is></c><c r=\"I8\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H8\" s=\"3\"><v>130A</v></c><c r=\"D8\" s=\"3\" t=\"str\"><v>46477</v></c></row><row r=\"9\"><c r=\"I9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"C9\" s=\"3\"><v>46307</v></c><c r=\"D9\" s=\"3\" t=\"n\"><v>-5</v></c><c r=\"H9\" s=\"3\"><v>7203</v></c></row><row r=\"10\"><c r=\"H10\" s=\"3\"><v>130A</v></c><c r=\"I10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"E10\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"C10\" s=\"3\"><v>46494</v></c><c r=\"D10\" s=\"3\"><v>46203</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"16\"><si><t xml:space=\"preserve\">決算期末\r\nFiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>会社名 / Issue Name</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>コード / Code</t></si><si><t>タイトル</t></si><si><t>Toyota Motor Corp.</t></si><si><t>Third quarter</t></si><si><t>130A</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Second quarter</t></si><si><t>&#x30C8;&#x30E8;&#x30BF;</t></si><si><r><t>F</t></r><r><t>irst quarter</t></r></si><si><t>  Fourth Quarter  </t></si><si><t>Full year</t></si><si><t>SoftBank Group Corp.  </t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "130A",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "&lol; &amp;",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "トヨタ",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "トヨタ",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -5601,7 +6395,7 @@
 						"name": "SoftBank Group Corp.",
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Fourth Quarter  かな",
+						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy2026-03-31-fourth-quarter"
 					},
 					{
@@ -5622,7 +6416,7 @@
 					},
 					{
 						"code": "6758",
-						"name": "かな",
+						"name": null,
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Third quarter",
@@ -5707,7 +6501,7 @@
 						"name": "Nintendo Co., Ltd.",
 						"announcementDate": "2026-10-12",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarterかな",
+						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2027-03-31-second-quarter"
 					},
 					{
@@ -5931,6 +6725,14 @@
 				"ok": true,
 				"value": [
 					{
+						"code": "7203",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
 						"code": "9984",
 						"name": "SoftBank Group Corp.",
 						"announcementDate": "2027-04-16",
@@ -5995,6 +6797,14 @@
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "First quarter",
 						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
 					}
 				]
 			}
@@ -6012,6 +6822,14 @@
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "First quarter",
 						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
 					}
 				]
 			}
@@ -6123,7 +6941,7 @@
 				"value": [
 					{
 						"code": "7203",
-						"name": "Nintendo Co., Ltd.かな",
+						"name": "Nintendo Co., Ltd.",
 						"announcementDate": "2026-11-06",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Full year",
@@ -6139,7 +6957,7 @@
 					},
 					{
 						"code": "6758",
-						"name": "Nintendo Co., Ltd.かな",
+						"name": "Nintendo Co., Ltd.",
 						"announcementDate": "2026-11-05",
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "Second quarter",
@@ -6209,8 +7027,8 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"/><row r=\"3\"><c r=\"A3\"/></row><row r=\"4\"><c s=\"3\" t=\"s\"><v>0</v></c><c r=\"I4\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"C4\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"E4\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>3</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"5\"><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>コード\nCode </t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>Issue Name</t></si><si><t>タイトル</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": []
 			}
 		},
 		{
@@ -6684,8 +7502,33 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"><c r=\"A3\" s=\"1\" t=\"s\"><v>3</v></c></row><row r=\"4\"><c r=\"A4\"/></row><row r=\"5\"><c r=\"H5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"A5\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year-end</t></is></c><c r=\"F5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"D5\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c></row><row r=\"6\"><c r=\"J6\" s=\"3\"><v>7203</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"A6\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"F6\" s=\"3\" t=\"inlineStr\"><is><t>A&#xD800;B</t></is></c></row><row r=\"7\"><c r=\"F7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"Z7\" s=\"2\"/><c r=\"H7\" s=\"3\"><v>46494</v></c><c r=\"A7\" s=\"3\"><v>46112</v></c><c r=\"J7\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c></row><row r=\"8\"><c r=\"F8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"J8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"H8\" s=\"3\"><v>46331</v></c><c r=\"D8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"A8\" s=\"3\" t=\"str\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>Scheduled Dates for Earnings Announcements</t></si><si><t>会社名 / Issue Name</t></si><si><t>コード\r\nCode</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><r><t>タ</t></r><r><t>イトル</t></r></si><si><t>未定_Undecided</t></si><si><t>Full year</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>A&#xD800;B</t></si><si><t>Second quarter</t></si><si><t>130A</t></si><si><r><t>S</t></r><r><t>oftBank Group Corp.  </t></r></si><si><t>First quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "AB",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -6720,7 +7563,7 @@
 					},
 					{
 						"code": "9984",
-						"name": "xyかな",
+						"name": "xy",
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Fourth Quarter",
@@ -6823,8 +7666,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"></row><row r=\"3\"><c r=\"A3\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"4\"><c r=\"A4\"/></row><row r=\"5\"><c r=\"A5\"/></row><row r=\"6\"><c r=\"H6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"K6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G6\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"7\"><c r=\"H7\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"K7\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"I7\" s=\"3\"/><c r=\"B7\" s=\"3\"><v>46112</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"8\"><c r=\"K8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"G8\" s=\"3\" t=\"inlineStr\"><is><t>Toyota Motor Corp.</t></is></c><c r=\"B8\" s=\"3\"><v>46477</v></c><c r=\"I8\" s=\"3\"><v>9984</v></c><c r=\"H8\" s=\"3\"><v>46493</v></c></row><row r=\"9\"><c r=\"K9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"H9\" s=\"3\"><v>46308</v></c><c r=\"B9\" s=\"3\"><v>46112</v></c><c r=\"G9\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"I9\" s=\"3\"><v>9984</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t xml:space=\"preserve\">Fiscal Year/Quarter</t></si><si><t>コード\r\nCode</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Issue Name</t></si><si><t>決算期末 / Fiscal Year-end</t></si><si><t>タイトル</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>First quarter</t></si><si><t>Third quarter</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Full year</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					}
+				]
 			}
 		},
 		{
@@ -6839,8 +7699,65 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><rows><row r=\"1\"><c><v>1</v></c></row></rows><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"A2\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"3\"/><row r=\"4\"><c r=\"A4\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"5\"><c r=\"A5\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"G6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"D6\" s=\"3\" t=\"inlineStr\"><is><t>決算期末 / Fiscal Year-end</t></is></c></row><row r=\"7\"><c r=\"D7\" s=\"3\"><v>46112</v></c><c r=\"C7\" s=\"3\"><v>45778</v></c><c r=\"H7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"B7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"8\"><c r=\"H8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"D8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"C8\" s=\"3\"><v>46307</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"9\"><c r=\"G9\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"H9\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"D9\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"C9\" s=\"3\" t=\"n\"><v>46000</v></c><c r=\"B9\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"10\"><c r=\"H10\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"B10\" s=\"3\"><v>9984</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"D10\" s=\"3\"><v>46203</v></c><c r=\"G10\" s=\"3\" t=\"s\"><v>16</v></c></row><row r=\"11\"><c r=\"G11\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"H11\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"C11\" s=\"3\"><v>45778</v></c><c r=\"D11\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"B11\" s=\"3\"/></row><row r=\"12\"><c r=\"C12\" s=\"3\"><v>46324</v></c><c r=\"D12\" s=\"3\"><v>46112</v></c><c r=\"H12\" s=\"3\" t=\"inlineStr\"><is><t>A&#xD800;B</t></is></c><c r=\"B12\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"G12\" s=\"3\" t=\"s\"><v>13</v></c></row><row r=\"13\"><c r=\"C13\" s=\"3\" t=\"n\"><v>46300</v></c><c r=\"H13\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"D13\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"B13\" s=\"3\"><v>130A</v></c><c r=\"G13\" s=\"3\" t=\"s\"><v>18</v></c></row><row r=\"14\"><c r=\"H14\" s=\"3\" t=\"s\"><v>19</v></c><c r=\"B14\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"G14\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"D14\" s=\"3\" t=\"str\"><v>46203</v></c></row><row r=\"15\"><c r=\"D15\" s=\"3\"><v>46203</v></c><c r=\"C15\" s=\"3\"><v>45778</v></c><c r=\"G15\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"B15\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"H15\" s=\"3\" t=\"s\"><v>20</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"21\"><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Issue Name</t></si><si><r><t>コ</t></r><r><t>ード / Code</t></r></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>7203</t></si><si><t>Toyota Motor Corp.</t></si><si><t xml:space=\"preserve\">First quarter</t></si><si><t>6758</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t></t></si><si><t>Full year</t></si><si><t>130A</t></si><si><r><t>&</t></r><r><t>#x30C8;&#x30E8;&#x30BF;</t></r></si><si><r><t>T</t></r><r><t>hird quarter</t></r></si><si><t>未定_Undecided</t></si><si><t xml:space=\"preserve\">名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Second quarter</t></si><si><t>Nintendo Co., Ltd.</t></si><si><t>  Fourth Quarter  </t></si><si><t>&lol; &amp;amp;</t></si><si><t>A&#0;B</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "&#x30C8;ヨタ",
+						"announcementDate": "2025-12-09",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "AB",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2026-10-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -6929,6 +7846,14 @@
 						"fiscalPeriodEnd": "2027-03-31",
 						"fiscalPeriodLabel": "First quarter",
 						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
 					}
 				]
 			}
@@ -7215,8 +8140,17 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\"/></row><row r=\"2\"><c r=\"A2\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"E3\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"I3\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></is></c><c r=\"K3\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F3\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G3\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"4\"><c r=\"E4\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"K4\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"Z4\" s=\"2\"/><c r=\"F4\" s=\"3\"/><c r=\"I4\" s=\"3\"><v>46307</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"5\"><c r=\"E5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"I5\" s=\"3\"><v>46493</v></c><c r=\"F5\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"K5\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"G5\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"6\"><c r=\"F6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"I6\" s=\"3\"><v>46331</v></c><c r=\"K6\" s=\"3\" t=\"n\"><v>46477</v></c></row><row r=\"7\"><c r=\"I7\" s=\"3\"><v>46332</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"K7\" s=\"3\" t=\"str\"><v>61</v></c><c r=\"F7\" s=\"3\" t=\"s\"><v>12</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>会社名\nIssue Name</t></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>コード / Code</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Fiscal Year/Quarter</t></si><si><t>タイトル</t></si><si><t>Toyota Motor Corp.</t></si><si><t>yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</t></si><si><t>9984</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>A&#0;B</t></si><si><t>Q1/2027</t></si><si><t>6758</t></si><si><t></t></si><si><t>A123</t></si><si><t>  </t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Q1/2027",
+						"periodKey": "fy2027-03-31-q1-2027"
+					}
+				]
 			}
 		},
 		{
@@ -7322,7 +8256,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>Fiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>コード\r\nCode</t></si><si><t>会社名 / Issue Name</t></si><si><t>6758</t></si><si><t>  </t></si><si><t xml:space=\"preserve\">Second quarter</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>First quarter</t></si><si><t>130A</t></si><si><t>  Fourth Quarter  </t></si><si><t>A&#xD800;B</t></si><si><t>Third quarter</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -7345,8 +8279,49 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>3</v></c></row><row r=\"2\"><c r=\"B2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"E2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"H2\" s=\"3\" t=\"inlineStr\"><is><t>Code</t></is></c><c r=\"K2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"D2\" s=\"3\" t=\"inlineStr\"><is><t>Issue Name</t></is></c></row><row r=\"3\"><c r=\"H3\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"K3\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"E3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D3\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"B3\" s=\"3\"><v>46308</v></c></row><row r=\"4\"><c r=\"D4\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"H4\" s=\"3\"><v>6758</v></c><c r=\"E4\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"K4\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"B4\" s=\"3\" t=\"n\"><v>46477</v></c></row><row r=\"5\"><c r=\"K5\" s=\"3\"><v>46112</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"B5\" s=\"3\"><v>46324</v></c><c r=\"H5\" s=\"3\"><v>9984</v></c><c r=\"D5\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c></row><row r=\"6\"><c r=\"Z6\" s=\"2\"/><c r=\"K6\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"B6\" s=\"3\"><v>46307</v></c></row><row r=\"7\"><c r=\"H7\" s=\"3\"><v>9984</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"B7\" s=\"3\"><v>46307</v></c><c r=\"K7\" s=\"3\"><v>46203</v></c><c r=\"E7\" s=\"3\" t=\"s\"><v>12</v></c></row><row r=\"8\"><c r=\"H8\" s=\"3\"/><c r=\"K8\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"D8\" s=\"3\" t=\"inlineStr\"><is><t>Sony &amp; Co &lt;Group&gt;</t></is></c><c r=\"B8\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>12</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"13\"><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>決算期末\r\nFiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>130A</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>First quarter</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>  Fourth Quarter  </t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></si><si><t>Full year</t></si><si><t>A&#xD800;B</t></si><si><t>Third quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "xy",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -7455,7 +8430,7 @@
 				"value": [
 					{
 						"code": "130A",
-						"name": "かな",
+						"name": null,
 						"announcementDate": "2027-04-16",
 						"fiscalPeriodEnd": "2026-06-30",
 						"fiscalPeriodLabel": "Third quarter",
@@ -7517,8 +8492,33 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"><c r=\"A2\"/></row><row r=\"3\"></row><row r=\"4\"><c r=\"A4\" s=\"1\" t=\"s\"><v>3</v></c></row><row r=\"5\"><c r=\"B5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"J5\" s=\"3\" t=\"inlineStr\"><is><t>Scheduled Dates for Earnings Announcements</t></is></c><c r=\"C5\" s=\"3\" t=\"inlineStr\"><is><t>コード\r\nCode</t></is></c></row><row r=\"6\"><c r=\"I6\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"J6\" s=\"3\"><v>46324</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"F6\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"C6\" s=\"3\"><v>6758</v></c></row><row r=\"7\"><c r=\"I7\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"F7\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"J7\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"B7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"C7\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"8\"><c r=\"I8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"J8\" s=\"3\"><v>46494</v></c><c r=\"C8\" s=\"3\"><v>9984</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"F8\" s=\"3\" t=\"n\"><v>46112</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"11\"><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Issue Name</t></si><si><t>決算期末 / Fiscal Year-end</t></si><si><t>タイトル</t></si><si><t>Toyota Motor Corp.</t></si><si><t>Second quarter</t></si><si><t>130A</t></si><si><t>  </t></si><si><t>Full year</t></si><si><t>A&#xD800;B</t></si><si><t>First quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -7730,8 +8730,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"><c r=\"C2\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"B2\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J2\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G2\" s=\"3\" t=\"inlineStr\"><is><t>会社名 / Issue Name</t></is></c><c r=\"I2\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"3\"><c r=\"I3\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"C3\" s=\"3\"><v>46307</v></c><c r=\"G3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"J3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"B3\" s=\"3\" t=\"s\"><v>5</v></c></row><row r=\"4\"><c r=\"C4\" s=\"3\"><v>46402</v></c><c r=\"J4\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"G4\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"B4\" s=\"3\" t=\"inlineStr\"><is><t>6758</t></is></c><c r=\"I4\" s=\"3\"><v>46112</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"10\"><si><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>6758</t></si><si><t>A&#0;B</t></si><si><t>Third quarter</t></si><si><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></si><si><t>Second quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -7787,8 +8804,33 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"/><row r=\"3\"/><row r=\"4\"><c r=\"B4\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C4\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"D4\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"K4\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"A4\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"5\"><c r=\"C5\" s=\"3\"><v>46493</v></c><c r=\"A5\" s=\"3\"><v>2958465</v></c><c r=\"D5\" s=\"3\"><v>7203</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"6\"><c r=\"A6\" s=\"3\"><v>46112</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"K6\" s=\"3\" t=\"inlineStr\"><is><t></t></is></c><c r=\"D6\" s=\"3\"><v>6758</v></c><c r=\"B6\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"6\"/><row r=\"7\"><c r=\"D7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"C7\" s=\"3\"><v>46324</v></c><c r=\"A7\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"K7\" s=\"3\" t=\"inlineStr\"><is><t>SoftBank Group Corp.  </t></is></c><c r=\"B7\" s=\"3\" t=\"s\"><v>8</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"10\"><si><r><t>F</t></r><r><t>iscal Year/Quarter</t></r></si><si><t>Scheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>Issue Name</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>Third quarter</t></si><si><t>未定_Undecided</t></si><si><t>Second quarter</t></si><si><t>130A</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "9999-12-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy9999-12-31-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -7885,8 +8927,73 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"2\"/><row r=\"3\"><c r=\"K3\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></is></c><c s=\"3\" t=\"s\"><v>0</v></c><c r=\"B3\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"H3\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"E3\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"4\"><c r=\"K4\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"H4\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c><c r=\"I4\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"B4\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"E4\" s=\"3\" t=\"n\"><v>46203</v></c></row><row r=\"5\"><c r=\"H5\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"B5\" s=\"3\"><v>7203</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"K5\" s=\"3\"><v>46493</v></c><c r=\"E5\" s=\"3\" t=\"str\"><v>46112</v></c></row><row r=\"6\"><c r=\"I6\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"K6\" s=\"3\"><v>46477</v></c><c r=\"E6\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"H6\" s=\"3\" t=\"inlineStr\"><is><t>Nintendo Co., Ltd.</t></is></c><c r=\"B6\" s=\"3\" t=\"s\"><v>5</v></c></row><row r=\"7\"><c r=\"I7\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"B7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E7\" s=\"3\"><v>46203</v></c><c r=\"K7\" s=\"3\"><v>46307</v></c><c r=\"H7\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"8\"><c r=\"H8\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"B8\" s=\"3\"><v>130A</v></c><c r=\"I8\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"E8\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"K8\" s=\"3\"><v>46493</v></c></row><row r=\"9\"><c r=\"I9\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"B9\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"K9\" s=\"3\"><v>45778</v></c><c r=\"E9\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"H9\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c></row><row r=\"10\"><c r=\"I10\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"E10\" s=\"3\"><v>46203</v></c><c r=\"B10\" s=\"3\"><v>9984</v></c><c r=\"K10\" s=\"3\"><v>46307</v></c><c r=\"H10\" s=\"3\" t=\"s\"><v>14</v></c></row><row r=\"11\"><c r=\"E11\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"K11\" s=\"3\"><v>45778</v></c><c r=\"B11\" s=\"3\" t=\"inlineStr\"><is><t>9984</t></is></c><c r=\"I11\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"H11\" s=\"3\" t=\"s\"><v>16</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"18\"><si><t>Fiscal Year/Quarter</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>コード\r\nCode</t></si><si><t>会社名\nIssue Name</t></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>タイトル</t></si><si><t>7203</t></si><si><t>Full year</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>  Fourth Quarter  </t></si><si><t> 7203 </t></si><si><t>x&#1114112;y</t></si><si><t>Second quarter</t></si><si><r><t>T</t></r><r><t>oyota Motor Corp.</t></r></si><si><t>9984</t></si><si><t>A&#xD800;B</t></si><si><t>Third quarter</t></si><si><r><t>A</t></r><r><t>&#0;B</t></r></si><si><t>yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "AB",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "7203",
+						"periodKey": "fy2026-06-30-7203"
+					},
+					{
+						"code": "7203",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "7203",
+						"periodKey": "fy2026-03-31-7203"
+					},
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "7203",
+						"periodKey": "fy2026-06-30-7203"
+					},
+					{
+						"code": "7203",
+						"name": "xy",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "7203",
+						"periodKey": "fy2026-06-30-7203"
+					},
+					{
+						"code": "130A",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "130A",
+						"periodKey": "fy2026-03-31-130a"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "9984",
+						"periodKey": "fy2026-06-30-9984"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "9984",
+						"periodKey": "fy2026-06-30-9984"
+					},
+					{
+						"code": "9984",
+						"name": "AB",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "9984",
+						"periodKey": "fy2027-03-31-9984"
+					}
+				]
 			}
 		},
 		{
@@ -7974,8 +9081,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"></row><row r=\"2\"/><row r=\"3\"/><row r=\"4\"></row><row r=\"5\"></row><row r=\"6\"><c r=\"C6\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"J6\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"H6\" s=\"3\" t=\"inlineStr\"><is><t>決算期末\r\nFiscal Year-end</t></is></c></row><row r=\"7\"><c r=\"J7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"H7\" s=\"3\"><v>46300</v></c><c r=\"E7\" s=\"3\"><v>46308</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"C7\" s=\"3\" t=\"inlineStr\"><is><t>7203</t></is></c></row><row r=\"8\"><c r=\"H8\" s=\"3\"><v>46112</v></c><c r=\"C8\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"J8\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"E8\" s=\"3\"><v>46324</v></c></row><row r=\"9\"><c r=\"C9\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"Z9\" s=\"2\"/><c r=\"D9\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"E9\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J9\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"10\"><c r=\"H10\" s=\"3\"><v>46112</v></c><c r=\"D10\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"C10\" s=\"3\"><v>7203</v></c><c r=\"E10\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"J10\" s=\"3\" t=\"s\"><v>12</v></c></row><row r=\"11\"><c r=\"J11\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"H11\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"E11\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"C11\" s=\"3\" t=\"s\"><v>14</v></c></row><row r=\"12\"><c r=\"J12\" s=\"3\" t=\"inlineStr\"><is><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></is></c><c r=\"D12\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"Z12\" s=\"2\"/><c r=\"H12\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"C12\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"E12\" s=\"3\" t=\"s\"><v>8</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"18\"><si><r><t>コ</t></r><r><t>ード / Code</t></r></si><si><t>Fiscal Year/Quarter</t></si><si><t>会社名\nIssue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>タイトル</t></si><si><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></si><si><t>Third quarter</t></si><si><r><t>7</t></r><r><t>203</t></r></si><si><t>未定_Undecided</t></si><si><t>6758</t></si><si><t></t></si><si><t>Full year</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Nintendo Co., Ltd.</t></si><si><t>  Fourth Quarter  </t></si><si><t>0001</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>130A</t></si><si><t>---</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "---",
+						"periodKey": "fy2026-06-30-"
+					}
+				]
 			}
 		},
 		{
@@ -8015,8 +9139,65 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"2\"></row><row r=\"3\"></row><row r=\"4\"></row><row r=\"5\"><c r=\"J5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"A5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"G5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"C5\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"J6\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"G6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"C6\" s=\"3\"><v>46494</v></c><c r=\"A6\" s=\"3\"><v>46203</v></c><c r=\"E6\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"7\"><c r=\"C7\" s=\"3\"><v>45778</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E7\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c><c r=\"J7\" s=\"3\" t=\"inlineStr\"><is><t>130A</t></is></c><c r=\"A7\" s=\"3\" t=\"n\"><v>46477</v></c></row><row r=\"8\"><c r=\"J8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"C8\" s=\"3\"><v>46308</v></c><c r=\"A8\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>12</v></c></row><row r=\"9\"><c r=\"G9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"C9\" s=\"3\"><v>46494</v></c><c r=\"E9\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"J9\" s=\"3\"><v>6758</v></c></row><row r=\"10\"><c r=\"C10\" s=\"3\"><v>46331</v></c><c r=\"G10\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"A10\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"J10\" s=\"3\"><v>7203</v></c></row><row r=\"11\"><c r=\"C11\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"A11\" s=\"3\"><v>46203</v></c><c r=\"E11\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"G11\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"J11\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"12\"><c r=\"E12\" s=\"3\" t=\"s\"><v>17</v></c><c r=\"A12\" s=\"3\"><v>46203</v></c><c r=\"C12\" s=\"3\"><v>46324</v></c><c r=\"G12\" s=\"3\" t=\"s\"><v>18</v></c><c r=\"J12\" s=\"3\" t=\"s\"><v>16</v></c></row><row r=\"13\"><c r=\"C13\" s=\"3\"><v>46493</v></c><c r=\"E13\" s=\"3\" t=\"inlineStr\"><is><t></t></is></c><c r=\"A13\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"G13\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J13\" s=\"3\"><v>6758</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"19\"><si><t>Code</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Fiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>決算発表予定日\rScheduled Dates for Earnings Announcements</t></si><si><t>Issue Name</t></si><si><t>タイトル</t></si><si><t>7203</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>  Fourth Quarter  </t></si><si><t>Full year</t></si><si><t>9984</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>First quarter</t></si><si><t>A&#0;B</t></si><si><t>Second quarter</t></si><si><t>&lol; &amp;amp;</t></si><si><t>6758</t></si><si><t>A&#xD800;B</t></si><si><t>Third quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "xy",
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2027-03-31-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "&lol; &amp;",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -8187,15 +9368,48 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"20\"><si><t>コード / Code</t></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>Scheduled Dates for Earnings Announcements</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>タイトル</t></si><si><t xml:space=\"preserve\">未定_Undecided</t></si><si><t>yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</t></si><si><t xml:space=\"preserve\">AB</t></si><si><t>Second quarter</t></si><si><t>x&#1114112;y</t></si><si><t>First quarter</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>Full year</t></si><si><t></t></si><si><t>  Fourth Quarter  </t></si><si><t>Fiscal Year/Quarter&amp;more</t></si><si><t>9984</t></si><si><t>Toyota Motor Corp.</t></si><si><t>130A</t></si><si><t>A&#0;B</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"/><row r=\"2\"></row><row r=\"3\"><c r=\"A3\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"4\"><c r=\"A4\" s=\"1\" t=\"s\"><v>5</v></c></row><row r=\"5\"><c r=\"F5\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"D5\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"G5\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"K5\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"6\"><c r=\"G6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"F6\" s=\"3\" t=\"n\"><v>46332</v></c><c r=\"K6\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"B6\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"D6\" s=\"3\" t=\"inlineStr\"><is><t>7203</t></is></c></row><row r=\"7\"><c r=\"B7\" s=\"3\"><v>46112</v></c><c r=\"K7\" s=\"3\" t=\"inlineStr\"><is><t>SoftBank Group Corp.  </t></is></c><c r=\"F7\" s=\"3\"><v>46477</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"G7\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"8\"><c r=\"K8\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"G8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"D8\" s=\"3\"><v>130A</v></c><c r=\"B8\" s=\"3\" t=\"str\"><v>46400</v></c><c r=\"F8\" s=\"3\"><v>46324</v></c></row><row r=\"9\"><c r=\"K9\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"D9\" s=\"3\"><v>9984</v></c><c r=\"B9\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"G9\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"F9\" s=\"3\" t=\"n\"><v>46331.0</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"12\"><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>Fiscal Year-end</t></si><si><t>コード\r\nCode</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Issue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>タイトル</t></si><si><t>Nintendo Co., Ltd.</t></si><si><t>First quarter</t></si><si><t>6758</t></si><si><t>Second quarter</t></si><si><r><t> </t></r><r><t> Fourth Quarter  </t></r></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-01-13",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-01-13-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -8246,7 +9460,7 @@
 					},
 					{
 						"code": "7203",
-						"name": "Toyota Motor Corp.かな",
+						"name": "Toyota Motor Corp.",
 						"announcementDate": "2027-01-15",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Full year",
@@ -8309,8 +9523,81 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>3</v></c></row><row r=\"2\"><c r=\"A2\" s=\"1\" t=\"s\"><v>3</v></c></row><row r=\"3\"><c r=\"J3\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"E3\" s=\"3\" t=\"inlineStr\"><is><t>コード / Code</t></is></c><c r=\"D3\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"A3\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"F3\" s=\"3\" t=\"s\"><v>2</v></c></row><row r=\"4\"><c r=\"E4\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"F4\" s=\"3\" t=\"inlineStr\"><is><t>Nintendo Co., Ltd.</t></is></c><c r=\"D4\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"A4\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"J4\" s=\"3\" t=\"n\"><v>46477</v></c></row><row r=\"5\"><c r=\"E5\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"J5\" s=\"3\"><v>46203</v></c><c r=\"F5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"A5\" s=\"3\"><v>46307</v></c><c r=\"D5\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"6\"><c r=\"E6\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"A6\" s=\"3\"><v>46324</v></c><c r=\"J6\" s=\"3\" t=\"n\"><v>46300</v></c><c r=\"F6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"D6\" s=\"3\" t=\"s\"><v>11</v></c></row><row r=\"7\"><c r=\"A7\" s=\"3\"><v>46477</v></c><c r=\"F7\" s=\"3\" t=\"inlineStr\"><is><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></is></c><c r=\"E7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"J7\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>9</v></c></row><row r=\"8\"><c r=\"J8\" s=\"3\"><v>46203</v></c><c r=\"A8\" s=\"3\"><v>46494</v></c><c r=\"D8\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"E8\" s=\"3\"><v>130A</v></c><c r=\"F8\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c></row><row r=\"9\"><c r=\"A9\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"D9\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"J9\" s=\"3\"><v>46477</v></c><c r=\"E9\" s=\"3\"><v>130A</v></c><c r=\"F9\" s=\"3\" t=\"s\"><v>12</v></c></row><row r=\"9\"/><row r=\"10\"><c r=\"J10\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"E10\" s=\"3\"><v>6758</v></c><c r=\"F10\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"D10\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"A10\" s=\"3\" t=\"n\"><v>46331</v></c></row><row r=\"11\"><c r=\"E11\" s=\"3\" t=\"inlineStr\"><is><t>6758</t></is></c><c r=\"F11\" s=\"3\" t=\"inlineStr\"><is><t>A&#0;B</t></is></c><c r=\"D11\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"J11\" s=\"3\" t=\"n\"><v>46331</v></c><c r=\"A11\" s=\"3\" t=\"n\"><v>46332</v></c></row><row r=\"12\"><c r=\"A12\" s=\"3\"><v>46494</v></c><c r=\"F12\" s=\"3\" t=\"inlineStr\"><is><t>Sony &amp; Co &lt;Group&gt;</t></is></c><c r=\"J12\" s=\"3\" t=\"str\"><v>46112</v></c><c r=\"D12\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"E12\" s=\"3\"><v>9984</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"16\"><si><t>決算期末 / Fiscal Year-end</t></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名\nIssue Name</t></si><si><t>タイトル</t></si><si><t>未定_Undecided</t></si><si><t>6758</t></si><si><t>Third quarter</t></si><si><t>7203</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>  Fourth Quarter  </t></si><si><t>130A</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>First quarter</t></si><si><t>A&#0;B</t></si><si><t>Second quarter</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Full year</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": "Nintendo Co., Ltd.",
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2026-10-05",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-10-05-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2027-03-31",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "xy",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "AB",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "AB",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-11-05",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-11-05-full-year"
+					},
+					{
+						"code": "9984",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-04-17",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					}
+				]
 			}
 		},
 		{
@@ -8329,7 +9616,7 @@
 				"value": [
 					{
 						"code": "7203",
-						"name": "xyかな",
+						"name": "xy",
 						"announcementDate": "2027-04-16",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "Full year",
@@ -8422,7 +9709,7 @@
 						"name": null,
 						"announcementDate": "2025-05-01",
 						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Fourth Quarter  かな",
+						"fiscalPeriodLabel": "Fourth Quarter",
 						"periodKey": "fy2027-03-31-fourth-quarter"
 					}
 				]
@@ -8693,8 +9980,25 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><rows><row r=\"1\"><c><v>1</v></c></row></rows><sheetData><row r=\"1\"><c r=\"E1\" s=\"3\" t=\"s\"><v>0</v></c><c s=\"3\" t=\"s\"><v>1</v></c><c r=\"J1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"F1\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></is></c><c r=\"I1\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"2\"><c r=\"J2\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"F2\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"H2\" s=\"3\" t=\"inlineStr\"><is><t>  </t></is></c><c r=\"E2\" s=\"3\"><v>6758</v></c><c r=\"I2\" s=\"3\" t=\"s\"><v>5</v></c></row><row r=\"3\"><c r=\"H3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"J3\" s=\"3\"><v>46477</v></c><c r=\"I3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"E3\" s=\"3\"><v>7203</v></c><c r=\"F3\" s=\"3\"><v>46493</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"8\"><si><t>コード / Code</t></si><si><t>会社名 / Issue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>決算期末\r\nFiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>未定_Undecided</t></si><si><t>First quarter</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>Third quarter</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": null,
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-06-30-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -8885,7 +10189,15 @@
 					},
 					{
 						"code": "130A",
-						"name": "xyかな",
+						"name": null,
+						"announcementDate": "1900-03-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "130A",
+						"periodKey": "fy2027-03-31-130a"
+					},
+					{
+						"code": "130A",
+						"name": "xy",
 						"announcementDate": "2026-10-13",
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "130A",
@@ -8914,24 +10226,211 @@
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"I1\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"J1\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"B1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"C1\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c><c r=\"K1\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"2\"><c r=\"I2\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"K2\" s=\"3\"><v>9984</v></c><c r=\"C2\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"J2\" s=\"3\"><v>46493</v></c><c r=\"B2\" s=\"3\" t=\"inlineStr\"><is><t>Toyota Motor Corp.</t></is></c></row><row r=\"3\"><c r=\"I3\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"C3\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"K3\" s=\"3\"><v>130A</v></c><c r=\"J3\" s=\"3\"><v>46308</v></c><c r=\"B3\" s=\"3\" t=\"inlineStr\"><is><t>&#x30C8;&#x30E8;&#x30BF;</t></is></c></row><row r=\"4\"><c r=\"B4\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"J4\" s=\"3\"><v>45778</v></c><c r=\"C4\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"I4\" s=\"3\"><v>46203</v></c><c r=\"K4\" s=\"3\"><v>9984</v></c></row><row r=\"5\"><c r=\"B5\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"K5\" s=\"3\" t=\"inlineStr\"><is><t>130A</t></is></c><c r=\"I5\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"J5\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"C5\" s=\"3\" t=\"s\"><v>5</v></c></row><row r=\"6\"><c r=\"B6\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"J6\" s=\"3\"><v>46324</v></c><c r=\"K6\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"I6\" s=\"3\"><v>46477</v></c><c r=\"C6\" s=\"3\" t=\"s\"><v>10</v></c></row><row r=\"7\"><c r=\"B7\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"C7\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"I7\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"K7\" s=\"3\"><v>6758</v></c><c r=\"J7\" s=\"3\"><v>46493</v></c></row><row r=\"8\"><c r=\"C8\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"K8\" s=\"3\"><v>130A</v></c><c r=\"B8\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"J8\" s=\"3\"><v>46307</v></c><c r=\"I8\" s=\"3\" t=\"str\"><v>46112</v></c></row><row r=\"9\"><c r=\"J9\" s=\"3\"><v>46307</v></c><c r=\"B9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"C9\" s=\"3\" t=\"s\"><v>4</v></c><c r=\"I9\" s=\"3\"><v>46112</v></c><c r=\"K9\" s=\"3\" t=\"s\"><v>13</v></c></row><row r=\"10\"><c r=\"J10\" s=\"3\"><v>46307</v></c><c r=\"K10\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"I10\" s=\"3\"><v>46112</v></c><c r=\"B10\" s=\"3\" t=\"s\"><v>16</v></c><c r=\"C10\" s=\"3\" t=\"s\"><v>12</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"17\"><si><t>Fiscal Year-end</t></si><si><t>決算発表予定日 / Scheduled Dates for Earnings Announcements</t></si><si><t>会社名 / Issue Name</t></si><si><t>Code</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Full year</t></si><si><t>Third quarter</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</t></si><si><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></si><si><t>9984</t></si><si><t>First quarter</t></si><si><t>&lol; &amp;amp;</t></si><si><t>  Fourth Quarter  </t></si><si><t>6758</t></si><si><t>  </t></si><si><t>130A</t></si><si><t>Toyota Motor Corp.</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "9984",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-06-30-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "トヨタ",
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2026-06-30-third-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "130A",
+						"name": "Toyota Motor Corp.",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"H1\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"A1\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"B1\" s=\"3\" t=\"inlineStr\"><is><t>決算発表予定日\nScheduled Dates for Earnings Announcements</t></is></c><c r=\"F1\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"C1\" s=\"3\" t=\"s\"><v>3</v></c></row><row r=\"2\"><c r=\"B2\" s=\"3\"><v>46493</v></c><c r=\"A2\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"C2\" s=\"3\" t=\"n\"><v>46477</v></c><c r=\"F2\" s=\"3\" t=\"s\"><v>4</v></c></row><row r=\"3\"><c r=\"H3\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"C3\" s=\"3\"><v>46112</v></c><c r=\"F3\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"B3\" s=\"3\"><v>46402</v></c><c r=\"A3\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"4\"><c r=\"F4\" s=\"3\" t=\"inlineStr\"><is><t>7203</t></is></c><c r=\"C4\" s=\"3\" t=\"n\"><v>46203</v></c><c r=\"B4\" s=\"3\"><v>46307</v></c><c r=\"A4\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"H4\" s=\"3\" t=\"inlineStr\"><is><t>x&#1114112;y</t></is></c></row><row r=\"5\"><c r=\"C5\" s=\"3\"><v>46112</v></c><c r=\"F5\" s=\"3\"><v>7203</v></c><c r=\"A5\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"B5\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"H5\" s=\"3\" t=\"s\"><v>7</v></c></row><row r=\"6\"><c r=\"A6\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"F6\" s=\"3\"><v>130A</v></c><c r=\"B6\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"H6\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"C6\" s=\"3\" t=\"n\"><v>46203</v></c></row><row r=\"7\"><c r=\"A7\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"B7\" s=\"3\"><v>46308</v></c><c r=\"F7\" s=\"3\"><v>9984</v></c><c r=\"C7\" s=\"3\"><v>46112</v></c><c r=\"H7\" s=\"3\" t=\"s\"><v>12</v></c></row><row r=\"8\"><c r=\"F8\" s=\"3\"><v>130A</v></c><c r=\"H8\" s=\"3\" t=\"inlineStr\"><is><t>  </t></is></c><c r=\"B8\" s=\"3\"><v>45778</v></c><c r=\"A8\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"C8\" s=\"3\"><v>46477</v></c></row><row r=\"9\"><c r=\"F9\" s=\"3\"><v>7203</v></c><c r=\"H9\" s=\"3\" t=\"s\"><v>15</v></c><c r=\"A9\" s=\"3\" t=\"s\"><v>14</v></c><c r=\"B9\" s=\"3\"><v>46307</v></c><c r=\"C9\" s=\"3\" t=\"str\"><v>46477</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"16\"><si><t>会社名\nIssue Name</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>コード / Code</t></si><si><t>決算期末\r\nFiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>7203</t></si><si><t>Third quarter</t></si><si><t>6758</t></si><si><t>NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN</t></si><si><t>第2四半期 Second</t></si><si><t>  Fourth Quarter  </t></si><si><t>未定_Undecided</t></si><si><t>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t xml:space=\"preserve\">  </t></si><si><t>Second quarter</t></si><si><t>First quarter</t></si><si><t></t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Third quarter",
+						"periodKey": "fy2027-03-31-third-quarter"
+					},
+					{
+						"code": "6758",
+						"name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "第2四半期 Second",
+						"periodKey": "fy2026-03-31-2-second"
+					},
+					{
+						"code": "7203",
+						"name": "xy",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-06-30-second-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2026-10-13",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2026-03-31-first-quarter"
+					},
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2025-05-01",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					},
+					{
+						"code": "7203",
+						"name": null,
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "First quarter",
+						"periodKey": "fy2027-03-31-first-quarter"
+					}
+				]
 			}
 		},
 		{
 			"sheet": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><worksheet><sheetData><row r=\"1\"><c r=\"A1\" s=\"1\" t=\"s\"><v>4</v></c></row><row r=\"2\"/><row r=\"3\"/><row r=\"4\"><c r=\"E4\" s=\"3\" t=\"s\"><v>0</v></c><c r=\"C4\" s=\"3\" t=\"s\"><v>1</v></c><c r=\"B4\" s=\"3\" t=\"s\"><v>2</v></c><c r=\"D4\" s=\"3\" t=\"s\"><v>3</v></c><c r=\"I4\" s=\"3\" t=\"inlineStr\"><is><t>Fiscal Year/Quarter</t></is></c></row><row r=\"5\"><c r=\"D5\" s=\"3\"><v>130A</v></c><c r=\"B5\" s=\"3\" t=\"str\"><v>46203</v></c><c r=\"E5\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"C5\" s=\"3\" t=\"str\"><v>46332</v></c><c r=\"I5\" s=\"3\" t=\"s\"><v>6</v></c></row><row r=\"6\"><c r=\"C6\" s=\"3\"><v>46307</v></c><c r=\"D6\" s=\"3\"><v>130A</v></c><c r=\"I6\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"E6\" s=\"3\" t=\"inlineStr\"><is><t>&lol; &amp;amp;</t></is></c><c r=\"B6\" s=\"3\" t=\"str\"><v>46112</v></c></row><row r=\"7\"><c r=\"E7\" s=\"3\" t=\"s\"><v>9</v></c><c r=\"B7\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"I7\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"C7\" s=\"3\"><v>46402</v></c><c r=\"D7\" s=\"3\" t=\"s\"><v>8</v></c></row><row r=\"8\"><c r=\"B8\" s=\"3\"><v>46477</v></c><c r=\"E8\" s=\"3\" t=\"s\"><v>10</v></c><c r=\"I8\" s=\"3\" t=\"s\"><v>11</v></c><c r=\"C8\" s=\"3\"><v>45778</v></c></row><row r=\"9\"><c r=\"B9\" s=\"3\"><v>46477</v></c><c r=\"D9\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"E9\" s=\"3\" t=\"s\"><v>12</v></c><c r=\"I9\" s=\"3\" t=\"s\"><v>7</v></c><c r=\"C9\" s=\"3\"><v>46307</v></c></row><row r=\"10\"><c r=\"B10\" s=\"3\" t=\"str\"><v>46477</v></c><c r=\"I10\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"E10\" s=\"3\" t=\"inlineStr\"><is><t>名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名</t></is></c><c r=\"D10\" s=\"3\"><v>7203</v></c><c r=\"C10\" s=\"3\"><v>46324</v></c></row><row r=\"11\"><c r=\"D11\" s=\"3\" t=\"s\"><v>8</v></c><c r=\"I11\" s=\"3\" t=\"s\"><v>13</v></c><c r=\"C11\" s=\"3\" t=\"str\"><v>46331</v></c><c r=\"B11\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"E11\" s=\"3\" t=\"inlineStr\"><is><t></t></is></c></row><row r=\"12\"><c r=\"I12\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D12\" s=\"3\" t=\"inlineStr\"><is><t>6758</t></is></c><c r=\"B12\" s=\"3\" t=\"n\"><v>46112</v></c><c r=\"E12\" s=\"3\" t=\"s\"><v>5</v></c><c r=\"C12\" s=\"3\"><v>46307</v></c></row><row r=\"13\"><c r=\"I13\" s=\"3\" t=\"s\"><v>6</v></c><c r=\"D13\" s=\"3\"><v>9984</v></c><c r=\"B13\" s=\"3\"><v>46477</v></c><c r=\"E13\" s=\"3\" t=\"inlineStr\"><is><t>  </t></is></c><c r=\"C13\" s=\"3\"><v>46493</v></c></row></sheetData></worksheet>",
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"14\"><si><t>会社名 / Issue Name</t></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t></si><si><t>Fiscal Year-end</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>コード\r\nCode</t></si><si><t>タイトル</t></si><si><t>  </t></si><si><t>  Fourth Quarter  </t></si><si><t>Second quarter</t></si><si><t>9984</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>&lol; &amp;amp;</t></si><si><t>Third quarter</t></si><si><r><t>S</t></r><r><t>oftBank Group Corp.  </t></r></si><si><t>Full year</t></si></sst>",
 			"output": {
-				"ok": false,
-				"error": "MISSING_HEADERS"
+				"ok": true,
+				"value": [
+					{
+						"code": "130A",
+						"name": null,
+						"announcementDate": "2026-11-06",
+						"fiscalPeriodEnd": "2026-06-30",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-06-30-fourth-quarter"
+					},
+					{
+						"code": "130A",
+						"name": "&lol; &amp;",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2026-03-31-second-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "Sony & Co <Group>",
+						"announcementDate": "2027-01-15",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": "SoftBank Group Corp.",
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Second quarter",
+						"periodKey": "fy2027-03-31-second-quarter"
+					},
+					{
+						"code": "7203",
+						"name": "名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名名",
+						"announcementDate": "2026-10-29",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2026-11-05",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Full year",
+						"periodKey": "fy2026-03-31-full-year"
+					},
+					{
+						"code": "6758",
+						"name": null,
+						"announcementDate": "2026-10-12",
+						"fiscalPeriodEnd": "2026-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2026-03-31-fourth-quarter"
+					},
+					{
+						"code": "9984",
+						"name": null,
+						"announcementDate": "2027-04-16",
+						"fiscalPeriodEnd": "2027-03-31",
+						"fiscalPeriodLabel": "Fourth Quarter",
+						"periodKey": "fy2027-03-31-fourth-quarter"
+					}
+				]
 			}
 		},
 		{
@@ -9037,7 +10536,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"15\"><si><t>会社名 / Issue Name</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>Fiscal Year/Quarter</t></si><si><t xml:space=\"preserve\">決算期末\r\nFiscal Year-end</t></si><si><r><t>決</t></r><r><t>算発表予定日\nScheduled Dates for Earnings Announcements</t></r></si><si><t>タイトル</t></si><si><t>9984</t></si><si><t>First quarter</t></si><si><t>Sony &amp; Co &lt;Group&gt;</t></si><si><t>Second quarter</t></si><si><t>Third quarter</t></si><si><t>SoftBank Group Corp.  </t></si><si><t>未定_Undecided</t></si><si><t>  Fourth Quarter  </t></si><si><t>130A</t></si><si><t>yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -9141,7 +10640,7 @@
 						"name": "&lol; &amp;",
 						"announcementDate": "2027-01-15",
 						"fiscalPeriodEnd": "2026-06-30",
-						"fiscalPeriodLabel": "Second quarterかな",
+						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2026-06-30-second-quarter"
 					},
 					{
@@ -9182,7 +10681,7 @@
 						"name": "AB",
 						"announcementDate": "2027-01-15",
 						"fiscalPeriodEnd": "2026-03-31",
-						"fiscalPeriodLabel": "Second quarterかな",
+						"fiscalPeriodLabel": "Second quarter",
 						"periodKey": "fy2026-03-31-second-quarter"
 					}
 				]
@@ -9201,7 +10700,7 @@
 			"shared": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sst count=\"9\"><si><r><t>C</t></r><r><t>ode</t></r></si><si><t>決算発表予定日\r\nScheduled Dates for Earnings Announcements</t><rPh sb=\"0\" eb=\"1\"><t>かな</t></rPh></si><si><t>会社名 / Issue Name</t></si><si><t>Fiscal Year-end</t></si><si><t>タイトル</t></si><si><t>9984</t></si><si><t>  Fourth Quarter  </t></si><si><t></t></si><si><t>Second quarter</t></si></sst>",
 			"output": {
 				"ok": false,
-				"error": "MISSING_HEADERS"
+				"error": "MALFORMED_WORKBOOK"
 			}
 		},
 		{
@@ -9326,7 +10825,7 @@
 					},
 					{
 						"code": "7203",
-						"name": "Toyota Motor Corp.かな",
+						"name": "Toyota Motor Corp.",
 						"announcementDate": null,
 						"fiscalPeriodEnd": "2026-03-31",
 						"fiscalPeriodLabel": "First quarter",
