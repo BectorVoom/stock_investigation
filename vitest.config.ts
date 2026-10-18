@@ -22,7 +22,7 @@ export default defineConfig({
 						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite,google}/**/*.test.ts",
 						"apps/runner/test/**/*.test.ts",
 						"apps/mcp/test/**/*.test.ts",
-						"tests/{architecture,security,formal,local,live,ui-review}/**/*.test.ts",
+						"tests/{architecture,contracts,security,formal,local,live,ui-review}/**/*.test.ts",
 					],
 				},
 			},

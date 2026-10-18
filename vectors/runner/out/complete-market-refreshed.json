@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"market-refreshed\",\"leaseGeneration\":5,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false},\"series\":[{\"seriesId\":\"fred:DGS10\",\"fetchedAt\":\"2026-10-11T00:00:00.000Z\",\"meta\":{\"title\":\"10-Year Treasury\",\"unit\":\"percent\",\"frequency\":\"daily\",\"publisher\":\"FRED\",\"sourceUrl\":\"https://fred.stlouisfed.org/series/DGS10\"},\"observations\":[[\"2026-10-08\",4.12],[\"2026-10-09\",4.1]],\"errorCode\":null},{\"seriesId\":\"twelve-data:XAU/USD\",\"fetchedAt\":\"2026-10-11T00:00:00.000Z\",\"meta\":null,\"observations\":[],\"errorCode\":\"SOURCE_NOT_CONFIGURED\"}]}",
+	"schema": "completeJobRequest"
+}

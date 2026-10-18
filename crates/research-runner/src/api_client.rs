@@ -421,7 +421,7 @@ fn classify<T: Contract>(status: u16, body: &[u8]) -> RunnerApiResult<T> {
 }
 
 /// `{"leaseGeneration":n}`.
-fn heartbeat_request(lease_generation: u64) -> HeartbeatRequest {
+pub(crate) fn heartbeat_request(lease_generation: u64) -> HeartbeatRequest {
 	HeartbeatRequest { lease_generation }
 }
 

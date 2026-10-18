@@ -433,9 +433,13 @@ impl GoogleCalendarPort for FakeGoogle {
 		sender: &dyn GoogleAuthUrlSender,
 	) -> Result<CompleteJobRequest, GoogleExecutionError> {
 		for _ in 0..self.auth_url_sends {
-			let delivered = sender
-				.send_auth_url("https://accounts.google.com/o/oauth2/v2/auth?x=1")
-				.await;
+			let url = research_google::oauth::build_authorization_url(
+				"client-id.apps.googleusercontent.com",
+				"http://127.0.0.1:51234/",
+				"state-0123456789",
+				&research_google::oauth::code_challenge_s256("verifier-0123456789"),
+			);
+			let delivered = sender.send_auth_url(&url).await;
 			self.delivered.lock().unwrap().push(delivered);
 		}
 		Ok(self.outcome.lock().unwrap().take().unwrap())
@@ -475,6 +479,10 @@ struct Options {
 	logger: Option<Arc<dyn EventLogger>>,
 	google: Arc<FakeGoogle>,
 	market_delay: Option<Duration>,
+	/// Replaces the Fred source (a delayed failure when `market_delay` is set).
+	market_source: Option<Arc<dyn MarketSeriesSource>>,
+	/// The Finnhub source.
+	earnings_source: Option<Arc<dyn research_finance::ports::EarningsCalendarSource>>,
 	/// The fence-token factory panics on this call (1-based).
 	fence_panics_on_call: Option<usize>,
 }
@@ -489,6 +497,8 @@ impl Default for Options {
 			logger: None,
 			google: Arc::new(FakeGoogle::default()),
 			market_delay: None,
+			market_source: None,
+			earnings_source: None,
 			fence_panics_on_call: None,
 		}
 	}
@@ -523,6 +533,13 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 	if let Some(delay) = options.market_delay {
 		market_sources.insert("fred".to_owned(), Arc::new(SlowSource { delay }));
 	}
+	if let Some(source) = options.market_source {
+		market_sources.insert("fred".to_owned(), source);
+	}
+	let mut earnings_sources = HashMap::new();
+	if let Some(source) = options.earnings_source {
+		earnings_sources.insert("finnhub".to_owned(), source);
+	}
 	let deps = Arc::new(JobDeps {
 		api,
 		agents: Arc::new(
@@ -551,7 +568,7 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		},
 		allow_unverified_tool_isolation: false,
 		market_sources,
-		earnings_sources: HashMap::new(),
+		earnings_sources,
 		// No limits: tests never wait for the quota gate.
 		pacer: Arc::new(WindowMarketPacer::new(
 			clock,
@@ -1824,4 +1841,505 @@ async fn a_market_refresh_with_an_unconfigured_provider_reports_source_not_confi
 		text.contains(r#""errorCode":"SOURCE_NOT_CONFIGURED""#),
 		"{text}"
 	);
+}
+
+/* ---------- golden outgoing payloads (shell-wire spec section 6, point 4) ---------- */
+
+/// A source that always has data.
+struct GoodSource;
+
+#[async_trait]
+impl MarketSeriesSource for GoodSource {
+	fn provider_id(&self) -> research_contracts::market::MarketProviderId {
+		research_contracts::market::MarketProviderId::Fred
+	}
+	async fn fetch_series(&self, _query: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
+		Ok(SeriesData {
+			meta: parse(
+				r#"{"title":"10-Year Treasury","unit":"percent","frequency":"daily","publisher":"FRED","sourceUrl":"https://fred.stlouisfed.org/series/DGS10"}"#,
+			)
+			.unwrap(),
+			observations: vec![
+				research_finance::ports::SeriesPoint {
+					observed_on: "2026-10-08".to_owned(),
+					value: 4.12,
+				},
+				research_finance::ports::SeriesPoint {
+					observed_on: "2026-10-09".to_owned(),
+					value: 4.1,
+				},
+			],
+		})
+	}
+}
+
+/// US stocks: the first has a date, the second only a name.
+struct FakeEarnings;
+
+#[async_trait]
+impl research_finance::ports::EarningsCalendarSource for FakeEarnings {
+	fn source_id(&self) -> research_contracts::watchlist::EarningsSourceId {
+		research_contracts::watchlist::EarningsSourceId::Finnhub
+	}
+	async fn fetch_earnings(
+		&self,
+		query: research_finance::ports::EarningsQuery<'_>,
+	) -> Vec<research_finance::ports::EarningsResult> {
+		query
+			.stocks
+			.iter()
+			.enumerate()
+			.map(|(index, _)| {
+				if index == 0 {
+					Ok(research_finance::ports::EarningsData {
+						name: Some("Example Corp".to_owned()),
+						events: vec![
+							parse(
+								r#"{"periodKey":"2026-q4","announcementDate":"2026-10-28","fiscalPeriodLabel":"Q4 2026","fiscalPeriodEnd":"2026-09-30","timing":"after-close"}"#,
+							)
+							.unwrap(),
+						],
+					})
+				} else {
+					Err(research_finance::ports::EarningsFailure::no_date(Some(
+						"Other Corp".to_owned(),
+					)))
+				}
+			})
+			.collect()
+	}
+}
+
+/// One golden file: the schema that must accept it and the exact wire text.
+struct Golden {
+	name: String,
+	schema: &'static str,
+	body: String,
+}
+
+fn wire<T: serde::Serialize>(value: &T) -> String {
+	research_contracts::json::to_js_json(value).unwrap()
+}
+
+fn golden_dir() -> std::path::PathBuf {
+	std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../vectors/runner/out")
+}
+
+/// Tab-indented JSON, like the files the TypeScript exporters write.
+fn golden_file_text(golden: &Golden) -> String {
+	use serde::Serialize;
+	let value = serde_json::json!({ "schema": golden.schema, "body": golden.body });
+	let mut buffer = Vec::new();
+	let formatter = serde_json::ser::PrettyFormatter::with_indent(b"\t");
+	let mut serializer = serde_json::Serializer::with_formatter(&mut buffer, formatter);
+	value.serialize(&mut serializer).unwrap();
+	let mut text = String::from_utf8(buffer).unwrap();
+	text.push('\n');
+	text
+}
+
+fn first_completion(api: &FakeApi) -> CompleteJobRequest {
+	api.calls().completions.remove(0)
+}
+
+fn outcome_of(completion: &CompleteJobRequest) -> &'static str {
+	// The serde tag is the wire name of the outcome.
+	let value: serde_json::Value = serde_json::from_str(&wire(completion)).unwrap();
+	let name = value["outcome"].as_str().unwrap().to_owned();
+	Box::leak(name.into_boxed_str())
+}
+
+fn collect_events(api: &FakeApi, prefix: &str, into: &mut Vec<Golden>) {
+	for (index, request) in api.calls().events.iter().enumerate() {
+		into.push(Golden {
+			name: format!("events-{prefix}-{index}"),
+			schema: "runnerEventsRequest",
+			body: wire(request),
+		});
+	}
+}
+
+fn notebook_job() -> ClaimedJob {
+	let widget = r#"{"widgetId":"w-text","title":"Title w-text","size":"medium","createdAt":"2026-10-11T00:00:00.000Z","updatedAt":"2026-10-11T00:00:00.000Z","revision":1,"origin":{"kind":"owner","messageId":null,"runId":null,"componentId":null},"type":"text","text":"Body of w-text."}"#;
+	parse(&format!(
+		r#"{{{},"workspaceId":"ws_test","agent":{{"agentId":"scripted","model":null,"effort":"medium"}},"instruction":"Make it larger.","selectedWidgetIds":["w-text"],"notebook":{{"widgets":[{widget}]}},"notebookVersion":4,"conversationContext":[]}}"#,
+		lease("notebook-assist", "run_notebook", 3, 20_000)
+	))
+	.unwrap()
+}
+
+fn earnings_job() -> ClaimedJob {
+	parse(&format!(
+		r#"{{{},"fromDate":"2026-10-11","toDate":"2027-04-14","stocks":[{{"stockId":"us:AAPL","name":null}},{{"stockId":"us:MSFT","name":"Microsoft"}}]}}"#,
+		lease("earnings-refresh", "run_earnings", 4, 20_000)
+	))
+	.unwrap()
+}
+
+/// Every payload the runner sends is produced by the real producers, written to
+/// `vectors/runner/out/` and parsed by `tests/contracts/runnerOut.test.ts`
+/// with the zod schemas. The files are compared on every run; set
+/// `UPDATE_VECTORS=1` to rewrite them.
+#[tokio::test]
+async fn golden_outgoing_payloads_are_current() {
+	let mut out: Vec<Golden> = Vec::new();
+
+	/* claim requests */
+	let descriptors: Vec<research_contracts::agent::AgentDescriptor> =
+		parse::<research_contracts::agent::AgentCapabilities>(r#"{"supported":["stream"]}"#)
+			.map(|capabilities| {
+				let descriptor = |id: &str, availability: AgentAvailability| {
+					research_contracts::agent::AgentDescriptor {
+						agent_id: id.to_owned(),
+						display_name: format!("Backend {id}"),
+						capabilities: capabilities.clone(),
+						cost_model: CostModel::Metered,
+						tool_isolation: ToolIsolation::Unverified,
+						availability,
+					}
+				};
+				let mut listed = descriptor("opencode", AgentAvailability::Available);
+				listed.capabilities.model = Some("provider/model-a".to_owned());
+				listed.capabilities.models = Some(vec![
+					"provider/model-a".to_owned(),
+					"other/model-b".to_owned(),
+				]);
+				listed.cost_model = CostModel::PlanLimited;
+				listed.tool_isolation = ToolIsolation::Enforced;
+				let mut backends = vec![listed];
+				use research_contracts::agent::UnavailableReason as Reason;
+				for (id, reason) in [
+					("codex", Reason::NotInstalled),
+					("claude-code", Reason::NotAuthenticated),
+					("openrouter", Reason::NotConfigured),
+					("custom-one", Reason::UnsupportedVersion),
+					("custom-two", Reason::ToolIsolationUnverified),
+					("custom-three", Reason::ProbeFailed),
+				] {
+					backends.push(descriptor(
+						id,
+						AgentAvailability::Unavailable {
+							reason_code: reason,
+							detail: "The CLI could not be started.".to_owned(),
+						},
+					));
+				}
+				backends
+			})
+			.unwrap();
+	out.push(Golden {
+		name: "claim-request-no-agents".to_owned(),
+		schema: "claimJobRequest",
+		body: wire(&research_contracts::jobs::ClaimJobRequest {
+			runner_version: "0.1.0".to_owned(),
+			agents: vec![],
+		}),
+	});
+	out.push(Golden {
+		name: "claim-request-agents".to_owned(),
+		schema: "claimJobRequest",
+		body: wire(&research_contracts::jobs::ClaimJobRequest {
+			runner_version: "0.1.0".to_owned(),
+			agents: descriptors,
+		}),
+	});
+	out.push(Golden {
+		name: "heartbeat-request".to_owned(),
+		schema: "heartbeatRequest",
+		body: wire(&crate::api_client::heartbeat_request(3)),
+	});
+
+	/* a completed research run: events and the completion */
+	let api = FakeApi::new(ApiScript::default());
+	let research = harness(Arc::clone(&api), Options::default());
+	run(research_job(), &research).await;
+	collect_events(&api, "research", &mut out);
+	let completed = first_completion(&api);
+	let CompleteJobRequest::Completed { bundle, usage, .. } = &completed else {
+		panic!("expected a completed run: {completed:?}");
+	};
+	let (bundle, usage) = (bundle.clone(), *usage);
+	out.push(Golden {
+		name: "complete-completed".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&completed),
+	});
+	out.push(Golden {
+		name: "complete-partial".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&CompleteJobRequest::Partial {
+			lease_generation: 3,
+			usage,
+			failure_code: "BUDGET_EXCEEDED".to_owned(),
+			bundle,
+			articles: vec![],
+			source_reports: vec![],
+		}),
+	});
+
+	/* failures */
+	let api = FakeApi::new(ApiScript::default());
+	let unregistered = harness(Arc::clone(&api), Options::default());
+	run(
+		research_job_with("codex", ZERO_USAGE, "[]", 20_000),
+		&unregistered,
+	)
+	.await;
+	out.push(Golden {
+		name: "complete-failed".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+	out.push(Golden {
+		name: "complete-failed-with-detail".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&to_completion(
+			3,
+			research_application::research::PipelineOutcome::Failed {
+				failure_code: "ALL_TOOL_CALLS_FAILED".to_owned(),
+				failure_detail: Some("TIMEOUT".to_owned()),
+				retryable: false,
+				usage,
+			},
+		)),
+	});
+	out.push(Golden {
+		name: "complete-waiting-approval".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&to_completion(
+			3,
+			research_application::research::PipelineOutcome::WaitingApproval {
+				approval_request: research_contracts::jobs::ApprovalRequest {
+					reason_code: "SPEND_CONSENT_REQUIRED".to_owned(),
+					detail: "The next step needs your approval.".to_owned(),
+				},
+				usage,
+			},
+		)),
+	});
+
+	/* a run cancelled by the owner (through the events answer) */
+	let api = FakeApi::new(ApiScript {
+		events: vec![Ok(EventsResponse {
+			cancel_requested: true,
+		})],
+		..ApiScript::default()
+	});
+	let cancelled = harness(Arc::clone(&api), Options::default());
+	run(research_job(), &cancelled).await;
+	out.push(Golden {
+		name: "complete-cancelled".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
+	/* news ingest */
+	let api = FakeApi::new(ApiScript::default());
+	let ingest = harness(
+		Arc::clone(&api),
+		Options {
+			feeds: HashMap::from([(
+				"https://news.example.org/feed.xml".to_owned(),
+				"FEED:Battery orders rise@https://news.example.org/a/1|Chip fab opens@https://news.example.org/a/2".to_owned(),
+			)]),
+			..Options::default()
+		},
+	);
+	run(ingest_job(), &ingest).await;
+	collect_events(&api, "ingest", &mut out);
+	out.push(Golden {
+		name: "complete-ingested".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
+	/* market refresh: a failed series and a successful one */
+	let api = FakeApi::new(ApiScript::default());
+	let market = harness(
+		Arc::clone(&api),
+		Options {
+			market_source: Some(Arc::new(GoodSource)),
+			..Options::default()
+		},
+	);
+	run(
+		market_job(&["fred:DGS10", "twelve-data:XAU/USD"], 20_000),
+		&market,
+	)
+	.await;
+	out.push(Golden {
+		name: "complete-market-refreshed".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
+	/* earnings refresh */
+	let api = FakeApi::new(ApiScript::default());
+	let earnings = harness(
+		Arc::clone(&api),
+		Options {
+			earnings_source: Some(Arc::new(FakeEarnings)),
+			..Options::default()
+		},
+	);
+	run(earnings_job(), &earnings).await;
+	out.push(Golden {
+		name: "complete-earnings-refreshed".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
+	/* notebook assistant */
+	let api = FakeApi::new(ApiScript::default());
+	let notebook = harness(
+		Arc::clone(&api),
+		Options {
+			replies: vec![
+				r#"{"reply":"Made it larger.","commands":[{"kind":"resize","widgetId":"w-text","size":"large"}]}"#
+					.to_owned(),
+			],
+			..Options::default()
+		},
+	);
+	run(notebook_job(), &notebook).await;
+	out.push(Golden {
+		name: "complete-notebook-assisted".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
+	/* Google Calendar: the sign-in URL event and the three completions */
+	let api = FakeApi::new(ApiScript::default());
+	let google = google_harness(&api, 1);
+	run(google_job("connect"), &google).await;
+	collect_events(&api, "google-connect", &mut out);
+	out.push(Golden {
+		name: "complete-google-calendar-connected".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+	out.push(Golden {
+		name: "complete-google-calendar-synced".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&CompleteJobRequest::GoogleCalendarSynced {
+			lease_generation: 2,
+			usage: EMPTY_USAGE,
+			calendar_id: "cal_1".to_owned(),
+			desired_digest: "a".repeat(64),
+			inserted: 3,
+			updated: 1,
+			deleted: 0,
+			unchanged: 7,
+		}),
+	});
+	out.push(Golden {
+		name: "complete-google-calendar-disconnected".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&CompleteJobRequest::GoogleCalendarDisconnected {
+			lease_generation: 2,
+			usage: EMPTY_USAGE,
+			revoked: true,
+		}),
+	});
+
+	/* long text is cut at the limit before it is sent */
+	let api = FakeApi::new(ApiScript::default());
+	let chatty = harness(Arc::clone(&api), Options::default());
+	let job = market_job(&[], 20_000);
+	let reporter = crate::job_execution::test_core(&chatty.deps, &job);
+	{
+		use research_application::reporter::{PipelineReporter, ToolCallOutcome};
+		reporter.state(JobState::Planning).await;
+		reporter.note(&"n".repeat(900)).await;
+		reporter
+			.tool("web.search", ToolCallOutcome::Denied, &"d".repeat(900))
+			.await;
+		reporter
+			.tool("news.fetch_feed", ToolCallOutcome::Executed, "3 articles")
+			.await;
+		reporter
+			.tool("web.fetch_page", ToolCallOutcome::Failed, "TIMEOUT")
+			.await;
+		reporter.usage(&usage).await;
+		reporter.state(JobState::Publishing).await;
+	}
+	collect_events(&api, "reporter", &mut out);
+
+	/* what was produced covers every outcome and every event type */
+	let outcomes: std::collections::BTreeSet<&str> = out
+		.iter()
+		.filter(|golden| golden.schema == "completeJobRequest")
+		.map(|golden| {
+			let value: serde_json::Value = serde_json::from_str(&golden.body).unwrap();
+			&*Box::leak(
+				value["outcome"]
+					.as_str()
+					.unwrap()
+					.to_owned()
+					.into_boxed_str(),
+			)
+		})
+		.collect();
+	assert_eq!(outcomes.len(), 12, "{outcomes:?}");
+	let event_types: std::collections::BTreeSet<String> = out
+		.iter()
+		.filter(|golden| golden.schema == "runnerEventsRequest")
+		.flat_map(|golden| {
+			let value: serde_json::Value = serde_json::from_str(&golden.body).unwrap();
+			value["events"]
+				.as_array()
+				.unwrap()
+				.iter()
+				.map(|event| event["event"]["type"].as_str().unwrap().to_owned())
+				.collect::<Vec<_>>()
+		})
+		.collect();
+	assert_eq!(
+		event_types.iter().map(String::as_str).collect::<Vec<_>>(),
+		["google-auth-url", "note", "state", "tool", "usage"]
+	);
+	let _ = outcome_of;
+
+	/* compare with (or rewrite) the committed files */
+	let names: std::collections::BTreeSet<&str> =
+		out.iter().map(|golden| golden.name.as_str()).collect();
+	assert_eq!(names.len(), out.len(), "duplicate golden names");
+	let directory = golden_dir();
+	if std::env::var_os("UPDATE_VECTORS").is_some() {
+		std::fs::create_dir_all(&directory).unwrap();
+		for entry in std::fs::read_dir(&directory).unwrap() {
+			std::fs::remove_file(entry.unwrap().path()).unwrap();
+		}
+		for golden in &out {
+			std::fs::write(
+				directory.join(format!("{}.json", golden.name)),
+				golden_file_text(golden),
+			)
+			.unwrap();
+		}
+		return;
+	}
+	let mut on_disk: Vec<String> = std::fs::read_dir(&directory)
+		.expect("vectors/runner/out is missing: run with UPDATE_VECTORS=1")
+		.map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+		.collect();
+	on_disk.sort();
+	let mut expected: Vec<String> = out
+		.iter()
+		.map(|golden| format!("{}.json", golden.name))
+		.collect();
+	expected.sort();
+	assert_eq!(
+		on_disk, expected,
+		"stale golden files: run with UPDATE_VECTORS=1"
+	);
+	for golden in &out {
+		let path = directory.join(format!("{}.json", golden.name));
+		assert_eq!(
+			std::fs::read_to_string(&path).unwrap(),
+			golden_file_text(golden),
+			"{} is stale: run the runner tests with UPDATE_VECTORS=1",
+			golden.name
+		);
+	}
 }

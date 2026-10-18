@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"cancelled\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false}}",
+	"schema": "completeJobRequest"
+}
