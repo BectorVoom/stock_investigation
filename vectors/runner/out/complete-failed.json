@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"failed\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false},\"failureCode\":\"AGENT_NOT_REGISTERED\",\"retryable\":false}",
+	"schema": "completeJobRequest"
+}

@@ -64,12 +64,18 @@ export const DEFAULT_CARGO_TARGET_DIR = "target";
 export const RUST_RUNNER_BINARY = "research-runner";
 export const RUST_PROVIDER_SPAWN_BINARY = "research-provider-spawn";
 /**
- * Companion binaries copied beside the runner when the build produced them.
- * TODO(ADR-0030): require `research-provider-spawn` (move it into
- * `RUST_REQUIRED_BINARIES`) once the runner crate declares that `[[bin]]`.
+ * Binaries every Rust runner install needs beside each other: the runner and
+ * the `research-provider-spawn` trampoline it starts agent CLIs through (the
+ * runner crate declares both `[[bin]]`s, so one `cargo build -p
+ * research-runner` makes both). The runner comes first: installers give it
+ * its own name.
  */
-export const RUST_OPTIONAL_BINARIES: readonly string[] = [RUST_PROVIDER_SPAWN_BINARY];
-export const RUST_REQUIRED_BINARIES: readonly string[] = [RUST_RUNNER_BINARY];
+export const RUST_REQUIRED_BINARIES: readonly string[] = [
+	RUST_RUNNER_BINARY,
+	RUST_PROVIDER_SPAWN_BINARY,
+];
+/** Companion binaries copied beside the runner when the build produced them (none today). */
+export const RUST_OPTIONAL_BINARIES: readonly string[] = [];
 /** The supervising development process that builds, copies and restarts the Rust runner. */
 export const RUNNER_DEV_SCRIPT = "scripts/runnerDev.ts";
 /** Cargo arguments of the development build (dev profile, lockfile respected). */

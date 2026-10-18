@@ -127,6 +127,10 @@ function writeGeneration(
 	if (runners !== "node") {
 		writeFileSync(layout.rustRunnerBinary, "#!/bin/sh\n", { mode: 0o755 });
 		chmodSync(layout.rustRunnerBinary, 0o755);
+		// Both binaries of `cargo build -p research-runner` are required (ADR-0030).
+		const spawnHelper = join(layout.runnerDir, "research-provider-spawn");
+		writeFileSync(spawnHelper, "#!/bin/sh\n", { mode: 0o755 });
+		chmodSync(spawnHelper, 0o755);
 	}
 	writeFileSync(layout.indexFile, "<html></html>");
 	writeFileSync(layout.wranglerConfig, "{}");
@@ -552,7 +556,9 @@ describe("validateGeneration with the Rust runner (ADR-0030)", () => {
 		const area = join(freshRoot(), "release");
 		writeGeneration(area, "gen-rust", ["0001_initial.sql"], "rust");
 		const layout = generationLayout(area, "gen-rust");
-		writeFileSync(join(layout.runnerDir, "research-provider-spawn"), "x", { mode: 0o644 });
+		const spawnHelper = join(layout.runnerDir, "research-provider-spawn");
+		writeFileSync(spawnHelper, "x", { mode: 0o644 });
+		chmodSync(spawnHelper, 0o644);
 		const refused = validateGeneration(layout);
 		expect(refused.ok).toBe(false);
 		if (!refused.ok) expect(refused.error).toContain("research-provider-spawn");

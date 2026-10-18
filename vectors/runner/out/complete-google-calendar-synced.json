@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"google-calendar-synced\",\"leaseGeneration\":2,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false},\"calendarId\":\"cal_1\",\"desiredDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"inserted\":3,\"updated\":1,\"deleted\":0,\"unchanged\":7}",
+	"schema": "completeJobRequest"
+}

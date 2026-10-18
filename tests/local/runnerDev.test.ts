@@ -193,6 +193,9 @@ echo "runner_started generation=$n args=\\$*"
 exec sleep 300
 EOF
 chmod 755 "$CARGO_TARGET_DIR/debug/research-runner"
+# The runner package declares the companion binary too (ADR-0030).
+printf '#!/bin/sh\\nexec "$@"\\n' > "$CARGO_TARGET_DIR/debug/research-provider-spawn"
+chmod 755 "$CARGO_TARGET_DIR/debug/research-provider-spawn"
 `,
 		{ mode: 0o755 },
 	);
