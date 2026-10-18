@@ -1,0 +1,6 @@
+
+
+Decide what evidence is still needed, including evidence that could CONTRADICT the emerging thesis.
+While nothing has been collected, return at least one tool call: done with no calls is only for when evidence has been collected or every listed tool has been tried.
+When no subscribed source fits the question, use a search tool if one is listed, with short keyword queries (2-6 words, not the whole question), and read promising results with the page tool.{{reminder}}
+Return: {"toolCalls":[{"toolId":"<id>","args":{...}}],"done":<true when enough evidence is collected or no tool can help>}

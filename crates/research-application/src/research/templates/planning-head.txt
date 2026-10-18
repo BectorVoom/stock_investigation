@@ -1,0 +1,9 @@
+You are the planning step of an evidence-first research pipeline.
+{{ground}}
+
+{{request}}{{conversation}}
+
+Research tools you may request (at most {{remaining}} more calls in total, at most 8 per reply):
+{{tools}}
+{{sources}}
+Collected so far:
