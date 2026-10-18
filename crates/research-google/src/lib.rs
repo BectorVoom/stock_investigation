@@ -1,3 +1,7 @@
-//! Google Calendar sync: Desktop-app OAuth over a loopback listener and the Calendar API.
-//!
-//! OWNER: wave B finance worker (ADR-0030). Specs: `../stock_investigation.worktrees/briefs/rr-spec-*.md`.
+//! Desktop-app Google OAuth and app-created Calendar sync (FR-019, ADR-0030).
+pub mod http;
+pub mod oauth;
+pub mod token_store;
+pub mod loopback;
+pub mod calendar;
+pub mod jobs;

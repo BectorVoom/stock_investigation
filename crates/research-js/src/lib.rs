@@ -24,3 +24,5 @@ pub mod text_decoder;
 pub mod uri;
 pub mod utf16;
 pub mod whitespace;
+
+pub mod string_number;

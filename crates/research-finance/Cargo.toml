@@ -22,5 +22,12 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 thiserror = { workspace = true }
 
+research-effects = { workspace = true }
+research-feed = { workspace = true }
+url = { workspace = true }
+regex = { workspace = true }
+indexmap = { workspace = true }
+chrono = { workspace = true }
+
 [lints]
 workspace = true

@@ -836,11 +836,16 @@ name = "research-finance"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "chrono",
  "flate2",
+ "indexmap",
  "quick-xml",
+ "regex",
  "research-application",
  "research-contracts",
  "research-domain",
+ "research-effects",
+ "research-feed",
  "research-js",
  "research-net",
  "serde",
@@ -848,6 +853,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+ "url",
 ]
 
 [[package]]
@@ -856,17 +862,28 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "base64",
+ "bytes",
+ "getrandom 0.2.17",
+ "http",
+ "http-body-util",
+ "httparse",
+ "hyper",
+ "hyper-util",
  "research-application",
  "research-contracts",
  "research-domain",
+ "research-effects",
+ "research-finance",
  "research-js",
  "research-net",
  "serde",
  "serde_json",
  "sha2",
+ "tempfile",
  "thiserror",
  "tokio",
  "tokio-util",
+ "url",
 ]
 
 [[package]]
