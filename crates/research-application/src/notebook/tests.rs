@@ -550,7 +550,7 @@ fn notebook_performance_budgets() -> TestResult {
 		));
 	});
 	let commands_ok = measure("12 notebook commands (runner check)", 6.0, &mut || {
-		black_box(check());
+		check();
 	});
 	let apply_ok = measure("12 notebook commands (with provenance)", 10.0, &mut || {
 		black_box(apply());
