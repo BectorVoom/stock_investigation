@@ -3,7 +3,7 @@
 use research_contracts::json::to_js_value;
 use research_contracts::notebook::{Notebook, limits};
 use research_contracts::widget_rules::{
-	notebook_capacity_problem, reconcile_chart_draft, with_earned_chart_provenance,
+	notebook_capacity_problem, reconcile_chart_draft_core, with_earned_chart_provenance,
 };
 use research_contracts::widgets::{
 	WidgetContent, WidgetCore, WidgetSize as ContractSize, WidgetType,
@@ -144,27 +144,32 @@ impl WidgetAgentType<GridWidget> for NotebookType<'_> {
 		assembled.insert("size", Value::from(draft.size.as_str()));
 		assembled.insert("type", Value::from(self.type_name()));
 		let value = Value::Object(assembled);
-		let value = if self.type_name() == "chart" {
-			reconcile_chart_draft(&value)
+		// A clean chart draft is reconciled straight into the widget; anything else is
+		// validated as given so the strict schema reports its first issue.
+		let reconciled = if self.type_name() == "chart" {
+			reconcile_chart_draft_core(&value)
 		} else {
-			value
+			None
 		};
-		let widget = research_contracts::validate::<WidgetCore>(&value).map_err(|error| {
-			let issues = match &error {
-				research_contracts::ContractError::Invalid(issues) => issues.as_slice(),
-				research_contracts::ContractError::Json(_) => &[],
-			};
-			let issue = issues.first();
-			let field = issue
-				.map(|issue| issue.path_string("."))
-				.filter(|s| !s.is_empty())
-				.unwrap_or_else(|| "widget".to_owned());
-			let message = issue.map_or("is invalid", |issue| issue.message.as_str());
-			format!(
-				"invalid {} widget: \"{field}\" {message}.",
-				self.type_name()
-			)
-		})?;
+		let widget = match reconciled {
+			Some(widget) => widget,
+			None => research_contracts::validate::<WidgetCore>(&value).map_err(|error| {
+				let issues = match &error {
+					research_contracts::ContractError::Invalid(issues) => issues.as_slice(),
+					research_contracts::ContractError::Json(_) => &[],
+				};
+				let issue = issues.first();
+				let field = issue
+					.map(|issue| issue.path_string("."))
+					.filter(|s| !s.is_empty())
+					.unwrap_or_else(|| "widget".to_owned());
+				let message = issue.map_or("is invalid", |issue| issue.message.as_str());
+				format!(
+					"invalid {} widget: \"{field}\" {message}.",
+					self.type_name()
+				)
+			})?,
+		};
 		if let WidgetContent::Research { component_id } = &widget.content {
 			if !self.known.contains(component_id.as_str()) {
 				return Err("invalid research widget: \"componentId\" must name a canvas component of this conversation.".to_owned());

@@ -70,17 +70,30 @@ fn same_content(a: &ChartView<'_>, b: &ChartView<'_>) -> bool {
 		&& a.series == b.series
 }
 
-/// `pointKey`.
-fn point_key(series_name: &str, occurrence: usize, point: &ChartPoint) -> String {
-	json_text(&(
-		series_name,
+/// `pointKey`: series, label occurrence, label, value and provenance. The TypeScript
+/// compares the keys' JSON texts; comparing the fields is the same relation (`-0`
+/// and `0` print alike, so the value is keyed by its bits with `-0` folded to `0`).
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct PointKey<'a> {
+	series: &'a str,
+	occurrence: usize,
+	x: &'a str,
+	y_bits: u64,
+	basis: Option<&'static str>,
+	source_id: Option<&'a str>,
+	as_of: Option<&'a str>,
+}
+
+fn point_key<'a>(series_name: &'a str, occurrence: usize, point: &'a ChartPoint) -> PointKey<'a> {
+	PointKey {
+		series: series_name,
 		occurrence,
-		&point.x,
-		point.y,
-		point.basis.map(|basis| basis.as_str()),
-		point.source_id.as_deref(),
-		point.as_of.as_deref(),
-	))
+		x: &point.x,
+		y_bits: (point.y + 0.0).to_bits(),
+		basis: point.basis.map(|basis| basis.as_str()),
+		source_id: point.source_id.as_deref(),
+		as_of: point.as_of.as_deref(),
+	}
 }
 
 /// Counts label occurrences within one series, as the TypeScript `seen` map does.
@@ -95,7 +108,7 @@ fn occurrences<'a>(points: &'a [ChartPoint]) -> impl Iterator<Item = (usize, &'a
 }
 
 /// `provenanceKeys`: every provenance-carrying point, keyed.
-fn provenance_keys(chart: &ChartView<'_>) -> HashSet<String> {
+fn provenance_keys<'a>(chart: &ChartView<'a>) -> HashSet<PointKey<'a>> {
 	let mut keys = HashSet::new();
 	for entry in chart.series {
 		for (occurrence, point) in occurrences(&entry.points) {
@@ -196,6 +209,21 @@ pub fn reconcile_chart_draft(input: &Value) -> Value {
 	}
 }
 
+/// [`reconcile_chart_draft`] for callers that want the widget itself: the
+/// reconciled draft as a [`WidgetCore`], skipping the encode-to-JSON and strict
+/// re-decode round trip (a reconciled draft satisfies the strict rules by
+/// construction). `None` when the input is not a clean chart draft; the caller
+/// then validates the original input, which reports the strict schema's issue.
+#[must_use]
+pub fn reconcile_chart_draft_core(input: &Value) -> Option<WidgetCore> {
+	let mut cx = Cx::new();
+	let draft = decode_chart_draft(&mut cx, Some(input))?;
+	cx.issues().is_empty().then(|| WidgetCore {
+		content: reconciled(draft.content),
+		..draft
+	})
+}
+
 fn without_provenance(point: ChartPoint) -> ChartPoint {
 	ChartPoint {
 		basis: None,
@@ -235,7 +263,7 @@ pub fn with_earned_chart_provenance(
 				};
 			}
 			let old = before.get(widget.widget_id.as_str());
-			let kept: HashSet<String> = match old {
+			let kept: HashSet<PointKey<'_>> = match old {
 				Some(old) if same_meaning(old, &view) => provenance_keys(old),
 				_ => HashSet::new(),
 			};

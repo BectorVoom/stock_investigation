@@ -478,13 +478,25 @@ async fn node_generated_notebook_transcripts() -> TestResult {
 }
 
 fn benchmark_input() -> TestResult<(Notebook, Vec<Value>)> {
+	benchmark_case(false)
+}
+
+/// The bench notebook, or the four-heavy-charts case when `heavy`.
+fn benchmark_case(heavy: bool) -> TestResult<(Notebook, Vec<Value>)> {
+	let file = if heavy {
+		"heavy.json"
+	} else {
+		"benchmark.json"
+	};
 	let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-		.join("../../vectors/notebook/benchmark.json");
+		.join("../../vectors/notebook")
+		.join(file);
 	let mut data = json::parse(&std::fs::read_to_string(path)?)?;
 	decode_bits(&mut data);
+	let case = &data;
 	Ok((
-		research_contracts::validate(field(&data, "notebook"))?,
-		array(field(&data, "commands")).to_vec(),
+		research_contracts::validate(field(case, "notebook"))?,
+		array(field(case, "commands")).to_vec(),
 	))
 }
 
@@ -555,6 +567,30 @@ fn notebook_performance_budgets() -> TestResult {
 	let apply_ok = measure("12 notebook commands (with provenance)", 10.0, &mut || {
 		black_box(apply());
 	});
+	// Four 6 x 400-point charts rewritten by one maximal reply; the TypeScript takes ~17 ms.
+	let (heavy, heavy_commands) = benchmark_case(true)?;
+	let heavy_check_ok = measure("heavy charts (runner check)", 13.0, &mut || {
+		let mut id = 0;
+		check_notebook_commands(&heavy, &heavy_commands, &mut || {
+			id += 1;
+			Some(format!("nb_new_{id}"))
+		})
+		.unwrap();
+	});
+	let heavy_apply_ok = measure("heavy charts (with provenance)", 16.0, &mut || {
+		let mut id = 0;
+		black_box(
+			apply_notebook_commands(&heavy, &heavy_commands, &mut || {
+				id += 1;
+				Some(format!("nb_new_{id}"))
+			})
+			.unwrap(),
+		);
+	});
+	assert!(
+		heavy_check_ok && heavy_apply_ok,
+		"heavy notebook performance budget exceeded"
+	);
 	assert!(
 		prompt_ok && bytes_ok && commands_ok && apply_ok,
 		"notebook performance budget exceeded"

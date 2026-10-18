@@ -1,5 +1,39 @@
 /** Same workload as scripts/bench.ts, kept as data for Rust timing guards. */
 import { type NotebookWidget, notebookSchema } from "@research/contracts";
+/** Four 6 x 400-point charts with provenance, and a maximal reply that rewrites each. */
+export function heavyChartsNotebook() {
+	const series = (bump: number) =>
+		Array.from({ length: 6 }, (_, s) => ({
+			name: `S${s}`,
+			points: Array.from({ length: 400 }, (_, i) => ({
+				x: `p${i}`,
+				y: i * 1.5 + 0.1 + (i === 0 && s === 0 ? bump : 0),
+				basis: "derived" as const,
+			})),
+		}));
+	const widgets = Array.from({ length: 4 }, (_, i) => ({
+		widgetId: `c${i}`,
+		title: `Heavy chart ${i}`,
+		size: "medium" as const,
+		createdAt: "2026-10-14T00:00:00.000Z",
+		updatedAt: "2026-10-14T00:00:00.000Z",
+		revision: 1,
+		origin: { kind: "owner" as const, messageId: null, runId: null, componentId: null },
+		type: "chart" as const,
+		chartType: "line" as const,
+		unit: "USD",
+		series: series(0),
+	}));
+	return {
+		notebook: notebookSchema.parse({ widgets }),
+		commands: widgets.map((w) => ({
+			kind: "update",
+			widgetId: w.widgetId,
+			config: { series: series(1) },
+		})),
+	};
+}
+
 export function benchmarkNotebook() {
 	const widgets: NotebookWidget[] = Array.from({ length: 200 }, (_, index) => {
 		const base = {

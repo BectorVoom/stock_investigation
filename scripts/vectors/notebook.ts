@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { notebookAssistPrompt } from "../../packages/application/src/notebook/prompts.ts";
-import { benchmarkNotebook } from "./notebook/benchmark.ts";
+import { benchmarkNotebook, heavyChartsNotebook } from "./notebook/benchmark.ts";
 import { encodeNumbers } from "./notebook/record.ts";
 import type { VectorExporter, VectorFile } from "./shared.ts";
 
@@ -72,6 +72,7 @@ export const notebookExporter: VectorExporter = {
 				repairNote: null,
 			});
 			files.push({ path: "notebook/benchmark.json", content: encodeNumbers(benchmarkNotebook()) });
+			files.push({ path: "notebook/heavy.json", content: encodeNumbers(heavyChartsNotebook()) });
 			const promptParts = {
 				head: prompt.split("Selected widget ids:")[0],
 				tail: prompt.slice(prompt.indexOf("Return exactly one JSON object")),
