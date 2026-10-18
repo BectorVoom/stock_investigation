@@ -13,6 +13,8 @@ research-domain = { workspace = true }
 research-contracts = { workspace = true }
 research-agent-core = { workspace = true }
 research-application = { workspace = true }
+research-net = { workspace = true }
+research-effects = { workspace = true }
 research-html = { workspace = true }
 research-feed = { workspace = true }
 research-finance = { workspace = true }
@@ -31,3 +33,6 @@ workspace = true
 [dev-dependencies]
 sha2 = { workspace = true }
 hex = { workspace = true }
+tempfile = { workspace = true }
+futures-util = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }

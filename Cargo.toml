@@ -55,6 +55,7 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 indexmap = "2"
 libc = "0.2"
 memchr = "2"
+rustix = { version = "1", features = ["process"] }
 percent-encoding = "2"
 quick-xml = "0.38"
 rayon = "1"

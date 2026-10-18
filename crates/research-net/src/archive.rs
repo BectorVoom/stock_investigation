@@ -19,6 +19,7 @@ use std::io::{self, Write};
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use async_trait::async_trait;
 use research_application::ports::{ArchiveWriteFailed, ArchivedPage, Hasher, PageArchive};
@@ -150,7 +151,21 @@ fn random_suffix() -> io::Result<String> {
 	Ok(hex::encode(bytes))
 }
 
-fn write_atomically(directory: &Path, file_name: &str, content: &str) -> io::Result<()> {
+/// Sets the flag when dropped: the save future was cancelled (ADR-0030 C3).
+struct CancelOnDrop(Arc<AtomicBool>);
+
+impl Drop for CancelOnDrop {
+	fn drop(&mut self) {
+		self.0.store(true, Ordering::SeqCst);
+	}
+}
+
+fn write_atomically(
+	directory: &Path,
+	file_name: &str,
+	content: &str,
+	cancelled: &AtomicBool,
+) -> io::Result<()> {
 	DirBuilder::new()
 		.recursive(true)
 		.mode(0o700)
@@ -167,6 +182,12 @@ fn write_atomically(directory: &Path, file_name: &str, content: &str) -> io::Res
 		file.write_all(content.as_bytes())?;
 		drop(file);
 		std::fs::set_permissions(&temporary, Permissions::from_mode(0o600))?;
+		// C3: a cancelled call must leave no archive file. The check sits right
+		// before the atomic rename, the only step that makes the page visible
+		// (a drop landing between check and rename is the residual window).
+		if cancelled.load(Ordering::SeqCst) {
+			return Err(io::Error::from(io::ErrorKind::Interrupted));
+		}
 		std::fs::rename(&temporary, &final_path)
 	})();
 	if written.is_err() {
@@ -182,10 +203,15 @@ impl PageArchive for FilePageArchive {
 		let directory = self.directory.clone();
 		let hasher = Arc::clone(&self.hasher);
 		let page = page.clone();
+		let cancelled = Arc::new(AtomicBool::new(false));
+		// Dropping this future (the call was cancelled) trips the flag; the
+		// blocking job cannot be stopped, but it then removes its temp file
+		// instead of renaming it into place.
+		let _on_drop = CancelOnDrop(Arc::clone(&cancelled));
 		// Hashing and file I/O are blocking work: keep them off the async workers.
 		let outcome = tokio::task::spawn_blocking(move || {
 			let (file_name, content) = prepare(&page, hasher.as_ref());
-			write_atomically(&directory, &file_name, &content).map(|()| file_name)
+			write_atomically(&directory, &file_name, &content, &cancelled).map(|()| file_name)
 		})
 		.await;
 		match outcome {
@@ -398,5 +424,53 @@ mod tests {
 			under_a_file.save(&page()).await.unwrap_err().detail,
 			"ENOTDIR"
 		);
+	}
+
+	/// Blocks inside the blocking job (while hashing) until released, so a test
+	/// can drop the save future while the write is still pending.
+	struct GatedHasher {
+		entered: std::sync::mpsc::Sender<()>,
+		release: std::sync::Mutex<std::sync::mpsc::Receiver<()>>,
+	}
+
+	impl Hasher for GatedHasher {
+		fn sha256_hex(&self, text: &str) -> String {
+			let _ = self.entered.send(());
+			let _ = self.release.lock().unwrap().recv();
+			Sha256Hasher.sha256_hex(text)
+		}
+	}
+
+	/// ADR-0030 C3: a save future dropped while its write is pending leaves no
+	/// archive file and no temp file behind.
+	#[tokio::test(flavor = "multi_thread")]
+	async fn a_dropped_save_leaves_no_file() {
+		let directory = tempfile::tempdir().unwrap();
+		let (entered, entered_receiver) = std::sync::mpsc::channel();
+		let (release, release_receiver) = std::sync::mpsc::channel();
+		let archive = FilePageArchive::new(
+			directory.path(),
+			Arc::new(GatedHasher {
+				entered,
+				release: std::sync::Mutex::new(release_receiver),
+			}),
+		);
+		let page = page();
+		{
+			let mut save = Box::pin(archive.save(&page));
+			tokio::select! {
+				biased;
+				_ = &mut save => panic!("finished before the drop"),
+				_ = tokio::task::spawn_blocking(move || {
+					entered_receiver.recv().unwrap();
+				}) => {}
+			}
+			// `save` is dropped here, mid-job.
+		}
+		// Let the job continue (it hashes twice) and finish.
+		release.send(()).unwrap();
+		release.send(()).unwrap();
+		tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+		assert_eq!(listing(directory.path()), Vec::<String>::new());
 	}
 }
