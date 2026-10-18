@@ -1,4 +1,5 @@
 //! Jurisdiction-specific position tools (FR-007, DATA-006), with explicit absence and provenance.
+use crate::sec::{is_ticker, parse_symbol_args, string_arg};
 use crate::shared::{EvidenceInput, bound_model_text, collect_evidence};
 use async_trait::async_trait;
 use research_agent_core::tools::*;
@@ -44,26 +45,23 @@ impl Tool for PositionTool {
 		&self.meta
 	}
 	fn parse_args(&self, args: &Value) -> Option<Value> {
-		let key = if self.metric == PositionMetric::UsShortInterest {
-			"ticker"
+		if self.metric == PositionMetric::UsShortInterest {
+			parse_symbol_args(args, "ticker", is_ticker, true)
 		} else {
-			"code"
-		};
-		crate::sec::parse_symbol_args(args, key, true)
+			parse_symbol_args(args, "code", is_securities_code, true)
+		}
 	}
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
-		let object = args.as_object().ok_or_else(crate::sec::invalid_args)?;
 		let key = if self.metric == PositionMetric::UsShortInterest {
 			"ticker"
 		} else {
 			"code"
 		};
-		let symbol = object
-			.get(key)
-			.and_then(Value::as_str)
-			.ok_or_else(crate::sec::invalid_args)?
-			.to_uppercase();
-		let security_id = object.get("securityId").and_then(Value::as_str);
+		let symbol = string_arg(&args, key)?.to_uppercase();
+		let security_id = args
+			.as_object()
+			.and_then(|object| object.get("securityId"))
+			.and_then(Value::as_str);
 		let (subject, result) = match self.metric {
 			PositionMetric::UsShortInterest => (
 				format!("US ticker {symbol}"),
@@ -111,11 +109,13 @@ fn position_output(
 	result: Result<Report, MarketDataUnavailable>,
 ) -> ToolOutput {
 	let labels = position_labels(metric);
+	// Order matters: the security id is allocated before the observation id.
+	let security_id_value = security_id
+		.map(str::to_owned)
+		.unwrap_or_else(|| context.ids.next_id("sec"));
 	let mut observation = PositionObservation {
 		observation_id: context.ids.next_id("po"),
-		security_id: security_id
-			.map(str::to_owned)
-			.unwrap_or_else(|| context.ids.next_id("sec")),
+		security_id: security_id_value,
 		jurisdiction: if metric == PositionMetric::JpMarginBalance {
 			Market::Jp
 		} else {
@@ -193,4 +193,12 @@ fn position_output(
 		position_observations: vec![observation],
 		..ToolOutput::default()
 	}
+}
+
+/// `^[0-9][0-9A-Za-z]{3}$`.
+fn is_securities_code(text: &str) -> bool {
+	let bytes = text.as_bytes();
+	bytes.len() == 4
+		&& bytes.first().is_some_and(u8::is_ascii_digit)
+		&& bytes.iter().all(u8::is_ascii_alphanumeric)
 }

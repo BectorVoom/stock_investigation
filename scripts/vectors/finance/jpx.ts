@@ -103,7 +103,22 @@ const LABELS = [
 	"Fiscal Year/Quarter&amp;more",
 ];
 
-const CODES = ["7203", "9984", "130A", "130a", " 7203 ", "6758", "12345", "AB", "", "7203\u0085", "2914", "A123", "0001", "9999"];
+const CODES = [
+	"7203",
+	"9984",
+	"130A",
+	"130a",
+	" 7203 ",
+	"6758",
+	"12345",
+	"AB",
+	"",
+	"7203\u0085",
+	"2914",
+	"A123",
+	"0001",
+	"9999",
+];
 
 function excelSerial(iso: string): number {
 	const [year, month, day] = iso.split("-").map(Number);
@@ -152,14 +167,27 @@ function randomWorkbook(rng: Rng, valid: boolean): SheetPlan {
 	// Shared-string items are written as <si> raw; a few use runs and phonetics.
 	const siFor = (text: string): string => {
 		const roll = rng.float();
-		if (roll < 0.06) return `<si><r><t>${text.slice(0, 1)}</t></r><r><t>${text.slice(1)}</t></r></si>`;
+		if (roll < 0.06)
+			return `<si><r><t>${text.slice(0, 1)}</t></r><r><t>${text.slice(1)}</t></r></si>`;
 		if (roll < 0.1) return `<si><t>${text}</t><rPh sb="0" eb="1"><t>かな</t></rPh></si>`;
 		if (roll < 0.14) return `<si><t xml:space="preserve">${text}</t></si>`;
 		return `<si><t>${text}</t></si>`;
 	};
 	const letters = rng.shuffle(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]).slice(0, 5);
-	const [dateCol, codeCol, nameCol, endCol, labelCol] = letters as [string, string, string, string, string];
-	const cellAt = (col: string, rowNumber: number, body: string, kind: string | null, withRef = true): string => {
+	const [dateCol, codeCol, nameCol, endCol, labelCol] = letters as [
+		string,
+		string,
+		string,
+		string,
+		string,
+	];
+	const cellAt = (
+		col: string,
+		rowNumber: number,
+		body: string,
+		kind: string | null,
+		withRef = true,
+	): string => {
 		const ref = withRef ? ` r="${col}${rowNumber}"` : "";
 		const t = kind === null ? "" : ` t="${kind}"`;
 		if (body === "") return `<c${ref} s="3"${t}/>`;
@@ -217,7 +245,12 @@ function randomWorkbook(rng: Rng, valid: boolean): SheetPlan {
 			else if (good())
 				cells.push(
 					rng.chance(0.8)
-						? cellAt(dateCol, number, `<v>${excelSerial(rng.pick(["2026-10-13", "2026-10-29", "2027-01-15", "2027-04-16", "2026-10-12", "2027-04-17", "2025-05-01"]))}</v>`, null)
+						? cellAt(
+								dateCol,
+								number,
+								`<v>${excelSerial(rng.pick(["2026-10-13", "2026-10-29", "2027-01-15", "2027-04-16", "2026-10-12", "2027-04-17", "2025-05-01"]))}</v>`,
+								null,
+							)
 						: literalCell(dateCol, number, rng.pick(["46331", "46477", "46332"])),
 				);
 			else cells.push(literalCell(dateCol, number, rng.pick(SERIAL_CHOICES)));
@@ -234,11 +267,19 @@ function randomWorkbook(rng: Rng, valid: boolean): SheetPlan {
 		// name
 		if (!rng.chance(0.08)) {
 			const name = rng.pick(NAMES);
-			cells.push(rng.chance(0.7) ? sharedCell(nameCol, number, name) : inlineCell(nameCol, number, name));
+			cells.push(
+				rng.chance(0.7) ? sharedCell(nameCol, number, name) : inlineCell(nameCol, number, name),
+			);
 		}
 		// fiscal end
 		if (!rng.chance(valid ? 0.01 : 0.05)) {
-			cells.push(literalCell(endCol, number, good() ? rng.pick(["46477", "46112", "46203"]) : rng.pick(SERIAL_CHOICES)));
+			cells.push(
+				literalCell(
+					endCol,
+					number,
+					good() ? rng.pick(["46477", "46112", "46203"]) : rng.pick(SERIAL_CHOICES),
+				),
+			);
 		}
 		// label
 		if (!rng.chance(valid ? 0.01 : 0.05)) {
@@ -250,7 +291,7 @@ function randomWorkbook(rng: Rng, valid: boolean): SheetPlan {
 		rows.push(`<row r="${number}">${cells.join("")}</row>`);
 		if (rng.chance(0.05)) rows.push(`<row r="${number}"/>`);
 	}
-	const decoy = rng.chance(0.1) ? "<rows><row r=\"1\"><c><v>1</v></c></row></rows>" : "";
+	const decoy = rng.chance(0.1) ? '<rows><row r="1"><c><v>1</v></c></row></rows>' : "";
 	const sheet = `<?xml version="1.0" encoding="UTF-8"?><worksheet>${decoy}<sheetData>${rows.join("")}</sheetData></worksheet>`;
 	const shared = `<?xml version="1.0" encoding="UTF-8"?><sst count="${strings.length}">${strings.map(siFor).join("")}</sst>`;
 	return { sheet, shared };
@@ -279,7 +320,7 @@ interface RecipeCase {
 }
 
 const RECIPE_STRINGS =
-	'<si><t>Scheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>Issue Name</t></si><si><t>Fiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Second quarter</t></si>';
+	"<si><t>Scheduled Dates for Earnings Announcements</t></si><si><t>Code</t></si><si><t>Issue Name</t></si><si><t>Fiscal Year-end</t></si><si><t>Fiscal Year/Quarter</t></si><si><t>Second quarter</t></si>";
 const RECIPE_HEADER =
 	'<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c><c r="D1" t="s"><v>3</v></c><c r="E1" t="s"><v>4</v></c></row>';
 
@@ -323,7 +364,13 @@ function recipeCases(): RecipeCase[] {
 		const result = parseJpxWorkbook(sheet, shared);
 		// Large row lists are summarised: their length and both ends.
 		const output = result.ok
-			? { ok: { length: result.value.length, first: result.value[0] ?? null, last: result.value.at(-1) ?? null } }
+			? {
+					ok: {
+						length: result.value.length,
+						first: result.value[0] ?? null,
+						last: result.value.at(-1) ?? null,
+					},
+				}
 			: { err: result.error };
 		return { recipe, count, output: plain(output) };
 	});
@@ -408,7 +455,29 @@ function headerCases(rng: Rng): unknown[] {
 	}
 	const slugs: unknown[] = [];
 	for (let index = 0; index < 300; index += 1) {
-		const label = rng.picks(["Second", " quarter", "--", "Q1/", "２", "É", "ß", "İ", "ΑΣ", "Σ", " ", "﻿", "x", "9", "_", "-"], rng.int(0, 6)).join("");
+		const label = rng
+			.picks(
+				[
+					"Second",
+					" quarter",
+					"--",
+					"Q1/",
+					"２",
+					"É",
+					"ß",
+					"İ",
+					"ΑΣ",
+					"Σ",
+					" ",
+					"﻿",
+					"x",
+					"9",
+					"_",
+					"-",
+				],
+				rng.int(0, 6),
+			)
+			.join("");
 		slugs.push({ label, output: slugFiscalKind(label) });
 	}
 	return [cases, slugs];
@@ -468,14 +537,14 @@ function indexCases(rng: Rng): unknown[] {
 	const noise = [
 		"<p>text</p>",
 		"<a>no href</a>",
-		"<abbr href=\"/x\">",
+		'<abbr href="/x">',
 		"<a href>",
 		"<a href=>",
-		"<a href=\"\">",
-		"<a href=\"unterminated",
-		"<link href=\"/listing/event-schedules/financial-announcement/ccc/kessan11_1111.xlsx\">",
+		'<a href="">',
+		'<a href="unterminated',
+		'<link href="/listing/event-schedules/financial-announcement/ccc/kessan11_1111.xlsx">',
 		"<script>var a='<a href=\"/x\">'</script>",
-		"<a href=\"  \">",
+		'<a href="  ">',
 	];
 	const cases: unknown[] = [];
 	for (let index = 0; index < 600; index += 1) {
@@ -551,8 +620,14 @@ function zipCases(rng: Rng): ZipCase[] {
 			["dup.txt"],
 		),
 	);
-	cases.push(describeZip(new Uint8Array(MAX_ZIP_ARCHIVE_BYTES + 1), both, [{ zeros: MAX_ZIP_ARCHIVE_BYTES + 1 }]));
-	cases.push(describeZip(new Uint8Array(MAX_ZIP_ARCHIVE_BYTES), both, [{ zeros: MAX_ZIP_ARCHIVE_BYTES }]));
+	cases.push(
+		describeZip(new Uint8Array(MAX_ZIP_ARCHIVE_BYTES + 1), both, [
+			{ zeros: MAX_ZIP_ARCHIVE_BYTES + 1 },
+		]),
+	);
+	cases.push(
+		describeZip(new Uint8Array(MAX_ZIP_ARCHIVE_BYTES), both, [{ zeros: MAX_ZIP_ARCHIVE_BYTES }]),
+	);
 	cases.push(describeZip(new TextEncoder().encode("hello"), both));
 	cases.push(describeZip(new Uint8Array(0), both));
 	cases.push(describeZip(new Uint8Array(21), both));
@@ -605,7 +680,8 @@ function zipCases(rng: Rng): ZipCase[] {
 				: patchByte(archive, position, (archive[position] ?? 0) ^ (1 << rng.int(0, 7)));
 		}
 		if (rng.chance(0.2)) archive = archive.slice(0, rng.int(0, archive.byteLength));
-		if (rng.chance(0.1)) archive = new Uint8Array([...archive, ...rng.picks([0, 1, 80, 75], rng.int(1, 40))]);
+		if (rng.chance(0.1))
+			archive = new Uint8Array([...archive, ...rng.picks([0, 1, 80, 75], rng.int(1, 40))]);
 		cases.push(describeZip(archive, rng.chance(0.8) ? both : [rng.pick([SHEET, STRINGS, "x"])]));
 	}
 	// Prefix junk (stub before the archive) and a trailing comment.
@@ -625,11 +701,17 @@ function zipCases(rng: Rng): ZipCase[] {
 	// Ceilings (the same sizes the TypeScript tests use).
 	const bigDeclared = patchU32(
 		buildTestZip([{ name: "a.txt", text: "x".repeat(100), method: 8 }]),
-		findSignature(buildTestZip([{ name: "a.txt", text: "x".repeat(100), method: 8 }]), 0x02014b50) + 24,
+		findSignature(buildTestZip([{ name: "a.txt", text: "x".repeat(100), method: 8 }]), 0x02014b50) +
+			24,
 		MAX_ZIP_ENTRY_BYTES + 1,
 	);
 	cases.push(describeZip(bigDeclared, ["a.txt"]));
-	for (const size of [MAX_ZIP_ENTRY_BYTES - 1, MAX_ZIP_ENTRY_BYTES, MAX_ZIP_ENTRY_BYTES + 1, MAX_ZIP_ENTRY_BYTES + 5000]) {
+	for (const size of [
+		MAX_ZIP_ENTRY_BYTES - 1,
+		MAX_ZIP_ENTRY_BYTES,
+		MAX_ZIP_ENTRY_BYTES + 1,
+		MAX_ZIP_ENTRY_BYTES + 5000,
+	]) {
 		const archive = buildTestZip([{ name: "bomb.bin", text: "\u0000".repeat(size), method: 8 }]);
 		cases.push(describeZip(archive, ["bomb.bin"]));
 		// Declared size says "cap" while the stream inflates beyond it.
@@ -640,8 +722,12 @@ function zipCases(rng: Rng): ZipCase[] {
 	const deflated = deflateRawSync(Buffer.from("hello world hello world"));
 	const trailing = Buffer.concat([deflated, Buffer.from([1, 2, 3, 4, 5])]);
 	cases.push(describeZip(rawArchive("t.txt", trailing, 8, 23), ["t.txt"]));
-	cases.push(describeZip(rawArchive("t.txt", deflated.subarray(0, deflated.length - 2), 8, 23), ["t.txt"]));
-	cases.push(describeZip(rawArchive("t.txt", Buffer.from("not deflate data at all"), 8, 23), ["t.txt"]));
+	cases.push(
+		describeZip(rawArchive("t.txt", deflated.subarray(0, deflated.length - 2), 8, 23), ["t.txt"]),
+	);
+	cases.push(
+		describeZip(rawArchive("t.txt", Buffer.from("not deflate data at all"), 8, 23), ["t.txt"]),
+	);
 	cases.push(describeZip(rawArchive("t.txt", deflated, 8, 24), ["t.txt"]));
 	cases.push(describeZip(rawArchive("t.txt", deflated, 8, 22), ["t.txt"]));
 	return cases;
@@ -756,12 +842,16 @@ async function runSourceCase(rng: Rng): Promise<{ steps: SourceStep[] }> {
 		clock.advance(rng.pick([0, 1000, 60_000, 1_799_999, 1_800_000, 1_800_001, 3_600_000]));
 		if (rng.chance(0.3)) urls = rng.shuffle([...WORKBOOK_URLS]).slice(0, rng.int(0, 4));
 		const script: ScriptEntry[] = [];
-		const stocks = rng.picks(["7203", "9984", "130A", "6758", "0000"], rng.int(0, 3)).map((symbol) => ({
-			symbol,
-			needName: rng.chance(0.6),
-		}));
+		const stocks = rng
+			.picks(["7203", "9984", "130A", "6758", "0000"], rng.int(0, 3))
+			.map((symbol) => ({
+				symbol,
+				needName: rng.chance(0.6),
+			}));
 		script.push(
-			rng.chance(0.08) ? fetchError("HTTP_ERROR", "HTTP 503") : { text: indexHtml(urls), contentType: "text/html" },
+			rng.chance(0.08)
+				? fetchError("HTTP_ERROR", "HTTP 503")
+				: { text: indexHtml(urls), contentType: "text/html" },
 		);
 		for (let item = 0; item < urls.length; item += 1) {
 			const roll = rng.float();
@@ -772,7 +862,15 @@ async function runSourceCase(rng: Rng): Promise<{ steps: SourceStep[] }> {
 				script.push({ bytes: base64(zip) });
 			}
 		}
-		const before = rng.pick([[], [], [], [false], [true, false], [true, true, false], [true, true, true, false]]);
+		const before = rng.pick([
+			[],
+			[],
+			[],
+			[false],
+			[true, false],
+			[true, true, false],
+			[true, true, true, false],
+		]);
 		const fresh: FetchEvent[] = [];
 		fetcher = scriptedFetcher(script, fresh);
 		const results = await source.fetchEarnings({
@@ -790,7 +888,9 @@ async function runSourceCase(rng: Rng): Promise<{ steps: SourceStep[] }> {
 			before,
 			script,
 			events: plain(fresh),
-			output: plain(results.map((result) => (result.ok ? { ok: result.value } : { err: result.error }))),
+			output: plain(
+				results.map((result) => (result.ok ? { ok: result.value } : { err: result.error })),
+			),
 		});
 	}
 	return { steps };

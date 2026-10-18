@@ -21,44 +21,48 @@ import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { PipelineReporter } from "@research/application";
-import { isGoogleSignInUrl } from "@research/contracts";
 import type { ClaimedJob } from "@research/contracts";
+import { isGoogleSignInUrl } from "@research/contracts";
 import { err, ok, type Result } from "@research/domain";
 import type { EventLogger } from "@research/effects";
-import {
-	createCalendar,
-	deleteEvent,
-	getCalendar,
-	insertEvent,
-	listManagedEvents,
-	updateEvent,
-	type CalendarCallDeps,
-	type CalendarEventWrite,
-	type GoogleCallCode,
-} from "../../packages/adapters/src/google/googleCalendarClient.ts";
-import type { GoogleHttpError, GoogleHttpRequest, GoogleHttpResult } from "../../packages/adapters/src/google/googleHttp.ts";
-import {
-	buildAuthorizationUrl,
-	codeChallengeS256,
-	exchangeCode,
-	mapTokenFailure,
-	refreshAccessToken,
-	revokeToken,
-	scopeGranted,
-	newCodeVerifier,
-	newOAuthState,
-} from "../../packages/adapters/src/google/googleOAuth.ts";
-import {
-	deleteGoogleTokenFile,
-	readGoogleTokenFile,
-	writeGoogleTokenFile,
-} from "../../packages/adapters/src/google/googleTokenStore.ts";
 import {
 	discardStoredGoogleGrant,
 	executeGoogleCalendar,
 	type GoogleExecutionEnv,
 } from "../../apps/runner/src/googleCalendar.ts";
 import { createMarketPacer } from "../../apps/runner/src/marketPacing.ts";
+import {
+	type CalendarCallDeps,
+	type CalendarEventWrite,
+	createCalendar,
+	deleteEvent,
+	type GoogleCallCode,
+	getCalendar,
+	insertEvent,
+	listManagedEvents,
+	updateEvent,
+} from "../../packages/adapters/src/google/googleCalendarClient.ts";
+import type {
+	GoogleHttpError,
+	GoogleHttpRequest,
+	GoogleHttpResult,
+} from "../../packages/adapters/src/google/googleHttp.ts";
+import {
+	buildAuthorizationUrl,
+	codeChallengeS256,
+	exchangeCode,
+	mapTokenFailure,
+	newCodeVerifier,
+	newOAuthState,
+	refreshAccessToken,
+	revokeToken,
+	scopeGranted,
+} from "../../packages/adapters/src/google/googleOAuth.ts";
+import {
+	deleteGoogleTokenFile,
+	readGoogleTokenFile,
+	writeGoogleTokenFile,
+} from "../../packages/adapters/src/google/googleTokenStore.ts";
 import { plain, Rng } from "./finance/support.ts";
 import type { VectorExporter, VectorFile } from "./shared.ts";
 
@@ -87,7 +91,8 @@ function recordRequest(request: GoogleHttpRequest): RecordedRequest {
 }
 
 function answerOf(answer: HttpAnswer | undefined): GoogleHttpResult {
-	if (answer === undefined) return ok({ status: 404, location: null, contentType: null, text: "{}" });
+	if (answer === undefined)
+		return ok({ status: 404, location: null, contentType: null, text: "{}" });
 	if ("error" in answer) return err(answer.error);
 	return ok({
 		status: answer.status,
@@ -144,11 +149,43 @@ const TOKEN_BODIES: readonly string[] = [
 	'{"error":"x","error":"invalid_grant"}',
 ];
 
-const STATUSES: readonly (number | null)[] = [null, 200, 201, 204, 299, 300, 301, 302, 307, 399, 400, 401, 403, 404, 408, 429, 500, 503];
+const STATUSES: readonly (number | null)[] = [
+	null,
+	200,
+	201,
+	204,
+	299,
+	300,
+	301,
+	302,
+	307,
+	399,
+	400,
+	401,
+	403,
+	404,
+	408,
+	429,
+	500,
+	503,
+];
 
 function pureCases(rng: Rng): unknown {
-	const clientIds = ["client-id.apps.googleusercontent.com", "a b&c=d", "é日本😀", "x".repeat(200), "", "a+b/c?d#e%f"];
-	const redirects = ["http://127.0.0.1:54321/", "http://127.0.0.1:1/", "http://localhost:80/x?y=z", "", "é"];
+	const clientIds = [
+		"client-id.apps.googleusercontent.com",
+		"a b&c=d",
+		"é日本😀",
+		"x".repeat(200),
+		"",
+		"a+b/c?d#e%f",
+	];
+	const redirects = [
+		"http://127.0.0.1:54321/",
+		"http://127.0.0.1:1/",
+		"http://localhost:80/x?y=z",
+		"",
+		"é",
+	];
 	const states = ["abc", "A-_0".repeat(11), "", "a b", "é"];
 	const urls = [];
 	for (const clientId of clientIds) {
@@ -169,7 +206,10 @@ function pureCases(rng: Rng): unknown {
 		"\u0000",
 		"a b",
 	];
-	const challenges = verifiers.map((verifier) => ({ verifier, challenge: codeChallengeS256(verifier) }));
+	const challenges = verifiers.map((verifier) => ({
+		verifier,
+		challenge: codeChallengeS256(verifier),
+	}));
 	const scopes = [
 		null,
 		"",
@@ -194,7 +234,10 @@ function pureCases(rng: Rng): unknown {
 		challenges,
 		scopes: scopes.map((scope) => ({ scope, output: scopeGranted(scope) })),
 		failures,
-		shapes: random.map((value) => ({ length: value.length, urlSafe: /^[A-Za-z0-9_-]{43}$/.test(value) })),
+		shapes: random.map((value) => ({
+			length: value.length,
+			urlSafe: /^[A-Za-z0-9_-]{43}$/.test(value),
+		})),
 	};
 }
 
@@ -269,7 +312,14 @@ async function oauthCases(rng: Rng): Promise<OAuthCase[]> {
 				cases.push(await runOAuth(op, [{ status, text: body }]));
 			}
 		}
-		for (const code of ["HOST_NOT_ALLOWED", "DNS_FAILED", "UNSAFE_DESTINATION", "NETWORK_ERROR", "TIMEOUT", "RESPONSE_TOO_LARGE"] as const) {
+		for (const code of [
+			"HOST_NOT_ALLOWED",
+			"DNS_FAILED",
+			"UNSAFE_DESTINATION",
+			"NETWORK_ERROR",
+			"TIMEOUT",
+			"RESPONSE_TOO_LARGE",
+		] as const) {
 			cases.push(await runOAuth(op, [{ error: { code, detail: "d" } }]));
 		}
 	}
@@ -325,12 +375,35 @@ function managedEvent(rng: Rng): unknown {
 		status: rng.pick(["confirmed", "cancelled", "tentative", undefined]),
 		summary: rng.pick(["S", "", undefined, "日本"]),
 		description: rng.pick(["D", undefined]),
-		start: rng.pick<unknown>([{ date: "2026-10-29" }, { dateTime: "2026-10-29T10:00:00Z" }, { date: "2026-10-29", dateTime: "x" }, {}, undefined, { dateTime: "😀😀😀😀😀😀😀😀😀😀😀" }, { dateTime: "short" }, { date: "" }]),
-		end: rng.pick<unknown>([{ date: "2026-10-30" }, { dateTime: "2026-10-30T10:00:00Z" }, undefined, {}]),
+		start: rng.pick<unknown>([
+			{ date: "2026-10-29" },
+			{ dateTime: "2026-10-29T10:00:00Z" },
+			{ date: "2026-10-29", dateTime: "x" },
+			{},
+			undefined,
+			{ dateTime: "😀😀😀😀😀😀😀😀😀😀😀" },
+			{ dateTime: "short" },
+			{ date: "" },
+		]),
+		end: rng.pick<unknown>([
+			{ date: "2026-10-30" },
+			{ dateTime: "2026-10-30T10:00:00Z" },
+			undefined,
+			{},
+		]),
 	};
 	for (const key of Object.keys(event)) if (event[key] === undefined) delete event[key];
 	if (rng.chance(0.06)) {
-		return rng.pick([null, "x", { id: "" }, { id: 5 }, { id: "ok", status: 5 }, { id: "ok", start: null }, { id: "ok", start: { date: 5 } }, { id: "ok", summary: null }]);
+		return rng.pick([
+			null,
+			"x",
+			{ id: "" },
+			{ id: 5 },
+			{ id: "ok", status: 5 },
+			{ id: "ok", start: null },
+			{ id: "ok", start: { date: 5 } },
+			{ id: "ok", summary: null },
+		]);
 	}
 	return event;
 }
@@ -347,10 +420,23 @@ function calendarBody(rng: Rng, op: CalendarOp["name"]): HttpAnswer {
 				}),
 			};
 		}
-		if (roll < 0.62) return { status: 200, text: rng.pick(["{}", "[]", "{oops", '{"nextPageToken":5}', '{"items":5}', '{"items":[null]}']) };
+		if (roll < 0.62)
+			return {
+				status: 200,
+				text: rng.pick([
+					"{}",
+					"[]",
+					"{oops",
+					'{"nextPageToken":5}',
+					'{"items":5}',
+					'{"items":[null]}',
+				]),
+			};
 	} else if (op === "get" || op === "create") {
-		if (roll < 0.5) return { status: 200, text: JSON.stringify({ id: rng.pick(["cal_1", "cal 2/é"]) }) };
-		if (roll < 0.58) return { status: 200, text: rng.pick(["{}", '{"id":""}', '{"id":5}', "[]", "{oops", ""]) };
+		if (roll < 0.5)
+			return { status: 200, text: JSON.stringify({ id: rng.pick(["cal_1", "cal 2/é"]) }) };
+		if (roll < 0.58)
+			return { status: 200, text: rng.pick(["{}", '{"id":""}', '{"id":5}', "[]", "{oops", ""]) };
 		if (op === "get" && roll < 0.68) return { status: 404, text: "{}" };
 	} else if (op === "insert") {
 		if (roll < 0.5) return { status: 200, text: "{}" };
@@ -428,7 +514,7 @@ async function runCalendar(
 		else if (op.name === "create") {
 			result = await createCalendar(deps, {
 				summary: "Earnings calendar",
-				description: "d \"q\" é",
+				description: 'd "q" é',
 				timeZone: "UTC",
 			});
 		} else if (op.name === "list") result = await listManagedEvents(deps, op.calendarId);
@@ -458,7 +544,8 @@ async function calendarCases(rng: Rng): Promise<CalendarCase[]> {
 			const calendarId = rng.pick(CALENDAR_IDS);
 			if (name === "create") return { name };
 			if (name === "get" || name === "list") return { name, calendarId };
-			if (name === "delete") return { name, calendarId, eventId: rng.pick(["a".repeat(32), "c/d e", "é", "x?y"]) };
+			if (name === "delete")
+				return { name, calendarId, eventId: rng.pick(["a".repeat(32), "c/d e", "é", "x?y"]) };
 			return { name, calendarId, body: eventBody(rng) };
 		});
 		const script: HttpAnswer[] = [];
@@ -466,22 +553,59 @@ async function calendarCases(rng: Rng): Promise<CalendarCase[]> {
 			const op = ops[Math.min(Math.floor(item / 3), ops.length - 1)];
 			script.push(
 				rng.chance(0.05)
-					? { error: { code: rng.pick(["TIMEOUT", "NETWORK_ERROR", "RESPONSE_TOO_LARGE", "DNS_FAILED"] as const), detail: "d" } }
+					? {
+							error: {
+								code: rng.pick([
+									"TIMEOUT",
+									"NETWORK_ERROR",
+									"RESPONSE_TOO_LARGE",
+									"DNS_FAILED",
+								] as const),
+								detail: "d",
+							},
+						}
 					: calendarBody(rng, op?.name ?? "get"),
 			);
 		}
 		const refreshes: RefreshAnswer[] = Array.from({ length: 4 }, () =>
-			rng.chance(0.8) ? { token: `tok-${rng.int(1, 9)}` } : { code: rng.pick(["GOOGLE_AUTH_EXPIRED", "GOOGLE_RATE_LIMITED", "GOOGLE_REQUEST_FAILED", "ABORTED"]) },
+			rng.chance(0.8)
+				? { token: `tok-${rng.int(1, 9)}` }
+				: {
+						code: rng.pick([
+							"GOOGLE_AUTH_EXPIRED",
+							"GOOGLE_RATE_LIMITED",
+							"GOOGLE_REQUEST_FAILED",
+							"ABORTED",
+						]),
+					},
 		);
 		const before = Array.from({ length: rng.int(0, 4) }, () => rng.chance(0.9));
 		cases.push(
-			await runCalendar(ops, before, refreshes, rng.chance(0.12) ? rng.int(1, 4) : null, rng.chance(0.03), script),
+			await runCalendar(
+				ops,
+				before,
+				refreshes,
+				rng.chance(0.12) ? rng.int(1, 4) : null,
+				rng.chance(0.03),
+				script,
+			),
 		);
 	}
 	// More pages than the bound.
-	const endless: HttpAnswer[] = Array.from({ length: 12 }, () => ({ status: 200, text: JSON.stringify({ items: [], nextPageToken: "more" }) }));
-	cases.push(await runCalendar([{ name: "list", calendarId: "cal_1" }], [], [], null, false, endless));
-	const ten: HttpAnswer[] = [...Array.from({ length: 9 }, () => ({ status: 200, text: JSON.stringify({ items: [], nextPageToken: "more" }) })), { status: 200, text: JSON.stringify({ items: [{ id: "last" }] }) }];
+	const endless: HttpAnswer[] = Array.from({ length: 12 }, () => ({
+		status: 200,
+		text: JSON.stringify({ items: [], nextPageToken: "more" }),
+	}));
+	cases.push(
+		await runCalendar([{ name: "list", calendarId: "cal_1" }], [], [], null, false, endless),
+	);
+	const ten: HttpAnswer[] = [
+		...Array.from({ length: 9 }, () => ({
+			status: 200,
+			text: JSON.stringify({ items: [], nextPageToken: "more" }),
+		})),
+		{ status: 200, text: JSON.stringify({ items: [{ id: "last" }] }) },
+	];
 	cases.push(await runCalendar([{ name: "list", calendarId: "cal_1" }], [], [], null, false, ten));
 	return cases;
 }
@@ -493,7 +617,7 @@ async function tokenStoreCases(rng: Rng): Promise<unknown> {
 	try {
 		const reads: unknown[] = [];
 		const record = {
-			version: 1,
+			version: 1 as const,
 			refreshToken: "rt",
 			calendarId: "cal_1",
 			scope: "https://www.googleapis.com/auth/calendar.app.created",
@@ -557,7 +681,10 @@ async function tokenStoreCases(rng: Rng): Promise<unknown> {
 			let outcome: unknown;
 			try {
 				await writeGoogleTokenFile(path, value);
-				outcome = { text: await readFile(path, "utf8"), mode: ((await stat(path)).mode & 0o777).toString(8) };
+				outcome = {
+					text: await readFile(path, "utf8"),
+					mode: ((await stat(path)).mode & 0o777).toString(8),
+				};
 			} catch {
 				outcome = { failed: true };
 			}
@@ -628,11 +755,13 @@ function maskBody(body: string | null, urlParams: URLSearchParams | null): unkno
 	if (params.has("code_verifier") && urlParams !== null) {
 		const verifier = params.get("code_verifier") ?? "";
 		const challenge = createHash("sha256").update(verifier).digest("base64url");
-		if (challenge !== urlParams.get("code_challenge")) throw new Error("verifier does not match the challenge");
+		if (challenge !== urlParams.get("code_challenge"))
+			throw new Error("verifier does not match the challenge");
 		params.set("code_verifier", "<verifier>");
 	}
 	if (params.has("redirect_uri") && urlParams !== null) {
-		if (params.get("redirect_uri") !== urlParams.get("redirect_uri")) throw new Error("redirect mismatch");
+		if (params.get("redirect_uri") !== urlParams.get("redirect_uri"))
+			throw new Error("redirect mismatch");
 		params.set("redirect_uri", "<redirect>");
 	}
 	return params.toString();
@@ -662,7 +791,13 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 	try {
 		const tokenFile = join(dir, "sub", "google-token.json");
 		if (spec.tokenFile !== null) {
-			await writeGoogleTokenFile(tokenFile, { version: 1, refreshToken: "x", calendarId: "x", scope: "x", savedAt: "x" });
+			await writeGoogleTokenFile(tokenFile, {
+				version: 1,
+				refreshToken: "x",
+				calendarId: "x",
+				scope: "x",
+				savedAt: "x",
+			});
 			await writeFile(tokenFile, spec.tokenFile);
 		}
 		let nowMs = Date.UTC(2026, 9, 17, 3, 0, 0);
@@ -684,7 +819,12 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		const http = async (request: GoogleHttpRequest): Promise<GoogleHttpResult> => {
 			const url = new URL(request.path, "https://google.test");
 			const key = `${request.method} ${url.pathname}`;
-			requests.push({ ...recordRequest(request), path: request.path, body: null, masked: maskBody(request.body, urlParams) });
+			requests.push({
+				...recordRequest(request),
+				path: request.path,
+				body: null,
+				masked: maskBody(request.body, urlParams),
+			});
 			seenCalls.n += 1;
 			const route = spec.routes.find((candidate) => candidate.key === key);
 			let answer: HttpAnswer | undefined;
@@ -730,7 +870,11 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 				});
 				return {
 					async pace(provider, signal, requests) {
-						const granted = await inner.pace(provider, signal, ...(requests === undefined ? [] : [requests]));
+						const granted = await inner.pace(
+							provider,
+							signal,
+							...(requests === undefined ? [] : [requests]),
+						);
 						paceCalls.push({ provider, granted });
 						return granted;
 					},
@@ -765,7 +909,10 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		}
 		if (spec.action === "connect" && spec.browser.kind === "callbacks") {
 			const delivered = await waitFor(
-				() => sentUrls.length > 0 && (spec.deliverAfterFailures === null ? false : attempts > spec.deliverAfterFailures) || controller.signal.aborted,
+				() =>
+					(sentUrls.length > 0 &&
+						(spec.deliverAfterFailures === null ? false : attempts > spec.deliverAfterFailures)) ||
+					controller.signal.aborted,
 			);
 			const sent = sentUrls.at(-1);
 			if (delivered && sent !== undefined && !controller.signal.aborted) {
@@ -776,10 +923,12 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 					let query: string;
 					let method = "GET";
 					let host = `127.0.0.1:${port}`;
-					if (request.kind === "code") query = `code=${encodeURIComponent(request.code)}&state=${state}`;
+					if (request.kind === "code")
+						query = `code=${encodeURIComponent(request.code)}&state=${state}`;
 					else if (request.kind === "badState") query = `code=c&state=${state}x`;
 					else if (request.kind === "noState") query = "code=c";
-					else if (request.kind === "error") query = `error=${encodeURIComponent(request.error)}&state=${state}`;
+					else if (request.kind === "error")
+						query = `error=${encodeURIComponent(request.error)}&state=${state}`;
 					else if (request.kind === "emptyCode") query = `code=&state=${state}`;
 					else if (request.kind === "longCode") query = `code=${"x".repeat(501)}&state=${state}`;
 					else if (request.kind === "post") {
@@ -791,7 +940,14 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 					}
 					const status = await new Promise<number | string>((resolve) => {
 						const outgoing = httpRequest(
-							{ host: "127.0.0.1", port: Number(port), method, path: `/?${query}`, headers: { host }, agent: false },
+							{
+								host: "127.0.0.1",
+								port: Number(port),
+								method,
+								path: `/?${query}`,
+								headers: { host },
+								agent: false,
+							},
 							(response) => {
 								response.resume();
 								response.once("end", () => resolve(response.statusCode ?? 0));
@@ -844,9 +1000,10 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 }
 
 function logger(sink: FlowLog[]): EventLogger {
-	const write = (level: string) => (event: string, fields?: { readonly [key: string]: unknown }) => {
-		sink.push({ level, event, fields: plain(fields ?? {}) });
-	};
+	const write =
+		(level: string) => (event: string, fields?: { readonly [key: string]: unknown }) => {
+			sink.push({ level, event, fields: plain(fields ?? {}) });
+		};
 	return { info: write("info"), warn: write("warn"), error: write("error"), logFailures: () => 0 };
 }
 
@@ -861,7 +1018,10 @@ const BODY = (n: string, summary: string) => ({
 	sourceUrl: "https://finnhub.io/",
 });
 
-function jobOf(action: "connect" | "sync" | "disconnect", extra: { [key: string]: unknown } = {}): unknown {
+function jobOf(
+	action: "connect" | "sync" | "disconnect",
+	extra: { [key: string]: unknown } = {},
+): unknown {
 	return {
 		kind: "google-calendar",
 		runId: "run_google",
@@ -875,7 +1035,12 @@ function jobOf(action: "connect" | "sync" | "disconnect", extra: { [key: string]
 	};
 }
 
-const GRANTED = JSON.stringify({ access_token: "at-1", refresh_token: "rt-1", scope: SCOPE, expires_in: 3600 });
+const GRANTED = JSON.stringify({
+	access_token: "at-1",
+	refresh_token: "rt-1",
+	scope: SCOPE,
+	expires_in: 3600,
+});
 const OK_CAL = (id: string): HttpAnswer => ({ status: 200, text: JSON.stringify({ id }) });
 const OK_EMPTY: HttpAnswer = { status: 200, text: "{}" };
 
@@ -894,103 +1059,462 @@ async function flowCases(): Promise<FlowCase[]> {
 		timeoutFires: false,
 		abortAt: null as string | null,
 	};
-	const connect = (over: Partial<Omit<FlowCase, "output" | "action" | "job">>, extra: Route[] = []): Promise<FlowCase> =>
+	const connect = (
+		over: Partial<Omit<FlowCase, "output" | "action" | "job">>,
+		extra: Route[] = [],
+	): Promise<FlowCase> =>
 		runFlow({ ...base, action: "connect", job: jobOf("connect"), routes: extra, ...over });
-	const code = (c = "auth-code-1"): Browser => ({ kind: "callbacks", requests: [{ kind: "code", code: c }] });
+	const code = (c = "auth-code-1"): Browser => ({
+		kind: "callbacks",
+		requests: [{ kind: "code", code: c }],
+	});
 	// Connect.
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_1")] })));
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_1")],
+			}),
+		),
+	);
 	cases.push(await connect({ clientConfigured: false }));
 	cases.push(await connect({ timeoutFires: true }));
-	cases.push(await connect({ browser: { kind: "callbacks", requests: [{ kind: "error", error: "access_denied" }] } }));
-	cases.push(await connect({ browser: { kind: "callbacks", requests: [{ kind: "error", error: "server_error" }] } }));
+	cases.push(
+		await connect({
+			browser: { kind: "callbacks", requests: [{ kind: "error", error: "access_denied" }] },
+		}),
+	);
+	cases.push(
+		await connect({
+			browser: { kind: "callbacks", requests: [{ kind: "error", error: "server_error" }] },
+		}),
+	);
 	cases.push(await connect({ deliverAfterFailures: null }));
-	cases.push(await connect({ deliverAfterFailures: 2, browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_2")] })));
-	cases.push(await connect({ deliverAfterFailures: 3, browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_2")] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 400, text: '{"error":"invalid_grant"}' }] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 429, text: "{}" }] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: JSON.stringify({ access_token: "a", refresh_token: "rt-1", scope: "openid" }) }], "POST /revoke": [OK_EMPTY] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: JSON.stringify({ access_token: "a", scope: SCOPE }) }] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [{ status: 403, text: '{"error":{"errors":[{"reason":"rateLimitExceeded"}]}}' }], "POST /revoke": [OK_EMPTY] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [{ status: 500, text: "{}" }], "POST /revoke": [{ status: 500, text: "{}" }] })));
-	cases.push(await connect({ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "GET /calendar/v3/calendars/cal_old": [OK_CAL("cal_old")] })));
-	cases.push(await connect({ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "GET /calendar/v3/calendars/cal_old": [{ status: 404, text: "{}" }], "POST /calendar/v3/calendars": [OK_CAL("cal_new")] })));
-	cases.push(await connect({ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "GET /calendar/v3/calendars/cal_old": [{ status: 500, text: "{}" }], "POST /revoke": [OK_EMPTY] })));
-	cases.push(await connect({ browser: code(), tokenFile: "{corrupt" }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_3")] })));
-	cases.push(await connect({ browser: { kind: "callbacks", requests: [{ kind: "badState" }, { kind: "noState" }, { kind: "emptyCode" }, { kind: "longCode" }, { kind: "wrongHost" }, { kind: "post" }, { kind: "code", code: "ok-code" }] } }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_4")] })));
-	cases.push(await connect({ browser: { kind: "callbacks", requests: [{ kind: "code", code: "special &=+/ code" }] } }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal 5/é")] })));
+	cases.push(
+		await connect(
+			{ deliverAfterFailures: 2, browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_2")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ deliverAfterFailures: 3, browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_2")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({ "POST /token": [{ status: 400, text: '{"error":"invalid_grant"}' }] }),
+		),
+	);
+	cases.push(
+		await connect({ browser: code() }, routes({ "POST /token": [{ status: 429, text: "{}" }] })),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [
+					{
+						status: 200,
+						text: JSON.stringify({ access_token: "a", refresh_token: "rt-1", scope: "openid" }),
+					},
+				],
+				"POST /revoke": [OK_EMPTY],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: JSON.stringify({ access_token: "a", scope: SCOPE }) }],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [
+					{ status: 403, text: '{"error":{"errors":[{"reason":"rateLimitExceeded"}]}}' },
+				],
+				"POST /revoke": [OK_EMPTY],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [{ status: 500, text: "{}" }],
+				"POST /revoke": [{ status: 500, text: "{}" }],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"GET /calendar/v3/calendars/cal_old": [OK_CAL("cal_old")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"GET /calendar/v3/calendars/cal_old": [{ status: 404, text: "{}" }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_new")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code(), tokenFile: tokenRecordText("old-rt", "cal_old") },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"GET /calendar/v3/calendars/cal_old": [{ status: 500, text: "{}" }],
+				"POST /revoke": [OK_EMPTY],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code(), tokenFile: "{corrupt" },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_3")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{
+				browser: {
+					kind: "callbacks",
+					requests: [
+						{ kind: "badState" },
+						{ kind: "noState" },
+						{ kind: "emptyCode" },
+						{ kind: "longCode" },
+						{ kind: "wrongHost" },
+						{ kind: "post" },
+						{ kind: "code", code: "ok-code" },
+					],
+				},
+			},
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_4")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: { kind: "callbacks", requests: [{ kind: "code", code: "special &=+/ code" }] } },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal 5/é")],
+			}),
+		),
+	);
 	// A 401 on the first calendar call refreshes once.
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }, { status: 200, text: JSON.stringify({ access_token: "at-2" }) }], "POST /calendar/v3/calendars": [{ status: 401, text: "{}" }, OK_CAL("cal_6")] })));
-	cases.push(await connect({ browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }, { status: 400, text: '{"error":"invalid_grant"}' }], "POST /calendar/v3/calendars": [{ status: 401, text: "{}" }], "POST /revoke": [OK_EMPTY] })));
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [
+					{ status: 200, text: GRANTED },
+					{ status: 200, text: JSON.stringify({ access_token: "at-2" }) },
+				],
+				"POST /calendar/v3/calendars": [{ status: 401, text: "{}" }, OK_CAL("cal_6")],
+			}),
+		),
+	);
+	cases.push(
+		await connect(
+			{ browser: code() },
+			routes({
+				"POST /token": [
+					{ status: 200, text: GRANTED },
+					{ status: 400, text: '{"error":"invalid_grant"}' },
+				],
+				"POST /calendar/v3/calendars": [{ status: 401, text: "{}" }],
+				"POST /revoke": [OK_EMPTY],
+			}),
+		),
+	);
 	// Aborts at every stop.
-	for (const abortAt of ["before", "authUrl", "state:collecting", "state:analyzing", "state:verifying", "POST /token", "POST /calendar/v3/calendars", "state:publishing"]) {
-		cases.push(await connect({ abortAt, browser: code() }, routes({ "POST /token": [{ status: 200, text: GRANTED }], "POST /calendar/v3/calendars": [OK_CAL("cal_7")], "POST /revoke": [OK_EMPTY] })));
+	for (const abortAt of [
+		"before",
+		"authUrl",
+		"state:collecting",
+		"state:analyzing",
+		"state:verifying",
+		"POST /token",
+		"POST /calendar/v3/calendars",
+		"state:publishing",
+	]) {
+		cases.push(
+			await connect(
+				{ abortAt, browser: code() },
+				routes({
+					"POST /token": [{ status: 200, text: GRANTED }],
+					"POST /calendar/v3/calendars": [OK_CAL("cal_7")],
+					"POST /revoke": [OK_EMPTY],
+				}),
+			),
+		);
 	}
 	// Sync.
 	const syncJob = (events: unknown[], extra: { [key: string]: unknown } = {}) =>
 		jobOf("sync", { calendarId: "cal_1", desiredDigest: "ab".repeat(32), events, ...extra });
 	const stored = tokenRecordText("rt-stored", "cal_stored");
 	const syncRoutes = (over: { [key: string]: HttpAnswer[] }) =>
-		routes({ "POST /token": [{ status: 200, text: JSON.stringify({ access_token: "at-s" }) }], ...over });
-	const sync = (job: unknown, over: Partial<Omit<FlowCase, "output" | "action" | "job">>, extra: Route[]) =>
-		runFlow({ ...base, action: "sync", job, routes: extra, ...over });
-	const existingList = (items: unknown[]): HttpAnswer => ({ status: 200, text: JSON.stringify({ items }) });
-	cases.push(await sync(syncJob([BODY("a", "New title"), BODY("b", "B")]), { tokenFile: stored }, syncRoutes({
-		"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
-		"GET /calendar/v3/calendars/cal_stored/events": [existingList([
-			{ id: "a".repeat(32), status: "confirmed", summary: "Old title", description: "desc a", start: { date: "2026-10-29" }, end: { date: "2026-10-30" } },
-			{ id: "c".repeat(32), status: "confirmed", summary: "C", description: "desc c", start: { date: "2026-10-29" }, end: { date: "2026-10-30" } },
-			{ id: "d".repeat(32), status: "cancelled", summary: "D", description: "", start: { date: "2026-10-29" }, end: { date: "2026-10-30" } },
-		])],
-		[`DELETE /calendar/v3/calendars/cal_stored/events/${"c".repeat(32)}`]: [{ status: 204, text: "" }],
-		[`PUT /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
-		"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
-	})));
-	cases.push(await sync(syncJob([BODY("a", "A")]), { tokenFile: stored }, syncRoutes({
-		"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
-		"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
-		"POST /calendar/v3/calendars/cal_stored/events": [{ status: 409, text: "{}" }],
-		[`PUT /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
-	})));
-	cases.push(await sync(syncJob([BODY("a", "A")]), { tokenFile: stored }, syncRoutes({
-		"GET /calendar/v3/calendars/cal_stored": [{ status: 404, text: "{}" }],
-		"POST /calendar/v3/calendars": [OK_CAL("cal_made")],
-		"POST /calendar/v3/calendars/cal_made/events": [OK_EMPTY],
-	})));
+		routes({
+			"POST /token": [{ status: 200, text: JSON.stringify({ access_token: "at-s" }) }],
+			...over,
+		});
+	const sync = (
+		job: unknown,
+		over: Partial<Omit<FlowCase, "output" | "action" | "job">>,
+		extra: Route[],
+	) => runFlow({ ...base, action: "sync", job, routes: extra, ...over });
+	const existingList = (items: unknown[]): HttpAnswer => ({
+		status: 200,
+		text: JSON.stringify({ items }),
+	});
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "New title"), BODY("b", "B")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [
+					existingList([
+						{
+							id: "a".repeat(32),
+							status: "confirmed",
+							summary: "Old title",
+							description: "desc a",
+							start: { date: "2026-10-29" },
+							end: { date: "2026-10-30" },
+						},
+						{
+							id: "c".repeat(32),
+							status: "confirmed",
+							summary: "C",
+							description: "desc c",
+							start: { date: "2026-10-29" },
+							end: { date: "2026-10-30" },
+						},
+						{
+							id: "d".repeat(32),
+							status: "cancelled",
+							summary: "D",
+							description: "",
+							start: { date: "2026-10-29" },
+							end: { date: "2026-10-30" },
+						},
+					]),
+				],
+				[`DELETE /calendar/v3/calendars/cal_stored/events/${"c".repeat(32)}`]: [
+					{ status: 204, text: "" },
+				],
+				[`PUT /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
+				"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [{ status: 409, text: "{}" }],
+				[`PUT /calendar/v3/calendars/cal_stored/events/${"a".repeat(32)}`]: [OK_EMPTY],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [{ status: 404, text: "{}" }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_made")],
+				"POST /calendar/v3/calendars/cal_made/events": [OK_EMPTY],
+			}),
+		),
+	);
 	cases.push(await sync(syncJob([]), { tokenFile: null }, syncRoutes({})));
 	cases.push(await sync(syncJob([]), { tokenFile: "{bad" }, syncRoutes({})));
-	cases.push(await sync(syncJob([]), { clientConfigured: false, tokenFile: stored }, syncRoutes({})));
-	cases.push(await sync(jobOf("sync", { calendarId: "cal_1" }), { tokenFile: stored }, syncRoutes({})));
-	cases.push(await sync(jobOf("sync", { desiredDigest: "ab".repeat(32), events: [] }), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [existingList([])] })));
-	cases.push(await sync(syncJob([], { calendarId: null }), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [existingList([])] })));
-	cases.push(await sync(syncJob([BODY("a", "A"), BODY("a", "dup")]), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [existingList([])] })));
-	cases.push(await sync(syncJob([]), { tokenFile: stored }, routes({ "POST /token": [{ status: 400, text: '{"error":"invalid_grant"}' }] })));
-	cases.push(await sync(syncJob([]), { tokenFile: stored }, routes({ "POST /token": [{ status: 429, text: "{}" }] })));
-	cases.push(await sync(syncJob([BODY("a", "A")]), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [{ status: 500, text: "{}" }] })));
-	cases.push(await sync(syncJob([BODY("a", "A")]), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [existingList([])], "POST /calendar/v3/calendars/cal_stored/events": [{ status: 429, text: "{}" }] })));
-	cases.push(await sync(syncJob([BODY("a", "A")]), { tokenFile: stored }, syncRoutes({ "GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")], "GET /calendar/v3/calendars/cal_stored/events": [existingList([])], "POST /calendar/v3/calendars/cal_stored/events": [{ status: 401, text: "{}" }, OK_EMPTY], "POST /token": [{ status: 200, text: JSON.stringify({ access_token: "at-1" }) }, { status: 200, text: JSON.stringify({ access_token: "at-2" }) }] })));
-	for (const abortAt of ["before", "state:collecting", "state:analyzing", "POST /token", "GET /calendar/v3/calendars/cal_stored", "GET /calendar/v3/calendars/cal_stored/events", "state:verifying", "POST /calendar/v3/calendars/cal_stored/events"]) {
-		cases.push(await sync(syncJob([BODY("a", "A"), BODY("b", "B")]), { tokenFile: stored, abortAt }, syncRoutes({
-			"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
-			"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
-			"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
-		})));
+	cases.push(
+		await sync(syncJob([]), { clientConfigured: false, tokenFile: stored }, syncRoutes({})),
+	);
+	cases.push(
+		await sync(jobOf("sync", { calendarId: "cal_1" }), { tokenFile: stored }, syncRoutes({})),
+	);
+	cases.push(
+		await sync(
+			jobOf("sync", { desiredDigest: "ab".repeat(32), events: [] }),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([], { calendarId: null }),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A"), BODY("a", "dup")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([]),
+			{ tokenFile: stored },
+			routes({ "POST /token": [{ status: 400, text: '{"error":"invalid_grant"}' }] }),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([]),
+			{ tokenFile: stored },
+			routes({ "POST /token": [{ status: 429, text: "{}" }] }),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [{ status: 500, text: "{}" }],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [{ status: 429, text: "{}" }],
+			}),
+		),
+	);
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")]),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+				"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_stored/events": [{ status: 401, text: "{}" }, OK_EMPTY],
+				"POST /token": [
+					{ status: 200, text: JSON.stringify({ access_token: "at-1" }) },
+					{ status: 200, text: JSON.stringify({ access_token: "at-2" }) },
+				],
+			}),
+		),
+	);
+	for (const abortAt of [
+		"before",
+		"state:collecting",
+		"state:analyzing",
+		"POST /token",
+		"GET /calendar/v3/calendars/cal_stored",
+		"GET /calendar/v3/calendars/cal_stored/events",
+		"state:verifying",
+		"POST /calendar/v3/calendars/cal_stored/events",
+	]) {
+		cases.push(
+			await sync(
+				syncJob([BODY("a", "A"), BODY("b", "B")]),
+				{ tokenFile: stored, abortAt },
+				syncRoutes({
+					"GET /calendar/v3/calendars/cal_stored": [OK_CAL("cal_stored")],
+					"GET /calendar/v3/calendars/cal_stored/events": [existingList([])],
+					"POST /calendar/v3/calendars/cal_stored/events": [OK_EMPTY],
+				}),
+			),
+		);
 	}
 	// Disconnect and discard.
 	const disconnect = (over: Partial<Omit<FlowCase, "output" | "action" | "job">>, extra: Route[]) =>
 		runFlow({ ...base, action: "disconnect", job: jobOf("disconnect"), routes: extra, ...over });
 	cases.push(await disconnect({ tokenFile: stored }, routes({ "POST /revoke": [OK_EMPTY] })));
-	cases.push(await disconnect({ tokenFile: stored }, routes({ "POST /revoke": [{ status: 400, text: "{}" }] })));
-	cases.push(await disconnect({ tokenFile: stored }, routes({ "POST /revoke": [{ error: { code: "NETWORK_ERROR", detail: "x" } }] })));
+	cases.push(
+		await disconnect(
+			{ tokenFile: stored },
+			routes({ "POST /revoke": [{ status: 400, text: "{}" }] }),
+		),
+	);
+	cases.push(
+		await disconnect(
+			{ tokenFile: stored },
+			routes({ "POST /revoke": [{ error: { code: "NETWORK_ERROR", detail: "x" } }] }),
+		),
+	);
 	cases.push(await disconnect({ tokenFile: null }, routes({})));
 	cases.push(await disconnect({ tokenFile: "{corrupt" }, routes({})));
-	cases.push(await disconnect({ tokenFile: stored, abortAt: "before" }, routes({ "POST /revoke": [OK_EMPTY] })));
-	cases.push(await disconnect({ tokenFile: stored, abortAt: "state:collecting" }, routes({ "POST /revoke": [OK_EMPTY] })));
-	cases.push(await disconnect({ tokenFile: stored, abortAt: "POST /revoke" }, routes({ "POST /revoke": [OK_EMPTY] })));
+	cases.push(
+		await disconnect(
+			{ tokenFile: stored, abortAt: "before" },
+			routes({ "POST /revoke": [OK_EMPTY] }),
+		),
+	);
+	cases.push(
+		await disconnect(
+			{ tokenFile: stored, abortAt: "state:collecting" },
+			routes({ "POST /revoke": [OK_EMPTY] }),
+		),
+	);
+	cases.push(
+		await disconnect(
+			{ tokenFile: stored, abortAt: "POST /revoke" },
+			routes({ "POST /revoke": [OK_EMPTY] }),
+		),
+	);
 	cases.push(await disconnect({ tokenFile: null, abortAt: "before" }, routes({})));
 	const discard = (over: Partial<Omit<FlowCase, "output" | "action" | "job">>, extra: Route[]) =>
 		runFlow({ ...base, action: "discard", job: jobOf("disconnect"), routes: extra, ...over });
 	cases.push(await discard({ tokenFile: stored }, routes({ "POST /revoke": [OK_EMPTY] })));
-	cases.push(await discard({ tokenFile: stored }, routes({ "POST /revoke": [{ status: 500, text: "{}" }] })));
+	cases.push(
+		await discard({ tokenFile: stored }, routes({ "POST /revoke": [{ status: 500, text: "{}" }] })),
+	);
 	cases.push(await discard({ tokenFile: null }, routes({})));
 	cases.push(await discard({ tokenFile: "{corrupt" }, routes({})));
 	void rng;

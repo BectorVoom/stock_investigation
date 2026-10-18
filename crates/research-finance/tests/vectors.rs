@@ -1665,3 +1665,39 @@ async fn earnings_refresh_matches_typescript() {
 	}
 	report(&failures);
 }
+
+/// Performance budget of `scripts/bench.ts` (JPX 2,900-row workbook <= 50 ms),
+/// run with `cargo test -p research-finance --release -- --ignored bench`.
+#[test]
+#[ignore = "timing: run in release mode"]
+fn bench_jpx_workbook_parse() {
+	let mut shared = String::from("<sst>");
+	for text in [
+		"Scheduled Dates for Earnings Announcements",
+		"Code",
+		"Issue Name",
+		"Fiscal Year-end",
+		"Fiscal Year/Quarter",
+		"Second quarter",
+	] {
+		shared.push_str(&format!("<si><t>{text}</t></si>"));
+	}
+	for i in 0..2900 {
+		shared.push_str(&format!("<si><t>Company {i} Co., Ltd.</t></si>"));
+	}
+	shared.push_str("</sst>");
+	let mut sheet = String::from(
+		"<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\" t=\"s\"><v>1</v></c><c r=\"C1\" t=\"s\"><v>2</v></c><c r=\"D1\" t=\"s\"><v>3</v></c><c r=\"E1\" t=\"s\"><v>4</v></c></row>",
+	);
+	for i in 0..2900 {
+		let n = i + 2;
+		sheet.push_str(&format!("<row r=\"{n}\"><c r=\"A{n}\"><v>{}</v></c><c r=\"B{n}\"><v>{}</v></c><c r=\"C{n}\" t=\"s\"><v>{}</v></c><c r=\"D{n}\"><v>46477</v></c><c r=\"E{n}\" t=\"s\"><v>5</v></c></row>", 46331 + i % 100, 1000 + i, 6 + i));
+	}
+	sheet.push_str("</sheetData></worksheet>");
+	let start = std::time::Instant::now();
+	let rows = parse_jpx_workbook(&sheet, &shared).unwrap();
+	let elapsed = start.elapsed();
+	eprintln!("JPX workbook, {} rows: {elapsed:?}", rows.len());
+	assert_eq!(rows.len(), 2900);
+	assert!(elapsed.as_millis() <= 50, "{elapsed:?}");
+}

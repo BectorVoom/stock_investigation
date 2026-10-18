@@ -20,10 +20,14 @@ import type {
 	MarketSeriesSource,
 } from "@research/application";
 import { unconfiguredEarningsCalendarSource } from "@research/application";
-import type { ClaimedJob, CompleteJobRequest, EarningsSourceId, MarketProviderId } from "@research/contracts";
+import type {
+	ClaimedJob,
+	CompleteJobRequest,
+	EarningsSourceId,
+	MarketProviderId,
+} from "@research/contracts";
 import { err, ok } from "@research/domain";
 import type { EventLogger } from "@research/effects";
-import { createFinnhubEarningsSource } from "../../../packages/adapters/src/finance/finnhubEarnings.ts";
 import { executeJob } from "../../../apps/runner/src/jobExecution.ts";
 import {
 	createMarketPacer,
@@ -37,7 +41,8 @@ import {
 	twelveDataRateLimit,
 } from "../../../apps/runner/src/marketPacing.ts";
 import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts";
-import { plain, Rng, type ScriptEntry, scriptedFetcher, type FetchEvent } from "./support.ts";
+import { createFinnhubEarningsSource } from "../../../packages/adapters/src/finance/finnhubEarnings.ts";
+import { type FetchEvent, plain, Rng, type ScriptEntry, scriptedFetcher } from "./support.ts";
 
 const BASE_MS = Date.UTC(2026, 9, 17, 3, 0, 0);
 
@@ -69,7 +74,11 @@ function sharedClock(): SharedClock {
 
 /* ---------- limits ---------- */
 
-type LimitSpec = { readonly provider: PacerKey; readonly maxPerWindow: number; readonly windowMs: number };
+type LimitSpec = {
+	readonly provider: string;
+	readonly maxPerWindow: number;
+	readonly windowMs: number;
+};
 
 function standardLimits(twelvePerMinute: number): LimitSpec[] {
 	const entry = (provider: PacerKey, limit: MarketRateLimit): LimitSpec => ({
@@ -87,7 +96,14 @@ function standardLimits(twelvePerMinute: number): LimitSpec[] {
 }
 
 function limitMap(specs: readonly LimitSpec[]): Map<PacerKey, MarketRateLimit> {
-	return new Map(specs.map((spec) => [spec.provider, { maxPerWindow: spec.maxPerWindow, windowMs: spec.windowMs }]));
+	const limits = new Map<PacerKey, MarketRateLimit>();
+	for (const spec of specs) {
+		limits.set(spec.provider as PacerKey, {
+			maxPerWindow: spec.maxPerWindow,
+			windowMs: spec.windowMs,
+		});
+	}
+	return limits;
 }
 
 /* ---------- pacer traces ---------- */
@@ -135,7 +151,8 @@ async function runPacer(
 		clock.advance(op.advanceMs);
 		const local = new AbortController();
 		if (op.abortBefore) local.abort();
-		const signal = abortInSleep === null ? local.signal : AbortSignal.any([local.signal, controller.signal]);
+		const signal =
+			abortInSleep === null ? local.signal : AbortSignal.any([local.signal, controller.signal]);
 		const before = sleeps.length;
 		const granted = await pacer.pace(
 			op.provider as PacerKey,
@@ -156,21 +173,71 @@ async function runPacer(
 async function pacerCases(): Promise<PacerCase[]> {
 	const rng = new Rng(0xbace);
 	const cases: PacerCase[] = [];
-	const op = (provider: string, requests: number | null = null, advanceMs = 0, abortBefore = false): PacerOp => ({
+	const op = (
+		provider: string,
+		requests: number | null = null,
+		advanceMs = 0,
+		abortBefore = false,
+	): PacerOp => ({
 		provider,
 		requests,
 		advanceMs,
 		abortBefore,
 	});
 	// marketPacing.test.ts families.
-	cases.push(await runPacer(standardLimits(8), null, null, Array.from({ length: 10 }, () => op("twelve-data"))));
-	cases.push(await runPacer(standardLimits(8), null, null, Array.from({ length: 4 }, () => op("fred"))));
-	cases.push(await runPacer(standardLimits(8), null, null, [op("unknown-provider"), op("unknown-provider", 5)]));
+	cases.push(
+		await runPacer(
+			standardLimits(8),
+			null,
+			null,
+			Array.from({ length: 10 }, () => op("twelve-data")),
+		),
+	);
+	cases.push(
+		await runPacer(
+			standardLimits(8),
+			null,
+			null,
+			Array.from({ length: 4 }, () => op("fred")),
+		),
+	);
+	cases.push(
+		await runPacer(standardLimits(8), null, null, [
+			op("unknown-provider"),
+			op("unknown-provider", 5),
+		]),
+	);
 	cases.push(await runPacer(standardLimits(8), null, null, [op("twelve-data", null, 0, true)]));
-	cases.push(await runPacer(standardLimits(2), null, 1, Array.from({ length: 5 }, () => op("twelve-data"))));
-	cases.push(await runPacer(standardLimits(8), [["fred", 3], ["jpx", 2]], null, [op("fred"), op("jpx"), op("finnhub")]));
-	cases.push(await runPacer(standardLimits(8), null, null, Array.from({ length: 40 }, () => op("google"))));
-	cases.push(await runPacer(standardLimits(8), null, null, [op("fred", 0), op("fred", 3), op("fred", 101)]));
+	cases.push(
+		await runPacer(
+			standardLimits(2),
+			null,
+			1,
+			Array.from({ length: 5 }, () => op("twelve-data")),
+		),
+	);
+	cases.push(
+		await runPacer(
+			standardLimits(8),
+			[
+				["fred", 3],
+				["jpx", 2],
+			],
+			null,
+			[op("fred"), op("jpx"), op("finnhub")],
+		),
+	);
+	cases.push(
+		await runPacer(
+			standardLimits(8),
+			null,
+			null,
+			Array.from({ length: 40 }, () => op("google")),
+		),
+	);
+	cases.push(
+		await runPacer(standardLimits(8), null, null, [op("fred", 0), op("fred", 3), op("fred", 101)]),
+	);
 	for (let index = 0; index < 300; index += 1) {
 		const limits: LimitSpec[] = rng.chance(0.4)
 			? standardLimits(rng.pick([1, 2, 8, 600]))
@@ -179,7 +246,9 @@ async function pacerCases(): Promise<PacerCase[]> {
 					maxPerWindow: rng.int(1, 5),
 					windowMs: rng.pick([1, 10, 1000, 60_000]),
 				}));
-		const requestsPerSeries = rng.chance(0.3) ? [["fred", rng.int(1, 3)] as const, ["finnhub", rng.int(1, 3)] as const] : null;
+		const requestsPerSeries = rng.chance(0.3)
+			? [["fred", rng.int(1, 3)] as const, ["finnhub", rng.int(1, 3)] as const]
+			: null;
 		const ops = Array.from({ length: rng.int(1, 14) }, () =>
 			op(
 				rng.pick(PROVIDERS),
@@ -188,7 +257,9 @@ async function pacerCases(): Promise<PacerCase[]> {
 				rng.chance(0.05),
 			),
 		);
-		cases.push(await runPacer(limits, requestsPerSeries, rng.chance(0.2) ? rng.int(1, 4) : null, ops));
+		cases.push(
+			await runPacer(limits, requestsPerSeries, rng.chance(0.2) ? rng.int(1, 4) : null, ops),
+		);
 	}
 	return cases;
 }
@@ -221,9 +292,10 @@ interface JobSetup {
 }
 
 function recordingLogger(sink: RecordedLog[]): EventLogger {
-	const write = (level: string) => (event: string, fields?: { readonly [key: string]: unknown }) => {
-		sink.push({ level, event, fields: plain(fields ?? {}) });
-	};
+	const write =
+		(level: string) => (event: string, fields?: { readonly [key: string]: unknown }) => {
+			sink.push({ level, event, fields: plain(fields ?? {}) });
+		};
 	return { info: write("info"), warn: write("warn"), error: write("error"), logFailures: () => 0 };
 }
 
@@ -243,7 +315,11 @@ function harnessFor(setup: JobSetup): Harness {
 	const counters = { sleep: 0, source: 0, before: 0 };
 	const bumpAbort = (where: "sleep" | "source" | "before"): void => {
 		counters[where] += 1;
-		if (setup.abortAt !== null && setup.abortAt.where === where && setup.abortAt.n === counters[where]) {
+		if (
+			setup.abortAt !== null &&
+			setup.abortAt.where === where &&
+			setup.abortAt.n === counters[where]
+		) {
 			shutdown.abort();
 		}
 	};
@@ -260,7 +336,11 @@ function harnessFor(setup: JobSetup): Harness {
 	});
 	const pacer: MarketPacer = {
 		async pace(provider, signal, requests) {
-			const granted = await inner.pace(provider, signal, ...(requests === undefined ? [] : [requests]));
+			const granted = await inner.pace(
+				provider,
+				signal,
+				...(requests === undefined ? [] : [requests]),
+			);
 			pace.push({ provider, requests: requests ?? null, granted });
 			return granted;
 		},
@@ -288,13 +368,21 @@ function harnessFor(setup: JobSetup): Harness {
 
 /** Long observation lists are summarised as their length and both ends. */
 function summarizeCompletion(completion: unknown): unknown {
-	if (typeof completion !== "object" || completion === null || !("series" in completion)) return completion;
+	if (typeof completion !== "object" || completion === null || !("series" in completion))
+		return completion;
 	const { series } = completion as { series: { observations: unknown[] }[] };
 	return {
 		...completion,
 		series: series.map((entry) =>
 			entry.observations.length > 20
-				? { ...entry, observations: { length: entry.observations.length, first: entry.observations[0], last: entry.observations.at(-1) } }
+				? {
+						...entry,
+						observations: {
+							length: entry.observations.length,
+							first: entry.observations[0],
+							last: entry.observations.at(-1),
+						},
+					}
 				: entry,
 		),
 	};
@@ -403,7 +491,13 @@ function fakeMarketSource(
 		return {
 			providerId: provider,
 			async fetchSeries(query) {
-				harness.sourceCalls.push({ provider, symbol: query.symbol, since: query.since, max: query.maxObservations, aborted: query.signal.aborted });
+				harness.sourceCalls.push({
+					provider,
+					symbol: query.symbol,
+					since: query.since,
+					max: query.maxObservations,
+					aborted: query.signal.aborted,
+				});
 				return err({ code: "SOURCE_NOT_CONFIGURED", reason: "not configured" });
 			},
 		};
@@ -412,7 +506,13 @@ function fakeMarketSource(
 	return {
 		providerId: provider,
 		async fetchSeries(query) {
-			harness.sourceCalls.push({ provider, symbol: query.symbol, since: query.since, max: query.maxObservations, aborted: query.signal.aborted });
+			harness.sourceCalls.push({
+				provider,
+				symbol: query.symbol,
+				since: query.since,
+				max: query.maxObservations,
+				aborted: query.signal.aborted,
+			});
 			harness.bumpAbort("source");
 			const answer = answers[index];
 			index += 1;
@@ -470,7 +570,19 @@ function marketAnswer(rng: Rng): MarketAnswer {
 		return { ok: { meta: META, count: rng.pick([0, 1, 5, 12, 800, 801, 805]) } };
 	}
 	if (roll < 0.9) {
-		return { err: { code: rng.pick(["RATE_LIMITED", "SOURCE_FAILED", "NO_DATA", "SERIES_NOT_FOUND", "SOURCE_AUTH_FAILED", "PLAN_NOT_ENTITLED"]), reason: "fixed reason" } };
+		return {
+			err: {
+				code: rng.pick([
+					"RATE_LIMITED",
+					"SOURCE_FAILED",
+					"NO_DATA",
+					"SERIES_NOT_FOUND",
+					"SOURCE_AUTH_FAILED",
+					"PLAN_NOT_ENTITLED",
+				]),
+				reason: "fixed reason",
+			},
+		};
 	}
 	return { throw: "Error" };
 }
@@ -482,16 +594,75 @@ async function marketCases(): Promise<MarketCase[]> {
 	const quiet: JobSetup = { limits: noLimits, abortAt: null, preAborted: false };
 	const ok1: MarketAnswer = { ok: { meta: META, count: 3 } };
 	// The families of marketRefresh.test.ts.
-	cases.push(await runMarket([{ seriesId: "fred:VIXCLS", latestObservedOn: null }, { seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" }], quiet, {}));
-	cases.push(await runMarket([{ seriesId: "fred:VIXCLS", latestObservedOn: null }, { seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" }], quiet, { fred: "unconfigured", "twelve-data": "unconfigured" }));
-	cases.push(await runMarket([{ seriesId: "fred:VIXCLS", latestObservedOn: null }, { seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" }], quiet, { fred: [ok1] }));
-	cases.push(await runMarket([{ seriesId: "fred:VIXCLS", latestObservedOn: null }, { seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" }], quiet, { fred: [{ err: { code: "RATE_LIMITED", reason: "limited" } }], "twelve-data": [{ throw: "Error" }] }));
-	cases.push(await runMarket([{ seriesId: "bogus", latestObservedOn: null }], quiet, { fred: [ok1] }));
-	cases.push(await runMarket([{ seriesId: "fred:VIXCLS", latestObservedOn: null }], { ...quiet, preAborted: true }, { fred: [ok1] }));
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+			],
+			quiet,
+			{},
+		),
+	);
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+			],
+			quiet,
+			{ fred: "unconfigured", "twelve-data": "unconfigured" },
+		),
+	);
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+			],
+			quiet,
+			{ fred: [ok1] },
+		),
+	);
+	cases.push(
+		await runMarket(
+			[
+				{ seriesId: "fred:VIXCLS", latestObservedOn: null },
+				{ seriesId: "twelve-data:AAPL", latestObservedOn: "2026-10-01" },
+			],
+			quiet,
+			{
+				fred: [{ err: { code: "RATE_LIMITED", reason: "limited" } }],
+				"twelve-data": [{ throw: "Error" }],
+			},
+		),
+	);
+	cases.push(
+		await runMarket([{ seriesId: "bogus", latestObservedOn: null }], quiet, { fred: [ok1] }),
+	);
+	cases.push(
+		await runMarket(
+			[{ seriesId: "fred:VIXCLS", latestObservedOn: null }],
+			{ ...quiet, preAborted: true },
+			{ fred: [ok1] },
+		),
+	);
 	cases.push(await runMarket([], quiet, { fred: [ok1] }));
 	// 60 series under the standard limits: FRED takes two grants per series.
-	const sixty = Array.from({ length: 60 }, (_, index) => ({ seriesId: index % 2 === 0 ? `fred:S${index}` : `twelve-data:T${index}`, latestObservedOn: index % 3 === 0 ? "2026-09-01" : null }));
-	cases.push(await runMarket(sixty, { limits: standardLimits(8), abortAt: null, preAborted: false }, { fred: Array.from({ length: 30 }, () => ok1), "twelve-data": Array.from({ length: 30 }, () => ok1) }));
+	const sixty = Array.from({ length: 60 }, (_, index) => ({
+		seriesId: index % 2 === 0 ? `fred:S${index}` : `twelve-data:T${index}`,
+		latestObservedOn: index % 3 === 0 ? "2026-09-01" : null,
+	}));
+	cases.push(
+		await runMarket(
+			sixty,
+			{ limits: standardLimits(8), abortAt: null, preAborted: false },
+			{
+				fred: Array.from({ length: 30 }, () => ok1),
+				"twelve-data": Array.from({ length: 30 }, () => ok1),
+			},
+		),
+	);
 	for (let index = 0; index < 400; index += 1) {
 		const count = rng.int(0, 8);
 		const series = Array.from({ length: count }, () => ({
@@ -502,7 +673,8 @@ async function marketCases(): Promise<MarketCase[]> {
 		for (const provider of ["fred", "twelve-data"]) {
 			const roll = rng.float();
 			if (roll < 0.1) continue;
-			sources[provider] = roll < 0.2 ? "unconfigured" : Array.from({ length: 8 }, () => marketAnswer(rng));
+			sources[provider] =
+				roll < 0.2 ? "unconfigured" : Array.from({ length: 8 }, () => marketAnswer(rng));
 		}
 		const limits = rng.chance(0.5) ? standardLimits(rng.pick([1, 2, 8])) : noLimits;
 		const abortAt = rng.chance(0.25)
@@ -528,7 +700,9 @@ interface EarningsCase {
 	readonly job: unknown;
 	readonly setup: JobSetup;
 	/** Source -> scripted answers (one per call); absent = no registry entry; "unconfigured" = the real unconfigured source; "real-finnhub" = the real adapter over `fetchScript`. */
-	readonly sources: { readonly [source: string]: readonly EarningsAnswer[] | "unconfigured" | "real-finnhub" };
+	readonly sources: {
+		readonly [source: string]: readonly EarningsAnswer[] | "unconfigured" | "real-finnhub";
+	};
 	readonly fetchScript: readonly ScriptEntry[] | null;
 	readonly output: JobRecord;
 }
@@ -592,7 +766,10 @@ async function runEarnings(
 	const registry = new Map<EarningsSourceId, EarningsCalendarSource>();
 	for (const [sourceId, answers] of Object.entries(sources)) {
 		if (answers === "unconfigured") {
-			registry.set(sourceId as EarningsSourceId, unconfiguredEarningsCalendarSource(sourceId as EarningsSourceId));
+			registry.set(
+				sourceId as EarningsSourceId,
+				unconfiguredEarningsCalendarSource(sourceId as EarningsSourceId),
+			);
 		} else if (answers === "real-finnhub") {
 			const events: FetchEvent[] = [];
 			registry.set(
@@ -603,7 +780,10 @@ async function runEarnings(
 				}),
 			);
 		} else {
-			registry.set(sourceId as EarningsSourceId, fakeEarningsSource(sourceId as EarningsSourceId, answers, harness));
+			registry.set(
+				sourceId as EarningsSourceId,
+				fakeEarningsSource(sourceId as EarningsSourceId, answers, harness),
+			);
 		}
 	}
 	const job = {
@@ -616,15 +796,47 @@ async function runEarnings(
 	return { kind: "earnings", job: plain(job), setup, sources, fetchScript, output };
 }
 
-const STOCK_IDS = ["us:AAPL", "us:MSFT", "us:BRK.B", "jp:7203", "jp:130A", "jp:9984", "us:aapl", "xx:1", "us:", "jp:12345", "us:AAPL", "nothing", ":AAPL"];
+const STOCK_IDS = [
+	"us:AAPL",
+	"us:MSFT",
+	"us:BRK.B",
+	"jp:7203",
+	"jp:130A",
+	"jp:9984",
+	"us:aapl",
+	"xx:1",
+	"us:",
+	"jp:12345",
+	"us:AAPL",
+	"nothing",
+	":AAPL",
+];
 
 function earningsResult(rng: Rng): EarningsResultSpec {
 	const roll = rng.float();
 	if (roll < 0.45) {
-		return { ok: { name: rng.pick([null, "Apple Inc", "Toyota Motor Corp."]), events: rng.chance(0.8) ? [EVENT] : Array.from({ length: 10 }, (_, i) => ({ ...EVENT, periodKey: `p${i}` })) } };
+		return {
+			ok: {
+				name: rng.pick([null, "Apple Inc", "Toyota Motor Corp."]),
+				events: rng.chance(0.8)
+					? [EVENT]
+					: Array.from({ length: 10 }, (_, i) => ({ ...EVENT, periodKey: `p${i}` })),
+			},
+		};
 	}
-	if (roll < 0.6) return { err: { code: "NO_SCHEDULED_DATE", name: rng.pick([null, "Apple Inc"]) } };
-	return { err: { code: rng.pick(["SYMBOL_NOT_FOUND", "SOURCE_FAILED", "RATE_LIMITED", "SOURCE_AUTH_FAILED", "PLAN_NOT_ENTITLED"]) } };
+	if (roll < 0.6)
+		return { err: { code: "NO_SCHEDULED_DATE", name: rng.pick([null, "Apple Inc"]) } };
+	return {
+		err: {
+			code: rng.pick([
+				"SYMBOL_NOT_FOUND",
+				"SOURCE_FAILED",
+				"RATE_LIMITED",
+				"SOURCE_AUTH_FAILED",
+				"PLAN_NOT_ENTITLED",
+			]),
+		},
+	};
 }
 
 function earningsAnswer(rng: Rng, expected: number): EarningsAnswer {
@@ -632,7 +844,9 @@ function earningsAnswer(rng: Rng, expected: number): EarningsAnswer {
 	const length = rng.chance(0.9) ? expected : Math.max(0, expected + rng.pick([-1, 1, 2]));
 	return {
 		results: Array.from({ length }, () => earningsResult(rng)),
-		beforePerStock: Array.from({ length: Math.max(expected, length) }, () => rng.pick([0, 1, 1, 2])),
+		beforePerStock: Array.from({ length: Math.max(expected, length) }, () =>
+			rng.pick([0, 1, 1, 2]),
+		),
 	};
 }
 
@@ -646,14 +860,36 @@ async function earningsCases(): Promise<EarningsCase[]> {
 		{ stockId: "jp:7203", name: null },
 	];
 	cases.push(await runEarnings(mixed, quiet, {}, null));
-	cases.push(await runEarnings(mixed, quiet, { finnhub: "unconfigured", jpx: "unconfigured" }, null));
+	cases.push(
+		await runEarnings(mixed, quiet, { finnhub: "unconfigured", jpx: "unconfigured" }, null),
+	);
 	cases.push(
 		await runEarnings(
 			mixed,
 			quiet,
 			{
-				finnhub: [{ results: [{ ok: { name: "Apple Inc", events: [EVENT] } }, { err: { code: "SYMBOL_NOT_FOUND" } }], beforePerStock: [1, 1] }],
-				jpx: [{ results: [{ ok: { name: "Toyota Motor Corp.", events: [{ ...EVENT, periodKey: "fy2027-03-31-second-quarter" }] } }], beforePerStock: [1] }],
+				finnhub: [
+					{
+						results: [
+							{ ok: { name: "Apple Inc", events: [EVENT] } },
+							{ err: { code: "SYMBOL_NOT_FOUND" } },
+						],
+						beforePerStock: [1, 1],
+					},
+				],
+				jpx: [
+					{
+						results: [
+							{
+								ok: {
+									name: "Toyota Motor Corp.",
+									events: [{ ...EVENT, periodKey: "fy2027-03-31-second-quarter" }],
+								},
+							},
+						],
+						beforePerStock: [1],
+					},
+				],
 			},
 			null,
 		),
@@ -662,12 +898,20 @@ async function earningsCases(): Promise<EarningsCase[]> {
 	const realScript = (symbols: readonly string[]): ScriptEntry[] =>
 		symbols.flatMap((symbol) => [
 			{ text: JSON.stringify({ name: `${symbol} Inc`, ticker: symbol }) },
-			{ text: JSON.stringify({ earningsCalendar: [{ date: "2026-10-29", hour: "amc", quarter: 4, symbol, year: 2026 }] }) },
+			{
+				text: JSON.stringify({
+					earningsCalendar: [{ date: "2026-10-29", hour: "amc", quarter: 4, symbol, year: 2026 }],
+				}),
+			},
 		]);
 	cases.push(
 		await runEarnings(
 			["AAPL", "MSFT"].map((symbol) => ({ stockId: `us:${symbol}`, name: null })),
-			{ limits: [{ provider: "finnhub", maxPerWindow: 3, windowMs: 60_000 }], abortAt: null, preAborted: false },
+			{
+				limits: [{ provider: "finnhub", maxPerWindow: 3, windowMs: 60_000 }],
+				abortAt: null,
+				preAborted: false,
+			},
 			{ finnhub: "real-finnhub" },
 			realScript(["AAPL", "MSFT"]),
 		),
@@ -676,7 +920,11 @@ async function earningsCases(): Promise<EarningsCase[]> {
 	cases.push(
 		await runEarnings(
 			fifty.map((symbol) => ({ stockId: `us:${symbol}`, name: null })),
-			{ limits: [{ provider: "finnhub", maxPerWindow: 30, windowMs: 60_000 }], abortAt: null, preAborted: false },
+			{
+				limits: [{ provider: "finnhub", maxPerWindow: 30, windowMs: 60_000 }],
+				abortAt: null,
+				preAborted: false,
+			},
 			{ finnhub: "real-finnhub" },
 			realScript(fifty),
 		),
@@ -708,8 +956,12 @@ async function earningsCases(): Promise<EarningsCase[]> {
 			sources[source] = roll < 0.2 ? "unconfigured" : [earningsAnswer(rng, sizes[source])];
 		}
 		const limits = rng.chance(0.5) ? standardLimits(8) : [];
-		const abortAt = rng.chance(0.25) ? { where: rng.pick(["sleep", "before"] as const), n: rng.int(1, 4) } : null;
-		cases.push(await runEarnings(stocks, { limits, abortAt, preAborted: rng.chance(0.04) }, sources, null));
+		const abortAt = rng.chance(0.25)
+			? { where: rng.pick(["sleep", "before"] as const), n: rng.int(1, 4) }
+			: null;
+		cases.push(
+			await runEarnings(stocks, { limits, abortAt, preAborted: rng.chance(0.04) }, sources, null),
+		);
 	}
 	return cases;
 }

@@ -27,3 +27,7 @@ rayon = { workspace = true }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+sha2 = { workspace = true }
+hex = { workspace = true }

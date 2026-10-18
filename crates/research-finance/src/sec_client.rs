@@ -39,6 +39,23 @@ pub enum SecErrorCode {
 	/// No eligible report.
 	NoData,
 }
+impl SecErrorCode {
+	/// The TypeScript literal, e.g. `"NOT_CONFIGURED"`.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::NotConfigured => "NOT_CONFIGURED",
+			Self::InvalidIdentifier => "INVALID_IDENTIFIER",
+			Self::NotFound => "NOT_FOUND",
+			Self::AccessDenied => "ACCESS_DENIED",
+			Self::RateLimited => "RATE_LIMITED",
+			Self::FetchFailed => "FETCH_FAILED",
+			Self::ResponseTooLarge => "RESPONSE_TOO_LARGE",
+			Self::UnexpectedResponse => "UNEXPECTED_RESPONSE",
+			Self::NoData => "NO_DATA",
+		}
+	}
+}
 /// A log-safe error with explicit retryability.
 #[derive(Clone, Debug, Serialize, thiserror::Error)]
 #[error("{detail}")]

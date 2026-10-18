@@ -16,6 +16,10 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	XMLParser,
+	XMLValidator,
+} from "../../../packages/adapters/node_modules/fast-xml-parser/src/fxp.js";
+import {
 	compareReportedPositions,
 	createSec13FSource,
 	extractInformationTableXml,
@@ -40,10 +44,6 @@ import {
 	selectAnnualFinancials,
 } from "../../../packages/adapters/src/finance/secFinancials.ts";
 import {
-	XMLParser,
-	XMLValidator,
-} from "../../../packages/adapters/node_modules/fast-xml-parser/src/fxp.js";
-import {
 	type FetchEvent,
 	fetchError,
 	plain,
@@ -64,8 +64,8 @@ const SUBMISSIONS = secFixture("submissions-CIK0009999993.synthetic.json");
 const FILING_Q1 = secFixture("13f-0009999993-26-000001.synthetic.txt");
 const FILING_Q2 = secFixture("13f-0009999993-26-000004.synthetic.txt");
 const TICKERS = secFixture("company_tickers_exchange.synthetic.json");
-const FACTS_ONE = secFixture("companyfacts-CIK0009999991.synthetic.json");
-const FACTS_TWO = secFixture("companyfacts-CIK0009999992.synthetic.json");
+export const FACTS_ONE = secFixture("companyfacts-CIK0009999991.synthetic.json");
+export const FACTS_TWO = secFixture("companyfacts-CIK0009999992.synthetic.json");
 
 const UA = "Synthetic Research Workspace owner@synthetic-wire.org";
 
@@ -375,7 +375,8 @@ function randomSubmissions(rng: Rng): string {
 		recent.form = column(() => rng.pick(FORMS.slice(0, 5)));
 	}
 	if (rng.chance(0.08)) recent.reportDate = (recent.reportDate as unknown[]).slice(1);
-	if (rng.chance(0.05)) delete recent[rng.pick(["accessionNumber", "filingDate", "reportDate", "form"])];
+	if (rng.chance(0.05))
+		delete recent[rng.pick(["accessionNumber", "filingDate", "reportDate", "form"])];
 	if (rng.chance(0.04)) recent.form = [1, 2, 3];
 	const doc: { [key: string]: unknown } = {
 		name: rng.pick(["Synthetic Capital Management LP", "  Padded Mgr  ", "", " ", "名前", "﻿BOM﻿"]),
@@ -397,30 +398,83 @@ const INFO_ROW = (
 ): string =>
 	`<${prefix}infoTable><${prefix}nameOfIssuer>${name}</${prefix}nameOfIssuer><${prefix}cusip>${cusip}</${prefix}cusip><${prefix}value>${value}</${prefix}value><${prefix}shrsOrPrnAmt><${prefix}sshPrnamt>${shares}</${prefix}sshPrnamt>${type === null ? "" : `<${prefix}sshPrnamtType>${type}</${prefix}sshPrnamtType>`}</${prefix}shrsOrPrnAmt>${extra}</${prefix}infoTable>`;
 
-const CUSIPS = ["037833100", "594918104", "02079K305", "11111111a", "ABCDEFGHI", "12345678", "1234567890", "  037833100  ", "037 33100", "0378331é0", "", "037833100 "];
-const ISSUERS = ["APPLE INC", "MICROSOFT CORP", "A &amp; B &lt;CO&gt;", "<![CDATA[ Cdata Co &amp; ]]>", "  Spaced  ", "", " ", "N".repeat(300), "N".repeat(301), "経".repeat(300), "経".repeat(301), "😀".repeat(150), "😀".repeat(151), "X &#x41; &#66; &#0; &lol;", "Two<b>parts</b>tail"];
-const AMOUNTS = ["1000", "250.5", "0", "00012", "1e3", "-5", "1,000", "", " 42 ", ".5", "5.", "12345678901234567890", "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"];
+const CUSIPS = [
+	"037833100",
+	"594918104",
+	"02079K305",
+	"11111111a",
+	"ABCDEFGHI",
+	"12345678",
+	"1234567890",
+	"  037833100  ",
+	"037 33100",
+	"0378331é0",
+	"",
+	"037833100 ",
+];
+const ISSUERS = [
+	"APPLE INC",
+	"MICROSOFT CORP",
+	"A &amp; B &lt;CO&gt;",
+	"<![CDATA[ Cdata Co &amp; ]]>",
+	"  Spaced  ",
+	"",
+	" ",
+	"N".repeat(300),
+	"N".repeat(301),
+	"経".repeat(300),
+	"経".repeat(301),
+	"😀".repeat(150),
+	"😀".repeat(151),
+	"X &#x41; &#66; &#0; &lol;",
+	"Two<b>parts</b>tail",
+];
+const AMOUNTS = [
+	"1000",
+	"250.5",
+	"0",
+	"00012",
+	"1e3",
+	"-5",
+	"1,000",
+	"",
+	" 42 ",
+	".5",
+	"5.",
+	"12345678901234567890",
+	"99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+];
 
 function randomRow(rng: Rng, prefix: string, noise: number): string {
-	const cusip = rng.chance(1 - 0.15 * noise) ? rng.pick(CUSIPS.slice(0, 3).concat(["AAAAAAAA1", "BBBBBBBB2"])) : rng.pick(CUSIPS);
+	const cusip = rng.chance(1 - 0.15 * noise)
+		? rng.pick(CUSIPS.slice(0, 3).concat(["AAAAAAAA1", "BBBBBBBB2"]))
+		: rng.pick(CUSIPS);
 	const value = rng.chance(1 - 0.15 * noise) ? rng.pick(AMOUNTS.slice(0, 3)) : rng.pick(AMOUNTS);
 	const shares = rng.chance(1 - 0.15 * noise) ? rng.pick(AMOUNTS.slice(0, 3)) : rng.pick(AMOUNTS);
-	const type = rng.chance(1 - 0.15 * noise) ? "SH" : rng.pick(["PRN", "sh", "prn", "", " SH ", null, "XX"]);
+	const type = rng.chance(1 - 0.15 * noise)
+		? "SH"
+		: rng.pick(["PRN", "sh", "prn", "", " SH ", null, "XX"]);
 	const name = rng.chance(1 - 0.15 * noise) ? rng.pick(ISSUERS.slice(0, 3)) : rng.pick(ISSUERS);
 	let extra = "";
-	if (rng.chance(0.1 * noise)) extra += `<${prefix}putCall>${rng.pick(["Put", "Call", "", " "])}</${prefix}putCall>`;
+	if (rng.chance(0.1 * noise))
+		extra += `<${prefix}putCall>${rng.pick(["Put", "Call", "", " "])}</${prefix}putCall>`;
 	if (rng.chance(0.2)) extra += `<${prefix}titleOfClass>COM</${prefix}titleOfClass>`;
-	if (rng.chance(0.1)) extra += `<${prefix}votingAuthority><${prefix}Sole>1</${prefix}Sole></${prefix}votingAuthority>`;
+	if (rng.chance(0.1))
+		extra += `<${prefix}votingAuthority><${prefix}Sole>1</${prefix}Sole></${prefix}votingAuthority>`;
 	if (rng.chance(0.05 * noise)) extra += `<${prefix}cusip>DUPLICATE9</${prefix}cusip>`;
 	const row = INFO_ROW(prefix, name, cusip, value, shares, type, extra);
-	if (rng.chance(0.05 * noise)) return row.replace(`<${prefix}infoTable>`, `<${prefix}infoTable x="1" y='2'>`);
-	if (rng.chance(0.03 * noise)) return row.replace(/<\/[^>]*cusip>/, `</${prefix}cusip ><!-- c -->`);
+	if (rng.chance(0.05 * noise))
+		return row.replace(`<${prefix}infoTable>`, `<${prefix}infoTable x="1" y='2'>`);
+	if (rng.chance(0.03 * noise))
+		return row.replace(/<\/[^>]*cusip>/, `</${prefix}cusip ><!-- c -->`);
 	return row;
 }
 
 function randomInfoTable(rng: Rng, noise = 1): string {
 	const prefix = rng.pick(["", "", "ns1:", "n:", "a:b:", "xmlns:"]);
-	const rootName = rng.chance(1 - 0.07 * noise) ? "informationTable" : rng.pick(["informationtable", "table", "root", "InformationTable"]);
+	const rootName = rng.chance(1 - 0.07 * noise)
+		? "informationTable"
+		: rng.pick(["informationtable", "table", "root", "InformationTable"]);
 	const count = rng.int(0, 10);
 	let rows = "";
 	for (let index = 0; index < count; index += 1) {
@@ -432,7 +486,9 @@ function randomInfoTable(rng: Rng, noise = 1): string {
 	if (rng.chance(0.04 * noise)) rows += `<${prefix}infoTable>just text</${prefix}infoTable>`;
 	if (rng.chance(0.03 * noise)) rows += `<${prefix}infoTable/>`;
 	const decl = rng.chance(0.6) ? '<?xml version="1.0" encoding="UTF-8"?>\n' : "";
-	const ns = rng.chance(0.5) ? ` xmlns${prefix === "" ? "" : `:${prefix.slice(0, -1)}`}="http://www.sec.gov/edgar/document/thirteenf/informationtable"` : "";
+	const ns = rng.chance(0.5)
+		? ` xmlns${prefix === "" ? "" : `:${prefix.slice(0, -1)}`}="http://www.sec.gov/edgar/document/thirteenf/informationtable"`
+		: "";
 	let xml = `${decl}<${prefix}${rootName}${ns}>${rows}</${prefix}${rootName}>`;
 	if (rng.chance(0.04 * noise)) xml = xml.slice(0, rng.int(1, xml.length - 1));
 	if (rng.chance(0.03 * noise)) xml = `<!DOCTYPE x [<!ENTITY e "v">]>${xml}`;
@@ -443,11 +499,20 @@ function randomInfoTable(rng: Rng, noise = 1): string {
 
 function submissionText(rng: Rng, infoXml: string | null, clean = false): string {
 	const head = rng.chance(0.8) ? "<SEC-DOCUMENT>\n" : "";
-	let documents = "<DOCUMENT>\n<TYPE>13F-HR\n<TEXT>\n<XML>\n<edgarSubmission/>\n</XML>\n</TEXT>\n</DOCUMENT>\n";
+	let documents =
+		"<DOCUMENT>\n<TYPE>13F-HR\n<TEXT>\n<XML>\n<edgarSubmission/>\n</XML>\n</TEXT>\n</DOCUMENT>\n";
 	if (infoXml !== null) {
 		const type = clean
 			? "INFORMATION TABLE"
-			: rng.pick(["INFORMATION TABLE", "INFORMATION TABLE", "information table", " Information Table ", "INFORMATION TABLE\r", "INFORMATION TABLE<x>", "INFO TABLE"]);
+			: rng.pick([
+					"INFORMATION TABLE",
+					"INFORMATION TABLE",
+					"information table",
+					" Information Table ",
+					"INFORMATION TABLE\r",
+					"INFORMATION TABLE<x>",
+					"INFO TABLE",
+				]);
 		const open = clean ? "<XML>" : rng.pick(["<XML>", "<XML>", "<XML>\n"]);
 		const close = clean ? "</XML>" : rng.pick(["</XML>", "</XML>", "</XML>\n", ""]);
 		documents += `<DOCUMENT>\n<TYPE>${type}\n<TEXT>\n${open}${rng.chance(0.2) ? "\n  " : ""}${infoXml}${rng.chance(0.2) ? "  \n" : ""}${close}\n</TEXT>\n</DOCUMENT>\n`;
@@ -500,7 +565,10 @@ function selectionCases(rng: Rng): unknown[] {
 		{ name: "", filings: { recent: {} } },
 		[],
 		"x",
-		{ name: "x", filings: { recent: { accessionNumber: [], filingDate: [], reportDate: [], form: [] } } },
+		{
+			name: "x",
+			filings: { recent: { accessionNumber: [], filingDate: [], reportDate: [], form: [] } },
+		},
 	];
 	for (const input of inputs) cases.push({ input, output: plain(selectRecent13FFilings(input)) });
 	for (let index = 0; index < 500; index += 1) {
@@ -565,7 +633,7 @@ const SOUP: readonly string[] = [
 	"<a />",
 	"<a:b />",
 	"<a x='1'>",
-	'<a:b x="1" y=\'2\'/>',
+	"<a:b x=\"1\" y='2'/>",
 	"text",
 	"  spaced  ",
 	"\n",
@@ -665,12 +733,15 @@ function parseCases(rng: Rng): unknown[] {
 function holdingsOf(rng: Rng): Reported13FHolding[] {
 	const cusips = ["AAAAAAAA1", "BBBBBBBB2", "CCCCCCCC3", "DDDDDDDD4", "EEEEEEEE5"];
 	const count = rng.int(0, 5);
-	return rng.shuffle([...cusips]).slice(0, count).map((cusip) => ({
-		issuerName: rng.pick(["Alpha", "Beta", "Gamma"]),
-		cusip,
-		reportedShares: rng.pick([0, 1, 100, 100, 250.5, 1e9, Number.POSITIVE_INFINITY]),
-		reportedValueUsd: rng.pick([0, 1, 100, 1e12]),
-	}));
+	return rng
+		.shuffle([...cusips])
+		.slice(0, count)
+		.map((cusip) => ({
+			issuerName: rng.pick(["Alpha", "Beta", "Gamma"]),
+			cusip,
+			reportedShares: rng.pick([0, 1, 100, 100, 250.5, 1e9, Number.POSITIVE_INFINITY]),
+			reportedValueUsd: rng.pick([0, 1, 100, 1e12]),
+		}));
 }
 
 function compareCases(rng: Rng): unknown[] {
@@ -694,16 +765,41 @@ async function sec13fSourceCases(): Promise<SecCase[]> {
 	const rng = new Rng(0x13f);
 	const cases: SecCase[] = [];
 	const base: ScriptEntry[] = [{ text: SUBMISSIONS }, { text: FILING_Q2 }, { text: FILING_Q1 }];
-	const step = (arg: string, advanceMs = 0, cancel = false): SecStep => ({ advanceMs, arg, cancel });
+	const step = (arg: string, advanceMs = 0, cancel = false): SecStep => ({
+		advanceMs,
+		arg,
+		cancel,
+	});
 	cases.push(await runSec("13f", UA, [step("0009999993")], base));
 	cases.push(await runSec("13f", UA, [step("CIK9999993"), step("9999993", 5)], [...base, ...base]));
 	cases.push(await runSec("13f", null, [step("0009999993")], base));
 	cases.push(await runSec("13f", UA, [step("abc")], base));
 	cases.push(await runSec("13f", UA, [step("0009999993")], [fetchError("HTTP_ERROR", "HTTP 404")]));
 	cases.push(await runSec("13f", UA, [step("0009999993")], [{ text: "{oops" }]));
-	cases.push(await runSec("13f", UA, [step("0009999993")], [{ text: SUBMISSIONS }, fetchError("HTTP_ERROR", "HTTP 429")]));
-	cases.push(await runSec("13f", UA, [step("0009999993")], [{ text: SUBMISSIONS }, { text: FILING_Q2 }, fetchError("TIMEOUT", "x")]));
-	cases.push(await runSec("13f", UA, [step("0009999993")], [{ text: SUBMISSIONS }, { text: "no documents" }]));
+	cases.push(
+		await runSec(
+			"13f",
+			UA,
+			[step("0009999993")],
+			[{ text: SUBMISSIONS }, fetchError("HTTP_ERROR", "HTTP 429")],
+		),
+	);
+	cases.push(
+		await runSec(
+			"13f",
+			UA,
+			[step("0009999993")],
+			[{ text: SUBMISSIONS }, { text: FILING_Q2 }, fetchError("TIMEOUT", "x")],
+		),
+	);
+	cases.push(
+		await runSec(
+			"13f",
+			UA,
+			[step("0009999993")],
+			[{ text: SUBMISSIONS }, { text: "no documents" }],
+		),
+	);
 	cases.push(await runSec("13f", UA, [step("0009999993", 0, true)], base));
 	void FILING_URL_1;
 	void FILING_URL_4;
@@ -713,11 +809,26 @@ async function sec13fSourceCases(): Promise<SecCase[]> {
 		const script: ScriptEntry[] = [{ text: submissions }];
 		for (let item = 0; item < filingCount; item += 1) {
 			const roll = rng.float();
-			if (roll < 0.04) script.push(fetchError(rng.pick(["HTTP_ERROR", "TIMEOUT", "NETWORK_ERROR"] as const), rng.pick(["HTTP 500", "HTTP 403", "x"])));
+			if (roll < 0.04)
+				script.push(
+					fetchError(
+						rng.pick(["HTTP_ERROR", "TIMEOUT", "NETWORK_ERROR"] as const),
+						rng.pick(["HTTP 500", "HTTP 403", "x"]),
+					),
+				);
 			else if (roll < 0.07) script.push({ text: submissionText(rng, null) });
-			else script.push({ text: submissionText(rng, randomInfoTable(rng, 0.1), rng.chance(0.85)), finalUrl: rng.pick([undefined, "https://www.sec.gov/final.txt"]) });
+			else
+				script.push({
+					text: submissionText(rng, randomInfoTable(rng, 0.1), rng.chance(0.85)),
+					finalUrl: rng.pick([undefined, "https://www.sec.gov/final.txt"]),
+				});
 		}
-		const steps = [step(rng.chance(0.95) ? rng.pick(["0009999993", "CIK9999993", "123"]) : "bad", rng.pick([0, 10, 200]))];
+		const steps = [
+			step(
+				rng.chance(0.95) ? rng.pick(["0009999993", "CIK9999993", "123"]) : "bad",
+				rng.pick([0, 10, 200]),
+			),
+		];
 		cases.push(await runSec("13f", rng.chance(0.97) ? UA : null, steps, script));
 	}
 	return cases;
@@ -751,7 +862,17 @@ function randomFact(rng: Rng): { [key: string]: unknown } {
 		start,
 		end,
 		val: rng.pick([1_400_000_000, -5, 0, 1.5, 123456789012, 2.5e9, 7]),
-		accn: rng.pick(["0009999991-24-000009", "0009999991-25-000010", "0009999991-25-000011", "A", "a", "Z9", "x".repeat(40), "x".repeat(41), ""]),
+		accn: rng.pick([
+			"0009999991-24-000009",
+			"0009999991-25-000010",
+			"0009999991-25-000011",
+			"A",
+			"a",
+			"Z9",
+			"x".repeat(40),
+			"x".repeat(41),
+			"",
+		]),
 		fy: rng.pick<unknown>([2024, 2025, null, undefined, 2024.5, "2024"]),
 		fp: rng.pick<unknown>(["FY", "FY", "FY", "Q3", "Q1", null, undefined, 5]),
 		form: rng.pick(["10-K", "10-K", "10-K/A", "10-Q", "8-K", "20-F"]),
@@ -764,10 +885,12 @@ function randomFact(rng: Rng): { [key: string]: unknown } {
 	return fact;
 }
 
-function randomFacts(rng: Rng): unknown {
+export function randomFacts(rng: Rng): unknown {
 	const unitsFor = (perShare: boolean): { [key: string]: unknown[] } => {
 		const units: { [key: string]: unknown[] } = {};
-		const names = perShare ? ["USD/shares", "JPY/shares", "EUR/shares", "USD", "shares"] : ["USD", "JPY", "EUR", "USDX", "usd", "USD/shares"];
+		const names = perShare
+			? ["USD/shares", "JPY/shares", "EUR/shares", "USD", "shares"]
+			: ["USD", "JPY", "EUR", "USDX", "usd", "USD/shares"];
 		const wanted = rng.int(0, 3);
 		for (let item = 0; item < wanted; item += 1) {
 			units[rng.pick(names)] = Array.from({ length: rng.int(0, 6) }, () => randomFact(rng));
@@ -775,7 +898,9 @@ function randomFacts(rng: Rng): unknown {
 		return units;
 	};
 	const concept = (perShare: boolean): unknown =>
-		rng.chance(0.05) ? rng.pick([null, "x", 5, { units: 5 }, { units: { USD: 5 } }]) : { label: rng.pick([undefined, "L", null, 5]), units: unitsFor(perShare) };
+		rng.chance(0.05)
+			? rng.pick([null, "x", 5, { units: 5 }, { units: { USD: 5 } }])
+			: { label: rng.pick([undefined, "L", null, 5]), units: unitsFor(perShare) };
 	const gaap: { [key: string]: unknown } = {};
 	for (const [name, perShare] of [
 		["Revenues", false],
@@ -787,15 +912,19 @@ function randomFacts(rng: Rng): unknown {
 	] as const) {
 		if (rng.chance(0.7)) gaap[name] = concept(perShare);
 	}
-	const doc: { [key: string]: unknown } = { entityName: "Synthetic", facts: { "us-gaap": gaap, dei: {} } };
-	if (rng.chance(0.06)) doc.facts = rng.pick([{}, { "us-gaap": [] }, { "us-gaap": null }, null, []]);
+	const doc: { [key: string]: unknown } = {
+		entityName: "Synthetic",
+		facts: { "us-gaap": gaap, dei: {} },
+	};
+	if (rng.chance(0.06))
+		doc.facts = rng.pick([{}, { "us-gaap": [] }, { "us-gaap": null }, null, []]);
 	if (rng.chance(0.03)) doc.entityName = rng.pick([null, 5]);
 	if (rng.chance(0.02)) return rng.pick([null, [], "x", {}]);
 	return doc;
 }
 
 /** A facts document tuned so that revenue, income and EPS all line up. */
-function alignedFacts(rng: Rng): unknown {
+export function alignedFacts(rng: Rng): unknown {
 	const [start, end] = rng.pick(FACT_DATES.slice(0, 6));
 	const fact = (val: number, accn: string, filed: string): { [key: string]: unknown } => ({
 		start,
@@ -809,15 +938,34 @@ function alignedFacts(rng: Rng): unknown {
 	});
 	const currency = rng.pick(["USD", "USD", "JPY"]);
 	const gaap: { [key: string]: unknown } = {
-		Revenues: { units: { [currency]: [fact(rng.pick([1000, 0, -5, 2e9]), "0000000001-25-000001", "2025-08-01"), fact(1100, "0000000001-25-000002", "2025-09-01")] } },
-		NetIncomeLoss: { units: { [rng.pick([currency, currency, "EUR"])]: [fact(rng.pick([100, -20, 2.5]), "0000000001-25-000001", "2025-08-01")] } },
-		EarningsPerShareDiluted: { units: { [`${currency}/shares`]: [fact(1.25, "0000000001-25-000001", "2025-08-01")] } },
+		Revenues: {
+			units: {
+				[currency]: [
+					fact(rng.pick([1000, 0, -5, 2e9]), "0000000001-25-000001", "2025-08-01"),
+					fact(1100, "0000000001-25-000002", "2025-09-01"),
+				],
+			},
+		},
+		NetIncomeLoss: {
+			units: {
+				[rng.pick([currency, currency, "EUR"])]: [
+					fact(rng.pick([100, -20, 2.5]), "0000000001-25-000001", "2025-08-01"),
+				],
+			},
+		},
+		EarningsPerShareDiluted: {
+			units: { [`${currency}/shares`]: [fact(1.25, "0000000001-25-000001", "2025-08-01")] },
+		},
 	};
 	if (rng.chance(0.2)) {
-		gaap.SalesRevenueNet = { units: { [currency]: [fact(5, "0000000001-25-000003", "2025-08-01")] } };
+		gaap.SalesRevenueNet = {
+			units: { [currency]: [fact(5, "0000000001-25-000003", "2025-08-01")] },
+		};
 	}
 	if (rng.chance(0.2)) {
-		(gaap.NetIncomeLoss as { units: { [k: string]: unknown[] } }).units.USD = [fact(7, "0000000001-25-000004", "2025-08-01")];
+		(gaap.NetIncomeLoss as { units: { [k: string]: unknown[] } }).units.USD = [
+			fact(7, "0000000001-25-000004", "2025-08-01"),
+		];
 	}
 	return { entityName: "Aligned", facts: { "us-gaap": gaap } };
 }
@@ -825,22 +973,57 @@ function alignedFacts(rng: Rng): unknown {
 function factsCases(rng: Rng): unknown[] {
 	const cases: unknown[] = [];
 	const inputs: unknown[] = [JSON.parse(FACTS_ONE), JSON.parse(FACTS_TWO)];
-	for (let index = 0; index < 450; index += 1) inputs.push(rng.chance(0.45) ? alignedFacts(rng) : randomFacts(rng));
+	for (let index = 0; index < 450; index += 1)
+		inputs.push(rng.chance(0.45) ? alignedFacts(rng) : randomFacts(rng));
 	for (const input of inputs) cases.push({ input, output: plain(selectAnnualFinancials(input)) });
 	return cases;
 }
 
 function directoryCases(rng: Rng): unknown[] {
 	const cases: unknown[] = [];
-	const inputs: unknown[] = [JSON.parse(TICKERS), null, {}, { fields: [], data: [] }, { fields: ["cik"], data: [[1]] }];
+	const inputs: unknown[] = [
+		JSON.parse(TICKERS),
+		null,
+		{},
+		{ fields: [], data: [] },
+		{ fields: ["cik"], data: [[1]] },
+	];
 	const names = ["cik", "name", "ticker", "exchange"];
 	for (let index = 0; index < 300; index += 1) {
-		const fields = rng.chance(0.85) ? rng.shuffle([...names]) : rng.pick([names.slice(1), [...names, "x"], ["cik", "name", "ticker"]]);
+		const fields = rng.chance(0.85)
+			? rng.shuffle([...names])
+			: rng.pick([names.slice(1), [...names, "x"], ["cik", "name", "ticker"]]);
 		const data = Array.from({ length: rng.int(0, 8) }, () =>
 			fields.map((field) => {
-				if (field === "cik") return rng.pick<unknown>([9999991, 320193, 1, 0, -5, 1.5, 3, "320193", null, 1e21, 12345678901, 5.0]);
+				if (field === "cik")
+					return rng.pick<unknown>([
+						9999991,
+						320193,
+						1,
+						0,
+						-5,
+						1.5,
+						3,
+						"320193",
+						null,
+						1e21,
+						12345678901,
+						5.0,
+					]);
 				if (field === "name") return rng.pick<unknown>(["Apple Inc.", " Padded ", "", 5, null]);
-				if (field === "ticker") return rng.pick<unknown>(["AAPL", "brk.b", "BRK-B", " msft ", "", " ", "A.B.C", 5, null, "ä"]);
+				if (field === "ticker")
+					return rng.pick<unknown>([
+						"AAPL",
+						"brk.b",
+						"BRK-B",
+						" msft ",
+						"",
+						" ",
+						"A.B.C",
+						5,
+						null,
+						"ä",
+					]);
 				return rng.pick<unknown>(["Nasdaq", "NYSE", " OTC ", "", " ", null, 5]);
 			}),
 		);
@@ -861,30 +1044,72 @@ function directoryCases(rng: Rng): unknown[] {
 async function secFinancialsSourceCases(): Promise<SecCase[]> {
 	const rng = new Rng(0xfa17);
 	const cases: SecCase[] = [];
-	const step = (arg: string, advanceMs = 0, cancel = false): SecStep => ({ advanceMs, arg, cancel });
+	const step = (arg: string, advanceMs = 0, cancel = false): SecStep => ({
+		advanceMs,
+		arg,
+		cancel,
+	});
 	const directory: ScriptEntry = { text: TICKERS };
 	cases.push(await runSec("financials", UA, [step("XTESTA")], [directory, { text: FACTS_ONE }]));
 	cases.push(
 		await runSec(
 			"financials",
 			UA,
-			[step("xtesta"), step("XTESTB", 100), step("XTESTA", 43_199_999), step("XTESTB", 2), step("XTESTB", 43_200_000)],
-			[directory, { text: FACTS_ONE }, { text: FACTS_TWO }, { text: FACTS_ONE }, directory, { text: FACTS_TWO }],
+			[
+				step("xtesta"),
+				step("XTESTB", 100),
+				step("XTESTA", 43_199_999),
+				step("XTESTB", 2),
+				step("XTESTB", 43_200_000),
+			],
+			[
+				directory,
+				{ text: FACTS_ONE },
+				{ text: FACTS_TWO },
+				{ text: FACTS_ONE },
+				directory,
+				{ text: FACTS_TWO },
+			],
 		),
 	);
 	cases.push(await runSec("financials", UA, [step("NOPE")], [directory]));
 	cases.push(await runSec("financials", null, [step("XTESTA")], [directory]));
-	cases.push(await runSec("financials", UA, [step("XTESTA")], [fetchError("HTTP_ERROR", "HTTP 403")]));
-	cases.push(await runSec("financials", UA, [step("XTESTA")], [directory, fetchError("HTTP_ERROR", "HTTP 404")]));
+	cases.push(
+		await runSec("financials", UA, [step("XTESTA")], [fetchError("HTTP_ERROR", "HTTP 403")]),
+	);
+	cases.push(
+		await runSec(
+			"financials",
+			UA,
+			[step("XTESTA")],
+			[directory, fetchError("HTTP_ERROR", "HTTP 404")],
+		),
+	);
 	cases.push(await runSec("financials", UA, [step("XTESTA")], [directory, { text: "[" }]));
-	cases.push(await runSec("financials", UA, [step("XTST-B"), step("xtst.b")], [directory, { text: FACTS_ONE }, { text: FACTS_ONE }]));
+	cases.push(
+		await runSec(
+			"financials",
+			UA,
+			[step("XTST-B"), step("xtst.b")],
+			[directory, { text: FACTS_ONE }, { text: FACTS_ONE }],
+		),
+	);
 	for (let index = 0; index < 160; index += 1) {
 		const steps = Array.from({ length: rng.int(1, 4) }, () =>
-			step(rng.pick(["XTESTA", "XTESTB", "XTESTA", "XTESTB", "XTESTC", "nope", "xtest-a"]), rng.pick([0, 5, 43_200_000, 20_000_000])),
+			step(
+				rng.pick(["XTESTA", "XTESTB", "XTESTA", "XTESTB", "XTESTC", "nope", "xtest-a"]),
+				rng.pick([0, 5, 43_200_000, 20_000_000]),
+			),
 		);
 		const script: ScriptEntry[] = [rng.chance(0.1) ? fetchError("TIMEOUT", "x") : directory];
 		for (let item = 0; item < steps.length * 2; item += 1) {
-			script.push(rng.chance(0.05) ? fetchError("HTTP_ERROR", "HTTP 500") : rng.chance(0.3) ? directory : { text: JSON.stringify(rng.chance(0.7) ? alignedFacts(rng) : randomFacts(rng)) });
+			script.push(
+				rng.chance(0.05)
+					? fetchError("HTTP_ERROR", "HTTP 500")
+					: rng.chance(0.3)
+						? directory
+						: { text: JSON.stringify(rng.chance(0.7) ? alignedFacts(rng) : randomFacts(rng)) },
+			);
 		}
 		cases.push(await runSec("financials", rng.chance(0.9) ? UA : null, steps, script));
 	}
@@ -897,13 +1122,26 @@ export async function secFiles(): Promise<{ path: string; content: unknown }[]> 
 	const rng = new Rng(0x5ec);
 	const [directory, tickerKeys] = directoryCases(rng) as [unknown[], unknown[]];
 	return [
-		{ path: "finance/sec_client.json", content: { primitives: clientPrimitiveCases(), calls: await clientCases() } },
+		{
+			path: "finance/sec_client.json",
+			content: { primitives: clientPrimitiveCases(), calls: await clientCases() },
+		},
 		{
 			path: "finance/sec_13f.json",
 			content: {
 				urls: [
-					{ cik: "0009999993", accession: "0009999993-26-000004", submissions: secSubmissionsUrl("0009999993"), filing: secFilingTextUrl("0009999993", "0009999993-26-000004") },
-					{ cik: "0000000042", accession: "0000000042-25-000001", submissions: secSubmissionsUrl("0000000042"), filing: secFilingTextUrl("0000000042", "0000000042-25-000001") },
+					{
+						cik: "0009999993",
+						accession: "0009999993-26-000004",
+						submissions: secSubmissionsUrl("0009999993"),
+						filing: secFilingTextUrl("0009999993", "0009999993-26-000004"),
+					},
+					{
+						cik: "0000000042",
+						accession: "0000000042-25-000001",
+						submissions: secSubmissionsUrl("0000000042"),
+						filing: secFilingTextUrl("0000000042", "0000000042-25-000001"),
+					},
 				],
 				selection: selectionCases(rng),
 				extraction: extractionCases(rng),

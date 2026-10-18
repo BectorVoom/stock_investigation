@@ -992,6 +992,7 @@ name = "research-tools"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "hex",
  "rayon",
  "regex",
  "research-agent-core",
@@ -1004,6 +1005,7 @@ dependencies = [
  "research-js",
  "serde",
  "serde_json",
+ "sha2",
  "tokio",
  "tokio-util",
  "url",

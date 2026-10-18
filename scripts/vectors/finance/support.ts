@@ -202,7 +202,11 @@ export function plain(value: unknown): unknown {
 }
 
 /** A SafeFetchError as the exporters script it. */
-export function fetchError(code: SafeFetchError["code"], detail: string, body?: string): ScriptEntry {
+export function fetchError(
+	code: SafeFetchError["code"],
+	detail: string,
+	body?: string,
+): ScriptEntry {
 	return { error: body === undefined ? { code, detail } : { code, detail, body } };
 }
 

@@ -204,17 +204,9 @@ function dateHelperCases(): unknown {
 				output: httpStatusOf({ code, detail }),
 			})),
 		),
-		splitTwelve: [
-			"AAPL",
-			"AAPL:NASDAQ",
-			"7203:JPX",
-			"A:B:C",
-			":X",
-			"X:",
-			":",
-			"",
-			"EUR/USD",
-		].map((input) => ({ input, output: splitTwelveSymbol(input) })),
+		splitTwelve: ["AAPL", "AAPL:NASDAQ", "7203:JPX", "A:B:C", ":X", "X:", ":", "", "EUR/USD"].map(
+			(input) => ({ input, output: splitTwelveSymbol(input) }),
+		),
 	};
 }
 
@@ -316,7 +308,7 @@ function randomValue(rng: Rng): unknown {
 		{},
 		[1, 2],
 		{ a: 1 },
-		12345678901234567890,
+		Number("12345678901234567890"),
 	]);
 }
 
@@ -385,7 +377,11 @@ function randomFailure(rng: Rng): ScriptEntry {
 interface SeriesCase {
 	readonly provider: "fred" | "twelve-data";
 	readonly apiKey: string;
-	readonly query: { readonly symbol: string; readonly since: string | null; readonly maxObservations: number };
+	readonly query: {
+		readonly symbol: string;
+		readonly since: string | null;
+		readonly maxObservations: number;
+	};
 	readonly script: readonly ScriptEntry[];
 	readonly events: unknown;
 	readonly output: unknown;
@@ -508,7 +504,16 @@ async function fredCases(): Promise<SeriesCase[]> {
 	];
 	for (const entry of scripts) cases.push(await runSeries("fred", entry.query, entry.script));
 	for (let index = 0; index < 700; index += 1) {
-		const since = rng.pick<string | null>([null, null, "2026-10-01", "2026-02-28", "0100-01-01", "bad", "2024-03-01", "9999-12-31"]);
+		const since = rng.pick<string | null>([
+			null,
+			null,
+			"2026-10-01",
+			"2026-02-28",
+			"0100-01-01",
+			"bad",
+			"2024-03-01",
+			"9999-12-31",
+		]);
 		const query = {
 			symbol: rng.pick(["VIXCLS", "X", "A B", "é&=", "A/B", "", "a+b"]),
 			since,
@@ -521,9 +526,7 @@ async function fredCases(): Promise<SeriesCase[]> {
 		const observationEntry: ScriptEntry = rng.chance(0.06)
 			? randomFailure(rng)
 			: {
-					text: rng.chance(0.15)
-						? mutateText(rng, VIX_OBS)
-						: randomFredObservations(rng),
+					text: rng.chance(0.15) ? mutateText(rng, VIX_OBS) : randomFredObservations(rng),
 				};
 		cases.push(await runSeries("fred", query, [metaEntry, observationEntry]));
 	}
@@ -582,33 +585,47 @@ async function twelveCases(): Promise<SeriesCase[]> {
 	for (const name of fixtures) {
 		for (const symbol of symbols) {
 			cases.push(
-				await runSeries(
-					"twelve-data",
-					{ symbol, since: null, maxObservations: 800 },
-					[{ text: fixture(name) }],
-				),
+				await runSeries("twelve-data", { symbol, since: null, maxObservations: 800 }, [
+					{ text: fixture(name) },
+				]),
 			);
 		}
 		cases.push(
-			await runSeries(
-				"twelve-data",
-				{ symbol: "AAPL", since: "2026-10-01", maxObservations: 3 },
-				[{ text: fixture(name) }],
-			),
+			await runSeries("twelve-data", { symbol: "AAPL", since: "2026-10-01", maxObservations: 3 }, [
+				{ text: fixture(name) },
+			]),
 		);
 	}
-	for (const detail of ["HTTP 401", "HTTP 403", "HTTP 404", "HTTP 429", "HTTP 400", "HTTP 500", "no status"]) {
+	for (const detail of [
+		"HTTP 401",
+		"HTTP 403",
+		"HTTP 404",
+		"HTTP 429",
+		"HTTP 400",
+		"HTTP 500",
+		"no status",
+	]) {
 		cases.push(
-			await runSeries(
-				"twelve-data",
-				{ symbol: "AAPL", since: null, maxObservations: 800 },
-				[fetchError("HTTP_ERROR", detail)],
-			),
+			await runSeries("twelve-data", { symbol: "AAPL", since: null, maxObservations: 800 }, [
+				fetchError("HTTP_ERROR", detail),
+			]),
 		);
 	}
 	for (let index = 0; index < 700; index += 1) {
 		const query = {
-			symbol: rng.pick(["AAPL", "7203:JPX", "A:B:C", ":X", "X:", "EUR/USD", "A B", "é", "A&B=C", "", "XAU/USD:Y"]),
+			symbol: rng.pick([
+				"AAPL",
+				"7203:JPX",
+				"A:B:C",
+				":X",
+				"X:",
+				"EUR/USD",
+				"A B",
+				"é",
+				"A&B=C",
+				"",
+				"XAU/USD:Y",
+			]),
 			since: rng.pick<string | null>([null, null, "2026-10-01", "0100-01-01", "bad", "2026-02-29"]),
 			maxObservations: rng.pick([1, 2, 5, 800, 0]),
 		};
@@ -618,7 +635,7 @@ async function twelveCases(): Promise<SeriesCase[]> {
 		else if (roll < 0.1) {
 			entry = {
 				text: JSON.stringify({
-					code: rng.pick([400, 401, 403, 404, 429, 500, 401.0, "401", 0, -1, 1e999]),
+					code: rng.pick([400, 401, 403, 404, 429, 500, 401.0, "401", 0, -1, Number("1e999")]),
 					message: rng.pick(["m", "", 5]),
 					status: rng.pick(["error", "ok", "ERROR"]),
 				}),
@@ -664,7 +681,9 @@ async function runFinnhub(
 		signal: NEVER,
 		beforeRequest: scriptedBefore(before, events),
 	});
-	const output = results.map((result) => (result.ok ? { ok: result.value } : { err: result.error }));
+	const output = results.map((result) =>
+		result.ok ? { ok: result.value } : { err: result.error },
+	);
 	return {
 		apiKey: FINNHUB_KEY,
 		query,
@@ -695,7 +714,7 @@ function finnhubRow(rng: Rng, symbol: string): { [key: string]: unknown } {
 		year: mostly<unknown>(
 			rng,
 			[2026, 2027, 2026.0, 2025],
-			[2026.5, 0, -1, 99999999999999999999, null, undefined, "2026"],
+			[2026.5, 0, -1, Number("99999999999999999999"), null, undefined, "2026"],
 			0.15,
 		),
 	};
@@ -706,7 +725,11 @@ function finnhubRow(rng: Rng, symbol: string): { [key: string]: unknown } {
 async function finnhubCases(): Promise<EarningsCase[]> {
 	const rng = new Rng(0xf1117);
 	const cases: EarningsCase[] = [];
-	const query = (stocks: { symbol: string; needName: boolean }[]) => ({ stocks, fromDate: FROM, toDate: TO });
+	const query = (stocks: { symbol: string; needName: boolean }[]) => ({
+		stocks,
+		fromDate: FROM,
+		toDate: TO,
+	});
 	const calendar = (rows: unknown): ScriptEntry => ({
 		text: JSON.stringify({ earningsCalendar: rows }),
 	});
@@ -714,45 +737,55 @@ async function finnhubCases(): Promise<EarningsCase[]> {
 	const aapl = { symbol: "AAPL", needName: true };
 	const aaplNoName = { symbol: "AAPL", needName: false };
 	cases.push(
-		await runFinnhub(query([aapl]), [], [
-			profile({ name: "Apple Inc", ticker: "AAPL" }),
-			calendar([finnhubRow(new Rng(1), "AAPL")]),
-		]),
+		await runFinnhub(
+			query([aapl]),
+			[],
+			[profile({ name: "Apple Inc", ticker: "AAPL" }), calendar([finnhubRow(new Rng(1), "AAPL")])],
+		),
 	);
 	cases.push(await runFinnhub(query([aaplNoName]), [], [calendar([])]));
 	cases.push(
-		await runFinnhub(query([aapl]), [], [
-			profile({ name: "Apple Inc", ticker: "AAPL" }),
-			calendar([]),
-		]),
+		await runFinnhub(
+			query([aapl]),
+			[],
+			[profile({ name: "Apple Inc", ticker: "AAPL" }), calendar([])],
+		),
 	);
 	cases.push(await runFinnhub(query([aapl]), [], [profile({ name: "x" })]));
 	cases.push(await runFinnhub(query([aapl]), [], [profile({}), calendar([])]));
 	cases.push(await runFinnhub(query([aapl]), [], [profile([])]));
 	cases.push(
-		await runFinnhub(query([aapl]), [], [
-			profile({ name: "N".repeat(201), ticker: "AAPL" }),
-			calendar([]),
-		]),
+		await runFinnhub(
+			query([aapl]),
+			[],
+			[profile({ name: "N".repeat(201), ticker: "AAPL" }), calendar([])],
+		),
 	);
 	cases.push(
-		await runFinnhub(query([aapl]), [], [
-			profile({ name: `  ${"N".repeat(200)}  `, ticker: "AAPL" }),
-			calendar([]),
-		]),
+		await runFinnhub(
+			query([aapl]),
+			[],
+			[profile({ name: `  ${"N".repeat(200)}  `, ticker: "AAPL" }), calendar([])],
+		),
 	);
 	cases.push(
-		await runFinnhub(query([aapl]), [], [
-			profile({ name: "経".repeat(200), ticker: "AAPL" }),
-			calendar([]),
-		]),
+		await runFinnhub(
+			query([aapl]),
+			[],
+			[profile({ name: "経".repeat(200), ticker: "AAPL" }), calendar([])],
+		),
 	);
-	cases.push(await runFinnhub(query([aapl, aaplNoName]), [true, false], [
-		profile({ name: "A", ticker: "AAPL" }),
-		calendar([]),
-	]));
+	cases.push(
+		await runFinnhub(
+			query([aapl, aaplNoName]),
+			[true, false],
+			[profile({ name: "A", ticker: "AAPL" }), calendar([])],
+		),
+	);
 	cases.push(await runFinnhub(query([aapl]), [false], []));
-	cases.push(await runFinnhub(query([aapl]), [true, false], [profile({ name: "A", ticker: "AAPL" })]));
+	cases.push(
+		await runFinnhub(query([aapl]), [true, false], [profile({ name: "A", ticker: "AAPL" })]),
+	);
 	for (const detail of ["HTTP 401", "HTTP 403", "HTTP 429", "HTTP 500", "HTTP 404", "x"]) {
 		cases.push(await runFinnhub(query([aapl]), [], [fetchError("HTTP_ERROR", detail)]));
 		cases.push(
