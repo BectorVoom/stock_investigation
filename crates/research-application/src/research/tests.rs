@@ -1,12 +1,12 @@
 //! Replays the actual TypeScript test scenarios, including every prompt and
 //! every ordered call across the agent, tools and progress reporter.
 use super::*;
-use research_contracts::jobs::{ConversationContextMessage, ConversationRole};
 use async_trait::async_trait;
 use research_agent_core::{
 	runtime::{AgentProbe, AgentRunContext, AgentTurn},
 	tools::{Tool, ToolCostCategory, ToolMeta, ToolSideEffect},
 };
+use research_contracts::jobs::{ConversationContextMessage, ConversationRole};
 use research_contracts::{
 	Contract,
 	agent::{AgentCapabilities, AgentRequest},
