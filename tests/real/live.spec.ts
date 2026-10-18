@@ -20,7 +20,7 @@ import {
  * Positive-path live test (`bun run test:real:live`, finding 14, task 23b).
  *
  * Opt-in: skipped without `RUN_LIVE_OPENCODE=1` and `OPENCODE_MODEL` (the
- * same switches the existing live tests use), because it spends plan quota
+ * same switches the existing live tests use) or `RUN_LIVE_AGENT=<agentId>`, because it spends plan quota
  * and needs the real network. `bun run test:real` alone is PARTIAL coverage
  * of the owner's rule (network path only: one real feed refresh, no model);
  * THIS suite is the positive path: a real question through the real agent
@@ -51,8 +51,19 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
-const LIVE = process.env.RUN_LIVE_OPENCODE === "1";
-const MODEL = (process.env.OPENCODE_MODEL ?? "").trim();
+/**
+ * The backend under test: `RUN_LIVE_AGENT=<agentId>` (with an optional
+ * `RUN_LIVE_MODEL`), or the original `RUN_LIVE_OPENCODE=1` with the required
+ * `OPENCODE_MODEL`. The runner is chosen by `RESEARCH_RUNNER` (the launcher).
+ */
+const LIVE_AGENT_ENV = (process.env.RUN_LIVE_AGENT ?? "").trim();
+const LIVE_OPENCODE = process.env.RUN_LIVE_OPENCODE === "1";
+const LIVE = LIVE_AGENT_ENV !== "" || LIVE_OPENCODE;
+const AGENT_ID = LIVE_AGENT_ENV !== "" ? LIVE_AGENT_ENV : "opencode";
+const MODEL =
+	AGENT_ID === "opencode"
+		? (process.env.OPENCODE_MODEL ?? "").trim()
+		: (process.env.RUN_LIVE_MODEL ?? "").trim();
 const PAGE_URL = (process.env.RESEARCH_REAL_PAGE_URL ?? "https://example.com/").trim();
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8901;
@@ -110,7 +121,7 @@ function childEnv(dataDir: string, extra: Readonly<Record<string, string>> = {})
 		extra: {
 			// The runner's agent runtimes inherit this environment: the model
 			// choice is explicit, so the CLI never picks a provider itself.
-			OPENCODE_MODEL: MODEL,
+			...(MODEL === "" ? {} : { OPENCODE_MODEL: MODEL }),
 			...extra,
 		},
 	});
@@ -167,20 +178,28 @@ async function dumpDiagnostics(label: string, dataDir: string): Promise<void> {
 	}
 }
 
+/** Waits until the runner's probe reports the backend (and the model, when one is chosen). */
 async function waitForRunnerWithModel(): Promise<void> {
 	await expect
 		.poll(
 			async () => {
 				const response = await fetch(`${API_ORIGIN}/api/v1/agents`);
-				if (!response.ok) return [];
+				if (!response.ok) return "agents API not ready";
 				const parsed = agentsResponseSchema.safeParse(await response.json());
-				if (!parsed.success) return [];
-				const opencode = parsed.data.agents.find((agent) => agent.agentId === "opencode");
-				return opencode?.capabilities.models ?? [];
+				if (!parsed.success) return "agents API response invalid";
+				const agent = parsed.data.agents.find((entry) => entry.agentId === AGENT_ID);
+				if (agent === undefined) return "backend not probed";
+				if (agent.availability.status !== "available") {
+					return `backend unavailable: ${agent.availability.reasonCode} ${agent.availability.detail}`;
+				}
+				if (MODEL !== "" && !(agent.capabilities.models ?? []).includes(MODEL)) {
+					return "model not listed";
+				}
+				return "ready";
 			},
 			{ timeout: 180_000 },
 		)
-		.toContain(MODEL);
+		.toBe("ready");
 }
 
 async function apiJson(method: string, path: string, body?: unknown): Promise<unknown> {
@@ -216,10 +235,10 @@ function nestedField(response: unknown, outer: string, field: string): string {
 }
 
 test.describe("live positive path through the real backend (spends real quota)", () => {
-	test.skip(!LIVE, "needs RUN_LIVE_OPENCODE=1 with OPENCODE_MODEL in the environment");
+	test.skip(!LIVE, "needs RUN_LIVE_AGENT=<agentId>, or RUN_LIVE_OPENCODE=1 with OPENCODE_MODEL");
 
 	test.beforeAll(async ({ browser }) => {
-		if (MODEL === "") {
+		if (AGENT_ID === "opencode" && MODEL === "") {
 			throw new Error(
 				"RUN_LIVE_OPENCODE=1 requires OPENCODE_MODEL=provider/model in the environment, so the CLI never picks a provider on its own",
 			);
@@ -235,7 +254,13 @@ test.describe("live positive path through the real backend (spends real quota)",
 		cleaners.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 		// Test-owned runner settings (finding 5): the operational
 		// `apps/runner/.env` is neither copied nor read.
-		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {});
+		// A backend whose tool isolation is "unverified" (Codex) is refused
+		// by the pipeline unless the owner opts in on the runner; this is a
+		// throwaway copy, and the opt-in is the documented one.
+		runnerEnvFile = writeTestRunnerEnvFile(
+			extraRoot,
+			AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" },
+		);
 		service = await startDev(dataDirA);
 		livePage = await browser.newPage();
 	});
@@ -278,23 +303,25 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const agentSection = page.getByRole("region", { name: "AI agent" });
 		await expect(agentSection).toBeVisible();
 		const backend = agentSection.getByLabel("Default backend");
-		await expect(backend.locator("option", { hasText: "OpenCode" })).toHaveCount(1, {
+		await expect(backend.locator(`option[value="${AGENT_ID}"]`)).toHaveCount(1, {
 			timeout: 30_000,
 		});
-		await backend.selectOption("opencode");
-		const modelSelect = agentSection.getByLabel("Model for this backend");
-		await expect
-			.poll(
-				async () =>
-					modelSelect
-						.locator("option")
-						.evaluateAll((nodes) =>
-							nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
-						),
-				{ timeout: 60_000 },
-			)
-			.toContain(MODEL);
-		await modelSelect.selectOption(MODEL);
+		await backend.selectOption(AGENT_ID);
+		if (MODEL !== "") {
+			const modelSelect = agentSection.getByLabel("Model for this backend");
+			await expect
+				.poll(
+					async () =>
+						modelSelect
+							.locator("option")
+							.evaluateAll((nodes) =>
+								nodes.map((node) => (node instanceof HTMLOptionElement ? node.value : "")),
+							),
+					{ timeout: 60_000 },
+				)
+				.toContain(MODEL);
+			await modelSelect.selectOption(MODEL);
+		}
 		await agentSection.getByLabel("Effort").selectOption("low");
 		// Public web access must be ON for the page question below: ensure
 		// the checkbox is checked (the defaults already allow it, so blindly
@@ -319,8 +346,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 			throw new Error("saved settings have no settings");
 		}
 		const settingsRecord = settingsBody as Record<string, unknown>;
-		expect(settingsRecord.defaultAgentId).toBe("opencode");
-		expect((settingsRecord.models as Record<string, unknown>).opencode).toBe(MODEL);
+		expect(settingsRecord.defaultAgentId).toBe(AGENT_ID);
+		if (MODEL !== "") {
+			expect((settingsRecord.models as Record<string, unknown>)[AGENT_ID]).toBe(MODEL);
+		}
 		expect(settingsRecord.webAccess).toBe("public-web");
 
 		// A real recommended source subscribed.
@@ -514,8 +543,8 @@ test.describe("live positive path through the real backend (spends real quota)",
 		const created = await apiJson("POST", "/api/v1/research-runs", {
 			workspaceId,
 			question: "Which products could see demand growth?",
-			agentId: "opencode",
-			model: MODEL,
+			agentId: AGENT_ID,
+			model: MODEL === "" ? null : MODEL,
 			effort: "low",
 			horizonYears: 4,
 			markets: ["US"],
