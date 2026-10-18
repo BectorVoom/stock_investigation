@@ -133,11 +133,9 @@ describe("SEC client: fair-access request spacing", () => {
 			await client.fetchDocument(URL_A, REQUEST);
 			const stop = new AbortController();
 			let finished = false;
-			const queued = client
-				.fetchDocument(URL_A, { ...REQUEST, signal: stop.signal })
-				.then(() => {
-					finished = true;
-				});
+			const queued = client.fetchDocument(URL_A, { ...REQUEST, signal: stop.signal }).then(() => {
+				finished = true;
+			});
 			await vi.advanceTimersByTimeAsync(10);
 			expect(finished).toBe(false);
 			stop.abort();

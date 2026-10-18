@@ -223,8 +223,12 @@ export async function executeJob(
 			await flush();
 		},
 		async note(text) {
+			// The Worker refuses an empty note (`text` is min(1)) and a refused batch
+			// stays queued, so one empty note would block every later event.
+			const cut = text.slice(0, 500);
+			if (cut === "") return;
 			progress.note += 1;
-			enqueue({ type: "note", text: text.slice(0, 500) });
+			enqueue({ type: "note", text: cut });
 			if (queue.length >= NOTE_FLUSH_THRESHOLD) await flush();
 		},
 		async tool(toolId, outcome, detail) {
