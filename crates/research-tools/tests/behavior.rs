@@ -290,3 +290,49 @@ async fn measure_real_network_tools() {
 	)
 	.unwrap();
 }
+
+/// Two `web.search` calls started together: the second GDELT request has to
+/// wait for its 5 s slot, which is the only case where ADR-0030 C5 applies.
+#[tokio::test]
+#[ignore = "explicit real-network comparison, four GDELT requests"]
+async fn measure_concurrent_searches_with_and_without_preconnect() {
+	for with_preconnect in [false, true] {
+		let fetcher = Arc::new(research_net::create_node_safe_fetcher().unwrap());
+		let search = create_search_tools(SearchToolDeps {
+			fetcher: fetcher.clone(),
+			clock: Arc::new(RealTime),
+			hasher: Arc::new(Hash),
+			sleep: Arc::new(TokioSleep),
+			preconnect: with_preconnect.then(|| {
+				let preconnect: Arc<dyn research_tools::search::SearchPreconnect> = fetcher.clone();
+				preconnect
+			}),
+		})
+		.remove(0);
+		let started = Instant::now();
+		let call = |query: &'static str| {
+			let search = search.clone();
+			async move {
+				let args = json::parse(&format!(r#"{{"query":"{query}"}}"#)).unwrap();
+				let result = search.execute(args, context()).await;
+				let detail = result.as_ref().map_or_else(
+					|e| e.detail.clone(),
+					|v| {
+						v.model_text
+							.lines()
+							.filter(|line| line.contains("search failed"))
+							.collect::<Vec<_>>()
+							.join(" ")
+					},
+				);
+				(started.elapsed().as_millis(), detail)
+			}
+		};
+		let (first, second) = tokio::join!(call("gold price"), call("battery storage"));
+		println!(
+			"{}",
+			serde_json::json!({"preconnect": with_preconnect, "first_ms": first.0, "first": first.1, "second_ms": second.0, "second": second.1})
+		);
+		tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+	}
+}
