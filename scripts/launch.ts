@@ -760,9 +760,10 @@ async function main(plan: LaunchPlan): Promise<void> {
 		RUNNER_TOKEN: token,
 	});
 	if (plan.mode === "development") {
-		// `node --watch` survives the program it runs, so a later runner
-		// crash is visible only here (finding 7); production runners exit,
-		// which the exit handler above reports.
+		// `node --watch` (and the Rust `scripts/runnerDev.ts`) survive the
+		// program they run, so a later runner crash is visible only here
+		// (finding 7); production runners exit, which the exit handler above
+		// reports.
 		stopRunnerLogWatch = watchRunnerLog(plan.runnerLog);
 	}
 	const agents = await waitForRunner(plan, runnerStartedAtMs);

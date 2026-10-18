@@ -8,10 +8,12 @@
  *
  * Development runs the working tree live (Vite HMR, `wrangler dev` reload,
  * a watching `bun build` of the runner into the development data directory
- * plus the bundle run under `node --watch`) against `data-dev/`. Production runs ONLY the
+ * plus the bundle run under `node --watch`, or with RESEARCH_RUNNER=rust the
+ * Cargo-built binary kept fresh by `scripts/runnerDev.ts`) against `data-dev/`. Production runs ONLY the
  * generation the pointer names under `release/generations/` (prebuilt Worker bundle with
  * bundling disabled, so later source edits and rebuilds of `dist/` cannot change what it serves)
- * against `data/`. Neither mode reads the other's data directory.
+ * against `data/`. Neither mode reads the other's data directory. The runner
+ * itself is chosen by RESEARCH_RUNNER (node, the default, or rust; ADR-0030).
  */
 import { resolve, sep } from "node:path";
 
