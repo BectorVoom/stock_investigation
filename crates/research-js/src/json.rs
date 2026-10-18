@@ -22,7 +22,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::json_text::{number as number_text, push_quoted};
+use crate::json_text::{push_number, push_quoted};
 use crate::utf16;
 
 /// A JavaScript value as `JSON.parse` produces it.
@@ -897,7 +897,7 @@ fn write(out: &mut String, root: &Value, gap: &str) {
 				Value::Null => out.push_str("null"),
 				Value::Bool(true) => out.push_str("true"),
 				Value::Bool(false) => out.push_str("false"),
-				Value::Number(number) => out.push_str(&number_text(*number)),
+				Value::Number(number) => push_number(out, *number),
 				Value::String(text) => push_quoted(out, text),
 				Value::Array(items) if items.is_empty() => out.push_str("[]"),
 				Value::Object(object) if object.is_empty() => out.push_str("{}"),

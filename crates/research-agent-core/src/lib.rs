@@ -13,3 +13,5 @@
 pub mod model_text;
 pub mod runtime;
 pub mod tools;
+
+pub mod registry;

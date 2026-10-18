@@ -11,7 +11,10 @@
 //! `log_write_failed` line a minute, and never reaches the caller).
 //!
 //! Effect itself is not ported: the runner only uses the facade.
+//!
+//! [`cpu::run_cpu`] is the single async-to-rayon bridge (panics caught).
 
+pub mod cpu;
 mod iso;
 mod line;
 mod logger;
