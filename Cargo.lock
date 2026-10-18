@@ -836,9 +836,12 @@ name = "research-finance"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64",
  "chrono",
  "flate2",
+ "hex",
  "indexmap",
+ "memchr",
  "quick-xml",
  "regex",
  "research-application",
@@ -850,6 +853,7 @@ dependencies = [
  "research-net",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "tokio",
  "tokio-util",

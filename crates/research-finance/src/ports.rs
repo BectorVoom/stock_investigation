@@ -1,7 +1,9 @@
 //! Market and earnings ports (FR-017, FR-018); sources are registered by id.
 use async_trait::async_trait;
-use research_contracts::market::{MarketSeriesMeta, MarketUnavailableCode, MarketProviderId, market_unavailable_reason};
-use research_contracts::watchlist::{EarningsEvent, EarningsUnavailableCode, EarningsSourceId};
+use research_contracts::market::{
+	MarketProviderId, MarketSeriesMeta, MarketUnavailableCode, market_unavailable_reason,
+};
+use research_contracts::watchlist::{EarningsEvent, EarningsSourceId, EarningsUnavailableCode};
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
@@ -10,12 +12,18 @@ use tokio_util::sync::CancellationToken;
 pub struct Secret(String);
 impl Secret {
 	/// Wraps a credential.
-	pub fn new(value: impl Into<String>) -> Self { Self(value.into()) }
+	pub fn new(value: impl Into<String>) -> Self {
+		Self(value.into())
+	}
 	/// Exposes it only at the outgoing request boundary.
-	pub fn expose(&self) -> &str { &self.0 }
+	pub fn expose(&self) -> &str {
+		&self.0
+	}
 }
 impl std::fmt::Debug for Secret {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { f.write_str("[REDACTED]") }
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str("[REDACTED]")
+	}
 }
 /// One request for a provider series.
 pub struct SeriesQuery<'a> {
@@ -57,7 +65,10 @@ pub struct MarketUnavailable {
 impl MarketUnavailable {
 	/// Constructs the provider-specific fixed reason.
 	pub fn new(code: MarketUnavailableCode, provider: MarketProviderId) -> Self {
-		Self { code, reason: market_unavailable_reason(code, Some(provider)).to_owned() }
+		Self {
+			code,
+			reason: market_unavailable_reason(code, Some(provider)).to_owned(),
+		}
 	}
 }
 /// Source-neutral series port.
@@ -77,9 +88,14 @@ pub struct UnconfiguredMarketSeriesSource {
 }
 #[async_trait]
 impl MarketSeriesSource for UnconfiguredMarketSeriesSource {
-	fn provider_id(&self) -> MarketProviderId { self.provider }
+	fn provider_id(&self) -> MarketProviderId {
+		self.provider
+	}
 	async fn fetch_series(&self, _: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
-		Err(MarketUnavailable { code: MarketUnavailableCode::SourceNotConfigured, reason: self.reason.clone() })
+		Err(MarketUnavailable {
+			code: MarketUnavailableCode::SourceNotConfigured,
+			reason: self.reason.clone(),
+		})
 	}
 }
 /// One requested stock.
@@ -130,9 +146,16 @@ pub struct EarningsFailure {
 }
 impl EarningsFailure {
 	/// A failure without a name.
-	pub fn new(code: EarningsUnavailableCode) -> Self { Self { code, name: None } }
+	pub fn new(code: EarningsUnavailableCode) -> Self {
+		Self { code, name: None }
+	}
 	/// A successful retrieval without announcements.
-	pub fn no_date(name: Option<String>) -> Self { Self { code: EarningsUnavailableCode::NoScheduledDate, name: Some(name) } }
+	pub fn no_date(name: Option<String>) -> Self {
+		Self {
+			code: EarningsUnavailableCode::NoScheduledDate,
+			name: Some(name),
+		}
+	}
 }
 /// A result per stock, in query order.
 pub type EarningsResult = Result<EarningsData, EarningsFailure>;
@@ -148,9 +171,19 @@ pub trait EarningsCalendarSource: Send + Sync {
 pub struct UnconfiguredEarningsCalendarSource(pub EarningsSourceId);
 #[async_trait]
 impl EarningsCalendarSource for UnconfiguredEarningsCalendarSource {
-	fn source_id(&self) -> EarningsSourceId { self.0 }
+	fn source_id(&self) -> EarningsSourceId {
+		self.0
+	}
 	async fn fetch_earnings(&self, query: EarningsQuery<'_>) -> Vec<EarningsResult> {
-		query.stocks.iter().map(|_| Err(EarningsFailure::new(EarningsUnavailableCode::SourceNotConfigured))).collect()
+		query
+			.stocks
+			.iter()
+			.map(|_| {
+				Err(EarningsFailure::new(
+					EarningsUnavailableCode::SourceNotConfigured,
+				))
+			})
+			.collect()
 	}
 }
 /// Injected sleep (ARCH-002); resolves early when cancelled.
@@ -165,7 +198,10 @@ pub struct TokioSleeper;
 impl Sleeper for TokioSleeper {
 	async fn sleep(&self, ms: u64, cancel: Option<&CancellationToken>) {
 		let sleep = tokio::time::sleep(std::time::Duration::from_millis(ms));
-		if let Some(cancel) = cancel { tokio::select! { () = sleep => {}, () = cancel.cancelled() => {} } }
-		else { sleep.await; }
+		if let Some(cancel) = cancel {
+			tokio::select! { () = sleep => {}, () = cancel.cancelled() => {} }
+		} else {
+			sleep.await;
+		}
 	}
 }

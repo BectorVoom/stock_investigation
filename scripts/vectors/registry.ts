@@ -8,6 +8,7 @@ import { dateExporter } from "./date.ts";
 import { domainExporter } from "./domain.ts";
 import { domainNewsExporter } from "./domainNews.ts";
 import { feedExporter } from "./feed.ts";
+import { financeExporter } from "./finance.ts";
 import { htmlExporter } from "./html.ts";
 import { jsExporter } from "./js.ts";
 import { loggingExporter } from "./logging.ts";
@@ -30,4 +31,5 @@ export const exporters: readonly VectorExporter[] = [
 	modelTextExporter,
 	mathExporter,
 	netExporter,
+	financeExporter,
 ];

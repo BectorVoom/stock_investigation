@@ -1,28 +1,64 @@
-//! Linear, bounded JPX sheet/shared-string scanners. Phonetic runs remain included (F3).
-use research_contracts::watchlist::{EarningsEvent,EarningsTiming};
-use research_domain::calendar::civil_date::{excel_serial_to_iso_date,is_valid_iso_date};
-use research_js::{whitespace::trim,utf16::utf16_len,string_number::string_to_number};
+//! Parser for the JPX earnings-announcement workbooks (FR-018), a port of
+//! `jpxWorkbook.ts`. The workbook is untrusted input (SEC-001): element
+//! scanning is a linear `memmem` walk (every delimiter is ASCII, so byte
+//! offsets slice exactly where the UTF-16 offsets of the TypeScript do), entity
+//! decoding is one non-recursive pass, and row / shared-string / cell counts
+//! are bounded: past a bound the workbook is rejected, never partially
+//! trusted. Phonetic `<rPh>` runs are included in shared strings, exactly as
+//! the TypeScript does (finding F3).
+use memchr::memmem;
+use research_contracts::watchlist::{EarningsEvent, EarningsTiming};
+use research_domain::calendar::civil_date::{excel_serial_to_iso_date, is_valid_iso_date};
+use research_js::{string_number::string_to_number, utf16::utf16_len, whitespace::trim};
 use serde::Serialize;
+
 /// Workbook structural failure.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
 pub enum JpxWorkbookError {
 	/// An element is truncated or all data rows are unreadable.
-	#[error("MALFORMED_WORKBOOK")] MalformedWorkbook,
+	#[error("MALFORMED_WORKBOOK")]
+	MalformedWorkbook,
 	/// A scanner, cell or row bound is exceeded.
-	#[error("LIMIT_EXCEEDED")] LimitExceeded,
+	#[error("LIMIT_EXCEEDED")]
+	LimitExceeded,
 	/// The five English headers are missing.
-	#[error("MISSING_HEADERS")] MissingHeaders,
+	#[error("MISSING_HEADERS")]
+	MissingHeaders,
 }
-use JpxWorkbookError::*;
+
+impl JpxWorkbookError {
+	/// The TypeScript error literal.
+	#[must_use]
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Self::MalformedWorkbook => "MALFORMED_WORKBOOK",
+			Self::LimitExceeded => "LIMIT_EXCEEDED",
+			Self::MissingHeaders => "MISSING_HEADERS",
+		}
+	}
+}
+
+use JpxWorkbookError::{LimitExceeded, MalformedWorkbook, MissingHeaders};
+
+/// The real file holds ~2,900 data rows; this is headroom, not a target.
+pub const MAX_JPX_DATA_ROWS: usize = 20_000;
+/// Bound on shared strings.
+pub const MAX_JPX_SHARED_STRINGS: usize = 100_000;
+/// Bound on cells in one workbook.
+pub const MAX_JPX_CELLS: usize = 1_000_000;
+
+const UNDECIDED_TEXT: &str = "未定_Undecided";
+const MAX_LABEL_UTF16: usize = 80;
+
 /// One normalized workbook row, before the requested date filter.
-#[derive(Clone,Debug,Serialize,PartialEq,Eq)]
-#[serde(rename_all="camelCase")]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct JpxWorkbookRow {
 	/// JP stock code.
 	pub code: String,
 	/// Provider company name.
 	pub name: Option<String>,
-	/// Announcement date or undecided.
+	/// Announcement date, or `None` when the source lists it as undecided.
 	pub announcement_date: Option<String>,
 	/// End of fiscal year.
 	pub fiscal_period_end: String,
@@ -31,138 +67,548 @@ pub struct JpxWorkbookRow {
 	/// Stable fiscal key.
 	pub period_key: String,
 }
-struct Element<'a> { attrs: &'a str, inner: &'a str }
-fn scan_elements<'a>(xml: &'a str,tag: &str,limit: usize) -> Result<Vec<Element<'a>>,JpxWorkbookError> {
-	let open = format!("<{tag}"); let close = format!("</{tag}>");
-	let mut at = 0; let mut out = Vec::new();
-	while let Some(relative) = xml.get(at..).and_then(|s| s.find(&open)) {
-		let start = at+relative+open.len();
-		if !xml.as_bytes().get(start).is_some_and(|b| matches!(b,b' '|b'\t'|b'\n'|b'\r'|b'/'|b'>')) { at = start; continue; }
-		let end = start+xml.get(start..).and_then(|s| s.find('>')).ok_or(MalformedWorkbook)?;
-		let attrs = xml.get(start..end).ok_or(MalformedWorkbook)?;
-		let element = if let Some(attrs) = attrs.strip_suffix('/') {
-			at = end+1; Element { attrs,inner: "" }
-		} else {
-			let body = end+1;
-			let closing = body+xml.get(body..).and_then(|s| s.find(&close)).ok_or(MalformedWorkbook)?;
-			at = closing+close.len();
-			Element { attrs,inner: xml.get(body..closing).ok_or(MalformedWorkbook)? }
+
+/// A scanned `<tag …>…</tag>` or `<tag …/>` element.
+struct Element<'a> {
+	attrs: &'a str,
+	inner: &'a str,
+}
+
+/// Bounded linear scan for elements named `tag` (SEC-001). An opener without
+/// its closer fails the workbook at once (`MALFORMED_WORKBOOK`); `limit`
+/// bounds the element count.
+fn scan_elements<'a>(
+	xml: &'a str,
+	tag: &str,
+	limit: usize,
+) -> Result<Vec<Element<'a>>, JpxWorkbookError> {
+	let open = format!("<{tag}");
+	let close = format!("</{tag}>");
+	let open_finder = memmem::Finder::new(open.as_bytes());
+	let close_finder = memmem::Finder::new(close.as_bytes());
+	let bytes = xml.as_bytes();
+	let mut position = 0;
+	let mut out = Vec::new();
+	loop {
+		let Some(found) = bytes
+			.get(position..)
+			.and_then(|rest| open_finder.find(rest))
+		else {
+			return Ok(out);
 		};
-		out.push(element);
-		if out.len() > limit { return Err(LimitExceeded); }
+		let start = position + found;
+		let after_name = start + open.len();
+		if !bytes
+			.get(after_name)
+			.is_some_and(|byte| matches!(byte, b' ' | b'\t' | b'\n' | b'\r' | b'/' | b'>'))
+		{
+			// `<rows>`, `<rowspan>` …: not this element; skip past the name.
+			position = after_name;
+			continue;
+		}
+		let attrs_end = bytes
+			.get(after_name..)
+			.and_then(|rest| memchr::memchr(b'>', rest))
+			.map(|at| after_name + at)
+			.ok_or(MalformedWorkbook)?;
+		let attrs = xml.get(after_name..attrs_end).ok_or(MalformedWorkbook)?;
+		if let Some(attrs) = attrs.strip_suffix('/') {
+			out.push(Element { attrs, inner: "" });
+			position = attrs_end + 1;
+		} else {
+			let body = attrs_end + 1;
+			let end = bytes
+				.get(body..)
+				.and_then(|rest| close_finder.find(rest))
+				.map(|at| body + at)
+				.ok_or(MalformedWorkbook)?;
+			out.push(Element {
+				attrs,
+				inner: xml.get(body..end).ok_or(MalformedWorkbook)?,
+			});
+			position = end + close.len();
+		}
+		if out.len() > limit {
+			return Err(LimitExceeded);
+		}
 	}
-	Ok(out)
 }
-/// Decodes one XML entity pass, discarding invalid numeric code points.
+
+/// Decodes the five predefined XML entities and numeric character references
+/// in one non-recursive pass (`&(#x[0-9a-fA-F]{1,6}|#\d{1,7}|lt|gt|amp|quot|apos);`).
+/// Anything else (custom entities, DTD tricks) stays inert literal text.
+#[must_use]
 pub fn decode_workbook_text(text: &str) -> String {
-	let mut out = String::with_capacity(text.len()); let mut rest = text;
-	while let Some(at) = rest.find('&') {
-		out.push_str(rest.get(..at).unwrap_or(""));
-		let after = rest.get(at+1..).unwrap_or("");
-		if let Some(end) = after.find(';').filter(|n| *n<=9) {
-			let entity = after.get(..end).unwrap_or("");
-			let named = match entity { "lt" => Some('<'), "gt" => Some('>'), "amp" => Some('&'), "quot" => Some('"'), "apos" => Some('\''),_ => None };
-			if let Some(ch) = named { out.push(ch); rest = after.get(end+1..).unwrap_or(""); continue; }
-			let numeric = entity.strip_prefix("#x").filter(|s| (1..=6).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_hexdigit())).map(|s| (s,16))
-				.or_else(|| entity.strip_prefix('#').filter(|s| (1..=7).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_digit())).map(|s| (s,10)));
-			if let Some((s,radix)) = numeric {
-				if let Some(ch) = u32::from_str_radix(s,radix).ok().filter(|n| *n>0).and_then(char::from_u32) { out.push(ch); }
-				rest = after.get(end+1..).unwrap_or(""); continue;
-			}
-		}
-		out.push('&'); rest = after;
-	}
-	out.push_str(rest); out
-}
-fn single<'a>(xml: &'a str,tag: &str) -> &'a str {
-	let Some(start) = xml.find(&format!("<{tag}")) else { return ""; };
-	let Some(end) = xml.get(start..).and_then(|s| s.find('>')).map(|n| start+n+1) else { return ""; };
-	let Some(close) = xml.get(end..).and_then(|s| s.find(&format!("</{tag}>"))).map(|n| end+n) else { return ""; };
-	xml.get(end..close).unwrap_or("")
-}
-fn letters(mut position: usize) -> String {
-	let mut reversed = Vec::new();
-	loop { reversed.push(char::from(b'A'+u8::try_from(position%26).unwrap_or(0))); if position<26 { break; } position = position/26-1; }
-	reversed.into_iter().rev().collect()
-}
-fn attr<'a>(attrs: &'a str,key: &str) -> Option<&'a str> {
-	let start = attrs.find(&format!("{key}=\""))?+key.len()+2;
-	let rest = attrs.get(start..)?; rest.get(..rest.find('"')?)
-}
-struct Cell<'a> { column: String,kind: &'a str,value: String }
-fn row_cells(xml: &str, seen: usize) -> Result<Vec<Cell<'_>>,JpxWorkbookError> {
-	if seen>=1_000_000 { return Err(LimitExceeded); }
-	scan_elements(xml,"c",1_000_000-seen)?.into_iter().enumerate().map(|(pos,e)| {
-		let column = attr(e.attrs,"r").and_then(|s| { let n = s.bytes().take_while(u8::is_ascii_uppercase).count(); let (letters,number)=s.split_at(n); (!letters.is_empty() && !number.is_empty() && number.bytes().all(|b| b.is_ascii_digit())).then(|| letters.to_owned()) }).unwrap_or_else(|| letters(pos));
-		let kind = attr(e.attrs,"t").filter(|s| !s.is_empty() && s.bytes().all(|b| b.is_ascii_alphabetic())).unwrap_or("");
-		let (kind,value) = if e.inner.is_empty() { ("empty",String::new()) }
-		else if kind=="inlineStr" { ("inline",decode_workbook_text(single(e.inner,"t"))) }
-		else if kind=="s" { ("shared",trim(single(e.inner,"v")).to_owned()) }
-		else { ("literal",decode_workbook_text(single(e.inner,"v"))) };
-		Ok(Cell { column,kind,value })
-	}).collect()
-}
-fn cell_text<'a>(cell: &'a Cell<'_>,shared: &'a [String]) -> &'a str {
-	if cell.kind!="shared" { return &cell.value; }
-	let index = string_to_number(&cell.value);
-	if !index.is_finite() || index<0.0 || index.fract()!=0.0 { return ""; }
-	let index = format!("{index:.0}").parse::<usize>().ok();
-	index.and_then(|n| shared.get(n)).map_or("",String::as_str)
-}
-const HEADERS: [&str;5] = ["Scheduled Dates for Earnings Announcements","Code","Issue Name","Fiscal Year-end","Fiscal Year/Quarter"];
-fn locate(cells: &[Cell<'_>],shared: &[String]) -> Option<Vec<String>> {
-	let mut found: Vec<Option<String>> = vec![None;5];
-	for cell in cells {
-		let text = cell_text(cell,shared);
-		for (index,header) in HEADERS.iter().enumerate() {
-			if text.split(['\n','\r']).map(trim).any(|line| line==*header || line.ends_with(&format!("/ {header}"))) {
-				if let Some(slot) = found.get_mut(index) { *slot = Some(cell.column.clone()); } break;
-			}
+	let mut out = String::with_capacity(text.len());
+	let mut rest = text;
+	while let Some(at) = memchr::memchr(b'&', rest.as_bytes()) {
+		out.push_str(rest.get(..at).unwrap_or_default());
+		let after = rest.get(at + 1..).unwrap_or_default();
+		if let Some((replacement, consumed)) = decode_entity(after) {
+			out.push_str(&replacement);
+			rest = after.get(consumed..).unwrap_or_default();
+		} else {
+			out.push('&');
+			rest = after;
 		}
 	}
-	found.into_iter().collect()
+	out.push_str(rest);
+	out
 }
-fn data_row(cells: &[Cell<'_>],shared: &[String],headers: &[String]) -> Option<JpxWorkbookRow> {
-	let cell = |index| { let column = headers.get(index)?; cells.iter().find(|cell| cell.column==*column) };
-	let read = |index| Some(trim(cell_text(cell(index)?,shared)));
-	let code_cell = cell(1)?;
-	// F6: the numeric branch is reachable only for empty cells and always skips them.
-	if code_cell.kind=="empty" { return None; }
-	let code = read(1)?.to_uppercase();
-	if code.len()!=4 || !code.as_bytes().first().is_some_and(u8::is_ascii_digit) || !code.bytes().all(|b| b.is_ascii_digit() || b.is_ascii_uppercase()) { return None; }
-	let raw = read(0)?;
-	let announcement_date = if raw=="未定_Undecided" { None } else {
-		if raw.is_empty() { return None; } Some(excel_serial_to_iso_date(string_to_number(raw)).ok()?)
+
+/// The replacement and the byte length of one entity body plus its `;`, when
+/// `after` (the text following `&`) starts with a recognised entity.
+fn decode_entity(after: &str) -> Option<(String, usize)> {
+	// The longest body is `#x` plus six hex digits or `#` plus seven digits.
+	let window = after.as_bytes().get(..9.min(after.len()))?;
+	let end = memchr::memchr(b';', window)?;
+	let entity = after.get(..end)?;
+	let consumed = end + 1;
+	let named = match entity {
+		"lt" => Some("<"),
+		"gt" => Some(">"),
+		"amp" => Some("&"),
+		"quot" => Some("\""),
+		"apos" => Some("'"),
+		_ => None,
 	};
-	let raw_end = read(3)?;
-	if raw_end.is_empty() { return None; }
-	let fiscal_period_end = excel_serial_to_iso_date(string_to_number(raw_end)).ok()?;
-	let label = read(4)?;
-	if label.is_empty() || utf16_len(label)>80 { return None; }
-	let lower = label.to_lowercase();
-	let slug = lower.split(|c: char| !c.is_ascii_lowercase() && !c.is_ascii_digit()).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("-");
-	let period_key = format!("fy{fiscal_period_end}-{slug}");
-	let event = EarningsEvent { period_key: period_key.clone(), announcement_date: announcement_date.clone(),fiscal_period_label: label.to_owned(),fiscal_period_end: Some(fiscal_period_end.clone()),timing: EarningsTiming::Unknown };
-	crate::market_fetch::valid_event(&event)?;
-	if announcement_date.as_deref().is_some_and(|s| !is_valid_iso_date(s)) { return None; }
-	let raw_name = read(2).unwrap_or("");
-	Some(JpxWorkbookRow { code,name: (!raw_name.is_empty()).then(|| raw_name.to_owned()),announcement_date,fiscal_period_end,fiscal_period_label: label.to_owned(),period_key })
-}
-/// Parses a sheet and shared strings, failing closed on structural corruption.
-pub fn parse_jpx_workbook(sheet: &str, shared: &str) -> Result<Vec<JpxWorkbookRow>,JpxWorkbookError> {
-	let strings: Vec<String> = scan_elements(shared,"si",100_000)?.into_iter().map(|e| {
-		Ok(scan_elements(e.inner,"t",1_000_000)?.into_iter().map(|e| decode_workbook_text(e.inner)).collect::<String>())
-	}).collect::<Result<_,JpxWorkbookError>>()?;
-	let mut rows = Vec::new(); let mut header = None; let mut seen = 0; let mut data_rows = 0;
-	for row in scan_elements(sheet,"row",21_000)? {
-		if row.inner.is_empty() { continue; }
-		let cells = row_cells(row.inner,seen)?; seen += cells.len();
-		let Some(headers) = &header else { header = locate(&cells,&strings); continue; };
-		if !cells.is_empty() { data_rows += 1; }
-		if rows.len()>=20_000 { return Err(LimitExceeded); }
-		if let Some(row) = data_row(&cells,&strings,headers) { rows.push(row); }
+	if let Some(replacement) = named {
+		return Some((replacement.to_owned(), consumed));
 	}
-	if header.is_none() { return Err(MissingHeaders); }
-	if data_rows>0 && rows.is_empty() { return Err(MalformedWorkbook); }
+	let (digits, radix) = if let Some(hex) = entity.strip_prefix("#x") {
+		(hex, 16)
+	} else {
+		(entity.strip_prefix('#')?, 10)
+	};
+	let max_digits = if radix == 16 { 6 } else { 7 };
+	if digits.is_empty()
+		|| digits.len() > max_digits
+		|| !digits
+			.bytes()
+			.all(|byte| byte.is_ascii_hexdigit() && (radix == 16 || byte.is_ascii_digit()))
+	{
+		return None;
+	}
+	// Zero, beyond U+10FFFF and the surrogate range decode to nothing.
+	let replacement = u32::from_str_radix(digits, radix)
+		.ok()
+		.filter(|code| *code > 0)
+		.and_then(char::from_u32)
+		.map(String::from)
+		.unwrap_or_default();
+	Some((replacement, consumed))
+}
+
+/// `Second quarter` becomes `second-quarter` for the period-key suffix.
+#[must_use]
+pub fn slug_fiscal_kind(label: &str) -> String {
+	let lower = trim(label).to_lowercase();
+	let mut slug = String::with_capacity(lower.len());
+	for part in lower.split(|c: char| !c.is_ascii_lowercase() && !c.is_ascii_digit()) {
+		if part.is_empty() {
+			continue;
+		}
+		if !slug.is_empty() {
+			slug.push('-');
+		}
+		slug.push_str(part);
+	}
+	slug
+}
+
+/// Text of the first `<tag …>…</tag>` run in a small cell body, or `""`.
+fn extract_single_tag_text<'a>(body: &'a str, tag: &str) -> &'a str {
+	let bytes = body.as_bytes();
+	let Some(start) = memmem::find(bytes, format!("<{tag}").as_bytes()) else {
+		return "";
+	};
+	let Some(text_start) = bytes
+		.get(start..)
+		.and_then(|rest| memchr::memchr(b'>', rest))
+		.map(|at| start + at + 1)
+	else {
+		return "";
+	};
+	let Some(end) = bytes
+		.get(text_start..)
+		.and_then(|rest| memmem::find(rest, format!("</{tag}>").as_bytes()))
+		.map(|at| text_start + at)
+	else {
+		return "";
+	};
+	body.get(text_start..end).unwrap_or_default()
+}
+
+/// Spreadsheet column letters of a zero-based cell position.
+fn column_letters(index: usize) -> String {
+	let mut letters = Vec::new();
+	let mut remainder = index;
+	loop {
+		let digit = u8::try_from(remainder % 26).unwrap_or(0);
+		letters.push(char::from(b'A' + digit));
+		if remainder < 26 {
+			break;
+		}
+		remainder = remainder / 26 - 1;
+	}
+	letters.iter().rev().collect()
+}
+
+/// The capture of `/<attr>="(<class>+)<suffix>"/` over `attrs`, trying every
+/// occurrence of `<attr>="` from the left like the regex does.
+fn attribute_capture<'a>(attrs: &'a str, name: &str, with_digits: bool) -> Option<&'a str> {
+	let needle = format!("{name}=\"");
+	let finder = memmem::Finder::new(needle.as_bytes());
+	let bytes = attrs.as_bytes();
+	let mut from = 0;
+	while let Some(found) = bytes.get(from..).and_then(|rest| finder.find(rest)) {
+		let start = from + found + needle.len();
+		let rest = bytes.get(start..)?;
+		let letters = rest
+			.iter()
+			.take_while(|byte| {
+				if with_digits {
+					byte.is_ascii_uppercase()
+				} else {
+					byte.is_ascii_alphabetic()
+				}
+			})
+			.count();
+		let mut end = letters;
+		if with_digits {
+			let digits = rest.get(letters..).map_or(0, |tail| {
+				tail.iter().take_while(|byte| byte.is_ascii_digit()).count()
+			});
+			if digits == 0 {
+				from += found + 1;
+				continue;
+			}
+			end += digits;
+		}
+		if letters > 0 && rest.get(end) == Some(&b'"') {
+			return attrs.get(start..start + letters);
+		}
+		from += found + 1;
+	}
+	None
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CellKind {
+	Empty,
+	Shared,
+	Literal,
+	Inline,
+}
+
+struct Cell {
+	column: String,
+	kind: CellKind,
+	value: String,
+}
+
+fn parse_row_cells(inner: &str, seen_cells: usize) -> Result<Vec<Cell>, JpxWorkbookError> {
+	if seen_cells >= MAX_JPX_CELLS {
+		return Err(LimitExceeded);
+	}
+	let scanned = scan_elements(inner, "c", MAX_JPX_CELLS - seen_cells)?;
+	let mut cells = Vec::with_capacity(scanned.len());
+	for (position, element) in scanned.iter().enumerate() {
+		let column = attribute_capture(element.attrs, "r", true)
+			.map_or_else(|| column_letters(position), str::to_owned);
+		let kind_attr = attribute_capture(element.attrs, "t", false).unwrap_or("");
+		let body = element.inner;
+		if body.is_empty() {
+			cells.push(Cell {
+				column,
+				kind: CellKind::Empty,
+				value: String::new(),
+			});
+			continue;
+		}
+		if kind_attr == "inlineStr" {
+			cells.push(Cell {
+				column,
+				kind: CellKind::Inline,
+				value: decode_workbook_text(extract_single_tag_text(body, "t")),
+			});
+			continue;
+		}
+		let value = extract_single_tag_text(body, "v");
+		if kind_attr == "s" {
+			cells.push(Cell {
+				column,
+				kind: CellKind::Shared,
+				value: trim(value).to_owned(),
+			});
+		} else {
+			cells.push(Cell {
+				column,
+				kind: CellKind::Literal,
+				value: decode_workbook_text(value),
+			});
+		}
+	}
+	Ok(cells)
+}
+
+fn parse_shared_strings(xml: &str) -> Result<Vec<String>, JpxWorkbookError> {
+	let items = scan_elements(xml, "si", MAX_JPX_SHARED_STRINGS)?;
+	let mut strings = Vec::with_capacity(items.len());
+	for item in items {
+		let mut combined = String::new();
+		for run in scan_elements(item.inner, "t", MAX_JPX_CELLS)? {
+			combined.push_str(&decode_workbook_text(run.inner));
+		}
+		strings.push(combined);
+	}
+	Ok(strings)
+}
+
+/// The text of a cell: shared-string cells resolve through the table, an
+/// index outside it is `""`.
+fn cell_text<'a>(cell: &'a Cell, shared: &'a [String]) -> &'a str {
+	if cell.kind != CellKind::Shared {
+		return &cell.value;
+	}
+	let index = string_to_number(&cell.value);
+	if !index.is_finite() || index.fract() != 0.0 || index < 0.0 {
+		return "";
+	}
+	// `-0` is an integer and indexes the first string, as in JavaScript.
+	let position = if index == 0.0 {
+		Some(0)
+	} else {
+		format!("{index:.0}").parse::<usize>().ok()
+	};
+	position
+		.and_then(|at| shared.get(at))
+		.map_or("", String::as_str)
+}
+
+/// Whether a header cell names the wanted English column. The observed file
+/// separates the languages with a newline; a `日本語 / English` slash form is
+/// accepted too. The match is on whole lines, so `Quarter` never matches
+/// `Fiscal Year/Quarter` and `Code` never matches `Market Segment`.
+#[must_use]
+pub fn header_matches(text: &str, english: &str) -> bool {
+	let slash_form = format!("/ {english}");
+	JsLines::new(text).any(|line| {
+		let line = trim(line);
+		line == english || line.ends_with(&slash_form)
+	})
+}
+
+/// `text.split(/\r\n|\r|\n/)`.
+struct JsLines<'a> {
+	rest: Option<&'a str>,
+}
+
+impl<'a> JsLines<'a> {
+	const fn new(text: &'a str) -> Self {
+		Self { rest: Some(text) }
+	}
+}
+
+impl<'a> Iterator for JsLines<'a> {
+	type Item = &'a str;
+
+	fn next(&mut self) -> Option<&'a str> {
+		let rest = self.rest?;
+		match memchr::memchr2(b'\r', b'\n', rest.as_bytes()) {
+			None => {
+				self.rest = None;
+				Some(rest)
+			}
+			Some(at) => {
+				let line = rest.get(..at);
+				let skip = if rest.as_bytes().get(at) == Some(&b'\r')
+					&& rest.as_bytes().get(at + 1) == Some(&b'\n')
+				{
+					2
+				} else {
+					1
+				};
+				self.rest = rest.get(at + skip..);
+				line
+			}
+		}
+	}
+}
+
+const HEADER_DATE: &str = "Scheduled Dates for Earnings Announcements";
+const HEADER_CODE: &str = "Code";
+const HEADER_NAME: &str = "Issue Name";
+const HEADER_END: &str = "Fiscal Year-end";
+const HEADER_LABEL: &str = "Fiscal Year/Quarter";
+
+/// Column letters of the five required columns.
+struct HeaderColumns {
+	date: String,
+	code: String,
+	name: String,
+	end: String,
+	label: String,
+}
+
+fn locate_headers(cells: &[Cell], shared: &[String]) -> Option<HeaderColumns> {
+	let mut date = None;
+	let mut code = None;
+	let mut name = None;
+	let mut end = None;
+	let mut label = None;
+	for cell in cells {
+		let text = cell_text(cell, shared);
+		// First matching header wins per cell; later cells overwrite.
+		let slot = if header_matches(text, HEADER_DATE) {
+			&mut date
+		} else if header_matches(text, HEADER_CODE) {
+			&mut code
+		} else if header_matches(text, HEADER_NAME) {
+			&mut name
+		} else if header_matches(text, HEADER_END) {
+			&mut end
+		} else if header_matches(text, HEADER_LABEL) {
+			&mut label
+		} else {
+			continue;
+		};
+		*slot = Some(cell.column.clone());
+	}
+	Some(HeaderColumns {
+		date: date?,
+		code: code?,
+		name: name?,
+		end: end?,
+		label: label?,
+	})
+}
+
+fn by_column<'a>(cells: &'a [Cell], column: &str) -> Option<&'a Cell> {
+	cells.iter().find(|cell| cell.column == column)
+}
+
+/// An Excel serial as an ISO date, when the cell text is a valid serial.
+fn serial_date(raw: &str) -> Option<String> {
+	if raw.is_empty() {
+		return None;
+	}
+	let serial = string_to_number(raw);
+	if !serial.is_finite() {
+		return None;
+	}
+	excel_serial_to_iso_date(serial).ok()
+}
+
+fn parse_data_row(
+	cells: &[Cell],
+	shared: &[String],
+	headers: &HeaderColumns,
+) -> Option<JpxWorkbookRow> {
+	let code_cell = by_column(cells, &headers.code)?;
+	// F6: the numeric branch of the TypeScript is reachable only for empty
+	// cells and always skips them.
+	if code_cell.kind == CellKind::Empty {
+		return None;
+	}
+	let code = trim(cell_text(code_cell, shared)).to_uppercase();
+	let code_bytes = code.as_bytes();
+	if code_bytes.len() != 4
+		|| !code_bytes.first().is_some_and(u8::is_ascii_digit)
+		|| !code_bytes
+			.iter()
+			.all(|byte| byte.is_ascii_digit() || byte.is_ascii_uppercase())
+	{
+		return None;
+	}
+
+	let date_cell = by_column(cells, &headers.date)?;
+	let date_raw = trim(cell_text(date_cell, shared));
+	let announcement_date = if date_raw == UNDECIDED_TEXT {
+		None
+	} else {
+		Some(serial_date(date_raw)?)
+	};
+
+	let end_cell = by_column(cells, &headers.end)?;
+	let fiscal_period_end = serial_date(trim(cell_text(end_cell, shared)))?;
+
+	let label_cell = by_column(cells, &headers.label)?;
+	let label = trim(cell_text(label_cell, shared));
+	if label.is_empty() || utf16_len(label) > MAX_LABEL_UTF16 {
+		return None;
+	}
+	let period_key = format!("fy{fiscal_period_end}-{}", slug_fiscal_kind(label));
+	let name_raw = by_column(cells, &headers.name).map_or("", |cell| trim(cell_text(cell, shared)));
+	// The contract schema is the last word: a row that cannot be stored is
+	// skipped, never half-kept.
+	crate::market_fetch::valid_event(&EarningsEvent {
+		period_key: period_key.clone(),
+		announcement_date: announcement_date.clone(),
+		fiscal_period_label: label.to_owned(),
+		fiscal_period_end: Some(fiscal_period_end.clone()),
+		timing: EarningsTiming::Unknown,
+	})?;
+	if announcement_date
+		.as_deref()
+		.is_some_and(|date| !is_valid_iso_date(date))
+	{
+		return None;
+	}
+	Some(JpxWorkbookRow {
+		code,
+		name: (!name_raw.is_empty()).then(|| name_raw.to_owned()),
+		announcement_date,
+		fiscal_period_end,
+		fiscal_period_label: label.to_owned(),
+		period_key,
+	})
+}
+
+/// Parses one workbook's sheet and shared strings into data rows. Rows that
+/// fail per-row validation are skipped; structural failures (no headers,
+/// malformed XML shape, bound overruns) fail the whole workbook.
+///
+/// # Errors
+/// [`JpxWorkbookError`] for the structural failures above.
+pub fn parse_jpx_workbook(
+	sheet: &str,
+	shared: &str,
+) -> Result<Vec<JpxWorkbookRow>, JpxWorkbookError> {
+	let strings = parse_shared_strings(shared)?;
+	let scanned = scan_elements(sheet, "row", MAX_JPX_DATA_ROWS + 1_000)?;
+	let mut rows = Vec::new();
+	let mut header: Option<HeaderColumns> = None;
+	let mut seen_cells = 0;
+	let mut data_rows = 0;
+	for element in scanned {
+		if element.inner.is_empty() {
+			continue;
+		}
+		let cells = parse_row_cells(element.inner, seen_cells)?;
+		seen_cells += cells.len();
+		let Some(columns) = &header else {
+			header = locate_headers(&cells, &strings);
+			continue;
+		};
+		if !cells.is_empty() {
+			data_rows += 1;
+		}
+		if rows.len() >= MAX_JPX_DATA_ROWS {
+			return Err(LimitExceeded);
+		}
+		if let Some(row) = parse_data_row(&cells, &strings, columns) {
+			rows.push(row);
+		}
+	}
+	if header.is_none() {
+		return Err(MissingHeaders);
+	}
+	// The header parsed but not one data row did: a schedule workbook always
+	// lists announcements, so this is a shape change or corruption: fail
+	// closed rather than reading it as "no date for any stock".
+	if data_rows > 0 && rows.is_empty() {
+		return Err(MalformedWorkbook);
+	}
 	Ok(rows)
 }
