@@ -336,8 +336,16 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 	let mut count = 0;
-	for file in 0..6 {
-		for case in list(&corpus(&format!("transcripts-{file}"))) {
+	for file in 0.. {
+		let name = format!("transcripts-{file}");
+		let path = format!(
+			"{}/../../vectors/pipeline/{name}.json",
+			env!("CARGO_MANIFEST_DIR")
+		);
+		if !std::path::Path::new(&path).exists() {
+			break;
+		}
+		for case in list(&corpus(&name)) {
 			let script = get(case, "input");
 			let job = get(script, "job");
 			let name = field(script, "name");

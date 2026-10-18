@@ -12,7 +12,13 @@ import { ingestSources } from "../../../packages/application/src/ingest.ts";
 import { seededRandom } from "../shared.ts";
 
 type Fetch =
-	| { readonly ok: { readonly finalUrl: string; readonly contentType: string | null; readonly text: string } }
+	| {
+			readonly ok: {
+				readonly finalUrl: string;
+				readonly contentType: string | null;
+				readonly text: string;
+			};
+	  }
 	| { readonly err: { readonly code: string; readonly detail: string } };
 
 interface IngestScript {
@@ -86,11 +92,21 @@ function pick<T>(random: () => number, values: readonly T[]): T {
 function feedOf(random: () => number, count: number): RawFeed {
 	const items = Array.from({ length: count }, (_, index) => ({
 		title: random() < 0.05 ? null : pick(random, TITLES),
-		link: random() < 0.6 ? `https://news.example.com/item-${index}-${Math.floor(random() * 5)}` : random() < 0.1 ? null : pick(random, LINKS),
+		link:
+			random() < 0.6
+				? `https://news.example.com/item-${index}-${Math.floor(random() * 5)}`
+				: random() < 0.1
+					? null
+					: pick(random, LINKS),
 		publishedText: pick(random, DATES),
 		summaryText: pick(random, SUMMARIES),
 	}));
-	return { kind: random() < 0.5 ? "rss" : "atom", title: "Feed", siteLink: "https://news.example.com/", items };
+	return {
+		kind: random() < 0.5 ? "rss" : "atom",
+		title: "Feed",
+		siteLink: "https://news.example.com/",
+		items,
+	};
 }
 
 function scripts(): IngestScript[] {
@@ -104,14 +120,29 @@ function scripts(): IngestScript[] {
 		licensePolicy: random() < 0.5 ? "short-excerpt-permitted" : "headline-and-link-only",
 	});
 	// Fixed edge cases first.
-	result.push({ name: "no sources", sources: [], maxArticles: 400, abortOnFetch: null, fetches: [], feeds: {} });
+	result.push({
+		name: "no sources",
+		sources: [],
+		maxArticles: 400,
+		abortOnFetch: null,
+		fetches: [],
+		feeds: {},
+	});
 	const one = feedOf(random, 5);
 	result.push({
 		name: "one source",
 		sources: [source(0)],
 		maxArticles: 400,
 		abortOnFetch: null,
-		fetches: [{ ok: { finalUrl: "https://news0.example.com/feed.xml", contentType: "application/rss+xml", text: "feed-0" } }],
+		fetches: [
+			{
+				ok: {
+					finalUrl: "https://news0.example.com/feed.xml",
+					contentType: "application/rss+xml",
+					text: "feed-0",
+				},
+			},
+		],
 		feeds: { "feed-0": one },
 	});
 	result.push({
@@ -119,15 +150,23 @@ function scripts(): IngestScript[] {
 		sources: [source(0), source(1, "not a url"), source(2)],
 		maxArticles: 400,
 		abortOnFetch: null,
-		fetches: [{ ok: { finalUrl: "https://news0.example.com/feed.xml", contentType: null, text: "feed-0" } }],
+		fetches: [
+			{ ok: { finalUrl: "https://news0.example.com/feed.xml", contentType: null, text: "feed-0" } },
+		],
 		feeds: { "feed-0": one },
 	});
 	result.push({
 		name: "IPv6 and uppercase hosts",
-		sources: [source(0, "https://[2001:db8::1]/feed"), source(1, "https://NEWS.Example.com:8443/feed.xml")],
+		sources: [
+			source(0, "https://[2001:db8::1]/feed"),
+			source(1, "https://NEWS.Example.com:8443/feed.xml"),
+		],
 		maxArticles: 400,
 		abortOnFetch: null,
-		fetches: [{ err: { code: "UNSAFE_URL", detail: "blocked" } }, { err: { code: "NETWORK_ERROR", detail: "reset" } }],
+		fetches: [
+			{ err: { code: "UNSAFE_URL", detail: "blocked" } },
+			{ err: { code: "NETWORK_ERROR", detail: "reset" } },
+		],
 		feeds: {},
 	});
 	for (let index = 0; index < 160; index++) {
@@ -137,10 +176,13 @@ function scripts(): IngestScript[] {
 		const feeds: Record<string, RawFeed> = {};
 		sources.forEach((_, i) => {
 			const roll = random();
-			if (roll < 0.15) fetches.push({ err: { code: pick(random, CODES), detail: "scripted failure" } });
+			if (roll < 0.15)
+				fetches.push({ err: { code: pick(random, CODES), detail: "scripted failure" } });
 			else {
 				const text = roll < 0.25 ? `garbage-${i}` : `feed-${index}-${i}`;
-				fetches.push({ ok: { finalUrl: sources[i]?.canonicalUrl ?? "", contentType: "application/xml", text } });
+				fetches.push({
+					ok: { finalUrl: sources[i]?.canonicalUrl ?? "", contentType: "application/xml", text },
+				});
 				if (!text.startsWith("garbage")) feeds[text] = feedOf(random, Math.floor(random() * 14));
 			}
 		});
@@ -170,7 +212,16 @@ async function run(script: IngestScript): Promise<unknown> {
 	let fetchIndex = 0;
 	const controller = new AbortController();
 	const fetcher = {
-		async fetchText(url: string, options: { maxBytes: number; timeoutMs: number; accept: string; signal?: AbortSignal; allowedHosts?: ReadonlySet<string> }) {
+		async fetchText(
+			url: string,
+			options: {
+				maxBytes: number;
+				timeoutMs: number;
+				accept: string;
+				signal?: AbortSignal;
+				allowedHosts?: ReadonlySet<string>;
+			},
+		) {
 			const number = ++fetchIndex;
 			calls.push({
 				url,
@@ -197,12 +248,18 @@ async function run(script: IngestScript): Promise<unknown> {
 		nowMs: () => 0,
 		nowIso: () => new Date(Date.UTC(2026, 9, 17, 0, 0, 0) + ++clockCalls * 1000).toISOString(),
 	};
-	const hasher = { sha256Hex: async (text: string) => createHash("sha256").update(text, "utf8").digest("hex") };
+	const hasher = {
+		sha256Hex: async (text: string) => createHash("sha256").update(text, "utf8").digest("hex"),
+	};
 	try {
-		const outcome = await ingestSources(script.sources, { fetcher, feedParser, hasher, clock } as never, {
-			signal: controller.signal,
-			maxArticles: script.maxArticles,
-		});
+		const outcome = await ingestSources(
+			script.sources,
+			{ fetcher, feedParser, hasher, clock } as never,
+			{
+				signal: controller.signal,
+				maxArticles: script.maxArticles,
+			},
+		);
 		return { calls, parserInputs, clockCalls, outcome };
 	} catch (error) {
 		return { calls, threw: error instanceof Error ? error.name : "unknown" };
@@ -211,6 +268,7 @@ async function run(script: IngestScript): Promise<unknown> {
 
 export async function ingestVectors(): Promise<{ input: IngestScript; output: unknown }[]> {
 	const cases = [];
-	for (const script of scripts()) cases.push({ input: script, output: JSON.parse(JSON.stringify(await run(script))) });
+	for (const script of scripts())
+		cases.push({ input: script, output: JSON.parse(JSON.stringify(await run(script))) });
 	return cases;
 }
