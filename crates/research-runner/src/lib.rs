@@ -12,6 +12,12 @@ pub mod api_client;
 pub mod config;
 pub mod env_file;
 pub mod exit_codes;
+pub mod google_sync;
+pub mod job_execution;
+pub mod runner_loop;
+pub mod scratch;
 
+#[cfg(test)]
+mod job_tests;
 #[cfg(test)]
 mod test_support;
