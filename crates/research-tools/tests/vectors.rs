@@ -75,11 +75,12 @@ impl SafeFetcher for Script {
 		let (index, entry) = {
 			let mut used = self.fetched.lock().unwrap();
 			let rows = self.value["fetches"].as_array().unwrap();
-			let index = rows
+			// Fetches must arrive in the order the TypeScript made them.
+			let index = used
 				.iter()
-				.enumerate()
-				.position(|(i, row)| !used[i] && row["url"] == url)
-				.unwrap_or_else(|| panic!("unexpected fetch {url}"));
+				.position(|taken| !taken)
+				.unwrap_or_else(|| panic!("unexpected extra fetch {url}"));
+			assert_eq!(rows[index]["url"], url, "fetch {index} out of order");
 			used[index] = true;
 			(index, rows[index].clone())
 		};
@@ -333,4 +334,44 @@ fn robots_match_typescript() {
 		}
 	}
 	assert!(count >= 1000);
+}
+
+/// The verified Lean model (`formal/ResearchFormal/Spacing.lean`) against the
+/// real `Ledger`: every operation sequence of length 0..3.
+#[test]
+fn spacing_ledger_matches_the_lean_model() {
+	use research_tools::search::{Claim, Ledger};
+	let path = format!("{}/../../formal/vectors.json", env!("CARGO_MANIFEST_DIR"));
+	let all: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+	let cases = all["spacing"].as_array().unwrap();
+	assert!(cases.len() >= 1885);
+	for case in cases {
+		let ledger = Ledger::new(case["interval"].as_i64().unwrap(), 8);
+		let mut starts = Vec::new();
+		let mut outcomes = Vec::new();
+		for op in case["ops"].as_array().unwrap() {
+			let time = op[1].as_i64().unwrap_or(0);
+			match op[0].as_str().unwrap() {
+				"claim" => {
+					let claim = ledger.claim("k", time, None, |now| now);
+					outcomes.push(json!(claim == Claim::Started));
+					if claim == Claim::Started {
+						starts.insert(0, time);
+					}
+				}
+				"note" => {
+					ledger.note("k", time);
+					outcomes.push(Value::Null);
+				}
+				other => panic!("unknown op {other}"),
+			}
+		}
+		// The recorded start is observable as the wait of a far-past reader.
+		let far_past = -1_000_000;
+		let wait = ledger.peek_wait("k", far_past);
+		let last = (wait > 0).then(|| far_past + wait - case["interval"].as_i64().unwrap());
+		assert_eq!(json!(outcomes), case["outcomes"], "{case}");
+		assert_eq!(json!(starts), case["starts"], "{case}");
+		assert_eq!(json!(last), case["last"], "{case}");
+	}
 }

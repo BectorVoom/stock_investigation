@@ -14,6 +14,7 @@ research-contracts = { workspace = true }
 research-agent-core = { workspace = true }
 research-application = { workspace = true }
 research-net = { workspace = true }
+research-effects = { workspace = true }
 research-html = { workspace = true }
 research-feed = { workspace = true }
 research-finance = { workspace = true }

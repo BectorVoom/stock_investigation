@@ -996,6 +996,7 @@ dependencies = [
  "research-application",
  "research-contracts",
  "research-domain",
+ "research-effects",
  "research-feed",
  "research-finance",
  "research-html",

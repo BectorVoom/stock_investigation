@@ -73,6 +73,18 @@ pub(crate) fn argument(args: &Value, key: &str) -> Result<String, ToolFailure> {
 		.map(str::to_owned)
 		.ok_or_else(invalid_args)
 }
+/// Runs pure CPU work on the rayon pool (never a tokio worker). A panic in the
+/// job is the TypeScript `TOOL_THREW` path; a cancelled run drops the job's
+/// result (C3) and reports `TOOL_ABORTED`.
+pub(crate) async fn cpu<T: Send + 'static>(
+	cancel: &tokio_util::sync::CancellationToken,
+	job: impl FnOnce() -> T + Send + 'static,
+) -> Result<T, ToolFailure> {
+	tokio::select! {
+		outcome = research_effects::cpu::run_cpu(job) => outcome.map_err(|_| crate::web::threw()),
+		() = cancel.cancelled() => Err(tool_failure("TOOL_ABORTED", "run was cancelled", false)),
+	}
+}
 pub(crate) fn invalid_args() -> ToolFailure {
 	tool_failure("INVALID_ARGS", "arguments failed validation", false)
 }
@@ -268,9 +280,14 @@ impl NewsTool {
 			.fetch_text(&source.canonical_url, &opts)
 			.await
 			.map_err(|error| fetch_failure(&error))?;
-		let feed = self.deps.feed_parser.parse(&fetched.text).map_err(|_| {
-			tool_failure("NOT_A_FEED", "response is not an RSS or Atom feed", false)
-		})?;
+		// XML parsing of up to 1 MB is CPU work: rayon pool, panic -> TOOL_THREW.
+		let parser = Arc::clone(&self.deps.feed_parser);
+		let text = fetched.text;
+		let feed = cpu(&context.cancel, move || parser.parse(&text))
+			.await?
+			.map_err(|_| {
+				tool_failure("NOT_A_FEED", "response is not an RSS or Atom feed", false)
+			})?;
 		let normalized = normalize_feed(
 			&feed,
 			&NormalizeFeedOptions {
@@ -390,7 +407,12 @@ impl NewsTool {
 				false,
 			));
 		}
-		let text = to_plain_text(&fetched.text);
+		// Tag stripping and the regex scans of up to 2 MB are CPU work.
+		let html = fetched.text;
+		let (text, page_title, page_published_at) = cpu(&context.cancel, move || {
+			(to_plain_text(&html), title(&html), published_at(&html))
+		})
+		.await?;
 		if text.is_empty() {
 			return Err(tool_failure(
 				"EMPTY_DOCUMENT",
@@ -411,10 +433,10 @@ impl NewsTool {
 			EvidenceInput {
 				evidence_id: context.ids.next_id("ev"),
 				source_url: fetched.final_url,
-				title: title(&fetched.text)
+				title: page_title
 					.unwrap_or_else(|| format!("Untitled page on {}", target.hostname)),
 				publisher: publisher(first, &target.hostname),
-				published_at: published_at(&fetched.text),
+				published_at: page_published_at,
 				retrieved_at: (context.now_iso)(),
 				effective_at: None,
 				source_class: SourceClass::News,
@@ -449,5 +471,39 @@ impl NewsTool {
 			evidence: vec![collected],
 			..ToolOutput::default()
 		})
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use tokio_util::sync::CancellationToken;
+
+	/// A panic inside a CPU job is the `TOOL_THREW` path, never a process abort.
+	#[tokio::test]
+	async fn a_panicking_cpu_job_becomes_tool_threw() {
+		let cancel = CancellationToken::new();
+		let failure = cpu(&cancel, || -> u32 { panic!("hostile page") })
+			.await
+			.unwrap_err();
+		assert_eq!(
+			(failure.code.as_str(), failure.detail.as_str()),
+			("TOOL_THREW", "Error")
+		);
+		assert_eq!(cpu(&cancel, || 7).await.unwrap(), 7);
+	}
+
+	#[tokio::test]
+	async fn a_cancelled_run_reports_tool_aborted() {
+		let cancel = CancellationToken::new();
+		cancel.cancel();
+		let (hold, wait) = std::sync::mpsc::channel::<()>();
+		let failure = cpu(&cancel, move || {
+			let _ = wait.recv();
+		})
+		.await
+		.unwrap_err();
+		assert_eq!(failure.code.as_str(), "TOOL_ABORTED");
+		drop(hold);
 	}
 }

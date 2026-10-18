@@ -17,6 +17,7 @@ use research_js::{
 };
 use std::{
 	collections::HashSet,
+	collections::VecDeque,
 	sync::{Arc, LazyLock, Mutex, PoisonError},
 	time::Duration,
 };
@@ -24,6 +25,9 @@ use tokio_util::sync::CancellationToken;
 
 /// GDELT asks for one request per 5 s.
 const GDELT_SPACING_MS: i64 = 5_000;
+const GDELT_KEY: &str = "api.gdeltproject.org";
+/// `SEARCH_TIMEOUT_MS` of the TypeScript: one fetch's whole budget.
+const SEARCH_TIMEOUT_MS: u64 = 15_000;
 
 /// Cancellation-aware waiting, injected for deterministic transcripts.
 #[async_trait]
@@ -42,8 +46,9 @@ impl Sleep for TokioSleep {
 /// Optional connection-only optimization; no HTTP request is sent here.
 #[async_trait]
 pub trait SearchPreconnect: Send + Sync {
-	/// Prepare a validated GDELT connection while spacing runs.
-	async fn preconnect(&self, cancel: &CancellationToken);
+	/// Prepares a validated GDELT connection within `timeout_ms`; failures are
+	/// ignored because the real fetch repeats every check and reports them.
+	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken);
 }
 /// Dependencies of `web.search`. One factory instance shares its GDELT limiter.
 #[derive(Clone)]
@@ -62,8 +67,8 @@ pub struct SearchToolDeps {
 struct SearchTool {
 	deps: SearchToolDeps,
 	meta: ToolMeta,
-	/// Start (or reserved start) of the latest GDELT request, process-wide per factory.
-	last: Mutex<Option<i64>>,
+	/// Recorded GDELT request starts, process-wide per factory.
+	ledger: Ledger,
 }
 struct Hit {
 	title: String,
@@ -83,7 +88,7 @@ enum Backend {
 pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	vec![Arc::new(SearchTool {
 		deps,
-		last: Mutex::new(None),
+		ledger: Ledger::new(GDELT_SPACING_MS, 1),
 		meta: meta(
 			"web.search",
 			"Searches recent news (GDELT) and Wikipedia for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
@@ -243,52 +248,68 @@ fn provider_items(value: &Value, gdelt: bool) -> Option<Vec<Hit>> {
 	Some(hits)
 }
 impl SearchTool {
-	/// Replaces this call's reservation by `value` unless a later caller already
-	/// chained its own slot on it.
-	fn settle(&self, expected: i64, value: Option<i64>) {
-		let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
-		if *last == Some(expected) {
-			*last = value;
-		}
-	}
-	/// Waits until a GDELT request may start; false when cancelled while waiting.
-	/// C2: the slot `max(now, last + 5 s)` is reserved under the lock before any
-	/// await, so concurrent calls can never start inside the window. C5: when a
-	/// wait is needed the connection (DNS, TCP, TLS) opens at once and only the
-	/// request waits for the slot.
-	async fn spacing(&self, context: &ToolContext) -> bool {
-		let now = self.deps.clock.now_ms();
-		let (previous, slot) = {
-			let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
-			let previous = *last;
-			let slot = reserve_slot(now, previous, GDELT_SPACING_MS);
-			*last = Some(slot);
-			(previous, slot)
-		};
-		let wait = slot.saturating_sub(now);
-		if wait > 0 {
-			let delay = self
-				.deps
-				.sleep
-				.sleep(u64::try_from(wait).unwrap_or(0), &context.cancel);
-			if let Some(preconnect) = &self.deps.preconnect {
-				tokio::join!(preconnect.preconnect(&context.cancel), delay);
-			} else {
-				delay.await;
+	/// Waits until a GDELT request may start; `Err` carries the failure cause
+	/// when the call must not send, `Ok(timeout)` the fetch budget otherwise.
+	///
+	/// C2: nothing is reserved. A start is recorded only at the instant the
+	/// request is sent (`Ledger::claim` under its lock), so a caller that never
+	/// sends records nothing and no restore exists. C5: when the slot is not yet
+	/// open the connection is prepared during the wait; the preparation shares
+	/// the fetch's overall deadline (spacing wait + `SEARCH_TIMEOUT_MS`) and
+	/// whatever it spends beyond the wait is deducted from the fetch budget.
+	async fn gate(&self, context: &ToolContext) -> Result<u64, Backend> {
+		let mut budget = SEARCH_TIMEOUT_MS;
+		if let Some(preconnect) = &self.deps.preconnect {
+			let began = self.deps.clock.now_ms();
+			let wait = self.ledger.peek_wait(GDELT_KEY, began);
+			if wait > 0 {
+				let wait_ms = u64::try_from(wait).unwrap_or(0);
+				tokio::join!(
+					preconnect
+						.preconnect(wait_ms.saturating_add(SEARCH_TIMEOUT_MS), &context.cancel),
+					self.deps.sleep.sleep(wait_ms, &context.cancel)
+				);
+				if context.cancel.is_cancelled() {
+					return Err(Backend::Aborted);
+				}
+				let spent = self
+					.deps
+					.clock
+					.now_ms()
+					.saturating_sub(began)
+					.saturating_sub(wait);
+				budget = SEARCH_TIMEOUT_MS.saturating_sub(u64::try_from(spent).unwrap_or(0));
+				if budget == 0 {
+					return Err(Backend::Failed(format!(
+						"TIMEOUT: no complete response within {SEARCH_TIMEOUT_MS} ms"
+					)));
+				}
 			}
-			if context.cancel.is_cancelled() {
-				// Nothing was sent: the earlier start stays authoritative.
-				self.settle(slot, previous);
-				return false;
-			}
 		}
-		self.settle(slot, Some(self.deps.clock.now_ms()));
-		true
+		if await_slot(
+			&self.ledger,
+			GDELT_KEY,
+			self.deps.clock.as_ref(),
+			self.deps.sleep.as_ref(),
+			&context.cancel,
+			false,
+		)
+		.await
+		{
+			Ok(budget)
+		} else {
+			Err(Backend::Aborted)
+		}
 	}
 	async fn backend(&self, query: &str, gdelt: bool, context: &ToolContext) -> Backend {
-		if gdelt && !self.spacing(context).await {
-			return Backend::Aborted;
-		}
+		let budget = if gdelt {
+			match self.gate(context).await {
+				Ok(budget) => budget,
+				Err(outcome) => return outcome,
+			}
+		} else {
+			SEARCH_TIMEOUT_MS
+		};
 		let (host, url) = if gdelt {
 			(
 				"api.gdeltproject.org",
@@ -306,7 +327,7 @@ impl SearchTool {
 				),
 			)
 		};
-		let mut opts = options(1_000_000, 15_000, "application/json", context);
+		let mut opts = options(1_000_000, budget, "application/json", context);
 		opts.allowed_hosts = Some([host.into()].into());
 		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
 		let fetched = match self.deps.fetcher.fetch_text(&url, &opts).await {
@@ -350,9 +371,12 @@ impl Tool for SearchTool {
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let query = argument(&args, "query")?;
-		let (gdelt, wiki) = tokio::join!(
-			self.backend(&query, true, &context),
-			self.backend(&query, false, &context)
+		// Wikipedia is polled first: in the TypeScript GDELT's request always
+		// comes after at least one await (the spacing check), so Wikipedia's
+		// request is the first one made.
+		let (wiki, gdelt) = tokio::join!(
+			self.backend(&query, false, &context),
+			self.backend(&query, true, &context)
 		);
 		if matches!(gdelt, Backend::Aborted) || matches!(wiki, Backend::Aborted) {
 			return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
@@ -426,21 +450,137 @@ impl Tool for SearchTool {
 
 #[async_trait]
 impl SearchPreconnect for research_net::NodeSafeFetcher {
-	async fn preconnect(&self, cancel: &CancellationToken) {
+	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken) {
 		// This is an optional optimization. Its typed failure never replaces the
 		// real fetch result, which repeats DNS validation and reports failures.
 		let _preparation = research_net::NodeSafeFetcher::preconnect(
 			self,
 			"https://api.gdeltproject.org/",
-			15_000,
+			timeout_ms,
 			Some(cancel.clone()),
 		)
 		.await;
 	}
 }
 
-// The unbounded-integer model and its minimality/spacing proofs live in
-// robots/Slots.lean (`reserveSlot`). Valid Date milliseconds leave ample i64 headroom.
+// The unbounded-integer model and its spacing proof live in
+// formal/ResearchFormal/Spacing.lean (`claim`, `reserveSlot`). Valid Date
+// milliseconds leave ample i64 headroom.
 pub(crate) fn reserve_slot(now: i64, last: Option<i64>, interval: i64) -> i64 {
 	last.map_or(now, |last| now.max(last.saturating_add(interval)))
+}
+
+/// What a caller learns when it asks to send now.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Claim {
+	/// The start was recorded; send immediately.
+	Started,
+	/// Cancelled before sending; nothing was recorded.
+	Aborted,
+	/// Not yet: the milliseconds until the earliest permitted start.
+	Wait(i64),
+}
+
+/// Request starts per key, at least `interval_ms` apart (ADR-0030 C2). Only a
+/// start that is actually being sent is ever recorded.
+#[derive(Debug)]
+pub struct Ledger {
+	entries: Mutex<VecDeque<(String, i64)>>,
+	interval_ms: i64,
+	capacity: usize,
+}
+
+impl Ledger {
+	/// A ledger keeping at most `capacity` keys (oldest evicted first, like
+	/// the TypeScript maps).
+	#[must_use]
+	pub fn new(interval_ms: i64, capacity: usize) -> Self {
+		Self {
+			entries: Mutex::new(VecDeque::new()),
+			interval_ms,
+			capacity,
+		}
+	}
+	fn entries(&self) -> std::sync::MutexGuard<'_, VecDeque<(String, i64)>> {
+		self.entries.lock().unwrap_or_else(PoisonError::into_inner)
+	}
+	/// Milliseconds `key` would have to wait at `now` (0 when it may start).
+	#[must_use]
+	pub fn peek_wait(&self, key: &str, now: i64) -> i64 {
+		let previous = self.entries().iter().find(|(k, _)| k == key).map(|e| e.1);
+		reserve_slot(now, previous, self.interval_ms).saturating_sub(now)
+	}
+	/// Under the lock: if `now` is at least `interval` after the recorded
+	/// start, records `record(now)` (the real send instant, never earlier than
+	/// `now`) and returns [`Claim::Started`]. A caller that already has a
+	/// previous start and is cancelled gets [`Claim::Aborted`] without a record
+	/// when `abort_if_previous` carries its token.
+	pub fn claim(
+		&self,
+		key: &str,
+		now: i64,
+		abort_if_previous: Option<&CancellationToken>,
+		record: impl FnOnce(i64) -> i64,
+	) -> Claim {
+		let mut entries = self.entries();
+		let previous = entries.iter().find(|(k, _)| k == key).map(|e| e.1);
+		let wait = reserve_slot(now, previous, self.interval_ms).saturating_sub(now);
+		if wait > 0 {
+			return Claim::Wait(wait);
+		}
+		if previous.is_some() && abort_if_previous.is_some_and(CancellationToken::is_cancelled) {
+			return Claim::Aborted;
+		}
+		let started = record(now).max(now);
+		crate::web::cache_set(&mut entries, key, started, self.capacity);
+		Claim::Started
+	}
+	/// Notes that `key` was contacted at `instant` (a request that ended on
+	/// another URL): the recorded start becomes `max(existing, instant)`, so
+	/// it can never move backwards over a later caller's start.
+	pub fn note(&self, key: &str, instant: i64) {
+		let mut entries = self.entries();
+		let latest = entries
+			.iter()
+			.find(|(k, _)| k == key)
+			.map_or(instant, |e| e.1.max(instant));
+		crate::web::cache_set(&mut entries, key, latest, self.capacity);
+	}
+}
+
+/// Waits until `key` may start and records the start at that instant; false
+/// when cancelled first (nothing recorded). Clock reads match the TypeScript:
+/// one before and one at the recorded start. `abort_without_wait` also
+/// checks cancellation when no wait is needed and an earlier start exists
+/// (the web tool's politeness rule).
+pub(crate) async fn await_slot(
+	ledger: &Ledger,
+	key: &str,
+	clock: &dyn Clock,
+	sleep: &dyn Sleep,
+	cancel: &CancellationToken,
+	abort_without_wait: bool,
+) -> bool {
+	let mut now = clock.now_ms();
+	let mut first = true;
+	loop {
+		let token = abort_without_wait.then_some(cancel);
+		let claim = ledger.claim(key, now, token, |n| {
+			if first { clock.now_ms().max(n) } else { n }
+		});
+		match claim {
+			Claim::Started => return true,
+			Claim::Aborted => return false,
+			Claim::Wait(ms) => {
+				sleep.sleep(u64::try_from(ms).unwrap_or(0), cancel).await;
+				if cancel.is_cancelled() {
+					return false;
+				}
+				// The sleep port guarantees `ms` elapsed unless cancelled, so a
+				// clock that lags behind it (a scripted one) cannot hold us here.
+				now = clock.now_ms().max(now.saturating_add(ms));
+				first = false;
+			}
+		}
+	}
 }

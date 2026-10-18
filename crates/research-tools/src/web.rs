@@ -1,11 +1,11 @@
 //! Public-page retrieval: per-hop robots approval, politeness, Markdown and archive.
 use crate::{
 	news::{
-		NOTICE, PAGE_ACCEPT, argument, content_type_matches, invalid_args, meta, options,
+		NOTICE, PAGE_ACCEPT, argument, content_type_matches, cpu, invalid_args, meta, options,
 		string_args,
 	},
 	robots::{RobotsRules, is_path_allowed, parse_robots_txt},
-	search::{Sleep, reserve_slot},
+	search::{Ledger, Sleep, await_slot},
 	shared::*,
 };
 use async_trait::async_trait;
@@ -27,6 +27,8 @@ use url::Url;
 
 /// Request starts to one host stay this far apart (politeness).
 const POLITENESS_INTERVAL_MS: i64 = 1_000;
+/// Bound of the robots cache and of the politeness ledger (hosts).
+const ROBOTS_CACHE_MAX_HOSTS: usize = 200;
 
 /// Dependencies of `web.fetch_page`.
 #[derive(Clone)]
@@ -49,20 +51,27 @@ struct CacheEntry {
 struct State {
 	deps: WebToolDeps,
 	robots: Mutex<VecDeque<(String, CacheEntry)>>,
-	/// Per-host request-start reservations (FIFO-evicted like the robots cache).
-	last: Mutex<VecDeque<(String, i64)>>,
+	/// Per-host request starts, recorded only when a request is sent (C2).
+	starts: Ledger,
 }
 /// Locks a std mutex; every critical section is short and never awaits, so a
 /// poisoned lock only means another thread panicked and the data is still valid.
 fn locked<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 	mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
-fn cache_set<T>(cache: &mut VecDeque<(String, T)>, key: &str, value: T) {
+/// A JS `Map` bounded to `capacity` keys: insertion-order (FIFO) eviction, and
+/// re-setting an existing key keeps its position.
+pub(crate) fn cache_set<T>(
+	cache: &mut VecDeque<(String, T)>,
+	key: &str,
+	value: T,
+	capacity: usize,
+) {
 	if let Some((_, old)) = cache.iter_mut().find(|(k, _)| k == key) {
 		*old = value;
 		return;
 	}
-	if cache.len() >= 200 {
+	if cache.len() >= capacity {
 		cache.pop_front();
 	}
 	cache.push_back((key.into(), value));
@@ -142,49 +151,22 @@ impl State {
 				rules: rules.clone(),
 				expires: self.deps.clock.now_ms().saturating_add(3_600_000),
 			},
+			ROBOTS_CACHE_MAX_HOSTS,
 		);
 		rules
 	}
-	/// Reserves this host's next request-start slot (ADR-0030 C2): under one
-	/// lock, `slot = max(now, last + interval)` and the entry becomes `slot`, so
-	/// concurrent callers can never start inside the politeness window.
-	fn reserve(&self, host: &str, now: i64) -> (Option<i64>, i64) {
-		let mut last = locked(&self.last);
-		let previous = last.iter().find(|(key, _)| key == host).map(|(_, at)| *at);
-		let slot = reserve_slot(now, previous, POLITENESS_INTERVAL_MS);
-		cache_set(&mut last, host, slot);
-		(previous, slot)
-	}
-	/// Replaces this call's reservation (`expected`) by `value` (the real start
-	/// time, or the old state after an abort) unless a later caller already
-	/// chained its own slot on it.
-	fn settle(&self, host: &str, expected: i64, value: i64) {
-		let mut last = locked(&self.last);
-		if let Some((_, at)) = last.iter_mut().find(|(key, _)| key == host) {
-			if *at == expected {
-				*at = value;
-			}
-		}
-	}
+	/// Waits until a request to `host` may start (politeness, C2) and records
+	/// the start only at the instant it is sent; false when cancelled first.
 	async fn polite_wait(&self, host: &str, cancel: &CancellationToken) -> bool {
-		let now = self.deps.clock.now_ms();
-		let (previous, slot) = self.reserve(host, now);
-		// TS: only a host with an earlier start can wait or be aborted here.
-		if let Some(previous) = previous {
-			if slot > now {
-				self.deps
-					.sleep
-					.sleep(u64::try_from(slot.saturating_sub(now)).unwrap_or(0), cancel)
-					.await;
-			}
-			if cancel.is_cancelled() {
-				// Nothing was sent, so the old start time stays authoritative.
-				self.settle(host, slot, previous);
-				return false;
-			}
-		}
-		self.settle(host, slot, self.deps.clock.now_ms());
-		true
+		await_slot(
+			&self.starts,
+			host,
+			self.deps.clock.as_ref(),
+			self.deps.sleep.as_ref(),
+			cancel,
+			true,
+		)
+		.await
 	}
 }
 struct Authorizer {
@@ -213,7 +195,7 @@ pub fn create_web_tools(deps: WebToolDeps) -> Vec<Arc<dyn Tool>> {
 		state: Arc::new(State {
 			deps,
 			robots: Mutex::new(VecDeque::new()),
-			last: Mutex::new(VecDeque::new()),
+			starts: Ledger::new(POLITENESS_INTERVAL_MS, ROBOTS_CACHE_MAX_HOSTS),
 		}),
 		meta: meta(
 			"web.fetch_page",
@@ -225,6 +207,10 @@ pub fn create_web_tools(deps: WebToolDeps) -> Vec<Arc<dyn Tool>> {
 			ToolNetworkAllowlist::PublicWeb,
 		),
 	})]
+}
+/// The TypeScript `TOOL_THREW <error.name>` path, for a panicking CPU job.
+pub(crate) fn threw() -> ToolFailure {
+	tool_failure("TOOL_THREW", "Error", false)
 }
 fn aborted() -> ToolFailure {
 	tool_failure("TOOL_ABORTED", "run was cancelled", false)
@@ -276,11 +262,7 @@ impl Tool for WebTool {
 		let (final_host, final_path) = host_path(&fetched.final_url)
 			.ok_or_else(|| tool_failure("UNSAFE_URL", "the final URL is malformed", false))?;
 		if final_host != target.hostname || final_path != path {
-			cache_set(
-				&mut locked(&state.last),
-				&final_host,
-				state.deps.clock.now_ms(),
-			);
+			state.starts.note(&final_host, state.deps.clock.now_ms());
 			let rules = state.robots_for(&final_host, &context).await;
 			if context.cancel.is_cancelled() {
 				return Err(aborted());
@@ -305,22 +287,21 @@ impl Tool for WebTool {
 		} else if fetched.content_type.as_deref().is_none_or(|t| {
 			content_type_matches(t, "text/html") || content_type_matches(t, "application/xhtml+xml")
 		}) {
-			// A parse is sequential CPU work. The oneshot keeps it off Tokio, and
-			// dropping this future cannot reach the subsequent archive write (C3).
-			let (send, receive) = tokio::sync::oneshot::channel();
+			// A parse is sequential CPU work: it runs on the rayon pool through the
+			// shared bridge (a panic becomes TOOL_THREW instead of aborting the
+			// runner), and the archive write below is never reached after a drop (C3).
 			let html = fetched.text;
 			let base = fetched.final_url.clone();
-			rayon::spawn(move || {
-				let page = research_html::html_to_markdown(
+			let page = cpu(&context.cancel, move || {
+				research_html::html_to_markdown(
 					&html,
 					&research_html::Options {
 						base_url: &base,
 						max_chars: MAX_RETRIEVED_TEXT_CHARS,
 					},
-				);
-				let _ = send.send(page);
-			});
-			let page = tokio::select! { page = receive => page.map_err(|_| tool_failure("TOOL_THREW","Error",false))?, () = context.cancel.cancelled() => return Err(aborted()) };
+				)
+			})
+			.await?;
 			let convert = |count| {
 				u32::try_from(count).map_err(|_| tool_failure("TOOL_THREW", "RangeError", false))
 			};
@@ -352,19 +333,22 @@ impl Tool for WebTool {
 			return Err(aborted());
 		}
 		let retrieved_at = (context.now_iso)();
-		let file = state
-			.deps
-			.page_archive
-			.save(&ArchivedPage {
-				source_url: target.href,
-				final_url: fetched.final_url.clone(),
-				title: title.clone(),
-				retrieved_at: retrieved_at.clone(),
-				markdown: markdown.clone(),
-				omitted: Some(omitted),
-			})
-			.await
-			.map_err(|error| tool_failure("ARCHIVE_WRITE_FAILED", &error.detail, false))?;
+		let page = ArchivedPage {
+			source_url: target.href,
+			final_url: fetched.final_url.clone(),
+			title: title.clone(),
+			retrieved_at: retrieved_at.clone(),
+			markdown: markdown.clone(),
+			omitted: Some(omitted),
+		};
+		// C3: dropping the save future (cancellation) stops the write before its
+		// atomic rename, so a cancelled call leaves no archive file.
+		let saved = tokio::select! {
+			saved = state.deps.page_archive.save(&page) => saved,
+			() = context.cancel.cancelled() => return Err(aborted()),
+		};
+		let file =
+			saved.map_err(|error| tool_failure("ARCHIVE_WRITE_FAILED", &error.detail, false))?;
 		let collected = collect_evidence(
 			state.deps.hasher.as_ref(),
 			EvidenceInput {

@@ -167,6 +167,211 @@ async fn concurrent_page_calls_reserve_different_host_slots() {
 	assert_eq!(starts.len(), 3);
 	assert!(starts.windows(2).all(|pair| pair[1] - pair[0] >= 1000));
 }
+/// Models GDELT's slow ServerHello: the preparation takes `duration`, bounded
+/// by the timeout it is given and by cancellation.
+struct SlowPrep {
+	duration: std::time::Duration,
+}
+#[async_trait]
+impl research_tools::search::SearchPreconnect for SlowPrep {
+	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken) {
+		let limit = self
+			.duration
+			.min(std::time::Duration::from_millis(timeout_ms));
+		tokio::select! { () = tokio::time::sleep(limit) => {}, () = cancel.cancelled() => {} }
+	}
+}
+fn gdelt_starts(fetcher: &Fetch) -> Vec<i64> {
+	fetcher
+		.starts
+		.lock()
+		.unwrap()
+		.iter()
+		.filter(|(url, _)| url.contains("gdelt"))
+		.map(|(_, at)| *at)
+		.collect()
+}
+fn prepared_search(prep: std::time::Duration) -> (Arc<dyn Tool>, Arc<Fetch>) {
+	let time = Arc::new(Time::new());
+	let fetcher = Arc::new(Fetch {
+		clock: time.clone(),
+		starts: Mutex::new(Vec::new()),
+	});
+	let tool = create_search_tools(SearchToolDeps {
+		fetcher: fetcher.clone(),
+		clock: time,
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		preconnect: Some(Arc::new(SlowPrep { duration: prep })),
+	})
+	.remove(0);
+	(tool, fetcher)
+}
+async fn search_after(
+	tool: Arc<dyn Tool>,
+	delay_ms: u64,
+	query: &str,
+	cancel: CancellationToken,
+) -> Result<ToolOutput, ToolFailure> {
+	tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+	let mut ctx = context();
+	ctx.cancel = cancel;
+	tool.execute(
+		json::parse(&format!(r#"{{"query":"{query}"}}"#)).unwrap(),
+		ctx,
+	)
+	.await
+}
+fn spaced(starts: &[i64], interval: i64) -> bool {
+	starts.windows(2).all(|pair| pair[1] - pair[0] >= interval)
+}
+
+/// C2 + C5: with a slow preparation the real starts still stay 5 s apart.
+#[tokio::test(start_paused = true)]
+async fn slow_preparations_never_pull_real_starts_inside_the_window() {
+	let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(7));
+	let _ = tokio::join!(
+		search_after(tool.clone(), 0, "aa", CancellationToken::new()),
+		search_after(tool.clone(), 1000, "bb", CancellationToken::new()),
+		search_after(tool.clone(), 2000, "cc", CancellationToken::new()),
+	);
+	let starts = gdelt_starts(&fetcher);
+	assert_eq!(starts.len(), 3);
+	assert!(spaced(&starts, 5000), "{starts:?}");
+}
+
+/// A caller cancelled at any instant records nothing, so spacing holds for
+/// every other caller whatever the abort time.
+#[tokio::test(start_paused = true)]
+async fn aborts_at_every_point_never_break_spacing() {
+	for cancel_at in (0..=16_000_u64).step_by(250) {
+		let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(7));
+		let doomed = CancellationToken::new();
+		let trigger = doomed.clone();
+		let abort = async move {
+			tokio::time::sleep(std::time::Duration::from_millis(cancel_at)).await;
+			trigger.cancel();
+		};
+		let _ = tokio::join!(
+			search_after(tool.clone(), 0, "p0", CancellationToken::new()),
+			search_after(tool.clone(), 1000, "xx", CancellationToken::new()),
+			search_after(tool.clone(), 2000, "aa", doomed),
+			abort,
+			search_after(tool.clone(), 10_000, "dd", CancellationToken::new()),
+		);
+		let starts = gdelt_starts(&fetcher);
+		assert!(spaced(&starts, 5000), "cancel at {cancel_at}: {starts:?}");
+	}
+}
+
+/// The preparation shares the fetch's deadline: a hung connect makes the second
+/// search fail after the spacing wait plus one 15 s budget, never after 30 s.
+#[tokio::test(start_paused = true)]
+async fn a_hung_preparation_never_extends_the_overall_deadline() {
+	let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(3600));
+	let started = tokio::time::Instant::now();
+	let first = search_after(tool.clone(), 0, "aa", CancellationToken::new()).await;
+	assert!(first.is_ok());
+	let first_took = started.elapsed();
+	let second = search_after(tool.clone(), 0, "bb", CancellationToken::new())
+		.await
+		.unwrap();
+	let took = started.elapsed() - first_took;
+	assert!(
+		second
+			.model_text
+			.contains("GDELT news search failed: TIMEOUT: no complete response within 15000 ms."),
+		"{}",
+		second.model_text
+	);
+	assert!(
+		took <= std::time::Duration::from_millis(5_000 + 15_000),
+		"{took:?}"
+	);
+	assert_eq!(
+		gdelt_starts(&fetcher).len(),
+		1,
+		"a timed-out call sends nothing"
+	);
+}
+
+/// Politeness after a redirect: the redirect's end must not move a host's
+/// recorded start back over a later caller's start.
+struct RedirectFetch {
+	clock: Arc<Time>,
+	b_starts: Mutex<Vec<i64>>,
+}
+#[async_trait]
+impl SafeFetcher for RedirectFetch {
+	async fn fetch_text(
+		&self,
+		url: &str,
+		opts: &SafeFetchOptions,
+	) -> Result<FetchedDocument, SafeFetchError> {
+		let document = |final_url: &str, text: &str| {
+			Ok(FetchedDocument {
+				final_url: final_url.into(),
+				content_type: Some("text/plain".into()),
+				text: text.into(),
+			})
+		};
+		if url.ends_with("robots.txt") {
+			return document(url, "User-agent: *\nAllow: /");
+		}
+		if url == "https://a.example.org/r" {
+			let allowed = opts
+				.authorize_redirect
+				.as_ref()
+				.unwrap()
+				.authorize("https://b.example.org/page")
+				.await;
+			assert!(allowed);
+			self.b_starts.lock().unwrap().push(self.clock.now_ms());
+			// Body download: the redirect's end comes after later callers reserved.
+			tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+			return document("https://b.example.org/page", "redirected text");
+		}
+		self.b_starts.lock().unwrap().push(self.clock.now_ms());
+		document(url, "text")
+	}
+}
+#[tokio::test(start_paused = true)]
+async fn a_redirects_end_never_rewinds_a_later_politeness_start() {
+	let time = Arc::new(Time::new());
+	let fetcher = Arc::new(RedirectFetch {
+		clock: time.clone(),
+		b_starts: Mutex::new(Vec::new()),
+	});
+	let tool = create_web_tools(WebToolDeps {
+		fetcher: fetcher.clone(),
+		clock: time,
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		page_archive: Arc::new(Archive(AtomicUsize::new(0))),
+	})
+	.remove(0);
+	let call = |delay_ms: u64, url: &'static str| {
+		let tool = tool.clone();
+		async move {
+			tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+			tool.execute(
+				json::parse(&format!(r#"{{"url":"{url}"}}"#)).unwrap(),
+				context(),
+			)
+			.await
+		}
+	};
+	let (first, second, third) = tokio::join!(
+		call(0, "https://a.example.org/r"),
+		call(100, "https://b.example.org/x"),
+		call(1100, "https://b.example.org/y"),
+	);
+	assert!(first.is_ok() && second.is_ok() && third.is_ok());
+	let starts = fetcher.b_starts.lock().unwrap().clone();
+	assert_eq!(starts.len(), 3);
+	assert!(spaced(&starts, 1000), "{starts:?}");
+}
+
 struct CancelledFetch;
 #[async_trait]
 impl SafeFetcher for CancelledFetch {
