@@ -8,6 +8,7 @@ import {
 	DEFAULT_PREVIOUS_RELEASE_DIR,
 	DEFAULT_PROD_DATA_DIR,
 	DEFAULT_PROD_PORT,
+	DEFAULT_RUNNER_KIND,
 	describeOverlap,
 	type LaunchInputs,
 	parseRunnerKind,
@@ -32,7 +33,7 @@ function inputs(overrides: Partial<LaunchInputs> = {}): LaunchInputs {
 		releaseDir: "release",
 		previousReleaseDir: DEFAULT_PREVIOUS_RELEASE_DIR,
 		runnerEnvFile: RUNNER_ENV_FILE,
-		runnerKind: "node",
+		runnerKind: "node", // the explicit rollback; the default (rust) is asserted via DEFAULT_RUNNER_KIND
 		cargoTargetDir: "/repo/target",
 		generationRunners: { node: true, rust: false },
 		...overrides,
@@ -42,7 +43,7 @@ function inputs(overrides: Partial<LaunchInputs> = {}): LaunchInputs {
 describe("readLaunchInputs", () => {
 	it("applies the documented defaults", () => {
 		const parsed = readLaunchInputs("production", {}, REPO_ROOT, BUN);
-		expect(parsed).toEqual({ ok: true, value: inputs() });
+		expect(parsed).toEqual({ ok: true, value: inputs({ runnerKind: DEFAULT_RUNNER_KIND }) });
 	});
 
 	it("lets RESEARCH_PORT and RESEARCH_DATA_DIR override production", () => {
@@ -324,17 +325,23 @@ describe("planLaunch: development", () => {
 });
 
 describe("RESEARCH_RUNNER and the Cargo settings", () => {
-	it("defaults to node and the repository target directory", () => {
+	it("defaults to rust (ADR-0030) and the repository target directory", () => {
 		const parsed = readLaunchInputs("production", {}, REPO_ROOT, BUN);
-		expect(parsed.ok && parsed.value.runnerKind).toBe("node");
+		expect(DEFAULT_RUNNER_KIND).toBe("rust");
+		expect(parsed.ok && parsed.value.runnerKind).toBe("rust");
 		expect(parsed.ok && parsed.value.cargoTargetDir).toBe("/repo/target");
 	});
 
 	it("accepts rust and node, trims, and treats empty as the default", () => {
 		expect(parseRunnerKind("rust")).toEqual({ ok: true, value: "rust" });
 		expect(parseRunnerKind(" node ")).toEqual({ ok: true, value: "node" });
-		expect(parseRunnerKind("")).toEqual({ ok: true, value: "node" });
-		expect(parseRunnerKind(undefined)).toEqual({ ok: true, value: "node" });
+		expect(parseRunnerKind("")).toEqual({ ok: true, value: "rust" });
+		expect(parseRunnerKind(undefined)).toEqual({ ok: true, value: "rust" });
+	});
+
+	it("keeps RESEARCH_RUNNER=node as the explicit rollback", () => {
+		const parsed = readLaunchInputs("production", { RESEARCH_RUNNER: "node" }, REPO_ROOT, BUN);
+		expect(parsed.ok && parsed.value.runnerKind).toBe("node");
 	});
 
 	it("refuses an unknown runner and names the setting", () => {

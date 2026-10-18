@@ -1,6 +1,6 @@
 /**
  * E2E runner entry point, started by `globalSetup.ts` and by the specs that
- * need a second runner. `RESEARCH_RUNNER` (default `node`, ADR-0030) picks
+ * need a second runner. `RESEARCH_RUNNER` (default from `DEFAULT_RUNNER_KIND`, ADR-0030) picks
  * the implementation under test:
  *
  * - `node`: `nodeRunnerHarness.ts`, the real TypeScript runner loop with the

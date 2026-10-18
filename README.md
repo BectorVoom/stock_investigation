@@ -38,7 +38,7 @@ The API never runs a CLI and the runner never listens on a port. If the runner i
 | `packages/adapters` | D1, feed parser, SSRF-safe fetchers (Worker and Node), agent backends, SEC tools — split by runtime |
 | `packages/ui-registry` | Component registry and the ten renderers |
 | `apps/api` · `apps/runner` · `apps/web` | Worker, local runner, SPA |
-| `crates/*` | The Rust runner, a Cargo workspace with one binary, `research-runner` ([ADR-0030](docs/adr/0030-runner-rewritten-in-rust.md)); opt in with `RESEARCH_RUNNER=rust` (the TypeScript runner in `apps/runner` stays the default until the switch) |
+| `crates/*` | The Rust runner, a Cargo workspace with one binary, `research-runner` ([ADR-0030](docs/adr/0030-runner-rewritten-in-rust.md)); the default runner since 2026-10-19, needs the Rust toolchain; `RESEARCH_RUNNER=node` rolls back to the TypeScript runner in `apps/runner` |
 | `formal/` | Lean 4 proofs and conformance vectors |
 | `vectors/` | Conformance vectors exported from the TypeScript and replayed by the Rust tests |
 | `examples/` | A scripted agent backend (worked extension example) and synthetic fixtures |
@@ -52,7 +52,7 @@ Requires [Bun](https://bun.sh) ≥ 1.3 and Node ≥ 23.6 (plus a Rust toolchain 
 bun install
 bun run prod       # build the release and serve it: http://localhost:8787
 bun run dev        # develop live: SPA http://localhost:3000, API http://127.0.0.1:8788
-RESEARCH_RUNNER=rust bun run dev    # the same with the Rust runner (default is node)
+RESEARCH_RUNNER=node bun run dev    # the same with the TypeScript runner (the rollback; default is rust)
 ```
 
 Open http://localhost:8787, start a conversation on **Chat**, subscribe to a source under **Sources**, choose **Refresh news now**, ask a question on **Chat** — the tables, charts and reports it produced appear under the answer — and keep what matters with **Add to Notebook**: the Notebook beside the chat holds widgets you arrange, resize and edit, and **Focus Notebook** makes it the main workspace (ADR-0020). **Home** shows market prices and indicators on widgets you arrange — the same widgets, menu and clipboard as the Notebook, so notes, tables and charts sit beside live data and copy between the two (ADR-0024) (live data needs `FRED_API_KEY` and `TWELVE_DATA_API_KEY` in `apps/runner/.env`; without them those widgets say which key to set). Ctrl+C stops it. Your data stays in `data/` on this PC; back it up by copying that directory. (`bun run start` means the same as `bun run prod`.) To promote a change: `bun run verify`, then `bun run prod:build`, then restart.
@@ -93,7 +93,7 @@ bun run rust:test      # cargo test over the workspace (--locked)
 bun run vectors        # export the conformance vectors from the TypeScript (`vectors:check` fails on drift)
 bun run verify         # check + typecheck + test + vectors:check + rust:check + rust:test + build
 bun run dev            # develop live: SPA http://localhost:3000, API http://127.0.0.1:8788
-bun run prod           # build the release and serve it: http://localhost:8787 (`prod:build` then `prod:start`; `prod:rollback` moves the pointer back; `start` means the same as `prod`; `RESEARCH_RUNNER=rust` builds and starts the Rust runner)
+bun run prod           # build the release and serve it: http://localhost:8787 (`prod:build` then `prod:start`; `prod:rollback` moves the pointer back; `start` means the same as `prod`; the Rust runner is the default, `RESEARCH_RUNNER=node` builds and starts the TypeScript one)
 bun run deploy         # optional, postponed: deploy env.production to Cloudflare (needs wrangler login)
 ```
 

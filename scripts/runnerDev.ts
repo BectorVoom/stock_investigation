@@ -1,6 +1,6 @@
 /**
  * The development Rust runner: ONE supervising process (ADR-0030, amending
- * ADR-0011). `bun run dev` with `RESEARCH_RUNNER=rust` starts it instead of
+ * ADR-0011). `bun run dev` (the default runner) starts it instead of
  * the Bun bundle watcher plus `node --watch`:
  *
  *     bun scripts/runnerDev.ts --binary data-dev/runner/research-runner \

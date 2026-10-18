@@ -139,8 +139,8 @@ const previousDir = previousDirFromEnv(process.env);
 const prodDataDir = nonEmptyEnv("RESEARCH_DATA_DIR", DEFAULT_PROD_DATA_DIR);
 const devDataDir = nonEmptyEnv("RESEARCH_DEV_DATA_DIR", DEFAULT_DEV_DATA_DIR);
 const marker = process.env[RELEASE_MARKER_ENV_VAR]?.trim() ?? "";
-// RESEARCH_RUNNER=rust builds the Rust runner binaries into the generation
-// INSTEAD of the Node bundle (ADR-0030); the default stays node.
+// The default (rust) builds the Rust runner binaries into the generation
+// INSTEAD of the Node bundle (ADR-0030); RESEARCH_RUNNER=node builds the bundle.
 const parsedRunnerKind = parseRunnerKind(process.env[RUNNER_KIND_ENV_VAR]);
 if (!parsedRunnerKind.ok) fail(parsedRunnerKind.error.message);
 const runnerKind = parsedRunnerKind.value;

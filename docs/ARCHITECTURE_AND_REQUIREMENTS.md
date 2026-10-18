@@ -413,7 +413,7 @@ All inputs and stored JSON are runtime-validated. Browser calls do not expose ru
 apps/
   web/                         # SolidJS SPA
   api/                         # Hono/Workers
-  runner/                      # the TypeScript runner (default until the switch, ADR-0030)
+  runner/                      # the TypeScript runner (the RESEARCH_RUNNER=node rollback, to be removed; ADR-0030)
   mcp/                         # stdio MCP server through which AI agents arrange Home (ADR-0019)
 packages/
   contracts/                   # schema versions, API/UI/job contracts
@@ -453,7 +453,7 @@ AGENTS.md                      # compact entry to engineering rules
 ENGINEERING_DESIGN_RULES.md    # canonical engineering rules
 ```
 
-Code runs in two runtimes (Worker and local PC); do not accidentally import Node-only libraries into Worker bundles. Contracts and pure domain packages must be usable in both runtimes. The local PC runtime is Rust once `RESEARCH_RUNNER=rust` becomes the default (ADR-0030): the Worker and the Rust runner share the wire contract through conformance vectors instead of shared code. The launcher builds and starts either runner (`RESEARCH_RUNNER=node|rust`, default node; see [OPERATIONS.md](OPERATIONS.md)).
+Code runs in two runtimes (Worker and local PC); do not accidentally import Node-only libraries into Worker bundles. Contracts and pure domain packages must be usable in both runtimes. The local PC runtime is Rust (the default since 2026-10-19, ADR-0030): the Worker and the Rust runner share the wire contract through conformance vectors instead of shared code. The launcher builds and starts either runner (`RESEARCH_RUNNER=rust|node`, default rust; see [OPERATIONS.md](OPERATIONS.md)).
 
 ## 12. Delivery plan and gates
 

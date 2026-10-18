@@ -30,7 +30,7 @@ const VITE_PORT = E2E_PORT - 30;
 const API_PORT = E2E_PORT - 31;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
-/** The suite's runner (RESEARCH_RUNNER, default node): `buildChildEnv` passes it to the launcher. */
+/** The suite's runner (RESEARCH_RUNNER, default `DEFAULT_RUNNER_KIND`): `buildChildEnv` passes it to the launcher. */
 const RUNNER = suiteRunnerSettings().RESEARCH_RUNNER === "rust" ? "rust" : "node";
 
 test.describe.configure({ mode: "serial" });

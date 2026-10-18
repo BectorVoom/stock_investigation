@@ -20,9 +20,9 @@
  *   RESEARCH_PREVIOUS_RELEASE_DIR  legacy previous-release location, migrated once (default "release.previous")
  *   RESEARCH_RUNNER_ENV_FILE  env file the runner processes load (default "apps/runner/.env";
  *     tests point it at a file they wrote themselves, so the operational file is never read)
- *   RESEARCH_RUNNER        "node" (default, the TypeScript runner) or "rust" (the research-runner
- *     binary built by Cargo, ADR-0030); a production generation without the binary still starts
- *     with node
+ *   RESEARCH_RUNNER        "rust" (default, the research-runner binary built by Cargo, ADR-0030) or "node"
+ *     (the TypeScript runner, the rollback); a production generation without the binary still
+ *     starts with node
  *   RESEARCH_CARGO_TARGET_DIR  shared Cargo build cache (default "target")
  * Optional runner settings (SEC_USER_AGENT, OPENCODE_MODEL, OPENROUTER_*, …) are
  * read from that env file when it exists.
