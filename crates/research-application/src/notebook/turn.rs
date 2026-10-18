@@ -19,6 +19,7 @@ use research_domain::jobs::{
 	budget::{CostReport, EMPTY_USAGE, ResourceUsage, UsageDelta, add_usage},
 	state_machine::JobState,
 };
+use research_effects::cpu::run_cpu;
 use research_js::{json::Value, utf16, whitespace};
 use serde::Serialize;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -363,8 +364,8 @@ async fn prompt(
 	let job = job.clone();
 	// Widget count says nothing about size (twelve charts reach the 850 KB cap), and the
 	// prompt build and command check fan out on rayon: any non-empty notebook runs on the
-	// blocking pool so neither CPU work nor a rayon join ever occupies a tokio worker.
-	tokio::task::spawn_blocking(move || build(&job)).await?
+	// rayon pool (`run_cpu`, which also turns a panic into an error) so neither CPU work nor a rayon join ever occupies a tokio worker.
+	run_cpu(move || build(&job)).await?
 }
 
 /// Runs one notebook-assist job, including at most one repair. All progress
@@ -456,5 +457,5 @@ async fn check_async(
 		return Ok(check_turn(job, &text));
 	}
 	let job = job.clone();
-	Ok(tokio::task::spawn_blocking(move || check_turn(&job, &text)).await?)
+	Ok(run_cpu(move || check_turn(&job, &text)).await?)
 }

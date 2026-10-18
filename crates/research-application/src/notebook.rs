@@ -31,7 +31,7 @@ pub enum NotebookError {
 	PromptLength,
 	/// A blocking worker failed.
 	#[error("notebook CPU worker failed: {0}")]
-	Worker(#[from] tokio::task::JoinError),
+	Worker(#[from] research_effects::cpu::CpuPanic),
 }
 
 #[cfg(test)]
