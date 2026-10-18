@@ -771,6 +771,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures-util",
+ "hex",
  "rayon",
  "research-agent-core",
  "research-contracts",
@@ -779,6 +780,7 @@ dependencies = [
  "research-widget-grid",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror",
  "tokio",
  "tokio-util",

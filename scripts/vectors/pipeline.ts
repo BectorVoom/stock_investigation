@@ -9,6 +9,7 @@ import { analysis } from "../../packages/application/test/support.ts";
 import { seededRandom, type VectorExporter } from "./shared.ts";
 import { transcripts, prompts } from "./pipeline/capture.ts";
 import { runCases } from "./pipeline/harness.ts";
+import { ingestVectors } from "./pipeline/ingest.ts";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 async function loadScenarios(path:string):Promise<void>{
@@ -31,5 +32,5 @@ export const pipelineExporter:VectorExporter={name:"pipeline",async build(){
 		for(const input of inputs){const result=schema.safeParse(input);drafts.push({input:{schema:name,value:input},output:result.success?{ok:result.data}:{err:result.error.issues.map(i=>({path:i.path.join("."),code:i.code,message:i.message}))}});}
 	}
 	const files=[];for(let offset=0;offset<transcripts.length;offset+=12){files.push({path:`pipeline/transcripts-${offset/12}.json`,content:transcripts.slice(offset,offset+12)});}
-	files.push({path:"pipeline/prompts.json",content:prompts},{path:"pipeline/drafts.json",content:drafts});return files;
+	files.push({path:"pipeline/ingest.json",content:await ingestVectors()},{path:"pipeline/prompts.json",content:prompts},{path:"pipeline/drafts.json",content:drafts});return files;
 }};
