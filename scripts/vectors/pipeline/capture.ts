@@ -25,6 +25,17 @@ type Json = null | boolean | number | string | readonly Json[] | { readonly [key
 function frozen(value: unknown): Json {
 	return JSON.parse(JSON.stringify(value)) as Json;
 }
+/**
+ * JSON has no -0: `JSON.stringify(-0)` is "0". The expected output spells a
+ * negative zero as `{"$negativeZero": true}` so the replay can tell it from 0.
+ */
+function withNegativeZero(value: unknown): Json {
+	return JSON.parse(
+		JSON.stringify(value, (_key, item: unknown) =>
+			Object.is(item, -0) ? { $negativeZero: true } : item,
+		),
+	) as Json;
+}
 export const transcripts: { input: unknown; output: unknown }[] = [];
 export const prompts: { input: unknown; output: string }[] = [];
 export function capturedPlanningPrompt(input: Parameters<typeof planningPrompt>[0]): string {
@@ -50,13 +61,31 @@ function meta(tool: ToolDefinition) {
 }
 interface Turn {
 	events: AgentEvent[];
-	cancelled: boolean;
+	/**
+	 * Events delivered before the run's signal was first seen aborted (0 = aborted
+	 * before the first event); null when it never was. The replay cancels at the
+	 * same point so the consumer sees events arrive after a cancellation.
+	 */
+	cancelAfter: number | null;
 	threw: string | null;
 }
 interface Execution {
 	args: unknown;
 	ids: { prefix: string; id: string }[];
+	/** null while the tool never returns (it hangs until its timeout or the run ends). */
 	result: Result<ToolOutput, ToolFailure> | null;
+	/** Error name when the tool threw. */
+	threw: string | null;
+	/** The tool aborted the whole run while it was executing. */
+	abortsRun: boolean;
+}
+let inFlight: Execution | null = null;
+/**
+ * A scripted tool calls this just before it aborts the run, so the replay can
+ * abort at the same point of the same execution.
+ */
+export function markRunAbortedByTool(): void {
+	if (inFlight !== null) inFlight.abortsRun = true;
 }
 interface SchemaCall {
 	input: unknown;
@@ -78,6 +107,7 @@ export async function capturedRunResearchPipeline(
 	const iso: string[] = [];
 	const fences: string[] = [];
 	let probe: Awaited<ReturnType<AgentRuntime["probe"]>> | null = null;
+
 	const agent: AgentRuntime = {
 		...deps.agent,
 		async probe() {
@@ -94,15 +124,25 @@ export async function capturedRunResearchPipeline(
 					effort: context.effort,
 				},
 			});
-			const turn: Turn = { events: [], cancelled: false, threw: null };
+			const turn: Turn = { events: [], cancelAfter: null, threw: null };
 			turns.push(turn);
 			try {
 				for await (const event of deps.agent.run(request, context)) {
 					turn.events.push(event);
-					turn.cancelled = context.signal.aborted;
+					// Aborts happen while the adapter produces the next event, so the first
+					// event seen after the abort was produced after it.
+					if (turn.cancelAfter === null && context.signal.aborted) {
+						turn.cancelAfter = turn.events.length - 1;
+					}
 					yield event;
 				}
+				if (turn.cancelAfter === null && context.signal.aborted) {
+					turn.cancelAfter = turn.events.length;
+				}
 			} catch (error) {
+				if (turn.cancelAfter === null && context.signal.aborted) {
+					turn.cancelAfter = turn.events.length;
+				}
 				turn.threw = error instanceof Error ? error.name : "unknown";
 				throw error;
 			}
@@ -131,18 +171,32 @@ export async function capturedRunResearchPipeline(
 				async execute(args: unknown, context: ToolContext) {
 					recordSchema(args);
 					trace.push({ type: "execute", toolId: tool.toolId, args: frozen(args) });
-					const execution: Execution = { args: frozen(args), ids: [], result: null };
+					const execution: Execution = {
+						args: frozen(args),
+						ids: [],
+						result: null,
+						threw: null,
+						abortsRun: false,
+					};
 					script.executions.push(execution);
-					const result = await tool.execute(args, {
-						...context,
-						nextId(prefix) {
-							const id = context.nextId(prefix);
-							execution.ids.push({ prefix, id });
-							return id;
-						},
-					});
-					execution.result = result;
-					return result;
+					inFlight = execution;
+					try {
+						const result = await tool.execute(args, {
+							...context,
+							nextId(prefix) {
+								const id = context.nextId(prefix);
+								execution.ids.push({ prefix, id });
+								return id;
+							},
+						});
+						execution.result = result;
+						return result;
+					} catch (error) {
+						execution.threw = error instanceof Error ? error.name : "unknown";
+						throw error;
+					} finally {
+						if (inFlight === execution) inFlight = null;
+					}
 				},
 			};
 		}),
@@ -214,7 +268,7 @@ export async function capturedRunResearchPipeline(
 				fences,
 				scratchDirectory: deps.scratchDirectory,
 			},
-			output: frozen({ trace, outcome }),
+			output: withNegativeZero({ trace, outcome }),
 		});
 		return outcome;
 	} finally {

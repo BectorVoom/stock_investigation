@@ -30,7 +30,9 @@ use research_agent_core::{
 	},
 	model_text::extract_json_object,
 	runtime::AgentRuntime,
-	tools::{CollectedEvidence, IdAllocator, ToolContext, ToolNetworkAllowlist, ToolOutput},
+	tools::{
+		CollectedEvidence, IdAllocator, ToolContext, ToolFailure, ToolNetworkAllowlist, ToolOutput,
+	},
 };
 use research_contracts::{
 	agent::{AgentAvailability, CostModel, ToolIsolation},
@@ -190,6 +192,18 @@ impl IdAllocator for RunIds {
 		format!("{}_{prefix}{counter}", self.run_id)
 	}
 }
+/// Runs pure CPU work on the rayon pool; a panic in it becomes
+/// [`PipelineError::CpuWorker`] instead of aborting the process.
+async fn on_cpu<T, F>(job: F) -> Result<T, PipelineError>
+where
+	F: FnOnce() -> T + Send + 'static,
+	T: Send + 'static,
+{
+	research_effects::cpu::run_cpu(job)
+		.await
+		.map_err(|_| PipelineError::CpuWorker)
+}
+
 fn failed(
 	code: impl Into<String>,
 	retryable: bool,
@@ -458,24 +472,31 @@ pub async fn run_research_pipeline(
 			context.cancel = call_cancel;
 			// Biased: when the run's deadline and the tool finish together, the deadline wins.
 			// Losing the race drops the tool's future (ADR-0030 C3).
-			let (result, deadline_fired) = tokio::select! {
+			let raced = tokio::select! {
 				biased;
-				() = tokio::time::sleep(Duration::from_millis(remaining_ms)) => (None, true),
-				result = execute_tool_call(authorized, context) => (Some(result), false),
+				() = tokio::time::sleep(Duration::from_millis(remaining_ms)) => None,
+				result = execute_tool_call(authorized, context) => Some(result),
 			};
 			executed += 1;
-			if deadline_fired && !input.cancel.is_cancelled() {
-				*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
-				deps.reporter
-					.tool(&label, ToolCallOutcome::Failed, "MAX_WALL_CLOCK")
-					.await;
-				stopped = Some(BudgetLimit::MaxWallClock);
-				break 'collection;
-			}
-			let Some(result) = result else {
-				return Ok(PipelineOutcome::Cancelled {
-					usage: session.usage,
-				});
+			let result = match raced {
+				Some(result) => result,
+				// The TypeScript combines the owner's signal with the run deadline, so a
+				// deadline that coincides with a cancellation reaches the tool as the
+				// owner's abort: TOOL_ABORTED, an ordinary tool failure. The pipeline
+				// notices the cancellation at the next call or turn.
+				None if input.cancel.is_cancelled() => Err(ToolFailure {
+					code: "TOOL_ABORTED".to_owned(),
+					detail: "run was cancelled".to_owned(),
+					retryable: false,
+				}),
+				None => {
+					*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
+					deps.reporter
+						.tool(&label, ToolCallOutcome::Failed, "MAX_WALL_CLOCK")
+						.await;
+					stopped = Some(BudgetLimit::MaxWallClock);
+					break 'collection;
+				}
 			};
 			match result {
 				Err(error) => {
@@ -747,13 +768,13 @@ pub async fn run_research_pipeline(
 			),
 		})
 		.collect::<Vec<_>>();
-	let (sender, receiver) = tokio::sync::oneshot::channel();
-	rayon::spawn(move || {
+	// CPU work leaves the tokio worker; a panic is an error, not a process abort.
+	let (index, mut claims) = on_cpu(move || {
 		let index = EvidenceIndex::new(&texts);
 		let claims = verify_claims_with(&drafts, &index);
-		let _ = sender.send((index, claims));
-	});
-	let (index, mut claims) = receiver.await.map_err(|_| PipelineError::CpuWorker)?;
+		(index, claims)
+	})
+	.await?;
 	for claim in &mut claims {
 		claim.issues.truncate(24);
 	}

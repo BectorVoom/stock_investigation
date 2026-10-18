@@ -9,7 +9,7 @@ use research_agent_core::{
 use research_contracts::jobs::{ConversationContextMessage, ConversationRole};
 use research_contracts::{
 	Contract,
-	agent::{AgentCapabilities, AgentRequest},
+	agent::{AgentCapabilities, AgentEvent, AgentRequest},
 	validate,
 };
 use std::{
@@ -47,19 +47,31 @@ impl PipelineReporter for Reporter {
 			.push(o([("type", s("usage")), ("usage", json(usage).unwrap())]));
 	}
 }
+/// Replays exactly the clock readings the TypeScript took: a missing reading
+/// (the port reads the clock more often) or a left-over one (less often) fails.
 struct ScriptClock {
 	ms: Mutex<VecDeque<i64>>,
 	iso: Mutex<VecDeque<String>>,
-	last_ms: Mutex<i64>,
+}
+impl ScriptClock {
+	fn assert_drained(&self, name: &str) {
+		assert!(
+			self.ms.lock().unwrap().is_empty(),
+			"{name}: unread clock.nowMs readings"
+		);
+		assert!(
+			self.iso.lock().unwrap().is_empty(),
+			"{name}: unread clock.nowIso readings"
+		);
+	}
 }
 impl Clock for ScriptClock {
 	fn now_ms(&self) -> i64 {
-		let v = self.ms.lock().unwrap().pop_front();
-		let mut last = self.last_ms.lock().unwrap();
-		if let Some(v) = v {
-			*last = v;
-		}
-		*last
+		self.ms
+			.lock()
+			.unwrap()
+			.pop_front()
+			.expect("unexpected clock.nowMs")
 	}
 	fn now_iso(&self) -> String {
 		self.iso
@@ -201,25 +213,43 @@ impl AgentRuntime for ScriptAgent {
 			.unwrap()
 			.pop_front()
 			.expect("unexpected agent turn");
-		if get(&turn, "cancelled").as_bool() == Some(true) {
-			ctx.cancel.cancel();
-		}
-		let mut events = items(&turn, "events")
+		// An event the contracts cannot even decode (the TypeScript test feeds
+		// `{type: "exec"}`) is delivered as a bounds-violating typed event, so the
+		// pipeline's own `validate_agent_event` path rejects it.
+		let events = items(&turn, "events")
 			.iter()
 			.map(|v| {
-				validate(v).unwrap_or_else(|_| research_contracts::agent::AgentEvent::Failed {
-					code: String::new(),
-					retryable: false,
+				validate::<AgentEvent>(v).unwrap_or_else(|_| AgentEvent::ToolRequest {
+					tool_id: "malformed".to_owned(),
+					args: research_contracts::json::JsonValue::default(),
+					call_id: String::new(),
 				})
 			})
 			.collect::<Vec<_>>();
-		if let Some(name) = get(&turn, "threw").as_str() {
-			events.push(research_contracts::agent::AgentEvent::Failed {
-				code: format!("AGENT_THREW_{name}"),
-				retryable: true,
-			});
-		}
-		AgentTurn::from_events(events)
+		// The run is cancelled at the point the TypeScript's signal first aborted.
+		let cancel_after = num(get(&turn, "cancelAfter")).map(|n| {
+			usize::try_from(research_js::number::to_js_string(n).parse::<u64>().unwrap()).unwrap()
+		});
+		let threw = get(&turn, "threw").as_str().is_some();
+		let run_cancel = ctx.cancel.clone();
+		AgentTurn::spawn(&ctx.cancel, move |sender| async move {
+			let delivered = events.len();
+			for (index, event) in events.into_iter().enumerate() {
+				if cancel_after == Some(index) {
+					run_cancel.cancel();
+				}
+				if !sender.send(event).await {
+					return;
+				}
+			}
+			if cancel_after == Some(delivered) {
+				run_cancel.cancel();
+			}
+			if threw {
+				// An adapter that throws: the port maps every panic to AGENT_THREW_Panic.
+				std::panic::resume_unwind(Box::new("adapter threw"));
+			}
+		})
 	}
 }
 struct ScriptTool {
@@ -227,6 +257,7 @@ struct ScriptTool {
 	script: Value,
 	position: AtomicUsize,
 	trace: Trace,
+	run_cancel: tokio_util::sync::CancellationToken,
 }
 #[async_trait]
 impl Tool for ScriptTool {
@@ -263,6 +294,13 @@ impl Tool for ScriptTool {
 				context.ids.next_id(field(allocated, "prefix")),
 				field(allocated, "id")
 			);
+		}
+		if get(call, "abortsRun").as_bool() == Some(true) {
+			self.run_cancel.cancel();
+		}
+		if get(call, "threw").as_str().is_some() {
+			// A tool that throws: the port maps every panic to TOOL_THREW / "panic".
+			std::panic::resume_unwind(Box::new("tool threw"));
 		}
 		let result = get(call, "result");
 		if matches!(result, Value::Null) {
@@ -329,13 +367,33 @@ fn compare(actual: &Value, expected: &Value, path: &str) {
 				compare(a, b, &format!("{path}.{i}"));
 			}
 		}
+		// `{"$negativeZero": true}` is how the vectors spell -0 (JSON cannot).
+		(Value::Number(a), Value::Object(b)) if b.get("$negativeZero").is_some() => {
+			assert!(
+				a.to_bits() == (-0.0_f64).to_bits(),
+				"{path}: expected -0, got {a}"
+			);
+		}
+		(Value::Number(a), Value::Number(b)) => {
+			assert!(
+				a.to_bits() == b.to_bits() || (a.is_nan() && b.is_nan()),
+				"{path}: {a} is not {b}"
+			);
+		}
 		_ => assert_eq!(actual, expected, "{path}"),
 	}
 }
 
+/// Pipeline.test.ts blocks (it.each rows expanded) and the hand-written runs
+/// they record; the seeded `gen/` and `edge/` runs come on top.
+const HAND_WRITTEN_BLOCKS: usize = 61;
+const HAND_WRITTEN_RUNS: usize = 67;
+
 #[tokio::test]
 async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
-	let mut count = 0;
+	let mut hand_written = Vec::new();
+	let mut seeded = 0;
+	let mut edges = 0;
 	for file in 0.. {
 		let name = format!("transcripts-{file}");
 		let path = format!(
@@ -349,6 +407,13 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 			let script = get(case, "input");
 			let job = get(script, "job");
 			let name = field(script, "name");
+			if name.starts_with("gen/") {
+				seeded += 1;
+			} else if name.starts_with("edge/") {
+				edges += 1;
+			} else {
+				hand_written.push(name.to_owned());
+			}
 			let trace = Trace::default();
 			let clock = Arc::new(ScriptClock {
 				ms: Mutex::new(
@@ -362,12 +427,12 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 						.collect(),
 				),
 				iso: Mutex::new(strings(get(get(script, "clock"), "iso")).into()),
-				last_ms: Mutex::new(0),
 			});
 			let cancel = tokio_util::sync::CancellationToken::new();
 			if get(script, "aborted").as_bool() == Some(true) {
 				cancel.cancel();
 			}
+			let run_cancel = cancel.clone();
 			let input = ResearchPipelineInput {
 				run_id: field(job, "runId").to_owned(),
 				request: request(get(job, "request")),
@@ -384,7 +449,7 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 					.as_bool()
 					.unwrap(),
 			};
-			let tools = items(script, "tools")
+			let script_tools: Vec<Arc<ScriptTool>> = items(script, "tools")
 				.iter()
 				.map(|v| {
 					Arc::new(ScriptTool {
@@ -392,21 +457,28 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 						script: v.clone(),
 						position: AtomicUsize::new(0),
 						trace: trace.clone(),
-					}) as Arc<dyn Tool>
+						run_cancel: run_cancel.clone(),
+					})
 				})
 				.collect();
-			let fences = Mutex::new(VecDeque::from(strings(get(script, "fences"))));
+			let tools = script_tools
+				.iter()
+				.map(|tool| Arc::clone(tool) as Arc<dyn Tool>)
+				.collect();
+			let fences = Arc::new(Mutex::new(VecDeque::from(strings(get(script, "fences")))));
+			let fence_source = Arc::clone(&fences);
+			let agent = Arc::new(ScriptAgent {
+				meta: get(script, "agent").clone(),
+				turns: Mutex::new(items(script, "turns").to_vec().into()),
+				trace: trace.clone(),
+			});
 			let deps = ResearchPipelineDeps {
-				agent: Arc::new(ScriptAgent {
-					meta: get(script, "agent").clone(),
-					turns: Mutex::new(items(script, "turns").to_vec().into()),
-					trace: trace.clone(),
-				}),
+				agent: Arc::clone(&agent) as Arc<dyn AgentRuntime>,
 				tools: ToolRegistry::new(tools).unwrap(),
-				clock,
+				clock: Arc::clone(&clock) as Arc<dyn Clock>,
 				reporter: Arc::new(Reporter(trace.clone())),
 				new_fence_token: Arc::new(move || {
-					fences
+					fence_source
 						.lock()
 						.unwrap()
 						.pop_front()
@@ -422,12 +494,39 @@ async fn all_original_typescript_pipeline_scenarios_match_full_transcripts() {
 				("outcome", json(&outcome).unwrap()),
 			]);
 			compare(&actual, get(case, "output"), name);
-			count += 1;
+			// Nothing scripted may be left over: every clock reading, fence token,
+			// model turn and tool execution the TypeScript made happened here too.
+			clock.assert_drained(name);
+			assert!(fences.lock().unwrap().is_empty(), "{name}: unused fences");
+			assert!(
+				agent.turns.lock().unwrap().is_empty(),
+				"{name}: unused turns"
+			);
+			for (tool, scripted) in script_tools.iter().zip(items(script, "tools")) {
+				assert_eq!(
+					tool.position.load(Ordering::SeqCst),
+					items(scripted, "executions").len(),
+					"{name}: executions of {}",
+					tool.meta.tool_id
+				);
+			}
 		}
 	}
-	// The TypeScript suite has 58 `it` blocks (some `it.each`, some running the
-	// pipeline twice); fewer transcripts than blocks means a scenario was lost.
-	assert!(count >= 58, "only {count} pipeline scenarios");
+	// Deleting or skipping any hand-written scenario must fail, whatever the
+	// seeded runs add: the exact list is the exporter's block table.
+	let table = corpus("scenarios");
+	let blocks = items(&table, "blocks");
+	assert_eq!(blocks.len(), HAND_WRITTEN_BLOCKS, "pipeline.test.ts blocks");
+	assert_eq!(hand_written.len(), HAND_WRITTEN_RUNS, "hand-written runs");
+	for block in blocks {
+		let name = field(block, "name");
+		let expected = usize::try_from(field_number_u64(block, "runs")).unwrap();
+		assert!(expected >= 1, "{name}: a block with no pipeline run");
+		let found = hand_written.iter().filter(|n| n.as_str() == name).count();
+		assert_eq!(found, expected, "{name}: recorded runs");
+	}
+	assert!(seeded >= 600, "only {seeded} seeded runs");
+	assert!(edges >= 70, "only {edges} budget-edge runs");
 }
 
 #[test]
@@ -778,6 +877,48 @@ mod in_flight_tool {
 		}
 	}
 
+	/// The owner cancels in the same instant the run's deadline fires: the
+	/// TypeScript combines the two signals, the tool sees the owner's abort and the
+	/// call is recorded as TOOL_ABORTED (never as a MAX_WALL_CLOCK stop, and the
+	/// run does not return `cancelled` before the plan's bookkeeping).
+	#[tokio::test(start_paused = true)]
+	async fn a_cancellation_that_coincides_with_the_deadline_is_a_tool_abort() {
+		let Fixture {
+			input,
+			deps,
+			trace,
+			started,
+			dropped,
+		} = fixture(30_000.0, 300_000);
+		let cancel = input.cancel.clone();
+		let run = tokio::spawn(run_research_pipeline(input, deps));
+		while !started.load(Ordering::SeqCst) {
+			tokio::task::yield_now().await;
+		}
+		cancel.cancel();
+		tokio::time::advance(Duration::from_millis(30_000)).await;
+		let outcome = run.await.unwrap().unwrap();
+		assert!(
+			dropped.load(Ordering::SeqCst),
+			"tool future was not dropped"
+		);
+		assert_eq!(
+			tool_events(&trace),
+			[("failed".to_owned(), "TOOL_ABORTED".to_owned())]
+		);
+		match outcome {
+			PipelineOutcome::Failed {
+				failure_code,
+				failure_detail,
+				..
+			} => {
+				assert_eq!(failure_code, "ALL_TOOL_CALLS_FAILED");
+				assert_eq!(failure_detail.as_deref(), Some("TOOL_ABORTED"));
+			}
+			other => panic!("unexpected outcome {other:?}"),
+		}
+	}
+
 	/// Owner cancellation while a tool runs aborts and drops the tool. As in the
 	/// TypeScript, a one-call plan then ends through the zero-evidence rule
 	/// (`ALL_TOOL_CALLS_FAILED` / `TOOL_ABORTED`): cancellation is only noticed
@@ -935,5 +1076,18 @@ mod hot_paths {
 		assert!(planning <= 5.0, "planning prompt {planning} ms");
 		assert!(history <= 5.0, "collectedSoFar {history} ms");
 		assert!(analysis <= 5.0, "analysis prompt {analysis} ms");
+	}
+}
+
+mod cpu_panics {
+	use super::*;
+
+	/// A panic in off-thread CPU work is an error the caller reports, not an abort.
+	#[tokio::test]
+	async fn a_panicking_cpu_job_is_a_cpu_worker_error() {
+		let result: Result<u32, PipelineError> =
+			on_cpu(|| std::panic::resume_unwind(Box::new("boom"))).await;
+		assert!(matches!(result, Err(PipelineError::CpuWorker)));
+		assert_eq!(on_cpu(|| 7).await.unwrap(), 7);
 	}
 }

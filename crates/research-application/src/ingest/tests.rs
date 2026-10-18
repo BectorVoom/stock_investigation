@@ -258,3 +258,60 @@ async fn fetch_source_articles_reports_a_non_feed_as_not_a_feed() {
 	assert_eq!(error.code, "NOT_A_FEED");
 	assert_eq!(error.detail, "response is not an RSS or Atom feed");
 }
+
+/// A feed parser that panics: the CPU job dies, the process must not.
+struct PanickingParser;
+impl FeedParser for PanickingParser {
+	fn parse(&self, _text: &str) -> Result<RawFeed, NotAFeed> {
+		std::panic::resume_unwind(Box::new("parser panicked"))
+	}
+}
+
+fn one_source() -> SubscribedSourceRef {
+	source(&json!({
+		"sourceId": "src_1", "canonicalUrl": "https://news.example.com/feed.xml",
+		"publisher": "P", "title": "T", "licensePolicy": "headline-and-link-only",
+	}))
+}
+
+#[tokio::test]
+async fn a_panic_in_feed_processing_is_a_cpu_worker_error() {
+	let deps = IngestDeps {
+		fetcher: Arc::new(Script {
+			fetches: vec![
+				json!({"ok": {"finalUrl": "u", "contentType": null, "text": "<rss/>"}}),
+				json!({"ok": {"finalUrl": "u", "contentType": null, "text": "<rss/>"}}),
+				json!({"ok": {"finalUrl": "u", "contentType": null, "text": "<rss/>"}}),
+			],
+			abort_on_fetch: None,
+			cancel: CancellationToken::new(),
+			calls: Mutex::new(Vec::new()),
+		}),
+		feed_parser: Arc::new(PanickingParser),
+		hasher: Arc::new(Sha),
+		clock: Arc::new(CountingClock(AtomicU64::new(0))),
+	};
+	let sources = [one_source(), one_source()];
+	let error = ingest_sources(
+		&sources,
+		&deps,
+		IngestOptions {
+			cancel: CancellationToken::new(),
+			max_articles: 400,
+		},
+	)
+	.await
+	.unwrap_err();
+	assert!(matches!(error, IngestError::CpuWorker));
+	assert_eq!(error.js_error_name(), "Panic");
+	let single = fetch_source_articles(&one_source(), &deps, None)
+		.await
+		.unwrap_err();
+	assert!(matches!(single, IngestError::CpuWorker));
+}
+
+#[test]
+fn an_invalid_stored_url_reports_the_javascript_error_name() {
+	let error = IngestError::InvalidStoredUrl(url::Url::parse("not a url").unwrap_err());
+	assert_eq!(error.js_error_name(), "TypeError");
+}

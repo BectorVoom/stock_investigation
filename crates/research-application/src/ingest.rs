@@ -65,9 +65,22 @@ pub enum IngestError {
 	/// Faithfully preserves new URL(storedUrl)'s throw (JS TypeError).
 	#[error("invalid stored feed URL (TypeError): {0}")]
 	InvalidStoredUrl(url::ParseError),
-	/// The CPU task failed before returning.
+	/// The CPU task panicked or was lost before returning.
 	#[error("feed CPU worker did not return a result")]
 	CpuWorker,
+}
+
+impl IngestError {
+	/// The name the TypeScript runner's `RUNNER_ERROR_<name>` failure code would
+	/// carry for this error: `TypeError` for a stored URL `new URL` rejects (the
+	/// job fails retryable), `Panic` for a lost CPU job (ADR-0030 error-name map).
+	#[must_use]
+	pub const fn js_error_name(&self) -> &'static str {
+		match self {
+			Self::InvalidStoredUrl(_) => "TypeError",
+			Self::CpuWorker => "Panic",
+		}
+	}
 }
 /// News-ingest completion (deduplication across sources is first wins).
 #[derive(Debug, Clone, serde::Serialize)]
@@ -108,15 +121,19 @@ async fn fetch_document(
 		}))
 }
 
-type Pending =
-	tokio::sync::oneshot::Receiver<(Result<SourceArticles, FeedFetchError>, SourceFetchReport)>;
+type Processed = (Result<SourceArticles, FeedFetchError>, SourceFetchReport);
+/// A source's CPU job, already running while the next fetch is in flight.
+type Pending = tokio::task::JoinHandle<Result<Processed, research_effects::cpu::CpuPanic>>;
+
+/// Starts parsing, normalizing and hashing on the rayon pool (a panic there is
+/// reported, never an abort). The task starts at once, so the work overlaps the
+/// next source's network request (ADR-0030 decision 5).
 fn process(
 	source: SubscribedSourceRef,
 	deps: IngestDeps,
 	fetched: Result<FetchedDocument, FeedFetchError>,
 ) -> Pending {
-	let (sender, receiver) = tokio::sync::oneshot::channel();
-	rayon::spawn(move || {
+	tokio::spawn(research_effects::cpu::run_cpu(move || {
 		let result = fetched.and_then(|document| {
 			let feed = deps
 				.feed_parser
@@ -159,9 +176,16 @@ fn process(
 			fetched_at: deps.clock.now_iso(),
 			error_code: result.as_ref().err().map(|e| e.code.clone()),
 		};
-		let _ = sender.send((result, report));
-	});
-	receiver
+		(result, report)
+	}))
+}
+
+/// Waits for a source's CPU job.
+async fn finish(pending: Pending) -> Result<Processed, IngestError> {
+	pending
+		.await
+		.map_err(|_| IngestError::CpuWorker)?
+		.map_err(|_| IngestError::CpuWorker)
 }
 
 /// Fetches one source, retaining the registered-host redirect allowlist.
@@ -172,9 +196,7 @@ pub async fn fetch_source_articles(
 	cancel: Option<CancellationToken>,
 ) -> Result<Result<SourceArticles, FeedFetchError>, IngestError> {
 	let fetched = fetch_document(source, deps, cancel).await?;
-	let (result, _) = process(source.clone(), deps.clone(), fetched)
-		.await
-		.map_err(|_| IngestError::CpuWorker)?;
+	let (result, _) = finish(process(source.clone(), deps.clone(), fetched)).await?;
 	Ok(result)
 }
 
@@ -182,7 +204,7 @@ fn collect_result(
 	out: &mut IngestOutcome,
 	seen: &mut HashSet<String>,
 	limit: usize,
-	result: (Result<SourceArticles, FeedFetchError>, SourceFetchReport),
+	result: Processed,
 ) {
 	let (result, report) = result;
 	out.source_reports.push(report);
@@ -217,13 +239,8 @@ pub async fn ingest_sources(
 		}
 		let fetch = fetch_document(source, deps, Some(options.cancel.clone()));
 		let fetched = if let Some(previous) = pending.take() {
-			let (fetched, previous) = tokio::join!(fetch, previous);
-			collect_result(
-				&mut out,
-				&mut seen,
-				options.max_articles,
-				previous.map_err(|_| IngestError::CpuWorker)?,
-			);
+			let (fetched, previous) = tokio::join!(fetch, finish(previous));
+			collect_result(&mut out, &mut seen, options.max_articles, previous?);
 			fetched?
 		} else {
 			fetch.await?
@@ -235,7 +252,7 @@ pub async fn ingest_sources(
 			&mut out,
 			&mut seen,
 			options.max_articles,
-			last.await.map_err(|_| IngestError::CpuWorker)?,
+			finish(last).await?,
 		);
 	}
 	Ok(out)

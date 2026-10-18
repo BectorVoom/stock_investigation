@@ -146,6 +146,9 @@ pub async fn execute_tool_call(
 		() = &mut timeout => Err(failure("TOOL_TIMEOUT", "tool exceeded its time limit", true)),
 		() = cancel.cancelled() => Err(failure("TOOL_ABORTED", "run was cancelled", false)),
 		result = execution => match result {
+			// The TypeScript races the tool against the abort: an abort raised while the
+			// tool ran (even one that returns in the same tick) wins over its result.
+			Ok(_) if cancel.is_cancelled() => Err(failure("TOOL_ABORTED", "run was cancelled", false)),
 			Ok(result) => result,
 			Err(_) => Err(failure("TOOL_THREW", "panic", false)),
 		},

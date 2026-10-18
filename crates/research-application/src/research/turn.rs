@@ -20,6 +20,9 @@ use research_js::{
 };
 use std::panic::AssertUnwindSafe;
 
+/// How long a cancelled adapter stream may keep delivering events.
+const CANCEL_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
+
 pub(super) enum TurnFailure {
 	Aborted,
 	UnknownSpend,
@@ -140,10 +143,18 @@ impl Session<'_> {
 				})
 			}
 			Ok(mut stream) => {
+				// The TypeScript keeps iterating a cancelled stream until the adapter ends
+				// it (a late `usage` event still counts); a stuck adapter is cut off after a
+				// grace period instead of hanging the run.
+				let grace = async {
+					self.input.cancel.cancelled().await;
+					tokio::time::sleep(CANCEL_GRACE).await;
+				};
+				tokio::pin!(grace);
 				loop {
 					let next = tokio::select! {
 						biased;
-						() = self.input.cancel.cancelled() => break,
+						() = &mut grace => break,
 						event = AssertUnwindSafe(stream.next()).catch_unwind() => event,
 					};
 					let raw = match next {

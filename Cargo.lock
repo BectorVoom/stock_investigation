@@ -776,6 +776,7 @@ dependencies = [
  "research-agent-core",
  "research-contracts",
  "research-domain",
+ "research-effects",
  "research-js",
  "research-widget-grid",
  "serde",

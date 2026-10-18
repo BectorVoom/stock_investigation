@@ -15,9 +15,10 @@ import {
 import { analysis } from "../../packages/application/test/support.ts";
 import { prompts, transcripts } from "./pipeline/capture.ts";
 import { generateRuns } from "./pipeline/generatedRuns.ts";
-import { runCases } from "./pipeline/harness.ts";
+import { cases, runCases } from "./pipeline/harness.ts";
 import { ingestVectors } from "./pipeline/ingest.ts";
 import { generatePromptCases } from "./pipeline/promptCorpus.ts";
+import { generateTargetedRuns } from "./pipeline/targetedRuns.ts";
 import { seededRandom, type VectorExporter } from "./shared.ts";
 
 const GENERATED_RUNS = 600;
@@ -60,9 +61,17 @@ export const pipelineExporter: VectorExporter = {
 	name: "pipeline",
 	async build() {
 		await loadScenarios("packages/application/test/pipeline.test.ts");
+		// Every `it` block of pipeline.test.ts (it.each rows expanded), in order.
+		const blockNames = cases.map((entry) => entry.name);
 		await loadScenarios("packages/application/test/prompts.test.ts");
 		await loadScenarios("packages/application/test/promptVolume.test.ts");
 		await runCases();
+		const handWritten = transcripts.map((entry) => (entry.input as { name: string }).name);
+		const blocks = blockNames.map((name) => ({
+			name,
+			runs: handWritten.filter((candidate) => candidate === name).length,
+		}));
+		await generateTargetedRuns();
 		await generateRuns(GENERATED_RUNS);
 		generatePromptCases();
 		const random = seededRandom(3404);
@@ -170,6 +179,8 @@ export const pipelineExporter: VectorExporter = {
 		}
 		files.push({ path: `pipeline/transcripts-${transcriptPart}.json`, content: transcriptChunk });
 		files.push(
+			{ path: "pipeline/scenarios.json", content: { blocks, handWrittenRuns: handWritten.length } },
+			{ path: "pipeline/scenarios.json", content: { blocks, handWrittenRuns: handWritten.length } },
 			{ path: "pipeline/ingest.json", content: await ingestVectors() },
 			{ path: "pipeline/drafts.json", content: drafts },
 		);

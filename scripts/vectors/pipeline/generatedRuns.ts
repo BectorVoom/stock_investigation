@@ -10,7 +10,10 @@ import {
 	createToolRegistry,
 	defineTool,
 	EMPTY_TOOL_OUTPUT,
+	type ToolContext,
 	type ToolDefinition,
+	type ToolFailure,
+	type ToolOutput,
 } from "@research/agent-core";
 import type {
 	AgentEvent,
@@ -19,13 +22,13 @@ import type {
 	SubscribedSourceRef,
 	WorkspaceComponentSummary,
 } from "@research/contracts";
-import { EMPTY_USAGE, err, type JsonObject, ok } from "@research/domain";
+import { EMPTY_USAGE, err, type JsonObject, ok, type Result } from "@research/domain";
 import { z } from "zod";
-import { createScriptedAgent } from "../../../examples/extensions/scriptedAgent.ts";
 import type { ResearchPipelineInput } from "../../../packages/application/src/research/pipeline.ts";
 import { seededRandom } from "../shared.ts";
-import { capturedRunResearchPipeline } from "./capture.ts";
+import { capturedRunResearchPipeline, markRunAbortedByTool } from "./capture.ts";
 import { setCurrentCase } from "./harness.ts";
+import { ToolPanic, textTurn, worldAgent } from "./world.ts";
 
 type Random = () => number;
 const pick = <T>(random: Random, values: readonly T[]): T =>
@@ -194,6 +197,7 @@ function buildTools(
 	random: Random,
 	advanceClock: (ms: number) => void,
 	nowIso: () => string,
+	controller: AbortController,
 ): ToolDefinition[] {
 	const failureRate = pick(random, [0, 0, 0, 0, 0.1, 0.5, 1]);
 	const base = {
@@ -203,7 +207,14 @@ function buildTools(
 		costCategory: "free" as const,
 	};
 	const maybeFail = () => {
-		advanceClock(chance(random, 0.1) ? int(random, 5_000, 30_000) : int(random, 0, 50));
+		// Rarely jump past every possible wall-clock budget (the smallest is 30 s).
+		advanceClock(
+			chance(random, 0.03)
+				? int(random, 31_000, 700_000)
+				: chance(random, 0.1)
+					? int(random, 5_000, 30_000)
+					: int(random, 0, 50),
+		);
 		if (!chance(random, failureRate)) return null;
 		return err({
 			code: pick(random, ["FETCH_FAILED", "lowercase_code", "X".repeat(100), "UNSAFE_URL", "A"]),
@@ -261,7 +272,42 @@ function buildTools(
 			});
 		},
 	});
+	const noArgs = z.strictObject({});
+	const scriptedTool = (
+		toolId: string,
+		timeoutMs: number,
+		execute: (
+			args: Record<string, never>,
+			context: ToolContext,
+		) => Promise<Result<ToolOutput, ToolFailure>>,
+	) =>
+		defineTool({
+			...base,
+			timeoutMs,
+			toolId,
+			description: `Scripted ${toolId}.`,
+			argsSchema: noArgs,
+			argsHint: "{}",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			execute,
+		});
+	// Never returns: ends by its own 15 ms timeout (TOOL_TIMEOUT) or the run deadline.
+	const hang = scriptedTool("hang.read", 15, () => new Promise(() => {}));
+	const crash = scriptedTool("throw.read", 5_000, async () => {
+		throw new ToolPanic("tool failed");
+	});
+	// Aborts the whole run while executing, like an owner cancelling mid-plan.
+	const abort = scriptedTool("abort.read", 5_000, async (_args, context) => {
+		markRunAbortedByTool();
+		controller.abort();
+		const item = evidenceFor(random, context.nextId("ev"), nowIso(), false);
+		return ok({ ...EMPTY_TOOL_OUTPUT, modelText: item.retrievedText, evidence: [item] });
+	});
 	const tools = [
+		hang,
+		crash,
+		abort,
 		evidenceTool(
 			"news.fetch_feed",
 			{ kind: "subscribed-sources" },
@@ -292,16 +338,23 @@ function planReply(random: Random, step: number): readonly AgentEvent[] | string
 			{ toolId: "x".repeat(100), args: {} },
 		]);
 	// Most plans lead with a call that can succeed, so runs reach analysis.
+	const rare = () =>
+		pick(random, [
+			{ toolId: "hang.read", args: {} },
+			{ toolId: "throw.read", args: {} },
+			{ toolId: "abort.read", args: {} },
+		]);
 	const good = [
 		{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } },
 		{ toolId: "web.search", args: { query: "battery demand" } },
 		{ toolId: "records.lookup", args: { ticker: "EXMP" } },
 	];
 	const first = () => (chance(random, 0.85) ? pick(random, good) : call());
+	const later = () => (chance(random, 0.08) ? rare() : call());
 	const plan = () =>
 		JSON.stringify({
 			toolCalls: Array.from({ length: pick(random, [1, 1, 1, 2, 3, 10, 0]) }, (_, i) =>
-				i === 0 ? first() : call(),
+				i === 0 ? first() : later(),
 			),
 			...(chance(random, 0.5) ? { done: chance(random, 0.5) } : {}),
 		});
@@ -676,14 +729,18 @@ export async function generateRuns(count: number): Promise<void> {
 		const { input, metered } = scenarioInput(random);
 		let nowMs = Date.parse("2026-10-11T00:00:00.000Z");
 		const clock = { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() };
+		const controller = new AbortController();
 		const world: World = {
-			tools: buildTools(random, (ms) => (nowMs += ms), clock.nowIso),
+			tools: buildTools(random, (ms) => (nowMs += ms), clock.nowIso, controller),
 			advance: (ms) => (nowMs += ms),
 		};
 		let turn = 0;
 		const unavailable = chance(random, 0.04);
 		const isolation = chance(random, 0.05) ? ("unverified" as const) : ("enforced" as const);
-		const agent = createScriptedAgent({
+		const costPerTurnUsd =
+			metered || chance(random, 0.3) ? pick(random, [0.01, 0.2, null]) : undefined;
+		const agent = worldAgent({
+			controller,
 			costModel: metered ? "metered" : "plan-limited",
 			toolIsolation: isolation,
 			...(unavailable
@@ -695,19 +752,31 @@ export async function generateRuns(count: number): Promise<void> {
 						},
 					}
 				: {}),
-			...(metered || chance(random, 0.3)
-				? { costPerTurnUsd: pick(random, [0.01, 0.2, null]) }
-				: {}),
-			reply: (request) => {
+			script: (request) => {
 				const step = turn++;
-				if (request.prompt.startsWith("You are the planning step")) return planReply(random, step);
-				if (request.prompt.startsWith("You are the analysis step"))
-					return analysisReply(random, request.prompt, step);
-				return verdictReply(random, request.prompt);
+				const reply = request.prompt.startsWith("You are the planning step")
+					? planReply(random, step)
+					: request.prompt.startsWith("You are the analysis step")
+						? analysisReply(random, request.prompt, step)
+						: verdictReply(random, request.prompt);
+				const scripted =
+					typeof reply === "string"
+						? textTurn(
+								reply,
+								costPerTurnUsd === undefined
+									? []
+									: [{ type: "usage", knownCostUsd: costPerTurnUsd }],
+							)
+						: { events: reply };
+				// Adapters that abort the run mid-stream or throw after their events.
+				if (chance(random, 0.03))
+					return { ...scripted, abortAfter: int(random, 0, scripted.events.length) };
+				// The throw is only reachable before the terminal event.
+				if (chance(random, 0.03)) return { events: scripted.events.slice(0, -1), throws: true };
+				return scripted;
 			},
 		});
 		let fence = 0;
-		const controller = new AbortController();
 		if (chance(random, 0.02)) controller.abort();
 		setCurrentCase(`gen/${index}`);
 		await capturedRunResearchPipeline(
