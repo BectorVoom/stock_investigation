@@ -564,7 +564,7 @@ const SERIES_IDS = [
 	"fred:",
 	":x",
 	"twelve-data:",
-	"fred:" + "A".repeat(26),
+	`fred:${"A".repeat(26)}`,
 	"unknown:X",
 	"twelve-data:A:B",
 	"twelve-data:AAPL:N",
