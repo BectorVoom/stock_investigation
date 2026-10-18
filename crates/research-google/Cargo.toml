@@ -36,6 +36,9 @@ http-body-util = { workspace = true }
 [dev-dependencies]
 research-net = { workspace = true, features = ["test-seams"] }
 tempfile = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+research-domain = { workspace = true }
 
 [lints]
 workspace = true

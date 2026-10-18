@@ -58,6 +58,9 @@ pub trait GoogleAuthUrlSender: Send + Sync {
 	/// True only when the API event queue is empty after flushing.
 	async fn send_auth_url(&self, url: &str) -> bool;
 }
+fn count_of(count: u64) -> i64 {
+	i64::try_from(count).unwrap_or(i64::MAX)
+}
 fn failed(job: &GoogleCalendarJob, code: Code) -> CompleteJobRequest {
 	CompleteJobRequest::Failed {
 		lease_generation: job.lease.lease_generation,
@@ -228,21 +231,23 @@ async fn connect_listening(
 		&code_challenge_s256(verifier.expose()),
 	);
 	reporter.state(JobState::Collecting).await;
-	let mut delivered = false;
-	for attempt in 0..4 {
+	// The first send is unconditional; each retry checks the stop before and
+	// after its pause, and a stop after the loop wins even over a delivery.
+	let mut delivered = sender.send_auth_url(&url).await;
+	let mut attempt = 1;
+	while !delivered && attempt < 4 {
 		if cancel.is_cancelled() {
 			return Ok(aborted(job));
 		}
-		if attempt > 0 {
-			env.sleep.sleep(2_000, Some(cancel)).await;
-			if cancel.is_cancelled() {
-				return Ok(aborted(job));
-			}
+		env.sleep.sleep(2_000, Some(cancel)).await;
+		if cancel.is_cancelled() {
+			return Ok(aborted(job));
 		}
-		if sender.send_auth_url(&url).await {
-			delivered = true;
-			break;
-		}
+		delivered = sender.send_auth_url(&url).await;
+		attempt += 1;
+	}
+	if cancel.is_cancelled() {
+		return Ok(aborted(job));
 	}
 	if !delivered {
 		warn(env, job, "google_auth_url_not_delivered", None);
@@ -511,22 +516,10 @@ async fn sync(
 		&[
 			("runId", job.lease.run_id.as_str().into()),
 			("calendarId", calendar_id.as_str().into()),
-			(
-				"inserted",
-				LogValue::Num(inserted.to_string().parse().unwrap_or(0.0)),
-			),
-			(
-				"updated",
-				LogValue::Num(updated.to_string().parse().unwrap_or(0.0)),
-			),
-			(
-				"deleted",
-				LogValue::Num(deleted.to_string().parse().unwrap_or(0.0)),
-			),
-			(
-				"unchanged",
-				LogValue::Num(unchanged.to_string().parse().unwrap_or(0.0)),
-			),
+			("inserted", LogValue::Int(count_of(inserted))),
+			("updated", LogValue::Int(count_of(updated))),
+			("deleted", LogValue::Int(count_of(deleted))),
+			("unchanged", LogValue::Int(count_of(unchanged))),
 		],
 	);
 	reporter.state(JobState::Publishing).await;

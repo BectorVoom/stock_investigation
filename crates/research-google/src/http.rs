@@ -84,8 +84,9 @@ pub trait GoogleHttp: Send + Sync {
 /// Production Google transport over research-net's verified connector.
 pub struct PinnedGoogleHttp {
 	tls: PinnedTls,
+	/// TEST SEAM: resolve every pinned host to this address instead of DNS.
 	#[cfg(test)]
-	address: Option<ValidatedAddress>,
+	override_ip: Option<std::net::IpAddr>,
 }
 impl PinnedGoogleHttp {
 	/// Configures verified production TLS. There is no production bypass for DNS or trust.
@@ -93,13 +94,13 @@ impl PinnedGoogleHttp {
 		Ok(Self {
 			tls: PinnedTls::new()?,
 			#[cfg(test)]
-			address: None,
+			override_ip: None,
 		})
 	}
 	async fn resolve(&self, host: &str) -> Result<ValidatedAddress, GoogleHttpError> {
 		#[cfg(test)]
-		if let Some(address) = &self.address {
-			return Ok(address.clone());
+		if let Some(ip) = self.override_ip {
+			return Ok(ValidatedAddress::assume_validated(host, ip));
 		}
 		let addresses = research_net::resolve_public(host)
 			.await
@@ -245,5 +246,299 @@ impl GoogleHttp for PinnedGoogleHttp {
 			() = cancel.cancelled() => Err(GoogleHttpError::new(GoogleHttpErrorCode::Timeout,"request was aborted")),
 			result = tokio::time::timeout(std::time::Duration::from_secs(30),self.exchange(&address,r)) => result.unwrap_or_else(|_| Err(GoogleHttpError::new(GoogleHttpErrorCode::Timeout,"request timed out"))),
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use research_net::PinnedTlsOverrides;
+	use rustls::pki_types::pem::PemObject;
+	use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+	use std::sync::{Arc, Mutex};
+	use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+	const CA_PEM: &str = include_str!("../tests/fixtures/ca.pem");
+	const LEAF_PEM: &str = include_str!("../tests/fixtures/leaf.pem");
+	const LEAF_KEY: &str = include_str!("../tests/fixtures/leaf.key");
+
+	/// A local TLS server for `*.googleapis.com` names that answers every
+	/// request with `reply` and records the raw request text.
+	struct Server {
+		port: u16,
+		seen: Arc<Mutex<Vec<String>>>,
+	}
+
+	async fn serve(reply: Vec<u8>) -> Server {
+		let certs: Vec<CertificateDer<'static>> =
+			CertificateDer::pem_slice_iter(LEAF_PEM.as_bytes())
+				.collect::<Result<_, _>>()
+				.unwrap();
+		let key = PrivateKeyDer::from_pem_slice(LEAF_KEY.as_bytes()).unwrap();
+		let provider = Arc::new(rustls::crypto::ring::default_provider());
+		let config = rustls::ServerConfig::builder_with_provider(provider)
+			.with_safe_default_protocol_versions()
+			.unwrap()
+			.with_no_client_auth()
+			.with_single_cert(certs, key)
+			.unwrap();
+		let acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(config));
+		let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+		let port = listener.local_addr().unwrap().port();
+		let seen = Arc::new(Mutex::new(Vec::new()));
+		let record = seen.clone();
+		tokio::spawn(async move {
+			loop {
+				let Ok((tcp, _)) = listener.accept().await else {
+					return;
+				};
+				let acceptor = acceptor.clone();
+				let reply = reply.clone();
+				let record = record.clone();
+				tokio::spawn(async move {
+					let Ok(mut tls) = acceptor.accept(tcp).await else {
+						return;
+					};
+					let mut request = Vec::new();
+					let mut chunk = [0u8; 4096];
+					loop {
+						let Ok(n) = tls.read(&mut chunk).await else {
+							return;
+						};
+						if n == 0 {
+							return;
+						}
+						request.extend_from_slice(&chunk[..n]);
+						let text = String::from_utf8_lossy(&request).into_owned();
+						if let Some(head_end) = text.find("\r\n\r\n") {
+							let length = text
+								.lines()
+								.find_map(|l| {
+									l.to_ascii_lowercase()
+										.strip_prefix("content-length: ")
+										.map(str::to_owned)
+								})
+								.and_then(|v| v.trim().parse::<usize>().ok())
+								.unwrap_or(0);
+							if request.len() >= head_end + 4 + length {
+								break;
+							}
+						}
+					}
+					record
+						.lock()
+						.unwrap()
+						.push(String::from_utf8_lossy(&request).into_owned());
+					let _ = tls.write_all(&reply).await;
+					let _ = tls.shutdown().await;
+				});
+			}
+		});
+		Server { port, seen }
+	}
+
+	fn client(port: u16) -> PinnedGoogleHttp {
+		PinnedGoogleHttp {
+			tls: PinnedTls::with_overrides(&PinnedTlsOverrides {
+				port: Some(port),
+				extra_root_pem: Some(CA_PEM.to_owned()),
+				dial_loopback: true,
+			})
+			.unwrap(),
+			override_ip: Some("93.184.216.34".parse().unwrap()),
+		}
+	}
+
+	fn response(status: &str, headers: &str, body: &[u8]) -> Vec<u8> {
+		let mut out = format!(
+			"HTTP/1.1 {status}\r\n{headers}content-length: {}\r\nconnection: close\r\n\r\n",
+			body.len()
+		)
+		.into_bytes();
+		out.extend_from_slice(body);
+		out
+	}
+
+	async fn post(
+		http: &PinnedGoogleHttp,
+		host: &str,
+		path: &str,
+		body: Option<&str>,
+		cancel: &CancellationToken,
+	) -> Result<GoogleHttpResponse, GoogleHttpError> {
+		http.send(GoogleHttpRequest {
+			host,
+			method: "POST",
+			path,
+			headers: &[("content-type", "application/x-www-form-urlencoded")],
+			body,
+			cancel,
+		})
+		.await
+	}
+
+	#[tokio::test]
+	async fn posts_a_form_through_verified_tls() {
+		let server = serve(response(
+			"200 OK",
+			"content-type: application/json\r\n",
+			br#"{"access_token":"at"}"#,
+		))
+		.await;
+		let reply = post(
+			&client(server.port),
+			GOOGLE_OAUTH_HOST,
+			"/token",
+			Some("grant_type=refresh_token"),
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap();
+		assert_eq!(reply.status, 200);
+		assert!(reply.text.contains("access_token"));
+		assert_eq!(reply.content_type.as_deref(), Some("application/json"));
+		let seen = server.seen.lock().unwrap().clone();
+		let request = seen.first().unwrap();
+		assert!(request.starts_with("POST /token HTTP/1.1\r\n"));
+		let lower = request.to_ascii_lowercase();
+		assert!(lower.contains("host: oauth2.googleapis.com\r\n"));
+		assert!(lower.contains("user-agent: stock-investigation-runner/0.1\r\n"));
+		assert!(lower.contains("content-length: 24\r\n"));
+		assert!(lower.contains("connection: close\r\n"));
+		assert!(!lower.contains("accept-encoding"));
+		assert!(request.ends_with("grant_type=refresh_token"));
+	}
+
+	#[tokio::test]
+	async fn refuses_other_hosts_and_relative_paths_before_any_lookup() {
+		// No override and no network: the refusal must come before resolution.
+		let http = PinnedGoogleHttp::new().unwrap();
+		let cancel = CancellationToken::new();
+		let error = post(&http, "evil.example", "/x", None, &cancel)
+			.await
+			.unwrap_err();
+		assert_eq!(error.code, GoogleHttpErrorCode::HostNotAllowed);
+		assert_eq!(error.detail, "host is not a pinned Google host");
+		let error = post(&http, GOOGLE_CALENDAR_HOST, "x", None, &cancel)
+			.await
+			.unwrap_err();
+		assert_eq!(error.code, GoogleHttpErrorCode::HostNotAllowed);
+		assert_eq!(error.detail, "request path must start with /");
+	}
+
+	#[tokio::test]
+	async fn does_not_follow_redirects() {
+		let server = serve(response(
+			"302 Found",
+			"location: https://oauth2.googleapis.com/elsewhere\r\n",
+			b"",
+		))
+		.await;
+		let reply = post(
+			&client(server.port),
+			GOOGLE_OAUTH_HOST,
+			"/token",
+			Some("a=b"),
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap();
+		assert_eq!(reply.status, 302);
+		assert_eq!(
+			reply.location.as_deref(),
+			Some("https://oauth2.googleapis.com/elsewhere")
+		);
+		assert_eq!(server.seen.lock().unwrap().len(), 1);
+	}
+
+	#[tokio::test]
+	async fn caps_response_bodies_at_one_megabyte() {
+		let big = serve(response("200 OK", "", &vec![b'x'; 1_000_001])).await;
+		let error = post(
+			&client(big.port),
+			GOOGLE_OAUTH_HOST,
+			"/token",
+			None,
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap_err();
+		assert_eq!(error.code, GoogleHttpErrorCode::ResponseTooLarge);
+		let exact = serve(response("200 OK", "", &vec![b'x'; 1_000_000])).await;
+		let reply = post(
+			&client(exact.port),
+			GOOGLE_OAUTH_HOST,
+			"/token",
+			None,
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap();
+		assert_eq!(reply.text.len(), 1_000_000);
+	}
+
+	#[tokio::test]
+	async fn decodes_text_like_text_decoder() {
+		let server = serve(response("200 OK", "", b"\xef\xbb\xbf{\"a\":\"\xff\"}")).await;
+		let reply = post(
+			&client(server.port),
+			GOOGLE_CALENDAR_HOST,
+			"/x",
+			None,
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap();
+		assert_eq!(reply.text, "{\"a\":\"\u{fffd}\"}");
+	}
+
+	#[tokio::test]
+	async fn verifies_the_certificate_against_the_host_name() {
+		// The server certificate covers only the two Google names.
+		let server = serve(response("200 OK", "", b"{}")).await;
+		let http = client(server.port);
+		let spoof = http
+			.tls
+			.connect(&ValidatedAddress::assume_validated(
+				"evil.example",
+				"93.184.216.34".parse().unwrap(),
+			))
+			.await;
+		assert!(spoof.is_err());
+	}
+
+	#[tokio::test]
+	async fn a_cancelled_request_times_out_as_aborted() {
+		let cancel = CancellationToken::new();
+		cancel.cancel();
+		let server = serve(response("200 OK", "", b"{}")).await;
+		let error = post(
+			&client(server.port),
+			GOOGLE_OAUTH_HOST,
+			"/token",
+			None,
+			&cancel,
+		)
+		.await
+		.unwrap_err();
+		assert_eq!(error.code, GoogleHttpErrorCode::Timeout);
+		assert_eq!(error.detail, "request was aborted");
+	}
+
+	#[tokio::test]
+	async fn malformed_requests_are_never_sent() {
+		let server = serve(response("200 OK", "", b"{}")).await;
+		let error = post(
+			&client(server.port),
+			GOOGLE_OAUTH_HOST,
+			"/a b",
+			None,
+			&CancellationToken::new(),
+		)
+		.await
+		.unwrap_err();
+		assert_eq!(error.code, GoogleHttpErrorCode::NetworkError);
+		assert_eq!(error.detail, "REQUEST_NOT_SENT");
+		assert!(server.seen.lock().unwrap().is_empty());
 	}
 }
