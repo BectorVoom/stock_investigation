@@ -11,6 +11,7 @@ use research_contracts::watchlist::{EarningsEvent, EarningsTiming};
 use research_domain::calendar::civil_date::{excel_serial_to_iso_date, is_valid_iso_date};
 use research_js::{string_number::string_to_number, utf16::utf16_len, whitespace::trim};
 use serde::Serialize;
+use std::borrow::Cow;
 
 /// Workbook structural failure.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
@@ -70,6 +71,9 @@ pub struct JpxWorkbookRow {
 
 /// A scanned `<tag …>…</tag>` or `<tag …/>` element.
 struct Element<'a> {
+	/// Offset of the opening `<` and of the first byte after the element.
+	start: usize,
+	end: usize,
 	attrs: &'a str,
 	inner: &'a str,
 }
@@ -113,8 +117,13 @@ fn scan_elements<'a>(
 			.ok_or(MalformedWorkbook)?;
 		let attrs = xml.get(after_name..attrs_end).ok_or(MalformedWorkbook)?;
 		if let Some(attrs) = attrs.strip_suffix('/') {
-			out.push(Element { attrs, inner: "" });
 			position = attrs_end + 1;
+			out.push(Element {
+				start,
+				end: position,
+				attrs,
+				inner: "",
+			});
 		} else {
 			let body = attrs_end + 1;
 			let end = bytes
@@ -122,11 +131,13 @@ fn scan_elements<'a>(
 				.and_then(|rest| close_finder.find(rest))
 				.map(|at| body + at)
 				.ok_or(MalformedWorkbook)?;
+			position = end + close.len();
 			out.push(Element {
+				start,
+				end: position,
 				attrs,
 				inner: xml.get(body..end).ok_or(MalformedWorkbook)?,
 			});
-			position = end + close.len();
 		}
 		if out.len() > limit {
 			return Err(LimitExceeded);
@@ -356,13 +367,31 @@ fn parse_shared_strings(xml: &str) -> Result<Vec<String>, JpxWorkbookError> {
 	let items = scan_elements(xml, "si", MAX_JPX_SHARED_STRINGS)?;
 	let mut strings = Vec::with_capacity(items.len());
 	for item in items {
+		let visible = without_phonetic_runs(item.inner)?;
 		let mut combined = String::new();
-		for run in scan_elements(item.inner, "t", MAX_JPX_CELLS)? {
+		for run in scan_elements(&visible, "t", MAX_JPX_CELLS)? {
 			combined.push_str(&decode_workbook_text(run.inner));
 		}
 		strings.push(combined);
 	}
 	Ok(strings)
+}
+
+/// The item's XML without its phonetic `<rPh>` runs: Excel shows the cell
+/// text only, while the readings (kana) would be glued onto the name or break
+/// a header match.
+fn without_phonetic_runs(item: &str) -> Result<Cow<'_, str>, JpxWorkbookError> {
+	if !item.contains("<rPh") {
+		return Ok(Cow::Borrowed(item));
+	}
+	let mut kept = String::with_capacity(item.len());
+	let mut position = 0;
+	for run in scan_elements(item, "rPh", MAX_JPX_CELLS)? {
+		kept.push_str(item.get(position..run.start).ok_or(MalformedWorkbook)?);
+		position = run.end;
+	}
+	kept.push_str(item.get(position..).ok_or(MalformedWorkbook)?);
+	Ok(Cow::Owned(kept))
 }
 
 /// The text of a cell: shared-string cells resolve through the table, an

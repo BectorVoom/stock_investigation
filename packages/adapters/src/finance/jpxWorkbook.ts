@@ -98,12 +98,32 @@ export function slugFiscalKind(label: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
+/**
+ * The item's XML without its phonetic `<rPh>` runs: Excel shows the cell
+ * text only, while the readings (kana) would be glued onto the name or break
+ * a header match.
+ */
+function withoutPhoneticRuns(item: string): Result<string, JpxWorkbookError> {
+	if (!item.includes("<rPh")) return ok(item);
+	const phonetic = scanElements(item, "rPh", MAX_JPX_CELLS);
+	if (!phonetic.ok) return phonetic;
+	let kept = "";
+	let position = 0;
+	for (const run of phonetic.value) {
+		kept += item.slice(position, run.start);
+		position = run.end;
+	}
+	return ok(kept + item.slice(position));
+}
+
 function parseSharedStrings(xml: string): Result<string[], JpxWorkbookError> {
 	const scanned = scanElements(xml, "si", MAX_JPX_SHARED_STRINGS);
 	if (!scanned.ok) return scanned;
 	const items: string[] = [];
 	for (const item of scanned.value) {
-		const runs = scanElements(item.inner, "t", MAX_JPX_CELLS);
+		const visible = withoutPhoneticRuns(item.inner);
+		if (!visible.ok) return visible;
+		const runs = scanElements(visible.value, "t", MAX_JPX_CELLS);
 		if (!runs.ok) return runs;
 		let combined = "";
 		for (const run of runs.value) combined += decodeWorkbookText(run.inner);
@@ -119,6 +139,9 @@ interface RawCell {
 }
 
 interface ScannedElement {
+	/** Offset of the opening `<` and of the first character after the element. */
+	readonly start: number;
+	readonly end: number;
 	readonly attrs: string;
 	readonly inner: string;
 	readonly selfClosed: boolean;
@@ -162,13 +185,25 @@ function scanElements(
 		if (attrsEnd === -1) return err("MALFORMED_WORKBOOK");
 		const attrs = xml.slice(start + open.length, attrsEnd);
 		if (attrs.endsWith("/")) {
-			out.push({ attrs: attrs.slice(0, -1), inner: "", selfClosed: true });
 			position = attrsEnd + 1;
+			out.push({
+				start,
+				end: position,
+				attrs: attrs.slice(0, -1),
+				inner: "",
+				selfClosed: true,
+			});
 		} else {
 			const end = xml.indexOf(close, attrsEnd + 1);
 			if (end === -1) return err("MALFORMED_WORKBOOK");
-			out.push({ attrs, inner: xml.slice(attrsEnd + 1, end), selfClosed: false });
 			position = end + close.length;
+			out.push({
+				start,
+				end: position,
+				attrs,
+				inner: xml.slice(attrsEnd + 1, end),
+				selfClosed: false,
+			});
 		}
 		if (out.length > limit) return err("LIMIT_EXCEEDED");
 	}
