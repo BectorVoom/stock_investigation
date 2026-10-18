@@ -453,7 +453,24 @@ fn draft_schemas_match_typescript_transformations_and_issue_paths() {
 
 #[test]
 fn prompt_corpus_matches_every_byte() {
-	for case in list(&corpus("prompts")) {
+	let mut cases_seen = 0;
+	for part in 0.. {
+		let name = format!("prompts-{part}");
+		let path = format!(
+			"{}/../../vectors/pipeline/{name}.json",
+			env!("CARGO_MANIFEST_DIR")
+		);
+		if !std::path::Path::new(&path).exists() {
+			break;
+		}
+		cases_seen += prompt_cases(&corpus(&name));
+	}
+	assert!(cases_seen > 400, "only {cases_seen} prompt cases");
+}
+
+fn prompt_cases(cases: &Value) -> usize {
+	let cases = list(cases);
+	for case in cases {
 		let input = get(case, "input");
 		let builder = field(input, "builder");
 		// The verification prompt takes neither a request nor a context.
@@ -521,4 +538,5 @@ fn prompt_corpus_matches_every_byte() {
 			field(input, "builder")
 		);
 	}
+	cases.len()
 }

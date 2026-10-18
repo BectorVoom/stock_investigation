@@ -10,6 +10,7 @@ import { seededRandom, type VectorExporter } from "./shared.ts";
 import { transcripts, prompts } from "./pipeline/capture.ts";
 import { runCases } from "./pipeline/harness.ts";
 import { ingestVectors } from "./pipeline/ingest.ts";
+import { generatePromptCases } from "./pipeline/promptCorpus.ts";
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),"../..");
 async function loadScenarios(path:string):Promise<void>{
@@ -22,7 +23,7 @@ async function loadScenarios(path:string):Promise<void>{
 	await import(`data:text/javascript;base64,${Buffer.from(compiled.outputText).toString("base64")}`);
 }
 export const pipelineExporter:VectorExporter={name:"pipeline",async build(){
-	await loadScenarios("packages/application/test/pipeline.test.ts");await loadScenarios("packages/application/test/prompts.test.ts");await loadScenarios("packages/application/test/promptVolume.test.ts");await runCases();
+	await loadScenarios("packages/application/test/pipeline.test.ts");await loadScenarios("packages/application/test/prompts.test.ts");await loadScenarios("packages/application/test/promptVolume.test.ts");await runCases();generatePromptCases();
 	const random=seededRandom(3404);const draft=JSON.parse(analysis()) as Record<string,unknown>;
 	const schemas={plan:planSchema,analysis:analysisDraftSchema,scenario:draftScenarioSchema,supplier:draftSupplierSchema,pricingPower:draftPricingPowerSchema,verdicts:verdictsSchema};
 	const drafts=[];const seeds:unknown[]=[null,0,true,"",[],{},draft,{claims:[]}, {toolCalls:[{toolId:"x"}]},{done:true},{verdicts:[{claimIndex:0,verdict:"supported"}]}];
@@ -32,5 +33,10 @@ export const pipelineExporter:VectorExporter={name:"pipeline",async build(){
 		for(const input of inputs){const result=schema.safeParse(input);drafts.push({input:{schema:name,value:input},output:result.success?{ok:result.data}:{err:result.error.issues.map(i=>({path:i.path.join("."),code:i.code,message:i.message}))}});}
 	}
 	const files=[];for(let offset=0;offset<transcripts.length;offset+=12){files.push({path:`pipeline/transcripts-${offset/12}.json`,content:transcripts.slice(offset,offset+12)});}
-	files.push({path:"pipeline/ingest.json",content:await ingestVectors()},{path:"pipeline/prompts.json",content:prompts},{path:"pipeline/drafts.json",content:drafts});return files;
+	files.push({path:"pipeline/ingest.json",content:await ingestVectors()},{path:"pipeline/drafts.json",content:drafts});
+	// Prompt cases are large (up to 76 KB each): chunk by size so no file passes ~3 MB.
+	let chunk:typeof prompts=[];let size=0;let part=0;
+	for(const entry of prompts){const length=JSON.stringify(entry).length;if(size+length>2_000_000&&chunk.length>0){files.push({path:`pipeline/prompts-${part++}.json`,content:chunk});chunk=[];size=0;}chunk.push(entry);size+=length;}
+	files.push({path:`pipeline/prompts-${part}.json`,content:chunk});
+	return files;
 }};
