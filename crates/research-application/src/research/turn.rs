@@ -55,11 +55,23 @@ impl Session<'_> {
 		self.deps.clock.now_ms().saturating_sub(self.started)
 	}
 	pub(super) fn terminal(&self, failure: &TurnFailure) -> Option<PipelineOutcome> {
-		let approval=match failure{
-			TurnFailure::Aborted=>return Some(PipelineOutcome::Cancelled{usage:self.usage}),
-			TurnFailure::UnknownSpend=>ApprovalRequest{reason_code:"METERED_COST_UNKNOWN".to_owned(),detail:"A metered request did not report its cost, so total spend is unknown. Approve to continue.".to_owned()},
-			TurnFailure::Budget(BudgetLimit::MaxSpend)=>ApprovalRequest{reason_code:"SPEND_LIMIT_REACHED".to_owned(),detail:format!("Metered spend is {} USD of the authorized {} USD; the next request could exceed it.",to_fixed(self.usage.known_cost_usd,4),to_js_string(self.input.request.budget.max_spend_usd.unwrap_or(0.0)))},
-			_=>return None,
+		let approval = match failure {
+			TurnFailure::Aborted => {
+				return Some(PipelineOutcome::Cancelled { usage: self.usage });
+			}
+			TurnFailure::UnknownSpend => ApprovalRequest {
+				reason_code: "METERED_COST_UNKNOWN".to_owned(),
+				detail: "A metered request did not report its cost, so total spend is unknown. Approve to continue.".to_owned(),
+			},
+			TurnFailure::Budget(BudgetLimit::MaxSpend) => ApprovalRequest {
+				reason_code: "SPEND_LIMIT_REACHED".to_owned(),
+				detail: format!(
+					"Metered spend is {} USD of the authorized {} USD; the next request could exceed it.",
+					to_fixed(self.usage.known_cost_usd, 4),
+					to_js_string(self.input.request.budget.max_spend_usd.unwrap_or(0.0))
+				),
+			},
+			_ => return None,
 		};
 		Some(PipelineOutcome::WaitingApproval {
 			approval_request: approval,
@@ -129,7 +141,11 @@ impl Session<'_> {
 			}
 			Ok(mut stream) => {
 				loop {
-					let next = tokio::select! {biased;()=self.input.cancel.cancelled()=>break,event=AssertUnwindSafe(stream.next()).catch_unwind()=>event};
+					let next = tokio::select! {
+						biased;
+						() = self.input.cancel.cancelled() => break,
+						event = AssertUnwindSafe(stream.next()).catch_unwind() => event,
+					};
 					let raw = match next {
 						Ok(Some(event)) => event,
 						Ok(None) => break,

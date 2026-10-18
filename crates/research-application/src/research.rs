@@ -456,7 +456,13 @@ pub async fn run_research_pipeline(
 			let _guard = call_cancel.clone().drop_guard();
 			let mut context = tool_context.clone();
 			context.cancel = call_cancel;
-			let (result, deadline_fired) = tokio::select! {biased; ()=tokio::time::sleep(Duration::from_millis(remaining_ms))=>(None,true), result=execute_tool_call(authorized,context)=>(Some(result),false)};
+			// Biased: when the run's deadline and the tool finish together, the deadline wins.
+			// Losing the race drops the tool's future (ADR-0030 C3).
+			let (result, deadline_fired) = tokio::select! {
+				biased;
+				() = tokio::time::sleep(Duration::from_millis(remaining_ms)) => (None, true),
+				result = execute_tool_call(authorized, context) => (Some(result), false),
+			};
 			executed += 1;
 			if deadline_fired && !input.cancel.is_cancelled() {
 				*tool_errors.entry("MAX_WALL_CLOCK".to_owned()).or_default() += 1;
