@@ -1,17 +1,23 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
-import { buildChildEnv, writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import {
+	buildChildEnv,
+	suiteRunnerSettings,
+	writeTestRunnerEnvFile,
+} from "../../scripts/testEnv.ts";
 import { E2E_PORT } from "./fixtures.ts";
 
 /**
  * Development on this PC (`bun run dev`, ADR-0011): the working tree, live —
  * Vite hot module replacement for the SPA, the API with reload on change, the
- * runner rebuilt from source on change into the data directory and run under
- * `node --watch` (never Bun: the pinned HTTPS fetcher hangs there) — against
+ * runner rebuilt from source on change into the data directory and restarted
+ * (RESEARCH_RUNNER=node: a Bun bundle under `node --watch`, never Bun itself —
+ * the pinned HTTPS fetcher hangs there; RESEARCH_RUNNER=rust: the Cargo-built
+ * binary kept fresh by `scripts/runnerDev.ts`) — against
  * its own ports and a throwaway data directory, so development can never
  * change what production serves. Ports derive from E2E_PORT like every other
  * spec in this suite, offset clear of the owner's own `bun run dev` (3000 and
@@ -22,6 +28,8 @@ const API_PORT = E2E_PORT - 21;
 const VITE_ORIGIN = `http://localhost:${VITE_PORT}`;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+/** The suite's runner (RESEARCH_RUNNER, default node): `buildChildEnv` passes it to the launcher. */
+const RUNNER = suiteRunnerSettings().RESEARCH_RUNNER === "rust" ? "rust" : "node";
 
 test.describe.configure({ mode: "serial" });
 
@@ -122,27 +130,37 @@ test("the header shows the Development badge", async ({ page }) => {
 	await expect(badge).toContainText("Development");
 });
 
-test("the runner runs under Node and restarts when its bundle is rebuilt", async () => {
+test(`the runner runs as ${RUNNER} and restarts when its ${RUNNER === "rust" ? "binary" : "bundle"} is rebuilt`, async () => {
 	test.setTimeout(180_000);
 	const runnerLog = join(dataDir, "logs", "runner.log");
-	const bundle = join(dataDir, "runner", "main.mjs");
-	// The runner's start-up line carries its runtime: Node, never Bun (the
-	// pinned HTTPS fetcher hangs under Bun's Node compatibility layer). The
-	// very first line is Node's own "--env-file-if-exists" notice.
+	const artifact = join(dataDir, "runner", RUNNER === "rust" ? "research-runner" : "main.mjs");
+	// The runner's start-up line carries its runtime. Node: never Bun (the
+	// pinned HTTPS fetcher hangs under Bun's Node compatibility layer; the
+	// very first line is Node's own "--env-file-if-exists" notice). Rust: the
+	// binary says so itself (ADR-0030, change C4).
 	const startedLine =
 		readFileSync(runnerLog, "utf8")
 			.split("\n")
 			.find((line) => line.includes("runner_started")) ?? "";
-	expect(startedLine).toContain('"runtime":"node"');
+	expect(startedLine).toContain(`"runtime":"${RUNNER}"`);
 	expect(startedLine).not.toContain('"runtime":"bun"');
-	// Rewriting the bundle (what the watching rebuild does after a source
-	// edit) restarts the runner under `node --watch`: a second start-up line
-	// appears. The bundle itself lives in the throwaway data directory, so
-	// no tracked file is touched.
+	// Replacing the runner file (what the watching rebuild does after a source
+	// edit) restarts the runner: a second start-up line appears. The file
+	// itself lives in the throwaway data directory, so no tracked file is touched.
 	const startsBefore = readFileSync(runnerLog, "utf8").split("runner_started").length;
-	const beforeMtime = statSync(bundle).mtimeMs;
-	writeFileSync(bundle, `${readFileSync(bundle, "utf8")}\n`);
-	expect(statSync(bundle).mtimeMs).toBeGreaterThanOrEqual(beforeMtime);
+	const beforeMtime = statSync(artifact).mtimeMs;
+	if (RUNNER === "rust") {
+		// Identical bytes through a temp file and a rename: appending to a
+		// running Mach-O would break its code signature (the kernel then
+		// kills it with "Code Signature Invalid"), and a rename is what the
+		// supervisor itself does.
+		const swap = `${artifact}.e2e-swap`;
+		writeFileSync(swap, readFileSync(artifact), { mode: 0o755 });
+		renameSync(swap, artifact);
+	} else {
+		writeFileSync(artifact, `${readFileSync(artifact, "utf8")}\n`);
+	}
+	expect(statSync(artifact).mtimeMs).toBeGreaterThanOrEqual(beforeMtime);
 	let restarted = false;
 	for (let waited = 0; waited < 60_000; waited += 1_000) {
 		await new Promise((resolve) => setTimeout(resolve, 1_000));
@@ -151,7 +169,7 @@ test("the runner runs under Node and restarts when its bundle is rebuilt", async
 			break;
 		}
 	}
-	expect(restarted, "the runner did not restart after its bundle was rebuilt").toBe(true);
+	expect(restarted, "the runner did not restart after its file was rebuilt").toBe(true);
 });
 
 test("a file the dev server serves is picked up without a page navigation", async ({ page }) => {

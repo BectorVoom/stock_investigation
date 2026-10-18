@@ -1,14 +1,19 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
-import { buildChildEnv, writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import {
+	buildChildEnv,
+	suiteRunnerSettings,
+	writeTestRunnerEnvFile,
+} from "../../scripts/testEnv.ts";
 import { E2E_PORT } from "./fixtures.ts";
 
 /**
  * Runner supervision in development (finding 7, task 23b): `node --watch`
+ * (and, with RESEARCH_RUNNER=rust, the supervising `scripts/runnerDev.ts`)
  * stays alive when the program it runs exits, so the launcher cannot treat
  * the surviving watch process as health. Readiness means the runner has
  * actually reported to the API after this launch.
@@ -25,6 +30,8 @@ const VITE_PORT = E2E_PORT - 30;
 const API_PORT = E2E_PORT - 31;
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+/** The suite's runner (RESEARCH_RUNNER, default node): `buildChildEnv` passes it to the launcher. */
+const RUNNER = suiteRunnerSettings().RESEARCH_RUNNER === "rust" ? "rust" : "node";
 
 test.describe.configure({ mode: "serial" });
 
@@ -126,14 +133,23 @@ test("a runner that crashes later is reported at once", async () => {
 			await new Promise((resolve) => setTimeout(resolve, 1_000));
 		}
 		expect(ready, `launcher output:\n${watched.output()}`).toBe(true);
-		// Crash the bundle the watch process runs (the file `node --watch`
-		// restarts on): the watch process survives, so only the runner-log
-		// watcher can report it — at once, on the launcher's console.
-		const bundle = join(dataDir, "runner", "main.mjs");
-		writeFileSync(
-			bundle,
-			`process.stderr.write('{"event":"runner_crashed","error":"Error"}\\n');\nprocess.exit(1);\n`,
-		);
+		// Crash the file the watch process runs: the watch process survives, so
+		// only the runner-log watcher can report it — at once, on the
+		// launcher's console.
+		const crashLine = '{"event":"runner_crashed","error":"Error"}';
+		if (RUNNER === "rust") {
+			// An executable script through a temp file and a rename (the
+			// supervisor restarts on a replaced binary).
+			const binary = join(dataDir, "runner", "research-runner");
+			const swap = `${binary}.e2e-swap`;
+			writeFileSync(swap, `#!/bin/sh\nprintf '%s\\n' '${crashLine}' >&2\nexit 1\n`, {
+				mode: 0o755,
+			});
+			renameSync(swap, binary);
+		} else {
+			const bundle = join(dataDir, "runner", "main.mjs");
+			writeFileSync(bundle, `process.stderr.write('${crashLine}\\n');\nprocess.exit(1);\n`);
+		}
 		let reported = false;
 		for (let waited = 0; waited < 60_000; waited += 1_000) {
 			if (watched.output().includes("runner_crashed")) {
