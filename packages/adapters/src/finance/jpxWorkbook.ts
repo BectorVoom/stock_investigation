@@ -333,15 +333,8 @@ function parseDataRow(
 ): JpxWorkbookRow | null {
 	const codeCell = byColumn(cells, headers.code);
 	if (codeCell === null) return null;
-	const codeRaw = cellText(codeCell, shared).trim();
-	let code: string;
-	if (codeCell.kind === "shared" || codeCell.kind === "inline" || codeCell.kind === "literal") {
-		code = codeRaw.toUpperCase();
-	} else {
-		const numeric = Number(codeRaw);
-		if (codeRaw === "" || !Number.isInteger(numeric)) return null;
-		code = String(numeric);
-	}
+	// An empty cell reads as "" and fails the pattern below, like any other non-code.
+	const code = cellText(codeCell, shared).trim().toUpperCase();
 	if (!JP_CODE_PATTERN.test(code)) return null;
 
 	const dateCell = byColumn(cells, headers.date);

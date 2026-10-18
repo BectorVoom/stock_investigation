@@ -535,11 +535,7 @@ fn parse_data_row(
 	headers: &HeaderColumns,
 ) -> Option<JpxWorkbookRow> {
 	let code_cell = by_column(cells, &headers.code)?;
-	// F6: the numeric branch of the TypeScript is reachable only for empty
-	// cells and always skips them.
-	if code_cell.kind == CellKind::Empty {
-		return None;
-	}
+	// An empty cell reads as "" and fails the pattern below, like any other non-code.
 	let code = trim(cell_text(code_cell, shared)).to_uppercase();
 	let code_bytes = code.as_bytes();
 	if code_bytes.len() != 4
