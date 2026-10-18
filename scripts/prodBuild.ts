@@ -23,9 +23,27 @@
 
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	copyFileSync,
+	existsSync,
+	mkdirSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
-import { DEFAULT_DEV_DATA_DIR, DEFAULT_PROD_DATA_DIR } from "./launchPlan.ts";
+import {
+	CARGO_RELEASE_BUILD_ARGS,
+	cargoBuildEnv,
+	cargoTargetDirFromEnv,
+	DEFAULT_DEV_DATA_DIR,
+	DEFAULT_PROD_DATA_DIR,
+	parseRunnerKind,
+	RUNNER_KIND_ENV_VAR,
+	RUST_OPTIONAL_BINARIES,
+	RUST_REQUIRED_BINARIES,
+} from "./launchPlan.ts";
 import {
 	acquireReleaseLock,
 	activateGeneration,
@@ -121,6 +139,12 @@ const previousDir = previousDirFromEnv(process.env);
 const prodDataDir = nonEmptyEnv("RESEARCH_DATA_DIR", DEFAULT_PROD_DATA_DIR);
 const devDataDir = nonEmptyEnv("RESEARCH_DEV_DATA_DIR", DEFAULT_DEV_DATA_DIR);
 const marker = process.env[RELEASE_MARKER_ENV_VAR]?.trim() ?? "";
+// RESEARCH_RUNNER=rust builds the Rust runner binaries into the generation
+// INSTEAD of the Node bundle (ADR-0030); the default stays node.
+const parsedRunnerKind = parseRunnerKind(process.env[RUNNER_KIND_ENV_VAR]);
+if (!parsedRunnerKind.ok) fail(parsedRunnerKind.error.message);
+const runnerKind = parsedRunnerKind.value;
+const cargoTargetDir = cargoTargetDirFromEnv(process.env, repoRoot);
 
 const markerCheck = checkReleaseMarker(marker);
 if (!markerCheck.ok) fail(markerCheck.error);
@@ -204,6 +228,37 @@ function copyWorkingMigrations(into: string): string[] {
 	return copied.value;
 }
 
+/**
+ * Builds the release binaries and COPIES them into the generation (never a
+ * hard link: a later Cargo build must not change a generation that is being
+ * served). The copy goes through a temp file and a rename, mode 0755 here and
+ * 0555 once the generation is made read-only. `RUSTFLAGS` and `CARGO_BUILD_*`
+ * from the caller never reach Cargo (see `cargoBuildEnv`).
+ */
+function buildRustRunner(runnerDir: string): void {
+	run(
+		"build the Rust runner (release)",
+		"cargo",
+		CARGO_RELEASE_BUILD_ARGS,
+		cargoBuildEnv(process.env, cargoTargetDir),
+	);
+	const releaseDir = join(cargoTargetDir, "release");
+	for (const name of [...RUST_REQUIRED_BINARIES, ...RUST_OPTIONAL_BINARIES]) {
+		const built = join(releaseDir, name);
+		if (!existsSync(built)) {
+			if (RUST_REQUIRED_BINARIES.includes(name)) {
+				throw new Error(`the Rust build did not produce ${built}.`);
+			}
+			continue;
+		}
+		const target = join(runnerDir, name);
+		const temp = `${target}.tmp-${process.pid}`;
+		copyFileSync(built, temp);
+		chmodSync(temp, 0o755);
+		renameSync(temp, target);
+	}
+}
+
 function buildGeneration(): string {
 	const builtAt = new Date().toISOString();
 	const id = newBuildGenerationId(new Date());
@@ -218,12 +273,15 @@ function buildGeneration(): string {
 		RESEARCH_WEB_OUT_DIR: layout.webDir,
 	});
 	failAtStep("runner");
-	run("build the runner", process.execPath, [
-		"build",
-		"apps/runner/src/main.ts",
-		"--target=node",
-		`--outfile=${join(layout.runnerDir, "main.mjs")}`,
-	]);
+	if (runnerKind === "rust") buildRustRunner(layout.runnerDir);
+	else {
+		run("build the runner", process.execPath, [
+			"build",
+			"apps/runner/src/main.ts",
+			"--target=node",
+			`--outfile=${join(layout.runnerDir, "main.mjs")}`,
+		]);
+	}
 	// The Worker is bundled through a generated configuration that refers only to
 	// this generation: its `assets.directory` is the generation's own `web/` (just
 	// built above), never `dist/web`, so a clean checkout with no `dist/`
@@ -278,7 +336,11 @@ function buildGeneration(): string {
 	const manifest = {
 		builtAt,
 		revision: gitRevision(),
-		versions: { bun: toolVersion(process.execPath, ["--version"]), node: process.version },
+		versions: {
+			bun: toolVersion(process.execPath, ["--version"]),
+			node: process.version,
+			...(runnerKind === "rust" ? { rustc: toolVersion("rustc", ["-V"]) } : {}),
+		},
 		generation: id,
 		migrations,
 		marker,

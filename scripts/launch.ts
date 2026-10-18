@@ -20,6 +20,10 @@
  *   RESEARCH_PREVIOUS_RELEASE_DIR  legacy previous-release location, migrated once (default "release.previous")
  *   RESEARCH_RUNNER_ENV_FILE  env file the runner processes load (default "apps/runner/.env";
  *     tests point it at a file they wrote themselves, so the operational file is never read)
+ *   RESEARCH_RUNNER        "node" (default, the TypeScript runner) or "rust" (the research-runner
+ *     binary built by Cargo, ADR-0030); a production generation without the binary still starts
+ *     with node
+ *   RESEARCH_CARGO_TARGET_DIR  shared Cargo build cache (default "target")
  * Optional runner settings (SEC_USER_AGENT, OPENCODE_MODEL, OPENROUTER_*, …) are
  * read from that env file when it exists.
  */
@@ -54,10 +58,12 @@ import {
 import {
 	ALLOW_NEWER_DB_ENV_VAR,
 	checkMigrationCompatibility,
+	generationLayout,
 	readAppliedMigrations,
 	readReleaseManifest,
 	removeHolderMarker,
 	resolveActiveGeneration,
+	runnersInGeneration,
 	validateDirectorySet,
 	writeHolderMarker,
 } from "./releaseOps.ts";
@@ -608,7 +614,12 @@ function requireRelease(plan: LaunchPlan): void {
 		!existsSync(plan.release.runnerBundle);
 	if (missing) {
 		throw new Error(
-			`no release found at ${plan.release.dir}/ (or its manifest is unreadable). Run \`bun run prod:build\` first.`,
+			`no release found at ${plan.release.dir}/ (or its manifest is unreadable, or it has no ${plan.release.runnerKind} runner for RESEARCH_RUNNER=${plan.release.runnerKind}). Run \`bun run prod:build\` first.`,
+		);
+	}
+	if (plan.release.runnerFellBack) {
+		console.log(
+			"  ⚠ RESEARCH_RUNNER=rust, but this generation was built before the Rust runner: starting its node runner. Run `bun run prod:build` to build the Rust one.",
 		);
 	}
 }
@@ -692,18 +703,29 @@ async function main(plan: LaunchPlan): Promise<void> {
 		writeFileSync(plan.devWrangler.file, plan.devWrangler.content);
 	}
 
-	// Development runs the runner from a bundle inside the data directory, so
-	// build it once before anything starts: `node --watch` below needs a file
-	// to watch, and the watching rebuild keeps it fresh afterwards.
+	// Development runs the runner from a file inside the data directory, so
+	// build it once before anything starts: the watching runner process below
+	// needs a file to run and to watch, and rebuilds it afterwards.
 	if (plan.devRunner !== null) {
-		const { bunExe, source, bundle } = plan.devRunner;
-		mkdirSync(bundle.split("/").slice(0, -1).join("/"), { recursive: true, mode: 0o700 });
-		await runStep(plan.buildLog, `building the development runner (${bundle})`, bunExe, [
-			"build",
-			source,
-			"--target=node",
-			`--outfile=${bundle}`,
-		]);
+		const devRunner = plan.devRunner;
+		if (devRunner.kind === "node") {
+			const { bunExe, source, bundle } = devRunner;
+			mkdirSync(bundle.split("/").slice(0, -1).join("/"), { recursive: true, mode: 0o700 });
+			await runStep(plan.buildLog, `building the development runner (${bundle})`, bunExe, [
+				"build",
+				source,
+				"--target=node",
+				`--outfile=${bundle}`,
+			]);
+		} else {
+			mkdirSync(devRunner.binaryDir, { recursive: true, mode: 0o700 });
+			await runStep(
+				plan.buildLog,
+				`building the development Rust runner (${devRunner.binary})`,
+				devRunner.prepare.command,
+				devRunner.prepare.args,
+			);
+		}
 	}
 
 	await runStep(plan.buildLog, `preparing the local database (${plan.stateDir})`, WRANGLER, [
@@ -792,7 +814,13 @@ export async function runMode(mode: LaunchMode): Promise<void> {
 			);
 			process.exit(1);
 		}
-		inputs = { ...parsed.value, releaseDir: active.value.generationDir };
+		inputs = {
+			...parsed.value,
+			releaseDir: active.value.generationDir,
+			generationRunners: runnersInGeneration(
+				generationLayout(active.value.areaAbs, active.value.generation),
+			),
+		};
 	}
 	const planned = planLaunch(inputs);
 	if (!planned.ok) {
