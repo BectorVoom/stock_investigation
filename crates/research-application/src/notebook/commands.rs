@@ -1,8 +1,7 @@
 //! Notebook type adapters and the command fold over the shared parser/layout engine.
 
-use super::edits::{build_edit, layout_failure};
 use research_contracts::json::to_js_value;
-use research_contracts::notebook::Notebook;
+use research_contracts::notebook::{Notebook, limits};
 use research_contracts::widget_rules::{
 	notebook_capacity_problem, reconcile_chart_draft, with_earned_chart_provenance,
 };
@@ -11,9 +10,11 @@ use research_contracts::widgets::{
 };
 use research_js::json::{Object, Value};
 use research_widget_grid::agent::commands::parse_widget_command;
-use research_widget_grid::agent::host::{ConfigUnreadable, WidgetDraft};
+use research_widget_grid::agent::host::{
+	ConfigUnreadable, MemoryLayoutStore, WidgetAgentHost, WidgetAgentType, WidgetDraft,
+};
 use research_widget_grid::agent::types::WidgetCommand;
-use research_widget_grid::core::layout::{WidgetLayoutLimits, apply_widget_layout_edit};
+use research_widget_grid::core::layout::WidgetLayoutLimits;
 use research_widget_grid::core::types::{WidgetBase, WidgetSize};
 use serde::Serialize;
 use std::collections::HashSet;
@@ -78,30 +79,52 @@ pub(super) fn core(widget: &research_contracts::notebook::NotebookWidget) -> Wid
 	}
 }
 
+/// One notebook widget type as the shared agent host sees it. The host's
+/// label, description and schema only feed the snapshots the API serves, which
+/// this runner never builds, so they are not carried here.
 pub(super) struct NotebookType<'a> {
-	pub(super) name: &'static str,
+	widget_type: WidgetType,
+	sizes: Vec<WidgetSize>,
 	known: &'a HashSet<&'a str>,
 }
-const ALL_SIZES: [WidgetSize; 3] = [WidgetSize::Small, WidgetSize::Medium, WidgetSize::Large];
-const RESEARCH_SIZES: [WidgetSize; 2] = [WidgetSize::Medium, WidgetSize::Large];
+static NO_SCHEMA: Value = Value::Null;
 
-impl NotebookType<'_> {
-	pub(super) fn default_size(&self) -> WidgetSize {
-		match self.name {
-			"metric" | "market-metric" => WidgetSize::Small,
-			"research" | "indicator-table" | "earnings-calendar" => WidgetSize::Large,
-			_ => WidgetSize::Medium,
+impl<'a> NotebookType<'a> {
+	fn new(widget_type: WidgetType, known: &'a HashSet<&'a str>) -> Self {
+		Self {
+			widget_type,
+			sizes: widget_type
+				.allowed_sizes()
+				.iter()
+				.copied()
+				.map(grid_size)
+				.collect(),
+			known,
 		}
 	}
-	pub(super) fn sizes(&self) -> &[WidgetSize] {
-		if self.name == "research" {
-			&RESEARCH_SIZES
-		} else {
-			&ALL_SIZES
-		}
+}
+
+impl WidgetAgentType<GridWidget> for NotebookType<'_> {
+	fn type_name(&self) -> &str {
+		self.widget_type.as_str()
 	}
-	pub(super) fn config_of(&self, widget: &GridWidget) -> Result<Object, ConfigUnreadable> {
-		if widget.widget_type() != self.name {
+	fn label(&self) -> &str {
+		self.widget_type.as_str()
+	}
+	fn description(&self) -> &str {
+		""
+	}
+	fn default_size(&self) -> WidgetSize {
+		grid_size(self.widget_type.default_size())
+	}
+	fn sizes(&self) -> &[WidgetSize] {
+		&self.sizes
+	}
+	fn config_schema(&self) -> &Value {
+		&NO_SCHEMA
+	}
+	fn config_of(&self, widget: &GridWidget) -> Result<Object, ConfigUnreadable> {
+		if widget.widget_type() != self.type_name() {
 			return Err(ConfigUnreadable);
 		}
 		let mut object = to_js_value(widget.0.as_ref())
@@ -113,15 +136,15 @@ impl NotebookType<'_> {
 		}
 		Ok(object)
 	}
-	pub(super) fn build(&self, draft: &WidgetDraft<'_>) -> Result<GridWidget, String> {
+	fn build(&self, draft: &WidgetDraft<'_>) -> Result<GridWidget, String> {
 		// Generic fields win over config so it cannot smuggle another type or id.
 		let mut assembled = draft.config.clone();
 		assembled.insert("widgetId", Value::from(draft.widget_id));
 		assembled.insert("title", Value::from(draft.title));
 		assembled.insert("size", Value::from(draft.size.as_str()));
-		assembled.insert("type", Value::from(self.name));
+		assembled.insert("type", Value::from(self.type_name()));
 		let value = Value::Object(assembled);
-		let value = if self.name == "chart" {
+		let value = if self.type_name() == "chart" {
 			reconcile_chart_draft(&value)
 		} else {
 			value
@@ -137,7 +160,10 @@ impl NotebookType<'_> {
 				.filter(|s| !s.is_empty())
 				.unwrap_or_else(|| "widget".to_owned());
 			let message = issue.map_or("is invalid", |issue| issue.message.as_str());
-			format!("invalid {} widget: \"{field}\" {message}.", self.name)
+			format!(
+				"invalid {} widget: \"{field}\" {message}.",
+				self.type_name()
+			)
 		})?;
 		if let WidgetContent::Research { component_id } = &widget.content {
 			if !self.known.contains(component_id.as_str()) {
@@ -148,56 +174,66 @@ impl NotebookType<'_> {
 	}
 }
 
-/// Pre-applies commands through the shared parser/layout engine, checks exact JSON byte
-/// capacity, then earns chart provenance. Changes/snapshots are API-only and
-/// intentionally omitted from this runner port (§1.6).
-///
-/// # Errors
-/// Returns the first command failure; the original notebook is never mutated.
-pub fn apply_notebook_commands(
-	notebook: &Notebook,
-	commands: &[Value],
-	new_widget_id: &mut dyn FnMut() -> Option<String>,
-) -> Result<Vec<WidgetCore>, NotebookCommandFailure> {
-	let known: HashSet<&str> = notebook
+/// The research widgets' component ids: the only ones a `research` command may name.
+fn known_component_ids(notebook: &Notebook) -> HashSet<&str> {
+	notebook
 		.widgets
 		.iter()
 		.filter_map(|w| match &w.content {
 			WidgetContent::Research { component_id } => Some(component_id.as_str()),
 			_ => None,
 		})
-		.collect();
-	apply_with_components(notebook, commands, &known, new_widget_id)
+		.collect()
 }
 
-pub(super) fn apply_with_components(
+fn failure(index: usize, code: &str, message: String) -> NotebookCommandFailure {
+	NotebookCommandFailure {
+		index,
+		code: code.to_owned(),
+		message,
+	}
+}
+
+/// Folds the commands over the notebook through the shared agent host and
+/// checks the exact JSON byte capacity; returns the resulting widgets.
+fn fold_and_check(
 	notebook: &Notebook,
 	commands: &[Value],
 	known: &HashSet<&str>,
 	new_widget_id: &mut dyn FnMut() -> Option<String>,
 ) -> Result<Vec<WidgetCore>, NotebookCommandFailure> {
-	let failure = |index, code: &str, message: String| NotebookCommandFailure {
-		index,
-		code: code.to_owned(),
-		message,
-	};
-	if commands.len() > 12 {
+	if commands.len() > limits::MAX_COMMANDS_PER_TURN {
 		return Err(failure(
-			12,
+			limits::MAX_COMMANDS_PER_TURN,
 			"INVALID_COMMAND",
-			"at most 12 commands are applied per turn.".to_owned(),
+			format!(
+				"at most {} commands are applied per turn.",
+				limits::MAX_COMMANDS_PER_TURN
+			),
 		));
 	}
-	let types: Vec<_> = WidgetType::VALUES
+	let types: Vec<NotebookType<'_>> = WidgetType::VALUES
 		.iter()
-		.map(|name| NotebookType { name, known })
+		.filter_map(|name| WidgetType::from_str_value(name))
+		.map(|widget_type| NotebookType::new(widget_type, known))
 		.collect();
-	let previous: Vec<_> = notebook.widgets.iter().map(core).collect();
-	let mut widgets: Vec<_> = previous
-		.iter()
-		.cloned()
-		.map(|w| GridWidget(Arc::new(w)))
-		.collect();
+	let registered: Vec<&dyn WidgetAgentType<GridWidget>> =
+		types.iter().map(|t| t as &dyn WidgetAgentType<_>).collect();
+	let store = MemoryLayoutStore {
+		widgets: notebook
+			.widgets
+			.iter()
+			.map(|w| GridWidget(Arc::new(core(w))))
+			.collect(),
+		revision: 0,
+	};
+	// `host.describe()` is skipped: it only fails when a stored widget's config
+	// cannot be read as its own type, which a decoded notebook cannot trigger.
+	let mut host = WidgetAgentHost::new(store, &registered, Box::new(new_widget_id)).with_limits(
+		WidgetLayoutLimits {
+			max_widgets: limits::MAX_WIDGETS,
+		},
+	);
 	for (index, command) in commands.iter().enumerate() {
 		let parsed = parse_widget_command(command)
 			.map_err(|e| failure(index, e.code.as_str(), e.message))?;
@@ -208,16 +244,12 @@ pub(super) fn apply_with_components(
 				"removals are proposed to the owner, never applied by the assistant.".to_owned(),
 			));
 		}
-		let edit = build_edit(&parsed, &widgets, &types, new_widget_id)
+		host.apply_command_unsnapshotted(&parsed)
 			.map_err(|e| failure(index, e.code.as_str(), e.message))?;
-		widgets =
-			apply_widget_layout_edit(&widgets, &edit, WidgetLayoutLimits { max_widgets: 200 })
-				.map_err(|e| {
-					let e = layout_failure(e, &parsed, widgets.len());
-					failure(index, e.code.as_str(), e.message)
-				})?;
 	}
-	let widgets: Vec<_> = widgets
+	let widgets: Vec<WidgetCore> = host
+		.into_store()
+		.widgets
 		.into_iter()
 		.map(|w| Arc::try_unwrap(w.0).unwrap_or_else(|shared| shared.as_ref().clone()))
 		.collect();
@@ -228,5 +260,53 @@ pub(super) fn apply_with_components(
 			problem.message,
 		));
 	}
+	Ok(widgets)
+}
+
+/// Applies commands through the shared parser/layout engine, checks exact JSON byte
+/// capacity, then earns chart provenance. Changes/snapshots are API-only and
+/// intentionally omitted from this runner port (§1.6).
+///
+/// # Errors
+/// Returns the first command failure; the original notebook is never mutated.
+pub fn apply_notebook_commands(
+	notebook: &Notebook,
+	commands: &[Value],
+	new_widget_id: &mut dyn FnMut() -> Option<String>,
+) -> Result<Vec<WidgetCore>, NotebookCommandFailure> {
+	apply_with_components(
+		notebook,
+		commands,
+		&known_component_ids(notebook),
+		new_widget_id,
+	)
+}
+
+/// [`apply_notebook_commands`] with an explicit set of canvas component ids
+/// (the API passes the conversation's, not only the notebook's).
+pub(super) fn apply_with_components(
+	notebook: &Notebook,
+	commands: &[Value],
+	known: &HashSet<&str>,
+	new_widget_id: &mut dyn FnMut() -> Option<String>,
+) -> Result<Vec<WidgetCore>, NotebookCommandFailure> {
+	let widgets = fold_and_check(notebook, commands, known, new_widget_id)?;
+	let previous: Vec<_> = notebook.widgets.iter().map(core).collect();
 	Ok(with_earned_chart_provenance(widgets, &previous))
+}
+
+/// The runner's check-only form of [`apply_notebook_commands`]: the same
+/// failures, but it stops after the capacity check. The turn discards the
+/// resulting widgets (the API recomputes them), so earning chart provenance
+/// there would be pure cost.
+///
+/// # Errors
+/// Returns the first command failure; the original notebook is never mutated.
+pub fn check_notebook_commands(
+	notebook: &Notebook,
+	commands: &[Value],
+	new_widget_id: &mut dyn FnMut() -> Option<String>,
+) -> Result<(), NotebookCommandFailure> {
+	let known = known_component_ids(notebook);
+	fold_and_check(notebook, commands, &known, new_widget_id).map(drop)
 }

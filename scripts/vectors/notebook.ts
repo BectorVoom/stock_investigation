@@ -72,12 +72,17 @@ export const notebookExporter: VectorExporter = {
 				repairNote: null,
 			});
 			files.push({ path: "notebook/benchmark.json", content: encodeNumbers(benchmarkNotebook()) });
+			const promptParts = {
+				head: prompt.split("Selected widget ids:")[0],
+				tail: prompt.slice(prompt.indexOf("Return exactly one JSON object")),
+			};
+			files.push({ path: "notebook/prompt.json", content: promptParts });
+			// The production copy `include_str!`ed by the Rust crate. Its path leaves
+			// `vectors/` on purpose: `--check` then fails when it drifts from the TS prompt,
+			// and a Rust test pins it to the vector copy above.
 			files.push({
-				path: "notebook/prompt.json",
-				content: {
-					head: prompt.split("Selected widget ids:")[0],
-					tail: prompt.slice(prompt.indexOf("Return exactly one JSON object")),
-				},
+				path: "../crates/research-application/src/notebook/prompt-parts.json",
+				content: promptParts,
 			});
 			return files;
 		} finally {

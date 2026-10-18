@@ -702,6 +702,21 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 		&mut self,
 		command: &WidgetCommand,
 	) -> Result<WidgetSnapshot, WidgetAgentFailure> {
+		let written = self.apply_command_unsnapshotted(command)?;
+		self.snapshot_of(&written)
+	}
+
+	/// [`Self::apply_command`] without building the snapshot: callers that
+	/// only need the stored layout (read it back with [`Self::store`]) skip
+	/// serialising every widget's configuration after each command.
+	///
+	/// # Errors
+	///
+	/// As [`Self::apply`].
+	pub fn apply_command_unsnapshotted(
+		&mut self,
+		command: &WidgetCommand,
+	) -> Result<Vec<W>, WidgetAgentFailure> {
 		let record = self.store.read().map_err(Self::read_failure)?;
 		let edit = self.build_edit(command, &record.widgets)?;
 		let applied = apply_widget_layout_edit(&record.widgets, &edit, self.limits)
@@ -720,6 +735,6 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 					"the widget store could not be written.",
 				),
 			})?;
-		self.snapshot_of(&written.widgets)
+		Ok(written.widgets)
 	}
 }

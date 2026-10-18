@@ -118,6 +118,38 @@ impl Recording {
 		self.calls.lock().unwrap().push(value);
 	}
 }
+/// Delivers a scripted event exactly as the adapter produced it, with no schema
+/// validation, so out-of-bounds values (NaN or infinite costs, over-long codes)
+/// reach the turn's own validation as they would from a misbehaving backend.
+fn raw_event(event: &Value) -> AgentEvent {
+	let json_value = |name: &str| research_contracts::json::JsonValue(field(event, name).clone());
+	match text(field(event, "type")) {
+		"text.delta" => AgentEvent::TextDelta {
+			text: text(field(event, "text")).to_owned(),
+		},
+		"tool.request" => AgentEvent::ToolRequest {
+			tool_id: text(field(event, "toolId")).to_owned(),
+			args: json_value("args"),
+			call_id: text(field(event, "callId")).to_owned(),
+		},
+		"tool.result" => AgentEvent::ToolResult {
+			call_id: text(field(event, "callId")).to_owned(),
+			result_ref: text(field(event, "resultRef")).to_owned(),
+		},
+		"ui.command" => AgentEvent::UiCommand {
+			command: json_value("command"),
+		},
+		"usage" => AgentEvent::Usage {
+			known_cost_usd: field(event, "knownCostUsd").as_f64(),
+		},
+		"completed" => AgentEvent::Completed,
+		_ => AgentEvent::Failed {
+			code: text(field(event, "code")).to_owned(),
+			retryable: field(event, "retryable").as_bool().unwrap_or(false),
+		},
+	}
+}
+
 struct FakeAgent {
 	recording: Arc<Recording>,
 	probe: AgentProbe,
@@ -178,16 +210,7 @@ impl AgentRuntime for FakeAgent {
 		}
 		let events = array(field(&script, "events"))
 			.iter()
-			.map(|event| {
-				// Invalid event bounds remain typed and are rejected by the actual turn loop.
-				match research_contracts::validate::<AgentEvent>(event) {
-					Ok(event) => event,
-					Err(_) => AgentEvent::Failed {
-						code: text(field(event, "code")).to_owned(),
-						retryable: field(event, "retryable").as_bool().unwrap_or(false),
-					},
-				}
-			})
+			.map(raw_event)
 			.collect();
 		assert_eq!(
 			field(&script, "threw"),

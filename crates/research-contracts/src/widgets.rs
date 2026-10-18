@@ -79,7 +79,34 @@ js_enum! {
 	}
 }
 
+/// Every size, for the types that take any.
+const ALL_WIDGET_SIZES: [WidgetSize; 3] =
+	[WidgetSize::Small, WidgetSize::Medium, WidgetSize::Large];
+/// A research widget is never small.
+const RESEARCH_WIDGET_SIZES: [WidgetSize; 2] = [WidgetSize::Medium, WidgetSize::Large];
+
 impl WidgetType {
+	/// `WIDGET_TYPE_META[type].defaultSize`: the size a new widget of this type gets.
+	#[must_use]
+	pub const fn default_size(self) -> WidgetSize {
+		match self {
+			Self::Metric | Self::MarketMetric => WidgetSize::Small,
+			Self::Research | Self::IndicatorTable | Self::EarningsCalendar => WidgetSize::Large,
+			Self::Text | Self::Chart | Self::Table | Self::LineChart | Self::StockTable => {
+				WidgetSize::Medium
+			}
+		}
+	}
+
+	/// `WIDGET_TYPE_META[type].sizes`: the sizes this type may take.
+	#[must_use]
+	pub fn allowed_sizes(self) -> &'static [WidgetSize] {
+		match self {
+			Self::Research => &RESEARCH_WIDGET_SIZES,
+			_ => &ALL_WIDGET_SIZES,
+		}
+	}
+
 	/// One of the live market types (`MARKET_WIDGET_TYPES`).
 	#[must_use]
 	pub const fn is_market(self) -> bool {

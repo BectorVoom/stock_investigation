@@ -2,7 +2,7 @@
 
 use super::{
 	NotebookError,
-	commands::apply_notebook_commands,
+	commands::check_notebook_commands,
 	prompts::{NOTEBOOK_PROMPT_BUDGET_BYTES, NotebookAssistPromptInput, notebook_assist_prompt},
 };
 use crate::{ports::Clock, reporter::PipelineReporter};
@@ -172,7 +172,7 @@ fn check_turn(job: &NotebookAssistJob, text: &str) -> Result<CheckedTurn, CheckF
 		rest.push(command.clone());
 	}
 	let mut counter = 0;
-	apply_notebook_commands(&job.notebook, &rest, &mut || {
+	check_notebook_commands(&job.notebook, &rest, &mut || {
 		counter += 1;
 		Some(format!("assist-preview-{counter}"))
 	})
@@ -227,24 +227,18 @@ async fn model_turn(
 		usage,
 		&UsageDelta {
 			agent_steps: 1,
-			input_bytes: u64::try_from(prompt.len()).map_err(|_| NotebookError::StaticData)?,
+			input_bytes: u64::try_from(prompt.len()).map_err(|_| NotebookError::PromptLength)?,
 			..UsageDelta::default()
 		},
 	);
+	// `new Date(nowMs + 600_000).toISOString()` throws a RangeError for a clock beyond
+	// the JavaScript date range; the TypeScript catches it with the adapter's throws
+	// and reports a retryable `AGENT_THREW_RangeError`, so this does too.
 	let deadline = deps
 		.clock
 		.now_ms()
 		.checked_add(600_000)
-		.and_then(research_js::date::epoch_ms_to_iso)
-		.ok_or(NotebookError::InvalidDeadline)?;
-	let request = AgentRequest {
-		run_id: input.job.lease.run_id.clone(),
-		conversation_id: input.job.workspace_id.clone(),
-		prompt,
-		permitted_tool_ids: Vec::new(),
-		max_tool_calls: 0,
-		deadline,
-	};
+		.and_then(research_js::date::epoch_ms_to_iso);
 	let effort = match input.job.agent.effort {
 		research_contracts::jobs::Effort::Low => Effort::Low,
 		research_contracts::jobs::Effort::Medium => Effort::Medium,
@@ -261,11 +255,23 @@ async fn model_turn(
 	let mut finished = false;
 	let mut text = String::new();
 	let mut units = 0;
-	match catch_unwind(AssertUnwindSafe(|| deps.agent.run(request, context))) {
-		Err(_) => {
+	let started = deadline.map(|deadline| {
+		let request = AgentRequest {
+			run_id: input.job.lease.run_id.clone(),
+			conversation_id: input.job.workspace_id.clone(),
+			prompt,
+			permitted_tool_ids: Vec::new(),
+			max_tool_calls: 0,
+			deadline,
+		};
+		catch_unwind(AssertUnwindSafe(|| deps.agent.run(request, context)))
+	});
+	match started {
+		None => failure = Some(("AGENT_THREW_RangeError".to_owned(), true)),
+		Some(Err(_)) => {
 			failure = Some(("AGENT_THREW_Panic".to_owned(), true));
 		}
-		Ok(mut turn) => {
+		Some(Ok(mut turn)) => {
 			while let Some(event) = turn.next().await {
 				// The shared event helper serializes typed events before decoding;
 				// JSON.stringify turns nonfinite numbers into null. Validate those
@@ -351,11 +357,13 @@ async fn prompt(
 			repair_note: repair.as_deref(),
 		})
 	};
-	if job.notebook.widgets.len() < 32 {
+	if job.notebook.widgets.is_empty() {
 		return build(job);
 	}
 	let job = job.clone();
-	// All large serialization/capacity work stays off the tokio worker.
+	// Widget count says nothing about size (twelve charts reach the 850 KB cap), and the
+	// prompt build and command check fan out on rayon: any non-empty notebook runs on the
+	// blocking pool so neither CPU work nor a rayon join ever occupies a tokio worker.
 	tokio::task::spawn_blocking(move || build(&job)).await?
 }
 
@@ -444,7 +452,7 @@ async fn check_async(
 	job: &NotebookAssistJob,
 	text: String,
 ) -> Result<Result<CheckedTurn, CheckFailure>, NotebookError> {
-	if job.notebook.widgets.len() < 32 {
+	if job.notebook.widgets.is_empty() {
 		return Ok(check_turn(job, &text));
 	}
 	let job = job.clone();

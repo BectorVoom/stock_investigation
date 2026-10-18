@@ -2,11 +2,10 @@
 //! checked against the claimed notebook before returning raw commands to the API.
 
 mod commands;
-mod edits;
 mod prompts;
 mod turn;
 
-pub use commands::{NotebookCommandFailure, apply_notebook_commands};
+pub use commands::{NotebookCommandFailure, apply_notebook_commands, check_notebook_commands};
 pub use prompts::{
 	NOTEBOOK_PROMPT_BUDGET_BYTES, NotebookAssistPromptInput, notebook_assist_prompt,
 };
@@ -27,9 +26,9 @@ pub enum NotebookError {
 	/// An unguessable, nonempty fence is required (AGT-007).
 	#[error("the notebook fence token is empty")]
 	EmptyFence,
-	/// The injected clock cannot produce a JavaScript date.
-	#[error("the notebook deadline is outside the JavaScript date range")]
-	InvalidDeadline,
+	/// A prompt's byte length does not fit the usage counter.
+	#[error("the notebook prompt length does not fit the usage counter")]
+	PromptLength,
 	/// A blocking worker failed.
 	#[error("notebook CPU worker failed: {0}")]
 	Worker(#[from] tokio::task::JoinError),

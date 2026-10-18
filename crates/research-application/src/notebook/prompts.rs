@@ -39,8 +39,7 @@ pub struct NotebookAssistPromptInput<'a> {
 
 fn static_part(key: &str) -> Result<&'static str, NotebookError> {
 	static TEMPLATE: OnceLock<Result<Value, json::ParseError>> = OnceLock::new();
-	let template = TEMPLATE
-		.get_or_init(|| json::parse(include_str!("../../../../vectors/notebook/prompt.json")));
+	let template = TEMPLATE.get_or_init(|| json::parse(include_str!("prompt-parts.json")));
 	template
 		.as_ref()
 		.ok()
