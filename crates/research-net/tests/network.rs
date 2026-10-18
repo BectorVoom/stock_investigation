@@ -1629,3 +1629,105 @@ async fn cancelling_an_incomplete_tls_preparation_closes_it_without_pooling() {
 	assert_eq!(connector.pool().idle_count(), 0);
 	assert_eq!(connector.connections_opened(), 0);
 }
+
+#[tokio::test]
+async fn two_preparations_of_one_key_open_one_socket() {
+	let server = start_server(LEAF_PEM).await;
+	let h = harness(&server);
+	let url = format!("https://{HOST_A}/conn");
+	let (first, second) = tokio::join!(
+		h.fetcher.preconnect(&url, 2000, None),
+		h.fetcher.preconnect(&url, 2000, None)
+	);
+	first.unwrap();
+	second.unwrap();
+	assert_eq!(server.accepted(), 1);
+	assert_eq!(h.connector().connections_opened(), 1);
+	assert_eq!(h.connector().pool().idle_count(), 1);
+	assert!(server.requests().is_empty());
+}
+
+#[tokio::test]
+async fn a_cancelled_preparation_never_blocks_or_poisons_a_later_request() {
+	let server = start_server(LEAF_PEM).await;
+	let h = harness(&server);
+	let url = format!("https://{HOST_A}/conn");
+	let cancel = CancellationToken::new();
+	cancel.cancel();
+	assert_eq!(
+		h.fetcher
+			.preconnect(&url, 2000, Some(cancel))
+			.await
+			.unwrap_err(),
+		failure(SafeFetchErrorCode::Timeout, "aborted by the caller")
+	);
+	assert_eq!(h.connector().pool().idle_count(), 0);
+	assert_eq!(
+		h.get(&url, &limits()).await.unwrap(),
+		"connection 1 request 1"
+	);
+}
+
+#[tokio::test]
+async fn a_failed_tls_preparation_pools_nothing_and_reports_the_tls_code() {
+	let server = start_server(LEAF_PEM).await;
+	let untrusted = harness_with(&server, None, PoolLimits::default());
+	assert_eq!(
+		untrusted
+			.fetcher
+			.preconnect(&format!("https://{HOST_A}/"), 2000, None)
+			.await
+			.unwrap_err(),
+		failure(
+			SafeFetchErrorCode::NetworkError,
+			"UNABLE_TO_VERIFY_LEAF_SIGNATURE"
+		)
+	);
+	let uncovered = harness(&server);
+	assert_eq!(
+		uncovered
+			.fetcher
+			.preconnect("https://uncovered.synthetic-wire.org/", 2000, None)
+			.await
+			.unwrap_err(),
+		failure(
+			SafeFetchErrorCode::NetworkError,
+			"ERR_TLS_CERT_ALTNAME_INVALID"
+		)
+	);
+	assert_eq!(untrusted.connector().pool().idle_count(), 0);
+	assert_eq!(uncovered.connector().pool().idle_count(), 0);
+	assert!(server.requests().is_empty());
+}
+
+#[tokio::test]
+async fn a_preparation_that_outlives_its_deadline_times_out_without_pooling() {
+	// A listener that accepts but never speaks TLS stalls the handshake.
+	let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+	let port = listener.local_addr().unwrap().port();
+	let tls = PinnedTls::with_overrides(&PinnedTlsOverrides {
+		port: Some(port),
+		extra_root_pem: Some(CA_PEM.into()),
+		dial_loopback: true,
+	})
+	.unwrap();
+	let connector = Arc::new(PinnedHttpsConnect::new(tls));
+	let fetcher = create_node_safe_fetcher_with(NodeSafeFetcherOverrides {
+		lookup: Some(Arc::new(ScriptedDns {
+			answers: Mutex::new(HashMap::new()),
+			lookups: Mutex::new(Vec::new()),
+		})),
+		connect: Some(connector.clone()),
+	})
+	.unwrap();
+	let url = format!("https://{HOST_A}/");
+	let (result, _accepted) = tokio::join!(fetcher.preconnect(&url, 200, None), listener.accept());
+	assert_eq!(
+		result.unwrap_err(),
+		failure(
+			SafeFetchErrorCode::Timeout,
+			"no complete response within 200 ms"
+		)
+	);
+	assert_eq!(connector.pool().idle_count(), 0);
+}

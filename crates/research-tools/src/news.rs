@@ -140,8 +140,11 @@ fn publisher(source: &SubscribedSourceRef, host: &str) -> String {
 	}
 }
 fn title(html: &str) -> Option<String> {
-	static PATTERN: LazyLock<Option<Regex>> =
-		LazyLock::new(|| regex(r"(?i-u:<title\b)[^>]*>([\s\S]*?)(?i-u:</title)[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*>"));
+	static PATTERN: LazyLock<Option<Regex>> = LazyLock::new(|| {
+		regex(
+			r"(?i-u:<title\b)[^>]*>([\s\S]*?)(?i-u:</title)[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*>",
+		)
+	});
 	let captures = PATTERN.as_ref()?.captures(html)?;
 	let title = to_plain_text(captures.get(1)?.as_str());
 	(!title.is_empty()).then(|| truncate_text(&title, MAX_TITLE_CHARS).into_owned())
@@ -153,12 +156,16 @@ fn published_at(html: &str) -> Option<String> {
 		)
 	});
 	static CONTENT: LazyLock<Option<Regex>> = LazyLock::new(|| {
-		regex(r#"(?i-u:\bcontent)[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*=[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*["']([^"']{1,64})["']"#)
+		regex(
+			r#"(?i-u:\bcontent)[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*=[\t-\r \u{00A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}]*["']([^"']{1,64})["']"#,
+		)
 	});
 	let tag = TAG.as_ref()?.find(html)?;
 	let content = CONTENT.as_ref()?.captures(tag.as_str())?;
 	let value = content.get(1)?.as_str();
-	if research_js::utf16::utf16_len(value) > 64 { return None; }
+	if research_js::utf16::utf16_len(value) > 64 {
+		return None;
+	}
 	date::to_iso_string(date::parse(trim(value)))
 }
 struct NewsTool {

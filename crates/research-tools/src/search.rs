@@ -17,11 +17,13 @@ use research_js::{
 };
 use std::{
 	collections::HashSet,
-	sync::{Arc, LazyLock},
+	sync::{Arc, LazyLock, Mutex, PoisonError},
 	time::Duration,
 };
-use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
+
+/// GDELT asks for one request per 5 s.
+const GDELT_SPACING_MS: i64 = 5_000;
 
 /// Cancellation-aware waiting, injected for deterministic transcripts.
 #[async_trait]
@@ -60,8 +62,8 @@ pub struct SearchToolDeps {
 struct SearchTool {
 	deps: SearchToolDeps,
 	meta: ToolMeta,
+	/// Start (or reserved start) of the latest GDELT request, process-wide per factory.
 	last: Mutex<Option<i64>>,
-	gate: Mutex<()>,
 }
 struct Hit {
 	title: String,
@@ -82,7 +84,6 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 	vec![Arc::new(SearchTool {
 		deps,
 		last: Mutex::new(None),
-		gate: Mutex::new(()),
 		meta: meta(
 			"web.search",
 			"Searches recent news (GDELT) and Wikipedia for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
@@ -242,37 +243,49 @@ fn provider_items(value: &Value, gdelt: bool) -> Option<Vec<Hit>> {
 	Some(hits)
 }
 impl SearchTool {
+	/// Replaces this call's reservation by `value` unless a later caller already
+	/// chained its own slot on it.
+	fn settle(&self, expected: i64, value: Option<i64>) {
+		let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
+		if *last == Some(expected) {
+			*last = value;
+		}
+	}
+	/// Waits until a GDELT request may start; false when cancelled while waiting.
+	/// C2: the slot `max(now, last + 5 s)` is reserved under the lock before any
+	/// await, so concurrent calls can never start inside the window. C5: when a
+	/// wait is needed the connection (DNS, TCP, TLS) opens at once and only the
+	/// request waits for the slot.
 	async fn spacing(&self, context: &ToolContext) -> bool {
-		// C2: reserve under the mutex before yielding, so concurrent calls cannot
-		// claim the same slot. Holding the gate through fetch also covers slow TLS.
 		let now = self.deps.clock.now_ms();
-		let mut last = self.last.lock().await;
-		let wait = reserve_slot(now,*last,5000).saturating_sub(now);
-		*last = Some(now.saturating_add(wait));
+		let (previous, slot) = {
+			let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
+			let previous = *last;
+			let slot = reserve_slot(now, previous, GDELT_SPACING_MS);
+			*last = Some(slot);
+			(previous, slot)
+		};
+		let wait = slot.saturating_sub(now);
 		if wait > 0 {
 			let delay = self
 				.deps
 				.sleep
 				.sleep(u64::try_from(wait).unwrap_or(0), &context.cancel);
 			if let Some(preconnect) = &self.deps.preconnect {
-				// C5: poll the connection immediately, then send only after spacing.
 				tokio::join!(preconnect.preconnect(&context.cancel), delay);
 			} else {
 				delay.await;
 			}
 			if context.cancel.is_cancelled() {
+				// Nothing was sent: the earlier start stays authoritative.
+				self.settle(slot, previous);
 				return false;
 			}
 		}
-		*last = Some(self.deps.clock.now_ms());
+		self.settle(slot, Some(self.deps.clock.now_ms()));
 		true
 	}
 	async fn backend(&self, query: &str, gdelt: bool, context: &ToolContext) -> Backend {
-		let _gate = if gdelt {
-			Some(self.gate.lock().await)
-		} else {
-			None
-		};
 		if gdelt && !self.spacing(context).await {
 			return Backend::Aborted;
 		}
@@ -427,7 +440,7 @@ impl SearchPreconnect for research_net::NodeSafeFetcher {
 }
 
 // The unbounded-integer model and its minimality/spacing proofs live in
-// robots/Slots.lean. Valid Date milliseconds leave ample i64 headroom.
-pub(crate) fn reserve_slot(now: i64,last: Option<i64>,interval: i64) -> i64 {
-	last.map_or(now,|last| now.max(last.saturating_add(interval)))
+// robots/Slots.lean (`reserveSlot`). Valid Date milliseconds leave ample i64 headroom.
+pub(crate) fn reserve_slot(now: i64, last: Option<i64>, interval: i64) -> i64 {
+	last.map_or(now, |last| now.max(last.saturating_add(interval)))
 }

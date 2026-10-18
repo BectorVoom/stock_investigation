@@ -167,7 +167,7 @@ async function generated(): Promise<void> {
 			"\uFEFF \nbody",
 			"x".repeat(300),
 			"[",
-			'{"extra":' + "[".repeat(150) + "0" + "]".repeat(150) + "}",
+			`{"extra":${"[".repeat(150)}0${"]".repeat(150)}}`,
 		];
 		const gdelt = bodies[Math.floor(random() * bodies.length)] ?? "{}";
 		const wiki = bodies[Math.floor(random() * bodies.length)] ?? "{}";

@@ -149,7 +149,12 @@ function capture<D extends { fetcher: SafeFetcher; hasher: Hasher; clock: Clock 
 				},
 			});
 			entry.output = output;
-			emit({ kind, id, calls, fetches, hashes, milliseconds, sleeps, archives });
+			// Evidence hashing runs concurrently, so its completion order is not
+			// stable; the replay consumes hashes by content, so sort for determinism.
+			const sortedHashes = [...hashes].sort((a, b) =>
+				JSON.stringify(a) < JSON.stringify(b) ? -1 : 1,
+			);
+			emit({ kind, id, calls, fetches, hashes: sortedHashes, milliseconds, sleeps, archives });
 			return output;
 		},
 	}));

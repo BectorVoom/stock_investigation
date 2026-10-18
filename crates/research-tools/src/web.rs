@@ -5,7 +5,7 @@ use crate::{
 		string_args,
 	},
 	robots::{RobotsRules, is_path_allowed, parse_robots_txt},
-	search::{reserve_slot, Sleep},
+	search::{Sleep, reserve_slot},
 	shared::*,
 };
 use async_trait::async_trait;
@@ -18,10 +18,15 @@ use research_js::{
 	utf16::utf16_len,
 	whitespace::{is_js_whitespace, trim},
 };
-use std::{collections::VecDeque, sync::Arc};
-use tokio::sync::Mutex;
+use std::{
+	collections::VecDeque,
+	sync::{Arc, Mutex, MutexGuard, PoisonError},
+};
 use tokio_util::sync::CancellationToken;
 use url::Url;
+
+/// Request starts to one host stay this far apart (politeness).
+const POLITENESS_INTERVAL_MS: i64 = 1_000;
 
 /// Dependencies of `web.fetch_page`.
 #[derive(Clone)]
@@ -44,7 +49,13 @@ struct CacheEntry {
 struct State {
 	deps: WebToolDeps,
 	robots: Mutex<VecDeque<(String, CacheEntry)>>,
-	last: Mutex<VecDeque<(String, Arc<Mutex<Option<i64>>>)>>>,
+	/// Per-host request-start reservations (FIFO-evicted like the robots cache).
+	last: Mutex<VecDeque<(String, i64)>>,
+}
+/// Locks a std mutex; every critical section is short and never awaits, so a
+/// poisoned lock only means another thread panicked and the data is still valid.
+fn locked<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+	mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 fn cache_set<T>(cache: &mut VecDeque<(String, T)>, key: &str, value: T) {
 	if let Some((_, old)) = cache.iter_mut().find(|(k, _)| k == key) {
@@ -96,7 +107,7 @@ impl State {
 	async fn robots_for(&self, host: &str, context: &ToolContext) -> Arc<RobotsRules> {
 		let now = self.deps.clock.now_ms();
 		{
-			let mut cache = self.robots.lock().await;
+			let mut cache = locked(&self.robots);
 			if let Some(index) = cache.iter().position(|(key, _)| key == host) {
 				if let Some((_, entry)) = cache.get(index) {
 					if now < entry.expires {
@@ -125,7 +136,7 @@ impl State {
 		};
 		let rules = Arc::new(rules);
 		cache_set(
-			&mut *self.robots.lock().await,
+			&mut locked(&self.robots),
 			host,
 			CacheEntry {
 				rules: rules.clone(),
@@ -134,36 +145,47 @@ impl State {
 		);
 		rules
 	}
-	async fn timestamp_for(&self, host: &str) -> Arc<Mutex<Option<i64>>> {
-		let mut timestamps = self.last.lock().await;
-		if let Some((_,entry)) = timestamps.iter().find(|(key,_)| key == host) { return entry.clone(); }
-		// Never evict a live reservation. The usual FIFO retains 200 hosts;
-		// additional entries exist only while concurrent callers own them.
-		while timestamps.len() >= 200 {
-			let Some(index) = timestamps.iter().position(|(_,entry)| Arc::strong_count(entry) == 1) else { break; };
-			timestamps.remove(index);
+	/// Reserves this host's next request-start slot (ADR-0030 C2): under one
+	/// lock, `slot = max(now, last + interval)` and the entry becomes `slot`, so
+	/// concurrent callers can never start inside the politeness window.
+	fn reserve(&self, host: &str, now: i64) -> (Option<i64>, i64) {
+		let mut last = locked(&self.last);
+		let previous = last.iter().find(|(key, _)| key == host).map(|(_, at)| *at);
+		let slot = reserve_slot(now, previous, POLITENESS_INTERVAL_MS);
+		cache_set(&mut last, host, slot);
+		(previous, slot)
+	}
+	/// Replaces this call's reservation (`expected`) by `value` (the real start
+	/// time, or the old state after an abort) unless a later caller already
+	/// chained its own slot on it.
+	fn settle(&self, host: &str, expected: i64, value: i64) {
+		let mut last = locked(&self.last);
+		if let Some((_, at)) = last.iter_mut().find(|(key, _)| key == host) {
+			if *at == expected {
+				*at = value;
+			}
 		}
-		let entry = Arc::new(Mutex::new(None));
-		timestamps.push_back((host.to_owned(),entry.clone()));
-		entry
 	}
 	async fn polite_wait(&self, host: &str, cancel: &CancellationToken) -> bool {
-		let timestamp = self.timestamp_for(host).await;
-		let mut last = timestamp.lock().await;
 		let now = self.deps.clock.now_ms();
-		let previous = *last;
-		let slot = reserve_slot(now,previous,1000);
-		// C2: reserve under the host mutex, held through the wait so oversleep
-		// cannot collapse two request starts into the same instant.
-		*last = Some(slot);
-		if slot > now {
-			self.deps.sleep.sleep(u64::try_from(slot.saturating_sub(now)).unwrap_or(0),cancel).await;
-			if cancel.is_cancelled() { *last = previous; return false; }
+		let (previous, slot) = self.reserve(host, now);
+		// TS: only a host with an earlier start can wait or be aborted here.
+		if let Some(previous) = previous {
+			if slot > now {
+				self.deps
+					.sleep
+					.sleep(u64::try_from(slot.saturating_sub(now)).unwrap_or(0), cancel)
+					.await;
+			}
+			if cancel.is_cancelled() {
+				// Nothing was sent, so the old start time stays authoritative.
+				self.settle(host, slot, previous);
+				return false;
+			}
 		}
-		*last = Some(self.deps.clock.now_ms());
+		self.settle(host, slot, self.deps.clock.now_ms());
 		true
 	}
-
 }
 struct Authorizer {
 	state: Arc<State>,
@@ -254,7 +276,11 @@ impl Tool for WebTool {
 		let (final_host, final_path) = host_path(&fetched.final_url)
 			.ok_or_else(|| tool_failure("UNSAFE_URL", "the final URL is malformed", false))?;
 		if final_host != target.hostname || final_path != path {
-			*state.timestamp_for(&final_host).await.lock().await = Some(state.deps.clock.now_ms());
+			cache_set(
+				&mut locked(&state.last),
+				&final_host,
+				state.deps.clock.now_ms(),
+			);
 			let rules = state.robots_for(&final_host, &context).await;
 			if context.cancel.is_cancelled() {
 				return Err(aborted());
