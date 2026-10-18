@@ -6,8 +6,8 @@ use std::{
 };
 
 /// Entry point of the `research-provider-spawn` executable. `cargo build -p research-runner`
-/// does not build binaries of dependencies, so the runner crate must declare a
-/// `[[bin]] research-provider-spawn` whose `main` calls this function (wave C).
+/// does not build binaries of dependencies, so the runner package declares the only
+/// `[[bin]] research-provider-spawn`, whose `main` calls this function.
 pub fn run() -> ExitCode {
 	if rustix::process::setsid().is_err() {
 		return ExitCode::from(126);

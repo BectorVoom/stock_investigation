@@ -1,5 +1,5 @@
 //! Real child processes: the process runner, the external-process protocol and the registry
-//! composition. Uses the compiled `research-provider-spawn` companion.
+//! composition. Uses the compiled `research-provider-spawn` companion, which the runner package owns.
 #![allow(
 	clippy::unwrap_used,
 	clippy::expect_used,

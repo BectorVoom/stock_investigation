@@ -79,6 +79,10 @@ pub(crate) enum Reply {
 	Redirect(String),
 	Raw(u16, String),
 	Hang,
+	/// Headers promise 100 bytes, 10 arrive, then the socket closes.
+	Truncated(u16),
+	/// Headers promise 100 bytes, 10 arrive, then silence.
+	StallBody(u16),
 }
 
 pub(crate) fn json(status: u16, payload: &str) -> Reply {
@@ -175,6 +179,19 @@ pub(crate) async fn serve(script: Vec<Reply>) -> FakeWorker {
 				Reply::Redirect(location) => format!(
 					"HTTP/1.1 302 Found\r\nlocation: {location}\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
 				),
+				Reply::Truncated(status) => format!(
+					"HTTP/1.1 {status} X\r\ncontent-length: 100\r\nconnection: close\r\n\r\n0123456789"
+				),
+				Reply::StallBody(status) => {
+					let head =
+						format!("HTTP/1.1 {status} X\r\ncontent-length: 100\r\n\r\n0123456789");
+					let _ = stream.write_all(head.as_bytes()).await;
+					tokio::spawn(async move {
+						let mut sink = [0_u8; 64];
+						while stream.read(&mut sink).await.unwrap_or(0) > 0 {}
+					});
+					continue;
+				}
 				Reply::Hang => {
 					// Keep the socket open and silent until the client gives up.
 					tokio::spawn(async move {

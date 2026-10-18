@@ -234,10 +234,10 @@ pub fn compose(
 		pacer: Arc::clone(&pacer),
 		sleeper: Arc::clone(&sleeper),
 	});
-	let scratch_root = config.scratch_root.as_ref().map_or_else(
-		|| TempScratch::default_root(env.get("TMPDIR").map(String::as_str)),
-		PathBuf::from,
-	);
+	let scratch_root = config
+		.scratch_root
+		.as_ref()
+		.map_or_else(|| TempScratch::default_root_from_env(env), PathBuf::from);
 	let scratch: Arc<dyn ScratchDirectories> = Arc::new(TempScratch::new(scratch_root));
 
 	let api = Arc::new(

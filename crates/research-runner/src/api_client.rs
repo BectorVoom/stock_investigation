@@ -5,13 +5,17 @@
 //! 5xx (and CONFLICT) are retried; all runner endpoints are idempotent, so a
 //! retry is safe.
 
-use std::sync::Arc;
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
 use bytes::Bytes;
+use futures_util::StreamExt;
+use futures_util::stream::FuturesUnordered;
 use http_body_util::{BodyExt, Full};
 use hyper::Request;
+use hyper::body::Incoming;
 use hyper::header::{CONNECTION, HOST};
 use hyper_util::rt::TokioIo;
 use research_contracts::api::{
@@ -27,7 +31,10 @@ use research_finance::ports::Sleeper;
 use rustls::ClientConfig;
 use rustls_pki_types::ServerName;
 use serde::Serialize;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
+use tokio::task::JoinHandle;
+use tokio::time::Instant;
 use tokio_rustls::TlsConnector;
 use url::{Host, Url};
 
@@ -147,21 +154,61 @@ pub enum ApiClientSetupError {
 	Tls,
 }
 
-/// A response that arrived: status and body bytes (3xx never gets here).
+/// A response that arrived: the status and its whole body (`None` when
+/// reading the body failed or ran into the attempt's deadline). A redirect
+/// never gets here.
 struct RawResponse {
 	status: u16,
-	body: Bytes,
+	body: Option<Bytes>,
 }
 
 /// A failure before a usable response (all `TRANSPORT_ERROR`).
 struct TransportFailure(&'static str);
 
-/// The production [`RunnerApi`].
+/// Anything a connection can run over (TCP or TLS).
+trait Io: AsyncRead + AsyncWrite + Unpin + Send {}
+impl<T: AsyncRead + AsyncWrite + Unpin + Send> Io for T {}
+
+type Sender = hyper::client::conn::http1::SendRequest<Full<Bytes>>;
+
+/// An open HTTP/1.1 connection to the API host. Dropping it closes the socket.
+struct Connection {
+	sender: Sender,
+	driver: JoinHandle<()>,
+	idle_since: Instant,
+}
+
+impl Drop for Connection {
+	fn drop(&mut self) {
+		self.driver.abort();
+	}
+}
+
+/// The fixed API host every call goes to.
+struct Target {
+	tls: bool,
+	host: Host<String>,
+	port: u16,
+	authority: String,
+	server_name: Option<ServerName<'static>>,
+}
+
+/// An idle connection is reused only this long (proxies and servers close
+/// idle sockets after a while; a stale one costs a failed attempt).
+const IDLE_LIMIT: Duration = Duration::from_secs(30);
+/// Connection Attempt Delay of RFC 8305 (happy eyeballs).
+const CONNECTION_ATTEMPT_DELAY: Duration = Duration::from_millis(250);
+
+/// The production [`RunnerApi`]. Keeps one idle keep-alive connection to the
+/// configured host: it is one fixed host, so reuse cannot send the token
+/// anywhere else.
 pub struct HttpRunnerApi {
 	base: Url,
+	target: Target,
 	headers: Vec<(&'static str, String)>,
 	tls: TlsConnector,
 	sleeper: Arc<dyn Sleeper>,
+	pool: Mutex<Option<Connection>>,
 	timeout: Duration,
 	max_attempts: u32,
 }
@@ -212,86 +259,185 @@ impl HttpRunnerApi {
 		for (_, value) in &headers {
 			http::HeaderValue::from_str(value).map_err(|_| ApiClientSetupError::InvalidHeader)?;
 		}
+		let host = base
+			.host()
+			.ok_or(ApiClientSetupError::InvalidUrl)?
+			.to_owned();
+		let port = base
+			.port_or_known_default()
+			.ok_or(ApiClientSetupError::InvalidUrl)?;
+		let server_name = match &host {
+			Host::Domain(domain) => ServerName::try_from(domain.clone()),
+			Host::Ipv4(address) => Ok(ServerName::from(std::net::IpAddr::V4(*address))),
+			Host::Ipv6(address) => Ok(ServerName::from(std::net::IpAddr::V6(*address))),
+		}
+		.map_err(|_| ApiClientSetupError::InvalidUrl)?;
+		let host_text = base.host_str().unwrap_or_default();
+		let authority = base.port().map_or_else(
+			|| host_text.to_owned(),
+			|explicit| format!("{host_text}:{explicit}"),
+		);
 		Ok(Self {
+			target: Target {
+				tls: base.scheme() == "https",
+				host,
+				port,
+				authority,
+				server_name: Some(server_name),
+			},
 			base,
 			headers,
 			tls: tls_connector()?,
 			sleeper,
+			pool: Mutex::new(None),
 			timeout: options.request_timeout,
 			max_attempts: options.max_attempts,
 		})
 	}
 
-	/// One request on a fresh connection, bounded by the attempt timeout.
+	/// Addresses of the host, IPv6 and IPv4 interleaved (IPv6 first).
+	async fn resolve(&self) -> Result<Vec<SocketAddr>, TransportFailure> {
+		let port = self.target.port;
+		let found: Vec<SocketAddr> = match &self.target.host {
+			Host::Domain(domain) => tokio::net::lookup_host((domain.as_str(), port))
+				.await
+				.map_err(|_| TransportFailure("LookupError"))?
+				.collect(),
+			Host::Ipv4(address) => vec![SocketAddr::new((*address).into(), port)],
+			Host::Ipv6(address) => vec![SocketAddr::new((*address).into(), port)],
+		};
+		Ok(interleave(found))
+	}
+
+	/// Opens a connection: TCP (racing the addresses), TLS for https, HTTP/1.1.
+	/// No proxy is ever consulted: the bearer token must not be routed through
+	/// an inherited proxy variable.
+	async fn connect(&self) -> Result<Connection, TransportFailure> {
+		let addresses = self.resolve().await?;
+		let tcp = race_connect(addresses)
+			.await
+			.map_err(|_| TransportFailure("ConnectError"))?;
+		// Small requests go out at once.
+		let _ = tcp.set_nodelay(true);
+		let io: Box<dyn Io> = match (&self.target.server_name, self.target.tls) {
+			(Some(name), true) => Box::new(
+				self.tls
+					.connect(name.clone(), tcp)
+					.await
+					.map_err(|_| TransportFailure("TlsError"))?,
+			),
+			_ => Box::new(tcp),
+		};
+		let (sender, connection) = hyper::client::conn::http1::handshake(TokioIo::new(io))
+			.await
+			.map_err(|_| TransportFailure("HandshakeError"))?;
+		Ok(Connection {
+			sender,
+			driver: tokio::spawn(async move {
+				let _ = connection.await;
+			}),
+			idle_since: Instant::now(),
+		})
+	}
+
+	/// The idle connection when it is still usable, else a new one.
+	async fn acquire(&self, deadline: Instant) -> Result<(Connection, bool), TransportFailure> {
+		let idle = self
+			.pool
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner)
+			.take();
+		if let Some(mut connection) = idle
+			&& connection.idle_since.elapsed() < IDLE_LIMIT
+			&& matches!(
+				tokio::time::timeout_at(deadline, connection.sender.ready()).await,
+				Ok(Ok(()))
+			) {
+			return Ok((connection, true));
+		}
+		let fresh = tokio::time::timeout_at(deadline, self.connect())
+			.await
+			.unwrap_or(Err(TransportFailure("TimeoutError")))?;
+		Ok((fresh, false))
+	}
+
+	fn release(&self, mut connection: Connection) {
+		connection.idle_since = Instant::now();
+		let mut slot = self
+			.pool
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner);
+		if slot.is_none() {
+			*slot = Some(connection);
+		}
+	}
+
+	async fn send_once(
+		&self,
+		connection: &mut Connection,
+		path: &str,
+		body: &str,
+		deadline: Instant,
+	) -> Result<hyper::Response<Incoming>, TransportFailure> {
+		let mut request = Request::builder()
+			.method("POST")
+			.uri(path)
+			.header(HOST, &self.target.authority);
+		for (name, value) in &self.headers {
+			request = request.header(*name, value);
+		}
+		let request = request
+			.body(Full::new(Bytes::copy_from_slice(body.as_bytes())))
+			.map_err(|_| TransportFailure("TypeError"))?;
+		match tokio::time::timeout_at(deadline, connection.sender.send_request(request)).await {
+			Ok(Ok(response)) => Ok(response),
+			Ok(Err(_)) => Err(TransportFailure("RequestError")),
+			Err(_) => Err(TransportFailure("TimeoutError")),
+		}
+	}
+
+	/// One request, bounded by the attempt timeout (connect, headers and body).
 	async fn exchange(&self, path: &str, body: &str) -> Result<RawResponse, TransportFailure> {
 		// The leading `/` replaces any path of the configured URL.
 		let url = self
 			.base
 			.join(&format!("{RUNNER_API_PREFIX}{path}"))
 			.map_err(|_| TransportFailure("TypeError"))?;
-		tokio::time::timeout(self.timeout, self.exchange_untimed(&url, body))
-			.await
-			.unwrap_or(Err(TransportFailure("TimeoutError")))
-	}
-
-	async fn exchange_untimed(
-		&self,
-		url: &Url,
-		body: &str,
-	) -> Result<RawResponse, TransportFailure> {
-		let fail = |name| TransportFailure(name);
-		let port = url
-			.port_or_known_default()
-			.ok_or_else(|| fail("TypeError"))?;
-		let host = url.host().ok_or_else(|| fail("TypeError"))?;
-		// No proxy is ever consulted: the bearer token must not be routed
-		// through an inherited proxy variable.
-		let tcp = match &host {
-			Host::Domain(domain) => TcpStream::connect((&**domain, port)).await,
-			Host::Ipv4(address) => TcpStream::connect((*address, port)).await,
-			Host::Ipv6(address) => TcpStream::connect((*address, port)).await,
-		}
-		.map_err(|_| fail("ConnectError"))?;
-		// Small requests go out at once.
-		let _ = tcp.set_nodelay(true);
-		let authority = match url.port() {
-			Some(explicit) => format!("{}:{explicit}", url.host_str().unwrap_or_default()),
-			None => url.host_str().unwrap_or_default().to_owned(),
-		};
-		let mut request = Request::builder()
-			.method("POST")
-			.uri(format!(
-				"{}{}",
-				url.path(),
-				url.query()
-					.map_or(String::new(), |query| format!("?{query}"))
-			))
-			.header(HOST, authority)
-			// One request per connection: nothing idles on the owner's network.
-			.header(CONNECTION, "close");
-		for (name, value) in &self.headers {
-			request = request.header(*name, value);
-		}
-		let request = request
-			.body(Full::new(Bytes::copy_from_slice(body.as_bytes())))
-			.map_err(|_| fail("TypeError"))?;
-		let response = if url.scheme() == "https" {
-			let name = match &host {
-				Host::Domain(domain) => ServerName::try_from(domain.to_string()),
-				Host::Ipv4(address) => Ok(ServerName::from(std::net::IpAddr::V4(*address))),
-				Host::Ipv6(address) => Ok(ServerName::from(std::net::IpAddr::V6(*address))),
+		let path = url.path();
+		let deadline = Instant::now() + self.timeout;
+		let (mut connection, reused) = self.acquire(deadline).await?;
+		let response = match self.send_once(&mut connection, path, body, deadline).await {
+			Ok(response) => response,
+			// An idle connection the server closed meanwhile: the request never
+			// reached it, so send it once more on a fresh connection.
+			Err(TransportFailure("RequestError")) if reused => {
+				connection = tokio::time::timeout_at(deadline, self.connect())
+					.await
+					.unwrap_or(Err(TransportFailure("TimeoutError")))?;
+				self.send_once(&mut connection, path, body, deadline)
+					.await?
 			}
-			.map_err(|_| fail("TypeError"))?;
-			let stream = self
-				.tls
-				.connect(name, tcp)
-				.await
-				.map_err(|_| fail("TlsError"))?;
-			send(TokioIo::new(stream), request).await?
-		} else {
-			send(TokioIo::new(tcp), request).await?
+			Err(failure) => return Err(failure),
 		};
-		Ok(response)
+		let status = response.status().as_u16();
+		// `redirect: "error"`: a redirect makes the request fail before any body
+		// is read, so the token never follows it. Other 3xx statuses (304) are
+		// ordinary responses.
+		if matches!(status, 301 | 302 | 303 | 307 | 308) {
+			return Err(TransportFailure("RedirectError"));
+		}
+		let closing = response
+			.headers()
+			.get(CONNECTION)
+			.is_some_and(|value| value.as_bytes().eq_ignore_ascii_case(b"close"));
+		let body = tokio::time::timeout_at(deadline, read_body(response.into_body()))
+			.await
+			.ok()
+			.flatten();
+		if body.is_some() && !closing {
+			self.release(connection);
+		}
+		Ok(RawResponse { status, body })
 	}
 
 	/// One attempt, classified (spec section 2 table).
@@ -304,7 +450,16 @@ impl HttpRunnerApi {
 				detail: failure.0.to_owned(),
 				transient: true,
 			})?;
-		classify::<T>(raw.status, &raw.body)
+		// Like `response.json()` rejecting: a body that could not be read (or
+		// timed out) is an invalid response, retried only for 5xx.
+		let Some(bytes) = raw.body else {
+			return Err(RunnerApiError {
+				code: "INVALID_RESPONSE".to_owned(),
+				detail: format!("HTTP {} with an unreadable body", raw.status),
+				transient: raw.status >= 500,
+			});
+		};
+		classify::<T>(raw.status, &bytes)
 	}
 
 	async fn post<T: Contract>(&self, path: &str, body: &impl Serialize) -> RunnerApiResult<T> {
@@ -316,7 +471,8 @@ impl HttpRunnerApi {
 		let mut result = self.attempt::<T>(path, &text).await;
 		let mut tries = 1;
 		while tries < self.max_attempts && matches!(&result, Err(error) if error.transient) {
-			// Not interruptible by shutdown, like the TypeScript client.
+			// Callers cancel a call by dropping its future (shutdown), which also
+			// ends this wait.
 			self.sleeper
 				.sleep(BACKOFF_START_MS << (tries - 1), None)
 				.await;
@@ -327,49 +483,56 @@ impl HttpRunnerApi {
 	}
 }
 
-/// Sends the request over an established stream and reads the whole body.
-async fn send<S>(
-	io: TokioIo<S>,
-	request: Request<Full<Bytes>>,
-) -> Result<RawResponse, TransportFailure>
-where
-	S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
-{
-	let (mut sender, connection) = hyper::client::conn::http1::handshake(io)
-		.await
-		.map_err(|_| TransportFailure("HandshakeError"))?;
-	let driver = tokio::spawn(async move {
-		let _ = connection.await;
-	});
-	let outcome = async {
-		let response = sender
-			.send_request(request)
-			.await
-			.map_err(|_| TransportFailure("RequestError"))?;
-		let status = response.status();
-		// `redirect: "error"`: a 3xx makes the request fail before any body is read.
-		if status.is_redirection() {
-			return Err(TransportFailure("RedirectError"));
-		}
-		let mut body = response.into_body();
-		let mut bytes = Vec::new();
-		while let Some(frame) = body.frame().await {
-			let frame = frame.map_err(|_| TransportFailure("BodyError"))?;
-			if let Ok(data) = frame.into_data() {
-				if bytes.len().saturating_add(data.len()) > MAX_RESPONSE_BYTES {
-					return Err(TransportFailure("BodyTooLarge"));
-				}
-				bytes.extend_from_slice(&data);
+/// Reads the whole body; `None` on a read error or a body over the cap.
+async fn read_body(mut body: Incoming) -> Option<Bytes> {
+	let mut bytes = Vec::new();
+	while let Some(frame) = body.frame().await {
+		if let Ok(data) = frame.ok()?.into_data() {
+			if bytes.len().saturating_add(data.len()) > MAX_RESPONSE_BYTES {
+				return None;
 			}
+			bytes.extend_from_slice(&data);
 		}
-		Ok(RawResponse {
-			status: status.as_u16(),
-			body: Bytes::from(bytes),
-		})
 	}
-	.await;
-	driver.abort();
-	outcome
+	Some(Bytes::from(bytes))
+}
+
+/// IPv6 and IPv4 addresses alternating, IPv6 first, each family in resolver order.
+fn interleave(found: Vec<SocketAddr>) -> Vec<SocketAddr> {
+	let (mut six, mut four): (Vec<_>, Vec<_>) = found.into_iter().partition(SocketAddr::is_ipv6);
+	six.reverse();
+	four.reverse();
+	let mut ordered = Vec::new();
+	while !six.is_empty() || !four.is_empty() {
+		ordered.extend(six.pop());
+		ordered.extend(four.pop());
+	}
+	ordered
+}
+
+/// Happy eyeballs (RFC 8305): attempt `i` starts `i` delays after the first, so
+/// a black-holed address family costs 250 ms, not the whole attempt timeout;
+/// the first connection wins and the rest are dropped.
+async fn race_connect(addresses: Vec<SocketAddr>) -> std::io::Result<TcpStream> {
+	let mut attempts = FuturesUnordered::new();
+	for (index, address) in addresses.into_iter().enumerate() {
+		attempts.push(async move {
+			if let Ok(position) = u32::try_from(index)
+				&& position > 0
+			{
+				tokio::time::sleep(CONNECTION_ATTEMPT_DELAY * position).await;
+			}
+			TcpStream::connect(address).await
+		});
+	}
+	let mut last = std::io::Error::other("no addresses");
+	while let Some(result) = attempts.next().await {
+		match result {
+			Ok(stream) => return Ok(stream),
+			Err(error) => last = error,
+		}
+	}
+	Err(last)
 }
 
 /// Whether a status is retried: `429 || >= 500`.
@@ -764,5 +927,221 @@ mod tests {
 		let request = &worker.requests()[0];
 		assert_eq!(request.path, "/api/v1/runner/credentials/renew");
 		assert_eq!(request.body, r#"{"expiresInDays":30}"#);
+	}
+
+	/// A keep-alive server: answers every request on a connection with
+	/// `payload`, counts connections, and optionally closes each connection
+	/// right after its first answer without announcing it.
+	async fn serve_keep_alive(
+		payload: &'static str,
+		close_after_first: bool,
+	) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+		use std::sync::atomic::Ordering;
+		use tokio::io::{AsyncReadExt, AsyncWriteExt};
+		let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+		let url = format!("http://{}", listener.local_addr().unwrap());
+		let connections = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+		let counter = Arc::clone(&connections);
+		tokio::spawn(async move {
+			loop {
+				let Ok((mut stream, _)) = listener.accept().await else {
+					return;
+				};
+				counter.fetch_add(1, Ordering::SeqCst);
+				tokio::spawn(async move {
+					let mut buffer = Vec::new();
+					let mut chunk = [0_u8; 4096];
+					loop {
+						let read = stream.read(&mut chunk).await.unwrap_or(0);
+						if read == 0 {
+							return;
+						}
+						buffer.extend_from_slice(&chunk[..read]);
+						// Requests here are small and arrive whole.
+						if !buffer.windows(4).any(|window| window == b"\r\n\r\n") {
+							continue;
+						}
+						buffer.clear();
+						let response = format!(
+							"HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{payload}",
+							payload.len()
+						);
+						if stream.write_all(response.as_bytes()).await.is_err() || close_after_first
+						{
+							return;
+						}
+					}
+				});
+			}
+		});
+		(url, connections)
+	}
+
+	#[tokio::test]
+	async fn reuses_one_keep_alive_connection_across_calls() {
+		use std::sync::atomic::Ordering;
+		let (url, connections) = serve_keep_alive(BEAT, false).await;
+		let api = client(&url, Arc::new(TokioSleeper));
+		for _ in 0..4 {
+			api.heartbeat("run_x", 1).await.unwrap();
+		}
+		assert_eq!(connections.load(Ordering::SeqCst), 1);
+	}
+
+	#[tokio::test]
+	async fn a_connection_the_server_closed_while_idle_is_replaced_without_failing_the_call() {
+		use std::sync::atomic::Ordering;
+		let (url, connections) = serve_keep_alive(BEAT, true).await;
+		let api = client(&url, Arc::new(RecordingSleeper::default()));
+		api.heartbeat("run_x", 1).await.unwrap();
+		tokio::time::sleep(Duration::from_millis(100)).await;
+		api.heartbeat("run_x", 1).await.unwrap();
+		// Immediately again: no time for the close to be noticed, the retry covers it.
+		api.heartbeat("run_x", 1).await.unwrap();
+		assert_eq!(connections.load(Ordering::SeqCst), 3);
+	}
+
+	#[tokio::test]
+	async fn a_304_is_an_invalid_response_that_is_not_retried_but_other_redirects_are_refused() {
+		let worker = serve(vec![Reply::Raw(304, String::new())]).await;
+		let error = client(&worker.url, Arc::new(RecordingSleeper::default()))
+			.claim(&empty_claim())
+			.await
+			.unwrap_err();
+		assert_eq!(
+			(error.code.as_str(), error.transient),
+			("INVALID_RESPONSE", false)
+		);
+		assert_eq!(worker.requests().len(), 1);
+		for status in [301_u16, 303, 307, 308] {
+			let worker = serve(vec![Reply::Raw(status, String::new())]).await;
+			let mut options = HttpRunnerApiOptions::new(worker.url.clone(), token(), None, None);
+			options.max_attempts = 1;
+			let error = HttpRunnerApi::new(options, Arc::new(TokioSleeper))
+				.unwrap()
+				.claim(&empty_claim())
+				.await
+				.unwrap_err();
+			assert_eq!(error.code, "TRANSPORT_ERROR", "{status}");
+		}
+	}
+
+	#[tokio::test]
+	async fn a_body_that_cannot_be_read_is_an_invalid_response_retried_only_for_5xx() {
+		for (reply, transient) in [
+			(Reply::Truncated(200), false),
+			(Reply::Truncated(503), true),
+			(Reply::StallBody(200), false),
+		] {
+			let worker = serve(vec![reply]).await;
+			let mut options = HttpRunnerApiOptions::new(worker.url.clone(), token(), None, None);
+			options.request_timeout = Duration::from_millis(300);
+			options.max_attempts = 2;
+			let sleeper = Arc::new(RecordingSleeper::default());
+			let error = HttpRunnerApi::new(options, sleeper.clone())
+				.unwrap()
+				.claim(&empty_claim())
+				.await
+				.unwrap_err();
+			assert_eq!(
+				(error.code.as_str(), error.transient),
+				("INVALID_RESPONSE", transient)
+			);
+			assert_eq!(worker.requests().len(), if transient { 2 } else { 1 });
+		}
+	}
+
+	#[tokio::test]
+	async fn an_unknown_job_kind_is_rejected_like_the_typescript_schema_does() {
+		// zod's strict discriminated union fails the whole claim response.
+		let error = classify::<ClaimJobResponse>(
+			200,
+			br#"{"job":{"kind":"quantum","runId":"r"},"pollAfterMs":1}"#,
+		)
+		.unwrap_err();
+		assert_eq!(
+			(error.code.as_str(), error.transient),
+			("INVALID_RESPONSE", false)
+		);
+	}
+
+	#[test]
+	fn addresses_interleave_ipv6_first() {
+		let addresses: Vec<SocketAddr> = [
+			"10.0.0.1:443",
+			"10.0.0.2:443",
+			"[2001:db8::1]:443",
+			"[2001:db8::2]:443",
+			"10.0.0.3:443",
+		]
+		.iter()
+		.map(|text| text.parse().unwrap())
+		.collect();
+		let ordered: Vec<String> = interleave(addresses)
+			.iter()
+			.map(ToString::to_string)
+			.collect();
+		assert_eq!(
+			ordered,
+			[
+				"[2001:db8::1]:443",
+				"10.0.0.1:443",
+				"[2001:db8::2]:443",
+				"10.0.0.2:443",
+				"10.0.0.3:443"
+			]
+		);
+	}
+
+	#[tokio::test]
+	async fn a_dead_first_address_does_not_block_the_one_that_answers() {
+		let closed = {
+			let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+			listener.local_addr().unwrap()
+		};
+		let open = TcpListener::bind("127.0.0.1:0").await.unwrap();
+		let started = std::time::Instant::now();
+		let stream = race_connect(vec![closed, open.local_addr().unwrap()]).await;
+		assert!(stream.is_ok());
+		// The second attempt starts after one delay at most, not after a timeout.
+		assert!(started.elapsed() < Duration::from_secs(2));
+	}
+
+	/// Latency of the real client against a live Worker (never in CI): run with
+	/// `RESEARCH_API_URL=… RUNNER_TOKEN=… cargo test -p research-runner --lib
+	/// measure_latency -- --ignored --nocapture`.
+	#[tokio::test]
+	#[ignore = "needs a running Worker"]
+	async fn measure_latency() {
+		let api = HttpRunnerApi::new(
+			HttpRunnerApiOptions::new(
+				std::env::var("RESEARCH_API_URL").unwrap(),
+				std::env::var("RUNNER_TOKEN").unwrap(),
+				None,
+				None,
+			),
+			Arc::new(TokioSleeper),
+		)
+		.unwrap();
+		let mut claims = Vec::new();
+		let mut beats = Vec::new();
+		for _ in 0..40 {
+			let started = std::time::Instant::now();
+			let _ = api.claim(&empty_claim()).await;
+			claims.push(started.elapsed());
+			let started = std::time::Instant::now();
+			let _ = api.heartbeat("run_none", 1).await;
+			beats.push(started.elapsed());
+		}
+		for (name, mut samples) in [("claim", claims), ("heartbeat", beats)] {
+			samples.sort();
+			let ms = |index: usize| samples[index].as_secs_f64() * 1000.0;
+			println!(
+				"{name}: first {:.2} ms, median {:.2} ms, p90 {:.2} ms",
+				ms(0).max(0.0),
+				ms(samples.len() / 2),
+				ms(samples.len() * 9 / 10)
+			);
+		}
 	}
 }
