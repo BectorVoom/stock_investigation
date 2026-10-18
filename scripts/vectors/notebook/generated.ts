@@ -80,7 +80,7 @@ export async function generatedTurns(): Promise<void> {
 	] satisfies AgentEvent[][])
 		await run([events]);
 
-	for (let index = 0; index < 36; index += 1) {
+	for (let index = 0; index < 24; index += 1) {
 		const count = [0, 1, 12, 32, 100, 200][index % 6] ?? 0;
 		const widgets: NotebookWidget[] = Array.from({ length: count }, (_, position) => {
 			const id = `w-${position}`;
@@ -95,9 +95,9 @@ export async function generatedTurns(): Promise<void> {
 			if (kind === 1)
 				return {
 					...chartWidget(id),
-					series: Array.from({ length: count <= 12 ? 6 : 1 }, (_, series) => ({
+					series: Array.from({ length: position < 2 && count <= 12 ? 6 : 1 }, (_, series) => ({
 						name: `S${series}`,
-						points: Array.from({ length: count <= 12 ? 400 : 4 }, (_, point) => ({
+						points: Array.from({ length: position < 2 && count <= 12 ? 400 : 4 }, (_, point) => ({
 							x: `p${point}`,
 							y: (point - 100) / 8,
 						})),

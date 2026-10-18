@@ -8,10 +8,25 @@ import type {
 } from "../../../packages/application/src/notebook/assistTurn.ts";
 import { doubleBits } from "../shared.ts";
 
+/**
+ * Appends one captured case. Callers that generate many huge notebooks pass
+ * `NOTEBOOK_SKIP_OVER_BYTES` so a case above that size is dropped: the whole-turn
+ * transcript already pins its outcome and the vector files stay small.
+ */
 export function save(value: unknown): void {
 	const target = process.env.NOTEBOOK_CAPTURE_FILE;
 	if (target === undefined) throw new Error("NOTEBOOK_CAPTURE_FILE is required");
-	appendFileSync(target, `${JSON.stringify(encodeNumbers(value))}\n`);
+	const line = JSON.stringify(encodeNumbers(value));
+	const limit = Number(process.env.NOTEBOOK_SKIP_OVER_BYTES ?? Number.POSITIVE_INFINITY);
+	if (
+		typeof value === "object" &&
+		value !== null &&
+		"area" in value &&
+		value.area === "commands" &&
+		line.length > limit
+	)
+		return;
+	appendFileSync(target, `${line}\n`);
 }
 
 export async function recordTurn(

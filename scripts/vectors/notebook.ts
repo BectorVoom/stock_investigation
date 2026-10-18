@@ -26,14 +26,22 @@ export const notebookExporter: VectorExporter = {
 				],
 				{
 					cwd: root,
-					env: { ...process.env, NOTEBOOK_CAPTURE_FILE: capture },
+					env: {
+						...process.env,
+						NOTEBOOK_CAPTURE_FILE: capture,
+						NOTEBOOK_SKIP_OVER_BYTES: "1500000",
+					},
 					stdio: "pipe",
 					timeout: 60_000,
 				},
 			);
 			execFileSync(process.execPath, ["scripts/vectors/notebook/runGenerated.ts"], {
 				cwd: root,
-				env: { ...process.env, NOTEBOOK_CAPTURE_FILE: capture },
+				env: {
+					...process.env,
+					NOTEBOOK_CAPTURE_FILE: capture,
+					NOTEBOOK_SKIP_OVER_BYTES: "150000",
+				},
 				stdio: "pipe",
 				timeout: 60_000,
 			});
