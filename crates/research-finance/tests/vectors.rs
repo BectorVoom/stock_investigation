@@ -10,6 +10,7 @@
 	clippy::panic,
 	clippy::indexing_slicing,
 	clippy::cast_possible_truncation,
+	clippy::cast_possible_wrap,
 	clippy::cast_sign_loss
 )]
 
@@ -1008,5 +1009,659 @@ fn sec_financials_pure_parts_match_typescript() {
 		sec_company_facts_url("0000320193"),
 		array(&file, "urls")[0].as_str().unwrap()
 	);
+	report(&failures);
+}
+
+/* ---------- pacing and the refresh jobs ---------- */
+
+use research_application::ports::Clock;
+use research_application::reporter::{PipelineReporter, ToolCallOutcome};
+use research_contracts::jobs::{
+	CompleteJobRequest, EarningsRefreshJob, EarningsRefreshStock, Lease, MarketRefreshJob,
+	MarketRefreshSeries,
+};
+use research_contracts::market::MarketSeriesMeta;
+use research_contracts::watchlist::{EarningsEvent, EarningsUnavailableCode};
+use research_domain::jobs::budget::ResourceUsage;
+use research_domain::jobs::state_machine::JobState;
+use research_effects::{EventLogger, LogValue};
+use research_finance::finnhub::FinnhubEarningsSource as RealFinnhub;
+use research_finance::jobs::{RefreshDeps, execute_earnings_refresh, execute_market_refresh};
+use research_finance::pacing::{MarketPacer, MarketRateLimit, WindowMarketPacer};
+use research_finance::ports::{
+	EarningsData, EarningsFailure, EarningsResult, MarketUnavailable, SeriesData, SeriesPoint,
+};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicI64, Ordering};
+
+const BASE_MS: i64 = 1_792_206_000_000; // 2026-10-17T03:00:00.000Z
+
+/// A clock that ticks one millisecond on every read; sleeps add to it.
+struct SharedClock {
+	reads: AtomicI64,
+	offset: AtomicI64,
+}
+
+impl SharedClock {
+	fn new() -> Arc<Self> {
+		Arc::new(Self {
+			reads: AtomicI64::new(0),
+			offset: AtomicI64::new(0),
+		})
+	}
+
+	fn read(&self) -> i64 {
+		BASE_MS + self.offset.load(Ordering::SeqCst) + self.reads.fetch_add(1, Ordering::SeqCst)
+	}
+
+	fn advance(&self, ms: i64) {
+		self.offset.fetch_add(ms, Ordering::SeqCst);
+	}
+
+	fn reads(&self) -> i64 {
+		self.reads.load(Ordering::SeqCst)
+	}
+}
+
+impl Clock for SharedClock {
+	fn now_ms(&self) -> i64 {
+		self.read()
+	}
+
+	fn now_iso(&self) -> String {
+		research_js::date::epoch_ms_to_iso(self.read()).unwrap()
+	}
+}
+
+/// Records every sleep, advances the clock and aborts the run on request.
+struct AdvancingSleeper {
+	clock: Arc<SharedClock>,
+	sleeps: Arc<Mutex<Vec<i64>>>,
+	on_sleep: Box<dyn Fn(usize) + Send + Sync>,
+}
+
+#[async_trait::async_trait]
+impl Sleeper for AdvancingSleeper {
+	async fn sleep(&self, ms: u64, _cancel: Option<&CancellationToken>) {
+		let count = {
+			let mut sleeps = self.sleeps.lock().unwrap();
+			sleeps.push(ms as i64);
+			sleeps.len()
+		};
+		self.clock.advance(ms as i64);
+		(self.on_sleep)(count);
+	}
+}
+
+fn limits_of(specs: &Value) -> HashMap<String, MarketRateLimit> {
+	array_of(specs)
+		.iter()
+		.map(|spec| {
+			(
+				text(spec, "provider").to_owned(),
+				MarketRateLimit {
+					max_per_window: number(spec, "maxPerWindow") as usize,
+					window_ms: number(spec, "windowMs") as i64,
+				},
+			)
+		})
+		.collect()
+}
+
+fn array_of(value: &Value) -> &[Value] {
+	value.as_array().unwrap()
+}
+
+#[tokio::test]
+async fn pacer_matches_typescript() {
+	let file = load("pacing.json");
+	let cases = file.as_array().unwrap();
+	assert!(cases.len() > 250);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let clock = SharedClock::new();
+		let sleeps = Arc::new(Mutex::new(Vec::new()));
+		// `AbortSignal.any([local, shared])`: the sleep that aborts the shared
+		// signal also ends the operation currently waiting.
+		let shared_cancelled = Arc::new(std::sync::atomic::AtomicBool::new(false));
+		let current: Arc<Mutex<CancellationToken>> = Arc::new(Mutex::new(CancellationToken::new()));
+		let abort_in = has(case, "abortInSleep")
+			.and_then(Value::as_f64)
+			.map(|n| n as usize);
+		let sleeper = Arc::new(AdvancingSleeper {
+			clock: clock.clone(),
+			sleeps: sleeps.clone(),
+			on_sleep: {
+				let shared = shared_cancelled.clone();
+				let current = current.clone();
+				Box::new(move |count| {
+					if abort_in == Some(count) {
+						shared.store(true, Ordering::SeqCst);
+						current.lock().unwrap().cancel();
+					}
+				})
+			},
+		});
+		let per_series: HashMap<String, usize> = match has(case, "requestsPerSeries") {
+			Some(Value::Array(entries)) => entries
+				.iter()
+				.map(|e| {
+					let pair = e.as_array().unwrap();
+					(
+						pair[0].as_str().unwrap().to_owned(),
+						pair[1].as_f64().unwrap() as usize,
+					)
+				})
+				.collect(),
+			_ => HashMap::new(),
+		};
+		let pacer = WindowMarketPacer::new(
+			clock.clone(),
+			sleeper,
+			limits_of(field(case, "limits")),
+			per_series,
+		);
+		let mut results = Vec::new();
+		for op in array(case, "ops") {
+			clock.advance(number(op, "advanceMs") as i64);
+			let token = CancellationToken::new();
+			if flag(op, "abortBefore") || shared_cancelled.load(Ordering::SeqCst) {
+				token.cancel();
+			}
+			*current.lock().unwrap() = token.clone();
+			let before = sleeps.lock().unwrap().len();
+			let requests = has(op, "requests")
+				.and_then(Value::as_f64)
+				.map(|n| n as usize);
+			let granted = pacer.pace(text(op, "provider"), &token, requests).await;
+			let taken: Vec<i64> = sleeps.lock().unwrap()[before..].to_vec();
+			results.push(json!({"granted": granted, "sleeps": taken}));
+		}
+		let actual = json!({"results": results, "reads": clock.reads()});
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!("pacer {index}: {actual}\n   expected {expected}"));
+		}
+	}
+	report(&failures);
+}
+
+/// Reports states with the timestamp `executeJob.enqueue` would read.
+struct RecordingReporter {
+	clock: Arc<SharedClock>,
+	states: Mutex<Vec<Json>>,
+}
+
+#[async_trait::async_trait]
+impl PipelineReporter for RecordingReporter {
+	async fn state(&self, state: JobState) {
+		let at = self.clock.now_iso();
+		self.states
+			.lock()
+			.unwrap()
+			.push(json!({"state": state.as_str(), "at": at}));
+	}
+	async fn note(&self, _text: &str) {}
+	async fn tool(&self, _tool_id: &str, _outcome: ToolCallOutcome, _detail: &str) {}
+	async fn usage(&self, _usage: &ResourceUsage) {}
+}
+
+#[derive(Default)]
+struct RecordingLogger(Mutex<Vec<Json>>);
+
+impl RecordingLogger {
+	fn push(&self, level: &str, event: &str, fields: &[(&str, LogValue<'_>)]) {
+		let mut map = serde_json::Map::new();
+		for (key, value) in fields {
+			let json = match value {
+				LogValue::Str(text) => Json::String(text.to_string()),
+				LogValue::Int(number) => json!(number),
+				LogValue::Num(number) => json!(number),
+				LogValue::Bool(flag) => json!(flag),
+				LogValue::Null => Json::Null,
+			};
+			map.insert((*key).to_owned(), json);
+		}
+		self.0
+			.lock()
+			.unwrap()
+			.push(json!({"level": level, "event": event, "fields": map}));
+	}
+}
+
+impl EventLogger for RecordingLogger {
+	fn info(&self, event: &str, fields: &[(&str, LogValue<'_>)]) {
+		self.push("info", event, fields);
+	}
+	fn warn(&self, event: &str, fields: &[(&str, LogValue<'_>)]) {
+		self.push("warn", event, fields);
+	}
+	fn error(&self, event: &str, fields: &[(&str, LogValue<'_>)]) {
+		self.push("error", event, fields);
+	}
+	fn log_failures(&self) -> u64 {
+		0
+	}
+}
+
+/// Everything one job run shares: the clock, the abort, the pacing and call records.
+struct JobHarness {
+	clock: Arc<SharedClock>,
+	shutdown: CancellationToken,
+	abort_at: Option<(String, usize)>,
+	counters: Mutex<HashMap<&'static str, usize>>,
+	source_calls: Mutex<Vec<Json>>,
+	pace: Mutex<Vec<Json>>,
+	sleeps: Arc<Mutex<Vec<i64>>>,
+}
+
+impl JobHarness {
+	fn bump_abort(&self, place: &'static str) {
+		let count = {
+			let mut counters = self.counters.lock().unwrap();
+			let entry = counters.entry(place).or_insert(0);
+			*entry += 1;
+			*entry
+		};
+		if self
+			.abort_at
+			.as_ref()
+			.is_some_and(|(where_, n)| where_ == place && *n == count)
+		{
+			self.shutdown.cancel();
+		}
+	}
+}
+
+struct RecordingPacer {
+	inner: WindowMarketPacer,
+	harness: Arc<JobHarness>,
+}
+
+#[async_trait::async_trait]
+impl MarketPacer for RecordingPacer {
+	async fn pace(
+		&self,
+		provider: &str,
+		cancel: &CancellationToken,
+		requests: Option<usize>,
+	) -> bool {
+		let granted = self.inner.pace(provider, cancel, requests).await;
+		self.harness
+			.pace
+			.lock()
+			.unwrap()
+			.push(json!({"provider": provider, "requests": requests, "granted": granted}));
+		granted
+	}
+}
+
+fn harness_for(setup: &Value) -> (Arc<JobHarness>, RecordingPacer) {
+	let clock = SharedClock::new();
+	let shutdown = CancellationToken::new();
+	let abort_at = has(setup, "abortAt")
+		.filter(|v| !v.is_null())
+		.map(|v| (text(v, "where").to_owned(), number(v, "n") as usize));
+	let sleeps = Arc::new(Mutex::new(Vec::new()));
+	let harness = Arc::new(JobHarness {
+		clock: clock.clone(),
+		shutdown: shutdown.clone(),
+		abort_at,
+		counters: Mutex::new(HashMap::new()),
+		source_calls: Mutex::new(Vec::new()),
+		pace: Mutex::new(Vec::new()),
+		sleeps: sleeps.clone(),
+	});
+	if flag(setup, "preAborted") {
+		shutdown.cancel();
+	}
+	let sleeper = Arc::new(AdvancingSleeper {
+		clock: clock.clone(),
+		sleeps,
+		on_sleep: {
+			let harness = harness.clone();
+			Box::new(move |_| harness.bump_abort("sleep"))
+		},
+	});
+	let inner = WindowMarketPacer::new(
+		clock,
+		sleeper,
+		limits_of(field(setup, "limits")),
+		HashMap::new(),
+	);
+	(harness.clone(), RecordingPacer { inner, harness })
+}
+
+fn lease_of(job: &Value) -> Lease {
+	Lease {
+		run_id: text(job, "runId").to_owned(),
+		lease_generation: number(job, "leaseGeneration") as u64,
+		lease_expires_at: text(job, "leaseExpiresAt").to_owned(),
+		attempt: number(job, "attempt") as u64,
+		heartbeat_interval_ms: number(job, "heartbeatIntervalMs") as u64,
+		sources: Vec::new(),
+	}
+}
+
+/// Long observation lists are summarised as their length and both ends.
+fn summarize(mut completion: Json) -> Json {
+	if let Some(series) = completion.get_mut("series").and_then(Json::as_array_mut) {
+		for entry in series {
+			let long = entry["observations"]
+				.as_array()
+				.is_some_and(|o| o.len() > 20);
+			if long {
+				let all = entry["observations"].as_array().unwrap().clone();
+				entry["observations"] =
+					json!({"length": all.len(), "first": all.first(), "last": all.last()});
+			}
+		}
+	}
+	completion
+}
+
+fn finish_record(
+	harness: &JobHarness,
+	reporter: &RecordingReporter,
+	logger: &RecordingLogger,
+	completion: &CompleteJobRequest,
+) -> Json {
+	let aborted = harness.shutdown.is_cancelled();
+	let logs: Vec<Json> = logger.0.lock().unwrap().clone();
+	json!({
+		"states": reporter.states.lock().unwrap().clone(),
+		"completion": if aborted { Json::Null } else { summarize(serde_json::to_value(completion).unwrap()) },
+		"logs": logs,
+		"sourceCalls": harness.source_calls.lock().unwrap().clone(),
+		"pace": harness.pace.lock().unwrap().clone(),
+		"sleeps": harness.sleeps.lock().unwrap().clone(),
+		"reads": harness.clock.reads(),
+	})
+}
+
+struct FakeMarketSource {
+	provider: research_contracts::market::MarketProviderId,
+	answers: Option<Vec<Value>>,
+	next: Mutex<usize>,
+	harness: Arc<JobHarness>,
+}
+
+#[async_trait::async_trait]
+impl MarketSeriesSource for FakeMarketSource {
+	fn provider_id(&self) -> research_contracts::market::MarketProviderId {
+		self.provider
+	}
+
+	async fn fetch_series(&self, query: SeriesQuery<'_>) -> Result<SeriesData, MarketUnavailable> {
+		self.harness.source_calls.lock().unwrap().push(json!({
+			"provider": self.provider.as_str(),
+			"symbol": query.symbol,
+			"since": query.since,
+			"max": query.max_observations,
+			"aborted": query.cancel.is_cancelled(),
+		}));
+		let Some(answers) = &self.answers else {
+			return Err(MarketUnavailable {
+				code: research_contracts::market::MarketUnavailableCode::SourceNotConfigured,
+				reason: "not configured".to_owned(),
+			});
+		};
+		self.harness.bump_abort("source");
+		let index = {
+			let mut next = self.next.lock().unwrap();
+			let index = *next;
+			*next += 1;
+			index
+		};
+		let Some(answer) = answers.get(index) else {
+			return Err(MarketUnavailable {
+				code: research_contracts::market::MarketUnavailableCode::NoData,
+				reason: "script exhausted".to_owned(),
+			});
+		};
+		if has(answer, "throw").is_some() {
+			panic!("boom");
+		}
+		if let Some(error) = has(answer, "err") {
+			let code = research_contracts::market::MarketUnavailableCode::from_str_value(text(
+				error, "code",
+			))
+			.unwrap();
+			return Err(MarketUnavailable {
+				code,
+				reason: text(error, "reason").to_owned(),
+			});
+		}
+		let ok = field(answer, "ok");
+		let meta: MarketSeriesMeta =
+			research_contracts::validate(&ok_meta(field(ok, "meta"))).unwrap();
+		let count = number(ok, "count") as usize;
+		let start = chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+		let observations = (0..count)
+			.map(|i| SeriesPoint {
+				observed_on: (start + chrono::Duration::days(i as i64))
+					.format("%Y-%m-%d")
+					.to_string(),
+				value: i as f64 * 1.5,
+			})
+			.collect();
+		Ok(SeriesData { meta, observations })
+	}
+}
+
+fn ok_meta(meta: &Value) -> Value {
+	meta.clone()
+}
+
+#[tokio::test]
+async fn market_refresh_matches_typescript() {
+	let file = load("jobs_market.json");
+	let cases = file.as_array().unwrap();
+	assert!(cases.len() > 300);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let (harness, pacer) = harness_for(field(case, "setup"));
+		let job_json = field(case, "job");
+		let job = MarketRefreshJob {
+			lease: lease_of(job_json),
+			series: array(job_json, "series")
+				.iter()
+				.map(|s| MarketRefreshSeries {
+					series_id: text(s, "seriesId").to_owned(),
+					latest_observed_on: optional_text(s, "latestObservedOn").map(str::to_owned),
+				})
+				.collect(),
+		};
+		let mut sources: HashMap<String, Arc<dyn MarketSeriesSource>> = HashMap::new();
+		for (provider, answers) in field(case, "sources").as_object().unwrap().iter() {
+			let provider_id =
+				research_contracts::market::MarketProviderId::from_str_value(provider).unwrap();
+			sources.insert(
+				provider.to_owned(),
+				Arc::new(FakeMarketSource {
+					provider: provider_id,
+					answers: answers.as_array().map(<[Value]>::to_vec),
+					next: Mutex::new(0),
+					harness: harness.clone(),
+				}),
+			);
+		}
+		let reporter = RecordingReporter {
+			clock: harness.clock.clone(),
+			states: Mutex::new(Vec::new()),
+		};
+		let logger = RecordingLogger::default();
+		let earnings: HashMap<String, Arc<dyn EarningsCalendarSource>> = HashMap::new();
+		let deps = RefreshDeps {
+			clock: harness.clock.as_ref(),
+			logger: &logger,
+			pacer: &pacer,
+			market_sources: &sources,
+			earnings_sources: &earnings,
+		};
+		let completion = execute_market_refresh(&job, &deps, &harness.shutdown, &reporter).await;
+		let actual = finish_record(&harness, &reporter, &logger, &completion);
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"market job {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	report(&failures);
+}
+
+struct FakeEarningsSource {
+	source: research_contracts::watchlist::EarningsSourceId,
+	answers: Vec<Value>,
+	next: Mutex<usize>,
+	harness: Arc<JobHarness>,
+}
+
+fn events_of(value: &Value) -> Vec<EarningsEvent> {
+	array_of(value)
+		.iter()
+		.map(|event| research_contracts::validate::<EarningsEvent>(event).unwrap())
+		.collect()
+}
+
+#[async_trait::async_trait]
+impl EarningsCalendarSource for FakeEarningsSource {
+	fn source_id(&self) -> research_contracts::watchlist::EarningsSourceId {
+		self.source
+	}
+
+	async fn fetch_earnings(&self, query: EarningsQuery<'_>) -> Vec<EarningsResult> {
+		self.harness.source_calls.lock().unwrap().push(json!({
+			"source": self.source.as_str(),
+			"stocks": query.stocks.iter().map(|s| json!({"symbol": s.symbol, "needName": s.need_name})).collect::<Vec<_>>(),
+			"fromDate": query.from_date,
+			"toDate": query.to_date,
+		}));
+		let index = {
+			let mut next = self.next.lock().unwrap();
+			let index = *next;
+			*next += 1;
+			index
+		};
+		let Some(answer) = self.answers.get(index) else {
+			return Vec::new();
+		};
+		if has(answer, "throw").is_some() {
+			panic!("boom");
+		}
+		let per_stock = array(answer, "beforePerStock");
+		let mut hooks = Vec::new();
+		for position in 0..query.stocks.len() {
+			let calls = per_stock
+				.get(position)
+				.and_then(Value::as_f64)
+				.unwrap_or(0.0) as usize;
+			for _ in 0..calls {
+				self.harness.bump_abort("before");
+				let granted = query.before_request.before_request().await;
+				hooks.push(granted);
+				if !granted {
+					break;
+				}
+			}
+		}
+		self.harness
+			.source_calls
+			.lock()
+			.unwrap()
+			.push(json!({"source": self.source.as_str(), "hooks": hooks}));
+		array(answer, "results")
+			.iter()
+			.map(|spec| {
+				if let Some(ok) = has(spec, "ok") {
+					Ok(EarningsData {
+						name: optional_text(ok, "name").map(str::to_owned),
+						events: events_of(field(ok, "events")),
+					})
+				} else {
+					let error = field(spec, "err");
+					let code =
+						EarningsUnavailableCode::from_str_value(text(error, "code")).unwrap();
+					match has(error, "name") {
+						Some(name) if code == EarningsUnavailableCode::NoScheduledDate => {
+							Err(EarningsFailure::no_date(name.as_str().map(str::to_owned)))
+						}
+						_ => Err(EarningsFailure::new(code)),
+					}
+				}
+			})
+			.collect()
+	}
+}
+
+#[tokio::test]
+async fn earnings_refresh_matches_typescript() {
+	let file = load("jobs_earnings.json");
+	let cases = file.as_array().unwrap();
+	assert!(cases.len() > 300);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let (harness, pacer) = harness_for(field(case, "setup"));
+		let job_json = field(case, "job");
+		let job = EarningsRefreshJob {
+			lease: lease_of(job_json),
+			from_date: text(job_json, "fromDate").to_owned(),
+			to_date: text(job_json, "toDate").to_owned(),
+			stocks: array(job_json, "stocks")
+				.iter()
+				.map(|s| EarningsRefreshStock {
+					stock_id: text(s, "stockId").to_owned(),
+					name: optional_text(s, "name").map(str::to_owned),
+				})
+				.collect(),
+		};
+		let mut sources: HashMap<String, Arc<dyn EarningsCalendarSource>> = HashMap::new();
+		let fetch_log = EventLog::default();
+		for (source, answers) in field(case, "sources").as_object().unwrap().iter() {
+			let source_id =
+				research_contracts::watchlist::EarningsSourceId::from_str_value(source).unwrap();
+			let entry: Arc<dyn EarningsCalendarSource> = match answers {
+				Value::String(kind) if kind == "unconfigured" => Arc::new(
+					research_finance::ports::UnconfiguredEarningsCalendarSource(source_id),
+				),
+				Value::String(_) => {
+					let script = field(case, "fetchScript");
+					Arc::new(RealFinnhub::new(
+						Secret::new("test-key"),
+						Arc::new(Scripted::new(script, &fetch_log)),
+					))
+				}
+				_ => Arc::new(FakeEarningsSource {
+					source: source_id,
+					answers: array_of(answers).to_vec(),
+					next: Mutex::new(0),
+					harness: harness.clone(),
+				}),
+			};
+			sources.insert(source.to_owned(), entry);
+		}
+		let reporter = RecordingReporter {
+			clock: harness.clock.clone(),
+			states: Mutex::new(Vec::new()),
+		};
+		let logger = RecordingLogger::default();
+		let market: HashMap<String, Arc<dyn MarketSeriesSource>> = HashMap::new();
+		let deps = RefreshDeps {
+			clock: harness.clock.as_ref(),
+			logger: &logger,
+			pacer: &pacer,
+			market_sources: &market,
+			earnings_sources: &sources,
+		};
+		let completion = execute_earnings_refresh(&job, &deps, &harness.shutdown, &reporter).await;
+		let actual = finish_record(&harness, &reporter, &logger, &completion);
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"earnings job {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
 	report(&failures);
 }

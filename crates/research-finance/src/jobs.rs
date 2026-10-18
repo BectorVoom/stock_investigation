@@ -1,6 +1,7 @@
 //! Market-refresh and earnings-refresh job bodies; the shell owns leases and event delivery.
 use crate::{pacing::MarketPacer, ports::*};
 use async_trait::async_trait;
+use futures_util::FutureExt;
 use indexmap::IndexMap;
 use research_application::{ports::Clock, reporter::PipelineReporter};
 use research_contracts::{
@@ -9,8 +10,12 @@ use research_contracts::{
 	watchlist::{EarningsUnavailableCode, earnings_source_by_market, parse_stock_id},
 };
 use research_effects::{EventLogger, LogValue};
-use std::collections::HashMap;
+use std::{collections::HashMap, panic::AssertUnwindSafe};
 use tokio_util::sync::CancellationToken;
+/// What an unexpected adapter fault is logged as: TypeScript logs the thrown
+/// `Error.name`, and a Rust panic is the same kind of programming fault.
+const ADAPTER_FAULT_CLASS: &str = "Error";
+
 /// Source registries and process-wide pacing.
 pub struct RefreshDeps<'a> {
 	/// Wall clock.
@@ -67,17 +72,29 @@ pub async fn execute_market_refresh(
 					{
 						break;
 					}
-					match source
-						.fetch_series(SeriesQuery {
-							symbol: parsed.symbol,
-							since: entry.latest_observed_on.as_deref(),
-							max_observations: 800,
-							cancel,
-						})
-						.await
-					{
-						Err(error) => output.error_code = Some(error.code),
-						Ok(result) => {
+					// An adapter fault (a panic, the Rust form of a TypeScript
+					// throw) is logged by class and fails this series only.
+					let fetched = AssertUnwindSafe(source.fetch_series(SeriesQuery {
+						symbol: parsed.symbol,
+						since: entry.latest_observed_on.as_deref(),
+						max_observations: 800,
+						cancel,
+					}))
+					.catch_unwind()
+					.await;
+					match fetched {
+						Err(_) => {
+							deps.logger.warn(
+								"market_series_failed",
+								&[
+									("seriesId", LogValue::from(entry.series_id.as_str())),
+									("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+								],
+							);
+							output.error_code = Some(MarketUnavailableCode::SourceFailed);
+						}
+						Ok(Err(error)) => output.error_code = Some(error.code),
+						Ok(Ok(result)) => {
 							output.meta = Some(result.meta);
 							let start = result.observations.len().saturating_sub(800);
 							output.observations = result
@@ -158,7 +175,22 @@ pub async fn execute_earnings_refresh(
 			id: &id,
 			cancel,
 		};
-		let mut results = match deps.earnings_sources.get(&id) {
+		let failed_all = || -> Vec<EarningsResult> {
+			stocks
+				.iter()
+				.map(|_| Err(EarningsFailure::new(EarningsUnavailableCode::SourceFailed)))
+				.collect()
+		};
+		let log_failure = |error: &str| {
+			deps.logger.warn(
+				"earnings_source_failed",
+				&[
+					("source", LogValue::from(id.as_str())),
+					("error", LogValue::from(error)),
+				],
+			);
+		};
+		let results = match deps.earnings_sources.get(&id) {
 			None => stocks
 				.iter()
 				.map(|_| {
@@ -168,30 +200,30 @@ pub async fn execute_earnings_refresh(
 				})
 				.collect(),
 			Some(source) => {
-				source
-					.fetch_earnings(EarningsQuery {
-						stocks: &stocks,
-						from_date: &job.from_date,
-						to_date: &job.to_date,
-						cancel,
-						before_request: &gate,
-					})
-					.await
+				let fetched = AssertUnwindSafe(source.fetch_earnings(EarningsQuery {
+					stocks: &stocks,
+					from_date: &job.from_date,
+					to_date: &job.to_date,
+					cancel,
+					before_request: &gate,
+				}))
+				.catch_unwind()
+				.await;
+				match fetched {
+					Err(_) => {
+						log_failure(ADAPTER_FAULT_CLASS);
+						failed_all()
+					}
+					// The port promises one result per symbol in order; a short
+					// batch is a contract breach, failed closed for the whole source.
+					Ok(results) if results.len() != stocks.len() => {
+						log_failure("RangeError");
+						failed_all()
+					}
+					Ok(results) => results,
+				}
 			}
 		};
-		if results.len() != stocks.len() {
-			deps.logger.warn(
-				"earnings_source_failed",
-				&[
-					("source", LogValue::from(id.as_str())),
-					("error", LogValue::from("RangeError")),
-				],
-			);
-			results = stocks
-				.iter()
-				.map(|_| Err(EarningsFailure::new(EarningsUnavailableCode::SourceFailed)))
-				.collect();
-		}
 		for (stock, result) in stocks.iter().zip(results) {
 			let Some((stock_id, _)) = order
 				.iter()
