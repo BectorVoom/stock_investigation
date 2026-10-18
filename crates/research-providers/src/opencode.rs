@@ -1,9 +1,11 @@
 //! OpenCode permission configs, variant memory and native research calls (ADR-0012/27/28/29).
 use crate::{cli_probe::*, cli_turn::*, environment::*, process::*, schema::*, turn::*};
 use async_trait::async_trait;
-use research_agent_core::runtime::{AgentProbe, AgentRunContext, AgentRuntime, AgentTurn, Effort};
+use research_agent_core::runtime::{
+	AgentProbe, AgentRunContext, AgentRuntime, AgentTurn, Effort, TurnEnd,
+};
 use research_contracts::{
-	agent::*,
+	agent::{is_free_tier_model_id, *},
 	json::{JsonValue, is_bounded_json},
 };
 use research_js::{
@@ -28,10 +30,6 @@ pub const TEXT_ONLY_SYSTEM_PROMPT: &str = "You are a text-generation backend for
 const FREE_SYSTEM_PROMPT: &str = "You are a text-generation backend for a research application. This session lists tools only because the provider requires it for this model, but every tool call is rejected before it runs and returns nothing. You have no working tools. Answer the user message with text only, in exactly the format it asks for. Do not call any tool.";
 /// Rejected calls beyond this bound fail the turn.
 pub const MAX_REJECTED_TOOL_CALLS: usize = 4;
-/// OpenCode free-tier suffix, case sensitive and untrimmed.
-pub fn is_free_tier_model_id(model: &str) -> bool {
-	model.ends_with("-free")
-}
 fn obj(fields: Vec<(&str, Value)>) -> Value {
 	Value::Object(Object::from_members(
 		fields.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
@@ -534,7 +532,14 @@ impl AgentRuntime for OpenCodeRuntime {
 						break;
 					}
 				}
-				turn.close().await;
+				if turn.close().await == TurnEnd::Panicked {
+					// A throwing inner turn is the TypeScript's AGENT_THREW path: end the outer
+					// turn with a failure event, then let the panic reach `close()`.
+					let _ = sender
+						.send(ProviderFailure::new("PROVIDER_ERROR").event())
+						.await;
+					std::panic::resume_unwind(Box::new("inner OpenCode turn panicked"));
+				}
 				if gone {
 					return;
 				}

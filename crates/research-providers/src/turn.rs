@@ -170,21 +170,38 @@ pub enum FailureHint {
 }
 /// Extracts only a fixed classification, never provider-controlled messages (SEC-010).
 pub fn hint_from_text(text: &str) -> Option<FailureHint> {
-	static PATTERNS: std::sync::LazyLock<Vec<(Regex, FailureHint)>> = std::sync::LazyLock::new(
-		|| {
-			[
-            (r"not logged in|please run /login|log ?in required|unauthori[sz]ed|authentication|invalid api key|invalid credentials|\b401\b|\b403\b", FailureHint::Auth),
-            (r"insufficient credits|payment required|billing|\b402\b", FailureHint::Payment),
-            (r"rate limit|usage limit|limit reached|quota|too many requests|\b429\b", FailureHint::RateLimit),
-            (r"overloaded|service unavailable|bad gateway|\b50[0234]\b|\b529\b", FailureHint::Unavailable),
-        ].into_iter().filter_map(|(p,h)| Regex::new(&format!("(?i-u:{p})")).ok().map(|r| (r,h))).collect()
-		},
-	);
-	PATTERNS
+	HINT_PATTERNS
 		.iter()
 		.find(|(pattern, _)| pattern.is_match(text))
 		.map(|(_, hint)| *hint)
 }
+/// Fixed hint sources; `every_hint_pattern_compiles` fails the build if one is invalid,
+/// so a broken pattern is never silently dropped at runtime.
+const HINT_SOURCES: [(&str, FailureHint); 4] = [
+	(
+		r"not logged in|please run /login|log ?in required|unauthori[sz]ed|authentication|invalid api key|invalid credentials|\b401\b|\b403\b",
+		FailureHint::Auth,
+	),
+	(
+		r"insufficient credits|payment required|billing|\b402\b",
+		FailureHint::Payment,
+	),
+	(
+		r"rate limit|usage limit|limit reached|quota|too many requests|\b429\b",
+		FailureHint::RateLimit,
+	),
+	(
+		r"overloaded|service unavailable|bad gateway|\b50[0234]\b|\b529\b",
+		FailureHint::Unavailable,
+	),
+];
+static HINT_PATTERNS: std::sync::LazyLock<Vec<(Regex, FailureHint)>> =
+	std::sync::LazyLock::new(|| {
+		HINT_SOURCES
+			.iter()
+			.filter_map(|(p, h)| Regex::new(&format!("(?i-u:{p})")).ok().map(|r| (r, *h)))
+			.collect()
+	});
 /// Status hint; 408 is handled by the HTTP adapter.
 pub fn hint_from_http_status(status: f64) -> Option<FailureHint> {
 	match status {
@@ -207,4 +224,17 @@ pub fn failure_for_hint(hint: FailureHint) -> ProviderFailure {
 /// Costs are known only when finite and nonnegative.
 pub fn as_known_cost_usd(value: Option<f64>) -> Option<f64> {
 	value.filter(|v| v.is_finite() && *v >= 0.0)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	#[test]
+	fn every_hint_pattern_compiles() {
+		assert_eq!(HINT_PATTERNS.len(), HINT_SOURCES.len());
+		assert_eq!(
+			hint_from_text("HTTP 429 slow down"),
+			Some(FailureHint::RateLimit)
+		);
+	}
 }

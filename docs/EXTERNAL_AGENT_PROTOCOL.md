@@ -53,16 +53,21 @@ The process cwd is the registration cwd. The scratch path is data in the request
 it need not exist for a backend that does not use it. Each stdout line must be an
 `AgentEvent`. Stderr is bounded diagnostics and never model output. The adapter
 forwards text and permitted tool requests within the request's tool-call budget,
-remembers last usage, and stops on the first completed or failed event. Usage is
-emitted exactly once immediately before that terminal event. `tool.result` and
+remembers last usage, and stops on the first completed or failed event. A usage event is
+forwarded immediately before the terminal event when the process reported one; a
+turn that fails before the process produces output (preflight, spawn failure,
+abort, deadline) ends with the failure event alone and no usage event. `tool.result` and
 `ui.command` are ignored. Invalid or unpermitted event lines count toward the
 shared malformed-line budget (8 tolerated; the ninth fails). EOF without a
 terminal event fails. Text is capped at 2 Mi UTF-16 units and raw output at 32 Mi.
-Cancellation/deadline kills the process group; terminal events follow bounded
-reaping. A consumer must call `AgentTurn::close().await` after early termination.
+Cancellation/deadline sends SIGTERM to the process group, SIGKILL after 2 s, and
+gives up after 3 s more; terminal events follow bounded reaping. No cancellation
+message is written to stdin. A backend that starts children of its own in other
+process groups must stop them on SIGTERM; the TypeScript wrapper aborts the wrapped
+runtime's signal on SIGTERM (so its process runner kills its detached CLIs) and exits
+by itself after 1.5 s at the latest. A consumer must call `AgentTurn::close().await` after early termination.
 
-The executable may end immediately after its terminal event. No cancellation
-message is sent. All per-instance state is lost between invocations; a future
+The executable may end immediately after its terminal event. All per-instance state is lost between invocations; a future
 multiplexed long-lived mode would require another protocol version.
 
 TypeScript backends call `serveExternalAgent(runtime)` from
@@ -72,6 +77,10 @@ terminal event, and coalesces adjacent text deltas split between a surrogate pai
 before JSON serialization. An actual lone surrogate becomes U+FFFD, matching the
 Rust string representation. Wave C can wrap its own `createScriptedAgent({reply})`
 without changing runner or orchestrator code.
+
+A missing companion is reported as `PROVIDER_SPAWN_FAILED` for turns and as an
+unavailable probe naming the helper (never as "not installed"); constructing
+`UnixProcessRunner` fails when it is absent.
 
 Unix packaging must install the `research-provider-spawn` companion executable
 beside `research-runner`. It calls `setsid` then execs the CLI without a shell,

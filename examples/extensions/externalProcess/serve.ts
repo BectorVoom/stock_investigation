@@ -14,6 +14,9 @@ const envelopeSchema = z.strictObject({
 	}),
 });
 
+/** Time the wrapped runtime gets to clean up its children after SIGTERM (< runner's 2 s grace). */
+const ABORT_GRACE_MS = 1500;
+
 async function write(value: unknown): Promise<void> {
 	if (!process.stdout.write(`${JSON.stringify(value)}\n`)) await once(process.stdout, "drain");
 }
@@ -52,6 +55,16 @@ export async function serveExternalAgent(runtime: AgentRuntime): Promise<void> {
 	}
 	let terminal = false;
 	let pending = "";
+	// Cancellation protocol: the runner sends SIGTERM to this process's group (and SIGKILL
+	// after its grace period). A wrapped runtime may have started CLIs in groups of their own
+	// (createNodeProcessRunner is detached), which that signal does not reach, so SIGTERM
+	// aborts the runtime's signal: its generator's finally blocks terminate those groups.
+	// The bounded timer guarantees exit even when the runtime ignores the abort.
+	const controller = new AbortController();
+	process.once("SIGTERM", () => {
+		controller.abort();
+		setTimeout(() => process.exit(143), ABORT_GRACE_MS).unref();
+	});
 	const emit = async (event: AgentEvent): Promise<void> => {
 		if (event.type === "text.delta") {
 			pending += event.text;
@@ -74,7 +87,6 @@ export async function serveExternalAgent(runtime: AgentRuntime): Promise<void> {
 			stdin += chunk;
 		}
 		const envelope = envelopeSchema.parse(JSON.parse(stdin));
-		const controller = new AbortController();
 		for await (const raw of runtime.run(envelope.request, {
 			...envelope.context,
 			signal: controller.signal,

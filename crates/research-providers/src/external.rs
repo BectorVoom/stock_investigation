@@ -317,7 +317,9 @@ impl AgentRuntime for ExternalProcessRuntime {
 				model: None,
 				models: None,
 			},
-			availability: if matches!(result, Capture::NotInstalled) {
+			availability: if matches!(result, Capture::HelperMissing) {
+				helper_missing()
+			} else if matches!(result, Capture::NotInstalled) {
 				unavailable(
 					UnavailableReason::NotInstalled,
 					"External agent command was not found on PATH",

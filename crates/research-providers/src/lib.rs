@@ -14,5 +14,6 @@ pub mod openrouter;
 pub mod openrouter_models;
 pub mod process;
 mod schema;
+pub mod spawn_helper;
 pub mod turn;
 pub use composition::{create_agent_runtimes, create_baseline_agent_runtimes};

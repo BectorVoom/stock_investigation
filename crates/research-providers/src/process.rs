@@ -72,6 +72,26 @@ pub trait ProcessRunner: Send + Sync {
 	/// Spawns without a shell. Spawn errors are typed OS errors.
 	fn run(&self, spec: ProcessSpec) -> io::Result<ProcessHandle>;
 }
+/// File name of the setsid/exec companion executable.
+pub const HELPER_NAME: &str = "research-provider-spawn";
+/// Error payload (inside an `io::Error` of kind `Other`) naming a missing or
+/// unusable companion executable. It is deliberately not `NotFound`, which the
+/// backends report as "CLI not installed".
+#[derive(Debug, thiserror::Error)]
+#[error("process helper {} is missing or not executable", .0.display())]
+pub struct HelperMissing(pub PathBuf);
+/// True when `error` is a [`HelperMissing`].
+pub fn is_helper_missing(error: &io::Error) -> bool {
+	error
+		.get_ref()
+		.is_some_and(|inner| inner.is::<HelperMissing>())
+}
+fn check_helper(helper: &Path) -> io::Result<()> {
+	match std::fs::metadata(helper) {
+		Ok(m) if m.is_file() && m.permissions().mode() & 0o111 != 0 => Ok(()),
+		_ => Err(io::Error::other(HelperMissing(helper.to_owned()))),
+	}
+}
 /// Production Unix runner using the safe setsid/exec companion executable.
 #[derive(Clone, Debug)]
 pub struct UnixProcessRunner {
@@ -89,13 +109,14 @@ impl UnixProcessRunner {
 		} else {
 			directory
 		};
-		Ok(Self {
-			helper: directory.join("research-provider-spawn"),
-		})
+		Self::with_helper(directory.join(HELPER_NAME))
 	}
 	/// Sets a trusted companion path at composition time (release packaging).
-	pub fn with_helper(helper: PathBuf) -> Self {
-		Self { helper }
+	/// Fails at once when the helper is not an executable file, so a packaging
+	/// mistake is never mistaken for "CLI not installed".
+	pub fn with_helper(helper: PathBuf) -> io::Result<Self> {
+		check_helper(&helper)?;
+		Ok(Self { helper })
 	}
 }
 fn tail_append(tail: &Mutex<String>, text: &str) {
@@ -179,6 +200,9 @@ fn signal_group(pid: Pid, signal: Signal, tail: &Mutex<String>) {
 		}
 	}
 }
+// Known limitation shared with the TypeScript: between the liveness poll and a signal the
+// group id could in theory be reused by an unrelated process (pid-reuse window). The poll
+// stops signalling as soon as the group is gone, which keeps the window to 25 ms.
 async fn terminate(pid: Pid, tail: &Mutex<String>) {
 	signal_group(pid, Signal::TERM, tail);
 	let mut waited = 0;
@@ -209,9 +233,13 @@ impl ProcessRunner for UnixProcessRunner {
 		} else {
 			std::env::current_dir()?.join(&spec.cwd)
 		};
+		check_helper(&self.helper)?;
 		let command = executable(&spec.command, &spec.env, &cwd)?;
+		// argv[0] is the command exactly as given (Node/libuv parity); the helper gets
+		// the resolved path first and the argv[0] second.
 		let mut child = tokio::process::Command::new(&self.helper)
 			.arg(command)
+			.arg(&spec.command)
 			.args(&spec.args)
 			.current_dir(cwd)
 			.env_clear()

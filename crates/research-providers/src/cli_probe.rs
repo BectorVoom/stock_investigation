@@ -26,6 +26,8 @@ pub enum Capture {
 	},
 	/// ENOENT.
 	NotInstalled,
+	/// The `research-provider-spawn` companion is missing (a packaging error).
+	HelperMissing,
 	/// Other spawn/read failure.
 	Failed,
 	/// Fifteen-second timeout.
@@ -40,7 +42,9 @@ pub async fn capture_command(runner: &Arc<dyn ProcessRunner>, mut spec: ProcessS
 		let handle = match runner.run(spec) {
 			Ok(v) => v,
 			Err(e) => {
-				return if e.kind() == std::io::ErrorKind::NotFound {
+				return if crate::process::is_helper_missing(&e) {
+					Capture::HelperMissing
+				} else if e.kind() == std::io::ErrorKind::NotFound {
 					Capture::NotInstalled
 				} else {
 					Capture::Failed
@@ -105,6 +109,13 @@ pub fn unavailable(reason_code: UnavailableReason, detail: &str) -> AgentAvailab
 		detail: truncate(detail, 300).into_owned(),
 	}
 }
+/// Availability for a missing process helper: the CLI itself may be installed.
+pub fn helper_missing() -> AgentAvailability {
+	unavailable(
+		UnavailableReason::ProbeFailed,
+		"Runner process helper research-provider-spawn is missing; reinstall the runner",
+	)
+}
 /// Version probe plus minimum compatibility check.
 pub async fn probe_cli_version(
 	runner: &Arc<dyn ProcessRunner>,
@@ -119,6 +130,7 @@ pub async fn probe_cli_version(
 			UnavailableReason::NotInstalled,
 			&format!("{name} CLI \"{command}\" was not found on PATH"),
 		)),
+		Capture::HelperMissing => Err(helper_missing()),
 		Capture::Exited {
 			code: Some(0),
 			stdout,

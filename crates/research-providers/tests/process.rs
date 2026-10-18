@@ -22,6 +22,7 @@ use tokio_util::sync::CancellationToken;
 
 fn runner() -> UnixProcessRunner {
 	UnixProcessRunner::with_helper(PathBuf::from(env!("CARGO_BIN_EXE_research-provider-spawn")))
+		.unwrap()
 }
 
 fn real_env() -> Environment {
@@ -220,5 +221,85 @@ async fn the_real_opencode_probe_prints_its_descriptor() {
 	println!(
 		"PROBE {}",
 		serde_json::json!({"capabilities": probe.capabilities, "availability": probe.availability})
+	);
+}
+
+fn alive(pid: &str) -> bool {
+	std::process::Command::new("kill")
+		.args(["-0", pid])
+		.status()
+		.unwrap()
+		.success()
+}
+
+/// Review finding: a CLI the wrapped runtime started in its own process group must die
+/// when the runner aborts the external process.
+#[tokio::test]
+async fn aborting_an_external_turn_kills_a_detached_grandchild() {
+	let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+		.join("../..")
+		.canonicalize()
+		.unwrap();
+	let dir = tempfile::tempdir().unwrap();
+	let pid_file = dir.path().join("pid");
+	let mut config: serde_json::Value = serde_json::from_str(&external_config(&root)).unwrap();
+	config[0]["args"] =
+		serde_json::json!([root.join("examples/extensions/externalProcess/detachedChild.ts")]);
+	config[0]["envKeys"] = serde_json::json!(["PIDFILE"]);
+	let configs = parse_external_configs(&config.to_string()).unwrap();
+	let mut env = real_env();
+	env.insert("PIDFILE".to_owned(), pid_file.display().to_string());
+	let runtime = ExternalProcessRuntime::new(
+		configs[0].clone(),
+		environment(Arc::new(runner()), unused_http(), env),
+	);
+	let cancel = CancellationToken::new();
+	let mut context = ctx();
+	context.cancel = cancel.clone();
+	let mut turn = runtime.run(request(), context);
+	let mut pid = String::new();
+	for _ in 0..100 {
+		if let Ok(text) = std::fs::read_to_string(&pid_file) {
+			if text.ends_with('\n') {
+				pid = text.trim().to_owned();
+				break;
+			}
+		}
+		tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+	}
+	assert!(!pid.is_empty(), "the grandchild never started");
+	assert!(alive(&pid));
+	cancel.cancel();
+	while turn.next().await.is_some() {}
+	let _ = turn.close().await;
+	tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+	let survived = alive(&pid);
+	if survived {
+		let _ = std::process::Command::new("kill")
+			.args(["-9", &pid])
+			.status();
+	}
+	assert!(!survived, "detached grandchild survived the abort");
+}
+
+#[tokio::test]
+async fn a_missing_helper_is_reported_distinctly() {
+	let error =
+		UnixProcessRunner::with_helper(PathBuf::from("/nonexistent/research-provider-spawn"))
+			.err()
+			.unwrap();
+	assert!(research_providers::process::is_helper_missing(&error));
+	assert_ne!(error.kind(), std::io::ErrorKind::NotFound);
+}
+
+/// Wave C guard: events written for the wire print integers without a fraction.
+#[test]
+fn wire_events_print_zero_not_zero_point_zero() {
+	let event = AgentEvent::Usage {
+		known_cost_usd: Some(0.0),
+	};
+	assert_eq!(
+		research_contracts::json::to_js_json(&event).unwrap(),
+		r#"{"type":"usage","knownCostUsd":0}"#
 	);
 }
