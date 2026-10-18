@@ -1660,6 +1660,84 @@ async fn no_heartbeat_is_sent_once_a_stop_reason_is_set() {
 	assert_eq!(outcome_names(&calls), ["cancelled"]);
 }
 
+/* ---------- shutdown cancels requests in flight (spec section 12.2) ---------- */
+
+/// A harness whose API client talks to a server that never answers.
+async fn hung_harness() -> (Harness, crate::test_support::FakeWorker) {
+	let worker = crate::test_support::serve(vec![crate::test_support::Reply::Hang]).await;
+	let base = harness(FakeApi::new(ApiScript::default()), Options::default());
+	let mut deps = Arc::try_unwrap(base.deps).ok().unwrap();
+	deps.api = Arc::new(
+		crate::api_client::HttpRunnerApi::new(
+			crate::api_client::HttpRunnerApiOptions::new(
+				worker.url.clone(),
+				format!("rk_{}", "a".repeat(64)),
+				None,
+				None,
+			),
+			Arc::new(TokioSleeper),
+		)
+		.unwrap(),
+	);
+	(
+		Harness {
+			deps: Arc::new(deps),
+			..base
+		},
+		worker,
+	)
+}
+
+#[tokio::test]
+async fn shutdown_cancels_a_claim_in_flight() {
+	let (harness, worker) = hung_harness().await;
+	let shutdown = CancellationToken::new();
+	let trigger = shutdown.clone();
+	tokio::spawn(async move {
+		tokio::time::sleep(Duration::from_millis(150)).await;
+		trigger.cancel();
+	});
+	let started = std::time::Instant::now();
+	let exit = run_runner_loop(
+		&LoopDeps {
+			jobs: Arc::clone(&harness.deps),
+			sleeper: Arc::new(TokioSleeper),
+		},
+		&shutdown,
+	)
+	.await;
+	assert_eq!(exit, RunnerExit::Shutdown);
+	assert!(
+		started.elapsed() < Duration::from_secs(2),
+		"{:?}",
+		started.elapsed()
+	);
+	// One claim reached the hung server; none were sent after shutdown.
+	assert_eq!(worker.requests().len(), 1);
+}
+
+#[tokio::test]
+async fn shutdown_cancels_an_events_request_in_flight_and_completes_nothing() {
+	let (harness, worker) = hung_harness().await;
+	let shutdown = CancellationToken::new();
+	let trigger = shutdown.clone();
+	tokio::spawn(async move {
+		tokio::time::sleep(Duration::from_millis(150)).await;
+		trigger.cancel();
+	});
+	let started = std::time::Instant::now();
+	execute_job(market_job(&[], 20_000), Arc::clone(&harness.deps), shutdown).await;
+	assert!(
+		started.elapsed() < Duration::from_secs(2),
+		"{:?}",
+		started.elapsed()
+	);
+	let seen = worker.requests();
+	assert_eq!(seen.len(), 1);
+	assert!(seen[0].path.ends_with("/events"));
+	assert_eq!(harness.scratch.removed.lock().unwrap().len(), 1);
+}
+
 /* ---------- event queue ---------- */
 
 #[tokio::test]

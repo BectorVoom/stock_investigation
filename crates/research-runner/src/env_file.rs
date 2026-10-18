@@ -20,8 +20,9 @@ pub const ENV_FILE_FLAG: &str = "--env-file-if-exists=";
 /// Why an env file could not be applied.
 #[derive(Debug, thiserror::Error)]
 pub enum EnvFileError {
-	/// The file exists but could not be read (Node exits with an error too).
-	#[error("env file unreadable")]
+	/// The file opened but could not be read, e.g. a directory (Node: "invalid
+	/// format", exit code 9).
+	#[error("invalid format")]
 	Unreadable,
 }
 
@@ -155,20 +156,22 @@ where
 	})
 }
 
-/// Reads and overlays the file. A missing file is silently ignored (the flag
-/// is "if exists"); any other read error is reported.
+/// Reads and overlays the file, like Node 23's `--env-file-if-exists`: a file
+/// that cannot be opened (missing, or no permission) is skipped as if it did
+/// not exist — Node prints "<path> not found. Continuing without it." for that;
+/// this binary prints nothing before `runner_started` — and a file that opens
+/// but cannot be read (a directory) is fatal ("<path>: invalid format", exit 9).
 ///
 /// # Errors
-/// [`EnvFileError::Unreadable`] when an existing file cannot be read.
+/// [`EnvFileError::Unreadable`] when an opened file cannot be read.
 pub fn apply_env_file(process: &mut Env, path: &Path) -> Result<(), EnvFileError> {
-	match std::fs::read(path) {
-		Ok(bytes) => {
-			overlay(process, parse(&String::from_utf8_lossy(&bytes)));
-			Ok(())
-		}
-		Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-		Err(_) => Err(EnvFileError::Unreadable),
-	}
+	let Ok(mut file) = std::fs::File::open(path) else {
+		return Ok(());
+	};
+	let mut bytes = Vec::new();
+	std::io::Read::read_to_end(&mut file, &mut bytes).map_err(|_| EnvFileError::Unreadable)?;
+	overlay(process, parse(&String::from_utf8_lossy(&bytes)));
+	Ok(())
 }
 
 #[cfg(test)]
@@ -221,6 +224,19 @@ mod tests {
 		let mut process = Env::new();
 		assert!(apply_env_file(&mut process, Path::new("/nonexistent/.env")).is_ok());
 		assert!(process.is_empty());
+		// No permission behaves like a missing file (Node 23).
+		let directory = tempfile::tempdir().unwrap();
+		let locked = directory.path().join("locked.env");
+		std::fs::write(&locked, "A=1").unwrap();
+		std::fs::set_permissions(&locked, std::os::unix::fs::PermissionsExt::from_mode(0o000))
+			.unwrap();
+		// (Running as root would read it anyway; the outcome is "skipped or applied", never an error.)
+		assert!(apply_env_file(&mut process, &locked).is_ok());
+		// A directory opens but cannot be read: fatal.
+		assert!(matches!(
+			apply_env_file(&mut process, directory.path()),
+			Err(EnvFileError::Unreadable)
+		));
 		assert_eq!(
 			env_file_argument(["renew", "--env-file-if-exists=/a/b"]).as_deref(),
 			Some("/a/b")

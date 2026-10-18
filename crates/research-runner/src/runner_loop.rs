@@ -54,7 +54,12 @@ pub async fn run_runner_loop(deps: &LoopDeps, shutdown: &CancellationToken) -> R
 		if probed_at_ms
 			.is_none_or(|at| jobs.clock.now_ms().saturating_sub(at) >= REPROBE_INTERVAL_MS)
 		{
-			descriptors = jobs.agents.describe_all().await;
+			// Probing runs CLIs (up to 15 s each): shutdown must not wait for it.
+			let probed = tokio::select! {
+				probed = jobs.agents.describe_all() => probed,
+				() = shutdown.cancelled() => return RunnerExit::Shutdown,
+			};
+			descriptors = probed;
 			probed_at_ms = Some(jobs.clock.now_ms());
 			for descriptor in &descriptors {
 				let (status, reason) = match &descriptor.availability {
@@ -78,13 +83,16 @@ pub async fn run_runner_loop(deps: &LoopDeps, shutdown: &CancellationToken) -> R
 			}
 		}
 
-		let claimed = jobs
-			.api
-			.claim(&ClaimJobRequest {
-				runner_version: RUNNER_VERSION.to_owned(),
-				agents: descriptors.clone(),
-			})
-			.await;
+		let request = ClaimJobRequest {
+			runner_version: RUNNER_VERSION.to_owned(),
+			agents: descriptors.clone(),
+		};
+		// A claim in flight (up to four 20 s attempts plus backoff) is cancelled
+		// by shutdown so the process exits within the launcher's 8 s grace.
+		let claimed = tokio::select! {
+			claimed = jobs.api.claim(&request) => claimed,
+			() = shutdown.cancelled() => return RunnerExit::Shutdown,
+		};
 		let response = match claimed {
 			Ok(response) => response,
 			Err(error) => {

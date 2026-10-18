@@ -11,7 +11,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::composition::{compose, renewal_api};
 use crate::config::{self, Env, RunnerConfig};
-use crate::env_file::{apply_env_file, env_file_argument};
+use crate::env_file::{ENV_FILE_FLAG, apply_env_file, env_file_argument};
 use crate::exit_codes::{RunnerFailure, fault_names, report_failure};
 use crate::runner_loop::{RunnerExit, run_runner_loop};
 
@@ -19,6 +19,8 @@ use crate::runner_loop::{RunnerExit, run_runner_loop};
 const RENEW_EXPIRES_IN_DAYS: u32 = 30;
 /// How long a lingering blocking task may delay the exit.
 const RUNTIME_SHUTDOWN_GRACE: std::time::Duration = std::time::Duration::from_secs(2);
+/// Node's exit code for an env file that cannot be read.
+const ENV_FILE_EXIT: u8 = 9;
 /// Exit status of a process killed by SIGINT / SIGTERM (128 + signal).
 const SIGINT_EXIT: i32 = 130;
 const SIGTERM_EXIT: i32 = 143;
@@ -31,8 +33,7 @@ pub struct ProcessEffects<'a> {
 	pub handle_signals: bool,
 }
 
-/// Why `runner_started` carries `runtime: "rust"` (ADR-0030 C4) plus the
-/// version and the build target.
+/// `runner_started` carries `runtime: "rust"` (ADR-0030 C4) and the version.
 fn log_started(logger: &dyn EventLogger) {
 	logger.info(
 		"runner_started",
@@ -41,14 +42,6 @@ fn log_started(logger: &dyn EventLogger) {
 			(
 				"version",
 				LogValue::from(crate::runner_loop::RUNNER_VERSION),
-			),
-			(
-				"target",
-				LogValue::from(format!(
-					"{}-{}",
-					std::env::consts::ARCH,
-					std::env::consts::OS
-				)),
 			),
 		],
 	);
@@ -99,31 +92,32 @@ fn watch_signals(
 		logger.info("shutdown_requested", &[("signal", LogValue::from(first.0))]);
 		shutdown.cancel();
 		let second = tokio::select! {
-			_ = interrupt.recv() => SIGINT_EXIT,
-			_ = terminate.recv() => SIGTERM_EXIT,
+			_ = interrupt.recv() => (signal_hook::consts::SIGINT, SIGINT_EXIT),
+			_ = terminate.recv() => (signal_hook::consts::SIGTERM, SIGTERM_EXIT),
 		};
-		std::process::exit(second);
+		// Die by the signal like Node's default action; the exit status is only
+		// reached if the emulation itself fails.
+		let _ = signal_hook::low_level::emulate_default_handler(second.0);
+		std::process::exit(second.1);
 	}))
-}
-
-/// Loads the env file named on the command line over the process environment.
-fn merge_env_file(arguments: &[String], env: &mut Env) -> Result<(), RunnerFailure> {
-	let Some(path) = env_file_argument(arguments) else {
-		return Ok(());
-	};
-	apply_env_file(env, std::path::Path::new(&path)).map_err(|error| RunnerFailure::Configuration {
-		problems: vec![error.to_string()],
-	})
 }
 
 /// Runs the runner: returns the process exit code. A panic anywhere is
 /// reported as `runner_crashed {error:"Panic"}` (exit 1), never printed.
 pub fn run_process(
 	arguments: &[String],
-	process_env: Env,
+	mut process_env: Env,
 	logger: &Arc<dyn EventLogger>,
 	effects: ProcessEffects<'_>,
 ) -> u8 {
+	// Node reads the env file before the program starts, so it comes first and
+	// prints nothing of its own; an unreadable file ends the process like Node.
+	if let Some(path) = env_file_argument(arguments)
+		&& let Err(error) = apply_env_file(&mut process_env, std::path::Path::new(&path))
+	{
+		let _ = std::io::stderr().write_all(format!("{path}: {error}\n").as_bytes());
+		return ENV_FILE_EXIT;
+	}
 	log_started(&**logger);
 	// A panic inside the program is a defect that escaped: log its class only.
 	let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -143,11 +137,10 @@ pub fn run_process(
 
 fn run_checked(
 	arguments: &[String],
-	mut env: Env,
+	env: Env,
 	logger: &Arc<dyn EventLogger>,
 	effects: ProcessEffects<'_>,
 ) -> Result<u8, RunnerFailure> {
-	merge_env_file(arguments, &mut env)?;
 	let config =
 		config::load(&env).map_err(|problems| RunnerFailure::Configuration { problems })?;
 	let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -159,6 +152,15 @@ fn run_checked(
 	// the launcher's grace period.
 	runtime.shutdown_timeout(RUNTIME_SHUTDOWN_GRACE);
 	result
+}
+
+/// The command: the first argument that is not a `--env-file-if-exists=` option
+/// (Node strips its own options, so `--env-file-if-exists=X renew` renews).
+fn command(arguments: &[String]) -> Option<&str> {
+	arguments
+		.iter()
+		.map(String::as_str)
+		.find(|argument| !argument.starts_with(ENV_FILE_FLAG))
 }
 
 fn unexpected(name: &str) -> RunnerFailure {
@@ -177,7 +179,7 @@ fn drive(
 ) -> Result<u8, RunnerFailure> {
 	// `renew`: print a fresh token once to stdout for the owner to store; it
 	// is never logged. Any other argument is ignored. No signal handlers.
-	if arguments.first().map(String::as_str) == Some("renew") {
+	if command(arguments) == Some("renew") {
 		let api = renewal_api(config).map_err(|_| unexpected(fault_names::ERROR))?;
 		let renewed = runtime
 			.block_on(async move {
@@ -272,7 +274,7 @@ mod tests {
 	fn runner_started_is_the_first_line_and_names_the_rust_runtime() {
 		let (code, lines, _) = run(&[], Env::new());
 		assert_eq!(code, 2);
-		assert!(lines[0].starts_with(r#"{"at":"2026-10-12T00:00:00.000Z","level":"info","event":"runner_started","runtime":"rust","version":"0.1.0","target":""#));
+		assert!(lines[0].starts_with(r#"{"at":"2026-10-12T00:00:00.000Z","level":"info","event":"runner_started","runtime":"rust","version":"0.1.0"}"#));
 	}
 
 	#[test]
@@ -313,14 +315,13 @@ mod tests {
 	}
 
 	#[test]
-	fn an_unreadable_env_file_is_an_invalid_configuration() {
+	fn an_env_file_that_cannot_be_read_ends_the_process_like_node_with_code_9() {
 		let directory = tempfile::tempdir().unwrap();
 		let flag = format!("--env-file-if-exists={}", directory.path().display());
 		let (code, lines, _) = run(&[&flag], Env::new());
-		assert_eq!(code, 2);
-		assert!(
-			lines[1].contains(r#""event":"invalid_configuration","problem":"env file unreadable""#)
-		);
+		assert_eq!(code, 9);
+		// Nothing is logged: Node fails before the program starts.
+		assert!(lines.is_empty(), "{lines:?}");
 	}
 
 	fn credential(token: &str) -> String {
@@ -344,6 +345,23 @@ mod tests {
 		let request = &worker.requests()[0];
 		assert_eq!(request.path, "/api/v1/runner/credentials/renew");
 		assert_eq!(request.body, r#"{"expiresInDays":30}"#);
+	}
+
+	#[test]
+	fn renew_is_found_before_or_after_the_env_file_option() {
+		for order in [
+			["--env-file-if-exists=/nonexistent/.env", "renew"],
+			["renew", "--env-file-if-exists=/nonexistent/.env"],
+		] {
+			let new_token = "m".repeat(48);
+			let (worker, _runtime) = serve_blocking(vec![json(200, &credential(&new_token))]);
+			let (code, _, stdout) = run(
+				&order,
+				env(&[("RESEARCH_API_URL", &worker.url), ("RUNNER_TOKEN", TOKEN)]),
+			);
+			assert_eq!((code, stdout), (0, format!("{new_token}\n")), "{order:?}");
+			assert_eq!(worker.requests().len(), 1);
+		}
 	}
 
 	#[test]

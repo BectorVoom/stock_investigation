@@ -178,6 +178,9 @@ struct JobCore {
 	logger: Arc<dyn EventLogger>,
 	clock: Arc<dyn Clock>,
 	stop: StopSignal,
+	/// The process's shutdown request: no new request is sent after it, and a
+	/// request in flight is cancelled (the launcher gives 8 s).
+	shutdown: CancellationToken,
 	queue: AsyncMutex<EventQueue>,
 	progress: Progress,
 	/// The latest usage figure, so a later fault still reports consumption (AGT-008).
@@ -256,13 +259,21 @@ impl JobCore {
 	/// Sends queued events in batches until the queue is empty or delivery fails.
 	/// A failed batch stays queued: sequence numbers make a later resend safe.
 	async fn flush_locked(&self, queue: &mut EventQueue) {
-		while !queue.events.is_empty() && self.stop.reason() != Some(StopReason::LeaseLost) {
+		while !queue.events.is_empty()
+			&& self.stop.reason() != Some(StopReason::LeaseLost)
+			&& !self.shutdown.is_cancelled()
+		{
 			let take = queue.events.len().min(MAX_EVENTS_PER_REQUEST);
 			let request = RunnerEventsRequest {
 				lease_generation: self.lease_generation,
 				events: queue.events.iter().take(take).cloned().collect(),
 			};
-			match self.api.events(&self.run_id, &request).await {
+			let sent = tokio::select! {
+				sent = self.api.events(&self.run_id, &request) => sent,
+				// Shutdown cancels the request in flight; the batch stays queued.
+				() = self.shutdown.cancelled() => return,
+			};
+			match sent {
 				Err(error) => {
 					if LEASE_LOST_CODES.contains(&error.code.as_str()) {
 						self.stop.stop(StopReason::LeaseLost);
@@ -310,6 +321,11 @@ impl PipelineReporter for JobReporter {
 	}
 
 	async fn note(&self, text: &str) {
+		// TS DEFECT, ported as is (ADR-0030 "known defects"): an empty note is queued
+		// like any other, the Worker refuses it (`text` is `min(1)`) with
+		// VALIDATION_FAILED, the batch stays queued and every later flush fails
+		// the same way, so no further progress reaches the Worker. The pipelines
+		// never report an empty note today.
 		self.core.progress.note.fetch_add(1, Ordering::Relaxed);
 		let mut queue = self.core.queue.lock().await;
 		// `text.slice(0, 500)`: never a lone surrogate, so at most 500 units at a char boundary.
@@ -571,7 +587,7 @@ fn failed_completion(
 	}
 }
 
-fn new_core(job: &ClaimedJob, deps: &JobDeps) -> Arc<JobCore> {
+fn new_core(job: &ClaimedJob, deps: &JobDeps, shutdown: CancellationToken) -> Arc<JobCore> {
 	let lease = job.lease();
 	Arc::new(JobCore {
 		run_id: lease.run_id.clone(),
@@ -580,6 +596,7 @@ fn new_core(job: &ClaimedJob, deps: &JobDeps) -> Arc<JobCore> {
 		logger: Arc::clone(&deps.logger),
 		clock: Arc::clone(&deps.clock),
 		stop: StopSignal::new(),
+		shutdown,
 		queue: AsyncMutex::new(EventQueue {
 			seq: 0,
 			events: VecDeque::new(),
@@ -598,7 +615,7 @@ fn new_core(job: &ClaimedJob, deps: &JobDeps) -> Arc<JobCore> {
 /// submitted.
 pub async fn execute_job(job: ClaimedJob, deps: Arc<JobDeps>, shutdown: CancellationToken) {
 	let lease = job.lease().clone();
-	let core = new_core(&job, &deps);
+	let core = new_core(&job, &deps, shutdown.clone());
 
 	// Shutdown already requested at job start stops it immediately.
 	if shutdown.is_cancelled() {
@@ -684,13 +701,39 @@ async fn report_fault(job: &ClaimedJob, core: &Arc<JobCore>, fault: Fault) {
 		.to_owned(),
 		true,
 	);
-	let submitted = core.api.complete(&core.run_id, &completion).await;
+	let Some(submitted) =
+		within_shutdown_grace(&core.shutdown, core.api.complete(&core.run_id, &completion)).await
+	else {
+		return;
+	};
 	log_submission(
 		job,
 		core,
 		&completion,
 		submitted.map_err(|error| error.code),
 	);
+}
+
+/// How long a completion already being sent may finish once shutdown starts.
+const SHUTDOWN_GRACE: Duration = Duration::from_secs(5);
+
+/// Runs `call`; when shutdown is requested meanwhile it gets [`SHUTDOWN_GRACE`]
+/// to finish, then it is cancelled (`None`) so the process exits within the
+/// launcher's grace period.
+async fn within_shutdown_grace<T>(
+	shutdown: &CancellationToken,
+	call: impl std::future::Future<Output = T>,
+) -> Option<T> {
+	tokio::pin!(call);
+	tokio::select! {
+		result = &mut call => Some(result),
+		() = shutdown.cancelled() => {
+			tokio::select! {
+				result = &mut call => Some(result),
+				() = tokio::time::sleep(SHUTDOWN_GRACE) => None,
+			}
+		}
+	}
 }
 
 fn progress_counts(core: &JobCore) -> ProgressCounts {
@@ -834,7 +877,18 @@ async fn attempt_job(
 			usage: core.usage(),
 		};
 	}
-	let submitted = deps.api.complete(&core.run_id, &completion).await;
+	let Some(submitted) =
+		within_shutdown_grace(&core.shutdown, deps.api.complete(&core.run_id, &completion)).await
+	else {
+		core.logger.info(
+			"job_abandoned",
+			&[
+				("runId", LogValue::from(core.run_id.as_str())),
+				("reason", LogValue::from("shutdown")),
+			],
+		);
+		return Ok(());
+	};
 	let kept = reason != Some(StopReason::Cancelled)
 		&& matches!(&submitted, Ok(response) if response.state == JobState::Completed);
 	if stored_grant && !kept {
@@ -851,9 +905,9 @@ async fn attempt_job(
 		&& REJECTED_SUBMISSION_CODES.contains(&code.as_str())
 	{
 		// The Worker refused the result itself; record that honestly rather than retrying it.
-		let _ = deps
-			.api
-			.complete(
+		let _ = within_shutdown_grace(
+			&core.shutdown,
+			deps.api.complete(
 				&core.run_id,
 				&failed_completion(
 					core.lease_generation,
@@ -865,8 +919,9 @@ async fn attempt_job(
 					.to_owned(),
 					false,
 				),
-			)
-			.await;
+			),
+		)
+		.await;
 	}
 	Ok(())
 }
@@ -1081,7 +1136,7 @@ pub(crate) struct TestReporter(JobReporter);
 #[cfg(test)]
 pub(crate) fn test_core(deps: &Arc<JobDeps>, job: &ClaimedJob) -> TestReporter {
 	TestReporter(JobReporter {
-		core: new_core(job, deps),
+		core: new_core(job, deps, CancellationToken::new()),
 	})
 }
 

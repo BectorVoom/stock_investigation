@@ -29,12 +29,30 @@ impl TempScratch {
 		Self { root }
 	}
 
-	/// The default root: `$TMPDIR` else `/tmp`, then `research-runner`. Rust's
+	/// The default root below Node's `os.tmpdir()`: `TMPDIR`, then `TMP`, then
+	/// `TEMP` (the first non-empty), else `/tmp`; a trailing slash is dropped
+	/// (`/` itself stays). Rust's
 	/// `temp_dir()` falls back to `confstr` on macOS where Node's `os.tmpdir()`
 	/// does not, and the test environment strips `TMPDIR`.
 	#[must_use]
+	pub fn default_root_from_env(env: &crate::config::Env) -> PathBuf {
+		let tmpdir = ["TMPDIR", "TMP", "TEMP"]
+			.iter()
+			.filter_map(|key| env.get(*key))
+			.find(|value| !value.is_empty());
+		Self::default_root(tmpdir.map(String::as_str))
+	}
+
+	/// As [`TempScratch::default_root_from_env`] for an already chosen directory.
+	#[must_use]
 	pub fn default_root(tmpdir: Option<&str>) -> PathBuf {
 		let base = tmpdir.filter(|value| !value.is_empty()).unwrap_or("/tmp");
+		let base = if base.len() > 1 {
+			base.trim_end_matches('/')
+		} else {
+			base
+		};
+		let base = if base.is_empty() { "/" } else { base };
 		Path::new(base).join("research-runner")
 	}
 }
@@ -92,6 +110,32 @@ mod tests {
 		// Removing twice is fine (force).
 		scratch.remove(&first).await.unwrap();
 		assert!(second.exists());
+	}
+
+	#[test]
+	fn the_default_root_follows_node_tmpdir_order() {
+		let env = |pairs: &[(&str, &str)]| -> crate::config::Env {
+			pairs
+				.iter()
+				.map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+				.collect()
+		};
+		let root = |pairs: &[(&str, &str)]| TempScratch::default_root_from_env(&env(pairs));
+		assert_eq!(
+			root(&[("TMPDIR", "/a/"), ("TMP", "/b")]),
+			Path::new("/a/research-runner")
+		);
+		assert_eq!(
+			root(&[("TMPDIR", ""), ("TMP", "/b")]),
+			Path::new("/b/research-runner")
+		);
+		assert_eq!(root(&[("TEMP", "/c//")]), Path::new("/c/research-runner"));
+		assert_eq!(
+			root(&[("TMP", "/b"), ("TEMP", "/c")]),
+			Path::new("/b/research-runner")
+		);
+		assert_eq!(root(&[]), Path::new("/tmp/research-runner"));
+		assert_eq!(root(&[("TMPDIR", "/")]), Path::new("/research-runner"));
 	}
 
 	#[test]

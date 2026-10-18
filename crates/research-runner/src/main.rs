@@ -17,7 +17,17 @@ fn main() -> ExitCode {
 	std::panic::set_hook(Box::new(|_| {}));
 	// One `write` per line to stderr, which the launcher captures in runner.log.
 	let logger: Arc<dyn EventLogger> = Arc::new(JsonEventLogger::new(StderrSink, SystemClock));
-	let arguments: Vec<String> = std::env::args().skip(1).collect();
+	// `args_os`: a non-UTF-8 argument must not panic before `runner_started`.
+	// It becomes a replacement-character string that matches no option and
+	// no command.
+	let arguments: Vec<String> = std::env::args_os()
+		.skip(1)
+		.map(|argument| {
+			argument
+				.into_string()
+				.unwrap_or_else(|_| "\u{fffd}".to_owned())
+		})
+		.collect();
 	let env: Env = std::env::vars_os()
 		.map(|(key, value)| {
 			(
