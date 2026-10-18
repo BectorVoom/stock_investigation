@@ -1,0 +1,8 @@
+# Test-only leaf for oauth2.googleapis.com and www.googleapis.com, valid until 2126:
+#   openssl req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -keyout leaf.key -out /tmp/leaf.csr -subj "/CN=google test leaf"
+#   openssl x509 -req -in /tmp/leaf.csr -CA ca.pem -CAkey /tmp/ca.key -CAcreateserial -out leaf.pem -days 36500 -extfile leaf.cnf -extensions ext
+[ext]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:oauth2.googleapis.com, DNS:www.googleapis.com

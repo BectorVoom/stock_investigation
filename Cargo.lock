@@ -676,15 +676,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quick-xml"
-version = "0.38.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b66c2058c55a409d601666cffe35f04333cf1013010882cec174a7467cd4e21c"
-dependencies = [
- "memchr",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -846,29 +837,19 @@ name = "research-finance"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "flate2",
- "quick-xml",
- "research-application",
- "research-contracts",
- "research-domain",
- "research-js",
- "research-net",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "research-google"
-version = "0.1.0"
-dependencies = [
- "async-trait",
  "base64",
+ "chrono",
+ "flate2",
+ "futures-util",
+ "hex",
+ "indexmap",
+ "memchr",
+ "regex",
  "research-application",
  "research-contracts",
  "research-domain",
+ "research-effects",
+ "research-feed",
  "research-js",
  "research-net",
  "serde",
@@ -877,6 +858,39 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "research-google"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64",
+ "bytes",
+ "getrandom 0.2.17",
+ "http",
+ "http-body-util",
+ "httparse",
+ "hyper",
+ "hyper-util",
+ "research-application",
+ "research-contracts",
+ "research-domain",
+ "research-effects",
+ "research-finance",
+ "research-js",
+ "research-net",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-rustls",
+ "tokio-util",
+ "url",
 ]
 
 [[package]]
@@ -999,6 +1013,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures-util",
+ "hex",
  "rayon",
  "regex",
  "research-agent-core",

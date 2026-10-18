@@ -1,0 +1,7480 @@
+[
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_1\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_1"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_1"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": false,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_NOT_CONFIGURED",
+				"retryable": false
+			},
+			"states": [],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_not_configured",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": true,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_TIMEOUT",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_auth_timeout",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "error",
+					"error": "access_denied"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_CONSENT_DENIED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_consent_denied",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "error",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "error",
+					"error": "server_error"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_CONSENT_DENIED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_consent_denied",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "error",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": null,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_auth_url_not_delivered",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 4,
+			"browser": [],
+			"googleSleeps": [
+				300000,
+				2000,
+				2000,
+				2000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 2,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_2\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_2"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_2"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 3,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000,
+				2000,
+				2000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_2\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 3,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_2\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_2"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_2"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E",
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 4,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000,
+				2000,
+				2000,
+				2000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_2\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 400,
+						"text": "{\"error\":\"invalid_grant\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_exchange_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_AUTH_EXPIRED"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 429,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_RATE_LIMITED",
+				"retryable": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_exchange_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_RATE_LIMITED"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"a\",\"refresh_token\":\"rt-1\",\"scope\":\"openid\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_SCOPE_MISSING",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_scope_missing",
+					"fields": {
+						"runId": "run_google"
+					}
+				},
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"a\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_SCOPE_MISSING",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_exchange_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_SCOPE_MISSING"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 403,
+						"text": "{\"error\":{\"errors\":[{\"reason\":\"rateLimitExceeded\"}]}}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_RATE_LIMITED",
+				"retryable": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_create_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_RATE_LIMITED"
+					}
+				},
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 500,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 500,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_create_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_REQUEST_FAILED"
+					}
+				},
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"old-rt\",\"calendarId\":\"cal_old\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_old",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_old\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_old"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_old"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_old",
+					"headers": {
+						"authorization": "Bearer at-1"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_old\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"old-rt\",\"calendarId\":\"cal_old\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_old",
+				"answers": [
+					{
+						"status": 404,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_new\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_new"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_new"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_old",
+					"headers": {
+						"authorization": "Bearer at-1"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_new\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"old-rt\",\"calendarId\":\"cal_old\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_old",
+				"answers": [
+					{
+						"status": 500,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_old",
+					"headers": {
+						"authorization": "Bearer at-1"
+					},
+					"body": null
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"old-rt\",\"calendarId\":\"cal_old\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{corrupt",
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_3\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_3"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_3"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_3\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "badState"
+				},
+				{
+					"kind": "noState"
+				},
+				{
+					"kind": "emptyCode"
+				},
+				{
+					"kind": "longCode"
+				},
+				{
+					"kind": "wrongHost"
+				},
+				{
+					"kind": "post"
+				},
+				{
+					"kind": "code",
+					"code": "ok-code"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_4\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_4"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_4"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=ok-code&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "badState",
+					"status": 400
+				},
+				{
+					"kind": "noState",
+					"status": 400
+				},
+				{
+					"kind": "emptyCode",
+					"status": 400
+				},
+				{
+					"kind": "longCode",
+					"status": 400
+				},
+				{
+					"kind": "wrongHost",
+					"status": 404
+				},
+				{
+					"kind": "post",
+					"status": 404
+				},
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_4\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "special &=+/ code"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal 5/é\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal 5/é"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal 5/é"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=special+%26%3D%2B%2F+code&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal 5/é\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					},
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-2\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 401,
+						"text": "{}"
+					},
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_6\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_6"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_6"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-1"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-2",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_6\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					},
+					{
+						"status": 400,
+						"text": "{\"error\":\"invalid_grant\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 401,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_create_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_AUTH_EXPIRED"
+					}
+				},
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-1"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "before",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "authUrl",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:collecting",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:analyzing",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:verifying",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "POST /token",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "POST /calendar/v3/calendars",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:publishing",
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_7\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_7"
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_connected",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_7"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-1\",\"calendarId\":\"cal_7\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "New title",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"Old title\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"}},{\"id\":\"cccccccccccccccccccccccccccccccc\",\"status\":\"confirmed\",\"summary\":\"C\",\"description\":\"desc c\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"}},{\"id\":\"dddddddddddddddddddddddddddddddd\",\"status\":\"cancelled\",\"summary\":\"D\",\"description\":\"\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"}}]}"
+					}
+				]
+			},
+			{
+				"key": "DELETE /calendar/v3/calendars/cal_stored/events/cccccccccccccccccccccccccccccccc",
+				"answers": [
+					{
+						"status": 204,
+						"text": ""
+					}
+				]
+			},
+			{
+				"key": "PUT /calendar/v3/calendars/cal_stored/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_stored",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 1,
+				"updated": 1,
+				"deleted": 1,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_stored",
+						"inserted": 1,
+						"updated": 1,
+						"deleted": 1,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "DELETE",
+					"path": "/calendar/v3/calendars/cal_stored/events/cccccccccccccccccccccccccccccccc",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "PUT",
+					"path": "/calendar/v3/calendars/cal_stored/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"New title\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"status\":\"confirmed\",\"summary\":\"B\",\"description\":\"desc b\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 409,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "PUT /calendar/v3/calendars/cal_stored/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_stored",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 0,
+				"updated": 1,
+				"deleted": 0,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_stored",
+						"inserted": 0,
+						"updated": 1,
+						"deleted": 0,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "PUT",
+					"path": "/calendar/v3/calendars/cal_stored/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 404,
+						"text": "{}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_made\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_made/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_made",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 1,
+				"updated": 0,
+				"deleted": 0,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_made",
+						"inserted": 1,
+						"updated": 0,
+						"deleted": 0,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_made/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_made\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-17T03:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"retryable": false
+			},
+			"states": [
+				"planning"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_auth_expired",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{bad",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"retryable": false
+			},
+			"states": [
+				"planning"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_auth_expired",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{bad",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": false,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_NOT_CONFIGURED",
+				"retryable": false
+			},
+			"states": [],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_not_configured",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": null,
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_stored",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 0,
+				"updated": 0,
+				"deleted": 0,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_stored",
+						"inserted": 0,
+						"updated": 0,
+						"deleted": 0,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "dup",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_plan_failed",
+					"fields": {
+						"runId": "run_google"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 400,
+						"text": "{\"error\":\"invalid_grant\"}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_AUTH_EXPIRED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_refresh_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_AUTH_EXPIRED"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": []
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 429,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_RATE_LIMITED",
+				"retryable": true
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [
+				{
+					"level": "warn",
+					"event": "google_refresh_failed",
+					"fields": {
+						"runId": "run_google",
+						"code": "GOOGLE_RATE_LIMITED"
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 500,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 429,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_RATE_LIMITED",
+				"retryable": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\"}"
+					},
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-2\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 401,
+						"text": "{}"
+					},
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-synced",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_stored",
+				"desiredDigest": "abababababababababababababababababababababababababababababababab",
+				"inserted": 1,
+				"updated": 0,
+				"deleted": 0,
+				"unchanged": 0
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_synced",
+					"fields": {
+						"runId": "run_google",
+						"calendarId": "cal_stored",
+						"inserted": 1,
+						"updated": 0,
+						"deleted": 0,
+						"unchanged": 0
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-1"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-1"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-2",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "before",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:collecting",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:analyzing",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "POST /token",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "GET /calendar/v3/calendars/cal_stored",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "GET /calendar/v3/calendars/cal_stored/events",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:verifying",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "POST /calendar/v3/calendars/cal_stored/events",
+		"action": "sync",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "sync",
+			"calendarId": "cal_1",
+			"desiredDigest": "abababababababababababababababababababababababababababababababab",
+			"events": [
+				{
+					"id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					"summary": "A",
+					"description": "desc a",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				},
+				{
+					"id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+					"summary": "B",
+					"description": "desc b",
+					"startDate": "2026-10-29",
+					"endDate": "2026-10-30",
+					"privateProperties": {
+						"researchWorkspace": "earnings",
+						"stockId": "us:AAPL",
+						"periodKey": "2026-q4"
+					},
+					"sourceTitle": "Finnhub",
+					"sourceUrl": "https://finnhub.io/"
+				}
+			]
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-s\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_stored\"}"
+					}
+				]
+			},
+			{
+				"key": "GET /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"items\":[]}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars/cal_stored/events",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=refresh_token&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&refresh_token=rt-stored"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "GET",
+					"path": "/calendar/v3/calendars/cal_stored/events?privateExtendedProperty=researchWorkspace%3Dearnings&showDeleted=true&maxResults=250",
+					"headers": {
+						"authorization": "Bearer at-s"
+					},
+					"body": null
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars/cal_stored/events",
+					"headers": {
+						"authorization": "Bearer at-s",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"status\":\"confirmed\",\"summary\":\"A\",\"description\":\"desc a\",\"start\":{\"date\":\"2026-10-29\"},\"end\":{\"date\":\"2026-10-30\"},\"extendedProperties\":{\"private\":{\"researchWorkspace\":\"earnings\",\"stockId\":\"us:AAPL\",\"periodKey\":\"2026-q4\"}},\"source\":{\"title\":\"Finnhub\",\"url\":\"https://finnhub.io/\"}}"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				},
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 400,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"error": {
+							"code": "NETWORK_ERROR",
+							"detail": "x"
+						}
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
+			"states": [
+				"planning",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{corrupt",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
+			"states": [
+				"planning",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "before",
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "state:collecting",
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
+			"states": [
+				"planning",
+				"collecting"
+			],
+			"logs": [],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": {
+				"text": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+				"mode": "600"
+			}
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "POST /revoke",
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": "before",
+		"action": "disconnect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [],
+		"output": {
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
+			"states": [
+				"planning",
+				"analyzing",
+				"verifying",
+				"publishing"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_disconnected",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "discard",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": null,
+			"states": [],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{\"version\":1,\"refreshToken\":\"rt-stored\",\"calendarId\":\"cal_stored\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"savedAt\":\"2026-10-01T00:00:00.000Z\"}\n",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "discard",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 500,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"output": {
+			"completion": null,
+			"states": [],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-stored"
+				}
+			],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "discard",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [],
+		"output": {
+			"completion": null,
+			"states": [],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	},
+	{
+		"clientConfigured": true,
+		"tokenFile": "{corrupt",
+		"browser": {
+			"kind": "none"
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "discard",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "disconnect"
+		},
+		"routes": [],
+		"output": {
+			"completion": null,
+			"states": [],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": false
+					}
+				}
+			],
+			"requests": [],
+			"sentUrls": [],
+			"signIn": null,
+			"attempts": 0,
+			"browser": [],
+			"googleSleeps": [],
+			"paceSleeps": [],
+			"paceCalls": [],
+			"tokenFile": null
+		}
+	}
+]
