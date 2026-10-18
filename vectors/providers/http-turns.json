@@ -1,0 +1,2360 @@
+[
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": 0
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": false,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "low",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"low\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "medium",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"medium\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"provider\":\"example\",\"error\":{\"code\":502,\"message\":\"Provider disconnected\",\"metadata\":{\"error_type\":\"provider_unavailable\"}},\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"error\"}]}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Partial"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"OK\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":1,\"total_tokens\":13}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\", wor\"},\"finish_reason\":null}]}\n\n: OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ld — 日本語\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\"},\"finish_reason\":\"stop\"}]}\n\ndata: {\"id\":\"gen-doc-example\",\"object\":\"chat.completion.chunk\",\"model\":\"example/model\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":6,\"total_tokens\":18,\"cost\":0.00042,\"cost_details\":{\"upstream_inference_cost\":null},\"prompt_tokens_details\":{\"cached_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0}}}\n\ndata: [DONE]\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "Hello"
+				},
+				{
+					"type": "text.delta",
+					"text": ", wor"
+				},
+				{
+					"type": "text.delta",
+					"text": "ld — 日本語"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3f3b866e43aa79bc"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": ": OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1792201335-amI9KRCwI4HRIU6r0UOe\",\"object\":\"chat.completion.chunk\",\"created\":1792201335,\"model\":\"nvidia/nemotron-3-ultra-550b-a55b:free\",\"provider\":\"Nvidia\",\"choices\":[],\"error\":{\"code\":503,\"message\":\"Upstream error from Nvidia: Service temporarily overloaded\",\"metadata\":{\"error_type\":\"provider_overloaded\"}}}\n\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}]}\r\n\r\ndata:[DONE]\r\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{}\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_INVALID",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"finish_reason\":\"length\"}]}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_OUTPUT_TRUNCATED",
+					"retryable": false
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":null}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":-1}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "text.delta",
+					"text": "OK"
+				},
+				{
+					"type": "usage",
+					"knownCostUsd": null
+				},
+				{
+					"type": "completed"
+				}
+			]
+		}
+	},
+	{
+		"input": {
+			"free": true,
+			"effort": "high",
+			"body": "data:{\"choices\":[{\"delta\":{\"content\":\"OK\"},\"finish_reason\":\"stop\"}],\"usage\":{\"cost\":0.5}}\ndata:[DONE]\n"
+		},
+		"output": {
+			"calls": [
+				{
+					"url": "https://openrouter.ai/api/v1/chat/completions",
+					"method": "POST",
+					"headers": {
+						"Authorization": "Bearer sk-or-v1-test-key",
+						"Content-Type": "application/json",
+						"Accept": "text/event-stream"
+					},
+					"body": "{\"model\":\"example/model:free\",\"messages\":[{\"role\":\"user\",\"content\":\"PROMPT-MARKER: reply with the single word OK.\"}],\"stream\":true,\"max_completion_tokens\":8192,\"usage\":{\"include\":true},\"reasoning\":{\"effort\":\"high\"}}",
+					"redirect": "error"
+				}
+			],
+			"events": [
+				{
+					"type": "usage",
+					"knownCostUsd": {
+						"doubleBits": "3fe0000000000000"
+					}
+				},
+				{
+					"type": "failed",
+					"code": "PROVIDER_FREE_MODEL_CHARGED",
+					"retryable": false
+				}
+			]
+		}
+	}
+]
