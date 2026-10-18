@@ -812,8 +812,10 @@ dependencies = [
 name = "research-effects"
 version = "0.1.0"
 dependencies = [
+ "rayon",
  "research-js",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
