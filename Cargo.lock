@@ -774,8 +774,12 @@ dependencies = [
  "research-agent-core",
  "research-contracts",
  "research-domain",
+ "research-effects",
  "research-js",
  "research-widget-grid",
+ "serde",
+ "serde_json",
+ "thiserror",
  "tokio",
  "tokio-util",
 ]

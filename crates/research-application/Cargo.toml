@@ -13,10 +13,15 @@ research-domain = { workspace = true }
 research-contracts = { workspace = true }
 research-agent-core = { workspace = true }
 research-widget-grid = { workspace = true }
+research-effects = { workspace = true }
 rayon = { workspace = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 tokio-util = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true
