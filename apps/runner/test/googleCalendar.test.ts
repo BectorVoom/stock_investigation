@@ -938,6 +938,55 @@ describe("sync execution", () => {
 		}
 	});
 
+	it("syncs the calendar the claim names, not the token file's", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, { access_token: ACCESS_TOKEN }),
+			"GET /calendar/v3/calendars/cal_claim": json(200, { id: "cal_claim" }),
+			"GET /calendar/v3/calendars/cal_claim/events": json(200, { items: [] }),
+			"POST /calendar/v3/calendars/cal_claim/events": json(200, { id: "a".repeat(32) }),
+		});
+		try {
+			await storedToken(harness);
+			const completion = await executeGoogleCalendar(
+				{ ...syncJob([BODY_A]), calendarId: "cal_claim" },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({
+				outcome: "google-calendar-synced",
+				calendarId: "cal_claim",
+				inserted: 1,
+			});
+			expect(harness.httpCalls.some((call) => call.path.includes("cal_1"))).toBe(false);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("falls back to the token file's calendar when the claim carries none (null)", async () => {
+		const harness = await googleHarness({
+			...managedRoutes(),
+			"POST /calendar/v3/calendars/cal_1/events": json(200, { id: "b".repeat(32) }),
+			"PUT /calendar/v3/calendars/cal_1/events/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": json(200, {}),
+			"DELETE /calendar/v3/calendars/cal_1/events/cccccccccccccccccccccccccccccccc": json(200, {}),
+		});
+		try {
+			await storedToken(harness);
+			const completion = await executeGoogleCalendar(
+				{ ...syncJob([BODY_A]), calendarId: null },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({ outcome: "google-calendar-synced", calendarId: "cal_1" });
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
 	it("fails auth-expired with no token file, or on invalid_grant", async () => {
 		const missing = await googleHarness({});
 		try {
@@ -1039,6 +1088,31 @@ describe("disconnect execution", () => {
 			);
 			expect(completion).toMatchObject({ outcome: "google-calendar-disconnected", revoked: false });
 			expect(await readGoogleTokenFile(harness.tokenFile)).toBe(null);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("disconnect without a token file", () => {
+	it("walks every leased state in order, like any other job", async () => {
+		const harness = await googleHarness({});
+		try {
+			const completion = await executeGoogleCalendar(
+				{ ...CONNECT, action: "disconnect" },
+				harness.env,
+				never,
+				stubReporter(harness),
+				async () => true,
+			);
+			expect(completion).toMatchObject({ outcome: "google-calendar-disconnected", revoked: false });
+			expect(harness.states).toEqual([
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying",
+				"publishing",
+			]);
 		} finally {
 			await rm(harness.dir, { recursive: true, force: true });
 		}

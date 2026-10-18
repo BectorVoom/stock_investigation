@@ -1295,7 +1295,7 @@ async function flowCases(): Promise<FlowCase[]> {
 	}
 	// Sync.
 	const syncJob = (events: unknown[], extra: { [key: string]: unknown } = {}) =>
-		jobOf("sync", { calendarId: "cal_1", desiredDigest: "ab".repeat(32), events, ...extra });
+		jobOf("sync", { calendarId: "cal_stored", desiredDigest: "ab".repeat(32), events, ...extra });
 	const stored = tokenRecordText("rt-stored", "cal_stored");
 	const syncRoutes = (over: { [key: string]: HttpAnswer[] }) =>
 		routes({
@@ -1373,6 +1373,18 @@ async function flowCases(): Promise<FlowCase[]> {
 				"GET /calendar/v3/calendars/cal_stored": [{ status: 404, text: "{}" }],
 				"POST /calendar/v3/calendars": [OK_CAL("cal_made")],
 				"POST /calendar/v3/calendars/cal_made/events": [OK_EMPTY],
+			}),
+		),
+	);
+	// F7: the claim's calendar id wins over the token file's.
+	cases.push(
+		await sync(
+			syncJob([BODY("a", "A")], { calendarId: "cal_claim" }),
+			{ tokenFile: stored },
+			syncRoutes({
+				"GET /calendar/v3/calendars/cal_claim": [OK_CAL("cal_claim")],
+				"GET /calendar/v3/calendars/cal_claim/events": [existingList([])],
+				"POST /calendar/v3/calendars/cal_claim/events": [OK_EMPTY],
 			}),
 		),
 	);
