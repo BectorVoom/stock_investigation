@@ -548,3 +548,270 @@ fn prompt_cases(cases: &Value) -> usize {
 	}
 	cases.len()
 }
+
+/// Native timing scenarios: the transcript vectors cannot carry real timers, so
+/// the wall-clock stop and run cancellation of a tool in flight are proved
+/// here with tokio's paused clock (ADR-0030 C3: the losing tool is dropped).
+mod in_flight_tool {
+	use super::*;
+	use research_agent_core::{runtime::AgentRunContext, tools::ToolFailure};
+	use research_contracts::agent::AgentEvent;
+	use std::sync::atomic::AtomicBool;
+
+	struct FixedClock;
+	impl Clock for FixedClock {
+		fn now_ms(&self) -> i64 {
+			1_792_195_200_000
+		}
+		fn now_iso(&self) -> String {
+			"2026-10-17T00:00:00.000Z".to_owned()
+		}
+	}
+
+	/// Replies to the planning prompt with one call to the slow tool.
+	struct PlanningAgent;
+	#[async_trait]
+	impl AgentRuntime for PlanningAgent {
+		fn agent_id(&self) -> &str {
+			"scripted"
+		}
+		fn display_name(&self) -> &str {
+			"Scripted"
+		}
+		fn cost_model(&self) -> CostModel {
+			CostModel::PlanLimited
+		}
+		fn tool_isolation(&self) -> ToolIsolation {
+			ToolIsolation::Enforced
+		}
+		async fn probe(&self) -> AgentProbe {
+			AgentProbe {
+				availability: AgentAvailability::Available,
+				capabilities: AgentCapabilities {
+					supported: Vec::new(),
+					model: None,
+					models: None,
+				},
+			}
+		}
+		fn run(&self, _request: AgentRequest, _context: AgentRunContext) -> AgentTurn {
+			AgentTurn::from_events(vec![
+				AgentEvent::TextDelta {
+					text: r#"{"toolCalls":[{"toolId":"slow.read","args":{}}],"done":true}"#
+						.to_owned(),
+				},
+				AgentEvent::Completed,
+			])
+		}
+	}
+
+	/// Never returns; records that its future was dropped (cancelled).
+	struct SlowTool {
+		meta: ToolMeta,
+		started: Arc<AtomicBool>,
+		dropped: Arc<AtomicBool>,
+	}
+	struct DropFlag(Arc<AtomicBool>);
+	impl Drop for DropFlag {
+		fn drop(&mut self) {
+			self.0.store(true, Ordering::SeqCst);
+		}
+	}
+	#[async_trait]
+	impl Tool for SlowTool {
+		fn meta(&self) -> &ToolMeta {
+			&self.meta
+		}
+		fn parse_args(&self, args: &Value) -> Option<Value> {
+			Some(args.clone())
+		}
+		async fn execute(
+			&self,
+			_args: Value,
+			_context: ToolContext,
+		) -> Result<ToolOutput, ToolFailure> {
+			let _flag = DropFlag(Arc::clone(&self.dropped));
+			self.started.store(true, Ordering::SeqCst);
+			std::future::pending().await
+		}
+	}
+
+	struct Fixture {
+		input: ResearchPipelineInput,
+		deps: ResearchPipelineDeps,
+		trace: Trace,
+		started: Arc<AtomicBool>,
+		dropped: Arc<AtomicBool>,
+	}
+
+	fn fixture(max_wall_clock_ms: f64, tool_timeout_ms: u64) -> Fixture {
+		let job = research_js::json::parse(&format!(
+			r#"{{"workspaceId":"ws_t","question":"Which storage products will see demand growth?","agentId":"scripted","model":null,"effort":"medium","horizonYears":4,"markets":["US"],"budget":{{"maxAgentSteps":6,"maxToolCalls":10,"maxWallClockMs":{max_wall_clock_ms},"maxInputBytes":400000,"maxSpendUsd":null}},"webAccess":"off"}}"#
+		))
+		.unwrap();
+		let trace = Trace::default();
+		let started = Arc::new(AtomicBool::new(false));
+		let dropped = Arc::new(AtomicBool::new(false));
+		let tool = SlowTool {
+			meta: ToolMeta {
+				tool_id: "slow.read",
+				version: "1",
+				description: "Never returns.",
+				args_hint: "{}",
+				timeout_ms: tool_timeout_ms,
+				permission: "research-read",
+				cost_category: ToolCostCategory::Free,
+				side_effect: ToolSideEffect::None,
+				network_allowlist: ToolNetworkAllowlist::None,
+			},
+			started: Arc::clone(&started),
+			dropped: Arc::clone(&dropped),
+		};
+		Fixture {
+			input: ResearchPipelineInput {
+				run_id: "run_t".to_owned(),
+				request: request(&job),
+				sources: Vec::new(),
+				workspace_components: Vec::new(),
+				conversation_context: Vec::new(),
+				prior_usage: ResourceUsage::default(),
+				cancel: tokio_util::sync::CancellationToken::new(),
+				allow_unverified_tool_isolation: false,
+			},
+			deps: ResearchPipelineDeps {
+				agent: Arc::new(PlanningAgent),
+				tools: ToolRegistry::new(vec![Arc::new(tool) as Arc<dyn Tool>]).unwrap(),
+				clock: Arc::new(FixedClock),
+				reporter: Arc::new(Reporter(trace.clone())),
+				new_fence_token: Arc::new(|| "fence".to_owned()),
+				scratch_directory: None,
+			},
+			trace,
+			started,
+			dropped,
+		}
+	}
+
+	fn tool_events(trace: &Trace) -> Vec<(String, String)> {
+		trace
+			.0
+			.lock()
+			.unwrap()
+			.iter()
+			.filter(|event| field(event, "type") == "tool")
+			.map(|event| {
+				(
+					field(event, "outcome").to_owned(),
+					field(event, "detail").to_owned(),
+				)
+			})
+			.collect()
+	}
+
+	/// The run's wall-clock budget ends a tool that is still running: the tool is
+	/// dropped, the stop is reported as MAX_WALL_CLOCK (the tool's own 5-minute
+	/// limit would have fired much later), and nothing is retried.
+	#[tokio::test(start_paused = true)]
+	async fn the_run_deadline_cancels_a_tool_in_flight() {
+		let Fixture {
+			input,
+			deps,
+			trace,
+			started,
+			dropped,
+		} = fixture(30_000.0, 300_000);
+		let outcome = run_research_pipeline(input, deps).await.unwrap();
+		assert!(started.load(Ordering::SeqCst));
+		assert!(
+			dropped.load(Ordering::SeqCst),
+			"tool future was not dropped"
+		);
+		assert_eq!(
+			tool_events(&trace),
+			[("failed".to_owned(), "MAX_WALL_CLOCK".to_owned())]
+		);
+		match outcome {
+			PipelineOutcome::Failed {
+				failure_code,
+				failure_detail,
+				retryable,
+				..
+			} => {
+				assert_eq!(failure_code, "ALL_TOOL_CALLS_FAILED");
+				assert_eq!(failure_detail.as_deref(), Some("MAX_WALL_CLOCK"));
+				assert!(!retryable);
+			}
+			other => panic!("unexpected outcome {other:?}"),
+		}
+	}
+
+	/// The tool's own time limit wins when it is shorter than the run's budget:
+	/// TOOL_TIMEOUT is an ordinary retryable-code tool failure, not a run stop.
+	#[tokio::test(start_paused = true)]
+	async fn the_tool_timeout_is_a_tool_failure_and_drops_the_tool() {
+		let Fixture {
+			input,
+			deps,
+			trace,
+			dropped,
+			..
+		} = fixture(600_000.0, 5_000);
+		let outcome = run_research_pipeline(input, deps).await.unwrap();
+		assert!(
+			dropped.load(Ordering::SeqCst),
+			"tool future was not dropped"
+		);
+		assert_eq!(
+			tool_events(&trace),
+			[("failed".to_owned(), "TOOL_TIMEOUT".to_owned())]
+		);
+		match outcome {
+			PipelineOutcome::Failed {
+				failure_code,
+				failure_detail,
+				..
+			} => {
+				assert_eq!(failure_code, "ALL_TOOL_CALLS_FAILED");
+				assert_eq!(failure_detail.as_deref(), Some("TOOL_TIMEOUT"));
+			}
+			other => panic!("unexpected outcome {other:?}"),
+		}
+	}
+
+	/// Owner cancellation while a tool runs aborts and drops the tool. As in the
+	/// TypeScript, a one-call plan then ends through the zero-evidence rule
+	/// (`ALL_TOOL_CALLS_FAILED` / `TOOL_ABORTED`): cancellation is only noticed
+	/// at the next call or turn, and the lease holder discards the result.
+	#[tokio::test(start_paused = true)]
+	async fn cancelling_the_run_aborts_a_tool_in_flight() {
+		let Fixture {
+			input,
+			deps,
+			started,
+			dropped,
+			..
+		} = fixture(600_000.0, 300_000);
+		let cancel = input.cancel.clone();
+		let run = tokio::spawn(run_research_pipeline(input, deps));
+		while !started.load(Ordering::SeqCst) {
+			tokio::task::yield_now().await;
+		}
+		cancel.cancel();
+		let outcome = run.await.unwrap().unwrap();
+		assert!(
+			dropped.load(Ordering::SeqCst),
+			"tool future was not dropped"
+		);
+		match outcome {
+			PipelineOutcome::Failed {
+				failure_code,
+				failure_detail,
+				..
+			} => {
+				assert_eq!(failure_code, "ALL_TOOL_CALLS_FAILED");
+				assert_eq!(failure_detail.as_deref(), Some("TOOL_ABORTED"));
+			}
+			other => panic!("unexpected outcome {other:?}"),
+		}
+	}
+}
