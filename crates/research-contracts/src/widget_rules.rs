@@ -6,6 +6,7 @@
 use rayon::prelude::*;
 use research_js::json::Value;
 use serde::Serialize;
+use std::collections::{HashMap, HashSet};
 
 use crate::json::to_js_json;
 use crate::notebook::{NotebookWidget, limits};
@@ -16,6 +17,7 @@ use crate::widgets::{
 use crate::zod::Cx;
 
 /// A chart's content fields, borrowed.
+#[derive(Clone, Copy)]
 struct ChartView<'a> {
 	unit: &'a str,
 	series: &'a [ChartSeries],
@@ -51,23 +53,21 @@ fn json_text<T: Serialize + ?Sized>(value: &T) -> String {
 	to_js_json(value).unwrap_or_default()
 }
 
-/// `chartMeaningKey`: unit, both axis titles and the x kind.
-fn chart_meaning_key(chart: &ChartView<'_>) -> String {
-	json_text(&(
-		chart.unit,
-		chart.y_label,
-		chart.x_label,
-		chart.x_kind.unwrap_or("text"),
-	))
+/// `chartMeaningKey` equality: unit, both axis titles and the x kind. Comparing the
+/// fields is the same relation as comparing their JSON texts (an absent label is
+/// `null`; `-0` and `0` print alike and compare equal) without building the strings.
+fn same_meaning(a: &ChartView<'_>, b: &ChartView<'_>) -> bool {
+	a.unit == b.unit
+		&& a.y_label == b.y_label
+		&& a.x_label == b.x_label
+		&& a.x_kind.unwrap_or("text") == b.x_kind.unwrap_or("text")
 }
 
-/// `chartContentKey`: the meaning, the series and the citations.
-fn chart_content_key(chart: &ChartView<'_>) -> String {
-	json_text(&(
-		chart_meaning_key(chart),
-		chart.series,
-		chart.source_ids.unwrap_or_default(),
-	))
+/// `chartContentKey` equality: the meaning, the series and the citations.
+fn same_content(a: &ChartView<'_>, b: &ChartView<'_>) -> bool {
+	same_meaning(a, b)
+		&& a.source_ids.unwrap_or_default() == b.source_ids.unwrap_or_default()
+		&& a.series == b.series
 }
 
 /// `pointKey`.
@@ -85,30 +85,22 @@ fn point_key(series_name: &str, occurrence: usize, point: &ChartPoint) -> String
 
 /// Counts label occurrences within one series, as the TypeScript `seen` map does.
 fn occurrences<'a>(points: &'a [ChartPoint]) -> impl Iterator<Item = (usize, &'a ChartPoint)> {
-	let mut seen: Vec<(&'a str, usize)> = Vec::new();
+	let mut seen: HashMap<&'a str, usize> = HashMap::with_capacity(points.len());
 	points.iter().map(move |point| {
-		let occurrence = match seen.iter_mut().find(|(label, _)| *label == point.x) {
-			Some((_, count)) => {
-				let occurrence = *count;
-				*count += 1;
-				occurrence
-			}
-			None => {
-				seen.push((&point.x, 1));
-				0
-			}
-		};
+		let count = seen.entry(point.x.as_str()).or_insert(0);
+		let occurrence = *count;
+		*count += 1;
 		(occurrence, point)
 	})
 }
 
 /// `provenanceKeys`: every provenance-carrying point, keyed.
-fn provenance_keys(chart: &ChartView<'_>) -> Vec<String> {
-	let mut keys = Vec::new();
+fn provenance_keys(chart: &ChartView<'_>) -> HashSet<String> {
+	let mut keys = HashSet::new();
 	for entry in chart.series {
 		for (occurrence, point) in occurrences(&entry.points) {
 			if point.has_provenance() {
-				keys.push(point_key(&entry.name, occurrence, point));
+				keys.insert(point_key(&entry.name, occurrence, point));
 			}
 		}
 	}
@@ -222,16 +214,13 @@ pub fn with_earned_chart_provenance(
 	next: Vec<WidgetCore>,
 	previous: &[WidgetCore],
 ) -> Vec<WidgetCore> {
-	let mut before: Vec<(&str, ChartView<'_>)> = Vec::new();
-	let mut contents: Vec<String> = Vec::new();
+	let mut before: HashMap<&str, ChartView<'_>> = HashMap::new();
+	let mut contents: Vec<ChartView<'_>> = Vec::new();
 	for widget in previous {
 		if let Some(view) = chart_view(&widget.content) {
-			contents.push(chart_content_key(&view));
+			contents.push(view);
 			// `Map.set`: a later widget with the same id replaces the earlier one.
-			match before.iter_mut().find(|(id, _)| *id == widget.widget_id) {
-				Some(entry) => entry.1 = view,
-				None => before.push((&widget.widget_id, view)),
-			}
+			before.insert(widget.widget_id.as_str(), view);
 		}
 	}
 	next.into_iter()
@@ -239,21 +228,16 @@ pub fn with_earned_chart_provenance(
 			let Some(view) = chart_view(&widget.content) else {
 				return widget;
 			};
-			if contents.contains(&chart_content_key(&view)) {
+			if contents.iter().any(|seen| same_content(seen, &view)) {
 				return WidgetCore {
 					content: reconciled(widget.content),
 					..widget
 				};
 			}
-			let old = before
-				.iter()
-				.find(|(id, _)| *id == widget.widget_id)
-				.map(|(_, view)| view);
-			let kept: Vec<String> = match old {
-				Some(old) if chart_meaning_key(old) == chart_meaning_key(&view) => {
-					provenance_keys(old)
-				}
-				_ => Vec::new(),
+			let old = before.get(widget.widget_id.as_str());
+			let kept: HashSet<String> = match old {
+				Some(old) if same_meaning(old, &view) => provenance_keys(old),
+				_ => HashSet::new(),
 			};
 			let old_ids: Vec<&str> = old
 				.and_then(|old| old.source_ids)

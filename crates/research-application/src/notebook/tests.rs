@@ -489,9 +489,6 @@ fn benchmark_input() -> TestResult<(Notebook, Vec<Value>)> {
 }
 
 #[test]
-// Known miss (measured under load 29): `with_earned_chart_provenance` in research-contracts
-// (not owned by this crate) builds chart content keys serially and costs ~17 ms of the
-// commands case; it needs a rayon pass over chart keys there.
 #[ignore = "timing guard: run explicitly on an idle machine with --release"]
 fn notebook_performance_budgets() -> TestResult {
 	use std::{hint::black_box, time::Instant};
@@ -512,6 +509,15 @@ fn notebook_performance_budgets() -> TestResult {
 	let apply = || {
 		let mut id = 0;
 		apply_notebook_commands(&room, &commands, &mut || {
+			id += 1;
+			Some(format!("nb_new_{id}"))
+		})
+		.unwrap()
+	};
+	// The runner's path: the turn discards the widgets, so it stops after the capacity check.
+	let check = || {
+		let mut id = 0;
+		check_notebook_commands(&room, &commands, &mut || {
 			id += 1;
 			Some(format!("nb_new_{id}"))
 		})
@@ -543,11 +549,14 @@ fn notebook_performance_budgets() -> TestResult {
 			&notebook.widgets,
 		));
 	});
-	let commands_ok = measure("12 notebook commands", 10.0, &mut || {
+	let commands_ok = measure("12 notebook commands (runner check)", 6.0, &mut || {
+		black_box(check());
+	});
+	let apply_ok = measure("12 notebook commands (with provenance)", 10.0, &mut || {
 		black_box(apply());
 	});
 	assert!(
-		prompt_ok && bytes_ok && commands_ok,
+		prompt_ok && bytes_ok && commands_ok && apply_ok,
 		"notebook performance budget exceeded"
 	);
 	Ok(())
