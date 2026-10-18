@@ -75,3 +75,82 @@ impl AgentRegistry {
 		.await
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::runtime::{AgentRunContext, AgentTurn};
+	use async_trait::async_trait;
+	use research_contracts::agent::{AgentRequest, CostModel, ToolIsolation};
+
+	struct Fake {
+		id: &'static str,
+		panics: bool,
+	}
+
+	#[async_trait]
+	impl AgentRuntime for Fake {
+		fn agent_id(&self) -> &str {
+			self.id
+		}
+		fn display_name(&self) -> &str {
+			"Fake"
+		}
+		fn cost_model(&self) -> CostModel {
+			CostModel::PlanLimited
+		}
+		fn tool_isolation(&self) -> ToolIsolation {
+			ToolIsolation::Enforced
+		}
+		async fn probe(&self) -> AgentProbe {
+			assert!(!self.panics, "probe exploded");
+			AgentProbe {
+				capabilities: AgentCapabilities {
+					supported: vec![],
+					model: None,
+					models: None,
+				},
+				availability: AgentAvailability::Available,
+			}
+		}
+		fn run(&self, _: AgentRequest, _: AgentRunContext) -> AgentTurn {
+			AgentTurn::from_events(vec![])
+		}
+	}
+
+	fn fake(id: &'static str, panics: bool) -> Arc<dyn AgentRuntime> {
+		Arc::new(Fake { id, panics })
+	}
+
+	#[test]
+	fn duplicate_ids_are_refused_and_order_is_kept() {
+		let error = AgentRegistry::new(vec![fake("a-one", false), fake("a-one", false)]).err();
+		assert_eq!(error, Some(DuplicateAgentId("a-one".to_owned())));
+		let registry = AgentRegistry::new(vec![fake("zz", false), fake("aa", false)]).unwrap();
+		assert_eq!(registry.ids(), vec!["zz", "aa"]);
+		assert!(registry.get("aa").is_some());
+		assert!(registry.get("missing").is_none());
+	}
+
+	#[tokio::test]
+	async fn a_panicking_probe_becomes_probe_failed_beside_healthy_neighbours() {
+		let registry = AgentRegistry::new(vec![
+			fake("good", false),
+			fake("bad", true),
+			fake("last", false),
+		])
+		.unwrap();
+		let all = registry.describe_all().await;
+		let ids: Vec<_> = all.iter().map(|d| d.agent_id.as_str()).collect();
+		assert_eq!(ids, vec!["good", "bad", "last"]);
+		assert!(matches!(all[0].availability, AgentAvailability::Available));
+		assert!(matches!(
+			all[1].availability,
+			AgentAvailability::Unavailable {
+				reason_code: UnavailableReason::ProbeFailed,
+				..
+			}
+		));
+		assert!(matches!(all[2].availability, AgentAvailability::Available));
+	}
+}
