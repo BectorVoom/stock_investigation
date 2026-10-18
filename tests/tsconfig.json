@@ -8,6 +8,7 @@
 	},
 	"include": [
 		"architecture/**/*.ts",
+		"contracts/**/*.ts",
 		"security/**/*.ts",
 		"e2e/**/*.ts",
 		"persistence/**/*.ts",

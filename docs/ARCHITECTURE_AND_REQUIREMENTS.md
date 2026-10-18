@@ -138,7 +138,7 @@ implementation exists.
                            | authenticated outbound HTTPS
                            | claim/lease/heartbeat/results
                            |
-                 Local Agent Runner (on PC)
+           Local Agent Runner (on PC; Rust, ADR-0030)
              scheduler | policy | tool registry
                            |
       +--------------------+----------------------+----------------+
@@ -413,7 +413,7 @@ All inputs and stored JSON are runtime-validated. Browser calls do not expose ru
 apps/
   web/                         # SolidJS SPA
   api/                         # Hono/Workers
-  runner/                      # local process; CLI adapters
+  runner/                      # the TypeScript runner (default until the switch, ADR-0030)
   mcp/                         # stdio MCP server through which AI agents arrange Home (ADR-0019)
 packages/
   contracts/                   # schema versions, API/UI/job contracts
@@ -425,6 +425,21 @@ packages/
   adapters/                    # D1, RSS, finance, providers — split by runtime
                                # (`sql/` driver interface, `sqlite/` node:sqlite driver,
                                #  worker/node/fetchers beside them)
+crates/                        # the Rust runner, a Cargo workspace (ADR-0030); one binary `research-runner`
+  research-js/                 #   JavaScript semantics (UTF-16, whitespace, numbers, JSON)
+  research-effects/            #   the one logger, CPU bridge
+  research-domain/             #   pure calculations, ported from packages/domain
+  research-contracts/          #   wire types and zod-parity decoders
+  research-widget-grid/        #   widget document model
+  research-agent-core/         #   agent runtime port, tool policy, registry
+  research-application/        #   ports, research pipeline, ingest, notebook
+  research-net/ -html/ -feed/  #   pinned HTTPS transport, HTML to Markdown, feed parsing
+  research-tools/ -providers/  #   research tools; agent backends and process spawning
+  research-finance/ -google/   #   market and earnings data; Google Calendar
+  research-runner/             #   composition root: config, API client, poll loop, job shell
+  research-runner-testkit/     #   E2E seams, never a dependency of the production binary
+Cargo.toml, Cargo.lock         # the workspace (builds use --locked); build cache in target/
+vectors/                       # conformance vectors exported from the TypeScript, replayed by cargo test
 infra/                         # Cloudflare configuration/migrations
 examples/                      # recorded fixtures, not production claims
 tests/                         # unit, integration, architecture, e2e, security,
@@ -438,7 +453,7 @@ AGENTS.md                      # compact entry to engineering rules
 ENGINEERING_DESIGN_RULES.md    # canonical engineering rules
 ```
 
-Code runs in two runtimes (Worker and local PC); do not accidentally import Node-only libraries into Worker bundles. Contracts and pure domain packages must be usable in both runtimes.
+Code runs in two runtimes (Worker and local PC); do not accidentally import Node-only libraries into Worker bundles. Contracts and pure domain packages must be usable in both runtimes. The local PC runtime is Rust once `RESEARCH_RUNNER=rust` becomes the default (ADR-0030): the Worker and the Rust runner share the wire contract through conformance vectors instead of shared code. The launcher builds and starts either runner (`RESEARCH_RUNNER=node|rust`, default node; see [OPERATIONS.md](OPERATIONS.md)).
 
 ## 12. Delivery plan and gates
 
@@ -446,7 +461,7 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 |---|---|---|
 | 0 | Repo, strict TS, CI, auth, threat model, migrations | all quality gates pass; no exposed secrets |
 | 1 | Chat, Registry, validated UI commands, D1 workspace | create/update/reload/reject invalid commands E2E |
-| 2 | D1 job queue, local runner, OpenCode adapter | lease/retry/offline/idempotency failure injection |
+| 2 | D1 job queue, local runner (Rust, ADR-0030), OpenCode adapter | lease/retry/offline/idempotency failure injection |
 | 3 | Codex, Claude Code and OpenRouter adapters | capability and auth compatibility tests; fail closed |
 | 4 | Source catalog/URL validation/news retrieval | safe ingestion, canonicalization and deduplication |
 | 5 | Evidence graph, demand scenarios, supplier mapping | evidence checks and counterevidence evaluation |
@@ -460,7 +475,7 @@ Code runs in two runtimes (Worker and local PC); do not accidentally import Node
 - **Owner identity:** choose an established auth method before implementation; do not create bespoke password cryptography.
 - **Market data vendors:** decided by ADR-0014 — FRED plus Twelve Data, keyed, fetched on request by the local runner behind source-neutral ports; metrics neither covers stay unavailable.
 - **Images:** withdrawn in full by the owner's decision of 2026-10-13 (ADR-0013); the earlier plan (external link/display by permission first, R2 for licensed retained assets later) no longer applies.
-- **Runner OS:** macOS/Windows/WSL supported by capability tests rather than assuming identical CLI interfaces.
+- **Runner OS:** macOS/Windows/WSL supported by capability tests rather than assuming identical CLI interfaces. The Rust runner's process-group and signal handling is POSIX (macOS, Linux/WSL); a native Windows runner is not built.
 - **Backups:** define periodic D1 export and restore test before storing valuable production-only research.
 - **Provider terms:** check per-backend authentication and automation rules at implementation and after major updates. No bypassing provider usage controls.
 

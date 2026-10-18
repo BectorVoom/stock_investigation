@@ -15,6 +15,7 @@
 //! produce a lone surrogate (slicing through a surrogate pair), these
 //! functions produce U+FFFD instead; that is the one documented divergence.
 
+pub mod array_sort;
 pub mod date;
 pub mod json;
 pub mod json_text;
@@ -24,3 +25,5 @@ pub mod text_decoder;
 pub mod uri;
 pub mod utf16;
 pub mod whitespace;
+
+pub mod string_number;

@@ -1,0 +1,4 @@
+{
+	"body": "{\"leaseGeneration\":3,\"events\":[{\"seq\":1,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"usage\",\"usage\":{\"agentSteps\":1,\"toolCalls\":0,\"inputBytes\":1693,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}},{\"seq\":2,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"state\",\"state\":\"collecting\"}}]}",
+	"schema": "runnerEventsRequest"
+}

@@ -8,6 +8,7 @@ import {
 	buildChildEnv,
 	INHERITED_ENV_ALLOWLIST,
 	newTestDirs,
+	suiteRunnerSettings,
 	writeTestRunnerEnvFile,
 } from "../../scripts/testEnv.ts";
 
@@ -121,5 +122,63 @@ describe("test child environments are isolated by construction (finding 5)", () 
 		const empty = writeTestRunnerEnvFile(dir, {}, "empty.env");
 		const child = buildChildEnv({ ...throwaway(), RESEARCH_RUNNER_ENV_FILE: empty });
 		expect(child.RESEARCH_RUNNER_ENV_FILE).toBe(empty);
+	});
+});
+
+describe("the Rust toolchain in the isolated environment (ADR-0030)", () => {
+	const touched = ["RESEARCH_RUNNER", "RESEARCH_CARGO_TARGET_DIR", "RUSTFLAGS", "CARGO_BUILD_JOBS"];
+	const before = new Map<string, string | undefined>();
+
+	afterEach(() => {
+		for (const [name, value] of before) {
+			if (value === undefined) delete process.env[name];
+			else process.env[name] = value;
+		}
+		before.clear();
+	});
+
+	function remember(): void {
+		for (const name of touched) before.set(name, process.env[name]);
+	}
+
+	it("inherits the toolchain plumbing but never compiler flags or build settings", () => {
+		for (const name of ["CARGO_HOME", "RUSTUP_HOME", "RUSTUP_TOOLCHAIN"]) {
+			expect(INHERITED_ENV_ALLOWLIST).toContain(name);
+		}
+		for (const name of ["RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "RUSTC_WRAPPER"]) {
+			expect(INHERITED_ENV_ALLOWLIST).not.toContain(name);
+		}
+		expect(INHERITED_ENV_ALLOWLIST.some((name) => name.startsWith("CARGO_BUILD_"))).toBe(false);
+		remember();
+		process.env.RUSTFLAGS = "--cfg test_seams";
+		process.env.CARGO_BUILD_JOBS = "1";
+		const child = buildChildEnv(throwaway());
+		expect(child.RUSTFLAGS).toBeUndefined();
+		expect(child.CARGO_BUILD_JOBS).toBeUndefined();
+	});
+
+	it("defaults to the node runner and the repository target directory", () => {
+		remember();
+		delete process.env.RESEARCH_RUNNER;
+		delete process.env.RESEARCH_CARGO_TARGET_DIR;
+		const settings = suiteRunnerSettings();
+		expect(settings.RESEARCH_RUNNER).toBe("node");
+		expect(settings.RESEARCH_CARGO_TARGET_DIR).toMatch(/[\\/]target$/);
+		expect(buildChildEnv(throwaway()).RESEARCH_RUNNER).toBe("node");
+	});
+
+	it("passes the suite's runner choice and shared target directory explicitly", () => {
+		remember();
+		process.env.RESEARCH_RUNNER = "rust";
+		process.env.RESEARCH_CARGO_TARGET_DIR = "/shared/cache";
+		const child = buildChildEnv(throwaway());
+		expect(child.RESEARCH_RUNNER).toBe("rust");
+		expect(child.RESEARCH_CARGO_TARGET_DIR).toBe("/shared/cache");
+	});
+
+	it("refuses an unknown runner instead of silently testing node", () => {
+		remember();
+		process.env.RESEARCH_RUNNER = "rsut";
+		expect(() => buildChildEnv(throwaway())).toThrow(/RESEARCH_RUNNER/);
 	});
 });

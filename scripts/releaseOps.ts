@@ -39,7 +39,13 @@ import {
 import { hostname } from "node:os";
 import { basename, dirname, join, parse, resolve, sep } from "node:path";
 import { z } from "zod";
-import { DEFAULT_PREVIOUS_RELEASE_DIR, DEFAULT_RELEASE_DIR } from "./launchPlan.ts";
+import {
+	DEFAULT_PREVIOUS_RELEASE_DIR,
+	DEFAULT_RELEASE_DIR,
+	RUST_OPTIONAL_BINARIES,
+	RUST_REQUIRED_BINARIES,
+	RUST_RUNNER_BINARY,
+} from "./launchPlan.ts";
 
 /** Subdirectory of the release area holding one directory per generation. */
 export const GENERATIONS_DIR_NAME = "generations";
@@ -67,7 +73,15 @@ export const BUILD_FAIL_AT_ENV_VAR = "RESEARCH_BUILD_FAIL_AT";
 /** Markers are appended to the served HTML, so only plain safe characters. */
 const MARKER_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
-const versionsSchema = z.strictObject({ bun: z.string().min(1), node: z.string().min(1) });
+/**
+ * `rustc` is recorded only by a build with RESEARCH_RUNNER=rust (`rustc -V`),
+ * so manifests of older generations still read (ADR-0030).
+ */
+const versionsSchema = z.strictObject({
+	bun: z.string().min(1),
+	node: z.string().min(1),
+	rustc: z.string().min(1).optional(),
+});
 
 export const releaseManifestSchema = z.strictObject({
 	/** ISO timestamp of `bun run prod:build`. */
@@ -144,7 +158,10 @@ export interface GenerationLayout {
 	readonly workerDir: string;
 	readonly workerBundle: string;
 	readonly runnerDir: string;
+	/** The Node runner bundle (`runner/main.mjs`). */
 	readonly runnerBundle: string;
+	/** The Rust runner binary (`runner/research-runner`). */
+	readonly rustRunnerBinary: string;
 	readonly wranglerConfig: string;
 	readonly manifestFile: string;
 	readonly migrationsDir: string;
@@ -162,6 +179,7 @@ export function generationLayout(areaAbs: string, id: string): GenerationLayout 
 		workerBundle: join(dir, "worker", "worker.js"),
 		runnerDir: join(dir, "runner"),
 		runnerBundle: join(dir, "runner", "main.mjs"),
+		rustRunnerBinary: join(dir, "runner", RUST_RUNNER_BINARY),
 		wranglerConfig: join(dir, "wrangler.jsonc"),
 		manifestFile: join(dir, "manifest.json"),
 		migrationsDir: join(dir, GENERATION_MIGRATIONS_DIR),
@@ -271,6 +289,31 @@ function nonEmptyFile(file: string): boolean {
 	}
 }
 
+/** A non-empty regular file with an execute bit: what a served Rust runner must be. */
+function executableFile(file: string): boolean {
+	try {
+		const stat = statSync(file);
+		return stat.isFile() && stat.size > 0 && (stat.mode & 0o111) !== 0;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Which runners a generation contains. A generation built before the Rust
+ * runner has only `runner/main.mjs`; one built with RESEARCH_RUNNER=rust only
+ * the binaries. The launcher starts whatever exists (ADR-0030 transition).
+ */
+export function runnersInGeneration(layout: GenerationLayout): {
+	readonly node: boolean;
+	readonly rust: boolean;
+} {
+	return {
+		node: nonEmptyFile(layout.runnerBundle),
+		rust: RUST_REQUIRED_BINARIES.every((name) => executableFile(join(layout.runnerDir, name))),
+	};
+}
+
 /** Sorted basenames of the `.sql` files in a directory; empty when unreadable. */
 export function listMigrationFiles(dir: string): string[] {
 	try {
@@ -325,9 +368,29 @@ export function validateGeneration(layout: GenerationLayout): GenerationCheck {
 			error: `generation ${layout.id} manifest names generation ${manifest.generation}.`,
 		};
 	}
-	for (const file of [layout.workerBundle, layout.runnerBundle, layout.indexFile]) {
+	for (const file of [layout.workerBundle, layout.indexFile]) {
 		if (!nonEmptyFile(file)) {
 			return { ok: false, error: `generation ${layout.id} is incomplete: ${file} is missing.` };
+		}
+	}
+	// One runner is enough: the node bundle (built by default) or the Rust
+	// binaries (built with RESEARCH_RUNNER=rust). A binary that cannot be
+	// executed would only fail at start, so the exec bit is checked here.
+	const runners = runnersInGeneration(layout);
+	if (!runners.node && !runners.rust) {
+		const rustMissing = RUST_REQUIRED_BINARIES.map((name) => join(layout.runnerDir, name));
+		return {
+			ok: false,
+			error: `generation ${layout.id} is incomplete: ${layout.runnerBundle} (or the executable ${rustMissing.join(", ")}) is missing.`,
+		};
+	}
+	for (const name of RUST_OPTIONAL_BINARIES) {
+		const file = join(layout.runnerDir, name);
+		if (existsSync(file) && !executableFile(file)) {
+			return {
+				ok: false,
+				error: `generation ${layout.id} is incomplete: ${file} is not an executable file.`,
+			};
 		}
 	}
 	if (!existsSync(layout.wranglerConfig)) {
@@ -690,7 +753,9 @@ function makeWritableBestEffort(root: string): void {
 }
 
 /**
- * Makes a finished generation's FILES read-only (best effort, finding 3).
+ * Makes a finished generation's FILES read-only (best effort, finding 3);
+ * a file that was executable (the Rust runner binaries) becomes 0555 instead
+ * of 0444, which would make it unrunnable.
  * This stops accidental overwrites — a later build writing into the wrong
  * directory, an editor, a stray script — from changing what a running
  * instance serves: every served file (Worker bundle, assets, configuration,
@@ -708,6 +773,13 @@ function makeWritableBestEffort(root: string): void {
  * the pointer is the only thing that moves.
  */
 export function makeGenerationReadOnly(dir: string): void {
+	const isExecutable = (file: string): boolean => {
+		try {
+			return (statSync(file).mode & 0o111) !== 0;
+		} catch {
+			return false;
+		}
+	};
 	const files: string[] = [];
 	const dirs: string[] = [];
 	try {
@@ -725,7 +797,9 @@ export function makeGenerationReadOnly(dir: string): void {
 	}
 	for (const file of files) {
 		try {
-			chmodSync(file, 0o444);
+			// The Rust runner binaries must stay executable (0555); everything
+			// else is data (0444).
+			chmodSync(file, isExecutable(file) ? 0o555 : 0o444);
 		} catch {
 			// Best effort only; the generation still validates.
 		}

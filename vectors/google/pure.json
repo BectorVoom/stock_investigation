@@ -1,0 +1,2582 @@
+{
+	"urls": [
+		{
+			"clientId": "client-id.apps.googleusercontent.com",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": true
+		},
+		{
+			"clientId": "client-id.apps.googleusercontent.com",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "é",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "client-id.apps.googleusercontent.com",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": false
+		},
+		{
+			"clientId": "client-id.apps.googleusercontent.com",
+			"redirectUri": "",
+			"state": "é",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "client-id.apps.googleusercontent.com",
+			"redirectUri": "é",
+			"state": "é",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a b&c=d",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "a b",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a+b%26c%3Dd&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "a b&c=d",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "a b",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a+b%26c%3Dd&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "a b&c=d",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "é",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a+b%26c%3Dd&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a b&c=d",
+			"redirectUri": "",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a+b%26c%3Dd&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": false
+		},
+		{
+			"clientId": "a b&c=d",
+			"redirectUri": "é",
+			"state": "",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a+b%26c%3Dd&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=",
+			"signIn": false
+		},
+		{
+			"clientId": "é日本😀",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%C3%A9%E6%97%A5%E6%9C%AC%F0%9F%98%80&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=",
+			"signIn": false
+		},
+		{
+			"clientId": "é日本😀",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%C3%A9%E6%97%A5%E6%9C%AC%F0%9F%98%80&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=",
+			"signIn": false
+		},
+		{
+			"clientId": "é日本😀",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "é",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%C3%A9%E6%97%A5%E6%9C%AC%F0%9F%98%80&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "é日本😀",
+			"redirectUri": "",
+			"state": "abc",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%C3%A9%E6%97%A5%E6%9C%AC%F0%9F%98%80&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=abc",
+			"signIn": false
+		},
+		{
+			"clientId": "é日本😀",
+			"redirectUri": "é",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=%C3%A9%E6%97%A5%E6%9C%AC%F0%9F%98%80&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": false
+		},
+		{
+			"clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "é",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": true
+		},
+		{
+			"clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"signIn": false
+		},
+		{
+			"clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"redirectUri": "",
+			"state": "abc",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=abc",
+			"signIn": false
+		},
+		{
+			"clientId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"redirectUri": "é",
+			"state": "a b",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "a b",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "a b",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "é",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "",
+			"redirectUri": "",
+			"state": "a b",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		},
+		{
+			"clientId": "",
+			"redirectUri": "é",
+			"state": "é",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a+b/c?d#e%f",
+			"redirectUri": "http://127.0.0.1:54321/",
+			"state": "",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a%2Bb%2Fc%3Fd%23e%25f&redirect_uri=http%3A%2F%2F127.0.0.1%3A54321%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=",
+			"signIn": false
+		},
+		{
+			"clientId": "a+b/c?d#e%f",
+			"redirectUri": "http://127.0.0.1:1/",
+			"state": "é",
+			"challenge": "iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a%2Bb%2Fc%3Fd%23e%25f&redirect_uri=http%3A%2F%2F127.0.0.1%3A1%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=iMnq5o6zALKXGivsnlom_0F5_WYda32GHkxlV7mq7hQ&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a+b/c?d#e%f",
+			"redirectUri": "http://localhost:80/x?y=z",
+			"state": "é",
+			"challenge": "SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a%2Bb%2Fc%3Fd%23e%25f&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Fx%3Fy%3Dz&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=SplVfkAzw1Od4utlRyAXytX5VX96BiWgnxw_biumnEw&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a+b/c?d#e%f",
+			"redirectUri": "",
+			"state": "é",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a%2Bb%2Fc%3Fd%23e%25f&redirect_uri=&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=%C3%A9",
+			"signIn": false
+		},
+		{
+			"clientId": "a+b/c?d#e%f",
+			"redirectUri": "é",
+			"state": "a b",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs",
+			"url": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=a%2Bb%2Fc%3Fd%23e%25f&redirect_uri=%C3%A9&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs&code_challenge_method=S256&state=a+b",
+			"signIn": false
+		}
+	],
+	"challenges": [
+		{
+			"verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+			"challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+		},
+		{
+			"verifier": "",
+			"challenge": "47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU"
+		},
+		{
+			"verifier": "a",
+			"challenge": "ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs"
+		},
+		{
+			"verifier": "é日本😀",
+			"challenge": "wEFYm-qNUtDPxcyQf253MdJ4phZ0HvsBPfyvQdY7Ahs"
+		},
+		{
+			"verifier": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"challenge": "RPg1RJSlugO6F5Ko0-nFNMR6kYGYD956P0SwbvKufH8"
+		},
+		{
+			"verifier": "A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0A-_0",
+			"challenge": "yi5WLwBQxPXCw451VN72dcFEt0RTFFlbDdJYI47anLk"
+		},
+		{
+			"verifier": "\u0000",
+			"challenge": "bjQLnP-zepicpUTmu3gKLHiQHT-zNzh2hRGjBhevoB0"
+		},
+		{
+			"verifier": "a b",
+			"challenge": "yGh6CKpdbtIEQyj6aml6uOltw0KR6MIDSujDjm_MbWU"
+		}
+	],
+	"scopes": [
+		{
+			"scope": null,
+			"output": false
+		},
+		{
+			"scope": "",
+			"output": false
+		},
+		{
+			"scope": "https://www.googleapis.com/auth/calendar.app.created",
+			"output": true
+		},
+		{
+			"scope": "openid https://www.googleapis.com/auth/calendar.app.created email",
+			"output": true
+		},
+		{
+			"scope": "https://www.googleapis.com/auth/calendar.app.created ",
+			"output": true
+		},
+		{
+			"scope": " https://www.googleapis.com/auth/calendar.app.created",
+			"output": true
+		},
+		{
+			"scope": "https://www.googleapis.com/auth/calendar.app.created  x",
+			"output": true
+		},
+		{
+			"scope": "https://www.googleapis.com/auth/calendar",
+			"output": false
+		},
+		{
+			"scope": "https://www.googleapis.com/auth/calendar.app.created\nx",
+			"output": false
+		},
+		{
+			"scope": "HTTPS://www.googleapis.com/auth/calendar.app.created",
+			"output": false
+		}
+	],
+	"failures": [
+		{
+			"status": null,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": null,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": null,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": null,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": null,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 200,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 200,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 200,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 200,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 201,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 201,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 201,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 201,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 204,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 204,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 204,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 204,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 299,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 299,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 299,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 299,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 300,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 301,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 302,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 307,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 399,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 400,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 400,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 400,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 400,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 401,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 401,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 401,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 401,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 403,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 403,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 403,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 403,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 404,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 404,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 404,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 404,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 408,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 408,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 408,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 408,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 429,
+			"text": "",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "[]",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "null",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{oops",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 429,
+			"text": null,
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 500,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 500,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 500,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 500,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 500,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "[]",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "null",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{oops",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"code\":\"invalid_grant\"}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"code\":\"rateLimitExceeded\"}}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"code\":5}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"message\":\"x\"}}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"rateLimitExceeded\"}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 503,
+			"text": "{\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_RATE_LIMITED"
+		},
+		{
+			"status": 503,
+			"text": "{\"rateLimitExceeded\":false,\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"rateLimitExceeded\":\"true\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_grant\",\"rateLimitExceeded\":true}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"x\",\"error_description\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":5}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":null}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error_description\":\"d\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":[]}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":{\"code\":\"invalid_grant\",\"extra\":1}}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"invalid_grant\",\"error\":\"x\"}",
+			"output": "GOOGLE_REQUEST_FAILED"
+		},
+		{
+			"status": 503,
+			"text": "{\"error\":\"x\",\"error\":\"invalid_grant\"}",
+			"output": "GOOGLE_AUTH_EXPIRED"
+		},
+		{
+			"status": 503,
+			"text": null,
+			"output": "GOOGLE_REQUEST_FAILED"
+		}
+	],
+	"shapes": [
+		{
+			"length": 43,
+			"urlSafe": true
+		},
+		{
+			"length": 43,
+			"urlSafe": true
+		}
+	]
+}

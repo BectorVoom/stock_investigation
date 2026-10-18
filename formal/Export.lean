@@ -687,6 +687,49 @@ def dragTargetVectors : List String := Id.run do
                 | none => "null" | some b => jsonNat b)] :: out
   return out.reverse
 
+/-! ## Request-start spacing (`Spacing.lean`)
+
+Every operation sequence of length 0..3 over claims and notes at times
+{0, 1, 2, 3, 5, 6}, interval 3. `abort` is a no-op and is covered by the
+theorem, not exported. -/
+
+def spacingOps : List SpacingOp :=
+  ([0, 1, 2, 3, 5, 6].map fun t => SpacingOp.claim t) ++
+  ([0, 1, 2, 3, 5, 6].map fun t => SpacingOp.note t)
+
+def spacingOpJson : SpacingOp → String
+  | .claim t => jsonArr [jsonStr "claim", jsonInt t]
+  | .note t => jsonArr [jsonStr "note", jsonInt t]
+  | .abort => jsonArr [jsonStr "abort"]
+
+/-- Per-operation outcome: whether a claim sent (`null` for a note). -/
+def spacingOutcomes (interval : Int) : SpacingState → List SpacingOp → List String
+  | _, [] => []
+  | s, op :: rest =>
+    let s' := spacingStep interval s op
+    let outcome : String := match op with
+      | .claim _ => jsonBool (s'.starts.length != s.starts.length)
+      | _ => "null"
+    outcome :: spacingOutcomes interval s' rest
+
+def spacingVec (ops : List SpacingOp) : String :=
+  let interval : Int := 3
+  let final := spacingRun interval ops
+  jsonObj [("interval", jsonInt interval), ("ops", jsonArr (ops.map spacingOpJson)),
+    ("outcomes", jsonArr (spacingOutcomes interval ⟨none, []⟩ ops)),
+    ("starts", jsonIntList final.starts),
+    ("last", match final.last with | none => "null" | some l => jsonInt l)]
+
+def spacingVectors : List String := Id.run do
+  let mut out := [spacingVec []]
+  for a in spacingOps do
+    out := spacingVec [a] :: out
+    for b in spacingOps do
+      out := spacingVec [a, b] :: out
+      for c in spacingOps do
+        out := spacingVec [a, b, c] :: out
+  return out.reverse
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -722,5 +765,6 @@ def main : IO Unit := do
   IO.println ("\"chartZoom\": [\n" ++ ",\n".intercalate chartZoomVectors ++ "\n],")
   IO.println ("\"chartSlice\": [\n" ++ ",\n".intercalate chartSliceVectors ++ "\n],")
   IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
-  IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n]")
+  IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n],")
+  IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n]")
   IO.println "}"

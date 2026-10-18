@@ -1,0 +1,11 @@
+# Test-only root for the pinned Google transport tests. The private key was
+# discarded after signing. Regenerate with:
+#   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -keyout /tmp/ca.key -out ca.pem -days 36500 -config ca.cnf -extensions ext
+[req]
+distinguished_name = dn
+prompt = no
+[dn]
+CN = research-google test root
+[ext]
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, keyCertSign

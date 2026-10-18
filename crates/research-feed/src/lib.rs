@@ -18,10 +18,12 @@
 //! `Object.entries` key order; `vectors/feed/*.json` pin them against the
 //! TypeScript.
 
+pub mod info_table;
 mod names;
 pub mod tree;
 mod units;
 pub mod validator;
+mod xml_scan;
 pub mod xml_tree;
 
 use research_application::ports::{FeedParser, NotAFeed};

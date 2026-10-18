@@ -88,6 +88,10 @@ function archiveAndInstall(repoRoot: string, root: string): PristineCopy {
 		"./.git",
 		"./test-results",
 		"./.wrangler",
+		// Rust build output is GBs: the copy builds into the SAME shared
+		// RESEARCH_CARGO_TARGET_DIR instead (see `suiteRunnerSettings`), so
+		// registry dependencies are not recompiled.
+		"./target",
 		// Operational runner settings never reach a test launcher (finding 5):
 		// a test that needs runner settings writes its own env file.
 		"./apps/runner/.env",

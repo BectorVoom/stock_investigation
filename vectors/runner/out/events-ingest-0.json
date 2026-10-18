@@ -1,0 +1,4 @@
+{
+	"body": "{\"leaseGeneration\":1,\"events\":[{\"seq\":0,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"state\",\"state\":\"planning\"}}]}",
+	"schema": "runnerEventsRequest"
+}

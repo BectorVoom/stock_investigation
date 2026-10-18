@@ -7,8 +7,36 @@ rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+# `research-runner-e2e` is the real runner loop with the seams of
+# `tests/e2e/runnerHarness.ts`. Nothing in the production dependency graph
+# reaches this crate (pinned by `tests/architecture/rustBoundaries.test.ts`).
+[[bin]]
+name = "research-runner-e2e"
+path = "src/main.rs"
+
 [dependencies]
+research-js = { workspace = true }
+research-effects = { workspace = true }
+research-contracts = { workspace = true }
+research-agent-core = { workspace = true }
+research-application = { workspace = true }
+research-feed = { workspace = true }
+research-tools = { workspace = true }
+research-providers = { workspace = true }
+research-finance = { workspace = true }
+research-google = { workspace = true }
 research-runner = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
 
 [lints]
 workspace = true

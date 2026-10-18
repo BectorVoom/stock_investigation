@@ -1,0 +1,1481 @@
+{
+	"helpers": {
+		"isIsoDate": [
+			{
+				"input": "2026-10-05",
+				"output": true
+			},
+			{
+				"input": "2026-02-29",
+				"output": false
+			},
+			{
+				"input": "2024-02-29",
+				"output": true
+			},
+			{
+				"input": "2100-02-29",
+				"output": false
+			},
+			{
+				"input": "2000-02-29",
+				"output": true
+			},
+			{
+				"input": "1900-02-29",
+				"output": false
+			},
+			{
+				"input": "0000-01-01",
+				"output": false
+			},
+			{
+				"input": "0050-01-01",
+				"output": false
+			},
+			{
+				"input": "0099-12-31",
+				"output": false
+			},
+			{
+				"input": "0100-01-01",
+				"output": true
+			},
+			{
+				"input": "0100-02-29",
+				"output": false
+			},
+			{
+				"input": "9999-12-31",
+				"output": true
+			},
+			{
+				"input": "2026-13-01",
+				"output": false
+			},
+			{
+				"input": "2026-00-10",
+				"output": false
+			},
+			{
+				"input": "2026-10-00",
+				"output": false
+			},
+			{
+				"input": "2026-10-32",
+				"output": false
+			},
+			{
+				"input": "2026-4-5",
+				"output": false
+			},
+			{
+				"input": "26-10-05",
+				"output": false
+			},
+			{
+				"input": "2026/10/05",
+				"output": false
+			},
+			{
+				"input": "20261005",
+				"output": false
+			},
+			{
+				"input": "2026-10-05T00:00:00Z",
+				"output": false
+			},
+			{
+				"input": "2026-10-05 ",
+				"output": false
+			},
+			{
+				"input": " 2026-10-05",
+				"output": false
+			},
+			{
+				"input": "２０２６-10-05",
+				"output": false
+			},
+			{
+				"input": "2026-10-05\n",
+				"output": false
+			},
+			{
+				"input": "",
+				"output": false
+			},
+			{
+				"input": "abcd-ef-gh",
+				"output": false
+			}
+		],
+		"datePrefix": [
+			{
+				"input": "2026-10-05",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "2026-02-29",
+				"output": null
+			},
+			{
+				"input": "2024-02-29",
+				"output": "2024-02-29"
+			},
+			{
+				"input": "2100-02-29",
+				"output": null
+			},
+			{
+				"input": "2000-02-29",
+				"output": "2000-02-29"
+			},
+			{
+				"input": "1900-02-29",
+				"output": null
+			},
+			{
+				"input": "0000-01-01",
+				"output": null
+			},
+			{
+				"input": "0050-01-01",
+				"output": null
+			},
+			{
+				"input": "0099-12-31",
+				"output": null
+			},
+			{
+				"input": "0100-01-01",
+				"output": "0100-01-01"
+			},
+			{
+				"input": "0100-02-29",
+				"output": null
+			},
+			{
+				"input": "9999-12-31",
+				"output": "9999-12-31"
+			},
+			{
+				"input": "2026-13-01",
+				"output": null
+			},
+			{
+				"input": "2026-00-10",
+				"output": null
+			},
+			{
+				"input": "2026-10-00",
+				"output": null
+			},
+			{
+				"input": "2026-10-32",
+				"output": null
+			},
+			{
+				"input": "2026-4-5",
+				"output": null
+			},
+			{
+				"input": "26-10-05",
+				"output": null
+			},
+			{
+				"input": "2026/10/05",
+				"output": null
+			},
+			{
+				"input": "20261005",
+				"output": null
+			},
+			{
+				"input": "2026-10-05T00:00:00Z",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "2026-10-05 ",
+				"output": "2026-10-05"
+			},
+			{
+				"input": " 2026-10-05",
+				"output": null
+			},
+			{
+				"input": "２０２６-10-05",
+				"output": null
+			},
+			{
+				"input": "2026-10-05\n",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "",
+				"output": null
+			},
+			{
+				"input": "abcd-ef-gh",
+				"output": null
+			},
+			{
+				"input": "2026-10-05 15:30:00",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "2026-10-05T15:30:00Z",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "2026-10-051",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "2026-10-0",
+				"output": null
+			},
+			{
+				"input": "😀2026-10-0",
+				"output": null
+			},
+			{
+				"input": "2026-10-😀",
+				"output": null
+			},
+			{
+				"input": "2026-10-05😀",
+				"output": "2026-10-05"
+			},
+			{
+				"input": "0050-01-01 00:00:00",
+				"output": null
+			}
+		],
+		"subtractDays": [
+			{
+				"iso": "2026-10-05",
+				"days": 0,
+				"output": "2026-10-05"
+			},
+			{
+				"iso": "2026-10-05",
+				"days": 1,
+				"output": "2026-10-04"
+			},
+			{
+				"iso": "2026-10-05",
+				"days": 45,
+				"output": "2026-08-21"
+			},
+			{
+				"iso": "2026-10-05",
+				"days": 365,
+				"output": "2025-10-05"
+			},
+			{
+				"iso": "2026-10-05",
+				"days": 36525,
+				"output": "1926-10-05"
+			},
+			{
+				"iso": "2026-02-29",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-02-29",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-02-29",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-02-29",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-02-29",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2024-02-29",
+				"days": 0,
+				"output": "2024-02-29"
+			},
+			{
+				"iso": "2024-02-29",
+				"days": 1,
+				"output": "2024-02-28"
+			},
+			{
+				"iso": "2024-02-29",
+				"days": 45,
+				"output": "2024-01-15"
+			},
+			{
+				"iso": "2024-02-29",
+				"days": 365,
+				"output": "2023-03-01"
+			},
+			{
+				"iso": "2024-02-29",
+				"days": 36525,
+				"output": "1924-02-29"
+			},
+			{
+				"iso": "2100-02-29",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2100-02-29",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2100-02-29",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2100-02-29",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2100-02-29",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2000-02-29",
+				"days": 0,
+				"output": "2000-02-29"
+			},
+			{
+				"iso": "2000-02-29",
+				"days": 1,
+				"output": "2000-02-28"
+			},
+			{
+				"iso": "2000-02-29",
+				"days": 45,
+				"output": "2000-01-15"
+			},
+			{
+				"iso": "2000-02-29",
+				"days": 365,
+				"output": "1999-03-01"
+			},
+			{
+				"iso": "2000-02-29",
+				"days": 36525,
+				"output": "1900-02-28"
+			},
+			{
+				"iso": "1900-02-29",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "1900-02-29",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "1900-02-29",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "1900-02-29",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "1900-02-29",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "0000-01-01",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "0000-01-01",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "0000-01-01",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "0000-01-01",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "0000-01-01",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "0050-01-01",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "0050-01-01",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "0050-01-01",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "0050-01-01",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "0050-01-01",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "0099-12-31",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "0099-12-31",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "0099-12-31",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "0099-12-31",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "0099-12-31",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "0100-01-01",
+				"days": 0,
+				"output": "0100-01-01"
+			},
+			{
+				"iso": "0100-01-01",
+				"days": 1,
+				"output": "0099-12-31"
+			},
+			{
+				"iso": "0100-01-01",
+				"days": 45,
+				"output": "0099-11-17"
+			},
+			{
+				"iso": "0100-01-01",
+				"days": 365,
+				"output": "0099-01-01"
+			},
+			{
+				"iso": "0100-01-01",
+				"days": 36525,
+				"output": "0000-01-01"
+			},
+			{
+				"iso": "0100-02-29",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "0100-02-29",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "0100-02-29",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "0100-02-29",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "0100-02-29",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "9999-12-31",
+				"days": 0,
+				"output": "9999-12-31"
+			},
+			{
+				"iso": "9999-12-31",
+				"days": 1,
+				"output": "9999-12-30"
+			},
+			{
+				"iso": "9999-12-31",
+				"days": 45,
+				"output": "9999-11-16"
+			},
+			{
+				"iso": "9999-12-31",
+				"days": 365,
+				"output": "9998-12-31"
+			},
+			{
+				"iso": "9999-12-31",
+				"days": 36525,
+				"output": "9899-12-30"
+			},
+			{
+				"iso": "2026-13-01",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-13-01",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-13-01",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-13-01",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-13-01",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-00-10",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-00-10",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-00-10",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-00-10",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-00-10",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-10-00",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-10-00",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-10-00",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-10-00",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-10-00",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-10-32",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-10-32",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-10-32",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-10-32",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-10-32",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-4-5",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-4-5",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-4-5",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-4-5",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-4-5",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "26-10-05",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "26-10-05",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "26-10-05",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "26-10-05",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "26-10-05",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026/10/05",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026/10/05",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026/10/05",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026/10/05",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026/10/05",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "20261005",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "20261005",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "20261005",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "20261005",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "20261005",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05T00:00:00Z",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05T00:00:00Z",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05T00:00:00Z",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05T00:00:00Z",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05T00:00:00Z",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05 ",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05 ",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05 ",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05 ",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05 ",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": " 2026-10-05",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": " 2026-10-05",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": " 2026-10-05",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": " 2026-10-05",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": " 2026-10-05",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "２０２６-10-05",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "２０２６-10-05",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "２０２６-10-05",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "２０２６-10-05",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "２０２６-10-05",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05\n",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05\n",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05\n",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05\n",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "2026-10-05\n",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "",
+				"days": 36525,
+				"output": null
+			},
+			{
+				"iso": "abcd-ef-gh",
+				"days": 0,
+				"output": null
+			},
+			{
+				"iso": "abcd-ef-gh",
+				"days": 1,
+				"output": null
+			},
+			{
+				"iso": "abcd-ef-gh",
+				"days": 45,
+				"output": null
+			},
+			{
+				"iso": "abcd-ef-gh",
+				"days": 365,
+				"output": null
+			},
+			{
+				"iso": "abcd-ef-gh",
+				"days": 36525,
+				"output": null
+			}
+		],
+		"httpStatus": [
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 400",
+				"output": 400
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 400",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 400",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 401",
+				"output": 401
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 401",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 401",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 403",
+				"output": 403
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 403",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 403",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 404",
+				"output": 404
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 404",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 404",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 429",
+				"output": 429
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 429",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 429",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 500",
+				"output": 500
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 500",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 500",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 503",
+				"output": 503
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 503",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 503",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 301 without a Location header",
+				"output": 301
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 301 without a Location header",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 301 without a Location header",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 1234",
+				"output": null
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 1234",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 1234",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 12",
+				"output": null
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 12",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 12",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP",
+				"output": null
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "status 404 and 429",
+				"output": 404
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "status 404 and 429",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "status 404 and 429",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP 4040 404",
+				"output": 404
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP 4040 404",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP 4040 404",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "HTTP_404",
+				"output": null
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "HTTP_404",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "HTTP_404",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "é404",
+				"output": 404
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "é404",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "é404",
+				"output": null
+			},
+			{
+				"code": "HTTP_ERROR",
+				"detail": "",
+				"output": null
+			},
+			{
+				"code": "TIMEOUT",
+				"detail": "",
+				"output": null
+			},
+			{
+				"code": "NETWORK_ERROR",
+				"detail": "",
+				"output": null
+			}
+		],
+		"splitTwelve": [
+			{
+				"input": "AAPL",
+				"output": {
+					"base": "AAPL",
+					"exchange": null
+				}
+			},
+			{
+				"input": "AAPL:NASDAQ",
+				"output": {
+					"base": "AAPL",
+					"exchange": "NASDAQ"
+				}
+			},
+			{
+				"input": "7203:JPX",
+				"output": {
+					"base": "7203",
+					"exchange": "JPX"
+				}
+			},
+			{
+				"input": "A:B:C",
+				"output": {
+					"base": "A:B",
+					"exchange": "C"
+				}
+			},
+			{
+				"input": ":X",
+				"output": {
+					"base": "",
+					"exchange": "X"
+				}
+			},
+			{
+				"input": "X:",
+				"output": {
+					"base": "X",
+					"exchange": ""
+				}
+			},
+			{
+				"input": ":",
+				"output": {
+					"base": "",
+					"exchange": ""
+				}
+			},
+			{
+				"input": "",
+				"output": {
+					"base": "",
+					"exchange": null
+				}
+			},
+			{
+				"input": "EUR/USD",
+				"output": {
+					"base": "EUR/USD",
+					"exchange": null
+				}
+			}
+		]
+	},
+	"documents": [
+		{
+			"script": [
+				{
+					"text": "{\"a\":1}"
+				}
+			],
+			"output": {
+				"ok": true,
+				"value": {
+					"finalUrl": "https://api.stlouisfed.org/fred/series?x=1",
+					"json": {
+						"a": 1
+					}
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"text": "{\"a\":1}",
+					"finalUrl": "https://api.stlouisfed.org/other"
+				}
+			],
+			"output": {
+				"ok": true,
+				"value": {
+					"finalUrl": "https://api.stlouisfed.org/other",
+					"json": {
+						"a": 1
+					}
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"text": "{oops"
+				}
+			],
+			"output": {
+				"ok": false,
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "response is not valid JSON"
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"text": ""
+				}
+			],
+			"output": {
+				"ok": false,
+				"error": {
+					"code": "NETWORK_ERROR",
+					"detail": "response is not valid JSON"
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"text": "{\"a\":1,\"a\":2}"
+				}
+			],
+			"output": {
+				"ok": true,
+				"value": {
+					"finalUrl": "https://api.stlouisfed.org/fred/series?x=1",
+					"json": {
+						"a": 2
+					}
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"error": {
+						"code": "HTTP_ERROR",
+						"detail": "HTTP 429",
+						"body": "{\"error_code\":429}"
+					}
+				}
+			],
+			"output": {
+				"ok": false,
+				"error": {
+					"code": "HTTP_ERROR",
+					"detail": "HTTP 429",
+					"body": "{\"error_code\":429}"
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		},
+		{
+			"script": [
+				{
+					"error": {
+						"code": "TIMEOUT",
+						"detail": "no complete response"
+					}
+				}
+			],
+			"output": {
+				"ok": false,
+				"error": {
+					"code": "TIMEOUT",
+					"detail": "no complete response"
+				}
+			},
+			"events": [
+				{
+					"fetch": {
+						"url": "https://api.stlouisfed.org/fred/series?x=1",
+						"accept": "application/json",
+						"maxBytes": 10,
+						"timeoutMs": 20,
+						"allowedHosts": [
+							"api.stlouisfed.org"
+						],
+						"userAgent": null,
+						"authorization": null,
+						"finnhubToken": null,
+						"includeErrorBody": false,
+						"hasSignal": true
+					}
+				}
+			]
+		}
+	]
+}

@@ -5,6 +5,11 @@ The workspace runs **on your own PC by default** ([ADR-0006](adr/0006-local-firs
 ## Running it (default: production on this PC)
 
 Requires [Bun](https://bun.sh) ≥ 1.3 and Node ≥ 23.6. No Cloudflare account, no sign-in.
+The Rust runner ([ADR-0030](adr/0030-runner-rewritten-in-rust.md)) additionally needs the
+Rust toolchain (`rustup`, stable ≥ 1.85; `cargo` on `PATH`) — only when you choose it with
+`RESEARCH_RUNNER=rust` (see "The runner: node or rust"). Until the owner switches, the
+default is the TypeScript runner and no Rust toolchain is needed. Node stays required for
+Wrangler and the test harness either way.
 
 ```sh
 bun install
@@ -50,9 +55,59 @@ pointer. The served generation id and build time are reported by
 | `RESEARCH_RELEASE_DIR` | `release` | The release area (generations + pointer) production serves. |
 | `RESEARCH_PREVIOUS_RELEASE_DIR` | `release.previous` | Legacy only: where the previous release *was* kept. Migrated once into generations, never written again; still validated with the other directories. |
 | `RESEARCH_ALLOW_NEWER_DB` | unset | Override for the newer-database refusal (see "Migrations and rollback"). Set to `1` only after checking the schema difference. |
-| `RESEARCH_RUNNER_ENV_FILE` | `apps/runner/.env` | Env file the runner processes load (`--env-file-if-exists`). Tests point it at a file they wrote themselves, so the operational file is never read by a test. |
+| `RESEARCH_RUNNER_ENV_FILE` | `apps/runner/.env` | Env file the runner processes load (`--env-file-if-exists`; parsed by Node for the node runner, by the runner itself for the Rust one — in both, variables already in the environment win). Tests point it at a file they wrote themselves, so the operational file is never read by a test. |
+| `RESEARCH_RUNNER` | `node` | Which runner the launcher starts: `node` (the TypeScript runner) or `rust` (the `research-runner` binary). Any other value is refused. See "The runner: node or rust". |
+| `RESEARCH_CARGO_TARGET_DIR` | `<repo>/target` | The one Cargo build cache shared by the working tree, `prod:build`, `bun run dev` and the test pristine copies. Only used with `RESEARCH_RUNNER=rust`. |
 | `RESEARCH_RELEASE_MARKER` | unset | Build-time marker baked into the manifest and the served page (a test hook for the immutability specs; safe `[A-Za-z0-9_-]` only). |
 | `RESEARCH_BUILD_FAIL_AT` | unset | Test-only hook: fail `prod:build` at the named step (`spa`, `runner`, `worker`, `finalize`). |
+
+### The runner: node or rust
+
+`RESEARCH_RUNNER=rust` starts the Rust runner ([ADR-0030](adr/0030-runner-rewritten-in-rust.md))
+instead of the TypeScript one; **the default stays `node`**, so nothing changes until the
+owner flips it. The setting is read by `bun run dev`, `bun run prod:build` and
+`bun run prod:start`.
+
+- **Production.** `RESEARCH_RUNNER=rust bun run prod:build` runs
+  `cargo build --release --locked -p research-runner` and *copies* the binaries
+  (`research-runner`, and `research-provider-spawn` once the crate builds it) into the new
+  generation's `runner/` instead of building the Node bundle (a copy, never a link, so a
+  later build cannot change a served generation). The finished generation is read-only with
+  the binaries at mode `0555`, and its `manifest.json` records `versions.rustc` (`rustc -V`).
+  `prod:start` runs `runner/research-runner --env-file-if-exists=<file>`. A generation built
+  *before* the switch has only `runner/main.mjs`: it keeps starting with node (the launcher
+  says so) even when `RESEARCH_RUNNER=rust`, so `prod:rollback` across the switch works for
+  one release; a generation built with `rust` has no `main.mjs`, so rolling it back to the
+  node default needs `RESEARCH_RUNNER=rust` (or a rebuild).
+- **Development.** `RESEARCH_RUNNER=rust bun run dev` builds the runner once
+  (`cargo build --locked -p research-runner`, dev profile), copies it to
+  `data-dev/runner/research-runner`, and starts ONE supervising process,
+  `scripts/runnerDev.ts`. It watches `crates/**`, `Cargo.toml` and `Cargo.lock`
+  (300 ms debounce), rebuilds, installs the binary through a temp file and a rename, and
+  restarts the runner (SIGTERM to its process group, 8 s, then SIGKILL) whenever the
+  installed binary changes — including a replacement by something else. If the runner
+  exits, the supervisor stays and waits for the next change (what `node --watch` did), so a
+  crash shows up as lines in `data-dev/logs/runner.log`, where the launcher's crash watcher
+  reports it. The runner's output goes to `runner.log`; Cargo's output and the supervisor's
+  own lines go to `data-dev/logs/runner-build.log`. A failed build keeps the running runner.
+- **Cargo environment.** The launcher never passes `RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS`,
+  `RUSTC_WRAPPER` or `CARGO_BUILD_*` from your shell to Cargo (they could change what a
+  release is made of) and always sets `CARGO_TARGET_DIR` from `RESEARCH_CARGO_TARGET_DIR`.
+  Builds use `--locked`; with the dependency cache already present they work offline
+  (`CARGO_NET_OFFLINE=true`).
+- **Disk and cleanup.** The Rust build cache is large (several GB for dev + release of the
+  whole workspace). Keep one shared `RESEARCH_CARGO_TARGET_DIR` rather than one per checkout:
+  registry dependencies compile once, and workspace crates from other source paths get
+  different artifact hashes, so checkouts do not overwrite each other. Free it with
+  `rm -rf target` (or the directory you chose); never delete it while a build runs.
+  `bun run build:runner:rust` builds the release binary only, `bun run runner:rust` builds
+  and runs it by hand.
+- **Tests.** The pristine copies of `bun run test:real` exclude `target/` and build into the
+  same shared target directory. The suites read `RESEARCH_RUNNER` from the environment
+  that starts them (default node) and pass it on explicitly, so
+  `RESEARCH_RUNNER=rust bun run test:e2e:chrome` / `bun run test:real` exercise the Rust
+  runner, and the Cargo toolchain variables (`CARGO_HOME`, `RUSTUP_HOME`,
+  `RUSTUP_TOOLCHAIN`) are the only Rust ones a test child inherits.
 
 Tests (including the E2E suite) never write into the repository-root
 `release/`, `release.previous/`, `data/` or `data-dev/`: every spec that
@@ -75,7 +130,8 @@ bun run dev            # SPA http://localhost:3000 (HMR), API http://127.0.0.1:8
 
 `bun run dev` starts the Vite dev server with hot module replacement for the
 SPA, the API from the working tree with reload on change, and the runner from
-source, restarted when its sources (or the packages they import) change — all
+source, restarted when its sources (or the packages they import) change (with
+`RESEARCH_RUNNER=rust`, when the Rust crates change; see "The runner: node or rust") — all
 under the same supervision as production. Development data lives in `data-dev/`
 (git-ignored): its own database, runner credential and logs. Development
 refuses to run against the production data directory, and production refuses
@@ -100,9 +156,9 @@ directory, which is the hazard ADR-0011 removes.
 | `data/d1/` | The production database (SQLite): workspaces, chats, claims, evidence, runs, sources, Home dashboards and market observations. |
 | `data/runner-credential.json` | The production runner's bearer token, readable only by you (mode 0600). |
 | `data/pages/` | Retrieved public web pages as Markdown (one file per page, with retrieval metadata in front matter). Nothing here is in the database. |
-| `data/logs/` | `build.log`, `server.log`, `runner.log`, rewritten on every start. |
+| `data/logs/` | `build.log`, `server.log`, `runner.log`, rewritten on every start (development with the Rust runner also has `runner-build.log`: Cargo output and the supervisor's lines). |
 | `data-dev/` | The same layout for development (`bun run dev`). Never the production data. |
-| `release/` | The release area: `generations/<timestamp>-<random>/` (one directory per build: SPA, Worker bundle, runner bundle, migration copy, Wrangler configuration, manifest — read-only once finished), `current.json` (the pointer naming the active generation plus its activation history), `build.lock` (serialises builds/rollbacks/pruning), `holders/` (one marker per live instance). |
+| `release/` | The release area: `generations/<timestamp>-<random>/` (one directory per build: SPA, Worker bundle, runner bundle or Rust binaries, migration copy, Wrangler configuration, manifest — read-only once finished), `current.json` (the pointer naming the active generation plus its activation history), `build.lock` (serialises builds/rollbacks/pruning), `holders/` (one marker per live instance). |
 | `release.previous/` | Legacy only: the previous release *was* kept here. The first new-style `prod:build` migrates it into a generation; nothing is ever written here again. |
 
 `data/`, `data-dev/`, `release/` and `release.previous/` are git-ignored. Deleting `data/` resets production to empty; deleting `data-dev/` resets development.
@@ -231,7 +287,7 @@ runner's last error line (exit code plus the `invalid_configuration` /
 `unsupported_runtime` / `runner_crashed` event) and stops everything it
 started — development never prints "ready" for a dead runner. While running,
 a runner exit is reported on the launcher's console at once; in development
-the bundle is rebuilt and rerun on the next source change as before. Three
+the bundle (or, with `RESEARCH_RUNNER=rust`, the binary) is rebuilt and rerun on the next source change as before. Three
 runner exits or crash lines in a short window without a report is a crash
 loop: the launcher stops retrying and says so.
 
@@ -328,6 +384,8 @@ bun run build          # SPA + runner bundle + dry-run of the Cloudflare bundle
 bun run build:web      # build the SPA only (vite build)
 bun run build:runner   # bundle the runner only (to dist/runner/main.mjs)
 bun run runner         # bundle the runner and run it with node
+bun run build:runner:rust  # build the Rust runner (release) into the shared target directory
+bun run runner:rust    # build it, then run target/release/research-runner
 bun run verify         # check + typecheck + test + build
 bun run check          # Biome: format + lint
 bun run format         # Biome: write formatting
@@ -385,15 +443,18 @@ directories:
    again (the running instance keeps serving what it started with), rollback,
    start the restored release.
 3. Clean-checkout `dev`: start (nothing pre-built), the runner online under
-   Node, the same real feed refresh, a runner source edit restarts the
-   runner, the SPA served by Vite.
+   Node (`"runtime":"node"`; with `RESEARCH_RUNNER=rust`, the Cargo-built
+   binary, `"runtime":"rust"`), the same real feed refresh, a runner source
+   edit (`apps/runner/src/main.ts`; for Rust `crates/research-runner/src/main.rs`)
+   rebuilds and restarts the runner, the SPA served by Vite.
 4. Both at the same time: production and development with separate data,
    neither disturbing the other.
 
 The feed refresh through the runner's real network path is the check that
 would have caught the development runner timing every fetch out: with the
 runner switched back to Bun it fails (every tool call `TIMEOUT`), with the
-Node runner it passes.
+Node runner it passes. (The Rust runner has no Bun/Node runtime question: its
+check is that the same refresh passes with `RESEARCH_RUNNER=rust`.)
 
 ## Real-environment positive path (spends plan quota)
 

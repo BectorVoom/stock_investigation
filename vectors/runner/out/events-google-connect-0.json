@@ -1,0 +1,4 @@
+{
+	"body": "{\"leaseGeneration\":2,\"events\":[{\"seq\":0,\"at\":\"2026-10-11T00:00:00.000Z\",\"event\":{\"type\":\"google-auth-url\",\"url\":\"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=client-id.apps.googleusercontent.com&redirect_uri=http%3A%2F%2F127.0.0.1%3A51234%2F&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=lC7HRkONmgMbfAnjtw_tCpn_MsY-4NtmqxjXvlihv9g&code_challenge_method=S256&state=state-0123456789\"}}]}",
+	"schema": "runnerEventsRequest"
+}

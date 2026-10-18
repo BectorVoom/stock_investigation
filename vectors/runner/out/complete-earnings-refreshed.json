@@ -1,0 +1,4 @@
+{
+	"body": "{\"outcome\":\"earnings-refreshed\",\"leaseGeneration\":4,\"usage\":{\"agentSteps\":0,\"toolCalls\":0,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false},\"stocks\":[{\"stockId\":\"us:AAPL\",\"fetchedAt\":\"2026-10-11T00:00:00.000Z\",\"name\":\"Example Corp\",\"events\":[{\"periodKey\":\"2026-q4\",\"announcementDate\":\"2026-10-28\",\"fiscalPeriodLabel\":\"Q4 2026\",\"fiscalPeriodEnd\":\"2026-09-30\",\"timing\":\"after-close\"}],\"errorCode\":null},{\"stockId\":\"us:MSFT\",\"fetchedAt\":\"2026-10-11T00:00:00.000Z\",\"name\":\"Other Corp\",\"events\":[],\"errorCode\":\"NO_SCHEDULED_DATE\"}]}",
+	"schema": "completeJobRequest"
+}

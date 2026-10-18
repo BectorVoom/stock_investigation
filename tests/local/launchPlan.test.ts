@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+	cargoBuildEnv,
+	cargoTargetDirFromEnv,
 	DEFAULT_DEV_API_PORT,
 	DEFAULT_DEV_DATA_DIR,
 	DEFAULT_DEV_PORT,
@@ -8,6 +10,7 @@ import {
 	DEFAULT_PROD_PORT,
 	describeOverlap,
 	type LaunchInputs,
+	parseRunnerKind,
 	planLaunch,
 	RUNNER_ENV_FILE,
 	readLaunchInputs,
@@ -29,6 +32,9 @@ function inputs(overrides: Partial<LaunchInputs> = {}): LaunchInputs {
 		releaseDir: "release",
 		previousReleaseDir: DEFAULT_PREVIOUS_RELEASE_DIR,
 		runnerEnvFile: RUNNER_ENV_FILE,
+		runnerKind: "node",
+		cargoTargetDir: "/repo/target",
+		generationRunners: { node: true, rust: false },
 		...overrides,
 	};
 }
@@ -133,6 +139,7 @@ describe("planLaunch: production", () => {
 		expect(serverArgs).toContain("--log-level warn");
 
 		const runner = plan.processes[1];
+		expect(runner?.command).toBe("node");
 		expect(runner?.args.join(" ")).toContain("release/runner/main.mjs");
 		expect(runner?.args.join(" ")).not.toContain("--watch");
 		expect(runner?.extraEnv.RESEARCH_API_URL).toBe(plan.origin);
@@ -258,6 +265,7 @@ describe("planLaunch: development", () => {
 		// The runner bundle lives inside the data directory and runs under
 		// Node: Bun's Node compatibility hangs the pinned HTTPS fetcher.
 		expect(plan.devRunner).toEqual({
+			kind: "node",
 			bunExe: BUN,
 			source: "apps/runner/src/main.ts",
 			bundle: `${DEFAULT_DEV_DATA_DIR}/runner/main.mjs`,
@@ -312,5 +320,144 @@ describe("planLaunch: development", () => {
 			{ port: 3100, envVar: "RESEARCH_DEV_PORT" },
 			{ port: 8899, envVar: "RESEARCH_DEV_API_PORT" },
 		]);
+	});
+});
+
+describe("RESEARCH_RUNNER and the Cargo settings", () => {
+	it("defaults to node and the repository target directory", () => {
+		const parsed = readLaunchInputs("production", {}, REPO_ROOT, BUN);
+		expect(parsed.ok && parsed.value.runnerKind).toBe("node");
+		expect(parsed.ok && parsed.value.cargoTargetDir).toBe("/repo/target");
+	});
+
+	it("accepts rust and node, trims, and treats empty as the default", () => {
+		expect(parseRunnerKind("rust")).toEqual({ ok: true, value: "rust" });
+		expect(parseRunnerKind(" node ")).toEqual({ ok: true, value: "node" });
+		expect(parseRunnerKind("")).toEqual({ ok: true, value: "node" });
+		expect(parseRunnerKind(undefined)).toEqual({ ok: true, value: "node" });
+	});
+
+	it("refuses an unknown runner and names the setting", () => {
+		const parsed = readLaunchInputs("production", { RESEARCH_RUNNER: "go" }, REPO_ROOT, BUN);
+		expect(parsed.ok).toBe(false);
+		if (parsed.ok) return;
+		expect(parsed.error.code).toBe("INVALID_RUNNER");
+		expect(parsed.error.message).toContain("RESEARCH_RUNNER");
+	});
+
+	it("resolves RESEARCH_CARGO_TARGET_DIR against the repository", () => {
+		expect(cargoTargetDirFromEnv({ RESEARCH_CARGO_TARGET_DIR: "/cache/t" }, REPO_ROOT)).toBe(
+			"/cache/t",
+		);
+		expect(cargoTargetDirFromEnv({ RESEARCH_CARGO_TARGET_DIR: "../shared" }, REPO_ROOT)).toBe(
+			"/shared",
+		);
+	});
+
+	it("never passes RUSTFLAGS or CARGO_BUILD_* on to Cargo, and sets the shared target dir", () => {
+		const env = cargoBuildEnv(
+			{
+				PATH: "/bin",
+				RUSTFLAGS: "--cfg test_seams",
+				CARGO_ENCODED_RUSTFLAGS: "x",
+				RUSTC_WRAPPER: "sccache",
+				CARGO_BUILD_RUSTFLAGS: "x",
+				CARGO_BUILD_TARGET: "x",
+				CARGO_HOME: "/home/.cargo",
+				CARGO_TARGET_DIR: "/elsewhere",
+			},
+			"/cache/t",
+		);
+		expect(env).toEqual({ PATH: "/bin", CARGO_HOME: "/home/.cargo", CARGO_TARGET_DIR: "/cache/t" });
+	});
+});
+
+describe("planLaunch: production with the Rust runner", () => {
+	const rust = (overrides: Partial<LaunchInputs> = {}) =>
+		inputs({ runnerKind: "rust", generationRunners: { node: false, rust: true }, ...overrides });
+
+	it("executes the binary of the generation with only the env-file flag", () => {
+		const planned = planLaunch(rust({ releaseDir: "release/generations/g1" }));
+		expect(planned.ok).toBe(true);
+		if (!planned.ok) return;
+		const plan = planned.value;
+		expect(plan.processes.map((process) => process.name)).toEqual(["server", "runner"]);
+		const runner = plan.processes[1];
+		expect(runner?.command).toBe("release/generations/g1/runner/research-runner");
+		expect(runner?.args).toEqual([`--env-file-if-exists=${RUNNER_ENV_FILE}`]);
+		// The launcher's variables still win over a deployed-Worker env file.
+		expect(runner?.extraEnv).toEqual({
+			RESEARCH_API_URL: plan.origin,
+			RUNNER_PAGES_DIR: "data/pages",
+			GOOGLE_TOKEN_FILE: "data/google-token.json",
+		});
+		expect(plan.release?.runnerKind).toBe("rust");
+		expect(plan.release?.runnerBundle).toBe("release/generations/g1/runner/research-runner");
+		expect(plan.release?.runnerFellBack).toBe(false);
+	});
+
+	it("keeps starting a generation built before the switch with node", () => {
+		const planned = planLaunch(
+			inputs({ runnerKind: "rust", generationRunners: { node: true, rust: false } }),
+		);
+		expect(planned.ok).toBe(true);
+		if (!planned.ok) return;
+		const runner = planned.value.processes[1];
+		expect(runner?.command).toBe("node");
+		expect(runner?.args.join(" ")).toContain("release/runner/main.mjs");
+		expect(planned.value.release?.runnerKind).toBe("node");
+		expect(planned.value.release?.runnerFellBack).toBe(true);
+	});
+
+	it("starts node from a generation holding both runners when node is asked for", () => {
+		const planned = planLaunch(inputs({ generationRunners: { node: true, rust: true } }));
+		expect(planned.ok).toBe(true);
+		if (!planned.ok) return;
+		expect(planned.value.release?.runnerKind).toBe("node");
+		expect(planned.value.release?.runnerFellBack).toBe(false);
+	});
+});
+
+describe("planLaunch: development with the Rust runner", () => {
+	it("starts Vite, the API and ONE supervising runner process, with a Cargo prepare step", () => {
+		const planned = planLaunch(
+			inputs({ mode: "development", runnerKind: "rust", cargoTargetDir: "/cache/t" }),
+		);
+		expect(planned.ok).toBe(true);
+		if (!planned.ok) return;
+		const plan = planned.value;
+		expect(plan.processes.map((process) => process.name)).toEqual(["vite", "server", "runner"]);
+		const binary = `${DEFAULT_DEV_DATA_DIR}/runner/research-runner`;
+		const runner = plan.processes[2];
+		expect(runner?.command).toBe(BUN);
+		expect(runner?.args[0]).toBe("scripts/runnerDev.ts");
+		expect(runner?.args).toEqual([
+			"scripts/runnerDev.ts",
+			"--binary",
+			binary,
+			"--runner-env",
+			RUNNER_ENV_FILE,
+			"--target-dir",
+			"/cache/t",
+			"--build-log",
+			`${DEFAULT_DEV_DATA_DIR}/logs/runner-build.log`,
+		]);
+		expect(runner?.logFile).toBe(`${DEFAULT_DEV_DATA_DIR}/logs/runner.log`);
+		expect(runner?.extraEnv).toEqual({
+			RESEARCH_API_URL: plan.apiOrigin,
+			RUNNER_PAGES_DIR: `${DEFAULT_DEV_DATA_DIR}/pages`,
+			GOOGLE_TOKEN_FILE: `${DEFAULT_DEV_DATA_DIR}/google-token.json`,
+		});
+		expect(plan.devRunner).toMatchObject({
+			kind: "rust",
+			binary,
+			binaryDir: `${DEFAULT_DEV_DATA_DIR}/runner`,
+			cargoTargetDir: "/cache/t",
+		});
+		// The one-shot build is the same script with --once, so the file exists
+		// before anything starts.
+		const prepare = plan.devRunner?.kind === "rust" ? plan.devRunner.prepare : null;
+		expect(prepare?.command).toBe(BUN);
+		expect(prepare?.args).toEqual([...(runner?.args ?? []), "--once"]);
 	});
 });

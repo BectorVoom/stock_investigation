@@ -22,5 +22,23 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 thiserror = { workspace = true }
 
+research-finance = { workspace = true }
+research-effects = { workspace = true }
+url = { workspace = true }
+getrandom = { workspace = true }
+bytes = { workspace = true }
+httparse = { workspace = true }
+http = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { workspace = true }
+http-body-util = { workspace = true }
+
+[dev-dependencies]
+research-net = { workspace = true, features = ["test-seams"] }
+tempfile = { workspace = true }
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+research-domain = { workspace = true }
+
 [lints]
 workspace = true
