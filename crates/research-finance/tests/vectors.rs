@@ -577,3 +577,436 @@ async fn jpx_source_matches_typescript() {
 	}
 	report(&failures);
 }
+
+/* ---------- SEC ---------- */
+
+use research_domain::finance::filings::ReportedPositionChange;
+use research_feed::{info_table, tree, validator};
+use research_finance::ports::Sleeper;
+use research_finance::sec_13f::{
+	Edgar13FSource, Reported13FHolding, Sec13FSource, compare_reported_positions,
+	extract_information_table_xml, parse_information_table, sec_filing_text_url,
+	sec_submissions_url, select_recent_13f_filings,
+};
+use research_finance::sec_client::{
+	PacedSecClient, SecClient, SecDocument, SecError, SecRequest, is_usable_sec_user_agent,
+	iso_date_to_instant, normalize_cik, parse_sec_json,
+};
+use research_finance::sec_financials::{
+	EdgarFinancialsSource, FigureResult, SecCompanyFinancials, SecFinancialsSource,
+	SelectedFinancials, normalize_ticker_key, parse_ticker_directory, sec_company_facts_url,
+	select_annual_financials,
+};
+
+fn sec_error_json(error: &SecError) -> Json {
+	serde_json::to_value(error).unwrap()
+}
+
+fn result_json<T>(result: Result<T, SecError>, ok: impl FnOnce(T) -> Json) -> Json {
+	match result {
+		Ok(value) => json!({"ok": true, "value": ok(value)}),
+		Err(error) => json!({"ok": false, "error": sec_error_json(&error)}),
+	}
+}
+
+fn figure_json(figure: &FigureResult) -> Json {
+	match figure {
+		Ok(value) => json!({"ok": true, "value": serde_json::to_value(value).unwrap()}),
+		Err(error) => json!({"ok": false, "error": {"reason": error.reason}}),
+	}
+}
+
+fn selected_json(selected: &SelectedFinancials) -> Json {
+	let margin = match &selected.net_profit_margin {
+		Ok(m) => json!({"ok": true, "value": {
+			"marginRatio": m.margin_ratio,
+			"formula": "net income / revenue",
+			"currency": m.currency,
+			"period": serde_json::to_value(&m.period).unwrap(),
+			"accountingStandard": serde_json::to_value(m.accounting_standard).unwrap(),
+			"continuingOperationsPolicy": "total",
+		}}),
+		Err(error) => json!({"ok": false, "error": {"reason": error.reason}}),
+	};
+	json!({
+		"revenue": figure_json(&selected.revenue),
+		"netIncome": figure_json(&selected.net_income),
+		"epsDiluted": figure_json(&selected.eps_diluted),
+		"netProfitMargin": margin,
+	})
+}
+
+fn financials_json(value: &SecCompanyFinancials) -> Json {
+	let mut json = selected_json(&value.selected);
+	json["issuer"] = serde_json::to_value(&value.issuer).unwrap();
+	json["tickerDirectoryUrl"] = Json::String(value.ticker_directory_url.clone());
+	json["companyFactsUrl"] = Json::String(value.company_facts_url.clone());
+	json
+}
+
+#[test]
+fn sec_client_primitives_match_typescript() {
+	let file = load("sec_client.json");
+	let primitives = field(&file, "primitives");
+	let mut failures = Vec::new();
+	for case in array(primitives, "userAgents") {
+		let input = optional_text(case, "input");
+		if is_usable_sec_user_agent(input) != flag(case, "output") {
+			failures.push(format!("userAgent {input:?}"));
+		}
+	}
+	for case in array(primitives, "ciks") {
+		let input = text(case, "input");
+		if normalize_cik(input).as_deref() != optional_text(case, "output") {
+			failures.push(format!("cik {input:?}: {:?}", normalize_cik(input)));
+		}
+	}
+	for case in array(primitives, "instants") {
+		if iso_date_to_instant(text(case, "input")) != text(case, "output") {
+			failures.push(format!("instant {:?}", text(case, "input")));
+		}
+	}
+	for case in array(primitives, "json") {
+		let document = SecDocument {
+			url: "https://www.sec.gov/x".to_owned(),
+			text: text(case, "text").to_owned(),
+		};
+		let actual = result_json(parse_sec_json(&document), |v| value_to_serde(&v));
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!("json {:?}: {actual} != {expected}", document.text));
+		}
+	}
+	report(&failures);
+}
+
+/// Records every sleep and, like the TypeScript client's, ignores cancellation (F2).
+struct RecordingSleeper(EventLog);
+
+#[async_trait::async_trait]
+impl Sleeper for RecordingSleeper {
+	async fn sleep(&self, ms: u64, cancel: Option<&CancellationToken>) {
+		assert!(
+			cancel.is_none(),
+			"the SEC wait must not be cancellable (F2)"
+		);
+		self.0.push(json!({"sleep": ms}));
+	}
+}
+
+fn sec_client(
+	case: &Value,
+	log: &EventLog,
+	script: &Value,
+	clock: &Arc<TestClock>,
+) -> PacedSecClient {
+	PacedSecClient::new(
+		Arc::new(Scripted::new(script, log)),
+		clock.clone(),
+		Arc::new(RecordingSleeper(log.clone())),
+		optional_text(case, "userAgent").map(str::to_owned),
+	)
+}
+
+#[tokio::test]
+async fn sec_client_calls_match_typescript() {
+	let file = load("sec_client.json");
+	let cases = array(&file, "calls");
+	assert!(cases.len() >= 100);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let log = EventLog::default();
+		let clock = Arc::new(TestClock(std::sync::atomic::AtomicI64::new(
+			number(case, "startMs") as i64,
+		)));
+		let client = sec_client(case, &log, field(case, "script"), &clock);
+		let calls = array(case, "calls");
+		let tokens: Vec<CancellationToken> = calls
+			.iter()
+			.map(|call| {
+				let token = CancellationToken::new();
+				if flag(call, "cancel") {
+					token.cancel();
+				}
+				token
+			})
+			.collect();
+		let request = |call: &Value, token: &CancellationToken| {
+			let url = text(call, "url").to_owned();
+			let accept = text(call, "accept").to_owned();
+			let max_bytes = number(call, "maxBytes") as usize;
+			let token = token.clone();
+			let client = &client;
+			async move {
+				let result = client
+					.fetch_document(
+						&url,
+						SecRequest {
+							max_bytes,
+							accept: &accept,
+							cancel: Some(&token),
+						},
+					)
+					.await;
+				result_json(result, |d| json!({"url": d.url, "text": d.text}))
+			}
+		};
+		let mut outputs = Vec::new();
+		if flag(case, "concurrent") {
+			for call in calls {
+				clock.0.fetch_add(
+					number(call, "advanceMs") as i64,
+					std::sync::atomic::Ordering::SeqCst,
+				);
+			}
+			let futures: Vec<_> = calls
+				.iter()
+				.zip(&tokens)
+				.map(|(call, token)| request(call, token))
+				.collect();
+			outputs = futures_util::future::join_all(futures).await;
+		} else {
+			for (call, token) in calls.iter().zip(&tokens) {
+				clock.0.fetch_add(
+					number(call, "advanceMs") as i64,
+					std::sync::atomic::Ordering::SeqCst,
+				);
+				outputs.push(request(call, token).await);
+			}
+		}
+		// Overlapping calls interleave sleeps and fetches differently; the
+		// record keeps the two lists apart, each in order.
+		let events = log.snapshot().as_array().unwrap().clone();
+		let (fetches, sleeps): (Vec<_>, Vec<_>) = events
+			.into_iter()
+			.partition(|event| event.get("fetch").is_some());
+		let actual = json!({"events": {"fetches": fetches, "sleeps": sleeps}, "outputs": outputs});
+		let expected = json!({
+			"events": js_to_serde(field(case, "events")),
+			"outputs": js_to_serde(field(case, "outputs")),
+		});
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"sec client {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	report(&failures);
+}
+
+#[test]
+fn sec_13f_pure_parts_match_typescript() {
+	let file = load("sec_13f.json");
+	let mut failures = Vec::new();
+	for case in array(&file, "urls") {
+		if sec_submissions_url(text(case, "cik")) != text(case, "submissions")
+			|| sec_filing_text_url(text(case, "cik"), text(case, "accession"))
+				!= text(case, "filing")
+		{
+			failures.push(format!("urls {:?}", text(case, "cik")));
+		}
+	}
+	for (index, case) in array(&file, "selection").iter().enumerate() {
+		let actual = result_json(
+			select_recent_13f_filings(field(case, "input")),
+			|recent| json!({"managerName": recent.manager_name, "filings": serde_json::to_value(&recent.filings).unwrap()}),
+		);
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"selection {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	for (index, case) in array(&file, "extraction").iter().enumerate() {
+		let actual = extract_information_table_xml(text(case, "input"));
+		if actual.as_deref() != optional_text(case, "output") {
+			failures.push(format!("extraction {index}: {actual:?}"));
+		}
+	}
+	for (index, case) in array(&file, "comparisons").iter().enumerate() {
+		let holdings = |key: &str| -> Vec<Reported13FHolding> {
+			array(case, key)
+				.iter()
+				.map(|h| Reported13FHolding {
+					issuer_name: text(h, "issuerName").to_owned(),
+					cusip: text(h, "cusip").to_owned(),
+					// Infinity travels as JSON null in the exporter's output (JSON.stringify).
+					reported_shares: field(h, "reportedShares").as_f64().unwrap_or(f64::INFINITY),
+					reported_value_usd: number(h, "reportedValueUsd"),
+				})
+				.collect()
+		};
+		let actual = serde_json::to_value(compare_reported_positions(
+			&holdings("previous"),
+			&holdings("current"),
+		))
+		.unwrap();
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"comparison {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	report(&failures);
+	let _ = ReportedPositionChange::NotReported;
+}
+
+fn encode_tree(value: &tree::Value) -> Json {
+	match value {
+		tree::Value::Text(text) => Json::String(text.clone()),
+		tree::Value::Array(items) => {
+			json!({"a": items.iter().map(encode_tree).collect::<Vec<_>>()})
+		}
+		tree::Value::Object(object) => encode_object(object),
+	}
+}
+
+fn encode_object(object: &tree::Object) -> Json {
+	json!({"o": object.iter().map(|(k, v)| json!([k, encode_tree(v)])).collect::<Vec<_>>()})
+}
+
+#[test]
+fn information_table_trees_match_fast_xml_parser() {
+	let file = load("sec_13f_trees.json");
+	let cases = file.as_array().unwrap();
+	assert!(cases.len() > 1500);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let input = text(case, "input");
+		let units: Vec<u16> = input.encode_utf16().collect();
+		let valid = validator::is_valid_xml(&units);
+		let tree_json = if valid {
+			info_table::parse(&units).map_or(json!({"throws": true}), |t| encode_object(&t))
+		} else {
+			json!({"throws": true})
+		};
+		let expected_valid = flag(case, "valid");
+		let expected_tree = js_to_serde(field(case, "tree"));
+		if valid != expected_valid || norm(&tree_json) != norm(&expected_tree) {
+			failures.push(format!("tree {index} {input:?}: valid {valid}/{expected_valid} {tree_json}\n   expected {expected_tree}"));
+		}
+	}
+	report(&failures);
+}
+
+#[test]
+fn information_tables_match_typescript() {
+	let file = load("sec_13f_tables.json");
+	let cases = file.as_array().unwrap();
+	assert!(cases.len() > 500);
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let actual = result_json(parse_information_table(text(case, "input")), |t| {
+			serde_json::to_value(&t).unwrap()
+		});
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!("table {index}: {actual}\n   expected {expected}"));
+		}
+	}
+	report(&failures);
+}
+
+async fn replay_sec_source(file: &str, kind13f: bool) {
+	let cases = load(file);
+	let cases = cases.as_array().unwrap();
+	assert!(cases.len() >= 100, "{file}");
+	let mut failures = Vec::new();
+	for (index, case) in cases.iter().enumerate() {
+		let log = EventLog::default();
+		let clock = Arc::new(TestClock(std::sync::atomic::AtomicI64::new(
+			number(case, "startMs") as i64,
+		)));
+		let client: Arc<dyn SecClient> =
+			Arc::new(sec_client(case, &log, field(case, "script"), &clock));
+		let mut outputs = Vec::new();
+		let holdings_source = Edgar13FSource {
+			client: client.clone(),
+		};
+		let financials_source = EdgarFinancialsSource::new(client.clone(), clock.clone());
+		for step in array(case, "steps") {
+			clock.0.fetch_add(
+				number(step, "advanceMs") as i64,
+				std::sync::atomic::Ordering::SeqCst,
+			);
+			let token = CancellationToken::new();
+			if flag(step, "cancel") {
+				token.cancel();
+			}
+			let arg = text(step, "arg");
+			outputs.push(if kind13f {
+				result_json(
+					holdings_source.latest_holdings(arg, Some(&token)).await,
+					|r| serde_json::to_value(&r).unwrap(),
+				)
+			} else {
+				result_json(
+					financials_source
+						.latest_annual_financials(arg, Some(&token))
+						.await,
+					|r| financials_json(&r),
+				)
+			});
+		}
+		let actual = json!({"events": log.snapshot(), "outputs": outputs});
+		let expected = json!({"events": js_to_serde(field(case, "events")), "outputs": js_to_serde(field(case, "outputs"))});
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!("{file} {index}: {actual}\n   expected {expected}"));
+		}
+	}
+	report(&failures);
+}
+
+#[tokio::test]
+async fn sec_13f_source_matches_typescript() {
+	replay_sec_source("sec_13f_source.json", true).await;
+}
+
+#[tokio::test]
+async fn sec_financials_source_matches_typescript() {
+	replay_sec_source("sec_financials_source.json", false).await;
+}
+
+#[test]
+fn sec_financials_pure_parts_match_typescript() {
+	let file = load("sec_financials.json");
+	let mut failures = Vec::new();
+	for (index, case) in array(&file, "selection").iter().enumerate() {
+		let actual = result_json(select_annual_financials(field(case, "input")), |s| {
+			selected_json(&s)
+		});
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"selection {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	for (index, case) in array(&file, "directory").iter().enumerate() {
+		let result = parse_ticker_directory(field(case, "input"));
+		let actual = match result {
+			Ok(map) => {
+				json!({"ok": map.iter().map(|(k, v)| json!([k, serde_json::to_value(v).unwrap()])).collect::<Vec<_>>()})
+			}
+			Err(error) => json!({"err": sec_error_json(&error)}),
+		};
+		let expected = js_to_serde(field(case, "output"));
+		if norm(&actual) != norm(&expected) {
+			failures.push(format!(
+				"directory {index}: {actual}\n   expected {expected}"
+			));
+		}
+	}
+	for case in array(&file, "tickerKeys") {
+		if normalize_ticker_key(text(case, "input")) != text(case, "output") {
+			failures.push(format!("tickerKey {:?}", text(case, "input")));
+		}
+	}
+	assert_eq!(
+		sec_company_facts_url("0000320193"),
+		array(&file, "urls")[0].as_str().unwrap()
+	);
+	report(&failures);
+}

@@ -18,6 +18,7 @@
 //! `Object.entries` key order; `vectors/feed/*.json` pin them against the
 //! TypeScript.
 
+pub mod info_table;
 mod names;
 pub mod tree;
 mod units;

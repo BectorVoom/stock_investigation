@@ -8,7 +8,8 @@ use indexmap::IndexMap;
 use research_application::ports::Clock;
 use research_domain::finance::{
 	net_margin::{
-		ContinuingOperationsPolicy, IncomeFigure, NetMarginError, compute_net_profit_margin,
+		ContinuingOperationsPolicy, IncomeFigure, NetMarginError, NetProfitMargin,
+		compute_net_profit_margin,
 	},
 	types::{AccountingStandard, FiscalPeriod, Money, ReportingPeriod},
 };
@@ -95,23 +96,6 @@ pub struct Unavailable {
 }
 /// A selected annual figure or explicit absence.
 pub type FigureResult = Result<SecAnnualFigure, Unavailable>;
-/// Domain margin plus its constant wire fields.
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Margin {
-	/// Net income / revenue.
-	pub margin_ratio: f64,
-	/// Reporting currency.
-	pub currency: String,
-	/// Common reporting period.
-	pub period: ReportingPeriod,
-	/// Accounting basis.
-	pub accounting_standard: AccountingStandard,
-	/// Total income basis.
-	pub continuing_operations_policy: String,
-	/// Explicit formula.
-	pub formula: String,
-}
 /// Independent annual selections and their derived margin.
 #[derive(Clone, Debug)]
 pub struct SelectedFinancials {
@@ -122,7 +106,7 @@ pub struct SelectedFinancials {
 	/// Diluted earnings per share.
 	pub eps_diluted: FigureResult,
 	/// Margin with honest failure semantics.
-	pub net_profit_margin: Result<Margin, Unavailable>,
+	pub net_profit_margin: Result<NetProfitMargin, Unavailable>,
 }
 /// Company financials and the documents actually retrieved.
 #[derive(Clone, Debug)]
@@ -342,7 +326,10 @@ fn figure(selection: Option<Selection>, what: &str) -> FigureResult {
 		}),
 	}
 }
-fn derive_margin(revenue: &FigureResult, income: &FigureResult) -> Result<Margin, Unavailable> {
+fn derive_margin(
+	revenue: &FigureResult,
+	income: &FigureResult,
+) -> Result<NetProfitMargin, Unavailable> {
 	let (Ok(revenue), Ok(income)) = (revenue, income) else {
 		return Err(Unavailable {
 			reason: "net profit margin needs both revenue and net income; one is unavailable"
@@ -359,14 +346,7 @@ fn derive_margin(revenue: &FigureResult, income: &FigureResult) -> Result<Margin
 		continuing_operations_policy: ContinuingOperationsPolicy::Total,
 	};
 	match compute_net_profit_margin(&to_income(income), &to_income(revenue)) {
-		Ok(m) => Ok(Margin {
-			margin_ratio: m.margin_ratio,
-			currency: m.currency,
-			period: m.period,
-			accounting_standard: m.accounting_standard,
-			continuing_operations_policy: "total".to_owned(),
-			formula: "net income / revenue".to_owned(),
-		}),
+		Ok(margin) => Ok(margin),
 		Err(error) => {
 			let reason = match error {
 				NetMarginError::NonFinite => "a reported figure is not a finite number",

@@ -87,21 +87,32 @@ pub trait SecClient: Send + Sync {
 		request: SecRequest<'_>,
 	) -> Result<SecDocument, SecError>;
 }
-/// True for a printable owner contact containing an email-shaped string.
+/// True for a printable owner contact containing an email-shaped string:
+/// `^[\x20-\x7e]{8,200}$` and `[^\s@]+@[^\s@]+\.[^\s@]+` (the user agent is
+/// printable ASCII by then, so the only whitespace is the space).
 pub fn is_usable_sec_user_agent(user_agent: Option<&str>) -> bool {
-	let Some(ua) = user_agent
-		.filter(|s| (8..=200).contains(&s.len()) && s.bytes().all(|b| (0x20..=0x7e).contains(&b)))
-	else {
+	let Some(ua) = user_agent.filter(|text| {
+		(8..=200).contains(&text.len()) && text.bytes().all(|byte| (0x20..=0x7e).contains(&byte))
+	}) else {
 		return false;
 	};
-	ua.split_whitespace().any(|word| {
-		word.split_once('@').is_some_and(|(left, right)| {
-			!left.is_empty()
-				&& !left.contains('@')
-				&& right
-					.split_once('.')
-					.is_some_and(|(a, b)| !a.is_empty() && !b.is_empty() && !right.contains('@'))
-		})
+	let bytes = ua.as_bytes();
+	let plain = |byte: u8| byte != b' ' && byte != b'@';
+	bytes.iter().enumerate().any(|(at, byte)| {
+		if *byte != b'@' || at == 0 || !bytes.get(at - 1).is_some_and(|b| plain(*b)) {
+			return false;
+		}
+		// The run after the '@' needs a '.' with a character on both sides of
+		// it inside the run.
+		let run: Vec<u8> = bytes
+			.iter()
+			.skip(at + 1)
+			.take_while(|b| plain(**b))
+			.copied()
+			.collect();
+		run.iter()
+			.enumerate()
+			.any(|(k, b)| *b == b'.' && k >= 1 && k + 2 <= run.len())
 	})
 }
 /// Ten-digit nonzero CIK; strips a single leading CIK after JS trimming.
