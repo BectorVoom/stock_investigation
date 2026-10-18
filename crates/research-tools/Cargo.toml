@@ -13,6 +13,7 @@ research-domain = { workspace = true }
 research-contracts = { workspace = true }
 research-agent-core = { workspace = true }
 research-application = { workspace = true }
+research-net = { workspace = true }
 research-html = { workspace = true }
 research-feed = { workspace = true }
 research-finance = { workspace = true }
@@ -27,3 +28,7 @@ rayon = { workspace = true }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+sha2 = { workspace = true }
+tempfile = { workspace = true }

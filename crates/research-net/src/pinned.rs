@@ -16,8 +16,9 @@
 //! caller's count IS the wire count. Any other `Content-Encoding` is refused.
 //! Only a success body is ever read; anything else is dropped unread.
 
-use std::sync::Arc;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, Weak};
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -126,6 +127,13 @@ pub trait PinnedConnect: Send + Sync {
 
 	/// Whether an idle pooled connection to `address` (host name and IP)
 	/// exists; the transport tries such addresses first.
+	/// Opens TLS without sending an HTTP request. The default is an unsupported
+	/// optimization (fetching remains fully functional).
+	async fn preconnect(&self, _address: &ValidatedAddress) -> Result<(), ConnectError> {
+		Ok(())
+	}
+
+	/// Whether a connection is available or currently being prepared.
 	fn has_idle(&self, _address: &ValidatedAddress) -> bool {
 		false
 	}
@@ -138,6 +146,7 @@ pub struct PinnedHttpsConnect {
 	tls: PinnedTls,
 	pool: Arc<ConnectionPool>,
 	opened: AtomicU64,
+	pending: Mutex<HashMap<PoolKey, Weak<tokio::sync::Mutex<()>>>>,
 }
 
 /// Node's `headerText` + Latin-1 decoding of the first value.
@@ -240,6 +249,7 @@ impl PinnedHttpsConnect {
 			tls,
 			pool: Arc::new(ConnectionPool::new(limits)),
 			opened: AtomicU64::new(0),
+			pending: Mutex::new(HashMap::new()),
 		}
 	}
 
@@ -253,6 +263,22 @@ impl PinnedHttpsConnect {
 	#[must_use]
 	pub fn connections_opened(&self) -> u64 {
 		self.opened.load(Ordering::Relaxed)
+	}
+
+	// Weak entries never retain tasks, connections or cancelled preparations.
+	// Every access removes dead entries, bounding bookkeeping by live callers.
+	fn preparation_gate(&self, key: &PoolKey) -> Arc<tokio::sync::Mutex<()>> {
+		let mut pending = self
+			.pending
+			.lock()
+			.unwrap_or_else(std::sync::PoisonError::into_inner);
+		pending.retain(|_, gate| gate.strong_count() > 0);
+		if let Some(gate) = pending.get(key).and_then(Weak::upgrade) {
+			return gate;
+		}
+		let gate = Arc::new(tokio::sync::Mutex::new(()));
+		pending.insert(key.clone(), Arc::downgrade(&gate));
+		gate
 	}
 
 	async fn open(&self, address: &ValidatedAddress) -> Result<Connection, ConnectError> {
@@ -349,6 +375,10 @@ impl PinnedHttpsConnect {
 impl PinnedConnect for PinnedHttpsConnect {
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError> {
 		let key: PoolKey = (request.address.hostname().to_owned(), request.address.ip());
+		// Wait for an in-flight preparation rather than dialing a second socket.
+		// No request can bypass fresh DNS: the transport validated this address.
+		let gate = self.preparation_gate(&key);
+		let _prepared = gate.lock().await;
 		if let Some(idle) = self
 			.pool
 			.take(request.address.hostname(), request.address.ip())
@@ -367,8 +397,27 @@ impl PinnedConnect for PinnedHttpsConnect {
 		}
 	}
 
+	async fn preconnect(&self, address: &ValidatedAddress) -> Result<(), ConnectError> {
+		let key: PoolKey = (address.hostname().to_owned(), address.ip());
+		let gate = self.preparation_gate(&key);
+		let _prepared = gate.lock().await;
+		if !self.pool.has_idle(address.hostname(), address.ip()) {
+			let connection = self.open(address).await?;
+			// No HTTP bytes were sent; this clean connection uses the same key,
+			// idle timeout and caps as a successfully completed 2xx connection.
+			self.pool.put(key, connection);
+		}
+		Ok(())
+	}
+
 	fn has_idle(&self, address: &ValidatedAddress) -> bool {
 		self.pool.has_idle(address.hostname(), address.ip())
+			|| self
+				.pending
+				.lock()
+				.unwrap_or_else(std::sync::PoisonError::into_inner)
+				.get(&(address.hostname().to_owned(), address.ip()))
+				.is_some_and(|gate| gate.strong_count() > 0)
 	}
 }
 
