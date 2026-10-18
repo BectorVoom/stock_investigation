@@ -1,5 +1,7 @@
 import type { EarningsCalendarSource, EarningsSourceRegistry } from "@research/application";
+import { type EarningsEvent, earningsEventSchema } from "@research/contracts";
 import { err, ok } from "@research/domain";
+import { EARNINGS_FIXTURES } from "./fixtures.ts";
 
 /**
  * Fixture earnings dates for the browser E2E run: canned Finnhub/JPX answers
@@ -22,33 +24,38 @@ function isoInDays(days: number): string {
 	return new Date(Date.now() + days * DAY_MS).toISOString().slice(0, 10);
 }
 
-const APPLE_OFFSET_DAYS = 16;
-const TOYOTA_OFFSET_DAYS = 23;
+/** One fixture announcement, validated against the public contract. */
+interface FixtureEntry {
+	readonly periodKey: string;
+	readonly offsetDays: number;
+	readonly fiscalPeriodLabel: string;
+	readonly fiscalPeriodEnd: string | null;
+	readonly timing: string;
+}
 
-const AAPL_EVENT_BASE = {
-	periodKey: "2026-q4",
-	fiscalPeriodLabel: "Q4 2026",
-	fiscalPeriodEnd: null,
-	timing: "after-close",
-} as const;
+function fixtureEvent(entry: FixtureEntry): EarningsEvent {
+	return earningsEventSchema.parse({
+		periodKey: entry.periodKey,
+		announcementDate: isoInDays(entry.offsetDays),
+		fiscalPeriodLabel: entry.fiscalPeriodLabel,
+		fiscalPeriodEnd: entry.fiscalPeriodEnd,
+		timing: entry.timing,
+	});
+}
 
-const TOYOTA_EVENT_BASE = {
-	periodKey: "fy2027-03-31-second-quarter",
-	fiscalPeriodLabel: "Second quarter",
-	fiscalPeriodEnd: "2027-03-31",
-	timing: "unknown",
-} as const;
+const [apple] = EARNINGS_FIXTURES.finnhub;
+const [toyota] = EARNINGS_FIXTURES.jpx;
+if (apple === undefined || toyota === undefined) {
+	throw new Error("tests/e2e/fixtures/e2e-fixtures.json lacks the earnings fixtures");
+}
 
 const finnhub: EarningsCalendarSource = {
 	sourceId: "finnhub",
 	fetchEarnings: (query) =>
 		Promise.resolve(
 			query.stocks.map((stock) =>
-				stock.symbol === "AAPL"
-					? ok({
-							name: "Apple Inc",
-							events: [{ ...AAPL_EVENT_BASE, announcementDate: isoInDays(APPLE_OFFSET_DAYS) }],
-						})
+				stock.symbol === apple.symbol
+					? ok({ name: apple.name, events: [fixtureEvent(apple)] })
 					: err({ code: "SYMBOL_NOT_FOUND" as const }),
 			),
 		),
@@ -59,11 +66,8 @@ const jpx: EarningsCalendarSource = {
 	fetchEarnings: (query) =>
 		Promise.resolve(
 			query.stocks.map((stock) =>
-				stock.symbol === "7203"
-					? ok({
-							name: "Toyota Motor Corp.",
-							events: [{ ...TOYOTA_EVENT_BASE, announcementDate: isoInDays(TOYOTA_OFFSET_DAYS) }],
-						})
+				stock.symbol === toyota.symbol
+					? ok({ name: toyota.name, events: [fixtureEvent(toyota)] })
 					: err({ code: "NO_SCHEDULED_DATE" as const, name: null }),
 			),
 		),

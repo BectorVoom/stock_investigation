@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalizeDir } from "../../scripts/releaseOps.ts";
-import { baseChildEnv, ISOLATION_RECORD_ENV_VAR } from "../../scripts/testEnv.ts";
+import {
+	baseChildEnv,
+	ISOLATION_RECORD_ENV_VAR,
+	suiteRunnerSettings,
+} from "../../scripts/testEnv.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 import { marketFailureFile } from "./marketFixtures.ts";
 
@@ -63,6 +67,7 @@ export default function globalSetup(): () => Promise<void> {
 		// caller's environment.
 		env: {
 			...baseChildEnv(),
+			...suiteRunnerSettings(),
 			...(process.env.E2E_PORT === undefined ? {} : { E2E_PORT: process.env.E2E_PORT }),
 			...(process.env.RUN_LIVE_OPENCODE === undefined
 				? {}

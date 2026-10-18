@@ -1,6 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { baseChildEnv } from "../../scripts/testEnv.ts";
+import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
 import { E2E_PORT, FEED_URL } from "./fixtures.ts";
 
 /**
@@ -32,6 +32,7 @@ test.beforeAll(async ({ browser }) => {
 		cwd: new URL("../..", import.meta.url).pathname,
 		env: {
 			...baseChildEnv(),
+			...suiteRunnerSettings(),
 			E2E_PORT: String(E2E_PORT),
 			E2E_RUNNER_OWNER: owner,
 		},
