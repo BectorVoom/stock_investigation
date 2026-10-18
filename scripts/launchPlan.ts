@@ -8,12 +8,13 @@
  *
  * Development runs the working tree live (Vite HMR, `wrangler dev` reload,
  * a watching `bun build` of the runner into the development data directory
- * plus the bundle run under `node --watch`, or with RESEARCH_RUNNER=rust the
- * Cargo-built binary kept fresh by `scripts/runnerDev.ts`) against `data-dev/`. Production runs ONLY the
+ * plus the Cargo-built binary kept fresh by `scripts/runnerDev.ts` (the default), or with RESEARCH_RUNNER=node the
+ * Cargo-built binary kept fresh by `scripts/runnerDev.ts`, or with RESEARCH_RUNNER=node the
+ * bundle run under `node --watch`) against `data-dev/`. Production runs ONLY the
  * generation the pointer names under `release/generations/` (prebuilt Worker bundle with
  * bundling disabled, so later source edits and rebuilds of `dist/` cannot change what it serves)
  * against `data/`. Neither mode reads the other's data directory. The runner
- * itself is chosen by RESEARCH_RUNNER (node, the default, or rust; ADR-0030).
+ * itself is chosen by RESEARCH_RUNNER (rust, the default, or node, the rollback; ADR-0030).
  */
 import { resolve, sep } from "node:path";
 
@@ -51,7 +52,7 @@ export const RUNNER_SOURCE = "apps/runner/src/main.ts";
  */
 export const RUNNER_KINDS = ["node", "rust"] as const;
 export type RunnerKind = (typeof RUNNER_KINDS)[number];
-export const DEFAULT_RUNNER_KIND: RunnerKind = "node";
+export const DEFAULT_RUNNER_KIND: RunnerKind = "rust";
 export const RUNNER_KIND_ENV_VAR = "RESEARCH_RUNNER";
 /**
  * Setting naming the shared Cargo target directory (default `<repo>/target`).
@@ -220,7 +221,7 @@ export interface LaunchInputs {
 	readonly previousReleaseDir: string;
 	/** Env file the runner processes load; tests override it (finding 5). */
 	readonly runnerEnvFile: string;
-	/** Which runner the settings ask for (`RESEARCH_RUNNER`, default node). */
+	/** Which runner the settings ask for (`RESEARCH_RUNNER`, default rust). */
 	readonly runnerKind: RunnerKind;
 	/** Absolute shared Cargo target directory (`RESEARCH_CARGO_TARGET_DIR`, default `<repo>/target`). */
 	readonly cargoTargetDir: string;
@@ -306,7 +307,7 @@ export interface LaunchPlan {
 		/** The runner file this plan starts: `runner/main.mjs` (node) or `runner/research-runner` (rust). */
 		readonly runnerBundle: string;
 		readonly runnerKind: RunnerKind;
-		/** True when `RESEARCH_RUNNER=rust` was asked for but the generation has no binary. */
+		/** True when `rust` was asked for (the default) but the generation has no binary. */
 		readonly runnerFellBack: boolean;
 	} | null;
 	/**

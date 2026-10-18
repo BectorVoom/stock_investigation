@@ -157,14 +157,14 @@ describe("the Rust toolchain in the isolated environment (ADR-0030)", () => {
 		expect(child.CARGO_BUILD_JOBS).toBeUndefined();
 	});
 
-	it("defaults to the node runner and the repository target directory", () => {
+	it("defaults to the rust runner and the repository target directory", () => {
 		remember();
 		delete process.env.RESEARCH_RUNNER;
 		delete process.env.RESEARCH_CARGO_TARGET_DIR;
 		const settings = suiteRunnerSettings();
-		expect(settings.RESEARCH_RUNNER).toBe("node");
+		expect(settings.RESEARCH_RUNNER).toBe("rust");
 		expect(settings.RESEARCH_CARGO_TARGET_DIR).toMatch(/[\\/]target$/);
-		expect(buildChildEnv(throwaway()).RESEARCH_RUNNER).toBe("node");
+		expect(buildChildEnv(throwaway()).RESEARCH_RUNNER).toBe("rust");
 	});
 
 	it("passes the suite's runner choice and shared target directory explicitly", () => {
@@ -174,6 +174,12 @@ describe("the Rust toolchain in the isolated environment (ADR-0030)", () => {
 		const child = buildChildEnv(throwaway());
 		expect(child.RESEARCH_RUNNER).toBe("rust");
 		expect(child.RESEARCH_CARGO_TARGET_DIR).toBe("/shared/cache");
+	});
+
+	it("passes RESEARCH_RUNNER=node through as the rollback", () => {
+		remember();
+		process.env.RESEARCH_RUNNER = "node";
+		expect(buildChildEnv(throwaway()).RESEARCH_RUNNER).toBe("node");
 	});
 
 	it("refuses an unknown runner instead of silently testing node", () => {

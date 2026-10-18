@@ -12,7 +12,7 @@
  *   RESEARCH_DEV_PORT, RESEARCH_DEV_API_PORT, RESEARCH_DEV_DATA_DIR,
  *   RESEARCH_RELEASE_DIR, RESEARCH_PREVIOUS_RELEASE_DIR,
  *   RESEARCH_RUNNER_ENV_FILE (RUNNER_ENV_FILE default `apps/runner/.env`),
- *   RESEARCH_RUNNER (node|rust, default node) and RESEARCH_CARGO_TARGET_DIR
+ *   RESEARCH_RUNNER (rust|node, default rust) and RESEARCH_CARGO_TARGET_DIR
  *   (shared Cargo build cache; see `suiteRunnerSettings`);
  *   the plan sets RESEARCH_API_URL, RUNNER_PAGES_DIR and
  *   RESEARCH_DEV_API_PORT on its children itself.
@@ -146,13 +146,13 @@ const REPOSITORY_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 /**
  * The runner choice and the Cargo build cache of a suite. Both are explicit
- * suite selectors, not inherited ambient state: `RESEARCH_RUNNER` (node by
- * default, `rust` to exercise the Rust runner) is read from the test process's
+ * suite selectors, not inherited ambient state: `RESEARCH_RUNNER` (rust by
+ * default, `node` to exercise the rollback runner) is read from the test process's
  * own environment and validated; a pristine copy builds into the SAME
  * `RESEARCH_CARGO_TARGET_DIR` (default `<repo>/target`), because that is a
  * build cache, not operational data — registry dependencies compile once and
  * workspace crates from other source paths get distinct artifact hashes.
- * Throws on an unknown runner kind, so a typo can never silently test node.
+ * Throws on an unknown runner kind, so a typo can never silently test the default.
  */
 export function suiteRunnerSettings(): Record<string, string> {
 	const kind = parseRunnerKind(process.env[RUNNER_KIND_ENV_VAR]);

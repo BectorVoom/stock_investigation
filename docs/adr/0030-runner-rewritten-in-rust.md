@@ -1,6 +1,6 @@
 # ADR-0030: The local runner is rewritten in Rust (tokio + rayon)
 
-**Status:** Accepted (in progress) · **Date:** 2026-10-17 · **Owner decision:**
+**Status:** Accepted; **default switched to Rust on 2026-10-19** (see "Default switch") · **Date:** 2026-10-17 · **Owner decision:**
 "Please optimise speed tool of web search and convert markdown by rust and
 rayon", then "Please rewrite node.js code in rust" — scope chosen: **whole
 runner**
@@ -145,6 +145,22 @@ the Rust replays prove, and its own commit:
 - Shared rules now exist in two languages (Worker in TypeScript, runner in
   Rust). Divergence is caught by the conformance vectors and by golden runner
   outputs that a vitest parses with the zod schemas.
+
+## Default switch (2026-10-19)
+
+The owner chose to make Rust the default runner (`DEFAULT_RUNNER_KIND = "rust"` in
+`scripts/launchPlan.ts`); `RESEARCH_RUNNER=node` keeps the TypeScript runner as the
+rollback. The TypeScript runner is not deleted yet; that is a later, separate step.
+Evidence, all gathered with the Rust runner:
+
+- Chrome E2E with `RESEARCH_RUNNER=rust` matched the node results (the one known
+  pre-existing failure, `chartViewer.spec.ts:517`, fails with both).
+- `bun run test:real` passed with the Rust runner (9 passed, live skipped).
+- Live positive path on the Rust runner with the Codex backend
+  (`logs/live-codex-rust-attempt2.log`): fresh state, page archive, web search and
+  chat rename/delete passed (4 of 5). The fifth, "upgraded state",
+  failed with `VALIDATION_FAILED` on `model` at the API (a request rejected before it reached
+  the runner); the re-run recorded in `logs/live-codex-rust-upgraded.log` passed (1 passed).
 
 ## Rollback
 

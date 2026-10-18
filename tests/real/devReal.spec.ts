@@ -25,7 +25,7 @@ import {
 test.describe.configure({ mode: "serial" });
 
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
-/** The suite's runner (RESEARCH_RUNNER, default node): `launcherEnv` + `buildChildEnv` pass it on. */
+/** The suite's runner (RESEARCH_RUNNER, default `DEFAULT_RUNNER_KIND`): `launcherEnv` + `buildChildEnv` pass it on. */
 const RUNNER = suiteRunnerSettings().RESEARCH_RUNNER === "rust" ? "rust" : "node";
 /** The runner source whose edit must rebuild and restart the runner, and the file the launcher keeps fresh. */
 const RUNNER_EDIT_SOURCE =
