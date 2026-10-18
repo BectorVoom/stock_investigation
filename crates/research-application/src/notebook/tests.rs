@@ -11,7 +11,7 @@ use research_contracts::{
 	agent::{
 		AgentAvailability, AgentCapabilities, AgentEvent, AgentRequest, CostModel, ToolIsolation,
 	},
-	jobs::{ClaimedJob, NotebookAssistJob},
+	jobs::{ClaimedJob, ConversationContextMessage, ConversationRole, NotebookAssistJob},
 	json::to_js_value,
 	notebook::Notebook,
 	widgets::WidgetCore,
@@ -274,6 +274,7 @@ fn job(input: &Value) -> TestResult<NotebookAssistJob> {
 	if let Value::Object(object) = &mut job {
 		object.remove("allowUnverifiedToolIsolation");
 		object.insert("selectedWidgetIds", Value::Array(Vec::new()));
+		object.insert("conversationContext", Value::Array(Vec::new()));
 	}
 	let ClaimedJob::NotebookAssist(mut job) = research_contracts::validate::<ClaimedJob>(&job)?
 	else {
@@ -282,6 +283,19 @@ fn job(input: &Value) -> TestResult<NotebookAssistJob> {
 	// Existing tests deliberately exceed the selection bound to exercise the
 	// application prompt budget directly. Production claims stay validated.
 	job.selected_widget_ids = ids;
+	// Likewise the prompt's own 4000-byte history budget lies beyond the claim's
+	// 2400-byte context bound; the vectors drive it with longer histories.
+	job.conversation_context = array(field(input, "conversationContext"))
+		.iter()
+		.map(|message| ConversationContextMessage {
+			role: if text(field(message, "role")) == "owner" {
+				ConversationRole::Owner
+			} else {
+				ConversationRole::Assistant
+			},
+			text: text(field(message, "text")).to_owned(),
+		})
+		.collect();
 	job.notebook = notebook;
 	let _ = allow;
 	Ok(job)
@@ -415,6 +429,17 @@ fn replay_commands(input: &Value, expected: &Value) -> TestResult {
 	Ok(())
 }
 
+/// The production prompt head and tail are exported from the TypeScript; the
+/// vector copy must equal the crate's, so regenerating can never change one silently.
+#[test]
+fn prompt_parts_match_the_exported_vector() -> TestResult {
+	let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+	let crate_copy = std::fs::read_to_string(dir.join("src/notebook/prompt-parts.json"))?;
+	let vector = std::fs::read_to_string(dir.join("../../vectors/notebook/prompt.json"))?;
+	assert_eq!(crate_copy, vector);
+	Ok(())
+}
+
 #[tokio::test]
 async fn node_generated_notebook_transcripts() -> TestResult {
 	let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../vectors/notebook");
@@ -446,8 +471,8 @@ async fn node_generated_notebook_transcripts() -> TestResult {
 			}
 		}
 	}
-	assert!(turns >= 90);
-	assert!(commands >= 30);
+	assert!(turns >= 120);
+	assert!(commands >= 70);
 	eprintln!("Replayed {turns} whole turns and {commands} command batches");
 	Ok(())
 }

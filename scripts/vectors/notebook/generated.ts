@@ -138,7 +138,7 @@ export async function generatedTurns(): Promise<void> {
 	}
 }
 
-async function run(
+export async function run(
 	replies: readonly (string | readonly AgentEvent[])[],
 	overrides: Parameters<typeof assistInput>[0] = {},
 ): Promise<void> {

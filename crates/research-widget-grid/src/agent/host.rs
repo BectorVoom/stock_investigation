@@ -562,6 +562,10 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 				// The default copy title can exceed the 200-character title
 				// limit when the original is already long; trim it the same
 				// way the command schema trims titles.
+				// ADR-0030 divergence: JavaScript `slice(0, 200)` can leave a lone surrogate
+				// when the cut falls inside an emoji; a Rust string cannot hold one, so
+				// `utf16::truncate` ends the title with U+FFFD instead. Only a title cut exactly
+				// there differs, and only in the byte count the capacity check measures.
 				let default_title;
 				let raw_title = match title {
 					Some(title) => title.as_str(),
