@@ -189,6 +189,9 @@ async function waitForRunnerWithModel(): Promise<void> {
 				if (!parsed.success) return "agents API response invalid";
 				const agent = parsed.data.agents.find((entry) => entry.agentId === AGENT_ID);
 				if (agent === undefined) return "backend not probed";
+				if (agent.availability.status !== "available") {
+					return `backend unavailable: ${agent.availability.reasonCode} ${agent.availability.detail}`;
+				}
 				if (MODEL !== "" && !(agent.capabilities.models ?? []).includes(MODEL)) {
 					return "model not listed";
 				}
