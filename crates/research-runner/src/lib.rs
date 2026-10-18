@@ -8,6 +8,7 @@
 //! completion ([`job_execution`]) and the composition of every adapter
 //! ([`composition`]).
 
+pub mod api_client;
 pub mod config;
 pub mod env_file;
 pub mod exit_codes;
