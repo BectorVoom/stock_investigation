@@ -815,3 +815,125 @@ mod in_flight_tool {
 		}
 	}
 }
+
+/// Hot-path budgets (rr-spec-pipeline.md section 3.2-5). Timing is only
+/// meaningful with optimizations: run
+/// `cargo test -p research-application --release -- --ignored hot_paths --nocapture`.
+mod hot_paths {
+	use super::*;
+	use crate::research::collect::{CollectedEntry, collected_so_far_text};
+	use std::time::Instant;
+
+	/// Best of `rounds` runs, in milliseconds (the minimum is the least noisy).
+	fn best_ms(rounds: u32, mut work: impl FnMut()) -> f64 {
+		(0..rounds)
+			.map(|_| {
+				let start = Instant::now();
+				work();
+				start.elapsed().as_secs_f64() * 1000.0
+			})
+			.fold(f64::INFINITY, f64::min)
+	}
+
+	fn cjk(len: usize) -> String {
+		"日本銀行政策金利蓄電池需要予測"
+			.chars()
+			.cycle()
+			.take(len)
+			.collect()
+	}
+
+	#[test]
+	#[ignore = "timing: run in release mode"]
+	fn hot_paths_meet_their_budgets() {
+		let job = research_js::json::parse(
+			r#"{"workspaceId":"ws_t","question":"Which storage products will see demand growth?","agentId":"scripted","model":null,"effort":"medium","horizonYears":4,"markets":["JP","US"],"budget":{"maxAgentSteps":6,"maxToolCalls":10,"maxWallClockMs":600000,"maxInputBytes":400000,"maxSpendUsd":null},"webAccess":"off"}"#,
+		)
+		.unwrap();
+		let request = request(&job);
+		let sources: Vec<SubscribedSourceRef> = (0..200)
+			.map(|i| SubscribedSourceRef {
+				source_id: format!("src_{i}"),
+				canonical_url: format!("https://news{i}.example.com/feed.xml"),
+				publisher: cjk(80),
+				title: cjk(120),
+				license_policy: research_contracts::records::LicensePolicy::HeadlineAndLinkOnly,
+			})
+			.collect();
+		let tool = ToolMeta {
+			tool_id: "news.fetch_feed",
+			version: "1",
+			description: "Fetch a subscribed feed.",
+			args_hint: "{\"sourceId\": string}",
+			timeout_ms: 5_000,
+			permission: "research-read",
+			cost_category: ToolCostCategory::Free,
+			side_effect: ToolSideEffect::ExternalRead,
+			network_allowlist: ToolNetworkAllowlist::SubscribedSources,
+		};
+		let tools = vec![&tool; 12];
+		let context: Vec<_> = (0..6)
+			.map(|i| ConversationContextMessage {
+				role: if i % 2 == 0 {
+					ConversationRole::Owner
+				} else {
+					ConversationRole::Assistant
+				},
+				text: cjk(600),
+			})
+			.collect();
+		let collected = cjk(90_000);
+		let planning = best_ms(20, || {
+			let prompt = planning_prompt(PlanningPromptInput {
+				request: &request,
+				now_iso: "2026-10-11T00:00:00.000Z",
+				tools: &tools,
+				sources: &sources,
+				collected_so_far: &collected,
+				remaining_tool_calls: 10,
+				conversation_context: &context,
+				fence_token: "fence-1",
+				prompt_budget_bytes: PLANNING_PROMPT_BUDGET_BYTES,
+				reminder: Some(PLANNING_REMINDER),
+			})
+			.unwrap();
+			assert!(prompt.len() <= PLANNING_PROMPT_BUDGET_BYTES);
+		});
+		let entries: Vec<_> = (0..400)
+			.map(|i| CollectedEntry {
+				step: i / 8,
+				full_text: cjk(2_000),
+				digest_lines: vec![
+					format!("[run_t_ev{i}] 日本の蓄電池需要 — Example News; undated");
+					5
+				],
+			})
+			.collect();
+		let history = best_ms(20, || {
+			assert!(!collected_so_far_text(&entries, 50).is_empty());
+		});
+		let pack = cjk(150_000);
+		let analysis = best_ms(20, || {
+			let prompt = analysis_prompt(AnalysisPromptInput {
+				request: &request,
+				now_iso: "2026-10-11T00:00:00.000Z",
+				evidence_pack: &pack,
+				record_summary: "(none)",
+				dataset_guide: &presentation::dataset_guide("run_t"),
+				existing_components: &[],
+				conversation_context: &context,
+				fence_token: "fence-1",
+				repair_note: None,
+			})
+			.unwrap();
+			assert!(prompt.len() > pack.len());
+		});
+		println!(
+			"planning prompt (200 CJK sources, 90 KB collected) {planning:.3} ms; \
+			 collectedSoFar (400 entries) {history:.3} ms; analysis prompt (150 KB pack) {analysis:.3} ms"
+		);
+		assert!(planning <= 5.0, "planning prompt {planning} ms");
+		assert!(history <= 5.0, "collectedSoFar {history} ms");
+		assert!(analysis <= 5.0, "analysis prompt {analysis} ms");
+	}
+}
