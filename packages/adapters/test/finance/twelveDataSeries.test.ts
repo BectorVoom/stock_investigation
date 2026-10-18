@@ -159,6 +159,25 @@ describe("Twelve Data adapter: success", () => {
 		expect(fetcher.calls[0]?.url).toContain("exchange=JPX");
 	});
 
+	it("trims the currency it reports as the unit (F4)", async () => {
+		const bars = JSON.stringify({
+			meta: { symbol: "AAPL", currency: " USD ", exchange: "NASDAQ" },
+			values: [{ datetime: "2026-10-09", open: "1", high: "1", low: "1", close: "2", volume: "3" }],
+			status: "ok",
+		});
+		const { source } = sourceWith({
+			[seriesUrl("symbol=AAPL&interval=1day&outputsize=800")]: { text: bars },
+		});
+		const result = await source.fetchSeries({
+			symbol: "AAPL",
+			since: null,
+			maxObservations: 800,
+			signal: NEVER,
+		});
+		if (!result.ok) throw new Error(`expected success, got ${result.error.code}`);
+		expect(result.value.meta.unit).toBe("USD");
+	});
+
 	it("requests start_date 45 days before since and caps outputsize", async () => {
 		const capped = sourceWith({
 			[seriesUrl("symbol=AAPL&interval=1day&outputsize=2&start_date=2026-08-17")]: {

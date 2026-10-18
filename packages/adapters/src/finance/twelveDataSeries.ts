@@ -114,7 +114,7 @@ function titleAndUnit(
 		const exchange = meta.exchange?.trim() ?? "";
 		return {
 			title: exchange === "" ? metaSymbol : `${metaSymbol} (${exchange})`,
-			unit: meta.currency,
+			unit: meta.currency.trim(),
 		};
 	}
 	const slash = metaSymbol.indexOf("/");

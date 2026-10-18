@@ -4610,7 +4610,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAU/USD",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -7553,7 +7553,7 @@
 			"ok": {
 				"meta": {
 					"title": "AAPL",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -9532,7 +9532,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -10729,7 +10729,7 @@
 			"ok": {
 				"meta": {
 					"title": "7203",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -11768,7 +11768,7 @@
 			"ok": {
 				"meta": {
 					"title": "AAPL  (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -13256,7 +13256,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAU/USD (XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -14555,7 +14555,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY (XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -16569,7 +16569,7 @@
 			"ok": {
 				"meta": {
 					"title": "/B (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -20299,7 +20299,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY (JPX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -20352,7 +20352,7 @@
 			"ok": {
 				"meta": {
 					"title": "7203",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -22025,7 +22025,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -22673,7 +22673,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAG/USD",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -23233,7 +23233,7 @@
 			"ok": {
 				"meta": {
 					"title": "7203 (XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -23560,7 +23560,7 @@
 			"ok": {
 				"meta": {
 					"title": "BRK/B (JPX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -23841,7 +23841,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAG/USD (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -26623,7 +26623,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY (NASDAQ)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -26967,7 +26967,7 @@
 			"ok": {
 				"meta": {
 					"title": "BRK/B",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -27268,7 +27268,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAG/USD (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -28668,7 +28668,7 @@
 			"ok": {
 				"meta": {
 					"title": "AAPL",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -29902,7 +29902,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAU/USD (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -30599,7 +30599,7 @@
 			"ok": {
 				"meta": {
 					"title": "BRK/B",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -33041,7 +33041,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAG/USD",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -33151,7 +33151,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAG/USD (JPX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -33465,7 +33465,7 @@
 			"ok": {
 				"meta": {
 					"title": "/B (NYSE)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -34133,7 +34133,7 @@
 			"ok": {
 				"meta": {
 					"title": "EUR/USD (NASDAQ)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -34649,7 +34649,7 @@
 			"ok": {
 				"meta": {
 					"title": "7203 (NASDAQ)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -35808,7 +35808,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -37069,7 +37069,7 @@
 			"ok": {
 				"meta": {
 					"title": "XAU/USD (JPX)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
@@ -37786,7 +37786,7 @@
 			"ok": {
 				"meta": {
 					"title": "USD/JPY (NASDAQ)",
-					"unit": " usd ",
+					"unit": "usd",
 					"frequency": "daily",
 					"publisher": "Twelve Data",
 					"sourceUrl": "https://twelvedata.com/"
