@@ -1,0 +1,9548 @@
+{
+	"models": [
+		{
+			"input": "sonnet",
+			"output": true
+		},
+		{
+			"input": "gpt-6.1-sol",
+			"output": true
+		},
+		{
+			"input": "opencode-go/glm-5.3-flash",
+			"output": true
+		},
+		{
+			"input": "anthropic/claude-sonnet-4.5",
+			"output": true
+		},
+		{
+			"input": "meta-llama/llama-3.3-70b-instruct:free",
+			"output": true
+		},
+		{
+			"input": "~openai/gpt-sol-latest",
+			"output": true
+		},
+		{
+			"input": "provider/model#high",
+			"output": true
+		},
+		{
+			"input": "",
+			"output": false
+		},
+		{
+			"input": "-m",
+			"output": false
+		},
+		{
+			"input": "--model",
+			"output": false
+		},
+		{
+			"input": "a b",
+			"output": false
+		},
+		{
+			"input": "a\tb",
+			"output": false
+		},
+		{
+			"input": "a;b",
+			"output": false
+		},
+		{
+			"input": "$(id)",
+			"output": false
+		},
+		{
+			"input": "a`b",
+			"output": false
+		},
+		{
+			"input": "../x y",
+			"output": false
+		},
+		{
+			"input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+			"output": false
+		},
+		{
+			"input": "",
+			"output": false
+		},
+		{
+			"input": "{",
+			"output": false
+		},
+		{
+			"input": "null",
+			"output": true
+		},
+		{
+			"input": "[]",
+			"output": false
+		},
+		{
+			"input": "true",
+			"output": true
+		},
+		{
+			"input": "\"x\"",
+			"output": false
+		},
+		{
+			"input": "﻿{}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"text\",\"part\":{\"text\":\"\\ud800\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"text\",\"part\":{\"text\":\"x\"},\"extra\":1e400}",
+			"output": false
+		},
+		{
+			"input": "vitest",
+			"output": true
+		},
+		{
+			"input": "../../src/providers/index.ts",
+			"output": false
+		},
+		{
+			"input": "./helpers.ts",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"none\"}",
+			"output": false
+		},
+		{
+			"input": "system",
+			"output": true
+		},
+		{
+			"input": "init",
+			"output": true
+		},
+		{
+			"input": "none",
+			"output": true
+		},
+		{
+			"input": "stream_event",
+			"output": true
+		},
+		{
+			"input": "content_block_delta",
+			"output": true
+		},
+		{
+			"input": "text_delta",
+			"output": true
+		},
+		{
+			"input": "{}",
+			"output": false
+		},
+		{
+			"input": "result",
+			"output": true
+		},
+		{
+			"input": "success",
+			"output": true
+		},
+		{
+			"input": "OK",
+			"output": true
+		},
+		{
+			"input": "{\"code\":0}",
+			"output": false
+		},
+		{
+			"input": "claude-code runtime metadata",
+			"output": false
+		},
+		{
+			"input": "is plan-limited, tool-isolated and claims only streaming",
+			"output": false
+		},
+		{
+			"input": "claude-code",
+			"output": true
+		},
+		{
+			"input": "plan-limited",
+			"output": true
+		},
+		{
+			"input": "enforced",
+			"output": true
+		},
+		{
+			"input": "claude-code argv",
+			"output": false
+		},
+		{
+			"input": "uses print mode with streaming JSON and every isolation flag",
+			"output": false
+		},
+		{
+			"input": "claude-code/ok.stream.jsonl",
+			"output": true
+		},
+		{
+			"input": "{\"effort\":\"high\"}",
+			"output": false
+		},
+		{
+			"input": "high",
+			"output": true
+		},
+		{
+			"input": "claude",
+			"output": true
+		},
+		{
+			"input": "-p",
+			"output": false
+		},
+		{
+			"input": "--output-format",
+			"output": false
+		},
+		{
+			"input": "stream-json",
+			"output": true
+		},
+		{
+			"input": "--verbose",
+			"output": false
+		},
+		{
+			"input": "--include-partial-messages",
+			"output": false
+		},
+		{
+			"input": "--tools",
+			"output": false
+		},
+		{
+			"input": "--strict-mcp-config",
+			"output": false
+		},
+		{
+			"input": "--mcp-config",
+			"output": false
+		},
+		{
+			"input": "--setting-sources",
+			"output": false
+		},
+		{
+			"input": "--disable-slash-commands",
+			"output": false
+		},
+		{
+			"input": "--no-session-persistence",
+			"output": false
+		},
+		{
+			"input": "--safe-mode",
+			"output": false
+		},
+		{
+			"input": "--permission-mode",
+			"output": false
+		},
+		{
+			"input": "dontAsk",
+			"output": true
+		},
+		{
+			"input": "--permission-prompts",
+			"output": false
+		},
+		{
+			"input": "--system-prompt",
+			"output": false
+		},
+		{
+			"input": "--effort",
+			"output": false
+		},
+		{
+			"input": "--model",
+			"output": false
+		},
+		{
+			"input": "--allowedTools",
+			"output": false
+		},
+		{
+			"input": "--allowed-tools",
+			"output": false
+		},
+		{
+			"input": "--add-dir",
+			"output": false
+		},
+		{
+			"input": "--settings",
+			"output": false
+		},
+		{
+			"input": "--bare",
+			"output": false
+		},
+		{
+			"input": "passes a requested model through --model",
+			"output": false
+		},
+		{
+			"input": "{\"model\":\"sonnet\"}",
+			"output": false
+		},
+		{
+			"input": "sonnet",
+			"output": true
+		},
+		{
+			"input": "claude-code stream interpretation",
+			"output": false
+		},
+		{
+			"input": "emits the recorded text deltas incrementally, in order",
+			"output": false
+		},
+		{
+			"input": "claude-code/no-tools-attempt.stream.jsonl",
+			"output": true
+		},
+		{
+			"input": "text.delta",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"text.delta\",\"text\":\"N\"}",
+			"output": false
+		},
+		{
+			"input": "N",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"text.delta\",\"text\":\"O_T\"}",
+			"output": false
+		},
+		{
+			"input": "O_T",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"text.delta\",\"text\":\"OOLS\"}",
+			"output": false
+		},
+		{
+			"input": "OOLS",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"completed\"}",
+			"output": false
+		},
+		{
+			"input": "completed",
+			"output": true
+		},
+		{
+			"input": "reports the subscription run's notional total_cost_usd as an unknown cost, not as money spent",
+			"output": false
+		},
+		{
+			"input": "\"total_cost_usd\":0.01264",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"usage\",\"knownCostUsd\":null}",
+			"output": false
+		},
+		{
+			"input": "usage",
+			"output": true
+		},
+		{
+			"input": "falls back to the result text when the CLI streamed no deltas",
+			"output": false
+		},
+		{
+			"input": "{\"result\":\"whole answer\"}",
+			"output": false
+		},
+		{
+			"input": "whole answer",
+			"output": false
+		},
+		{
+			"input": "does not duplicate the text when both deltas and a result are present",
+			"output": false
+		},
+		{
+			"input": "O",
+			"output": true
+		},
+		{
+			"input": "K",
+			"output": true
+		},
+		{
+			"input": "ignores thinking deltas and unknown event types",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"status\",\"status\":\"requesting\"}",
+			"output": false
+		},
+		{
+			"input": "status",
+			"output": true
+		},
+		{
+			"input": "requesting",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}",
+			"output": false
+		},
+		{
+			"input": "thinking_delta",
+			"output": true
+		},
+		{
+			"input": "secret plan",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"some_future_event\",\"payload\":{\"nested\":true}}",
+			"output": false
+		},
+		{
+			"input": "some_future_event",
+			"output": true
+		},
+		{
+			"input": "{\"nested\":true}",
+			"output": false
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_EMPTY when a successful turn produced no text",
+			"output": false
+		},
+		{
+			"input": "{\"result\":\"\"}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_EMPTY\",\"retryable\":true}",
+			"output": false
+		},
+		{
+			"input": "failed",
+			"output": true
+		},
+		{
+			"input": "PROVIDER_OUTPUT_EMPTY",
+			"output": true
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without a result",
+			"output": false
+		},
+		{
+			"input": "partial",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_INVALID\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_OUTPUT_INVALID",
+			"output": true
+		},
+		{
+			"input": "claude-code tool isolation guard",
+			"output": false
+		},
+		{
+			"input": "fails closed when the init event lists any built-in tool",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[\"Bash\",\"Read\"],\"mcp_servers\":[],\"apiKeySource\":\"none\"}",
+			"output": false
+		},
+		{
+			"input": "Bash",
+			"output": true
+		},
+		{
+			"input": "Read",
+			"output": true
+		},
+		{
+			"input": "should never be emitted",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_VIOLATED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
+			"output": true
+		},
+		{
+			"input": "fails closed when the init event lists an MCP server",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[{\"name\":\"gmail\",\"status\":\"connected\"}],\"apiKeySource\":\"none\"}",
+			"output": false
+		},
+		{
+			"input": "{\"name\":\"gmail\",\"status\":\"connected\"}",
+			"output": false
+		},
+		{
+			"input": "gmail",
+			"output": true
+		},
+		{
+			"input": "connected",
+			"output": true
+		},
+		{
+			"input": "x",
+			"output": true
+		},
+		{
+			"input": "fails closed when text arrives before any init event confirmed the tool list",
+			"output": false
+		},
+		{
+			"input": "unverified",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_UNVERIFIED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_UNVERIFIED",
+			"output": true
+		},
+		{
+			"input": "fails closed when the init event has no readable tool list",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\"}",
+			"output": false
+		},
+		{
+			"input": "fails closed when a result arrives without any init event",
+			"output": false
+		},
+		{
+			"input": "a streamed tool_use block",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"name\":\"Bash\"}}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"name\":\"Bash\"}}",
+			"output": false
+		},
+		{
+			"input": "content_block_start",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"tool_use\",\"name\":\"Bash\"}",
+			"output": false
+		},
+		{
+			"input": "tool_use",
+			"output": true
+		},
+		{
+			"input": "a server tool block",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"server_tool_use\",\"name\":\"web_search\"}}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"server_tool_use\",\"name\":\"web_search\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"server_tool_use\",\"name\":\"web_search\"}",
+			"output": false
+		},
+		{
+			"input": "server_tool_use",
+			"output": true
+		},
+		{
+			"input": "web_search",
+			"output": true
+		},
+		{
+			"input": "a tool_use block in an assistant message",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}]}}",
+			"output": false
+		},
+		{
+			"input": "assistant",
+			"output": true
+		},
+		{
+			"input": "{\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}]}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}",
+			"output": false
+		},
+		{
+			"input": "fails closed and stops the process on %s",
+			"output": false
+		},
+		{
+			"input": "before",
+			"output": true
+		},
+		{
+			"input": "claude-code metered-auth guard (AGT-012)",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[]}",
+			"output": false
+		},
+		{
+			"input": "an environment API key",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"ANTHROPIC_API_KEY\"}",
+			"output": false
+		},
+		{
+			"input": "ANTHROPIC_API_KEY",
+			"output": true
+		},
+		{
+			"input": "a Console-managed key",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"/login managed key\"}",
+			"output": false
+		},
+		{
+			"input": "/login managed key",
+			"output": false
+		},
+		{
+			"input": "an apiKeyHelper",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"apiKeyHelper\"}",
+			"output": false
+		},
+		{
+			"input": "apiKeyHelper",
+			"output": true
+		},
+		{
+			"input": "no statement about the key source at all",
+			"output": false
+		},
+		{
+			"input": "fails closed at the init event for %s, before any output is accepted",
+			"output": false
+		},
+		{
+			"input": "paid output that must not be delivered",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_METERED_AUTH_NOT_ALLOWED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_METERED_AUTH_NOT_ALLOWED",
+			"output": true
+		},
+		{
+			"input": "never turns the CLI's total_cost_usd into a known cost, even for a completed turn",
+			"output": false
+		},
+		{
+			"input": "{\"total_cost_usd\":1.5}",
+			"output": false
+		},
+		{
+			"input": "reports a tool-isolation violation in preference to the auth kind when both are wrong",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[\"Bash\"],\"mcp_servers\":[],\"apiKeySource\":\"ANTHROPIC_API_KEY\"}",
+			"output": false
+		},
+		{
+			"input": "claude-code failures",
+			"output": false
+		},
+		{
+			"input": "maps the recorded not-logged-in output to PROVIDER_AUTH without emitting the CLI's message as text",
+			"output": false
+		},
+		{
+			"input": "claude-code/not-logged-in.stream.jsonl",
+			"output": true
+		},
+		{
+			"input": "{\"code\":1}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_AUTH\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_AUTH",
+			"output": true
+		},
+		{
+			"input": "rate_limit",
+			"output": true
+		},
+		{
+			"input": "PROVIDER_RATE_LIMITED",
+			"output": true
+		},
+		{
+			"input": "billing_error",
+			"output": true
+		},
+		{
+			"input": "PROVIDER_PAYMENT_REQUIRED",
+			"output": true
+		},
+		{
+			"input": "server_error",
+			"output": true
+		},
+		{
+			"input": "PROVIDER_UNAVAILABLE",
+			"output": true
+		},
+		{
+			"input": "authentication_failed",
+			"output": true
+		},
+		{
+			"input": "maps assistant error %s to %s",
+			"output": false
+		},
+		{
+			"input": "{\"content\":[{\"type\":\"text\",\"text\":\"API error\"}]}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"text\",\"text\":\"API error\"}",
+			"output": false
+		},
+		{
+			"input": "text",
+			"output": true
+		},
+		{
+			"input": "API error",
+			"output": false
+		},
+		{
+			"input": "maps a rejected rate-limit event to PROVIDER_RATE_LIMITED",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"rejected\",\"rateLimitType\":\"five_hour\"}}",
+			"output": false
+		},
+		{
+			"input": "rate_limit_event",
+			"output": true
+		},
+		{
+			"input": "{\"status\":\"rejected\",\"rateLimitType\":\"five_hour\"}",
+			"output": false
+		},
+		{
+			"input": "rejected",
+			"output": true
+		},
+		{
+			"input": "five_hour",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"result\":\"limit\"}",
+			"output": false
+		},
+		{
+			"input": "limit",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_RATE_LIMITED\",\"retryable\":true}",
+			"output": false
+		},
+		{
+			"input": "maps an unexplained error result to PROVIDER_ERROR",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true}",
+			"output": false
+		},
+		{
+			"input": "error_during_execution",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_ERROR\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_ERROR",
+			"output": true
+		},
+		{
+			"input": "treats a non-zero exit as a failure even after a success result",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_EXIT_NONZERO\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_EXIT_NONZERO",
+			"output": true
+		},
+		{
+			"input": "claude-code probe",
+			"output": false
+		}
+	],
+	"hints": [
+		{
+			"input": "",
+			"output": null
+		},
+		{
+			"input": "null",
+			"output": null
+		},
+		{
+			"input": "[]",
+			"output": null
+		},
+		{
+			"input": "true",
+			"output": null
+		},
+		{
+			"input": "\"x\"",
+			"output": null
+		},
+		{
+			"input": "﻿{}",
+			"output": null
+		},
+		{
+			"input": "vitest",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/index.ts",
+			"output": null
+		},
+		{
+			"input": "./helpers.ts",
+			"output": null
+		},
+		{
+			"input": "system",
+			"output": null
+		},
+		{
+			"input": "init",
+			"output": null
+		},
+		{
+			"input": "none",
+			"output": null
+		},
+		{
+			"input": "stream_event",
+			"output": null
+		},
+		{
+			"input": "content_block_delta",
+			"output": null
+		},
+		{
+			"input": "text_delta",
+			"output": null
+		},
+		{
+			"input": "result",
+			"output": null
+		},
+		{
+			"input": "success",
+			"output": null
+		},
+		{
+			"input": "OK",
+			"output": null
+		},
+		{
+			"input": "claude-code runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is plan-limited, tool-isolated and claims only streaming",
+			"output": null
+		},
+		{
+			"input": "claude-code",
+			"output": null
+		},
+		{
+			"input": "plan-limited",
+			"output": null
+		},
+		{
+			"input": "enforced",
+			"output": null
+		},
+		{
+			"input": "claude-code argv",
+			"output": null
+		},
+		{
+			"input": "uses print mode with streaming JSON and every isolation flag",
+			"output": null
+		},
+		{
+			"input": "claude-code/ok.stream.jsonl",
+			"output": null
+		},
+		{
+			"input": "high",
+			"output": null
+		},
+		{
+			"input": "claude",
+			"output": null
+		},
+		{
+			"input": "-p",
+			"output": null
+		},
+		{
+			"input": "--output-format",
+			"output": null
+		},
+		{
+			"input": "stream-json",
+			"output": null
+		},
+		{
+			"input": "--verbose",
+			"output": null
+		},
+		{
+			"input": "--include-partial-messages",
+			"output": null
+		},
+		{
+			"input": "--tools",
+			"output": null
+		},
+		{
+			"input": "--strict-mcp-config",
+			"output": null
+		},
+		{
+			"input": "--mcp-config",
+			"output": null
+		},
+		{
+			"input": "--setting-sources",
+			"output": null
+		},
+		{
+			"input": "--disable-slash-commands",
+			"output": null
+		},
+		{
+			"input": "--no-session-persistence",
+			"output": null
+		},
+		{
+			"input": "--safe-mode",
+			"output": null
+		},
+		{
+			"input": "--permission-mode",
+			"output": null
+		},
+		{
+			"input": "dontAsk",
+			"output": null
+		},
+		{
+			"input": "--permission-prompts",
+			"output": null
+		},
+		{
+			"input": "--system-prompt",
+			"output": null
+		},
+		{
+			"input": "--effort",
+			"output": null
+		},
+		{
+			"input": "--model",
+			"output": null
+		},
+		{
+			"input": "--allowedTools",
+			"output": null
+		},
+		{
+			"input": "--allowed-tools",
+			"output": null
+		},
+		{
+			"input": "--add-dir",
+			"output": null
+		},
+		{
+			"input": "--settings",
+			"output": null
+		},
+		{
+			"input": "--bare",
+			"output": null
+		},
+		{
+			"input": "passes a requested model through --model",
+			"output": null
+		},
+		{
+			"input": "sonnet",
+			"output": null
+		},
+		{
+			"input": "claude-code stream interpretation",
+			"output": null
+		},
+		{
+			"input": "emits the recorded text deltas incrementally, in order",
+			"output": null
+		},
+		{
+			"input": "claude-code/no-tools-attempt.stream.jsonl",
+			"output": null
+		},
+		{
+			"input": "text.delta",
+			"output": null
+		},
+		{
+			"input": "N",
+			"output": null
+		},
+		{
+			"input": "O_T",
+			"output": null
+		},
+		{
+			"input": "OOLS",
+			"output": null
+		},
+		{
+			"input": "completed",
+			"output": null
+		},
+		{
+			"input": "reports the subscription run's notional total_cost_usd as an unknown cost, not as money spent",
+			"output": null
+		},
+		{
+			"input": "\"total_cost_usd\":0.01264",
+			"output": null
+		},
+		{
+			"input": "usage",
+			"output": null
+		},
+		{
+			"input": "falls back to the result text when the CLI streamed no deltas",
+			"output": null
+		},
+		{
+			"input": "whole answer",
+			"output": null
+		},
+		{
+			"input": "does not duplicate the text when both deltas and a result are present",
+			"output": null
+		},
+		{
+			"input": "O",
+			"output": null
+		},
+		{
+			"input": "K",
+			"output": null
+		},
+		{
+			"input": "ignores thinking deltas and unknown event types",
+			"output": null
+		},
+		{
+			"input": "status",
+			"output": null
+		},
+		{
+			"input": "requesting",
+			"output": null
+		},
+		{
+			"input": "thinking_delta",
+			"output": null
+		},
+		{
+			"input": "secret plan",
+			"output": null
+		},
+		{
+			"input": "some_future_event",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_EMPTY when a successful turn produced no text",
+			"output": null
+		},
+		{
+			"input": "failed",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_EMPTY",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without a result",
+			"output": null
+		},
+		{
+			"input": "partial",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_INVALID",
+			"output": null
+		},
+		{
+			"input": "claude-code tool isolation guard",
+			"output": null
+		},
+		{
+			"input": "fails closed when the init event lists any built-in tool",
+			"output": null
+		},
+		{
+			"input": "Bash",
+			"output": null
+		},
+		{
+			"input": "Read",
+			"output": null
+		},
+		{
+			"input": "should never be emitted",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
+			"output": null
+		},
+		{
+			"input": "fails closed when the init event lists an MCP server",
+			"output": null
+		},
+		{
+			"input": "gmail",
+			"output": null
+		},
+		{
+			"input": "connected",
+			"output": null
+		},
+		{
+			"input": "x",
+			"output": null
+		},
+		{
+			"input": "fails closed when text arrives before any init event confirmed the tool list",
+			"output": null
+		},
+		{
+			"input": "unverified",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_UNVERIFIED",
+			"output": null
+		},
+		{
+			"input": "fails closed when the init event has no readable tool list",
+			"output": null
+		},
+		{
+			"input": "fails closed when a result arrives without any init event",
+			"output": null
+		},
+		{
+			"input": "a streamed tool_use block",
+			"output": null
+		},
+		{
+			"input": "content_block_start",
+			"output": null
+		},
+		{
+			"input": "tool_use",
+			"output": null
+		},
+		{
+			"input": "a server tool block",
+			"output": null
+		},
+		{
+			"input": "server_tool_use",
+			"output": null
+		},
+		{
+			"input": "web_search",
+			"output": null
+		},
+		{
+			"input": "a tool_use block in an assistant message",
+			"output": null
+		},
+		{
+			"input": "assistant",
+			"output": null
+		},
+		{
+			"input": "fails closed and stops the process on %s",
+			"output": null
+		},
+		{
+			"input": "before",
+			"output": null
+		},
+		{
+			"input": "claude-code metered-auth guard (AGT-012)",
+			"output": null
+		},
+		{
+			"input": "an environment API key",
+			"output": null
+		},
+		{
+			"input": "ANTHROPIC_API_KEY",
+			"output": null
+		},
+		{
+			"input": "a Console-managed key",
+			"output": null
+		},
+		{
+			"input": "/login managed key",
+			"output": null
+		},
+		{
+			"input": "an apiKeyHelper",
+			"output": null
+		},
+		{
+			"input": "apiKeyHelper",
+			"output": null
+		},
+		{
+			"input": "no statement about the key source at all",
+			"output": null
+		},
+		{
+			"input": "fails closed at the init event for %s, before any output is accepted",
+			"output": null
+		},
+		{
+			"input": "paid output that must not be delivered",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_METERED_AUTH_NOT_ALLOWED",
+			"output": null
+		},
+		{
+			"input": "never turns the CLI's total_cost_usd into a known cost, even for a completed turn",
+			"output": null
+		},
+		{
+			"input": "reports a tool-isolation violation in preference to the auth kind when both are wrong",
+			"output": null
+		},
+		{
+			"input": "claude-code failures",
+			"output": null
+		},
+		{
+			"input": "maps the recorded not-logged-in output to PROVIDER_AUTH without emitting the CLI's message as text",
+			"output": null
+		},
+		{
+			"input": "claude-code/not-logged-in.stream.jsonl",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_AUTH",
+			"output": null
+		},
+		{
+			"input": "rate_limit",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_RATE_LIMITED",
+			"output": null
+		},
+		{
+			"input": "billing_error",
+			"output": "payment"
+		},
+		{
+			"input": "PROVIDER_PAYMENT_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "server_error",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "authentication_failed",
+			"output": "auth"
+		},
+		{
+			"input": "maps assistant error %s to %s",
+			"output": null
+		},
+		{
+			"input": "text",
+			"output": null
+		},
+		{
+			"input": "API error",
+			"output": null
+		},
+		{
+			"input": "maps a rejected rate-limit event to PROVIDER_RATE_LIMITED",
+			"output": null
+		},
+		{
+			"input": "rate_limit_event",
+			"output": null
+		},
+		{
+			"input": "rejected",
+			"output": null
+		},
+		{
+			"input": "five_hour",
+			"output": null
+		},
+		{
+			"input": "limit",
+			"output": null
+		},
+		{
+			"input": "maps an unexplained error result to PROVIDER_ERROR",
+			"output": null
+		},
+		{
+			"input": "error_during_execution",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_ERROR",
+			"output": null
+		},
+		{
+			"input": "treats a non-zero exit as a failure even after a success result",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_EXIT_NONZERO",
+			"output": null
+		},
+		{
+			"input": "claude-code probe",
+			"output": null
+		},
+		{
+			"input": "2.1.296 (Claude Code)",
+			"output": null
+		},
+		{
+			"input": "--version",
+			"output": null
+		},
+		{
+			"input": "is available for the recorded logged-in status, using only local status commands",
+			"output": null
+		},
+		{
+			"input": "claude-code/auth-status.logged-in.json",
+			"output": null
+		},
+		{
+			"input": "\n",
+			"output": null
+		},
+		{
+			"input": "stream",
+			"output": null
+		},
+		{
+			"input": "available",
+			"output": null
+		},
+		{
+			"input": "auth",
+			"output": null
+		},
+		{
+			"input": "--json",
+			"output": null
+		},
+		{
+			"input": "is NOT_AUTHENTICATED for the recorded logged-out status (exit code 1)",
+			"output": null
+		},
+		{
+			"input": "claude-code/auth-status.logged-out.json",
+			"output": null
+		},
+		{
+			"input": "unavailable",
+			"output": null
+		},
+		{
+			"input": "NOT_AUTHENTICATED",
+			"output": null
+		},
+		{
+			"input": "is PROBE_FAILED when the status output is not the documented JSON",
+			"output": null
+		},
+		{
+			"input": "Usage: claude [options]",
+			"output": null
+		},
+		{
+			"input": "PROBE_FAILED",
+			"output": null
+		},
+		{
+			"input": "refuses the recorded API-key status as NOT_CONFIGURED, before any turn can spend money",
+			"output": null
+		},
+		{
+			"input": "claude-code/auth-status.api-key.json",
+			"output": null
+		},
+		{
+			"input": "NOT_CONFIGURED",
+			"output": null
+		},
+		{
+			"input": "accepts the recorded `claude setup-token` status, which is subscription auth",
+			"output": null
+		},
+		{
+			"input": "claude-code/auth-status.oauth-token.json",
+			"output": null
+		},
+		{
+			"input": "an API key source on an otherwise subscription-looking status",
+			"output": null
+		},
+		{
+			"input": "claude.ai",
+			"output": null
+		},
+		{
+			"input": "firstParty",
+			"output": null
+		},
+		{
+			"input": "apiKeyHelper SECRET-MARKER",
+			"output": null
+		},
+		{
+			"input": "a third-party provider",
+			"output": null
+		},
+		{
+			"input": "bedrock",
+			"output": null
+		},
+		{
+			"input": "an auth method this adapter does not know",
+			"output": null
+		},
+		{
+			"input": "console",
+			"output": null
+		},
+		{
+			"input": "no auth method at all",
+			"output": null
+		},
+		{
+			"input": "no provider at all",
+			"output": null
+		},
+		{
+			"input": "fails closed as NOT_CONFIGURED for %s, without echoing the status",
+			"output": null
+		},
+		{
+			"input": "SECRET-MARKER",
+			"output": null
+		},
+		{
+			"input": "accepts a newer CLI version, relying on the per-run init check",
+			"output": null
+		},
+		{
+			"input": "3.0.1 (Claude Code)",
+			"output": null
+		},
+		{
+			"input": "@research/agent-core",
+			"output": null
+		},
+		{
+			"input": "@research/contracts",
+			"output": null
+		},
+		{
+			"input": "opencode",
+			"output": null
+		},
+		{
+			"input": "opencode/ok.jsonl",
+			"output": null
+		},
+		{
+			"input": "opencode-go/example-model",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.config",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.local/share",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.local/state",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.cache",
+			"output": null
+		},
+		{
+			"input": "codex",
+			"output": null
+		},
+		{
+			"input": "codex/ok.jsonl",
+			"output": null
+		},
+		{
+			"input": "example-model",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.codex",
+			"output": null
+		},
+		{
+			"input": "item.completed",
+			"output": null
+		},
+		{
+			"input": "item_0",
+			"output": null
+		},
+		{
+			"input": "agent_message",
+			"output": null
+		},
+		{
+			"input": "/home/owner/.claude",
+			"output": null
+		},
+		{
+			"input": "subscription-token-from-setup-token",
+			"output": null
+		},
+		{
+			"input": "$name CLI adapter",
+			"output": null
+		},
+		{
+			"input": "completes the recorded happy path with exactly one terminal event and an unknown cost",
+			"output": null
+		},
+		{
+			"input": "runs the CLI in the scratch directory and sends the prompt on stdin, never in argv",
+			"output": null
+		},
+		{
+			"input": "PROMPT-MARKER --dangerously-skip-permissions; rm -rf ~ $(id)",
+			"output": null
+		},
+		{
+			"input": "/scratch/job_9",
+			"output": null
+		},
+		{
+			"input": "\u0000",
+			"output": null
+		},
+		{
+			"input": "PROMPT-MARKER",
+			"output": null
+		},
+		{
+			"input": "rm -rf",
+			"output": null
+		},
+		{
+			"input": "never passes an auto-approve or sandbox-bypass flag",
+			"output": null
+		},
+		{
+			"input": "--auto",
+			"output": null
+		},
+		{
+			"input": "--search",
+			"output": null
+		},
+		{
+			"input": "gives the child an allowlisted environment with none of the runner's secrets",
+			"output": null
+		},
+		{
+			"input": "uses the same allowlisted environment for its probe commands",
+			"output": null
+		},
+		{
+			"input": "0.0.1",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_EXIT_NONZERO when the CLI exits non-zero without an explanation",
+			"output": null
+		},
+		{
+			"input": "panic: boom",
+			"output": null
+		},
+		{
+			"input": "tolerates a few garbage lines around valid output",
+			"output": null
+		},
+		{
+			"input": "warning: not json",
+			"output": null
+		},
+		{
+			"input": "trailing noise",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID once garbage exceeds the tolerated bound",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_TOO_LARGE and stops the process when the text budget is exceeded",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_TOO_LARGE",
+			"output": null
+		},
+		{
+			"input": "fails with DEADLINE_EXCEEDED without spawning when the deadline has already passed",
+			"output": null
+		},
+		{
+			"input": "2020-01-01T00:00:00.000Z",
+			"output": null
+		},
+		{
+			"input": "DEADLINE_EXCEEDED",
+			"output": null
+		},
+		{
+			"input": "fails with DEADLINE_EXCEEDED and stops the process when the deadline passes mid-run",
+			"output": null
+		},
+		{
+			"input": "fails with ABORTED without spawning when the signal is already aborted",
+			"output": null
+		},
+		{
+			"input": "ABORTED",
+			"output": null
+		},
+		{
+			"input": "fails with ABORTED and aborts the process signal when cancelled mid-stream",
+			"output": null
+		},
+		{
+			"input": "partial answer",
+			"output": null
+		},
+		{
+			"input": "reports ABORTED only after the runner confirmed the process tree is gone",
+			"output": null
+		},
+		{
+			"input": "still ends with ABORTED, after a bounded wait, when the runner never reports an exit",
+			"output": null
+		},
+		{
+			"input": "stops the process when the consumer stops reading early",
+			"output": null
+		},
+		{
+			"input": "first",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_NOT_INSTALLED when the binary is missing",
+			"output": null
+		},
+		{
+			"input": "ENOENT",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_NOT_INSTALLED",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_SPAWN_FAILED when the runner itself throws",
+			"output": null
+		},
+		{
+			"input": "EACCES",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_SPAWN_FAILED",
+			"output": null
+		},
+		{
+			"input": "refuses to run without a scratch directory",
+			"output": null
+		},
+		{
+			"input": "SCRATCH_DIRECTORY_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "--dangerously-bypass-approvals-and-sandbox",
+			"output": null
+		},
+		{
+			"input": "-c",
+			"output": null
+		},
+		{
+			"input": "model with spaces",
+			"output": null
+		},
+		{
+			"input": "a\nb",
+			"output": null
+		},
+		{
+			"input": "rejects the model id %j before spawning, so it cannot become a CLI option",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_MODEL_INVALID",
+			"output": null
+		},
+		{
+			"input": "reports NOT_INSTALLED from probe when the binary is missing",
+			"output": null
+		},
+		{
+			"input": "NOT_INSTALLED",
+			"output": null
+		},
+		{
+			"input": "reports PROBE_FAILED from probe when --version fails or prints no version",
+			"output": null
+		},
+		{
+			"input": "no digits here",
+			"output": null
+		},
+		{
+			"input": "reports UNSUPPORTED_VERSION from probe for a CLI older than the verified one",
+			"output": null
+		},
+		{
+			"input": "UNSUPPORTED_VERSION",
+			"output": null
+		},
+		{
+			"input": "re-probes on every call instead of caching",
+			"output": null
+		},
+		{
+			"input": "item_1",
+			"output": null
+		},
+		{
+			"input": "turn.completed",
+			"output": null
+		},
+		{
+			"input": "codex runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is plan-limited and honest that its tool isolation is unverified",
+			"output": null
+		},
+		{
+			"input": "codex argv",
+			"output": null
+		},
+		{
+			"input": "runs `exec --json` read-only, ephemeral, without ambient config, reading stdin",
+			"output": null
+		},
+		{
+			"input": "/scratch/job_7",
+			"output": null
+		},
+		{
+			"input": "low",
+			"output": null
+		},
+		{
+			"input": "exec",
+			"output": null
+		},
+		{
+			"input": "--sandbox",
+			"output": null
+		},
+		{
+			"input": "read-only",
+			"output": null
+		},
+		{
+			"input": "--skip-git-repo-check",
+			"output": null
+		},
+		{
+			"input": "--ephemeral",
+			"output": null
+		},
+		{
+			"input": "--ignore-user-config",
+			"output": null
+		},
+		{
+			"input": "--ignore-rules",
+			"output": null
+		},
+		{
+			"input": "-C",
+			"output": null
+		},
+		{
+			"input": "approval_policy=\"never\"",
+			"output": null
+		},
+		{
+			"input": "web_search=\"disabled\"",
+			"output": null
+		},
+		{
+			"input": "mcp_servers={}",
+			"output": null
+		},
+		{
+			"input": "notify=[]",
+			"output": null
+		},
+		{
+			"input": "project_doc_max_bytes=0",
+			"output": null
+		},
+		{
+			"input": "shell_environment_policy.inherit=\"none\"",
+			"output": null
+		},
+		{
+			"input": "model_reasoning_effort=\"low\"",
+			"output": null
+		},
+		{
+			"input": "-",
+			"output": null
+		},
+		{
+			"input": "-m",
+			"output": null
+		},
+		{
+			"input": "--enable",
+			"output": null
+		},
+		{
+			"input": "--oss",
+			"output": null
+		},
+		{
+			"input": "--profile",
+			"output": null
+		},
+		{
+			"input": "disables the shell, web, app, plugin, hook and sub-agent features",
+			"output": null
+		},
+		{
+			"input": "--disable",
+			"output": null
+		},
+		{
+			"input": "shell_tool",
+			"output": null
+		},
+		{
+			"input": "unified_exec",
+			"output": null
+		},
+		{
+			"input": "apps",
+			"output": null
+		},
+		{
+			"input": "plugins",
+			"output": null
+		},
+		{
+			"input": "hooks",
+			"output": null
+		},
+		{
+			"input": "multi_agent",
+			"output": null
+		},
+		{
+			"input": "browser_use",
+			"output": null
+		},
+		{
+			"input": "computer_use",
+			"output": null
+		},
+		{
+			"input": "image_generation",
+			"output": null
+		},
+		{
+			"input": "view_image",
+			"output": null
+		},
+		{
+			"input": "code_mode_host",
+			"output": null
+		},
+		{
+			"input": "passes a requested model through -m, before the stdin marker",
+			"output": null
+		},
+		{
+			"input": "gpt-example",
+			"output": null
+		},
+		{
+			"input": "codex stream interpretation",
+			"output": null
+		},
+		{
+			"input": "treats `item.completed` warnings of type error as non-fatal (recorded run)",
+			"output": null
+		},
+		{
+			"input": "\"type\":\"error\"",
+			"output": null
+		},
+		{
+			"input": "emits each agent message of the recorded two-message turn, separated, in order",
+			"output": null
+		},
+		{
+			"input": "codex/tool-attempt.jsonl",
+			"output": null
+		},
+		{
+			"input": "I’ll check the available tools and try both requested operations.\nTOOLS: ",
+			"output": null
+		},
+		{
+			"input": "separates messages that do not end in a newline",
+			"output": null
+		},
+		{
+			"input": "second",
+			"output": null
+		},
+		{
+			"input": "first\nsecond",
+			"output": null
+		},
+		{
+			"input": "ignores reasoning items, plan updates, transient error notices and unknown event types",
+			"output": null
+		},
+		{
+			"input": "thread.started",
+			"output": null
+		},
+		{
+			"input": "t",
+			"output": null
+		},
+		{
+			"input": "turn.started",
+			"output": null
+		},
+		{
+			"input": "error",
+			"output": null
+		},
+		{
+			"input": "Reconnecting... 1/5",
+			"output": null
+		},
+		{
+			"input": "item.started",
+			"output": null
+		},
+		{
+			"input": "reasoning",
+			"output": null
+		},
+		{
+			"input": "hidden reasoning",
+			"output": null
+		},
+		{
+			"input": "item.updated",
+			"output": null
+		},
+		{
+			"input": "item_9",
+			"output": null
+		},
+		{
+			"input": "todo_list",
+			"output": null
+		},
+		{
+			"input": "some.future.event",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without turn.completed",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_EMPTY when the turn completed without any message",
+			"output": null
+		},
+		{
+			"input": "codex tool-use guard",
+			"output": null
+		},
+		{
+			"input": "command_execution",
+			"output": null
+		},
+		{
+			"input": "file_change",
+			"output": null
+		},
+		{
+			"input": "mcp_tool_call",
+			"output": null
+		},
+		{
+			"input": "collab_tool_call",
+			"output": null
+		},
+		{
+			"input": "some_future_tool",
+			"output": null
+		},
+		{
+			"input": "fails closed and stops the process on a %s item",
+			"output": null
+		},
+		{
+			"input": "item_2",
+			"output": null
+		},
+		{
+			"input": "cat ~/.ssh/id_rsa",
+			"output": null
+		},
+		{
+			"input": "after",
+			"output": null
+		},
+		{
+			"input": "codex failures",
+			"output": null
+		},
+		{
+			"input": "maps the recorded not-logged-in run (401, turn.failed, exit 1) to PROVIDER_AUTH",
+			"output": "auth"
+		},
+		{
+			"input": "codex/not-logged-in.jsonl",
+			"output": null
+		},
+		{
+			"input": "maps a usage-limit turn failure to PROVIDER_RATE_LIMITED",
+			"output": null
+		},
+		{
+			"input": "turn.failed",
+			"output": null
+		},
+		{
+			"input": "You've hit your usage limit. Try again later.",
+			"output": "rate-limit"
+		},
+		{
+			"input": "maps an unexplained turn failure with exit 0 to PROVIDER_ERROR",
+			"output": null
+		},
+		{
+			"input": "stream disconnected",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_EXIT_NONZERO for an unknown feature flag error",
+			"output": null
+		},
+		{
+			"input": "Error: Unknown feature flag: shell_tool",
+			"output": null
+		},
+		{
+			"input": "codex probe",
+			"output": null
+		},
+		{
+			"input": "codex-cli 0.160.0",
+			"output": null
+		},
+		{
+			"input": "is available for a ChatGPT login, which the CLI reports on stderr",
+			"output": null
+		},
+		{
+			"input": "Logged in using ChatGPT\n",
+			"output": null
+		},
+		{
+			"input": "login",
+			"output": null
+		},
+		{
+			"input": "is NOT_AUTHENTICATED when the CLI reports no login (exit code 1)",
+			"output": null
+		},
+		{
+			"input": "Not logged in\n",
+			"output": "auth"
+		},
+		{
+			"input": "refuses a metered API-key login and never echoes the status line",
+			"output": null
+		},
+		{
+			"input": "Logged in using an API key - sk-proj-abc***xyz\n",
+			"output": null
+		},
+		{
+			"input": "sk-proj",
+			"output": null
+		},
+		{
+			"input": "is PROBE_FAILED when the status output is not understood",
+			"output": null
+		},
+		{
+			"input": "sk-or-v1-TEST-KEY-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "example/model",
+			"output": null
+		},
+		{
+			"input": "example/model:free",
+			"output": null
+		},
+		{
+			"input": "Content-Type",
+			"output": null
+		},
+		{
+			"input": "text/event-stream",
+			"output": null
+		},
+		{
+			"input": "opencode ok",
+			"output": null
+		},
+		{
+			"input": "opencode no-tools attempt",
+			"output": null
+		},
+		{
+			"input": "opencode/no-tools-attempt.jsonl",
+			"output": null
+		},
+		{
+			"input": "opencode model unavailable",
+			"output": null
+		},
+		{
+			"input": "opencode/model-unavailable.jsonl",
+			"output": null
+		},
+		{
+			"input": "opencode garbage",
+			"output": null
+		},
+		{
+			"input": "opencode free-tier native tool call",
+			"output": null
+		},
+		{
+			"input": "opencode/free-tier-native-tool-call.jsonl",
+			"output": null
+		},
+		{
+			"input": "opencode/nemotron-3.5-lightning-free",
+			"output": null
+		},
+		{
+			"input": "web.search",
+			"output": null
+		},
+		{
+			"input": "web.fetch_page",
+			"output": null
+		},
+		{
+			"input": "opencode not installed",
+			"output": null
+		},
+		{
+			"input": "opencode past deadline",
+			"output": null
+		},
+		{
+			"input": "codex ok",
+			"output": null
+		},
+		{
+			"input": "codex tool attempt",
+			"output": null
+		},
+		{
+			"input": "codex not logged in",
+			"output": "auth"
+		},
+		{
+			"input": "codex garbage",
+			"output": null
+		},
+		{
+			"input": "codex killed by a signal",
+			"output": null
+		},
+		{
+			"input": "SIGKILL",
+			"output": null
+		},
+		{
+			"input": "codex aborted",
+			"output": null
+		},
+		{
+			"input": "claude ok",
+			"output": null
+		},
+		{
+			"input": "claude no-tools attempt",
+			"output": null
+		},
+		{
+			"input": "claude not logged in",
+			"output": "auth"
+		},
+		{
+			"input": "claude garbage",
+			"output": null
+		},
+		{
+			"input": "claude metered API-key auth",
+			"output": null
+		},
+		{
+			"input": "claude non-zero exit",
+			"output": null
+		},
+		{
+			"input": "killed",
+			"output": null
+		},
+		{
+			"input": "claude not installed",
+			"output": null
+		},
+		{
+			"input": "openrouter ok",
+			"output": null
+		},
+		{
+			"input": "openrouter/ok.sse",
+			"output": null
+		},
+		{
+			"input": "openrouter no cost",
+			"output": null
+		},
+		{
+			"input": "openrouter/ok-no-cost.sse",
+			"output": null
+		},
+		{
+			"input": "openrouter mid-stream error",
+			"output": null
+		},
+		{
+			"input": "openrouter/midstream-error.sse",
+			"output": null
+		},
+		{
+			"input": "openrouter 429",
+			"output": "rate-limit"
+		},
+		{
+			"input": "Retry-After",
+			"output": null
+		},
+		{
+			"input": "3600",
+			"output": null
+		},
+		{
+			"input": "openrouter garbage",
+			"output": null
+		},
+		{
+			"input": "openrouter past deadline",
+			"output": null
+		},
+		{
+			"input": "openrouter not configured",
+			"output": null
+		},
+		{
+			"input": "openrouter-free ok",
+			"output": null
+		},
+		{
+			"input": "openrouter-free garbage",
+			"output": null
+		},
+		{
+			"input": "openrouter-free not configured",
+			"output": null
+		},
+		{
+			"input": "openrouter-free",
+			"output": null
+		},
+		{
+			"input": "openrouter",
+			"output": null
+		},
+		{
+			"input": "/scratch/job_1",
+			"output": null
+		},
+		{
+			"input": "agent event contract",
+			"output": null
+		},
+		{
+			"input": "$name: every emitted event satisfies agentEventSchema",
+			"output": null
+		},
+		{
+			"input": "$name: ends with exactly one terminal event, preceded by at most one usage event",
+			"output": null
+		},
+		{
+			"input": "$name: emits only text, usage, terminal events and requests for permitted tools — the orchestrator runs every tool",
+			"output": null
+		},
+		{
+			"input": "tool.request",
+			"output": null
+		},
+		{
+			"input": "$name: a successful turn always reports its (possibly unknown) cost",
+			"output": null
+		},
+		{
+			"input": "baseline registry",
+			"output": null
+		},
+		{
+			"input": "provides the four V1 backends in BASELINE_AGENT_IDS order",
+			"output": null
+		},
+		{
+			"input": "registers without id collisions and describes every backend with a valid descriptor",
+			"output": null
+		},
+		{
+			"input": "surfaces unavailable backends honestly instead of pretending they work (FR-012)",
+			"output": null
+		},
+		{
+			"input": "provides the baseline four followed by openrouter-free through createAgentRuntimes",
+			"output": null
+		},
+		{
+			"input": "capability honesty",
+			"output": null
+		},
+		{
+			"input": "no adapter claims tool-calls, structured-output or image-input",
+			"output": null
+		},
+		{
+			"input": "tool-calls",
+			"output": null
+		},
+		{
+			"input": "structured-output",
+			"output": null
+		},
+		{
+			"input": "image-input",
+			"output": null
+		},
+		{
+			"input": "only openrouter claims cancel; killing a CLI process is not a provider cancel",
+			"output": null
+		},
+		{
+			"input": "cancel",
+			"output": null
+		},
+		{
+			"input": "only backends that deliver incremental deltas claim stream",
+			"output": null
+		},
+		{
+			"input": "declares cost models and tool isolation exactly as verified",
+			"output": null
+		},
+		{
+			"input": "metered",
+			"output": null
+		},
+		{
+			"input": "plan-limited backends never report a known cost for a subscription run",
+			"output": null
+		},
+		{
+			"input": "fast-check",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/lines.ts",
+			"output": null
+		},
+		{
+			"input": "splitLines",
+			"output": null
+		},
+		{
+			"input": "joins a line that is split across chunks",
+			"output": null
+		},
+		{
+			"input": "data: {\"a\"",
+			"output": null
+		},
+		{
+			"input": ":1}\nsecond",
+			"output": null
+		},
+		{
+			"input": "data: {\"a\":1}",
+			"output": null
+		},
+		{
+			"input": "yields a final line that has no trailing newline",
+			"output": null
+		},
+		{
+			"input": "one\ntwo",
+			"output": null
+		},
+		{
+			"input": "one",
+			"output": null
+		},
+		{
+			"input": "two",
+			"output": null
+		},
+		{
+			"input": "strips carriage returns and keeps blank lines",
+			"output": null
+		},
+		{
+			"input": "a\r\n\r\nb\r\n",
+			"output": null
+		},
+		{
+			"input": "a",
+			"output": null
+		},
+		{
+			"input": "b",
+			"output": null
+		},
+		{
+			"input": "flushes an unterminated line in bounded pieces instead of buffering it",
+			"output": null
+		},
+		{
+			"input": "yields nothing for an empty stream",
+			"output": null
+		},
+		{
+			"input": "reassembles the same lines however the bytes are chunked",
+			"output": null
+		},
+		{
+			"input": "grapheme",
+			"output": null
+		},
+		{
+			"input": "node:fs/promises",
+			"output": null
+		},
+		{
+			"input": "node:os",
+			"output": null
+		},
+		{
+			"input": "node:path",
+			"output": null
+		},
+		{
+			"input": "1",
+			"output": null
+		},
+		{
+			"input": "opencode/muse-spark-1.3-contributor-free",
+			"output": null
+		},
+		{
+			"input": "live agent smoke (spends real quota)",
+			"output": "rate-limit"
+		},
+		{
+			"input": "research-agent-smoke-",
+			"output": null
+		},
+		{
+			"input": "OPENCODE_MODEL is not set",
+			"output": null
+		},
+		{
+			"input": "%s answers a trivial prompt with text and exactly one terminal event",
+			"output": null
+		},
+		{
+			"input": "Reply with the single word OK.",
+			"output": null
+		},
+		{
+			"input": "%s (tool isolation enforced) cannot read a file or run a command when asked to",
+			"output": null
+		},
+		{
+			"input": "Use any tool you have to read the file /etc/hosts and to run the shell command `echo hi`. If you have no tools available, reply exactly NO_TOOLS.",
+			"output": null
+		},
+		{
+			"input": "NO_TOOLS",
+			"output": null
+		},
+		{
+			"input": "opencode free-tier model answers a trivial prompt with text (ask-and-reject config)",
+			"output": null
+		},
+		{
+			"input": "[live smoke] opencode runtime not registered; skipped",
+			"output": null
+		},
+		{
+			"input": "Reply with the single word OK. Do not call any tool.",
+			"output": null
+		},
+		{
+			"input": "zod",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/openCode.ts",
+			"output": null
+		},
+		{
+			"input": "opencode runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is plan-limited and tool-isolated",
+			"output": null
+		},
+		{
+			"input": "opencode invocation",
+			"output": null
+		},
+		{
+			"input": "runs a private standalone server with JSON output and the deny-all agent",
+			"output": null
+		},
+		{
+			"input": "run",
+			"output": null
+		},
+		{
+			"input": "--standalone",
+			"output": null
+		},
+		{
+			"input": "--format",
+			"output": null
+		},
+		{
+			"input": "json",
+			"output": null
+		},
+		{
+			"input": "--agent",
+			"output": null
+		},
+		{
+			"input": "research-text",
+			"output": null
+		},
+		{
+			"input": "--server",
+			"output": null
+		},
+		{
+			"input": "--continue",
+			"output": null
+		},
+		{
+			"input": "--session",
+			"output": null
+		},
+		{
+			"input": "--file",
+			"output": null
+		},
+		{
+			"input": "writes a deny-everything project config into the scratch directory before spawning",
+			"output": null
+		},
+		{
+			"input": "/scratch/job_3",
+			"output": null
+		},
+		{
+			"input": "/scratch/job_3/opencode.jsonc",
+			"output": null
+		},
+		{
+			"input": "*",
+			"output": null
+		},
+		{
+			"input": "deny",
+			"output": null
+		},
+		{
+			"input": "primary",
+			"output": null
+		},
+		{
+			"input": "does not spawn when the config cannot be written",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_CONFIG_WRITE_FAILED",
+			"output": null
+		},
+		{
+			"input": "refuses to let the CLI pick its default (possibly metered) provider when no model is given",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_MODEL_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "falls back to OPENCODE_MODEL from the runner environment, without forwarding it",
+			"output": null
+		},
+		{
+			"input": "opencode-go/from-env",
+			"output": null
+		},
+		{
+			"input": "opencode-go/from-env#medium",
+			"output": null
+		},
+		{
+			"input": "OPENCODE_MODEL",
+			"output": null
+		},
+		{
+			"input": "opencode free-tier config selection",
+			"output": null
+		},
+		{
+			"input": "uses the deny-all config for a plan model and the ask-and-reject config for a free-tier model",
+			"output": null
+		},
+		{
+			"input": "writes the deny-all config for a plan model run",
+			"output": null
+		},
+		{
+			"input": "/scratch/plan",
+			"output": null
+		},
+		{
+			"input": "writes the ask-and-reject config for a free-tier model run",
+			"output": null
+		},
+		{
+			"input": "/scratch/free",
+			"output": null
+		},
+		{
+			"input": "/scratch/free/opencode.jsonc",
+			"output": null
+		},
+		{
+			"input": "builds the free-tier config as deny-first then ask for exactly the ten verified permissions",
+			"output": null
+		},
+		{
+			"input": "edit",
+			"output": null
+		},
+		{
+			"input": "glob",
+			"output": null
+		},
+		{
+			"input": "grep",
+			"output": null
+		},
+		{
+			"input": "question",
+			"output": null
+		},
+		{
+			"input": "read",
+			"output": null
+		},
+		{
+			"input": "shell",
+			"output": null
+		},
+		{
+			"input": "skill",
+			"output": null
+		},
+		{
+			"input": "subagent",
+			"output": null
+		},
+		{
+			"input": "webfetch",
+			"output": null
+		},
+		{
+			"input": "websearch",
+			"output": null
+		},
+		{
+			"input": "ask",
+			"output": null
+		},
+		{
+			"input": "never makes execute askable and keeps the free-tier agent honest about rejected tools",
+			"output": null
+		},
+		{
+			"input": "execute",
+			"output": null
+		},
+		{
+			"input": "every tool call is rejected",
+			"output": null
+		},
+		{
+			"input": "Do not call any tool",
+			"output": null
+		},
+		{
+			"input": "text only",
+			"output": null
+		},
+		{
+			"input": "opencode stream interpretation",
+			"output": null
+		},
+		{
+			"input": "completes the recorded run that has no step_finish event",
+			"output": null
+		},
+		{
+			"input": "step_finish",
+			"output": null
+		},
+		{
+			"input": "reports OpenCode's own cost estimate as unknown, never as a known cost",
+			"output": null
+		},
+		{
+			"input": "\"cost\":0.00012405",
+			"output": null
+		},
+		{
+			"input": "ignores reasoning parts and unknown event types and separates text parts",
+			"output": null
+		},
+		{
+			"input": "step_start",
+			"output": null
+		},
+		{
+			"input": "step-start",
+			"output": null
+		},
+		{
+			"input": "hidden",
+			"output": null
+		},
+		{
+			"input": "snapshot",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_EMPTY when the CLI exits cleanly without any text",
+			"output": null
+		},
+		{
+			"input": "opencode effort variant",
+			"output": null
+		},
+		{
+			"input": "medium",
+			"output": null
+		},
+		{
+			"input": "sends effort %s as the model's reasoning variant",
+			"output": null
+		},
+		{
+			"input": "keeps a variant the owner wrote into the model id",
+			"output": null
+		},
+		{
+			"input": "#",
+			"output": null
+		},
+		{
+			"input": "opencode/variant-unavailable.jsonl",
+			"output": null
+		},
+		{
+			"input": "falls back from a missing medium to low, and goes straight to low next time",
+			"output": null
+		},
+		{
+			"input": "max",
+			"output": null
+		},
+		{
+			"input": "falls back from high to max",
+			"output": null
+		},
+		{
+			"input": "runs without a variant only when the model offers none of the candidates, and remembers that",
+			"output": null
+		},
+		{
+			"input": "reports a variant the owner wrote that the model does not offer",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_VARIANT_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "opencode tool-use guard",
+			"output": null
+		},
+		{
+			"input": "a tool_use event",
+			"output": null
+		},
+		{
+			"input": "tool",
+			"output": null
+		},
+		{
+			"input": "bash",
+			"output": null
+		},
+		{
+			"input": "a tool part under another event name",
+			"output": null
+		},
+		{
+			"input": "part",
+			"output": null
+		},
+		{
+			"input": "a renamed tool event",
+			"output": null
+		},
+		{
+			"input": "tool_call",
+			"output": null
+		},
+		{
+			"input": "call",
+			"output": null
+		},
+		{
+			"input": "This non-interactive run cannot ask the user for permission, so the request was rejected",
+			"output": null
+		},
+		{
+			"input": "echo hi",
+			"output": null
+		},
+		{
+			"input": "a rejected read call",
+			"output": null
+		},
+		{
+			"input": "a rejected shell call with provider text",
+			"output": null
+		},
+		{
+			"input": "lets a free-tier turn answer after %s, without surfacing provider text",
+			"output": null
+		},
+		{
+			"input": "step-finish",
+			"output": null
+		},
+		{
+			"input": "the answer",
+			"output": null
+		},
+		{
+			"input": "non-interactive",
+			"output": null
+		},
+		{
+			"input": "stops a free-tier turn that keeps calling tools past the bound",
+			"output": null
+		},
+		{
+			"input": "too late",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TOOL_CALL_REJECTED",
+			"output": null
+		},
+		{
+			"input": "reports a free-tier turn that only called tools and never answered as PROVIDER_TOOL_CALL_REJECTED",
+			"output": null
+		},
+		{
+			"input": "native research-tool calls (ADR-0028)",
+			"output": null
+		},
+		{
+			"input": "hands the recorded native web.search call to the orchestrator and ends the turn at that step",
+			"output": null
+		},
+		{
+			"input": "increasing demand services global market 2026",
+			"output": null
+		},
+		{
+			"input": "call-c01aa090-e149-4ade-b299-2245b366426c",
+			"output": null
+		},
+		{
+			"input": "No tool named",
+			"output": null
+		},
+		{
+			"input": "reports every permitted call of one step before ending the turn",
+			"output": null
+		},
+		{
+			"input": "cloud demand japan",
+			"output": null
+		},
+		{
+			"input": "call-1",
+			"output": null
+		},
+		{
+			"input": "https://example.com/",
+			"output": null
+		},
+		{
+			"input": "call-2",
+			"output": null
+		},
+		{
+			"input": "never reached",
+			"output": null
+		},
+		{
+			"input": "skips a native call to a tool the run does not permit, and lets the model answer",
+			"output": null
+		},
+		{
+			"input": "sec.filings",
+			"output": null
+		},
+		{
+			"input": "never turns arguments that are not a JSON object into a request",
+			"output": null
+		},
+		{
+			"input": "cloud demand",
+			"output": null
+		},
+		{
+			"input": "answer",
+			"output": null
+		},
+		{
+			"input": "stops requesting at the run's remaining tool-call budget",
+			"output": null
+		},
+		{
+			"input": "fails closed on a permitted call that the CLI reports as executed",
+			"output": null
+		},
+		{
+			"input": "never accepts a native call from a plan-model run, where no tool is sent",
+			"output": null
+		},
+		{
+			"input": "still fails closed on a free-tier tool event that was not rejected",
+			"output": null
+		},
+		{
+			"input": "treats a rejected tool event in a plan-model run as an isolation violation (no tool is sent there)",
+			"output": null
+		},
+		{
+			"input": "opencode failures",
+			"output": null
+		},
+		{
+			"input": "maps the recorded no-route error (unknown model or no credential) to PROVIDER_MODEL_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_MODEL_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "maps the recorded provider.auth refusal (credentials/plan rejected for this model) to PROVIDER_AUTH",
+			"output": null
+		},
+		{
+			"input": "opencode/provider-auth.jsonl",
+			"output": null
+		},
+		{
+			"input": "fails (never falls back to another agent) on the recorded agent-not-found error",
+			"output": null
+		},
+		{
+			"input": "opencode/agent-not-found.jsonl",
+			"output": null
+		},
+		{
+			"input": "Unauthorized: invalid api key",
+			"output": "auth"
+		},
+		{
+			"input": "Rate limit exceeded, retry later",
+			"output": "rate-limit"
+		},
+		{
+			"input": "Insufficient credits",
+			"output": "payment"
+		},
+		{
+			"input": "upstream returned 503 service unavailable",
+			"output": "unavailable"
+		},
+		{
+			"input": "maps the error message %j to %s",
+			"output": null
+		},
+		{
+			"input": "provider.error",
+			"output": null
+		},
+		{
+			"input": "reports an error event as a failure even if text was produced and the exit code is 0",
+			"output": null
+		},
+		{
+			"input": "unknown",
+			"output": null
+		},
+		{
+			"input": "stream interrupted",
+			"output": null
+		},
+		{
+			"input": "opencode probe",
+			"output": null
+		},
+		{
+			"input": "opencode v2.0.27",
+			"output": null
+		},
+		{
+			"input": "models",
+			"output": null
+		},
+		{
+			"input": "is available for the recorded credential list, queried on a private server",
+			"output": null
+		},
+		{
+			"input": "opencode/auth-list.json",
+			"output": null
+		},
+		{
+			"input": "list",
+			"output": null
+		},
+		{
+			"input": "export",
+			"output": null
+		},
+		{
+			"input": "is NOT_AUTHENTICATED when no credential is stored (recorded empty list)",
+			"output": null
+		},
+		{
+			"input": "does not count environment-variable connections, whose keys are not forwarded to runs",
+			"output": null
+		},
+		{
+			"input": "google",
+			"output": null
+		},
+		{
+			"input": "Google",
+			"output": null
+		},
+		{
+			"input": "env",
+			"output": null
+		},
+		{
+			"input": "GEMINI_API_KEY",
+			"output": null
+		},
+		{
+			"input": "is PROBE_FAILED when the list is not the expected JSON",
+			"output": null
+		},
+		{
+			"input": "ERROR",
+			"output": null
+		},
+		{
+			"input": "  Unrecognized flag",
+			"output": null
+		},
+		{
+			"input": "opencode v2.1.0",
+			"output": null
+		},
+		{
+			"input": "opencode v3.0.0",
+			"output": null
+		},
+		{
+			"input": "reports TOOL_ISOLATION_UNVERIFIED for %s, beyond the verified release line",
+			"output": null
+		},
+		{
+			"input": "TOOL_ISOLATION_UNVERIFIED",
+			"output": null
+		},
+		{
+			"input": "accepts a later patch release of the verified line",
+			"output": null
+		},
+		{
+			"input": "opencode v2.0.31",
+			"output": null
+		},
+		{
+			"input": "reports UNSUPPORTED_VERSION for a CLI older than the 2.0.27 floor",
+			"output": null
+		},
+		{
+			"input": "opencode v2.0.24",
+			"output": null
+		},
+		{
+			"input": "opencode model listing",
+			"output": null
+		},
+		{
+			"input": "reports the recorded listing sorted and de-duplicated, dropping garbage lines",
+			"output": null
+		},
+		{
+			"input": "opencode/models.txt",
+			"output": null
+		},
+		{
+			"input": "google/gemini-2.5-flash",
+			"output": null
+		},
+		{
+			"input": "opencode-go/muse-spark-1.3-contributor",
+			"output": null
+		},
+		{
+			"input": "opencode/gpt-5.5",
+			"output": null
+		},
+		{
+			"input": "omits the list when the models command fails, without changing availability",
+			"output": null
+		},
+		{
+			"input": "usage: unexpected flag",
+			"output": null
+		},
+		{
+			"input": "caps a long listing at 300 ids",
+			"output": null
+		},
+		{
+			"input": "parses nothing when the command prints no valid ids",
+			"output": null
+		},
+		{
+			"input": "not a model id!!",
+			"output": null
+		},
+		{
+			"input": "--help",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/openRouter.ts",
+			"output": null
+		},
+		{
+			"input": "string",
+			"output": null
+		},
+		{
+			"input": "data: [DONE]\n\n",
+			"output": null
+		},
+		{
+			"input": "openrouter runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is metered and tool-isolated by construction",
+			"output": null
+		},
+		{
+			"input": "openrouter request",
+			"output": null
+		},
+		{
+			"input": "posts one streaming chat completion with the prompt, no tools and no fallback models",
+			"output": null
+		},
+		{
+			"input": "the research prompt",
+			"output": null
+		},
+		{
+			"input": "https://openrouter.ai/api/v1/chat/completions",
+			"output": null
+		},
+		{
+			"input": "POST",
+			"output": null
+		},
+		{
+			"input": "Authorization",
+			"output": null
+		},
+		{
+			"input": "user",
+			"output": null
+		},
+		{
+			"input": "the model from OPENROUTER_MODEL",
+			"output": null
+		},
+		{
+			"input": "a model from the run context",
+			"output": null
+		},
+		{
+			"input": "other/model",
+			"output": null
+		},
+		{
+			"input": "never asks for a model fallback or sends tools, with %s (AGT-012)",
+			"output": null
+		},
+		{
+			"input": "route",
+			"output": null
+		},
+		{
+			"input": "provider",
+			"output": null
+		},
+		{
+			"input": "tools",
+			"output": null
+		},
+		{
+			"input": "tool_choice",
+			"output": null
+		},
+		{
+			"input": "fallback",
+			"output": null
+		},
+		{
+			"input": "max_tokens",
+			"output": null
+		},
+		{
+			"input": "prefers the model from the run context over OPENROUTER_MODEL",
+			"output": null
+		},
+		{
+			"input": "other/model:free",
+			"output": null
+		},
+		{
+			"input": "openrouter SSE parsing",
+			"output": null
+		},
+		{
+			"input": "Hello, world — 日本語",
+			"output": null
+		},
+		{
+			"input": "streams the documented example: deltas concatenate, cost is reported, one terminal event",
+			"output": null
+		},
+		{
+			"input": "Hello",
+			"output": null
+		},
+		{
+			"input": ", wor",
+			"output": null
+		},
+		{
+			"input": "ld — 日本語",
+			"output": null
+		},
+		{
+			"input": "gives the same result wherever the byte stream is cut, including inside a data: line or a character",
+			"output": null
+		},
+		{
+			"input": "gives the same result when the body arrives one byte at a time",
+			"output": null
+		},
+		{
+			"input": "accepts CRLF line endings and data lines without a space after the colon",
+			"output": null
+		},
+		{
+			"input": "stop",
+			"output": null
+		},
+		{
+			"input": "stops at [DONE] and ignores anything after it",
+			"output": null
+		},
+		{
+			"input": "ignored",
+			"output": null
+		},
+		{
+			"input": "ignores keep-alive comments, event/id fields and unknown JSON fields",
+			"output": null
+		},
+		{
+			"input": "gen-1",
+			"output": null
+		},
+		{
+			"input": "example",
+			"output": null
+		},
+		{
+			"input": "tolerates a few malformed data lines but fails once they exceed the bound",
+			"output": null
+		},
+		{
+			"input": "data: {not json\n\n",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without [DONE] or a finish_reason",
+			"output": null
+		},
+		{
+			"input": "truncated ans",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_EMPTY when the completion has no text",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_TRUNCATED when the provider stops at the output-token cap",
+			"output": null
+		},
+		{
+			"input": "cut off mid-sen",
+			"output": null
+		},
+		{
+			"input": "length",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_TRUNCATED",
+			"output": null
+		},
+		{
+			"input": "reports a cap consumed entirely by reasoning as truncated, not as a retryable empty answer",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_INVALID for a 200 response that is not an event stream",
+			"output": null
+		},
+		{
+			"input": "Provider disconnected",
+			"output": null
+		},
+		{
+			"input": "openrouter cost",
+			"output": null
+		},
+		{
+			"input": "reports an unknown cost (null, not 0) when the response carries no cost",
+			"output": null
+		},
+		{
+			"input": "reports an unknown cost when the response has no usage object at all",
+			"output": null
+		},
+		{
+			"input": "reports a cost of 0 only when the provider explicitly says 0 (a free model)",
+			"output": null
+		},
+		{
+			"input": "treats the invalid cost %j as unknown",
+			"output": null
+		},
+		{
+			"input": "openrouter failures",
+			"output": null
+		},
+		{
+			"input": "maps the documented mid-stream error chunk to PROVIDER_UNAVAILABLE after the partial text",
+			"output": null
+		},
+		{
+			"input": "Partial",
+			"output": null
+		},
+		{
+			"input": "maps a mid-stream error with code %j to %s",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TIMEOUT",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_REQUEST_REJECTED",
+			"output": null
+		},
+		{
+			"input": "maps HTTP %i to %s and does not retry",
+			"output": null
+		},
+		{
+			"input": "nope",
+			"output": null
+		},
+		{
+			"input": "maps HTTP %i to %s once its retries are used up",
+			"output": null
+		},
+		{
+			"input": "maps a network failure to PROVIDER_UNAVAILABLE once its retries are used up",
+			"output": null
+		},
+		{
+			"input": "fetch failed",
+			"output": null
+		},
+		{
+			"input": "maps a connection dropped mid-stream to PROVIDER_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "Par",
+			"output": null
+		},
+		{
+			"input": "terminated",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_OUTPUT_TOO_LARGE once the text budget is exceeded",
+			"output": null
+		},
+		{
+			"input": "the turn did not end within 600 s of fake time",
+			"output": null
+		},
+		{
+			"input": "openrouter/upstream-overloaded.sse",
+			"output": "unavailable"
+		},
+		{
+			"input": "openrouter transient rejections",
+			"output": null
+		},
+		{
+			"input": "sends the same request again when the upstream is overloaded, and answers once it recovers",
+			"output": "unavailable"
+		},
+		{
+			"input": "backs off exponentially and reports the overload once the retries are used up",
+			"output": null
+		},
+		{
+			"input": "waits as long as the provider's Retry-After asks",
+			"output": null
+		},
+		{
+			"input": "5",
+			"output": null
+		},
+		{
+			"input": "does not wait out a Retry-After longer than the turn may wait (a spent daily quota)",
+			"output": "rate-limit"
+		},
+		{
+			"input": "does not retry when the deadline leaves no room for another request",
+			"output": null
+		},
+		{
+			"input": "fails with ABORTED and sends nothing more when cancelled during the wait",
+			"output": null
+		},
+		{
+			"input": "openrouter retry policy",
+			"output": null
+		},
+		{
+			"input": "backs off exponentially, up to the retry limit",
+			"output": null
+		},
+		{
+			"input": "prefers the provider's Retry-After, but never beyond the longest wait",
+			"output": null
+		},
+		{
+			"input": "keeps enough of the turn for the retried request",
+			"output": null
+		},
+		{
+			"input": "reads Retry-After as seconds or as an HTTP date",
+			"output": null
+		},
+		{
+			"input": "2026-10-17T00:00:00Z",
+			"output": null
+		},
+		{
+			"input": "12",
+			"output": null
+		},
+		{
+			"input": " 0 ",
+			"output": null
+		},
+		{
+			"input": "Sat, 17 Oct 2026 00:00:30 GMT",
+			"output": null
+		},
+		{
+			"input": "Fri, 16 Oct 2026 23:59:00 GMT",
+			"output": null
+		},
+		{
+			"input": "soon",
+			"output": null
+		},
+		{
+			"input": "-5",
+			"output": null
+		},
+		{
+			"input": "openrouter configuration",
+			"output": null
+		},
+		{
+			"input": "no API key",
+			"output": null
+		},
+		{
+			"input": "an empty API key",
+			"output": null
+		},
+		{
+			"input": "   ",
+			"output": null
+		},
+		{
+			"input": "an API key containing a line break",
+			"output": null
+		},
+		{
+			"input": "sk-or-v1-abc\r\nX-Evil: 1",
+			"output": null
+		},
+		{
+			"input": "no model",
+			"output": null
+		},
+		{
+			"input": "fails closed with NOT_CONFIGURED and makes no network call with %s",
+			"output": null
+		},
+		{
+			"input": "is available when key and model are set, without any network call from probe",
+			"output": null
+		},
+		{
+			"input": "runs with a model from the run context even if OPENROUTER_MODEL is unset",
+			"output": null
+		},
+		{
+			"input": "ctx/model",
+			"output": null
+		},
+		{
+			"input": "openrouter deadline and cancellation",
+			"output": null
+		},
+		{
+			"input": "fails with DEADLINE_EXCEEDED without a network call when the deadline has passed",
+			"output": null
+		},
+		{
+			"input": "fails with ABORTED without a network call when already cancelled",
+			"output": null
+		},
+		{
+			"input": "aborts the HTTP request and fails with ABORTED when cancelled mid-stream",
+			"output": null
+		},
+		{
+			"input": "fails with ABORTED when cancelled while waiting for the response headers",
+			"output": null
+		},
+		{
+			"input": "fails with DEADLINE_EXCEEDED when the deadline passes mid-stream",
+			"output": null
+		},
+		{
+			"input": "fails with PROVIDER_TIMEOUT when the stream goes silent for too long",
+			"output": null
+		},
+		{
+			"input": "aborts the HTTP request when the consumer stops reading early",
+			"output": null
+		},
+		{
+			"input": "openrouter secret handling",
+			"output": null
+		},
+		{
+			"input": "a successful stream",
+			"output": null
+		},
+		{
+			"input": "an error body echoing the key",
+			"output": null
+		},
+		{
+			"input": "a thrown error containing the key",
+			"output": null
+		},
+		{
+			"input": "a mid-stream error echoing the key",
+			"output": null
+		},
+		{
+			"input": "a stream that echoes the key as garbage",
+			"output": null
+		},
+		{
+			"input": "never puts the API key into an event for %s",
+			"output": null
+		},
+		{
+			"input": "sk-or-",
+			"output": null
+		},
+		{
+			"input": "sends the key only in the Authorization header, never in the URL or the body",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/openRouterModels.ts",
+			"output": null
+		},
+		{
+			"input": "google/gemma-4-31b-it:free",
+			"output": null
+		},
+		{
+			"input": "openrouter-free runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is plan-limited and tool-isolated by construction",
+			"output": null
+		},
+		{
+			"input": "OpenRouter (free models)",
+			"output": null
+		},
+		{
+			"input": "openrouter-free probe",
+			"output": null
+		},
+		{
+			"input": "reports NOT_CONFIGURED with zero fetch calls when the key is missing",
+			"output": null
+		},
+		{
+			"input": "OPENROUTER_API_KEY",
+			"output": null
+		},
+		{
+			"input": "is available with the catalog models and the configured free model",
+			"output": null
+		},
+		{
+			"input": "b/model:free",
+			"output": null
+		},
+		{
+			"input": "0",
+			"output": null
+		},
+		{
+			"input": "a/model:free",
+			"output": null
+		},
+		{
+			"input": "is available without models when the catalog fails",
+			"output": null
+		},
+		{
+			"input": "openrouter-free configuration",
+			"output": null
+		},
+		{
+			"input": "refuses a non-free model with zero fetch calls",
+			"output": null
+		},
+		{
+			"input": "google/gemma-4-31b-it",
+			"output": null
+		},
+		{
+			"input": "refuses a missing model with zero fetch calls",
+			"output": null
+		},
+		{
+			"input": "refuses a missing key with zero fetch calls",
+			"output": null
+		},
+		{
+			"input": "never uses OPENROUTER_MODEL",
+			"output": null
+		},
+		{
+			"input": "billed/model",
+			"output": null
+		},
+		{
+			"input": "openrouter-free turn",
+			"output": null
+		},
+		{
+			"input": "streams text from the documented example with unknown cost and completes",
+			"output": null
+		},
+		{
+			"input": "\"cost\":0.00042",
+			"output": null
+		},
+		{
+			"input": "\"cost\":0",
+			"output": null
+		},
+		{
+			"input": "PROMPT-MARKER: reply with the single word OK.",
+			"output": null
+		},
+		{
+			"input": "reports null when the provider explicitly says the cost is 0",
+			"output": null
+		},
+		{
+			"input": "fails closed with the reported cost when the provider charges a free model",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_FREE_MODEL_CHARGED",
+			"output": null
+		},
+		{
+			"input": "openrouter-free secret handling",
+			"output": null
+		},
+		{
+			"input": "sends the key only in the chat Authorization header, never to the models URL",
+			"output": null
+		},
+		{
+			"input": "node:fs",
+			"output": null
+		},
+		{
+			"input": "./fixtures/openrouter/models.json",
+			"output": null
+		},
+		{
+			"input": "utf8",
+			"output": null
+		},
+		{
+			"input": "google/gemma-4-26b-a4b-it:free",
+			"output": null
+		},
+		{
+			"input": "nvidia/nemotron-3-super-120b-a12b:free",
+			"output": null
+		},
+		{
+			"input": "openrouter/free",
+			"output": null
+		},
+		{
+			"input": "thinkingmachines/inkling:free",
+			"output": null
+		},
+		{
+			"input": "application/json",
+			"output": null
+		},
+		{
+			"input": "parseFreeModelIds",
+			"output": null
+		},
+		{
+			"input": "returns exactly the free text ids from the live-captured fixture",
+			"output": null
+		},
+		{
+			"input": "returns [] for a wrong envelope",
+			"output": null
+		},
+		{
+			"input": "skips entries with a missing, non-zero or unparseable price",
+			"output": null
+		},
+		{
+			"input": "a/missing:free",
+			"output": null
+		},
+		{
+			"input": "a/nonzero:free",
+			"output": null
+		},
+		{
+			"input": "0.001",
+			"output": null
+		},
+		{
+			"input": "a/unparseable:free",
+			"output": null
+		},
+		{
+			"input": "free",
+			"output": null
+		},
+		{
+			"input": "a/ok:free",
+			"output": null
+		},
+		{
+			"input": "0.00",
+			"output": null
+		},
+		{
+			"input": "a/numeric:free",
+			"output": null
+		},
+		{
+			"input": "excludes a zero-priced id without a :free suffix and non-text output",
+			"output": null
+		},
+		{
+			"input": "plain/model",
+			"output": null
+		},
+		{
+			"input": "audio/only:free",
+			"output": null
+		},
+		{
+			"input": "audio",
+			"output": null
+		},
+		{
+			"input": "kept/model:free",
+			"output": null
+		},
+		{
+			"input": "noarch/model:free",
+			"output": null
+		},
+		{
+			"input": "ignores one odd entry without hiding the rest",
+			"output": null
+		},
+		{
+			"input": "not-an-object",
+			"output": null
+		},
+		{
+			"input": "good/model:free",
+			"output": null
+		},
+		{
+			"input": "de-duplicates, sorts ascending and caps at 300 ids",
+			"output": null
+		},
+		{
+			"input": "a/first:free",
+			"output": null
+		},
+		{
+			"input": "free model catalog",
+			"output": null
+		},
+		{
+			"input": "fetches once within the TTL and refetches after it",
+			"output": null
+		},
+		{
+			"input": "shares one in-flight request between concurrent calls",
+			"output": null
+		},
+		{
+			"input": "returns null on the first failure and the stale list afterwards, without retrying for 60 s",
+			"output": null
+		},
+		{
+			"input": "ok",
+			"output": null
+		},
+		{
+			"input": "fail",
+			"output": null
+		},
+		{
+			"input": "treats invalid JSON and an empty parsed list as failures",
+			"output": null
+		},
+		{
+			"input": "not json",
+			"output": null
+		},
+		{
+			"input": "treats a missing body and an oversized body as failures",
+			"output": null
+		},
+		{
+			"input": "sends no Authorization header and refuses redirects",
+			"output": null
+		},
+		{
+			"input": "GET",
+			"output": null
+		},
+		{
+			"input": "Accept",
+			"output": null
+		},
+		{
+			"input": "never rejects, even when fetch throws",
+			"output": null
+		},
+		{
+			"input": "win32",
+			"output": null
+		},
+		{
+			"input": "-e",
+			"output": null
+		},
+		{
+			"input": "createNodeProcessRunner",
+			"output": null
+		},
+		{
+			"input": "streams stdout as lines, feeds stdin and reports the exit code and stderr tail",
+			"output": null
+		},
+		{
+			"input": "let input = \"\";\n\t\t\tprocess.stdin.on(\"data\", (chunk) => { input += chunk; });\n\t\t\tprocess.stdin.on(\"end\", () => {\n\t\t\t\tprocess.stdout.write(\"first\\nsecond:\" + input + \"\\n\");\n\t\t\t\tprocess.stderr.write(\"warning text\");\n\t\t\t\tprocess.exitCode = 3;\n\t\t\t});",
+			"output": null
+		},
+		{
+			"input": "from-stdin",
+			"output": null
+		},
+		{
+			"input": "second:from-stdin",
+			"output": null
+		},
+		{
+			"input": "warning text",
+			"output": null
+		},
+		{
+			"input": "gives the child exactly the environment it was handed, nothing inherited",
+			"output": null
+		},
+		{
+			"input": "const keys = Object.keys(process.env).filter((key) => !key.startsWith(\"__CF\"));\n\t\t\tconsole.log(JSON.stringify(keys.sort()));",
+			"output": null
+		},
+		{
+			"input": "2",
+			"output": null
+		},
+		{
+			"input": "AND_THIS",
+			"output": null
+		},
+		{
+			"input": "ONLY_THIS",
+			"output": null
+		},
+		{
+			"input": "passes arguments literally, without a shell",
+			"output": null
+		},
+		{
+			"input": "console.log(process.argv.slice(1).join('|'))",
+			"output": null
+		},
+		{
+			"input": "$(echo injected)",
+			"output": null
+		},
+		{
+			"input": "; touch /tmp/should-not-exist",
+			"output": null
+		},
+		{
+			"input": "`id`",
+			"output": null
+		},
+		{
+			"input": "$(echo injected)|; touch /tmp/should-not-exist|`id`",
+			"output": null
+		},
+		{
+			"input": "rejects `exit` with ENOENT and ends stdout when the command does not exist",
+			"output": null
+		},
+		{
+			"input": "/nonexistent/definitely-not-a-binary",
+			"output": null
+		},
+		{
+			"input": "bounds the stderr it keeps to a tail",
+			"output": null
+		},
+		{
+			"input": "process.stderr.write(\"a\".repeat(50000) + \"TAIL-MARKER\")",
+			"output": null
+		},
+		{
+			"input": "TAIL-MARKER",
+			"output": null
+		},
+		{
+			"input": "terminates the whole process group on abort, including a grandchild",
+			"output": null
+		},
+		{
+			"input": "const { spawn } = require(\"node:child_process\");\n\t\t\t\tconst grandchild = spawn(process.execPath, [\"-e\", \"setInterval(() => {}, 1000)\"], { stdio: \"ignore\" });\n\t\t\t\tconsole.log(JSON.stringify({ child: process.pid, grandchild: grandchild.pid }));\n\t\t\t\tsetInterval(() => {}, 1000);",
+			"output": null
+		},
+		{
+			"input": "SIGTERM",
+			"output": null
+		},
+		{
+			"input": "kills immediately when the signal is already aborted",
+			"output": null
+		},
+		{
+			"input": "setInterval(() => {}, 1000)",
+			"output": null
+		},
+		{
+			"input": "createNodeProcessRunner with real processes that resist SIGTERM",
+			"output": null
+		},
+		{
+			"input": "SIGKILLs a descendant that ignores SIGTERM after its parent has already exited, before `exit` resolves",
+			"output": null
+		},
+		{
+			"input": "const { spawn } = require(\"node:child_process\");\n\t\t\t\tconst grandchild = spawn(\n\t\t\t\t\tprocess.execPath,\n\t\t\t\t\t[\"-e\", \"process.on('SIGTERM', () => {}); process.send('ready'); setInterval(() => {}, 1000);\"],\n\t\t\t\t\t{ stdio: [\"ignore\", \"ignore\", \"ignore\", \"ipc\"] },\n\t\t\t\t);\n\t\t\t\tgrandchild.on(\"message\", () => {\n\t\t\t\t\tconsole.log(JSON.stringify({ child: process.pid, grandchild: grandchild.pid }));\n\t\t\t\t});\n\t\t\t\tsetInterval(() => {}, 1000);",
+			"output": null
+		},
+		{
+			"input": "kill ESRCH",
+			"output": null
+		},
+		{
+			"input": "ESRCH",
+			"output": null
+		},
+		{
+			"input": "createNodeProcessRunner termination escalation (fake child, fake clock)",
+			"output": null
+		},
+		{
+			"input": "pid",
+			"output": null
+		},
+		{
+			"input": "fake",
+			"output": null
+		},
+		{
+			"input": "/",
+			"output": null
+		},
+		{
+			"input": "still SIGKILLs the group after the grace period when the direct child closed long before it",
+			"output": null
+		},
+		{
+			"input": "resolves promptly and sends no SIGKILL when SIGTERM emptied the group",
+			"output": null
+		},
+		{
+			"input": "SIGKILLs a group whose leader never closes on SIGTERM, then resolves once it has",
+			"output": null
+		},
+		{
+			"input": "gives up confirming after a bounded wait when the group cannot be killed, and says so",
+			"output": null
+		},
+		{
+			"input": "process group still alive after SIGKILL",
+			"output": null
+		},
+		{
+			"input": "resolves at close without signalling when nothing was aborted, and ignores a later abort",
+			"output": null
+		},
+		{
+			"input": "starts terminating at once when the signal was aborted before the spawn",
+			"output": null
+		},
+		{
+			"input": "rejects `exit` and signals nothing when the process never started",
+			"output": null
+		},
+		{
+			"input": "spawn ENOENT",
+			"output": null
+		},
+		{
+			"input": "without process groups, signals only the direct child and escalates until it closes",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/environment.ts",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/turn.ts",
+			"output": null
+		},
+		{
+			"input": "createTurnGuard",
+			"output": null
+		},
+		{
+			"input": "keeps the first stop reason: a later deadline cannot relabel a cancellation",
+			"output": null
+		},
+		{
+			"input": "finished",
+			"output": null
+		},
+		{
+			"input": "aborted",
+			"output": null
+		},
+		{
+			"input": "stops with `deadline` when the deadline passes first, and resolves `stopped`",
+			"output": null
+		},
+		{
+			"input": "deadline",
+			"output": null
+		},
+		{
+			"input": "is stopped from the start when the external signal is already aborted",
+			"output": null
+		},
+		{
+			"input": "leaves no timer behind once stopped",
+			"output": null
+		},
+		{
+			"input": "preflightTurn",
+			"output": null
+		},
+		{
+			"input": "2026-10-11T00:00:00.000Z",
+			"output": null
+		},
+		{
+			"input": "accepts a future deadline and returns it in epoch milliseconds",
+			"output": null
+		},
+		{
+			"input": "2026-10-11T00:01:00+09:00",
+			"output": null
+		},
+		{
+			"input": "2026-10-10T15:01:00.000Z",
+			"output": null
+		},
+		{
+			"input": "rejects a deadline that is exactly now or earlier",
+			"output": null
+		},
+		{
+			"input": "rejects an unparseable deadline instead of running without one",
+			"output": null
+		},
+		{
+			"input": "isValidModelId",
+			"output": null
+		},
+		{
+			"input": "gpt-6.1-sol",
+			"output": null
+		},
+		{
+			"input": "opencode-go/glm-5.3-flash",
+			"output": null
+		},
+		{
+			"input": "anthropic/claude-sonnet-4.5",
+			"output": null
+		},
+		{
+			"input": "meta-llama/llama-3.3-70b-instruct:free",
+			"output": null
+		},
+		{
+			"input": "~openai/gpt-sol-latest",
+			"output": null
+		},
+		{
+			"input": "provider/model#high",
+			"output": null
+		},
+		{
+			"input": "accepts %s",
+			"output": null
+		},
+		{
+			"input": "a b",
+			"output": null
+		},
+		{
+			"input": "a\tb",
+			"output": null
+		},
+		{
+			"input": "a;b",
+			"output": null
+		},
+		{
+			"input": "$(id)",
+			"output": null
+		},
+		{
+			"input": "a`b",
+			"output": null
+		},
+		{
+			"input": "../x y",
+			"output": null
+		},
+		{
+			"input": "rejects %j",
+			"output": null
+		},
+		{
+			"input": "failure hints",
+			"output": null
+		},
+		{
+			"input": "Not logged in · Please run /login",
+			"output": "auth"
+		},
+		{
+			"input": "unexpected status 401 Unauthorized: Missing bearer",
+			"output": "auth"
+		},
+		{
+			"input": "You've hit your usage limit",
+			"output": "rate-limit"
+		},
+		{
+			"input": "rate-limit",
+			"output": null
+		},
+		{
+			"input": "429 Too Many Requests",
+			"output": "rate-limit"
+		},
+		{
+			"input": "payment",
+			"output": null
+		},
+		{
+			"input": "Overloaded",
+			"output": "unavailable"
+		},
+		{
+			"input": "segmentation fault",
+			"output": null
+		},
+		{
+			"input": "took 4010 ms on port 14290",
+			"output": null
+		},
+		{
+			"input": "reads %j as %j",
+			"output": null
+		},
+		{
+			"input": "reads HTTP %i as %j",
+			"output": null
+		},
+		{
+			"input": "asKnownCostUsd",
+			"output": null
+		},
+		{
+			"input": "maps %j to %j",
+			"output": null
+		},
+		{
+			"input": "buildChildEnv",
+			"output": null
+		},
+		{
+			"input": "copies only the base keys and the named provider keys",
+			"output": null
+		},
+		{
+			"input": "CODEX_HOME",
+			"output": null
+		},
+		{
+			"input": "omits unset and empty variables instead of passing empty strings",
+			"output": null
+		},
+		{
+			"input": "/bin",
+			"output": null
+		},
+		{
+			"input": "Not logged in · Please run /login",
+			"output": "auth"
+		},
+		{
+			"input": "unexpected status 401 Unauthorized: Missing bearer",
+			"output": "auth"
+		},
+		{
+			"input": "You've hit your usage limit",
+			"output": "rate-limit"
+		},
+		{
+			"input": "429 Too Many Requests",
+			"output": "rate-limit"
+		},
+		{
+			"input": "Insufficient credits",
+			"output": "payment"
+		},
+		{
+			"input": "Overloaded",
+			"output": "unavailable"
+		},
+		{
+			"input": "segmentation fault",
+			"output": null
+		},
+		{
+			"input": "took 4010 ms on port 14290",
+			"output": null
+		},
+		{
+			"input": "ſervice unavailable",
+			"output": null
+		},
+		{
+			"input": "é401é",
+			"output": "auth"
+		},
+		{
+			"input": "invalid credentials billing quota 503",
+			"output": "auth"
+		}
+	],
+	"statuses": [
+		{
+			"input": 200,
+			"output": {
+				"hint": null,
+				"failure": {
+					"code": "PROVIDER_REQUEST_REJECTED",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 400,
+			"output": {
+				"hint": null,
+				"failure": {
+					"code": "PROVIDER_REQUEST_REJECTED",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 401,
+			"output": {
+				"hint": "auth",
+				"failure": {
+					"code": "PROVIDER_AUTH",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 402,
+			"output": {
+				"hint": "payment",
+				"failure": {
+					"code": "PROVIDER_PAYMENT_REQUIRED",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 403,
+			"output": {
+				"hint": "auth",
+				"failure": {
+					"code": "PROVIDER_AUTH",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 404,
+			"output": {
+				"hint": null,
+				"failure": {
+					"code": "PROVIDER_REQUEST_REJECTED",
+					"retryable": false
+				}
+			}
+		},
+		{
+			"input": 408,
+			"output": {
+				"hint": null,
+				"failure": {
+					"code": "PROVIDER_TIMEOUT",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 429,
+			"output": {
+				"hint": "rate-limit",
+				"failure": {
+					"code": "PROVIDER_RATE_LIMITED",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 500,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 502,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 503,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 504,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 529,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		},
+		{
+			"input": 999,
+			"output": {
+				"hint": "unavailable",
+				"failure": {
+					"code": "PROVIDER_UNAVAILABLE",
+					"retryable": true
+				}
+			}
+		}
+	],
+	"costs": [
+		{
+			"input": "3fe0000000000000",
+			"output": "3fe0000000000000"
+		},
+		{
+			"input": "0000000000000000",
+			"output": "0000000000000000"
+		},
+		{
+			"input": "bf847ae147ae147b",
+			"output": null
+		},
+		{
+			"input": "7ff8000000000000",
+			"output": null
+		},
+		{
+			"input": "7ff0000000000000",
+			"output": null
+		}
+	],
+	"retry": [
+		{
+			"input": {
+				"index": 0,
+				"after": null,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": null,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": null,
+				"remaining": 60000
+			},
+			"output": 2000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": null,
+				"remaining": 600000
+			},
+			"output": 2000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 0,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 0,
+				"remaining": 31000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 0,
+				"remaining": 60000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 0,
+				"remaining": 600000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 1000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 1000,
+				"remaining": 31000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 1000,
+				"remaining": 60000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 1000,
+				"remaining": 600000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30000,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30000,
+				"remaining": 60000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30000,
+				"remaining": 600000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30001,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30001,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30001,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 0,
+				"after": 30001,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": null,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": null,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": null,
+				"remaining": 60000
+			},
+			"output": 4000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": null,
+				"remaining": 600000
+			},
+			"output": 4000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 0,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 0,
+				"remaining": 31000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 0,
+				"remaining": 60000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 0,
+				"remaining": 600000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 1000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 1000,
+				"remaining": 31000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 1000,
+				"remaining": 60000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 1000,
+				"remaining": 600000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30000,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30000,
+				"remaining": 60000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30000,
+				"remaining": 600000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30001,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30001,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30001,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 1,
+				"after": 30001,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": null,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": null,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": null,
+				"remaining": 60000
+			},
+			"output": 8000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": null,
+				"remaining": 600000
+			},
+			"output": 8000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 0,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 0,
+				"remaining": 31000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 0,
+				"remaining": 60000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 0,
+				"remaining": 600000
+			},
+			"output": 0
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 1000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 1000,
+				"remaining": 31000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 1000,
+				"remaining": 60000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 1000,
+				"remaining": 600000
+			},
+			"output": 1000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30000,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30000,
+				"remaining": 60000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30000,
+				"remaining": 600000
+			},
+			"output": 30000
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30001,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30001,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30001,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 2,
+				"after": 30001,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": null,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": null,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": null,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": null,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 0,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 0,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 0,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 0,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 1000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 1000,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 1000,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 1000,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30000,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30000,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30000,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30000,
+				"remaining": 600000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30001,
+				"remaining": 0
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30001,
+				"remaining": 31000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30001,
+				"remaining": 60000
+			},
+			"output": null
+		},
+		{
+			"input": {
+				"index": 3,
+				"after": 30001,
+				"remaining": 600000
+			},
+			"output": null
+		}
+	],
+	"headers": [
+		{
+			"input": null,
+			"now": 1792195200000,
+			"output": null
+		},
+		{
+			"input": "",
+			"now": 1792195200000,
+			"output": null
+		},
+		{
+			"input": "2",
+			"now": 1792195200000,
+			"output": "409f400000000000"
+		},
+		{
+			"input": " 30 ",
+			"now": 1792195200000,
+			"output": "40dd4c0000000000"
+		},
+		{
+			"input": "-5",
+			"now": 1792195200000,
+			"output": null
+		},
+		{
+			"input": "1.5",
+			"now": 1792195200000,
+			"output": null
+		},
+		{
+			"input": "999999999999999999999999999999999999999999999",
+			"now": 1792195200000,
+			"output": "49e5e531a0a1c872"
+		},
+		{
+			"input": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+			"now": 1792195200000,
+			"output": "7ff0000000000000"
+		},
+		{
+			"input": "Sat, 17 Oct 2026 00:00:05 GMT",
+			"now": 1792195200000,
+			"output": "40b3880000000000"
+		},
+		{
+			"input": "Fri, 16 Oct 2026 00:00:00 GMT",
+			"now": 1792195200000,
+			"output": "0000000000000000"
+		},
+		{
+			"input": "no date",
+			"now": 1792195200000,
+			"output": null
+		}
+	],
+	"catalogs": [
+		{
+			"input": {
+				"data": [
+					{
+						"id": "stepfun/step-5-preview",
+						"canonical_slug": "stepfun/step-5-preview-20261008",
+						"hugging_face_id": null,
+						"name": "StepFun: Step 5 Preview",
+						"created": 1791462849,
+						"description": "Step 5 Preview is StepFun's flagship model for agentic work, built on a sparse M",
+						"context_length": 1000000,
+						"architecture": {
+							"modality": "text+image+video->text",
+							"input_modalities": [
+								"text",
+								"image",
+								"video"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Other",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0.000001",
+							"completion": "0.0000027",
+							"input_cache_read": "0.00000005"
+						},
+						"top_provider": {
+							"context_length": 1000000,
+							"max_completion_tokens": 64000,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"frequency_penalty",
+							"include_reasoning",
+							"logprobs",
+							"max_tokens",
+							"reasoning",
+							"reasoning_effort",
+							"response_format",
+							"stop",
+							"structured_outputs",
+							"temperature",
+							"tools",
+							"top_logprobs",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": null,
+							"top_p": null,
+							"top_k": null,
+							"frequency_penalty": null,
+							"presence_penalty": null,
+							"repetition_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/stepfun/step-5-preview-20261008/endpoints"
+						},
+						"reasoning": {
+							"mandatory": true,
+							"supported_efforts": [
+								"high",
+								"medium",
+								"low"
+							],
+							"default_effort": "medium"
+						}
+					},
+					{
+						"id": "anthropic/claude-haiku-5.5",
+						"canonical_slug": "anthropic/claude-haiku-5.5-20261007",
+						"hugging_face_id": null,
+						"name": "Anthropic: Claude Haiku 5.5",
+						"created": 1791397883,
+						"description": "Claude Haiku 5.5 is Anthropic's small, fast model for high-volume, cost-sensitiv",
+						"context_length": 1000000,
+						"architecture": {
+							"modality": "text+image+file->text",
+							"input_modalities": [
+								"text",
+								"image",
+								"file"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Claude",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0.0000001",
+							"completion": "0.0000005",
+							"web_search": "0.01",
+							"input_cache_read": "0.00000001",
+							"input_cache_write": "0.000000125",
+							"input_cache_write_1h": "0.0000002",
+							"overrides": [
+								{
+									"min_prompt_tokens": 100000,
+									"prompt": "0.0000005",
+									"completion": "0.0000025",
+									"input_cache_read": "0.00000005",
+									"input_cache_write": "0.000000625",
+									"input_cache_write_1h": "0.000001"
+								}
+							]
+						},
+						"top_provider": {
+							"context_length": 1000000,
+							"max_completion_tokens": 128000,
+							"is_moderated": true
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"include_reasoning",
+							"max_completion_tokens",
+							"max_tokens",
+							"reasoning",
+							"reasoning_effort",
+							"response_format",
+							"stop",
+							"structured_outputs",
+							"tool_choice",
+							"tools",
+							"verbosity"
+						],
+						"default_parameters": {},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/anthropic/claude-haiku-5.5-20261007/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [
+								{
+									"arena": "models",
+									"category": "3d",
+									"elo": 1351,
+									"win_rate": 58.7,
+									"rank": 6
+								},
+								{
+									"arena": "models",
+									"category": "codecategories",
+									"elo": 1283,
+									"win_rate": 50.1,
+									"rank": 20
+								},
+								{
+									"arena": "models",
+									"category": "gamedev",
+									"elo": 1307,
+									"win_rate": 52.9,
+									"rank": 15
+								},
+								{
+									"arena": "models",
+									"category": "website",
+									"elo": 1272,
+									"win_rate": 49.2,
+									"rank": 28
+								}
+							],
+							"artificial_analysis": {
+								"intelligence_index": 43.4,
+								"coding_index": null,
+								"agentic_index": null
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"supported_efforts": [
+								"max",
+								"xhigh",
+								"high",
+								"medium",
+								"low"
+							],
+							"default_effort": "medium"
+						}
+					},
+					{
+						"id": "inclusionai/ling-3.1-flash",
+						"canonical_slug": "inclusionai/ling-3.1-flash-20261002",
+						"hugging_face_id": null,
+						"name": "inclusionAI: Ling 3.1 Flash",
+						"created": 1790950024,
+						"description": "Ling 3.1 Flash is a hybrid reasoning mixture-of-experts model from inclusionAI, ",
+						"context_length": 262144,
+						"architecture": {
+							"modality": "text->text",
+							"input_modalities": [
+								"text"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Other",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 262144,
+							"max_completion_tokens": 235929,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"frequency_penalty",
+							"include_reasoning",
+							"logprobs",
+							"max_tokens",
+							"presence_penalty",
+							"reasoning",
+							"repetition_penalty",
+							"seed",
+							"stop",
+							"temperature",
+							"tool_choice",
+							"tools",
+							"top_k",
+							"top_logprobs",
+							"top_p"
+						],
+						"default_parameters": {},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/inclusionai/ling-3.1-flash-20261002/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [],
+							"artificial_analysis": {
+								"intelligence_index": 41.1,
+								"coding_index": null,
+								"agentic_index": null
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"default_enabled": true
+						}
+					},
+					{
+						"id": "thinkingmachines/inkling:free",
+						"canonical_slug": "thinkingmachines/inkling-20260715",
+						"hugging_face_id": "thinkingmachines/Inkling",
+						"name": "Thinking Machines: Inkling (free)",
+						"created": 1784325956,
+						"description": "Inkling is an open-weight multimodal mixture-of-experts model from Thinking Mach",
+						"context_length": 1048576,
+						"architecture": {
+							"modality": "text+image+audio->text",
+							"input_modalities": [
+								"text",
+								"image",
+								"audio"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Other",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 1048576,
+							"max_completion_tokens": 262144,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"frequency_penalty",
+							"include_reasoning",
+							"max_tokens",
+							"presence_penalty",
+							"reasoning",
+							"reasoning_effort",
+							"seed",
+							"stop",
+							"temperature",
+							"tools",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": null,
+							"top_p": null,
+							"top_k": null,
+							"frequency_penalty": null,
+							"presence_penalty": null,
+							"repetition_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/thinkingmachines/inkling-20260715/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [
+								{
+									"arena": "agents",
+									"category": "webapps",
+									"elo": 1189,
+									"win_rate": 48.6,
+									"rank": 22
+								},
+								{
+									"arena": "models",
+									"category": "3d",
+									"elo": 1166,
+									"win_rate": 40.6,
+									"rank": 59
+								},
+								{
+									"arena": "models",
+									"category": "asciiart",
+									"elo": 1092,
+									"win_rate": 34,
+									"rank": 62
+								},
+								{
+									"arena": "models",
+									"category": "codecategories",
+									"elo": 1209,
+									"win_rate": 42.3,
+									"rank": 55
+								},
+								{
+									"arena": "models",
+									"category": "dataviz",
+									"elo": 1161,
+									"win_rate": 37.4,
+									"rank": 75
+								},
+								{
+									"arena": "models",
+									"category": "gamedev",
+									"elo": 1169,
+									"win_rate": 37.8,
+									"rank": 65
+								},
+								{
+									"arena": "models",
+									"category": "svg",
+									"elo": 1112,
+									"win_rate": 35,
+									"rank": 57
+								},
+								{
+									"arena": "models",
+									"category": "uicomponent",
+									"elo": 1201,
+									"win_rate": 40.2,
+									"rank": 54
+								},
+								{
+									"arena": "models",
+									"category": "website",
+									"elo": 1228,
+									"win_rate": 44.7,
+									"rank": 51
+								}
+							],
+							"artificial_analysis": {
+								"intelligence_index": 25,
+								"coding_index": 52.1,
+								"agentic_index": 22.5
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"default_enabled": true,
+							"supported_efforts": [
+								"max",
+								"high",
+								"medium",
+								"low",
+								"minimal",
+								"none"
+							],
+							"default_effort": "high"
+						}
+					},
+					{
+						"id": "google/gemma-4-26b-a4b-it:free",
+						"canonical_slug": "google/gemma-4-26b-a4b-it-20260403",
+						"hugging_face_id": "google/gemma-4-26B-A4B-it",
+						"name": "Google: Gemma 4 26B A4B  (free)",
+						"created": 1775227989,
+						"description": "Gemma 4 26B A4B IT is an instruction-tuned Mixture-of-Experts (MoE) model from G",
+						"context_length": 262144,
+						"architecture": {
+							"modality": "text+image+video->text",
+							"input_modalities": [
+								"image",
+								"text",
+								"video"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Gemma",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 262144,
+							"max_completion_tokens": 32768,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"include_reasoning",
+							"max_tokens",
+							"reasoning",
+							"response_format",
+							"seed",
+							"temperature",
+							"tool_choice",
+							"tools",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": 1,
+							"top_p": 0.95,
+							"top_k": 64
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/google/gemma-4-26b-a4b-it-20260403/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [],
+							"artificial_analysis": {
+								"intelligence_index": 16.7,
+								"coding_index": 39.3,
+								"agentic_index": 2.9
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"default_enabled": false
+						}
+					},
+					{
+						"id": "google/gemma-4-31b-it:free",
+						"canonical_slug": "google/gemma-4-31b-it-20260402",
+						"hugging_face_id": "google/gemma-4-31B-it",
+						"name": "Google: Gemma 4 31B (free)",
+						"created": 1775148486,
+						"description": "Gemma 4 31B Instruct is Google DeepMind's 30.7B dense multimodal model supportin",
+						"context_length": 262144,
+						"architecture": {
+							"modality": "text+image+video->text",
+							"input_modalities": [
+								"image",
+								"text",
+								"video"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Gemma",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 262144,
+							"max_completion_tokens": 32768,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"include_reasoning",
+							"max_tokens",
+							"reasoning",
+							"response_format",
+							"seed",
+							"temperature",
+							"tool_choice",
+							"tools",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": 1,
+							"top_p": 0.95,
+							"top_k": 64,
+							"frequency_penalty": null,
+							"presence_penalty": null,
+							"repetition_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/google/gemma-4-31b-it-20260402/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [],
+							"artificial_analysis": {
+								"intelligence_index": 14.7,
+								"coding_index": 43.4,
+								"agentic_index": 4.2
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"default_enabled": false
+						}
+					},
+					{
+						"id": "google/lyria-3-pro-preview",
+						"canonical_slug": "google/lyria-3-pro-preview-20260330",
+						"hugging_face_id": null,
+						"name": "Google: Lyria 3 Pro Preview",
+						"created": 1774907286,
+						"description": "Full-length songs are priced at $0.08 per song. Lyria 3 is Google's family of mu",
+						"context_length": 1048576,
+						"architecture": {
+							"modality": "text+image->text+audio",
+							"input_modalities": [
+								"text",
+								"image"
+							],
+							"output_modalities": [
+								"text",
+								"audio"
+							],
+							"tokenizer": "Other",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 1048576,
+							"max_completion_tokens": 65536,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"max_tokens",
+							"response_format",
+							"seed",
+							"temperature",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": null,
+							"top_p": null,
+							"top_k": null,
+							"frequency_penalty": null,
+							"presence_penalty": null,
+							"repetition_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/google/lyria-3-pro-preview-20260330/endpoints"
+						}
+					},
+					{
+						"id": "nvidia/nemotron-3-super-120b-a12b:free",
+						"canonical_slug": "nvidia/nemotron-3-super-120b-a12b-20230311",
+						"hugging_face_id": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-FP8",
+						"name": "NVIDIA: Nemotron 3 Super (free)",
+						"created": 1773245239,
+						"description": "NVIDIA Nemotron 3 Super is a 120B-parameter open hybrid MoE model, activating ju",
+						"context_length": 262144,
+						"architecture": {
+							"modality": "text->text",
+							"input_modalities": [
+								"text"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Other",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": 262144,
+							"max_completion_tokens": 235929,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"include_reasoning",
+							"max_tokens",
+							"reasoning",
+							"reasoning_effort",
+							"response_format",
+							"seed",
+							"structured_outputs",
+							"temperature",
+							"tool_choice",
+							"tools",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": 1,
+							"top_p": 0.95,
+							"top_k": null,
+							"frequency_penalty": null,
+							"presence_penalty": null,
+							"repetition_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/nvidia/nemotron-3-super-120b-a12b-20230311/endpoints"
+						},
+						"benchmarks": {
+							"design_arena": [],
+							"artificial_analysis": {
+								"intelligence_index": 12.8,
+								"coding_index": 37.7,
+								"agentic_index": 1.7
+							}
+						},
+						"reasoning": {
+							"mandatory": false,
+							"default_enabled": true,
+							"supports_max_tokens": true,
+							"supported_efforts": [
+								"medium",
+								"low"
+							],
+							"default_effort": "medium"
+						}
+					},
+					{
+						"id": "openrouter/free",
+						"canonical_slug": "openrouter/free",
+						"hugging_face_id": "",
+						"name": "Free Models Router",
+						"created": 1769917427,
+						"description": "The simplest way to get free inference. openrouter/free is a router that selects",
+						"context_length": 200000,
+						"architecture": {
+							"modality": "text+image->text",
+							"input_modalities": [
+								"text",
+								"image"
+							],
+							"output_modalities": [
+								"text"
+							],
+							"tokenizer": "Router",
+							"instruct_type": null
+						},
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						},
+						"top_provider": {
+							"context_length": null,
+							"max_completion_tokens": null,
+							"is_moderated": false
+						},
+						"per_request_limits": null,
+						"supported_parameters": [
+							"frequency_penalty",
+							"include_reasoning",
+							"logprobs",
+							"max_completion_tokens",
+							"max_tokens",
+							"min_p",
+							"presence_penalty",
+							"reasoning",
+							"reasoning_effort",
+							"repetition_penalty",
+							"response_format",
+							"seed",
+							"stop",
+							"structured_outputs",
+							"temperature",
+							"tool_choice",
+							"tools",
+							"top_k",
+							"top_logprobs",
+							"top_p"
+						],
+						"default_parameters": {
+							"temperature": null,
+							"top_p": null,
+							"frequency_penalty": null
+						},
+						"supported_voices": null,
+						"knowledge_cutoff": null,
+						"expiration_date": null,
+						"links": {
+							"details": "/api/v1/models/openrouter/free/endpoints"
+						}
+					}
+				]
+			},
+			"output": [
+				"google/gemma-4-26b-a4b-it:free",
+				"google/gemma-4-31b-it:free",
+				"nvidia/nemotron-3-super-120b-a12b:free",
+				"openrouter/free",
+				"thinkingmachines/inkling:free"
+			]
+		},
+		{
+			"input": null,
+			"output": []
+		},
+		{
+			"input": {},
+			"output": []
+		},
+		{
+			"input": {
+				"data": []
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": 0
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": -1,
+							"completion": -1
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": -1,
+							"completion": -1
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": -1,
+							"completion": -1
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": -1,
+							"completion": -1
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "",
+							"completion": ""
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "",
+							"completion": ""
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "",
+							"completion": ""
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "",
+							"completion": ""
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": " ",
+							"completion": " "
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": " ",
+							"completion": " "
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": " ",
+							"completion": " "
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": " ",
+							"completion": " "
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0",
+							"completion": "0"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0x0",
+							"completion": "0x0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0x0",
+							"completion": "0x0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0x0",
+							"completion": "0x0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0x0",
+							"completion": "0x0"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0b0",
+							"completion": "0b0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0b0",
+							"completion": "0b0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0b0",
+							"completion": "0b0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0b0",
+							"completion": "0b0"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0o0",
+							"completion": "0o0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0o0",
+							"completion": "0o0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0o0",
+							"completion": "0o0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0o0",
+							"completion": "0o0"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0e5",
+							"completion": "0e5"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0e5",
+							"completion": "0e5"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0e5",
+							"completion": "0e5"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0e5",
+							"completion": "0e5"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": ".0",
+							"completion": ".0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": ".0",
+							"completion": ".0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": ".0",
+							"completion": ".0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": ".0",
+							"completion": ".0"
+						}
+					}
+				]
+			},
+			"output": [
+				"a/m:free",
+				"openrouter/free"
+			]
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0,0",
+							"completion": "0,0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0,0",
+							"completion": "0,0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0,0",
+							"completion": "0,0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0,0",
+							"completion": "0,0"
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": "0_0",
+							"completion": "0_0"
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": "0_0",
+							"completion": "0_0"
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": "0_0",
+							"completion": "0_0"
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": "0_0",
+							"completion": "0_0"
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "openrouter/free",
+						"pricing": {
+							"prompt": null,
+							"completion": null
+						}
+					},
+					{
+						"id": "a/m:free",
+						"pricing": {
+							"prompt": null,
+							"completion": null
+						}
+					},
+					{
+						"id": "a/paid",
+						"pricing": {
+							"prompt": null,
+							"completion": null
+						}
+					},
+					{
+						"id": "-m:free",
+						"pricing": {
+							"prompt": null,
+							"completion": null
+						}
+					}
+				]
+			},
+			"output": []
+		},
+		{
+			"input": {
+				"data": [
+					{
+						"id": "p/m350:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m349:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m348:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m347:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m346:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m345:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m344:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m343:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m342:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m341:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m340:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m339:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m338:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m337:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m336:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m335:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m334:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m333:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m332:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m331:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m330:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m329:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m328:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m327:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m326:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m325:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m324:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m323:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m322:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m321:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m320:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m319:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m318:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m317:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m316:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m315:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m314:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m313:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m312:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m311:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m310:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m309:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m308:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m307:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m306:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m305:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m304:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m303:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m302:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m301:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m300:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m299:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m298:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m297:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m296:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m295:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m294:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m293:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m292:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m291:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m290:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m289:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m288:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m287:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m286:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m285:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m284:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m283:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m282:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m281:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m280:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m279:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m278:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m277:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m276:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m275:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m274:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m273:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m272:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m271:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m270:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m269:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m268:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m267:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m266:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m265:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m264:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m263:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m262:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m261:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m260:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m259:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m258:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m257:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m256:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m255:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m254:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m253:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m252:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m251:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m250:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m249:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m248:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m247:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m246:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m245:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m244:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m243:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m242:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m241:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m240:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m239:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m238:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m237:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m236:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m235:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m234:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m233:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m232:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m231:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m230:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m229:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m228:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m227:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m226:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m225:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m224:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m223:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m222:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m221:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m220:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m219:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m218:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m217:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m216:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m215:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m214:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m213:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m212:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m211:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m210:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m209:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m208:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m207:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m206:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m205:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m204:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m203:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m202:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m201:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m200:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m199:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m198:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m197:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m196:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m195:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m194:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m193:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m192:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m191:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m190:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m189:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m188:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m187:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m186:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m185:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m184:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m183:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m182:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m181:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m180:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m179:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m178:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m177:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m176:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m175:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m174:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m173:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m172:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m171:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m170:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m169:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m168:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m167:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m166:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m165:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m164:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m163:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m162:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m161:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m160:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m159:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m158:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m157:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m156:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m155:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m154:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m153:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m152:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m151:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m150:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m149:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m148:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m147:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m146:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m145:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m144:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m143:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m142:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m141:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m140:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m139:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m138:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m137:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m136:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m135:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m134:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m133:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m132:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m131:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m130:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m129:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m128:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m127:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m126:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m125:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m124:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m123:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m122:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m121:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m120:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m119:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m118:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m117:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m116:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m115:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m114:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m113:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m112:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m111:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m110:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m109:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m108:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m107:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m106:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m105:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m104:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m103:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m102:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m101:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m100:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m99:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m98:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m97:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m96:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m95:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m94:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m93:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m92:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m91:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m90:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m89:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m88:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m87:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m86:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m85:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m84:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m83:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m82:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m81:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m80:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m79:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m78:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m77:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m76:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m75:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m74:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m73:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m72:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m71:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m70:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m69:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m68:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m67:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m66:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m65:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m64:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m63:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m62:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m61:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m60:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m59:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m58:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m57:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m56:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m55:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m54:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m53:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m52:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m51:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m50:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m49:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m48:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m47:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m46:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m45:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m44:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m43:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m42:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m41:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m40:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m39:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m38:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m37:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m36:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m35:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m34:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m33:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m32:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m31:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m30:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m29:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m28:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m27:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m26:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m25:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m24:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m23:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m22:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m21:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m20:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m19:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m18:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m17:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m16:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m15:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m14:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m13:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m12:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m11:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m10:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m9:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m8:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m7:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m6:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m5:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m4:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m3:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m2:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					},
+					{
+						"id": "p/m1:free",
+						"pricing": {
+							"prompt": 0,
+							"completion": "0"
+						}
+					}
+				]
+			},
+			"output": [
+				"p/m100:free",
+				"p/m101:free",
+				"p/m102:free",
+				"p/m103:free",
+				"p/m104:free",
+				"p/m105:free",
+				"p/m106:free",
+				"p/m107:free",
+				"p/m108:free",
+				"p/m109:free",
+				"p/m110:free",
+				"p/m111:free",
+				"p/m112:free",
+				"p/m113:free",
+				"p/m114:free",
+				"p/m115:free",
+				"p/m116:free",
+				"p/m117:free",
+				"p/m118:free",
+				"p/m119:free",
+				"p/m120:free",
+				"p/m121:free",
+				"p/m122:free",
+				"p/m123:free",
+				"p/m124:free",
+				"p/m125:free",
+				"p/m126:free",
+				"p/m127:free",
+				"p/m128:free",
+				"p/m129:free",
+				"p/m130:free",
+				"p/m131:free",
+				"p/m132:free",
+				"p/m133:free",
+				"p/m134:free",
+				"p/m135:free",
+				"p/m136:free",
+				"p/m137:free",
+				"p/m138:free",
+				"p/m139:free",
+				"p/m140:free",
+				"p/m141:free",
+				"p/m142:free",
+				"p/m143:free",
+				"p/m144:free",
+				"p/m145:free",
+				"p/m146:free",
+				"p/m147:free",
+				"p/m148:free",
+				"p/m149:free",
+				"p/m150:free",
+				"p/m151:free",
+				"p/m152:free",
+				"p/m153:free",
+				"p/m154:free",
+				"p/m155:free",
+				"p/m156:free",
+				"p/m157:free",
+				"p/m158:free",
+				"p/m159:free",
+				"p/m160:free",
+				"p/m161:free",
+				"p/m162:free",
+				"p/m163:free",
+				"p/m164:free",
+				"p/m165:free",
+				"p/m166:free",
+				"p/m167:free",
+				"p/m168:free",
+				"p/m169:free",
+				"p/m170:free",
+				"p/m171:free",
+				"p/m172:free",
+				"p/m173:free",
+				"p/m174:free",
+				"p/m175:free",
+				"p/m176:free",
+				"p/m177:free",
+				"p/m178:free",
+				"p/m179:free",
+				"p/m180:free",
+				"p/m181:free",
+				"p/m182:free",
+				"p/m183:free",
+				"p/m184:free",
+				"p/m185:free",
+				"p/m186:free",
+				"p/m187:free",
+				"p/m188:free",
+				"p/m189:free",
+				"p/m190:free",
+				"p/m191:free",
+				"p/m192:free",
+				"p/m193:free",
+				"p/m194:free",
+				"p/m195:free",
+				"p/m196:free",
+				"p/m197:free",
+				"p/m198:free",
+				"p/m199:free",
+				"p/m200:free",
+				"p/m201:free",
+				"p/m202:free",
+				"p/m203:free",
+				"p/m204:free",
+				"p/m205:free",
+				"p/m206:free",
+				"p/m207:free",
+				"p/m208:free",
+				"p/m209:free",
+				"p/m210:free",
+				"p/m211:free",
+				"p/m212:free",
+				"p/m213:free",
+				"p/m214:free",
+				"p/m215:free",
+				"p/m216:free",
+				"p/m217:free",
+				"p/m218:free",
+				"p/m219:free",
+				"p/m220:free",
+				"p/m221:free",
+				"p/m222:free",
+				"p/m223:free",
+				"p/m224:free",
+				"p/m225:free",
+				"p/m226:free",
+				"p/m227:free",
+				"p/m228:free",
+				"p/m229:free",
+				"p/m230:free",
+				"p/m231:free",
+				"p/m232:free",
+				"p/m233:free",
+				"p/m234:free",
+				"p/m235:free",
+				"p/m236:free",
+				"p/m237:free",
+				"p/m238:free",
+				"p/m239:free",
+				"p/m240:free",
+				"p/m241:free",
+				"p/m242:free",
+				"p/m243:free",
+				"p/m244:free",
+				"p/m245:free",
+				"p/m246:free",
+				"p/m247:free",
+				"p/m248:free",
+				"p/m249:free",
+				"p/m250:free",
+				"p/m251:free",
+				"p/m252:free",
+				"p/m253:free",
+				"p/m254:free",
+				"p/m255:free",
+				"p/m256:free",
+				"p/m257:free",
+				"p/m258:free",
+				"p/m259:free",
+				"p/m260:free",
+				"p/m261:free",
+				"p/m262:free",
+				"p/m263:free",
+				"p/m264:free",
+				"p/m265:free",
+				"p/m266:free",
+				"p/m267:free",
+				"p/m268:free",
+				"p/m269:free",
+				"p/m270:free",
+				"p/m271:free",
+				"p/m272:free",
+				"p/m273:free",
+				"p/m274:free",
+				"p/m275:free",
+				"p/m276:free",
+				"p/m277:free",
+				"p/m278:free",
+				"p/m279:free",
+				"p/m280:free",
+				"p/m281:free",
+				"p/m282:free",
+				"p/m283:free",
+				"p/m284:free",
+				"p/m285:free",
+				"p/m286:free",
+				"p/m287:free",
+				"p/m288:free",
+				"p/m289:free",
+				"p/m290:free",
+				"p/m291:free",
+				"p/m292:free",
+				"p/m293:free",
+				"p/m294:free",
+				"p/m295:free",
+				"p/m296:free",
+				"p/m297:free",
+				"p/m298:free",
+				"p/m299:free",
+				"p/m300:free",
+				"p/m301:free",
+				"p/m302:free",
+				"p/m303:free",
+				"p/m304:free",
+				"p/m305:free",
+				"p/m306:free",
+				"p/m307:free",
+				"p/m308:free",
+				"p/m309:free",
+				"p/m310:free",
+				"p/m311:free",
+				"p/m312:free",
+				"p/m313:free",
+				"p/m314:free",
+				"p/m315:free",
+				"p/m316:free",
+				"p/m317:free",
+				"p/m318:free",
+				"p/m319:free",
+				"p/m320:free",
+				"p/m321:free",
+				"p/m322:free",
+				"p/m323:free",
+				"p/m324:free",
+				"p/m325:free",
+				"p/m326:free",
+				"p/m327:free",
+				"p/m328:free",
+				"p/m329:free",
+				"p/m330:free",
+				"p/m331:free",
+				"p/m332:free",
+				"p/m333:free",
+				"p/m334:free",
+				"p/m335:free",
+				"p/m336:free",
+				"p/m337:free",
+				"p/m338:free",
+				"p/m339:free",
+				"p/m340:free",
+				"p/m341:free",
+				"p/m342:free",
+				"p/m343:free",
+				"p/m344:free",
+				"p/m345:free",
+				"p/m346:free",
+				"p/m347:free",
+				"p/m348:free",
+				"p/m349:free",
+				"p/m350:free",
+				"p/m51:free",
+				"p/m52:free",
+				"p/m53:free",
+				"p/m54:free",
+				"p/m55:free",
+				"p/m56:free",
+				"p/m57:free",
+				"p/m58:free",
+				"p/m59:free",
+				"p/m60:free",
+				"p/m61:free",
+				"p/m62:free",
+				"p/m63:free",
+				"p/m64:free",
+				"p/m65:free",
+				"p/m66:free",
+				"p/m67:free",
+				"p/m68:free",
+				"p/m69:free",
+				"p/m70:free",
+				"p/m71:free",
+				"p/m72:free",
+				"p/m73:free",
+				"p/m74:free",
+				"p/m75:free",
+				"p/m76:free",
+				"p/m77:free",
+				"p/m78:free",
+				"p/m79:free",
+				"p/m80:free",
+				"p/m81:free",
+				"p/m82:free",
+				"p/m83:free",
+				"p/m84:free",
+				"p/m85:free",
+				"p/m86:free",
+				"p/m87:free",
+				"p/m88:free",
+				"p/m89:free",
+				"p/m90:free",
+				"p/m91:free",
+				"p/m92:free",
+				"p/m93:free",
+				"p/m94:free",
+				"p/m95:free",
+				"p/m96:free",
+				"p/m97:free",
+				"p/m98:free",
+				"p/m99:free"
+			]
+		}
+	],
+	"modelLists": [
+		{
+			"input": "# Recorded `opencode models` (opencode v2.0.24, 2026-10-12): one\n# provider/model id per line, exit 0, nothing on stderr, no model quota spent.\n# The adapter keeps lines that pass its model-id validation and drops the rest\n# (blank lines, warnings, flag-like text).\nopencode/gpt-5.5\nopencode-go/muse-spark-1.3-contributor\n\nthis line is not a model id\n--not-a-model\nopencode/gpt-5.5\ngoogle/gemini-2.5-flash\n",
+			"output": [
+				"google/gemini-2.5-flash",
+				"opencode-go/muse-spark-1.3-contributor",
+				"opencode/gpt-5.5"
+			]
+		},
+		{
+			"input": " ﻿a/m\n\nb/m\na/m\n--bad\n日本語",
+			"output": [
+				"a/m",
+				"b/m"
+			]
+		}
+	],
+	"preflight": [
+		{
+			"input": {
+				"deadline": "2026-10-11T00:01:00+09:00",
+				"now": 0
+			},
+			"output": {
+				"ok": true,
+				"deadlineEpochMs": 1791644460000
+			}
+		},
+		{
+			"input": {
+				"deadline": "2026-10-11T00:00:00.000Z",
+				"now": 0
+			},
+			"output": {
+				"ok": true,
+				"deadlineEpochMs": 1791676800000
+			}
+		},
+		{
+			"input": {
+				"deadline": "soon",
+				"now": 0
+			},
+			"output": {
+				"ok": false,
+				"failure": {
+					"code": "REQUEST_INVALID",
+					"retryable": false
+				}
+			}
+		}
+	]
+}

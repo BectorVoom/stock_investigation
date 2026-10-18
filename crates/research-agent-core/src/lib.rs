@@ -15,3 +15,4 @@ pub mod runtime;
 pub mod tools;
 
 pub mod authorize;
+pub mod registry;

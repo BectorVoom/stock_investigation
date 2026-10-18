@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 research-js = { workspace = true }
+rayon = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

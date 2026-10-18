@@ -5,7 +5,7 @@
 //! the common controls with their short forms, the rest as `\u00xx` with
 //! lower-case hex; U+2028, U+2029 and DEL are written as they are.
 
-use crate::number::to_js_string;
+use crate::number::{push_js_string, to_js_string};
 
 /// Appends `JSON.stringify(text)` to `out`.
 pub fn push_quoted(out: &mut String, text: &str) {
@@ -40,6 +40,15 @@ pub fn quote(text: &str) -> String {
 	let mut out = String::with_capacity(text.len() + 2);
 	push_quoted(&mut out, text);
 	out
+}
+
+/// Appends `JSON.stringify(value)` for a number: non-finite numbers become `null`.
+pub fn push_number(out: &mut String, value: f64) {
+	if value.is_finite() {
+		push_js_string(out, value);
+	} else {
+		out.push_str("null");
+	}
 }
 
 /// `JSON.stringify(value)` for a number: non-finite numbers become `null`.
