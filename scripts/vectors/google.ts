@@ -16,7 +16,7 @@
  * hand-tested in Rust against local servers (see the crate's tests).
  */
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -729,6 +729,8 @@ interface FlowCase {
 	readonly clientConfigured: boolean;
 	readonly job: unknown;
 	readonly tokenFile: string | null;
+	/** A directory sits in the token file's place, so writing it fails. */
+	readonly tokenFileBlocked?: boolean;
 	readonly routes: readonly Route[];
 	readonly browser: Browser;
 	/** How many `sendAuthUrl` attempts fail before one is delivered; null never. */
@@ -800,6 +802,7 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 			});
 			await writeFile(tokenFile, spec.tokenFile);
 		}
+		if (spec.tokenFileBlocked === true) await mkdir(tokenFile, { recursive: true });
 		let nowMs = Date.UTC(2026, 9, 17, 3, 0, 0);
 		const clock = { nowMs: () => nowMs, nowIso: () => new Date(nowMs).toISOString() };
 		const requests: (RecordedRequest & { masked?: unknown })[] = [];
@@ -960,7 +963,8 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 				}
 			}
 		}
-		const completion = await pending;
+		// A fault that escapes (a failed token write) is part of the contract.
+		const completion = await pending.catch(() => ({ threw: true }));
 		let tokenText: string | null = null;
 		let tokenMode: string | null = null;
 		try {
@@ -1074,6 +1078,17 @@ async function flowCases(): Promise<FlowCase[]> {
 			routes({
 				"POST /token": [{ status: 200, text: GRANTED }],
 				"POST /calendar/v3/calendars": [OK_CAL("cal_1")],
+			}),
+		),
+	);
+	// F1: a token file that cannot be written gives the new grant back, then the fault escapes.
+	cases.push(
+		await connect(
+			{ browser: code(), tokenFileBlocked: true },
+			routes({
+				"POST /token": [{ status: 200, text: GRANTED }],
+				"POST /calendar/v3/calendars": [OK_CAL("cal_1")],
+				"POST /revoke": [OK_EMPTY],
 			}),
 		),
 	);

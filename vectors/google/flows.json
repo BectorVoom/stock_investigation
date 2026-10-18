@@ -124,6 +124,136 @@
 		}
 	},
 	{
+		"clientConfigured": true,
+		"tokenFile": null,
+		"browser": {
+			"kind": "callbacks",
+			"requests": [
+				{
+					"kind": "code",
+					"code": "auth-code-1"
+				}
+			]
+		},
+		"deliverAfterFailures": 0,
+		"timeoutFires": false,
+		"abortAt": null,
+		"action": "connect",
+		"job": {
+			"kind": "google-calendar",
+			"runId": "run_google",
+			"leaseGeneration": 2,
+			"leaseExpiresAt": "2026-10-11T00:01:30.000Z",
+			"attempt": 1,
+			"heartbeatIntervalMs": 20000,
+			"sources": [],
+			"action": "connect"
+		},
+		"routes": [
+			{
+				"key": "POST /token",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"access_token\":\"at-1\",\"refresh_token\":\"rt-1\",\"scope\":\"https://www.googleapis.com/auth/calendar.app.created\",\"expires_in\":3600}"
+					}
+				]
+			},
+			{
+				"key": "POST /calendar/v3/calendars",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{\"id\":\"cal_1\"}"
+					}
+				]
+			},
+			{
+				"key": "POST /revoke",
+				"answers": [
+					{
+						"status": 200,
+						"text": "{}"
+					}
+				]
+			}
+		],
+		"tokenFileBlocked": true,
+		"output": {
+			"completion": {
+				"threw": true
+			},
+			"states": [
+				"planning",
+				"collecting",
+				"analyzing",
+				"verifying"
+			],
+			"logs": [
+				{
+					"level": "info",
+					"event": "google_grant_discarded",
+					"fields": {
+						"runId": "run_google",
+						"revoked": true
+					}
+				}
+			],
+			"requests": [
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/token",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "grant_type=authorization_code&code=auth-code-1&client_id=test-client-id-abc&client_secret=test-client-secret-xyz&redirect_uri=%3Credirect%3E&code_verifier=%3Cverifier%3E"
+				},
+				{
+					"host": "www.googleapis.com",
+					"method": "POST",
+					"path": "/calendar/v3/calendars",
+					"headers": {
+						"authorization": "Bearer at-1",
+						"content-type": "application/json; charset=utf-8"
+					},
+					"body": "{\"summary\":\"Earnings calendar (Research workspace)\",\"description\":\"Earnings announcements of the owner's watchlist, kept in step by the research workspace runner.\",\"timeZone\":\"UTC\"}"
+				},
+				{
+					"host": "oauth2.googleapis.com",
+					"method": "POST",
+					"path": "/revoke",
+					"headers": {
+						"content-type": "application/x-www-form-urlencoded"
+					},
+					"body": "token=rt-1"
+				}
+			],
+			"sentUrls": [
+				"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-client-id-abc&redirect_uri=%3Credirect_uri%3E&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.app.created&access_type=offline&prompt=consent&code_challenge=%3Ccode_challenge%3E&code_challenge_method=S256&state=%3Cstate%3E"
+			],
+			"signIn": true,
+			"attempts": 1,
+			"browser": [
+				{
+					"kind": "code",
+					"status": 200
+				}
+			],
+			"googleSleeps": [
+				300000
+			],
+			"paceSleeps": [],
+			"paceCalls": [
+				{
+					"provider": "google",
+					"granted": true
+				}
+			],
+			"tokenFile": null
+		}
+	},
+	{
 		"clientConfigured": false,
 		"tokenFile": null,
 		"browser": {

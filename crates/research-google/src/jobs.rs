@@ -376,17 +376,17 @@ async fn connect_listening(
 	if cancel.is_cancelled() {
 		return Ok(give_back(env, job, &tokens.refresh_token, aborted(job)).await);
 	}
-	// F1: a write failure propagates without revoking this new grant, as TypeScript does.
-	write_google_token_file(
-		env.token_file,
-		&GoogleTokenRecord {
-			refresh_token: tokens.refresh_token,
-			calendar_id: calendar_id.clone(),
-			scope: GOOGLE_CALENDAR_SCOPE.to_owned(),
-			saved_at: env.clock.now_iso(),
-		},
-	)
-	.await?;
+	// F1: a grant that could not be stored is given back before the fault propagates.
+	let record = GoogleTokenRecord {
+		refresh_token: tokens.refresh_token.clone(),
+		calendar_id: calendar_id.clone(),
+		scope: GOOGLE_CALENDAR_SCOPE.to_owned(),
+		saved_at: env.clock.now_iso(),
+	};
+	if let Err(error) = write_google_token_file(env.token_file, &record).await {
+		give_back(env, job, &tokens.refresh_token, aborted(job)).await;
+		return Err(error.into());
+	}
 	env.logger.info(
 		"google_connected",
 		&[

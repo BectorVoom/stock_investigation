@@ -5,7 +5,7 @@
  * for the 5-minute timeout, and a secrets scan over every captured log
  * line, sent event and completion (security check 1).
  */
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GoogleHttpRequest, GoogleHttpResult } from "@research/adapters/google";
@@ -627,6 +627,28 @@ describe("a grant that is not kept is given back", () => {
 				[...harness.logs.map((line) => JSON.stringify(line)), JSON.stringify(completion)],
 				[CLIENT_SECRET, AUTH_CODE, REFRESH_TOKEN, ACCESS_TOKEN],
 			);
+		} finally {
+			await rm(harness.dir, { recursive: true, force: true });
+		}
+	});
+
+	it("revokes the new grant when the token file cannot be written, then fails", async () => {
+		const harness = await googleHarness({
+			"POST /token": json(200, GRANTED),
+			"POST /calendar/v3/calendars": json(200, { id: "cal_1" }),
+			"POST /revoke": json(200, {}),
+		});
+		try {
+			// A directory in the token file's place makes the atomic rename fail.
+			await mkdir(harness.tokenFile);
+			await expect(connectThroughCallback(harness)).rejects.toThrow();
+			const revoke = harness.httpCalls.find((call) => call.path === "/revoke");
+			expect(revoke?.body).toBe(`token=${REFRESH_TOKEN}`);
+			expect(harness.logs.find((line) => line.event === "google_grant_discarded")?.fields).toEqual({
+				runId: "run_google",
+				revoked: true,
+			});
+			expect(harness.logs.some((line) => line.event === "google_connected")).toBe(false);
 		} finally {
 			await rm(harness.dir, { recursive: true, force: true });
 		}

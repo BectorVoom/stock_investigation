@@ -308,13 +308,20 @@ async function executeConnect(
 		}
 		// Stopped while talking to Google: nothing is stored.
 		if (signal.aborted) return giveBack(aborted(job));
-		await writeGoogleTokenFile(env.google.config.tokenFile, {
-			version: 1,
-			refreshToken,
-			calendarId,
-			scope: GOOGLE_CALENDAR_SCOPE,
-			savedAt: env.clock.nowIso(),
-		});
+		try {
+			await writeGoogleTokenFile(env.google.config.tokenFile, {
+				version: 1,
+				refreshToken,
+				calendarId,
+				scope: GOOGLE_CALENDAR_SCOPE,
+				savedAt: env.clock.nowIso(),
+			});
+		} catch (error) {
+			// The grant was not stored, so it is given back before the fault
+			// propagates (the job then ends as a retryable runner error).
+			await giveBack(failed(job, "GOOGLE_REQUEST_FAILED", false));
+			throw error;
+		}
 		env.logger.info("google_connected", { runId: job.runId, calendarId });
 		await reporter.state("publishing");
 		return {
