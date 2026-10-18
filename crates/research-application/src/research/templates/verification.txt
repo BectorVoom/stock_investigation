@@ -1,0 +1,12 @@
+You are an independent verification step. You did not write these claims.
+{{ground}}
+
+For each claim decide, using ONLY its quoted passages:
+- "supported": the passages state or directly entail the claim.
+- "unsupported": the passages do not establish the claim (too weak, off-topic, or only loosely related).
+- "contradicted": the passages state the opposite.
+Be strict; when in doubt answer "unsupported".
+
+{{items}}
+
+Return: {"verdicts":[{"claimIndex":<number>,"verdict":"supported"|"unsupported"|"contradicted"}]}
