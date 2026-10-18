@@ -2611,7 +2611,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting"
@@ -2686,7 +2698,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting"
@@ -2763,7 +2787,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting"
@@ -2840,7 +2876,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -2952,7 +3000,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -3064,7 +3124,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -3176,7 +3248,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -3303,7 +3387,18 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "google-calendar-connected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"calendarId": "cal_7"
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -5428,7 +5523,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -5550,7 +5657,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -5672,7 +5791,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -5794,7 +5925,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -5916,7 +6059,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -6052,7 +6207,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -6202,7 +6369,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -6352,7 +6531,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -6827,7 +7018,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting"
@@ -6879,7 +7082,19 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "failed",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"failureCode": "GOOGLE_REQUEST_FAILED",
+				"retryable": false
+			},
 			"states": [
 				"planning",
 				"collecting"
@@ -6931,7 +7146,18 @@
 			}
 		],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": true
+			},
 			"states": [
 				"planning",
 				"collecting",
@@ -6992,7 +7218,18 @@
 		},
 		"routes": [],
 		"output": {
-			"completion": null,
+			"completion": {
+				"outcome": "google-calendar-disconnected",
+				"leaseGeneration": 2,
+				"usage": {
+					"agentSteps": 0,
+					"toolCalls": 0,
+					"inputBytes": 0,
+					"knownCostUsd": 0,
+					"hasUnmeteredUsage": false
+				},
+				"revoked": false
+			},
 			"states": [
 				"planning",
 				"analyzing",

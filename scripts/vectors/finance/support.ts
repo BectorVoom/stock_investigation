@@ -5,6 +5,7 @@
  * normalisation of recorded calls and values into the JSON the Rust replay
  * compares against.
  */
+import { createHash } from "node:crypto";
 import type {
 	BinaryDocument,
 	Clock,
@@ -196,9 +197,34 @@ export function tickingClock(start: number): TickingClock {
 	};
 }
 
-/** Plain JSON copy of a value (drops `undefined`, expands Maps and Sets the way the contract wants). */
+/** Marks a negative zero, which JSON text cannot carry. */
+export const NEGATIVE_ZERO = "-0(neg)";
+
+/**
+ * Plain JSON copy of a value (drops `undefined`). A negative zero becomes the
+ * string `NEGATIVE_ZERO`, so the replays can compare it exactly.
+ */
 export function plain(value: unknown): unknown {
-	return JSON.parse(JSON.stringify(value));
+	return JSON.parse(
+		JSON.stringify(value, (_key, item: unknown) => (Object.is(item, -0) ? NEGATIVE_ZERO : item)),
+	);
+}
+
+/** JSON with sorted keys and JavaScript number text, the form digests are taken of. */
+export function canonicalJson(value: unknown): string {
+	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+	if (typeof value === "object" && value !== null) {
+		const entries = Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+		return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+	}
+	return JSON.stringify(value) ?? "null";
+}
+
+/** SHA-256 (hex) of the canonical form: lets a replay compare a long list exactly. */
+export function digestOf(value: unknown): string {
+	return createHash("sha256")
+		.update(canonicalJson(plain(value)))
+		.digest("hex");
 }
 
 /** A SafeFetchError as the exporters script it. */

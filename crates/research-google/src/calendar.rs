@@ -35,7 +35,7 @@ pub trait CalendarTokens: Send + Sync {
 	/// Current access token.
 	fn access_token(&self) -> Secret;
 	/// Refreshes and updates the current token.
-	async fn refresh_access_token(&self) -> Result<Secret, Code>;
+	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError>;
 }
 /// Dependencies shared by each operation in a sync.
 pub struct CalendarClient<'a> {

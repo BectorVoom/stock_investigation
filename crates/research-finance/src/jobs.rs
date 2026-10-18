@@ -128,6 +128,9 @@ impl BeforeRequest for SourceGate<'_> {
 		self.pacer.pace(self.id, self.cancel, None).await
 	}
 }
+// RECORDED (ported as-is): when a source returns the right number of results, a
+// stock whose symbol repeats takes the first not-yet-answered claim entry
+// (`order.find(... && !byId.has)`), exactly like the TypeScript.
 /// Groups by first-seen source, executes each group sequentially and restores claim order.
 pub async fn execute_earnings_refresh(
 	job: &EarningsRefreshJob,

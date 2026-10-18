@@ -39,6 +39,7 @@ import {
 } from "../../../packages/adapters/test/zipTestUtils.ts";
 import {
 	base64,
+	digestOf,
 	type FetchEvent,
 	fetchError,
 	plain,
@@ -367,8 +368,7 @@ function recipeCases(): RecipeCase[] {
 			? {
 					ok: {
 						length: result.value.length,
-						first: result.value[0] ?? null,
-						last: result.value.at(-1) ?? null,
+						digest: digestOf(result.value),
 					},
 				}
 			: { err: result.error };

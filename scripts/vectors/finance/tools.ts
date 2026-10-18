@@ -310,7 +310,17 @@ function holdings(
 			"Z",
 		]),
 		cusip,
-		reportedShares: rng.pick([1, 100, 250.5, 1e9, 3, 0, 123456789012]),
+		reportedShares: rng.pick([
+			1,
+			100,
+			250.5,
+			1e9,
+			3,
+			0,
+			123456789012,
+			Number.POSITIVE_INFINITY,
+			Number.POSITIVE_INFINITY,
+		]),
 		reportedValueUsd: rng.pick([1000, 52000, 4400, 1e12, 0.5, 7e21]),
 	}));
 }

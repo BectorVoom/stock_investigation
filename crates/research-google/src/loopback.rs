@@ -83,6 +83,8 @@ struct Callback {
 	state: String,
 	max_code_length: usize,
 	settled: AtomicBool,
+	/// A callback was accepted: its page must be flushed before sockets are dropped.
+	accepted: AtomicBool,
 	result: watch::Sender<Option<LoopbackResult>>,
 }
 fn decide(
@@ -90,19 +92,19 @@ fn decide(
 	target: &str,
 	host: Option<&str>,
 	callback: &Callback,
-) -> (u16, &'static str, Option<LoopbackResult>) {
+) -> (u16, &'static str, bool) {
 	if callback.settled.load(Ordering::SeqCst)
 		|| method != "GET"
 		|| host != Some(callback.expected_host.as_str())
 	{
-		return (404, FAILED_PAGE, None);
+		return (404, FAILED_PAGE, false);
 	}
 	let url = url::Url::parse("http://127.0.0.1/").and_then(|base| base.join(target));
 	let Ok(url) = url else {
-		return (404, FAILED_PAGE, None);
+		return (404, FAILED_PAGE, false);
 	};
 	if url.path() != "/" || url.host_str() != Some("127.0.0.1") || url.port().is_some() {
-		return (404, FAILED_PAGE, None);
+		return (404, FAILED_PAGE, false);
 	}
 	let params: Vec<_> = url.query_pairs().collect();
 	let get = |key| {
@@ -112,7 +114,7 @@ fn decide(
 			.map(|(_, v)| v.as_ref())
 	};
 	if !get("state").is_some_and(|state| states_equal(state, &callback.state)) {
-		return (400, FAILED_PAGE, None);
+		return (400, FAILED_PAGE, false);
 	}
 	let result = if let Some(error) = get("error") {
 		(
@@ -127,15 +129,23 @@ fn decide(
 		let Some(code) = get("code").filter(|s| {
 			!s.is_empty() && research_js::utf16::utf16_len(s) <= callback.max_code_length
 		}) else {
-			return (400, FAILED_PAGE, None);
+			return (400, FAILED_PAGE, false);
 		};
 		(SUCCESS_PAGE, LoopbackResult::Code(Secret::new(code)))
 	};
+	// Settling and publishing are one step: a timeout or an abort that wins
+	// the race right after this line finds the result already set and cannot
+	// discard a valid callback. The page is still being written; the listener
+	// task waits for it before it drops the connections.
 	if callback.settled.swap(true, Ordering::SeqCst) {
-		return (404, FAILED_PAGE, None);
+		return (404, FAILED_PAGE, false);
 	}
-	(200, result.0, Some(result.1))
+	callback.accepted.store(true, Ordering::SeqCst);
+	callback.result.send_replace(Some(result.1));
+	(200, result.0, true)
 }
+// RECORDED: Node adds a `Date` header to every response; these fixed pages carry
+// none (nothing reads it, and the headers are otherwise byte-identical).
 async fn serve(mut socket: TcpStream, callback: Arc<Callback>, cancel: CancellationToken) -> bool {
 	let mut bytes = Vec::with_capacity(1024);
 	let head = loop {
@@ -165,7 +175,7 @@ async fn serve(mut socket: TcpStream, callback: Arc<Callback>, cancel: Cancellat
 		.iter()
 		.find(|h| h.name.eq_ignore_ascii_case("host"))
 		.and_then(|h| std::str::from_utf8(h.value).ok());
-	let (status, page, result) = decide(
+	let (status, page, accepted) = decide(
 		request.method.unwrap_or(""),
 		request.path.unwrap_or(""),
 		host,
@@ -180,15 +190,9 @@ async fn serve(mut socket: TcpStream, callback: Arc<Callback>, cancel: Cancellat
 		"HTTP/1.1 {status} {reason}\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'none'\r\ncache-control: no-store\r\nreferrer-policy: no-referrer\r\nx-content-type-options: nosniff\r\nconnection: close\r\ncontent-length: {}\r\n\r\n{page}",
 		page.len()
 	);
-	// Publish after flushing so a caller that immediately closes cannot reset the success page.
 	let _ = socket.write_all(response.as_bytes()).await;
 	let _ = socket.shutdown().await;
-	if let Some(result) = result {
-		callback.result.send_replace(Some(result));
-		true
-	} else {
-		false
-	}
+	accepted
 }
 /// Binds 127.0.0.1:0; all timers and sockets are scoped to the returned handle.
 pub async fn start_loopback_listener(
@@ -208,6 +212,7 @@ pub async fn start_loopback_listener(
 		state,
 		max_code_length,
 		settled: AtomicBool::new(false),
+		accepted: AtomicBool::new(false),
 		result: sender,
 	});
 	let close = CancellationToken::new();
@@ -245,6 +250,14 @@ pub async fn start_loopback_listener(
 			if !callback.settled.swap(true, Ordering::SeqCst) {
 				callback.result.send_replace(Some(result));
 			}
+		}
+		if callback.accepted.load(Ordering::SeqCst) {
+			// Let the accepted callback's page go out (bounded), so closing
+			// right after `wait()` cannot reset the success page.
+			let _ = tokio::time::timeout(std::time::Duration::from_secs(2), async {
+				while clients.join_next().await.is_some() {}
+			})
+			.await;
 		}
 		clients.abort_all();
 		while clients.join_next().await.is_some() {}
@@ -487,5 +500,64 @@ mod tests {
 			tokio::time::sleep(std::time::Duration::from_millis(5)).await;
 		}
 		assert!(released.load(Ordering::SeqCst));
+	}
+
+	#[test]
+	fn an_accepted_callback_is_published_in_the_step_that_settles_it() {
+		let (sender, receiver) = watch::channel(None);
+		let callback = Callback {
+			expected_host: "127.0.0.1:1".to_owned(),
+			state: "s".to_owned(),
+			max_code_length: 500,
+			settled: AtomicBool::new(false),
+			accepted: AtomicBool::new(false),
+			result: sender,
+		};
+		let (status, _, accepted) =
+			decide("GET", "/?state=s&code=c", Some("127.0.0.1:1"), &callback);
+		assert_eq!((status, accepted), (200, true));
+		// Nothing can intervene between settling and publishing.
+		assert!(
+			matches!(&*receiver.borrow(), Some(LoopbackResult::Code(code)) if code.expose() == "c")
+		);
+	}
+
+	#[tokio::test]
+	async fn a_timeout_after_the_callback_cannot_discard_the_code() {
+		struct Gate(Arc<tokio::sync::Notify>);
+		#[async_trait::async_trait]
+		impl Sleeper for Gate {
+			async fn sleep(&self, _: u64, _: Option<&CancellationToken>) {
+				self.0.notified().await;
+			}
+		}
+		for _ in 0..20 {
+			let notify = Arc::new(tokio::sync::Notify::new());
+			let mut handle = start_loopback_listener(
+				"state-1".to_owned(),
+				300_000,
+				CancellationToken::new(),
+				Arc::new(Gate(notify.clone())),
+				500,
+			)
+			.await
+			.unwrap();
+			let port = handle.port;
+			let mut stream = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
+			stream
+				.write_all(get(port, "/?state=state-1&code=ok").as_bytes())
+				.await
+				.unwrap();
+			let mut response = Vec::new();
+			let _ = stream.read_to_end(&mut response).await;
+			assert!(String::from_utf8_lossy(&response).starts_with("HTTP/1.1 200 OK"));
+			// The 5-minute timer fires after the callback was accepted: the
+			// code stays the result.
+			notify.notify_one();
+			assert!(
+				matches!(handle.wait().await, LoopbackResult::Code(code) if code.expose() == "ok")
+			);
+			handle.close().await;
+		}
 	}
 }

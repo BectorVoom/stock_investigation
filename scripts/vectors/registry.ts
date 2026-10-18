@@ -3,6 +3,7 @@
  * command line; each returned file lands at `vectors/<path>`. Workers add
  * their exporter here (one line each).
  */
+import { arraySortExporter } from "./arraySort.ts";
 import { contractsExporter } from "./contracts.ts";
 import { dateExporter } from "./date.ts";
 import { domainExporter } from "./domain.ts";
@@ -36,6 +37,7 @@ export const exporters: readonly VectorExporter[] = [
 	modelTextExporter,
 	mathExporter,
 	netExporter,
+	arraySortExporter,
 	financeExporter,
 	googleExporter,
 	notebookExporter,

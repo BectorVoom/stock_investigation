@@ -714,16 +714,19 @@ fn notable_changes(changes: &[ReportedPositionComparison]) -> Vec<&ReportedPosit
 		.iter()
 		.filter(|change| change.change != ReportedPositionChange::UnchangedReportedPosition)
 		.collect();
-	notable.sort_by(|a, b| {
-		// `delta(b) - delta(a) || a.cusip.localeCompare(b.cusip)`: a NaN
-		// difference falls through to the CUSIP, as in JavaScript.
+	// `delta(b) - delta(a) || a.cusip.localeCompare(b.cusip)` in V8's sort: a
+	// NaN difference (infinite shares in both quarters) falls through to the
+	// CUSIP, and the comparator is then not a total order.
+	research_js::array_sort::sort_by_js(&mut notable, |a, b| {
 		let difference = delta(b) - delta(a);
 		if difference.is_nan() || difference == 0.0 {
-			a.cusip.cmp(&b.cusip)
-		} else if difference < 0.0 {
-			std::cmp::Ordering::Less
+			match a.cusip.cmp(&b.cusip) {
+				std::cmp::Ordering::Less => -1.0,
+				std::cmp::Ordering::Equal => 0.0,
+				std::cmp::Ordering::Greater => 1.0,
+			}
 		} else {
-			std::cmp::Ordering::Greater
+			difference
 		}
 	});
 	notable.truncate(MAX_CHANGES_IN_MODEL_TEXT);

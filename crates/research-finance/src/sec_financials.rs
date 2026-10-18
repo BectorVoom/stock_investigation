@@ -448,6 +448,8 @@ pub trait SecFinancialsSource: Send + Sync {
 		cancel: Option<&CancellationToken>,
 	) -> Result<SecCompanyFinancials, SecError>;
 }
+// RECORDED (TypeScript equivalent): the directory lock is held across the
+// ticker-directory download, so concurrent first calls share one fetch.
 struct DirectoryCache {
 	issuers: IndexMap<String, SecIssuer>,
 	url: String,
@@ -493,9 +495,14 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 						},
 					)
 					.await?;
+				let url = doc.url.clone();
+				// An 8 MB directory: parse off the tokio worker.
+				let issuers =
+					crate::cpu::offload(move || parse_ticker_directory(&parse_sec_json(&doc)?))
+						.await?;
 				*cache = Some(DirectoryCache {
-					issuers: parse_ticker_directory(&parse_sec_json(&doc)?)?,
-					url: doc.url,
+					issuers,
+					url,
 					expires: self.clock.now_ms().saturating_add(43_200_000),
 				});
 			}
@@ -524,12 +531,15 @@ impl SecFinancialsSource for EdgarFinancialsSource {
 				},
 			)
 			.await?;
-		let selected = select_annual_financials(&parse_sec_json(&doc)?)?;
+		let company_facts_url = doc.url.clone();
+		// Up to 48 MB of JSON: parse and select off the tokio worker.
+		let selected =
+			crate::cpu::offload(move || select_annual_financials(&parse_sec_json(&doc)?)).await?;
 		Ok(SecCompanyFinancials {
 			issuer,
 			selected,
 			ticker_directory_url: directory_url,
-			company_facts_url: doc.url,
+			company_facts_url,
 		})
 	}
 }

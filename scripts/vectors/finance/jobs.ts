@@ -42,7 +42,14 @@ import {
 } from "../../../apps/runner/src/marketPacing.ts";
 import { createDeps, createFakeApi } from "../../../apps/runner/test/support.ts";
 import { createFinnhubEarningsSource } from "../../../packages/adapters/src/finance/finnhubEarnings.ts";
-import { type FetchEvent, plain, Rng, type ScriptEntry, scriptedFetcher } from "./support.ts";
+import {
+	digestOf,
+	type FetchEvent,
+	plain,
+	Rng,
+	type ScriptEntry,
+	scriptedFetcher,
+} from "./support.ts";
 
 const BASE_MS = Date.UTC(2026, 9, 17, 3, 0, 0);
 
@@ -379,8 +386,7 @@ function summarizeCompletion(completion: unknown): unknown {
 						...entry,
 						observations: {
 							length: entry.observations.length,
-							first: entry.observations[0],
-							last: entry.observations.at(-1),
+							digest: digestOf(entry.observations),
 						},
 					}
 				: entry,

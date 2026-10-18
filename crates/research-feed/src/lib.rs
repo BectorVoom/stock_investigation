@@ -23,6 +23,7 @@ mod names;
 pub mod tree;
 mod units;
 pub mod validator;
+mod xml_scan;
 pub mod xml_tree;
 
 use research_application::ports::{FeedParser, NotAFeed};

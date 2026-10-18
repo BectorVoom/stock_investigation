@@ -4309,14 +4309,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -4352,14 +4345,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -6946,14 +6932,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -7690,14 +7669,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -8805,14 +8777,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -14491,14 +14456,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -15571,14 +15529,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -16871,14 +16822,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -17156,14 +17100,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -17381,14 +17318,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -18551,14 +18481,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -19290,14 +19213,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -20540,14 +20456,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					}
@@ -20883,14 +20792,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -22080,14 +21982,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -22396,14 +22291,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -22741,14 +22629,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -23304,14 +23185,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -23867,14 +23741,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -24163,14 +24030,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -24621,14 +24481,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -26231,14 +26084,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -26989,14 +26835,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -27033,14 +26872,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -27056,14 +26888,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					}
@@ -27595,14 +27420,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -28344,14 +28162,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -28816,14 +28627,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -28859,14 +28663,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -29806,14 +29603,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -30498,14 +30288,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -32122,14 +31905,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -32728,14 +32504,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -33062,14 +32831,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -33659,14 +33421,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -34651,14 +34406,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -36908,14 +36656,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -37921,14 +37662,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -40274,14 +40008,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					}
@@ -41110,14 +40837,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -41679,14 +41399,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -44518,14 +44231,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -44548,14 +44254,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -47433,14 +47132,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -48369,14 +48061,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -49899,14 +49584,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -50379,14 +50057,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -50844,14 +50515,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -51262,14 +50926,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -53660,14 +53317,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -54999,14 +54649,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -55997,14 +55640,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -56034,14 +55670,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -60363,14 +59992,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -61745,14 +61367,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -63253,14 +62868,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -64263,14 +63871,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -64969,14 +64570,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -64992,14 +64586,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -65459,14 +65046,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -66411,14 +65991,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -66455,14 +66028,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -67096,14 +66662,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -69003,14 +68562,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -69585,14 +69137,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -71442,14 +70987,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -71547,14 +71085,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					}
@@ -72193,14 +71724,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -73636,14 +73160,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -74039,14 +73556,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -75537,14 +75047,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -75887,14 +75390,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -75917,14 +75413,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -76282,14 +75771,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -79049,14 +78531,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -79710,14 +79185,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -82158,14 +81626,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -82672,14 +82133,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -82716,14 +82170,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -83879,14 +83326,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -83902,14 +83342,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -85818,14 +85251,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -89877,14 +89303,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					}
@@ -90683,14 +90102,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -90727,14 +90139,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -91527,14 +90932,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -91564,14 +90962,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -91853,14 +91244,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -93022,14 +92406,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -93298,14 +92675,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					}
@@ -95106,14 +94476,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -96855,14 +96218,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -97542,14 +96898,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -99114,14 +98463,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -100447,14 +99789,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -100483,14 +99818,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -101366,14 +100694,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -102041,14 +101362,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -102817,14 +102131,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-01",
-								0
-							],
-							"last": [
-								"2022-03-10",
-								1198.5
-							]
+							"digest": "74dff557dfca2d92e0aecf7b4def3b3b6d3f888b606b294a1dac1ffe3f5d330a"
 						},
 						"errorCode": null
 					},
@@ -103563,14 +102870,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -104852,14 +104152,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -104903,14 +104196,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}
@@ -105447,14 +104733,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-02",
-								1.5
-							],
-							"last": [
-								"2022-03-11",
-								1200
-							]
+							"digest": "4dad0aa5f368c640b8ca568552bf84aca75fb2398ac6ea7d7f924ea73892e85b"
 						},
 						"errorCode": null
 					},
@@ -107300,14 +106579,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					},
@@ -111069,14 +110341,7 @@
 						},
 						"observations": {
 							"length": 800,
-							"first": [
-								"2020-01-06",
-								7.5
-							],
-							"last": [
-								"2022-03-15",
-								1206
-							]
+							"digest": "53181882ca90320972d38d89b4512e73f4aed53a0340fec79715ce398250bc4a"
 						},
 						"errorCode": null
 					}

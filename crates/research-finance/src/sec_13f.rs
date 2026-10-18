@@ -343,6 +343,14 @@ pub fn compare_reported_positions(
 		})
 		.collect()
 }
+/// A `localeCompare`-style `-1 / 0 / 1`.
+fn ordering_number(order: std::cmp::Ordering) -> f64 {
+	match order {
+		std::cmp::Ordering::Less => -1.0,
+		std::cmp::Ordering::Equal => 0.0,
+		std::cmp::Ordering::Greater => 1.0,
+	}
+}
 fn to_filing(filing: FilingRef, url: String, table: ParsedInformationTable) -> Sec13FFiling {
 	let dollars = filing.filed_at.as_str() >= FORM_13F_WHOLE_DOLLAR_FROM;
 	let mut holdings: Vec<_> = table
@@ -355,14 +363,15 @@ fn to_filing(filing: FilingRef, url: String, table: ParsedInformationTable) -> S
 			reported_value_usd: h.value_as_filed * if dollars { 1.0 } else { 1000.0 },
 		})
 		.collect();
-	holdings.sort_by(|a, b| {
+	// `b.v - a.v || a.cusip.localeCompare(b.cusip)`: V8's sort, because the
+	// difference is NaN for two infinite values and the comparator is then
+	// not a total order.
+	research_js::array_sort::sort_by_js(&mut holdings, |a, b| {
 		let difference = b.reported_value_usd - a.reported_value_usd;
 		if difference.is_nan() || difference == 0.0 {
-			a.cusip.cmp(&b.cusip)
-		} else if difference < 0.0 {
-			std::cmp::Ordering::Less
+			ordering_number(a.cusip.cmp(&b.cusip))
 		} else {
-			std::cmp::Ordering::Greater
+			difference
 		}
 	});
 	Sec13FFiling {
@@ -428,14 +437,17 @@ impl Edgar13FSource {
 				},
 			)
 			.await?;
-		let xml = extract_information_table_xml(&document.text).ok_or_else(|| {
-			unexpected("13F-HR submission contains no information table document")
-		})?;
-		Ok(to_filing(
-			filing,
-			document.url,
-			parse_information_table(&xml)?,
-		))
+		let url = document.url;
+		let text = document.text;
+		// Extraction, XML parsing and aggregation of a table up to 16 MB are
+		// CPU work.
+		crate::cpu::offload(move || {
+			let xml = extract_information_table_xml(&text).ok_or_else(|| {
+				unexpected("13F-HR submission contains no information table document")
+			})?;
+			Ok(to_filing(filing, url, parse_information_table(&xml)?))
+		})
+		.await
 	}
 }
 #[async_trait]
@@ -459,7 +471,10 @@ impl Sec13FSource for Edgar13FSource {
 				},
 			)
 			.await?;
-		let recent = select_recent_13f_filings(&parse_sec_json(&submissions)?)?;
+		let submissions_url = submissions.url.clone();
+		let recent =
+			crate::cpu::offload(move || select_recent_13f_filings(&parse_sec_json(&submissions)?))
+				.await?;
 		let mut filings = recent.filings.into_iter();
 		let latest = filings.next().ok_or_else(|| {
 			SecError::new(
@@ -484,7 +499,7 @@ impl Sec13FSource for Edgar13FSource {
 				cik,
 				name: recent.manager_name,
 			},
-			submissions_url: submissions.url,
+			submissions_url,
 			current,
 			previous,
 			changes,

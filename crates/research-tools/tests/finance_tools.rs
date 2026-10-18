@@ -18,7 +18,6 @@ use async_trait::async_trait;
 use research_agent_core::tools::{IdAllocator, Tool, ToolContext, ToolOutput};
 use research_application::ports::Hasher;
 use research_contracts::json::to_js_value;
-use research_domain::finance::filings::ReportedPositionChange;
 use research_domain::finance::per::PriceQuote;
 use research_domain::finance::positions::{JpMarginBalanceFigures, UsShortInterestFigures};
 use research_domain::finance::types::{AdjustmentBasis, Money};
@@ -28,8 +27,7 @@ use research_finance::market_data::{
 	UsShortInterestReport, UsShortInterestSource,
 };
 use research_finance::sec_13f::{
-	FilingRef, Manager, Reported13FHolding, ReportedPositionComparison, Sec13FFiling, Sec13FReport,
-	Sec13FSource,
+	FilingRef, Manager, Reported13FHolding, Sec13FFiling, Sec13FReport, Sec13FSource,
 };
 use research_finance::sec_client::{SecError, SecErrorCode};
 use research_finance::sec_financials::{
@@ -108,7 +106,12 @@ fn norm(value: &Json) -> Json {
 	match value {
 		Json::Number(n) => {
 			let d = n.as_f64().unwrap_or(f64::NAN);
-			Number::from_f64(if d == 0.0 { 0.0 } else { d }).map_or(Json::Null, Json::Number)
+			if d == 0.0 && d.is_sign_negative() {
+				// The exporters write a negative zero as this marker.
+				Json::String("-0(neg)".to_owned())
+			} else {
+				Number::from_f64(d).map_or(Json::Null, Json::Number)
+			}
 		}
 		Json::Array(items) => Json::Array(items.iter().map(norm).collect()),
 		Json::Object(map) => Json::Object(map.iter().map(|(k, v)| (k.clone(), norm(v))).collect()),
@@ -385,7 +388,10 @@ fn holdings_of(value: &Value) -> Vec<Reported13FHolding> {
 		.map(|h| Reported13FHolding {
 			issuer_name: text(h, "issuerName").to_owned(),
 			cusip: text(h, "cusip").to_owned(),
-			reported_shares: number(h, "reportedShares"),
+			// Infinity travels as JSON null; a holding always has shares.
+			reported_shares: has(h, "reportedShares")
+				.and_then(Value::as_f64)
+				.unwrap_or(f64::INFINITY),
 			reported_value_usd: number(h, "reportedValueUsd"),
 		})
 		.collect()
@@ -425,6 +431,10 @@ impl Sec13FSource for FakeHoldings {
 		if has(report, "manager").is_none() {
 			return Err(sec_error_of(report));
 		}
+		let current = filing_of(field(report, "current"));
+		let previous = has(report, "previous")
+			.filter(|v| !v.is_null())
+			.map(filing_of);
 		Ok(Sec13FReport {
 			manager: Manager {
 				cik: text(field(report, "manager"), "cik").to_owned(),
@@ -435,16 +445,18 @@ impl Sec13FSource for FakeHoldings {
 			previous: has(report, "previous")
 				.filter(|v| !v.is_null())
 				.map(filing_of),
-			changes: array(report, "changes")
-				.iter()
-				.map(|c| ReportedPositionComparison {
-					cusip: text(c, "cusip").to_owned(),
-					issuer_name: text(c, "issuerName").to_owned(),
-					previous_reported_shares: optional_number(c, "previousReportedShares"),
-					current_reported_shares: optional_number(c, "currentReportedShares"),
-					change: ReportedPositionChange::from_str_value(text(c, "change")).unwrap(),
-				})
-				.collect(),
+			// The exporter's `changes` are `compareReportedPositions` of the two
+			// filings (verified separately) whenever a comparison was made.
+			changes: match (
+				&previous,
+				optional_text(report, "comparisonUnavailableReason"),
+			) {
+				(Some(previous), None) => research_finance::sec_13f::compare_reported_positions(
+					&previous.holdings,
+					&current.holdings,
+				),
+				_ => Vec::new(),
+			},
 			comparison_unavailable_reason: optional_text(report, "comparisonUnavailableReason")
 				.map(str::to_owned),
 		})

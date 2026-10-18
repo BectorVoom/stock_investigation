@@ -969,12 +969,11 @@ async function runFlow(spec: Omit<FlowCase, "output">): Promise<FlowCase> {
 		} catch {
 			tokenText = null;
 		}
-		const aborted = controller.signal.aborted;
 		const first = sentUrls[0];
 		return {
 			...spec,
 			output: {
-				completion: aborted ? null : plain(completion),
+				completion: plain(completion),
 				states,
 				logs,
 				requests: requests.map((request) => ({

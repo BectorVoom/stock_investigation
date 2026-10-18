@@ -9399,22 +9399,7 @@
 			"output": {
 				"ok": {
 					"length": 20000,
-					"first": {
-						"code": "7203",
-						"name": "Second quarter",
-						"announcementDate": "2026-11-05",
-						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarter",
-						"periodKey": "fy2027-03-31-second-quarter"
-					},
-					"last": {
-						"code": "7203",
-						"name": "Second quarter",
-						"announcementDate": "2026-11-05",
-						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarter",
-						"periodKey": "fy2027-03-31-second-quarter"
-					}
+					"digest": "b17087c5ee65ccdca89ff4c71579dd7bdbb6e493767cfd8731a602e88f6a4300"
 				}
 			}
 		},
@@ -9431,22 +9416,7 @@
 			"output": {
 				"ok": {
 					"length": 100,
-					"first": {
-						"code": "7203",
-						"name": "Second quarter",
-						"announcementDate": "2026-11-05",
-						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarter",
-						"periodKey": "fy2027-03-31-second-quarter"
-					},
-					"last": {
-						"code": "7203",
-						"name": "Second quarter",
-						"announcementDate": "2026-11-05",
-						"fiscalPeriodEnd": "2027-03-31",
-						"fiscalPeriodLabel": "Second quarter",
-						"periodKey": "fy2027-03-31-second-quarter"
-					}
+					"digest": "4a2bf9cfe0614f3ba4d60b51517513a6ec434825af52de5caa84137c2bcb3d65"
 				}
 			}
 		},

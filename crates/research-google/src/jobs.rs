@@ -164,10 +164,13 @@ impl CalendarTokens for Session<'_> {
 			.map(|s| s.clone())
 			.unwrap_or_else(|_| Secret::new(""))
 	}
-	async fn refresh_access_token(&self) -> Result<Secret, Code> {
+	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
 		let refreshed =
 			refresh_access_token(self.http, self.client, self.refresh, self.cancel).await?;
-		let mut access = self.access.lock().map_err(|_| Code::RequestFailed)?;
+		let mut access = self
+			.access
+			.lock()
+			.map_err(|_| GoogleCallError::Failed(Code::RequestFailed))?;
 		*access = refreshed.access_token.clone();
 		Ok(refreshed.access_token)
 	}
@@ -427,7 +430,10 @@ async fn sync(
 		cancel,
 		access: Mutex::new(Secret::new("")),
 	};
-	if let Err(code) = session.refresh_access_token().await {
+	if let Err(error) = session.refresh_access_token().await {
+		let GoogleCallError::Failed(code) = error else {
+			return Ok(aborted(job));
+		};
 		if cancel.is_cancelled() {
 			return Ok(aborted(job));
 		}

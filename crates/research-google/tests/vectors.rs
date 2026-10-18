@@ -116,7 +116,12 @@ fn norm(value: &Json) -> Json {
 	match value {
 		Json::Number(n) => {
 			let d = n.as_f64().unwrap_or(f64::NAN);
-			Number::from_f64(if d == 0.0 { 0.0 } else { d }).map_or(Json::Null, Json::Number)
+			if d == 0.0 && d.is_sign_negative() {
+				// The exporters write a negative zero as this marker.
+				Json::String("-0(neg)".to_owned())
+			} else {
+				Number::from_f64(d).map_or(Json::Null, Json::Number)
+			}
 		}
 		Json::Array(items) => Json::Array(items.iter().map(norm).collect()),
 		Json::Object(map) => Json::Object(map.iter().map(|(k, v)| (k.clone(), norm(v))).collect()),
@@ -391,7 +396,7 @@ impl CalendarTokens for ScriptedTokens {
 		Secret::new(self.current.lock().unwrap().clone())
 	}
 
-	async fn refresh_access_token(&self) -> Result<Secret, Code> {
+	async fn refresh_access_token(&self) -> Result<Secret, GoogleCallError> {
 		let index = {
 			let mut next = self.next.lock().unwrap();
 			*next += 1;
@@ -399,13 +404,13 @@ impl CalendarTokens for ScriptedTokens {
 		};
 		self.trace.lock().unwrap().push(json!({"refresh": true}));
 		match self.refreshes.get(index) {
-			None => Err(Code::RequestFailed),
-			// "ABORTED" never comes out of a real refresh; the TypeScript
-			// scripts it, the Rust refresh cannot, so it maps to a plain failure
-			// and those cases are checked through the abort flag instead.
-			Some(entry) if has(entry, "code").is_some() => {
-				Err(Code::from_str_value(text(entry, "code")).unwrap_or(Code::RequestFailed))
-			}
+			None => Err(GoogleCallError::Failed(Code::RequestFailed)),
+			Some(entry) if has(entry, "code").is_some() => match text(entry, "code") {
+				"ABORTED" => Err(GoogleCallError::Aborted),
+				other => Err(GoogleCallError::Failed(
+					Code::from_str_value(other).unwrap_or(Code::RequestFailed),
+				)),
+			},
 			Some(entry) => {
 				let token = text(entry, "token").to_owned();
 				*self.current.lock().unwrap() = token.clone();
@@ -449,13 +454,6 @@ async fn calendar_client_matches_typescript() {
 	assert!(cases.len() > 500);
 	let mut failures = Vec::new();
 	for (i, case) in cases.iter().enumerate() {
-		// A scripted "ABORTED" refresh failure is a TypeScript-only value.
-		if array(case, "refreshes")
-			.iter()
-			.any(|r| optional_text(r, "code") == Some("ABORTED"))
-		{
-			continue;
-		}
 		let requests = Requests::default();
 		let cancel = CancellationToken::new();
 		if flag(case, "abortBeforeStart") {
@@ -1140,7 +1138,6 @@ async fn google_flows_match_typescript() {
 		} else {
 			(&mut run).await
 		};
-		let aborted = shared.cancel.is_cancelled();
 		let token_file = std::fs::read_to_string(&token_path).ok().map(|text| {
 			use std::os::unix::fs::PermissionsExt;
 			let mode = std::fs::metadata(&token_path).unwrap().permissions().mode() & 0o777;
@@ -1148,7 +1145,7 @@ async fn google_flows_match_typescript() {
 		});
 		let urls = sender.urls.lock().unwrap().clone();
 		let actual = json!({
-			"completion": if aborted { Json::Null } else { completion.as_ref().map_or(Json::Null, |c| serde_json::to_value(c).unwrap()) },
+			"completion": completion.as_ref().map_or(Json::Null, |c| serde_json::to_value(c).unwrap()),
 			"states": reporter.states.lock().unwrap().clone(),
 			"logs": logger.0.lock().unwrap().clone(),
 			"requests": http.requests.lock().unwrap().clone(),

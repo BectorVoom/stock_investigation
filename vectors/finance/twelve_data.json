@@ -4029,7 +4029,7 @@
 					},
 					{
 						"observedOn": "2026-10-05",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-08",
@@ -10368,7 +10368,7 @@
 					},
 					{
 						"observedOn": "2026-10-02",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-05",
@@ -10737,7 +10737,7 @@
 				"observations": [
 					{
 						"observedOn": "2026-10-09",
-						"value": 0
+						"value": "-0(neg)"
 					}
 				]
 			}
@@ -14331,7 +14331,7 @@
 					},
 					{
 						"observedOn": "2026-10-05",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-06",
@@ -14845,7 +14845,7 @@
 					},
 					{
 						"observedOn": "2026-10-07",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-08",
@@ -15739,7 +15739,7 @@
 				"observations": [
 					{
 						"observedOn": "2026-10-09",
-						"value": 0
+						"value": "-0(neg)"
 					}
 				]
 			}
@@ -18726,7 +18726,7 @@
 					},
 					{
 						"observedOn": "2026-10-08",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-09",
@@ -20181,7 +20181,7 @@
 					},
 					{
 						"observedOn": "2026-09-30",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-02",
@@ -27769,7 +27769,7 @@
 					},
 					{
 						"observedOn": "2026-10-09",
-						"value": 0
+						"value": "-0(neg)"
 					}
 				]
 			}
@@ -32149,7 +32149,7 @@
 				"observations": [
 					{
 						"observedOn": "2024-02-29",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-05",
@@ -33526,7 +33526,7 @@
 				"observations": [
 					{
 						"observedOn": "2026-09-30",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-05",
@@ -34555,7 +34555,7 @@
 					},
 					{
 						"observedOn": "2026-10-09",
-						"value": 0
+						"value": "-0(neg)"
 					}
 				]
 			}
@@ -34665,7 +34665,7 @@
 					},
 					{
 						"observedOn": "2026-10-06",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-07",
@@ -37217,7 +37217,7 @@
 				"observations": [
 					{
 						"observedOn": "2024-02-29",
-						"value": 0
+						"value": "-0(neg)"
 					},
 					{
 						"observedOn": "2026-10-02",

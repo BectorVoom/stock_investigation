@@ -67,6 +67,9 @@ pub async fn read_google_token_file(path: &Path) -> Option<GoogleTokenRecord> {
 	let bytes = tokio::fs::read(path).await.ok()?;
 	decode_token_record(&String::from_utf8_lossy(&bytes))
 }
+// RECORDED (same as the TypeScript, deliberately not changed): the temporary
+// file is opened without O_EXCL / no-follow and neither it nor its directory is
+// fsynced before the rename. The directory is the owner's 0700 runner directory.
 /// Atomically replaces the token record with mode 0600; creates new parent directories 0700.
 pub async fn write_google_token_file(
 	path: &Path,

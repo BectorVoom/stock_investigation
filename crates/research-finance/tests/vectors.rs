@@ -361,8 +361,7 @@ fn jpx_workbook_matches_typescript() {
 		let actual = match parse_jpx_workbook(&sheet, &shared) {
 			Ok(rows) => json!({"ok": {
 				"length": rows.len(),
-				"first": rows.first().map(|r| serde_json::to_value(r).unwrap()),
-				"last": rows.last().map(|r| serde_json::to_value(r).unwrap()),
+				"digest": digest_of(&serde_json::to_value(&rows).unwrap()),
 			}}),
 			Err(error) => json!({"err": error.as_str()}),
 		};
@@ -1351,9 +1350,9 @@ fn summarize(mut completion: Json) -> Json {
 				.as_array()
 				.is_some_and(|o| o.len() > 20);
 			if long {
-				let all = entry["observations"].as_array().unwrap().clone();
-				entry["observations"] =
-					json!({"length": all.len(), "first": all.first(), "last": all.last()});
+				let all = entry["observations"].clone();
+				let length = all.as_array().map_or(0, Vec::len);
+				entry["observations"] = json!({"length": length, "digest": digest_of(&all)});
 			}
 		}
 	}

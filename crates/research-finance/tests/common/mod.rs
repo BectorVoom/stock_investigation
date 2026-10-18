@@ -130,8 +130,11 @@ pub(crate) fn norm(value: &Json) -> Json {
 	match value {
 		Json::Number(number) => {
 			let double = number.as_f64().unwrap_or(f64::NAN);
-			let double = if double == 0.0 { 0.0 } else { double };
-			Number::from_f64(double).map_or(Json::Null, Json::Number)
+			if double == 0.0 && double.is_sign_negative() {
+				Json::String(NEGATIVE_ZERO.to_owned())
+			} else {
+				Number::from_f64(double).map_or(Json::Null, Json::Number)
+			}
 		}
 		Json::Array(items) => Json::Array(items.iter().map(norm).collect()),
 		Json::Object(map) => Json::Object(map.iter().map(|(k, v)| (k.clone(), norm(v))).collect()),
@@ -317,4 +320,49 @@ pub(crate) fn error_json(error: &SafeFetchError) -> Json {
 		value["body"] = Json::String(body.clone());
 	}
 	value
+}
+
+/// The marker the exporters write for a negative zero (JSON text cannot).
+const NEGATIVE_ZERO: &str = "-0(neg)";
+
+/// JSON with sorted keys and JavaScript number text (the exporter's `canonicalJson`).
+fn canonical_json(value: &Json, out: &mut String) {
+	match value {
+		Json::Null => out.push_str("null"),
+		Json::Bool(flag) => out.push_str(if *flag { "true" } else { "false" }),
+		Json::Number(number) => out.push_str(&research_js::number::to_js_string(
+			number.as_f64().unwrap_or(f64::NAN),
+		)),
+		Json::String(text) => out.push_str(&research_js::json_text::quote(text)),
+		Json::Array(items) => {
+			out.push('[');
+			for (index, item) in items.iter().enumerate() {
+				if index > 0 {
+					out.push(',');
+				}
+				canonical_json(item, out);
+			}
+			out.push(']');
+		}
+		Json::Object(map) => {
+			out.push('{');
+			for (index, (key, item)) in map.iter().enumerate() {
+				if index > 0 {
+					out.push(',');
+				}
+				out.push_str(&research_js::json_text::quote(key));
+				out.push(':');
+				canonical_json(item, out);
+			}
+			out.push('}');
+		}
+	}
+}
+
+/// SHA-256 (hex) of the canonical form, as the exporter's `digestOf` takes it.
+pub(crate) fn digest_of(value: &Json) -> String {
+	use sha2::{Digest, Sha256};
+	let mut text = String::new();
+	canonical_json(&norm(value), &mut text);
+	hex::encode(Sha256::digest(text.as_bytes()))
 }

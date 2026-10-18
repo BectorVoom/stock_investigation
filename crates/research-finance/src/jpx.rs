@@ -66,6 +66,9 @@ pub fn extract_jpx_workbook_urls(html: &str) -> Vec<String> {
 	}
 	urls
 }
+// RECORDED (same as the TypeScript's single-flight-by-accident): the cache lock
+// is held across the index and workbook downloads, so concurrent calls on one
+// source queue behind each other; JPX asks for sequential downloads anyway.
 struct Cache {
 	index: Option<(String, i64)>,
 	workbooks: BTreeMap<String, Vec<JpxWorkbookRow>>,
@@ -136,14 +139,18 @@ impl JpxEarningsSource {
 			options.max_bytes = crate::zip_reader::MAX_ZIP_ARCHIVE_BYTES;
 			options.timeout_ms = 60_000;
 			let bytes = self.binary.fetch_bytes(&url, &options).await.ok()?.bytes;
-			let entries = read_zip_entries(&bytes, &[SHEET, STRINGS]).ok()?;
-			let decode = |key| {
-				entries.get(key).map(|s| {
-					let text = String::from_utf8_lossy(s);
-					text.strip_prefix('\u{feff}').unwrap_or(&text).to_owned()
-				})
-			};
-			let rows = parse_jpx_workbook(&decode(SHEET)?, &decode(STRINGS)?).ok()?;
+			// Inflate, decode and parse are CPU work (hundreds of ms at the caps).
+			let rows = crate::cpu::offload(move || {
+				let entries = read_zip_entries(&bytes, &[SHEET, STRINGS]).ok()?;
+				let decode = |key| {
+					entries.get(key).map(|s| {
+						let text = String::from_utf8_lossy(s);
+						text.strip_prefix('\u{feff}').unwrap_or(&text).to_owned()
+					})
+				};
+				parse_jpx_workbook(&decode(SHEET)?, &decode(STRINGS)?).ok()
+			})
+			.await?;
 			all.extend(rows.iter().cloned());
 			cache.workbooks.insert(url, rows);
 		}
