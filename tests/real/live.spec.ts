@@ -254,7 +254,13 @@ test.describe("live positive path through the real backend (spends real quota)",
 		cleaners.add(() => rmSync(extraRoot, { recursive: true, force: true }));
 		// Test-owned runner settings (finding 5): the operational
 		// `apps/runner/.env` is neither copied nor read.
-		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {});
+		// A backend whose tool isolation is "unverified" (Codex) is refused
+		// by the pipeline unless the owner opts in on the runner; this is a
+		// throwaway copy, and the opt-in is the documented one.
+		runnerEnvFile = writeTestRunnerEnvFile(
+			extraRoot,
+			AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" },
+		);
 		service = await startDev(dataDirA);
 		livePage = await browser.newPage();
 	});
