@@ -43,13 +43,6 @@ impl Sleep for TokioSleep {
 		tokio::select! { () = tokio::time::sleep(Duration::from_millis(milliseconds)) => {}, () = cancel.cancelled() => {} }
 	}
 }
-/// Optional connection-only optimization; no HTTP request is sent here.
-#[async_trait]
-pub trait SearchPreconnect: Send + Sync {
-	/// Prepares a validated GDELT connection within `timeout_ms`; failures are
-	/// ignored because the real fetch repeats every check and reports them.
-	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken);
-}
 /// Dependencies of `web.search`. One factory instance shares its GDELT limiter.
 #[derive(Clone)]
 pub struct SearchToolDeps {
@@ -61,8 +54,6 @@ pub struct SearchToolDeps {
 	pub clock: Arc<dyn Clock>,
 	/// Cancellation-aware delay.
 	pub sleep: Arc<dyn Sleep>,
-	/// Production preconnection capability, absent for scripted fetchers.
-	pub preconnect: Option<Arc<dyn SearchPreconnect>>,
 }
 struct SearchTool {
 	deps: SearchToolDeps,
@@ -248,68 +239,21 @@ fn provider_items(value: &Value, gdelt: bool) -> Option<Vec<Hit>> {
 	Some(hits)
 }
 impl SearchTool {
-	/// Waits until a GDELT request may start; `Err` carries the failure cause
-	/// when the call must not send, `Ok(timeout)` the fetch budget otherwise.
-	///
-	/// C2: nothing is reserved. A start is recorded only at the instant the
-	/// request is sent (`Ledger::claim` under its lock), so a caller that never
-	/// sends records nothing and no restore exists. C5: when the slot is not yet
-	/// open the connection is prepared during the wait; the preparation shares
-	/// the fetch's overall deadline (spacing wait + `SEARCH_TIMEOUT_MS`) and
-	/// whatever it spends beyond the wait is deducted from the fetch budget.
-	async fn gate(&self, context: &ToolContext) -> Result<u64, Backend> {
-		let mut budget = SEARCH_TIMEOUT_MS;
-		if let Some(preconnect) = &self.deps.preconnect {
-			let began = self.deps.clock.now_ms();
-			let wait = self.ledger.peek_wait(GDELT_KEY, began);
-			if wait > 0 {
-				let wait_ms = u64::try_from(wait).unwrap_or(0);
-				tokio::join!(
-					preconnect
-						.preconnect(wait_ms.saturating_add(SEARCH_TIMEOUT_MS), &context.cancel),
-					self.deps.sleep.sleep(wait_ms, &context.cancel)
-				);
-				if context.cancel.is_cancelled() {
-					return Err(Backend::Aborted);
-				}
-				let spent = self
-					.deps
-					.clock
-					.now_ms()
-					.saturating_sub(began)
-					.saturating_sub(wait);
-				budget = SEARCH_TIMEOUT_MS.saturating_sub(u64::try_from(spent).unwrap_or(0));
-				if budget == 0 {
-					return Err(Backend::Failed(format!(
-						"TIMEOUT: no complete response within {SEARCH_TIMEOUT_MS} ms"
-					)));
-				}
-			}
-		}
-		if await_slot(
-			&self.ledger,
-			GDELT_KEY,
-			self.deps.clock.as_ref(),
-			self.deps.sleep.as_ref(),
-			&context.cancel,
-			false,
-		)
-		.await
-		{
-			Ok(budget)
-		} else {
-			Err(Backend::Aborted)
-		}
-	}
 	async fn backend(&self, query: &str, gdelt: bool, context: &ToolContext) -> Backend {
-		let budget = if gdelt {
-			match self.gate(context).await {
-				Ok(budget) => budget,
-				Err(outcome) => return outcome,
-			}
-		} else {
-			SEARCH_TIMEOUT_MS
-		};
+		// C2: wait for the request's slot; a start is recorded only when sent.
+		if gdelt
+			&& !await_slot(
+				&self.ledger,
+				GDELT_KEY,
+				self.deps.clock.as_ref(),
+				self.deps.sleep.as_ref(),
+				&context.cancel,
+				false,
+			)
+			.await
+		{
+			return Backend::Aborted;
+		}
 		let (host, url) = if gdelt {
 			(
 				"api.gdeltproject.org",
@@ -327,7 +271,7 @@ impl SearchTool {
 				),
 			)
 		};
-		let mut opts = options(1_000_000, budget, "application/json", context);
+		let mut opts = options(1_000_000, SEARCH_TIMEOUT_MS, "application/json", context);
 		opts.allowed_hosts = Some([host.into()].into());
 		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
 		let fetched = match self.deps.fetcher.fetch_text(&url, &opts).await {
@@ -448,21 +392,6 @@ impl Tool for SearchTool {
 	}
 }
 
-#[async_trait]
-impl SearchPreconnect for research_net::NodeSafeFetcher {
-	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken) {
-		// This is an optional optimization. Its typed failure never replaces the
-		// real fetch result, which repeats DNS validation and reports failures.
-		let _preparation = research_net::NodeSafeFetcher::preconnect(
-			self,
-			"https://api.gdeltproject.org/",
-			timeout_ms,
-			Some(cancel.clone()),
-		)
-		.await;
-	}
-}
-
 // The unbounded-integer model and its spacing proof live in
 // formal/ResearchFormal/Spacing.lean (`claim`, `reserveSlot`). Valid Date
 // milliseconds leave ample i64 headroom.
@@ -470,60 +399,132 @@ pub(crate) fn reserve_slot(now: i64, last: Option<i64>, interval: i64) -> i64 {
 	last.map_or(now, |last| now.max(last.saturating_add(interval)))
 }
 
-/// What a caller learns when it asks to send now.
+/// What a ticket holder learns when it asks to send now.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Claim {
+pub(crate) enum Claim {
 	/// The start was recorded; send immediately.
 	Started,
 	/// Cancelled before sending; nothing was recorded.
 	Aborted,
 	/// Not yet: the milliseconds until the earliest permitted start.
 	Wait(i64),
+	/// An earlier caller is still ahead in the queue.
+	NotYourTurn,
+}
+
+#[derive(Debug, Default)]
+struct LedgerState {
+	/// Recorded starts per key, FIFO-evicted beyond `capacity` keys.
+	starts: VecDeque<(String, i64)>,
+	/// Waiting tickets per key, oldest first.
+	queues: Vec<(String, VecDeque<u64>)>,
+	next_ticket: u64,
 }
 
 /// Request starts per key, at least `interval_ms` apart (ADR-0030 C2). Only a
-/// start that is actually being sent is ever recorded.
+/// start that is actually being sent is ever recorded, and callers are served
+/// first come, first served (only the head of a key's ticket queue may claim),
+/// so no caller can be starved by later arrivals.
+///
+/// Proof: `formal/ResearchFormal/Spacing.lean` (`run_spaced`). The model has
+/// one unbounded ledger per key; here at most `capacity` keys are remembered
+/// (the TypeScript maps' FIFO bound), so the spacing guarantee holds for every
+/// remembered key. A key forgotten after more than `capacity` other keys were
+/// started may start at once; the web tool's capacity is 200 hosts.
 #[derive(Debug)]
 pub struct Ledger {
-	entries: Mutex<VecDeque<(String, i64)>>,
+	state: Mutex<LedgerState>,
+	turn: tokio::sync::Notify,
 	interval_ms: i64,
 	capacity: usize,
 }
 
+/// A place in a key's queue; dropping it (sent, cancelled, future dropped)
+/// leaves the queue and wakes the next waiter.
+pub(crate) struct Ticket<'a> {
+	ledger: &'a Ledger,
+	key: String,
+	id: u64,
+}
+
+impl Drop for Ticket<'_> {
+	fn drop(&mut self) {
+		{
+			let mut state = self.ledger.state();
+			if let Some(index) = state.queues.iter().position(|(k, _)| *k == self.key) {
+				if let Some((_, queue)) = state.queues.get_mut(index) {
+					queue.retain(|id| *id != self.id);
+					if queue.is_empty() {
+						state.queues.swap_remove(index);
+					}
+				}
+			}
+		}
+		self.ledger.turn.notify_waiters();
+	}
+}
+
 impl Ledger {
-	/// A ledger keeping at most `capacity` keys (oldest evicted first, like
-	/// the TypeScript maps).
+	/// A ledger remembering at most `capacity` keys.
 	#[must_use]
 	pub fn new(interval_ms: i64, capacity: usize) -> Self {
 		Self {
-			entries: Mutex::new(VecDeque::new()),
+			state: Mutex::new(LedgerState::default()),
+			turn: tokio::sync::Notify::new(),
 			interval_ms,
 			capacity,
 		}
 	}
-	fn entries(&self) -> std::sync::MutexGuard<'_, VecDeque<(String, i64)>> {
-		self.entries.lock().unwrap_or_else(PoisonError::into_inner)
+	fn state(&self) -> std::sync::MutexGuard<'_, LedgerState> {
+		self.state.lock().unwrap_or_else(PoisonError::into_inner)
 	}
 	/// Milliseconds `key` would have to wait at `now` (0 when it may start).
 	#[must_use]
 	pub fn peek_wait(&self, key: &str, now: i64) -> i64 {
-		let previous = self.entries().iter().find(|(k, _)| k == key).map(|e| e.1);
+		let state = self.state();
+		let previous = state.starts.iter().find(|(k, _)| k == key).map(|e| e.1);
 		reserve_slot(now, previous, self.interval_ms).saturating_sub(now)
 	}
-	/// Under the lock: if `now` is at least `interval` after the recorded
-	/// start, records `record(now)` (the real send instant, never earlier than
-	/// `now`) and returns [`Claim::Started`]. A caller that already has a
-	/// previous start and is cancelled gets [`Claim::Aborted`] without a record
-	/// when `abort_if_previous` carries its token.
-	pub fn claim(
+	pub(crate) fn enqueue(&self, key: &str) -> Ticket<'_> {
+		let mut state = self.state();
+		let id = state.next_ticket;
+		state.next_ticket = state.next_ticket.wrapping_add(1);
+		match state.queues.iter_mut().find(|(k, _)| k == key) {
+			Some((_, queue)) => queue.push_back(id),
+			None => state.queues.push((key.to_owned(), VecDeque::from([id]))),
+		}
+		Ticket {
+			ledger: self,
+			key: key.to_owned(),
+			id,
+		}
+	}
+	/// Under the lock: only the head ticket may claim. It records exactly `now`
+	/// (the instant it decided on, which the model's `claim` also records) when
+	/// `now` is at least `interval` after the recorded start. A head that
+	/// already has a previous start and is cancelled gets [`Claim::Aborted`]
+	/// without a record when `abort_if_previous` carries its token.
+	pub(crate) fn claim(
 		&self,
-		key: &str,
+		ticket: &Ticket<'_>,
 		now: i64,
 		abort_if_previous: Option<&CancellationToken>,
-		record: impl FnOnce(i64) -> i64,
 	) -> Claim {
-		let mut entries = self.entries();
-		let previous = entries.iter().find(|(k, _)| k == key).map(|e| e.1);
+		let mut state = self.state();
+		let is_head = state
+			.queues
+			.iter()
+			.find(|(k, _)| *k == ticket.key)
+			.and_then(|(_, queue)| queue.front())
+			.is_some_and(|id| *id == ticket.id);
+		if !is_head {
+			return Claim::NotYourTurn;
+		}
+		let previous = state
+			.starts
+			.iter()
+			.find(|(k, _)| *k == ticket.key)
+			.map(|e| e.1);
 		let wait = reserve_slot(now, previous, self.interval_ms).saturating_sub(now);
 		if wait > 0 {
 			return Claim::Wait(wait);
@@ -531,29 +532,30 @@ impl Ledger {
 		if previous.is_some() && abort_if_previous.is_some_and(CancellationToken::is_cancelled) {
 			return Claim::Aborted;
 		}
-		let started = record(now).max(now);
-		crate::web::cache_set(&mut entries, key, started, self.capacity);
+		crate::web::cache_set(&mut state.starts, &ticket.key, now, self.capacity);
 		Claim::Started
 	}
 	/// Notes that `key` was contacted at `instant` (a request that ended on
 	/// another URL): the recorded start becomes `max(existing, instant)`, so
 	/// it can never move backwards over a later caller's start.
 	pub fn note(&self, key: &str, instant: i64) {
-		let mut entries = self.entries();
-		let latest = entries
+		let mut state = self.state();
+		let latest = state
+			.starts
 			.iter()
 			.find(|(k, _)| k == key)
 			.map_or(instant, |e| e.1.max(instant));
-		crate::web::cache_set(&mut entries, key, latest, self.capacity);
+		crate::web::cache_set(&mut state.starts, key, latest, self.capacity);
 	}
 }
 
-/// Waits until `key` may start and records the start at that instant; false
-/// when cancelled first (nothing recorded). Clock reads match the TypeScript:
-/// one before and one at the recorded start. `abort_without_wait` also
-/// checks cancellation when no wait is needed and an earlier start exists
-/// (the web tool's politeness rule).
-pub(crate) async fn await_slot(
+/// Waits (first come, first served) until `key` may start and records the
+/// start at that instant; false when cancelled first (nothing recorded, the
+/// ticket is released). Clock reads match the TypeScript: one before and one
+/// at the recorded start, and the recorded value is the very value decided
+/// on. `abort_without_wait` also checks cancellation when no wait is needed
+/// and an earlier start exists (the web tool's politeness rule).
+pub async fn await_slot(
 	ledger: &Ledger,
 	key: &str,
 	clock: &dyn Clock,
@@ -561,14 +563,21 @@ pub(crate) async fn await_slot(
 	cancel: &CancellationToken,
 	abort_without_wait: bool,
 ) -> bool {
+	let ticket = ledger.enqueue(key);
 	let mut now = clock.now_ms();
-	let mut first = true;
+	// The TypeScript reads the clock a second time when it records the start;
+	// that second read is the instant decided on (and recorded) here.
+	let mut reread = true;
 	loop {
+		// Registered before the state is inspected, so a wake-up cannot be lost.
+		let mut turn = std::pin::pin!(ledger.turn.notified());
+		turn.as_mut().enable();
+		if reread && ledger.peek_wait(key, now) == 0 {
+			now = clock.now_ms();
+		}
+		reread = false;
 		let token = abort_without_wait.then_some(cancel);
-		let claim = ledger.claim(key, now, token, |n| {
-			if first { clock.now_ms().max(n) } else { n }
-		});
-		match claim {
+		match ledger.claim(&ticket, now, token) {
 			Claim::Started => return true,
 			Claim::Aborted => return false,
 			Claim::Wait(ms) => {
@@ -579,7 +588,13 @@ pub(crate) async fn await_slot(
 				// The sleep port guarantees `ms` elapsed unless cancelled, so a
 				// clock that lags behind it (a scripted one) cannot hold us here.
 				now = clock.now_ms().max(now.saturating_add(ms));
-				first = false;
+			}
+			Claim::NotYourTurn => {
+				tokio::select! {
+					() = &mut turn => {}
+					() = cancel.cancelled() => return false,
+				}
+				now = clock.now_ms();
 			}
 		}
 	}

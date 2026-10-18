@@ -1,15 +1,26 @@
 import ResearchFormal.Basic
 
 /-!
-# Request-start spacing (ADR-0030 C2 and C5)
+# Request-start spacing (ADR-0030 C2)
 
-Formal model of `Ledger` in `crates/research-tools/src/search.rs`, which
-spaces GDELT request starts (5 s) and per-host `web.fetch_page` starts (1 s).
+Formal model of `Ledger` and `await_slot` in
+`crates/research-tools/src/search.rs`, which space GDELT request starts (5 s)
+and per-host `web.fetch_page` starts (1 s).
 
-The algorithm is *reserve-at-send*: nothing is reserved while a caller waits
-or prepares its connection (C5). A caller that is allowed to send atomically
-(under the ledger lock) records its start, and a caller that is cancelled, or
+The algorithm is *reserve-at-send*: nothing is reserved while a caller waits.
+A caller that is allowed to send atomically (under the ledger lock) records
+exactly the instant `now` it decided on, and a caller that is cancelled, or
 that finds the window closed, records nothing, so no restore step exists.
+
+Assumptions, stated where the code relies on them:
+* Waiters are served first come, first served (only the head of a ticket
+  queue may claim). That only RESTRICTS which `claim` can happen next, so the
+  theorem, which quantifies over every interleaving, covers it; the queue is
+  what prevents starvation, which is not a safety property and is tested.
+* One key. The Rust ledger forgets the oldest keys beyond its capacity (200
+  hosts, the TypeScript maps' FIFO bound), so the guarantee holds for every
+  remembered key; a key forgotten after more than 200 other hosts were started
+  is treated as new. The model has unbounded memory.
 
 * `claim now` — the caller read `now` and asks to send. It sends (and records
   `now`) exactly when `now` is at least `interval` after the last recorded

@@ -16,9 +16,8 @@
 //! caller's count IS the wire count. Any other `Content-Encoding` is refused.
 //! Only a success body is ever read; anything else is dropped unread.
 
-use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, Weak};
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -125,19 +124,8 @@ pub trait PinnedConnect: Send + Sync {
 	/// Sends the request.
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError>;
 
-	/// Opens a connection to a validated address WITHOUT sending any HTTP
-	/// byte and parks it idle in the pool (ADR-0030 C5), so a request made
-	/// shortly after finds the TCP+TLS handshake done. The default does
-	/// nothing: preparation is an optimisation, never required.
-	///
-	/// # Errors
-	/// The connection or TLS failure.
-	async fn preconnect(&self, _address: &ValidatedAddress) -> Result<(), ConnectError> {
-		Ok(())
-	}
-
-	/// Whether an idle pooled connection to `address` (host name and IP) is
-	/// available or being prepared; the transport tries such addresses first.
+	/// Whether an idle pooled connection to `address` (host name and IP)
+	/// exists; the transport tries such addresses first.
 	fn has_idle(&self, _address: &ValidatedAddress) -> bool {
 		false
 	}
@@ -150,7 +138,6 @@ pub struct PinnedHttpsConnect {
 	tls: PinnedTls,
 	pool: Arc<ConnectionPool>,
 	opened: AtomicU64,
-	pending: Mutex<HashMap<PoolKey, Weak<tokio::sync::Mutex<()>>>>,
 }
 
 /// Node's `headerText` + Latin-1 decoding of the first value.
@@ -253,7 +240,6 @@ impl PinnedHttpsConnect {
 			tls,
 			pool: Arc::new(ConnectionPool::new(limits)),
 			opened: AtomicU64::new(0),
-			pending: Mutex::new(HashMap::new()),
 		}
 	}
 
@@ -267,41 +253,6 @@ impl PinnedHttpsConnect {
 	#[must_use]
 	pub fn connections_opened(&self) -> u64 {
 		self.opened.load(Ordering::Relaxed)
-	}
-
-	/// The gate of a preparation still in flight for `key`, if any. Entries are
-	/// weak so they never retain a task or a cancelled preparation: the only
-	/// strong reference is the guard held by the preparing future itself.
-	fn live_preparation(&self, key: &PoolKey) -> Option<Arc<tokio::sync::Mutex<()>>> {
-		let mut pending = self
-			.pending
-			.lock()
-			.unwrap_or_else(std::sync::PoisonError::into_inner);
-		pending.retain(|_, gate| gate.strong_count() > 0);
-		pending.get(key).and_then(Weak::upgrade)
-	}
-
-	/// Registers a new preparation for `key` and returns its guard, or the
-	/// gate of the one already running. The registry lock makes the check and
-	/// the registration atomic, and a fresh gate is always lockable.
-	fn begin_preparation(
-		&self,
-		key: &PoolKey,
-	) -> Result<tokio::sync::OwnedMutexGuard<()>, Arc<tokio::sync::Mutex<()>>> {
-		let mut pending = self
-			.pending
-			.lock()
-			.unwrap_or_else(std::sync::PoisonError::into_inner);
-		pending.retain(|_, gate| gate.strong_count() > 0);
-		if let Some(running) = pending.get(key).and_then(Weak::upgrade) {
-			return Err(running);
-		}
-		let gate = Arc::new(tokio::sync::Mutex::new(()));
-		pending.insert(key.clone(), Arc::downgrade(&gate));
-		// A gate nobody else can see yet is always lockable; if that ever failed
-		// the caller would simply treat the preparation as already running.
-		gate.try_lock_owned()
-			.map_err(|_| Arc::new(tokio::sync::Mutex::new(())))
 	}
 
 	async fn open(&self, address: &ValidatedAddress) -> Result<Connection, ConnectError> {
@@ -398,13 +349,6 @@ impl PinnedHttpsConnect {
 impl PinnedConnect for PinnedHttpsConnect {
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError> {
 		let key: PoolKey = (request.address.hostname().to_owned(), request.address.ip());
-		// ADR-0030 C5: a connection being prepared for this very (host, IP) is
-		// awaited instead of dialing a second socket. Only preparations hold a
-		// gate, so ordinary concurrent requests never wait for each other. The
-		// transport validated this address from fresh DNS before calling.
-		if let Some(preparing) = self.live_preparation(&key) {
-			drop(preparing.lock().await);
-		}
 		if let Some(idle) = self
 			.pool
 			.take(request.address.hostname(), request.address.ip())
@@ -423,33 +367,8 @@ impl PinnedConnect for PinnedHttpsConnect {
 		}
 	}
 
-	async fn preconnect(&self, address: &ValidatedAddress) -> Result<(), ConnectError> {
-		let key: PoolKey = (address.hostname().to_owned(), address.ip());
-		let guard = match self.begin_preparation(&key) {
-			Ok(guard) => guard,
-			Err(running) => {
-				// Another preparation owns this key: nothing more to do.
-				drop(running.lock().await);
-				return Ok(());
-			}
-		};
-		if !self.pool.has_idle(address.hostname(), address.ip()) {
-			// Same validated TCP + peer check + TLS path as a request. Dropping
-			// this future mid-handshake closes the socket; nothing is pooled.
-			let connection = self.open(address).await?;
-			// No HTTP byte was sent: a clean connection under the same key,
-			// idle timeout and caps as one that just finished a 2xx response.
-			self.pool.put(key, connection);
-		}
-		drop(guard);
-		Ok(())
-	}
-
 	fn has_idle(&self, address: &ValidatedAddress) -> bool {
 		self.pool.has_idle(address.hostname(), address.ip())
-			|| self
-				.live_preparation(&(address.hostname().to_owned(), address.ip()))
-				.is_some()
 	}
 }
 

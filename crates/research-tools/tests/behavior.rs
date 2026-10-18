@@ -114,7 +114,6 @@ async fn concurrent_gdelt_calls_keep_five_second_start_spacing() {
 		clock: time.clone(),
 		hasher: Arc::new(Hash),
 		sleep: Arc::new(TokioSleep),
-		preconnect: None,
 	})
 	.remove(0);
 	let (a, b, c) = tokio::join!(
@@ -167,20 +166,6 @@ async fn concurrent_page_calls_reserve_different_host_slots() {
 	assert_eq!(starts.len(), 3);
 	assert!(starts.windows(2).all(|pair| pair[1] - pair[0] >= 1000));
 }
-/// Models GDELT's slow ServerHello: the preparation takes `duration`, bounded
-/// by the timeout it is given and by cancellation.
-struct SlowPrep {
-	duration: std::time::Duration,
-}
-#[async_trait]
-impl research_tools::search::SearchPreconnect for SlowPrep {
-	async fn preconnect(&self, timeout_ms: u64, cancel: &CancellationToken) {
-		let limit = self
-			.duration
-			.min(std::time::Duration::from_millis(timeout_ms));
-		tokio::select! { () = tokio::time::sleep(limit) => {}, () = cancel.cancelled() => {} }
-	}
-}
 fn gdelt_starts(fetcher: &Fetch) -> Vec<i64> {
 	fetcher
 		.starts
@@ -191,7 +176,7 @@ fn gdelt_starts(fetcher: &Fetch) -> Vec<i64> {
 		.map(|(_, at)| *at)
 		.collect()
 }
-fn prepared_search(prep: std::time::Duration) -> (Arc<dyn Tool>, Arc<Fetch>) {
+fn gdelt_search() -> (Arc<dyn Tool>, Arc<Fetch>) {
 	let time = Arc::new(Time::new());
 	let fetcher = Arc::new(Fetch {
 		clock: time.clone(),
@@ -202,7 +187,6 @@ fn prepared_search(prep: std::time::Duration) -> (Arc<dyn Tool>, Arc<Fetch>) {
 		clock: time,
 		hasher: Arc::new(Hash),
 		sleep: Arc::new(TokioSleep),
-		preconnect: Some(Arc::new(SlowPrep { duration: prep })),
 	})
 	.remove(0);
 	(tool, fetcher)
@@ -226,73 +210,88 @@ fn spaced(starts: &[i64], interval: i64) -> bool {
 	starts.windows(2).all(|pair| pair[1] - pair[0] >= interval)
 }
 
-/// C2 + C5: with a slow preparation the real starts still stay 5 s apart.
+/// Callers are served first come, first served and starts stay 5 s apart.
 #[tokio::test(start_paused = true)]
-async fn slow_preparations_never_pull_real_starts_inside_the_window() {
-	let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(7));
-	let _ = tokio::join!(
-		search_after(tool.clone(), 0, "aa", CancellationToken::new()),
-		search_after(tool.clone(), 1000, "bb", CancellationToken::new()),
-		search_after(tool.clone(), 2000, "cc", CancellationToken::new()),
+async fn waiting_callers_are_served_in_arrival_order() {
+	let (tool, fetcher) = gdelt_search();
+	let queries = ["aa", "bb", "cc", "dd", "ee"];
+	let calls = queries.iter().enumerate().map(|(i, q)| {
+		search_after(
+			tool.clone(),
+			u64::try_from(i).unwrap() * 100,
+			q,
+			CancellationToken::new(),
+		)
+	});
+	let results = futures_util::future::join_all(calls).await;
+	assert!(results.iter().all(Result::is_ok));
+	let order: Vec<String> = fetcher
+		.starts
+		.lock()
+		.unwrap()
+		.iter()
+		.filter(|(url, _)| url.contains("gdelt"))
+		.map(|(url, _)| url.clone())
+		.collect();
+	let expected: Vec<bool> = queries
+		.iter()
+		.zip(&order)
+		.map(|(q, url)| url.contains(&format!("query={q}%20")))
+		.collect();
+	assert!(
+		expected.iter().all(|ok| *ok) && order.len() == 5,
+		"{order:?}"
 	);
 	let starts = gdelt_starts(&fetcher);
-	assert_eq!(starts.len(), 3);
 	assert!(spaced(&starts, 5000), "{starts:?}");
+	// Nobody is starved: the fifth caller starts after exactly four intervals.
+	assert_eq!(starts[4] - starts[0], 20_000, "{starts:?}");
 }
 
-/// A caller cancelled at any instant records nothing, so spacing holds for
-/// every other caller whatever the abort time.
+/// A caller cancelled at any instant records nothing and leaves the queue, so
+/// the others keep their order and spacing whatever the abort time.
 #[tokio::test(start_paused = true)]
-async fn aborts_at_every_point_never_break_spacing() {
-	for cancel_at in (0..=16_000_u64).step_by(250) {
-		let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(7));
+async fn aborts_at_every_point_never_break_spacing_or_order() {
+	for cancel_at in (0..=26_000_u64).step_by(250) {
+		let (tool, fetcher) = gdelt_search();
 		let doomed = CancellationToken::new();
 		let trigger = doomed.clone();
 		let abort = async move {
 			tokio::time::sleep(std::time::Duration::from_millis(cancel_at)).await;
 			trigger.cancel();
 		};
-		let _ = tokio::join!(
+		let (a, b, c, d, e, ()) = tokio::join!(
 			search_after(tool.clone(), 0, "p0", CancellationToken::new()),
 			search_after(tool.clone(), 1000, "xx", CancellationToken::new()),
 			search_after(tool.clone(), 2000, "aa", doomed),
-			abort,
+			search_after(tool.clone(), 3000, "yy", CancellationToken::new()),
 			search_after(tool.clone(), 10_000, "dd", CancellationToken::new()),
+			abort,
 		);
 		let starts = gdelt_starts(&fetcher);
 		assert!(spaced(&starts, 5000), "cancel at {cancel_at}: {starts:?}");
+		for survivor in [&a, &b, &d, &e] {
+			assert!(survivor.is_ok(), "cancel at {cancel_at}");
+		}
+		// A cancelled caller either never started or started exactly once.
+		assert!(c.is_ok() || c.as_ref().unwrap_err().code == "TOOL_ABORTED");
+		let sent = starts.len();
+		assert_eq!(sent, 4 + usize::from(c.is_ok()), "cancel at {cancel_at}");
+		let order: Vec<String> = fetcher
+			.starts
+			.lock()
+			.unwrap()
+			.iter()
+			.filter(|(url, _)| url.contains("gdelt"))
+			.map(|(url, _)| url.clone())
+			.collect();
+		let position = |q: &str| {
+			order
+				.iter()
+				.position(|u| u.contains(&format!("query={q}%20")))
+		};
+		assert!(position("p0") < position("xx") && position("xx") < position("yy"));
 	}
-}
-
-/// The preparation shares the fetch's deadline: a hung connect makes the second
-/// search fail after the spacing wait plus one 15 s budget, never after 30 s.
-#[tokio::test(start_paused = true)]
-async fn a_hung_preparation_never_extends_the_overall_deadline() {
-	let (tool, fetcher) = prepared_search(std::time::Duration::from_secs(3600));
-	let started = tokio::time::Instant::now();
-	let first = search_after(tool.clone(), 0, "aa", CancellationToken::new()).await;
-	assert!(first.is_ok());
-	let first_took = started.elapsed();
-	let second = search_after(tool.clone(), 0, "bb", CancellationToken::new())
-		.await
-		.unwrap();
-	let took = started.elapsed() - first_took;
-	assert!(
-		second
-			.model_text
-			.contains("GDELT news search failed: TIMEOUT: no complete response within 15000 ms."),
-		"{}",
-		second.model_text
-	);
-	assert!(
-		took <= std::time::Duration::from_millis(5_000 + 15_000),
-		"{took:?}"
-	);
-	assert_eq!(
-		gdelt_starts(&fetcher).len(),
-		1,
-		"a timed-out call sends nothing"
-	);
 }
 
 /// Politeness after a redirect: the redirect's end must not move a host's
@@ -442,7 +441,6 @@ async fn measure_real_network_tools() {
 		clock: clock.clone(),
 		hasher: hash.clone(),
 		sleep: sleep.clone(),
-		preconnect: Some(fetcher.clone()),
 	})
 	.remove(0);
 	let web = create_web_tools(WebToolDeps {
@@ -494,50 +492,4 @@ async fn measure_real_network_tools() {
 		serde_json::to_string_pretty(&rows).unwrap(),
 	)
 	.unwrap();
-}
-
-/// Two `web.search` calls started together: the second GDELT request has to
-/// wait for its 5 s slot, which is the only case where ADR-0030 C5 applies.
-#[tokio::test]
-#[ignore = "explicit real-network comparison, four GDELT requests"]
-async fn measure_concurrent_searches_with_and_without_preconnect() {
-	for with_preconnect in [false, true] {
-		let fetcher = Arc::new(research_net::create_node_safe_fetcher().unwrap());
-		let search = create_search_tools(SearchToolDeps {
-			fetcher: fetcher.clone(),
-			clock: Arc::new(RealTime),
-			hasher: Arc::new(Hash),
-			sleep: Arc::new(TokioSleep),
-			preconnect: with_preconnect.then(|| {
-				let preconnect: Arc<dyn research_tools::search::SearchPreconnect> = fetcher.clone();
-				preconnect
-			}),
-		})
-		.remove(0);
-		let started = Instant::now();
-		let call = |query: &'static str| {
-			let search = search.clone();
-			async move {
-				let args = json::parse(&format!(r#"{{"query":"{query}"}}"#)).unwrap();
-				let result = search.execute(args, context()).await;
-				let detail = result.as_ref().map_or_else(
-					|e| e.detail.clone(),
-					|v| {
-						v.model_text
-							.lines()
-							.filter(|line| line.contains("search failed"))
-							.collect::<Vec<_>>()
-							.join(" ")
-					},
-				);
-				(started.elapsed().as_millis(), detail)
-			}
-		};
-		let (first, second) = tokio::join!(call("gold price"), call("battery storage"));
-		println!(
-			"{}",
-			serde_json::json!({"preconnect": with_preconnect, "first_ms": first.0, "first": first.1, "second_ms": second.0, "second": second.1})
-		);
-		tokio::time::sleep(std::time::Duration::from_secs(20)).await;
-	}
 }

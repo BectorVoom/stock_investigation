@@ -220,7 +220,6 @@ async fn transcript(value: Value) {
 			hasher: script.clone(),
 			clock: script.clone(),
 			sleep: script.clone(),
-			preconnect: None,
 		}),
 		"web" => create_web_tools(WebToolDeps {
 			fetcher: script.clone(),
@@ -336,26 +335,57 @@ fn robots_match_typescript() {
 	assert!(count >= 1000);
 }
 
+/// A clock frozen at the instant the model's operation names.
+struct FrozenClock(i64);
+impl Clock for FrozenClock {
+	fn now_ms(&self) -> i64 {
+		self.0
+	}
+	fn now_iso(&self) -> String {
+		panic!("not used")
+	}
+}
+/// A caller whose window is closed gives up instead of waiting: the model's
+/// refused claim (it records nothing).
+struct GiveUp;
+#[async_trait]
+impl Sleep for GiveUp {
+	async fn sleep(&self, _: u64, cancel: &CancellationToken) {
+		cancel.cancel();
+	}
+}
+
 /// The verified Lean model (`formal/ResearchFormal/Spacing.lean`) against the
-/// real `Ledger`: every operation sequence of length 0..3.
-#[test]
-fn spacing_ledger_matches_the_lean_model() {
-	use research_tools::search::{Claim, Ledger};
+/// real claim path, `await_slot` with its retry loop and ticket queue: every
+/// operation sequence of length 0..3. A refused claim is a caller that gives
+/// up at its first wait, so it must leave no record.
+#[tokio::test]
+async fn spacing_ledger_matches_the_lean_model() {
+	use research_tools::search::{Ledger, await_slot};
 	let path = format!("{}/../../formal/vectors.json", env!("CARGO_MANIFEST_DIR"));
 	let all: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
 	let cases = all["spacing"].as_array().unwrap();
 	assert!(cases.len() >= 1885);
 	for case in cases {
-		let ledger = Ledger::new(case["interval"].as_i64().unwrap(), 8);
+		let interval = case["interval"].as_i64().unwrap();
+		let ledger = Ledger::new(interval, 8);
 		let mut starts = Vec::new();
 		let mut outcomes = Vec::new();
 		for op in case["ops"].as_array().unwrap() {
 			let time = op[1].as_i64().unwrap_or(0);
 			match op[0].as_str().unwrap() {
 				"claim" => {
-					let claim = ledger.claim("k", time, None, |now| now);
-					outcomes.push(json!(claim == Claim::Started));
-					if claim == Claim::Started {
+					let started = await_slot(
+						&ledger,
+						"k",
+						&FrozenClock(time),
+						&GiveUp,
+						&CancellationToken::new(),
+						false,
+					)
+					.await;
+					outcomes.push(json!(started));
+					if started {
 						starts.insert(0, time);
 					}
 				}
@@ -369,7 +399,7 @@ fn spacing_ledger_matches_the_lean_model() {
 		// The recorded start is observable as the wait of a far-past reader.
 		let far_past = -1_000_000;
 		let wait = ledger.peek_wait("k", far_past);
-		let last = (wait > 0).then(|| far_past + wait - case["interval"].as_i64().unwrap());
+		let last = (wait > 0).then(|| far_past + wait - interval);
 		assert_eq!(json!(outcomes), case["outcomes"], "{case}");
 		assert_eq!(json!(starts), case["starts"], "{case}");
 		assert_eq!(json!(last), case["last"], "{case}");
