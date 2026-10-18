@@ -206,6 +206,7 @@ function feed(
 	items: (nextId: (prefix: string) => string) => {
 		evidence: Evidence;
 		text: string;
+		retain?: boolean;
 	}[],
 	extra?: (world: World, nextId: (prefix: string) => string) => Partial<typeof EMPTY_TOOL_OUTPUT>,
 	modelText = "ok",
@@ -219,7 +220,7 @@ function feed(
 				evidence: found.map((item) => ({
 					evidence: item.evidence,
 					retrievedText: item.text,
-					retainQuotes: true,
+					retainQuotes: item.retain ?? true,
 				})),
 				...(extra?.(world, context.nextId) ?? {}),
 			});
@@ -593,6 +594,51 @@ async function limitsAndFaults(): Promise<void> {
 		),
 		expect: partial("MAX_INPUT_BYTES"),
 	});
+	// Two retrieved items share an evidence id with different quote licences: the
+	// later one decides whether the claim's quote may be stored (last wins).
+	for (const [name, retains] of [
+		["retain-true-then-false", [true, false]],
+		["retain-false-then-true", [false, true]],
+	] as const) {
+		await run({
+			name: `duplicate-evidence-id-${name}`,
+			reply: (k) =>
+				k === "planning"
+					? doneOf("feed.read")
+					: k === "analysis"
+						? JSON.stringify({
+								claims: [
+									{
+										text: "Grid storage orders reached 100 GWh in 2026.",
+										claimType: "observation",
+										evidence: [
+											{
+												evidenceId: `${RUN_ID}_ev1`,
+												relation: "supports",
+												quote: "Orders for grid storage reached 100 GWh in 2026",
+											},
+										],
+									},
+								],
+							})
+						: JSON.stringify({ verdicts: [{ claimIndex: 0, verdict: "supported" }] }),
+			tools: feed((nextId) => {
+				const id = nextId("ev");
+				return retains.map((retain, i) => ({
+					evidence: evidence(id, "Grid storage orders rise", "Example News", 40 + i),
+					text: "Orders for grid storage reached 100 GWh in 2026, said the report.",
+					retain,
+				}));
+			}),
+			expect: (o) => {
+				if (o.kind !== "completed") return `got ${o.kind}`;
+				const kept = o.bundle.claims[0]?.links[0]?.quote !== null;
+				return kept === retains[retains.length - 1]
+					? null
+					: `retained quote must follow the last item (${name})`;
+			},
+		});
+	}
 	// Mid-plan cancellation: the first call aborts the run, the second never starts.
 	await run({
 		name: "cancel-mid-plan",
