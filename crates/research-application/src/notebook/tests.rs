@@ -441,6 +441,9 @@ fn benchmark_input() -> TestResult<(Notebook, Vec<Value>)> {
 }
 
 #[test]
+// Known miss (measured under load 29): `with_earned_chart_provenance` in research-contracts
+// (not owned by this crate) builds chart content keys serially and costs ~17 ms of the
+// commands case; it needs a rayon pass over chart keys there.
 #[ignore = "timing guard: run explicitly on an idle machine with --release"]
 fn notebook_performance_budgets() -> TestResult {
 	use std::{hint::black_box, time::Instant};
@@ -471,14 +474,17 @@ fn notebook_performance_budgets() -> TestResult {
 			run();
 		}
 		let mut samples = Vec::new();
-		for _ in 0..9 {
+		for _ in 0..25 {
 			let start = Instant::now();
 			run();
 			samples.push(start.elapsed().as_secs_f64() * 1000.0);
 		}
 		samples.sort_by(f64::total_cmp);
-		let median = samples[4];
-		eprintln!("{label}: {median:.3} ms (budget {budget} ms)");
+		let median = samples[12];
+		eprintln!(
+			"{label}: median {median:.3} ms, min {:.3} ms (budget {budget} ms)",
+			samples[0]
+		);
 		median <= budget
 	};
 	let prompt_ok = measure("full notebook prompt", 5.0, &mut || {
