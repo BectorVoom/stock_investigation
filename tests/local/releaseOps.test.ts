@@ -48,6 +48,7 @@ import {
 	removeHolderMarker,
 	resolveActiveGeneration,
 	rollbackRelease,
+	runnersInGeneration,
 	safeRemoveDir,
 	safeRename,
 	validateDirectorySet,
@@ -94,11 +95,15 @@ function makeWritableTree(dir: string): void {
 	}
 }
 
-function manifestBody(generation: string, migrations: string[] = ["0001_initial.sql"]) {
+function manifestBody(
+	generation: string,
+	migrations: string[] = ["0001_initial.sql"],
+	versions: { bun: string; node: string; rustc?: string } = { bun: "1.3.0", node: "v23.6.0" },
+) {
 	return {
 		builtAt: "2026-10-12T00:00:00.000Z",
 		revision: null,
-		versions: { bun: "1.3.0", node: "v23.6.0" },
+		versions,
 		generation,
 		migrations,
 		marker: "",
@@ -110,6 +115,7 @@ function writeGeneration(
 	area: string,
 	id: string,
 	migrations: string[] = ["0001_initial.sql"],
+	runners: "node" | "rust" | "both" = "node",
 ): void {
 	const layout = generationLayout(area, id);
 	mkdirSync(layout.workerDir, { recursive: true });
@@ -117,11 +123,26 @@ function writeGeneration(
 	mkdirSync(layout.migrationsDir, { recursive: true });
 	mkdirSync(layout.webDir, { recursive: true });
 	writeFileSync(layout.workerBundle, "worker");
-	writeFileSync(layout.runnerBundle, "runner");
+	if (runners !== "rust") writeFileSync(layout.runnerBundle, "runner");
+	if (runners !== "node") {
+		writeFileSync(layout.rustRunnerBinary, "#!/bin/sh\n", { mode: 0o755 });
+		chmodSync(layout.rustRunnerBinary, 0o755);
+	}
 	writeFileSync(layout.indexFile, "<html></html>");
 	writeFileSync(layout.wranglerConfig, "{}");
 	for (const name of migrations) writeFileSync(join(layout.migrationsDir, name), "select 1;");
-	writeFileSync(layout.manifestFile, JSON.stringify(manifestBody(id, migrations)));
+	writeFileSync(
+		layout.manifestFile,
+		JSON.stringify(
+			manifestBody(
+				id,
+				migrations,
+				runners === "node"
+					? undefined
+					: { bun: "1.3.0", node: "v23.6.0", rustc: "rustc 1.97.1 (8bab26f4f 2026-07-14)" },
+			),
+		),
+	);
 }
 
 function stubProbe(overrides: Partial<LockProbe> = {}): LockProbe {
@@ -489,6 +510,65 @@ describe("validateGeneration (finding 4)", () => {
 	});
 });
 
+describe("validateGeneration with the Rust runner (ADR-0030)", () => {
+	it("accepts a generation with only the executable binary and records rustc", () => {
+		const area = join(freshRoot(), "release");
+		writeGeneration(area, "gen-rust", ["0001_initial.sql"], "rust");
+		const layout = generationLayout(area, "gen-rust");
+		const checked = validateGeneration(layout);
+		expect(checked.ok).toBe(true);
+		if (!checked.ok) return;
+		expect(checked.value.versions.rustc).toBe("rustc 1.97.1 (8bab26f4f 2026-07-14)");
+		expect(runnersInGeneration(layout)).toEqual({ node: false, rust: true });
+	});
+
+	it("tells which runners a generation holds (transition: old generations have only node)", () => {
+		const area = join(freshRoot(), "release");
+		writeGeneration(area, "gen-old", ["0001_initial.sql"], "node");
+		writeGeneration(area, "gen-both", ["0001_initial.sql"], "both");
+		expect(runnersInGeneration(generationLayout(area, "gen-old"))).toEqual({
+			node: true,
+			rust: false,
+		});
+		expect(runnersInGeneration(generationLayout(area, "gen-both"))).toEqual({
+			node: true,
+			rust: true,
+		});
+	});
+
+	it("refuses a binary without the execute bit and a generation with no runner at all", () => {
+		const area = join(freshRoot(), "release");
+		writeGeneration(area, "gen-rust", ["0001_initial.sql"], "rust");
+		const layout = generationLayout(area, "gen-rust");
+		chmodSync(layout.rustRunnerBinary, 0o644);
+		const refused = validateGeneration(layout);
+		expect(refused.ok).toBe(false);
+		if (!refused.ok) expect(refused.error).toContain("research-runner");
+		rmSync(layout.rustRunnerBinary);
+		expect(validateGeneration(layout).ok).toBe(false);
+	});
+
+	it("refuses a companion binary that is present but not executable", () => {
+		const area = join(freshRoot(), "release");
+		writeGeneration(area, "gen-rust", ["0001_initial.sql"], "rust");
+		const layout = generationLayout(area, "gen-rust");
+		writeFileSync(join(layout.runnerDir, "research-provider-spawn"), "x", { mode: 0o644 });
+		const refused = validateGeneration(layout);
+		expect(refused.ok).toBe(false);
+		if (!refused.ok) expect(refused.error).toContain("research-provider-spawn");
+	});
+
+	it("still reads manifests written before rustc existed", () => {
+		const repo = freshRoot();
+		mkdirSync(join(repo, "release"), { recursive: true });
+		writeFileSync(join(repo, "release/manifest.json"), JSON.stringify(manifestBody("gen-a")));
+		expect(readReleaseManifest(join(repo, "release/manifest.json"))?.versions).toEqual({
+			bun: "1.3.0",
+			node: "v23.6.0",
+		});
+	});
+});
+
 describe("rollbackRelease (finding 4)", () => {
 	it("moves the pointer to the previous generation and deletes nothing", () => {
 		const repo = freshRoot();
@@ -783,6 +863,24 @@ describe("makeGenerationReadOnly (finding 3)", () => {
 		// to the served configuration on every start (EACCES otherwise).
 		expect(statSync(layout.dir).mode & 0o222).not.toBe(0);
 		// Still a valid generation: read-only changes no content.
+		expect(validateGeneration(layout).ok).toBe(true);
+	});
+});
+
+describe("makeGenerationReadOnly keeps executables executable (ADR-0030)", () => {
+	it("locks the Rust binaries to 0555 and everything else to 0444", () => {
+		const area = join(freshRoot(), "release");
+		writeGeneration(area, "gen-rust", ["0001_initial.sql"], "rust");
+		const layout = generationLayout(area, "gen-rust");
+		writeFileSync(join(layout.runnerDir, "research-provider-spawn"), "#!/bin/sh\n", {
+			mode: 0o755,
+		});
+		makeGenerationReadOnly(layout.dir);
+		expect(statSync(layout.rustRunnerBinary).mode & 0o777).toBe(0o555);
+		expect(statSync(join(layout.runnerDir, "research-provider-spawn")).mode & 0o777).toBe(0o555);
+		expect(statSync(layout.workerBundle).mode & 0o777).toBe(0o444);
+		expect(statSync(layout.manifestFile).mode & 0o777).toBe(0o444);
+		// A read-only generation is still servable: validation checks the exec bit.
 		expect(validateGeneration(layout).ok).toBe(true);
 	});
 });

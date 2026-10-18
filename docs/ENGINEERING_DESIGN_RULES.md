@@ -24,7 +24,7 @@ This is the **canonical rule set** for human developers and coding agents (OpenC
 | ARCH-007 | Interface Segregation | Narrow contracts; do not require unsupported agent capabilities |
 | ARCH-008 | Composition over Inheritance | Prefer injected capabilities and small functions over inheritance trees |
 | ARCH-009 | Immutability | Treat domain records as immutable values; update through pure transitions |
-| ARCH-010 | Explicit error handling | Expected failures represented by tagged `Result` unions; unexpected failures handled/logged at effect boundaries; shell code uses Effect (ADR-0007) |
+| ARCH-010 | Explicit error handling | Expected failures represented by tagged `Result` unions; unexpected failures handled/logged at effect boundaries; shell code uses Effect (ADR-0007); the Rust runner returns `Result` with `thiserror` types and handles failures at its edge instead of Effect (ADR-0030) |
 | ARCH-011 | Determinism | For deterministic operations, same validated inputs yield same outputs; record external timestamps/snapshots |
 | ARCH-012 | KISS / YAGNI | Avoid generic frameworks until at least one real extension requires them; do not prebuild multi-tenancy or microservices |
 | ARCH-013 | DRY with restraint | Deduplicate stable domain logic, not merely superficially similar workflows |
@@ -116,6 +116,19 @@ The illustrative stub above **MUST NOT be committed as completed production func
 - Do not use `any`, unbounded `unknown` propagation, `@ts-ignore`, non-null assertions or unchecked casts to silence compilation. For unavoidable SDK interop, localize, document and test the assertion.
 - Record units, dates, currency, market and financial basis in types/records; do not pass raw unqualified finance `number` values across module boundaries.
 - Use precise names (`reportedShortInterestShares`, `trailingPer`, `retrievedAt`) over ambiguous names (`ratio`, `date`, `balance`).
+
+### FUNC-004: Rust rules (the local runner, ADR-0030)
+
+The runner is a Cargo workspace (`crates/*`, binary `research-runner`); the Worker API, the web app and the MCP server stay TypeScript. The Rust counterparts of the TypeScript rules above:
+
+- **No unchecked escape hatches.** `unsafe_code = "forbid"`. Clippy denies `unwrap_used`, `expect_used`, `panic`, `todo`, `unimplemented`, `dbg_macro`, `indexing_slicing` and the lossy numeric casts (`cast_possible_truncation`, `cast_possible_wrap`, `cast_sign_loss`) in production code (`Cargo.toml` `[workspace.lints]`); tests may unwrap and index (`clippy.toml`). Use `get`, `try_from` and typed errors. An `#[allow(...)]` needs a comment saying why.
+- **Typed errors, no exceptions to swallow.** Library crates return `Result` with `thiserror` error types; nothing is caught and ignored. A panic inside a job is caught at the job boundary and reported as `job_crashed` with a retryable failure (`panic = "unwind"`), and the panic hook never prints the payload (SEC-010).
+- **Contracts decoders at every boundary** (the counterpart of "no `any`: parse unknown data with zod"). Anything that crosses the process edge — Worker responses, agent output, feeds, pages, files — is decoded by `research-contracts` (or the owning crate's decoder), never read from `serde_json::Value` past the boundary, and everything written to the Worker goes through `research_contracts::json::to_js_json`.
+- **JavaScript semantics live in `research-js`** (UTF-16 lengths, JS whitespace, number formatting, `JSON.stringify` strings); no other crate re-implements them.
+- **Vectors prove parity.** A behaviour ported from TypeScript is proved by conformance vectors exported from the real TypeScript (`scripts/vectors/*.ts`, `vectors/**`, drift-checked by `bun run vectors:check`) and replayed by `cargo test`; algorithms with a Lean model replay `formal/vectors.json`. Changing a TypeScript algorithm that has vectors means regenerating them.
+- **Test seams are not shippable.** They live in `research-runner-testkit`; the production binary has no dependency on it (checked from `cargo metadata`) and contains none of its marker strings.
+- **Performance.** `rayon` only for pure parallel work collected by index; async code reaches CPU work through the rayon/oneshot bridge, never on a tokio worker; hot paths scan bytes (`memchr`) instead of running regexes over large text.
+- **Gates.** `bun run rust:check` (`cargo fmt --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`) and `bun run rust:test` (`cargo test --workspace --locked`) are part of `bun run verify`. Builds use `--locked`; `RUSTFLAGS` and `CARGO_BUILD_*` from the caller never reach a build the launcher runs.
 
 ## 5. SolidJS UI rules
 
@@ -304,6 +317,7 @@ Coverage percentage MAY be monitored, but **100% line coverage is not the accept
 | AGT-001..014 | per-adapter capability tests, sandbox/permission verification, failure injection |
 | DATA-001..012 | referential integrity and time/unit/filing fixtures |
 | SEC-001..010 | threat-model-derived adversarial tests, secret scanning, network restrictions |
+| FUNC-004 (Rust) | `cargo fmt --check`, `cargo clippy -- -D warnings` with the workspace lint deny list, `cargo test --locked`, conformance vectors (`bun run vectors:check`), testkit-isolation checks |
 
 ## 14. Authoritative sources
 

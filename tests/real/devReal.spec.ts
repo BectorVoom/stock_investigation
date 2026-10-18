@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
-import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
+import { suiteRunnerSettings, writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	launcherEnv,
 	makePristineCopy,
@@ -15,14 +15,22 @@ import {
 
 /**
  * Development positive path in the real environment network (`bun run
- * test:real`). The development runner runs under Node (its first log line
- * carries `runtime: node`); with the runner switched back to Bun this same
- * refresh fails with every tool call timing out, which is the defect this
- * check guards against. No model quota is spent.
+ * test:real`). RESEARCH_RUNNER=node: the development runner runs under Node
+ * (its first log line carries `runtime: node`); with the runner switched back
+ * to Bun this same refresh fails with every tool call timing out, which is the
+ * defect this check guards against. RESEARCH_RUNNER=rust: the Cargo-built
+ * binary runs (`runtime: rust`), and an edit to the runner crate's `main.rs`
+ * rebuilds incrementally and restarts it. No model quota is spent.
  */
 test.describe.configure({ mode: "serial" });
 
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+/** The suite's runner (RESEARCH_RUNNER, default node): `launcherEnv` + `buildChildEnv` pass it on. */
+const RUNNER = suiteRunnerSettings().RESEARCH_RUNNER === "rust" ? "rust" : "node";
+/** The runner source whose edit must rebuild and restart the runner, and the file the launcher keeps fresh. */
+const RUNNER_EDIT_SOURCE =
+	RUNNER === "rust" ? "crates/research-runner/src/main.rs" : "apps/runner/src/main.ts";
+const RUNNER_ARTIFACT = RUNNER === "rust" ? "research-runner" : "main.mjs";
 const VITE_PORT = 8892;
 const API_PORT = 8893;
 const VITE_ORIGIN = `http://localhost:${VITE_PORT}`;
@@ -65,7 +73,7 @@ function devEnv(): Record<string, string> {
 	});
 }
 
-test("dev refreshes a real feed with the runner under Node, and restarts it on a source edit", async () => {
+test(`dev refreshes a real feed with the ${RUNNER} runner, and restarts it on a source edit`, async () => {
 	test.setTimeout(600_000);
 	if (pristine === null) throw new Error("the pristine copy was not created");
 	const pristineRoot = pristine.root;
@@ -76,7 +84,7 @@ test("dev refreshes a real feed with the runner under Node, and restarts it on a
 	});
 	try {
 		expect(service.output()).toMatch(/agents: /);
-		// The runner runs under Node, not Bun: the pinned HTTPS fetcher only
+		// The node runner runs under Node, not Bun: the pinned HTTPS fetcher only
 		// completes there. Its start-up line carries the runtime (the very
 		// first line is Node's own "--env-file-if-exists" notice).
 		const runnerLog = join(dataDir, "logs", "runner.log");
@@ -84,7 +92,7 @@ test("dev refreshes a real feed with the runner under Node, and restarts it on a
 			readFileSync(runnerLog, "utf8")
 				.split("\n")
 				.find((line) => line.includes("runner_started")) ?? "";
-		expect(startedLine).toContain('"runtime":"node"');
+		expect(startedLine).toContain(`"runtime":"${RUNNER}"`);
 		expect(startedLine).not.toContain('"runtime":"bun"');
 
 		const session = await (await fetch(`${API_ORIGIN}/api/v1/session`)).json();
@@ -97,8 +105,8 @@ test("dev refreshes a real feed with the runner under Node, and restarts it on a
 
 		// An edit to a runner source rebuilds the bundle and restarts the
 		// runner: the bundle is rewritten and a second start-up line appears.
-		const source = join(pristineRoot, "apps/runner/src/main.ts");
-		const bundle = join(dataDir, "runner", "main.mjs");
+		const source = join(pristineRoot, RUNNER_EDIT_SOURCE);
+		const bundle = join(dataDir, "runner", RUNNER_ARTIFACT);
 		const original = readFileSync(source, "utf8");
 		const beforeMtime = statSync(bundle).mtimeMs;
 		const startsBefore = readFileSync(runnerLog, "utf8").split("runner_started").length;

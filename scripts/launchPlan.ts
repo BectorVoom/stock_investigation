@@ -8,10 +8,12 @@
  *
  * Development runs the working tree live (Vite HMR, `wrangler dev` reload,
  * a watching `bun build` of the runner into the development data directory
- * plus the bundle run under `node --watch`) against `data-dev/`. Production runs ONLY the
+ * plus the bundle run under `node --watch`, or with RESEARCH_RUNNER=rust the
+ * Cargo-built binary kept fresh by `scripts/runnerDev.ts`) against `data-dev/`. Production runs ONLY the
  * generation the pointer names under `release/generations/` (prebuilt Worker bundle with
  * bundling disabled, so later source edits and rebuilds of `dist/` cannot change what it serves)
- * against `data/`. Neither mode reads the other's data directory.
+ * against `data/`. Neither mode reads the other's data directory. The runner
+ * itself is chosen by RESEARCH_RUNNER (node, the default, or rust; ADR-0030).
  */
 import { resolve, sep } from "node:path";
 
@@ -40,6 +42,101 @@ export const RUNNER_ENV_FILE = "apps/runner/.env";
  */
 export const RUNNER_ENV_FILE_ENV_VAR = "RESEARCH_RUNNER_ENV_FILE";
 export const RUNNER_SOURCE = "apps/runner/src/main.ts";
+
+/**
+ * Which runner the launcher starts (ADR-0030). `node` is the TypeScript
+ * runner bundled by Bun and run under Node; `rust` is the `research-runner`
+ * binary built by Cargo. The default stays `node` until the owner switches
+ * after the real-environment run.
+ */
+export const RUNNER_KINDS = ["node", "rust"] as const;
+export type RunnerKind = (typeof RUNNER_KINDS)[number];
+export const DEFAULT_RUNNER_KIND: RunnerKind = "node";
+export const RUNNER_KIND_ENV_VAR = "RESEARCH_RUNNER";
+/**
+ * Setting naming the shared Cargo target directory (default `<repo>/target`).
+ * One build cache for the working tree, pristine copies and tests: registry
+ * dependencies are compiled once.
+ */
+export const CARGO_TARGET_DIR_ENV_VAR = "RESEARCH_CARGO_TARGET_DIR";
+export const DEFAULT_CARGO_TARGET_DIR = "target";
+/** The runner binary and the companion it spawns agent CLIs through, built by `-p research-runner`. */
+export const RUST_RUNNER_BINARY = "research-runner";
+export const RUST_PROVIDER_SPAWN_BINARY = "research-provider-spawn";
+/**
+ * Companion binaries copied beside the runner when the build produced them.
+ * TODO(ADR-0030): require `research-provider-spawn` (move it into
+ * `RUST_REQUIRED_BINARIES`) once the runner crate declares that `[[bin]]`.
+ */
+export const RUST_OPTIONAL_BINARIES: readonly string[] = [RUST_PROVIDER_SPAWN_BINARY];
+export const RUST_REQUIRED_BINARIES: readonly string[] = [RUST_RUNNER_BINARY];
+/** The supervising development process that builds, copies and restarts the Rust runner. */
+export const RUNNER_DEV_SCRIPT = "scripts/runnerDev.ts";
+/** Cargo arguments of the development build (dev profile, lockfile respected). */
+export const CARGO_DEV_BUILD_ARGS: readonly string[] = [
+	"build",
+	"--locked",
+	"-p",
+	"research-runner",
+];
+/** Cargo arguments of the release build `prod:build` runs. */
+export const CARGO_RELEASE_BUILD_ARGS: readonly string[] = [
+	"build",
+	"--release",
+	"--locked",
+	"-p",
+	"research-runner",
+];
+
+/**
+ * Variables that would change what Cargo compiles. They are never passed on
+ * from the caller: `RUSTFLAGS` or `CARGO_BUILD_*` could enable test seams or
+ * change code generation, and a release must be a function of the sources.
+ */
+const CARGO_CODEGEN_VARS = new Set([
+	"RUSTFLAGS",
+	"CARGO_ENCODED_RUSTFLAGS",
+	"RUSTC_WRAPPER",
+	"RUSTC_WORKSPACE_WRAPPER",
+	"RUSTDOCFLAGS",
+]);
+
+/** Environment for a Cargo child: the caller's, minus codegen overrides, with the shared target dir. */
+export function cargoBuildEnv(
+	base: Readonly<Record<string, string | undefined>>,
+	targetDir: string,
+): Record<string, string> {
+	const env: Record<string, string> = {};
+	for (const [name, value] of Object.entries(base)) {
+		if (value === undefined) continue;
+		if (CARGO_CODEGEN_VARS.has(name) || name.startsWith("CARGO_BUILD_")) continue;
+		env[name] = value;
+	}
+	env.CARGO_TARGET_DIR = targetDir;
+	return env;
+}
+
+/** Absolute shared Cargo target directory from the settings. */
+export function cargoTargetDirFromEnv(
+	env: Readonly<Record<string, string | undefined>>,
+	repoRoot: string,
+): string {
+	return resolve(repoRoot, nonEmpty(env[CARGO_TARGET_DIR_ENV_VAR], DEFAULT_CARGO_TARGET_DIR));
+}
+
+/** Parses `RESEARCH_RUNNER`; an unknown value is refused, never guessed. */
+export function parseRunnerKind(raw: string | undefined): PlanResult<RunnerKind> {
+	if (raw === undefined || raw.trim() === "") return ok(DEFAULT_RUNNER_KIND);
+	const value = raw.trim();
+	const kind = RUNNER_KINDS.find((candidate) => candidate === value);
+	if (kind === undefined) {
+		return fail(
+			"INVALID_RUNNER",
+			`${RUNNER_KIND_ENV_VAR} must be "node" or "rust" (got ${JSON.stringify(raw)}).`,
+		);
+	}
+	return ok(kind);
+}
 /** Worker entry served by both the dev server and the release builds. */
 export const WORKER_SOURCE = "apps/api/src/worker.ts";
 /** Migrations resolve to the working tree by absolute path, taken at start/build time. */
@@ -93,7 +190,7 @@ export function devWranglerConfig(args: {
 }
 
 export interface PlanError {
-	readonly code: "INVALID_PORT" | "DATA_DIR_REFUSED";
+	readonly code: "INVALID_PORT" | "INVALID_RUNNER" | "DATA_DIR_REFUSED";
 	readonly message: string;
 }
 
@@ -117,6 +214,17 @@ export interface LaunchInputs {
 	readonly previousReleaseDir: string;
 	/** Env file the runner processes load; tests override it (finding 5). */
 	readonly runnerEnvFile: string;
+	/** Which runner the settings ask for (`RESEARCH_RUNNER`, default node). */
+	readonly runnerKind: RunnerKind;
+	/** Absolute shared Cargo target directory (`RESEARCH_CARGO_TARGET_DIR`, default `<repo>/target`). */
+	readonly cargoTargetDir: string;
+	/**
+	 * Production only: which runners the served generation contains. A
+	 * generation built before the switch has only `runner/main.mjs`, one built
+	 * with `RESEARCH_RUNNER=rust` only the binary; the plan runs what exists
+	 * (the rust request falls back to node for a generation without a binary).
+	 */
+	readonly generationRunners: { readonly node: boolean; readonly rust: boolean };
 }
 
 export interface PlannedProcess {
@@ -133,6 +241,30 @@ export interface ListenPort {
 	/** Setting that overrides it, named in the port-busy error. */
 	readonly envVar: string;
 }
+
+/**
+ * The development runner: either the Bun bundle run under `node --watch`, or
+ * the Cargo-built binary kept fresh by the supervising `scripts/runnerDev.ts`.
+ * `prepare` is the one-shot step the launcher runs before anything starts, so
+ * the file the runner process watches exists.
+ */
+export type DevRunnerPlan =
+	| {
+			readonly kind: "node";
+			readonly bunExe: string;
+			readonly source: string;
+			readonly bundle: string;
+	  }
+	| {
+			readonly kind: "rust";
+			readonly bunExe: string;
+			/** Directory holding `research-runner` (and its companion), inside the data directory. */
+			readonly binaryDir: string;
+			readonly binary: string;
+			readonly cargoTargetDir: string;
+			/** One-shot build + copy run by the launcher before anything starts. */
+			readonly prepare: { readonly command: string; readonly args: readonly string[] };
+	  };
 
 export interface LaunchPlan {
 	readonly mode: LaunchMode;
@@ -165,7 +297,11 @@ export interface LaunchPlan {
 		readonly manifestFile: string;
 		readonly wranglerConfig: string;
 		readonly workerBundle: string;
+		/** The runner file this plan starts: `runner/main.mjs` (node) or `runner/research-runner` (rust). */
 		readonly runnerBundle: string;
+		readonly runnerKind: RunnerKind;
+		/** True when `RESEARCH_RUNNER=rust` was asked for but the generation has no binary. */
+		readonly runnerFellBack: boolean;
 	} | null;
 	/**
 	 * For development: the one-shot build the launcher runs before starting
@@ -174,11 +310,7 @@ export interface LaunchPlan {
 	 * test directories stay isolated and nothing is written into the
 	 * repository. Absent in production.
 	 */
-	readonly devRunner: {
-		readonly bunExe: string;
-		readonly source: string;
-		readonly bundle: string;
-	} | null;
+	readonly devRunner: DevRunnerPlan | null;
 	/**
 	 * For development: the generated Wrangler configuration the dev server
 	 * and migrations run against (never `dist/`), written into the
@@ -224,13 +356,17 @@ function nonEmpty(raw: string | undefined, fallback: string): string {
  * the missing-release refusal; default `release/`), and
  * `RESEARCH_PREVIOUS_RELEASE_DIR` names where the previous release is kept
  * for rollback (default `release.previous/`; a test hook so the suite never
- * touches the repository-root release directories).
+ * touches the repository-root release directories). `RESEARCH_RUNNER`
+ * (`node`, the default, or `rust`) picks the runner and
+ * `RESEARCH_CARGO_TARGET_DIR` the shared Cargo build cache.
  */
 export function readLaunchInputs(
 	mode: LaunchMode,
 	env: Readonly<Record<string, string | undefined>>,
 	repoRoot: string,
 	bunExe: string,
+	/** Production only: the runners the served generation contains (the launcher looks). */
+	generationRunners: LaunchInputs["generationRunners"] = { node: true, rust: false },
 ): PlanResult<LaunchInputs> {
 	const prodPort = parsePort(env.RESEARCH_PORT, DEFAULT_PROD_PORT, "RESEARCH_PORT");
 	if (!prodPort.ok) return prodPort;
@@ -242,6 +378,8 @@ export function readLaunchInputs(
 		"RESEARCH_DEV_API_PORT",
 	);
 	if (!devApiPort.ok) return devApiPort;
+	const runnerKind = parseRunnerKind(env[RUNNER_KIND_ENV_VAR]);
+	if (!runnerKind.ok) return runnerKind;
 	return ok({
 		mode,
 		repoRoot,
@@ -254,6 +392,9 @@ export function readLaunchInputs(
 		releaseDir: nonEmpty(env.RESEARCH_RELEASE_DIR, DEFAULT_RELEASE_DIR),
 		previousReleaseDir: nonEmpty(env.RESEARCH_PREVIOUS_RELEASE_DIR, DEFAULT_PREVIOUS_RELEASE_DIR),
 		runnerEnvFile: nonEmpty(env[RUNNER_ENV_FILE_ENV_VAR], RUNNER_ENV_FILE),
+		runnerKind: runnerKind.value,
+		cargoTargetDir: cargoTargetDirFromEnv(env, repoRoot),
+		generationRunners,
 	});
 }
 
@@ -285,7 +426,16 @@ export function describeOverlap(
 function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 	const origin = `http://localhost:${inputs.prodPort}`;
 	const releaseDir = inputs.releaseDir;
-	const runnerBundle = joinPath(releaseDir, "runner/main.mjs");
+	// The runner file comes from what the generation contains (ADR-0030
+	// transition): a generation built before the switch has only main.mjs and
+	// keeps starting with node even when the rust runner is requested.
+	const runnerKind: RunnerKind =
+		inputs.runnerKind === "rust" && inputs.generationRunners.rust ? "rust" : "node";
+	const runnerFellBack = inputs.runnerKind === "rust" && runnerKind === "node";
+	const runnerBundle = joinPath(
+		releaseDir,
+		runnerKind === "rust" ? `runner/${RUST_RUNNER_BINARY}` : "runner/main.mjs",
+	);
 	const logDir = joinPath(dataDir, "logs");
 	const stateDir = joinPath(dataDir, "d1");
 	const processes: readonly PlannedProcess[] = [
@@ -327,8 +477,14 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 		},
 		{
 			name: "runner",
-			command: "node",
-			args: [`--env-file-if-exists=${inputs.runnerEnvFile}`, runnerBundle],
+			// The Rust binary parses `--env-file-if-exists` itself with Node's
+			// precedence (existing environment wins), so the launcher's
+			// variables below still cannot be redirected by the file.
+			command: runnerKind === "rust" ? runnerBundle : "node",
+			args:
+				runnerKind === "rust"
+					? [`--env-file-if-exists=${inputs.runnerEnvFile}`]
+					: [`--env-file-if-exists=${inputs.runnerEnvFile}`, runnerBundle],
 			logFile: joinPath(logDir, "runner.log"),
 			// Set here so they win over the same names in the env file: a
 			// file written for a deployed Worker cannot point the local
@@ -365,11 +521,81 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 			wranglerConfig: joinPath(releaseDir, "wrangler.jsonc"),
 			workerBundle: joinPath(releaseDir, "worker/worker.js"),
 			runnerBundle,
+			runnerKind,
+			runnerFellBack,
 		},
 		devRunner: null,
 		devWrangler: null,
 		processes,
 	};
+}
+
+/** Arguments shared by the one-shot and the supervising `scripts/runnerDev.ts` runs. */
+function runnerDevArgs(inputs: LaunchInputs, logDir: string, binary: string): string[] {
+	return [
+		"--binary",
+		binary,
+		"--runner-env",
+		inputs.runnerEnvFile,
+		"--target-dir",
+		inputs.cargoTargetDir,
+		"--build-log",
+		joinPath(logDir, "runner-build.log"),
+	];
+}
+
+/**
+ * Rust development runner: ONE supervising process (ADR-0030, amending
+ * ADR-0011). It watches `crates/**`, `Cargo.toml` and `Cargo.lock`, runs the
+ * Cargo build, copies the binary into the data directory through a temp file
+ * and rename, and restarts the runner child on every new binary — and
+ * survives the child's exit and waits for the next change, as `node --watch`
+ * did. The child's output goes to `runner.log` (the launcher's crash watcher
+ * reads it); the supervisor's own lines go to `runner-build.log`.
+ */
+function rustDevRunnerProcess(
+	inputs: LaunchInputs,
+	logDir: string,
+	binary: string,
+	runnerEnv: Readonly<Record<string, string>>,
+): PlannedProcess {
+	return {
+		name: "runner",
+		command: inputs.bunExe,
+		args: [RUNNER_DEV_SCRIPT, ...runnerDevArgs(inputs, logDir, binary)],
+		logFile: joinPath(logDir, "runner.log"),
+		extraEnv: runnerEnv,
+	};
+}
+
+/** Node development runner: a watching Bun build plus the bundle under `node --watch`. */
+function nodeDevRunnerProcesses(
+	inputs: LaunchInputs,
+	logDir: string,
+	runnerBundle: string,
+	runnerEnv: Readonly<Record<string, string>>,
+): PlannedProcess[] {
+	return [
+		{
+			name: "runner-build",
+			// Rebuilds the runner bundle whenever its sources (or the
+			// workspace packages they import) change.
+			command: inputs.bunExe,
+			args: ["build", RUNNER_SOURCE, "--target=node", `--outfile=${runnerBundle}`, "--watch"],
+			logFile: joinPath(logDir, "runner-build.log"),
+			extraEnv: {},
+		},
+		{
+			name: "runner",
+			// Runs the rebuilt bundle under Node with restart on change:
+			// edits to runner sources rebuild the bundle, and `node --watch`
+			// restarts on the rebuilt file.
+			command: NODE,
+			args: [`--env-file-if-exists=${inputs.runnerEnvFile}`, "--watch", runnerBundle],
+			logFile: joinPath(logDir, "runner.log"),
+			extraEnv: runnerEnv,
+		},
+	];
 }
 
 function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
@@ -397,6 +623,7 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 	// The runner itself must run under Node — under Bun its pinned HTTPS
 	// fetcher never completes (see apps/runner/src/runtime.ts).
 	const runnerBundle = joinPath(dataDir, "runner/main.mjs");
+	const runnerBinary = joinPath(dataDir, "runner", RUST_RUNNER_BINARY);
 	const runnerEnv = {
 		RESEARCH_API_URL: apiOrigin,
 		RUNNER_PAGES_DIR: joinPath(dataDir, "pages"),
@@ -445,25 +672,9 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 			logFile: joinPath(logDir, "server.log"),
 			extraEnv: {},
 		},
-		{
-			name: "runner-build",
-			// Rebuilds the runner bundle whenever its sources (or the
-			// workspace packages they import) change.
-			command: inputs.bunExe,
-			args: ["build", RUNNER_SOURCE, "--target=node", `--outfile=${runnerBundle}`, "--watch"],
-			logFile: joinPath(logDir, "runner-build.log"),
-			extraEnv: {},
-		},
-		{
-			name: "runner",
-			// Runs the rebuilt bundle under Node with restart on change:
-			// edits to runner sources rebuild the bundle, and `node --watch`
-			// restarts on the rebuilt file.
-			command: NODE,
-			args: [`--env-file-if-exists=${inputs.runnerEnvFile}`, "--watch", runnerBundle],
-			logFile: joinPath(logDir, "runner.log"),
-			extraEnv: runnerEnv,
-		},
+		...(inputs.runnerKind === "rust"
+			? [rustDevRunnerProcess(inputs, logDir, runnerBinary, runnerEnv)]
+			: nodeDevRunnerProcesses(inputs, logDir, runnerBundle, runnerEnv)),
 	];
 	return {
 		mode: "development",
@@ -488,7 +699,20 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 			stateDir,
 		},
 		release: null,
-		devRunner: { bunExe: inputs.bunExe, source: RUNNER_SOURCE, bundle: runnerBundle },
+		devRunner:
+			inputs.runnerKind === "rust"
+				? {
+						kind: "rust",
+						bunExe: inputs.bunExe,
+						binaryDir: joinPath(dataDir, "runner"),
+						binary: runnerBinary,
+						cargoTargetDir: inputs.cargoTargetDir,
+						prepare: {
+							command: inputs.bunExe,
+							args: [RUNNER_DEV_SCRIPT, ...runnerDevArgs(inputs, logDir, runnerBinary), "--once"],
+						},
+					}
+				: { kind: "node", bunExe: inputs.bunExe, source: RUNNER_SOURCE, bundle: runnerBundle },
 		devWrangler,
 		processes,
 	};

@@ -11,7 +11,9 @@
  * - `scripts/launchPlan.ts`: RESEARCH_PORT, RESEARCH_DATA_DIR,
  *   RESEARCH_DEV_PORT, RESEARCH_DEV_API_PORT, RESEARCH_DEV_DATA_DIR,
  *   RESEARCH_RELEASE_DIR, RESEARCH_PREVIOUS_RELEASE_DIR,
- *   RESEARCH_RUNNER_ENV_FILE (RUNNER_ENV_FILE default `apps/runner/.env`);
+ *   RESEARCH_RUNNER_ENV_FILE (RUNNER_ENV_FILE default `apps/runner/.env`),
+ *   RESEARCH_RUNNER (node|rust, default node) and RESEARCH_CARGO_TARGET_DIR
+ *   (shared Cargo build cache; see `suiteRunnerSettings`);
  *   the plan sets RESEARCH_API_URL, RUNNER_PAGES_DIR and
  *   RESEARCH_DEV_API_PORT on its children itself.
  * - `apps/runner/src/config.ts`: RESEARCH_API_URL, RUNNER_TOKEN,
@@ -34,7 +36,14 @@
  */
 import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+	CARGO_TARGET_DIR_ENV_VAR,
+	cargoTargetDirFromEnv,
+	parseRunnerKind,
+	RUNNER_KIND_ENV_VAR,
+} from "./launchPlan.ts";
 
 /**
  * Ambient variables a child may inherit. WHY only these: everything the
@@ -46,6 +55,15 @@ import { join } from "node:path";
  * `REVIEW_*` or `BUN_*`/`NODE_*` variable is ever inherited. Windows needs its system variables to spawn
  * anything, so they are included there only.
  */
+/**
+ * Rust toolchain plumbing, like PATH/HOME: where rustup and Cargo keep their
+ * toolchains and registry cache, and which toolchain a shim picks. Without
+ * them `cargo` cannot run under the allowlist (ADR-0030). RUSTFLAGS and
+ * CARGO_BUILD_* are deliberately NOT here: they could enable test seams or
+ * change code generation, so a caller's values never reach a build.
+ */
+const RUST_TOOLCHAIN_PLUMBING = ["CARGO_HOME", "RUSTUP_HOME", "RUSTUP_TOOLCHAIN"] as const;
+
 export const INHERITED_ENV_ALLOWLIST: readonly string[] =
 	process.platform === "win32"
 		? [
@@ -61,8 +79,9 @@ export const INHERITED_ENV_ALLOWLIST: readonly string[] =
 				"COMSPEC",
 				"TEMP",
 				"TMP",
+				...RUST_TOOLCHAIN_PLUMBING,
 			]
-		: ["PATH", "HOME", "LANG", "LC_ALL", "LC_MESSAGES", "TZ"];
+		: ["PATH", "HOME", "LANG", "LC_ALL", "LC_MESSAGES", "TZ", ...RUST_TOOLCHAIN_PLUMBING];
 
 /** Every directory a launcher run writes: all must be explicit throwaway values. */
 export const REQUIRED_PATH_SETTINGS = [
@@ -119,6 +138,31 @@ export const ALL_TEST_CONTROLLED_VARS: readonly string[] = [
 	...RELEASE_CONTROL_SETTINGS,
 ];
 
+/**
+ * The repository the suites run from (this file is `scripts/testEnv.ts`):
+ * the default home of the shared Cargo target directory.
+ */
+const REPOSITORY_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
+
+/**
+ * The runner choice and the Cargo build cache of a suite. Both are explicit
+ * suite selectors, not inherited ambient state: `RESEARCH_RUNNER` (node by
+ * default, `rust` to exercise the Rust runner) is read from the test process's
+ * own environment and validated; a pristine copy builds into the SAME
+ * `RESEARCH_CARGO_TARGET_DIR` (default `<repo>/target`), because that is a
+ * build cache, not operational data — registry dependencies compile once and
+ * workspace crates from other source paths get distinct artifact hashes.
+ * Throws on an unknown runner kind, so a typo can never silently test node.
+ */
+export function suiteRunnerSettings(): Record<string, string> {
+	const kind = parseRunnerKind(process.env[RUNNER_KIND_ENV_VAR]);
+	if (!kind.ok) throw new Error(`test isolation: ${kind.error.message}`);
+	return {
+		[RUNNER_KIND_ENV_VAR]: kind.value,
+		[CARGO_TARGET_DIR_ENV_VAR]: cargoTargetDirFromEnv(process.env, REPOSITORY_ROOT),
+	};
+}
+
 /** Where a suite recorded the directories it configured (finding 15 guard audit). */
 export const ISOLATION_RECORD_ENV_VAR = "TEST_ISOLATION_RECORD";
 
@@ -156,6 +200,7 @@ export function buildChildEnv(overrides: Readonly<Record<string, string>>): Reco
 	const child: Record<string, string> = {
 		...pickInheritedEnv(),
 		WRANGLER_SEND_METRICS: "false",
+		...suiteRunnerSettings(),
 		...overrides,
 	};
 	const record = process.env[ISOLATION_RECORD_ENV_VAR];
