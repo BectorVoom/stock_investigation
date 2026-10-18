@@ -1023,7 +1023,25 @@ dependencies = [
 name = "research-runner-testkit"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "research-agent-core",
+ "research-application",
+ "research-contracts",
+ "research-effects",
+ "research-feed",
+ "research-finance",
+ "research-google",
+ "research-js",
+ "research-providers",
  "research-runner",
+ "research-tools",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "url",
 ]
 
 [[package]]
