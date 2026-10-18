@@ -20,6 +20,7 @@ import { netExporter } from "./net.ts";
 import { notebookExporter } from "./notebook.ts";
 import { pipelineExporter } from "./pipeline.ts";
 import { providersExporter } from "./providers.ts";
+import { runnerExporter } from "./runner.ts";
 import type { VectorExporter } from "./shared.ts";
 import { toolsExporter } from "./tools.ts";
 import { widgetGridExporter } from "./widgetGrid.ts";
@@ -44,4 +45,5 @@ export const exporters: readonly VectorExporter[] = [
 	pipelineExporter,
 	toolsExporter,
 	providersExporter,
+	runnerExporter,
 ];

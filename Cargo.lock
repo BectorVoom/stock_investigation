@@ -984,6 +984,15 @@ dependencies = [
 name = "research-runner"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "bytes",
+ "futures-util",
+ "getrandom 0.2.17",
+ "hex",
+ "http",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
  "research-agent-core",
  "research-application",
  "research-contracts",
@@ -996,8 +1005,17 @@ dependencies = [
  "research-net",
  "research-providers",
  "research-tools",
+ "rustls",
+ "rustls-pki-types",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
  "tokio",
+ "tokio-rustls",
  "tokio-util",
+ "url",
+ "webpki-roots",
 ]
 
 [[package]]
