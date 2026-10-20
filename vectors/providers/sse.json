@@ -1398,7 +1398,7 @@
 		}
 	},
 	{
-		"input": "data:{\"capabilities\":{\"supported\":[\"stream\"]},\"availability\":{\"status\":\"available\"}}",
+		"input": "data:{\"capabilities\":{\"supported\":[\"stream\"],\"models\":[\"fable\",\"opus\",\"sonnet\",\"haiku\"]},\"availability\":{\"status\":\"available\"}}",
 		"output": {
 			"kind": "chunk",
 			"text": "",
@@ -1407,7 +1407,7 @@
 		}
 	},
 	{
-		"input": "data:{\"supported\":[\"stream\"]}",
+		"input": "data:{\"supported\":[\"stream\"],\"models\":[\"fable\",\"opus\",\"sonnet\",\"haiku\"]}",
 		"output": {
 			"kind": "chunk",
 			"text": "",
@@ -1417,6 +1417,24 @@
 	},
 	{
 		"input": "data:stream",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fable",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:opus",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:haiku",
 		"output": {
 			"kind": "malformed"
 		}
@@ -1542,6 +1560,15 @@
 		"input": "data:NOT_CONFIGURED",
 		"output": {
 			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"supported\":[\"stream\"]}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
 		}
 	},
 	{
@@ -3048,13 +3075,25 @@
 		}
 	},
 	{
+		"input": "data:codex/models.json",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:codex-cli 0.160.0",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
-		"input": "data:is available for a ChatGPT login, which the CLI reports on stderr",
+		"input": "data:debug",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is available for a ChatGPT login and lists the model-picker models, newest first",
 		"output": {
 			"kind": "malformed"
 		}
@@ -3070,6 +3109,138 @@
 	},
 	{
 		"input": "data:Logged in using ChatGPT\n",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"capabilities\":{\"supported\":[],\"models\":[\"gpt-6.1-sol\",\"gpt-6-astra\",\"gpt-6-sol\",\"gpt-6-luna\",\"gpt-5.6-sol\",\"gpt-5.6-terra\",\"gpt-5.6-luna\"]},\"availability\":{\"status\":\"available\"}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"supported\":[],\"models\":[\"gpt-6.1-sol\",\"gpt-6-astra\",\"gpt-6-sol\",\"gpt-6-luna\",\"gpt-5.6-sol\",\"gpt-5.6-terra\",\"gpt-5.6-luna\"]}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:gpt-6.1-sol",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-6-astra",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-6-sol",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-6-luna",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-5.6-sol",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-5.6-terra",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-5.6-luna",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:login",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:models",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reads a catalog larger than a status command's output budget",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:gpt-big",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:list",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:the catalog command fails",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"lines\":[],\"code\":2}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:the catalog output is not understood",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"lines\":[\"error: unknown subcommand\"],\"code\":0}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:error: unknown subcommand",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:stays available without a model list when %s",
 		"output": {
 			"kind": "malformed"
 		}
@@ -3093,13 +3264,7 @@
 		}
 	},
 	{
-		"input": "data:login",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:is NOT_AUTHENTICATED when the CLI reports no login (exit code 1)",
+		"input": "data:does not read the catalog when Codex is not usable",
 		"output": {
 			"kind": "malformed"
 		}
@@ -3115,6 +3280,12 @@
 	},
 	{
 		"input": "data:Not logged in\n",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is NOT_AUTHENTICATED when the CLI reports no login (exit code 1)",
 		"output": {
 			"kind": "malformed"
 		}
@@ -5260,12 +5431,6 @@
 		}
 	},
 	{
-		"input": "data:models",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:{\"lines\":[]}",
 		"output": {
 			"kind": "chunk",
@@ -5302,12 +5467,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:list",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -8074,12 +8233,6 @@
 	},
 	{
 		"input": "data:isValidModelId",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:gpt-6.1-sol",
 		"output": {
 			"kind": "malformed"
 		}

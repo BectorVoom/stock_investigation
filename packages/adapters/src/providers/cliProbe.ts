@@ -4,6 +4,7 @@ import { settle } from "./turn.ts";
 
 /** Probes are local status commands; one that takes longer than this is treated as broken. */
 const PROBE_TIMEOUT_MS = 15_000;
+/** Output budget of a status command; a catalog command may pass a larger one. */
 const PROBE_MAX_OUTPUT_CHARS = 262_144;
 
 export type CaptureOutcome =
@@ -24,11 +25,18 @@ export interface CaptureSpec {
 	readonly env: Readonly<Record<string, string>>;
 }
 
+export interface CaptureOptions {
+	/** Complete stdout lines are kept up to this many characters; later lines are dropped. */
+	readonly maxOutputChars?: number;
+}
+
 /** Runs a short status command to completion and returns its bounded output. */
 export async function captureCommand(
 	processRunner: ProcessRunner,
 	spec: CaptureSpec,
+	options: CaptureOptions = {},
 ): Promise<CaptureOutcome> {
+	const maxOutputChars = options.maxOutputChars ?? PROBE_MAX_OUTPUT_CHARS;
 	const controller = new AbortController();
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timedOut = new Promise<"timed-out">((resolve) => {
@@ -42,7 +50,7 @@ export async function captureCommand(
 			(async () => {
 				for await (const line of handle.stdoutLines) {
 					capturedChars += line.length + 1;
-					if (capturedChars > PROBE_MAX_OUTPUT_CHARS) break;
+					if (capturedChars > maxOutputChars) break;
 					stdoutLines.push(line);
 				}
 			})(),

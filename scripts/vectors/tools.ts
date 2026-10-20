@@ -111,11 +111,9 @@ async function generated(): Promise<void> {
 	const variants: unknown[] = [
 		{},
 		{ articles: [] },
-		{ pages: [] },
 		null,
 		[],
 		{ articles: null },
-		{ pages: null },
 		{ articles: [{ url: "https://a.org/x", title: " A ", seendate: "00990101T000000Z" }] },
 		{
 			articles: [
@@ -124,37 +122,10 @@ async function generated(): Promise<void> {
 		},
 		{ articles: [{ url: "https://a.org/x", title: "", domain: null }] },
 		{
-			pages: [
-				{
-					key: "Gold",
-					title: "G",
-					excerpt: "&#0; &#xD800; &#0000000065; &amp; &unknown;",
-					description: null,
-				},
-			],
-		},
-		{
-			pages: [
-				{ key: "", title: "G" },
-				{ key: "日本😀", title: "\uFEFFTitle\uFEFF", description: "same", excerpt: "<b>same</b>" },
-			],
-		},
-		{ pages: [{ key: "a", title: "b", excerpt: null }] },
-		{
 			articles: [
 				{ url: "http://a.org/x", title: "a" },
 				{ url: "https://a.org/x", title: "b" },
 				{ url: "https://a.org/x", title: "c" },
-			],
-		},
-		{
-			pages: [
-				{
-					key: "Gold",
-					title: " G ",
-					description: "",
-					excerpt: "&nbsp; &#999999999999999999999999; &AMP;",
-				},
 			],
 		},
 	];
@@ -170,7 +141,6 @@ async function generated(): Promise<void> {
 			`{"extra":${"[".repeat(150)}0${"]".repeat(150)}}`,
 		];
 		const gdelt = bodies[Math.floor(random() * bodies.length)] ?? "{}";
-		const wiki = bodies[Math.floor(random() * bodies.length)] ?? "{}";
 		const fetcher: SafeFetcher = {
 			fetchText: async (url) =>
 				i % 9 === 0
@@ -181,7 +151,7 @@ async function generated(): Promise<void> {
 					: ok({
 							finalUrl: url,
 							contentType: "application/json",
-							text: url.includes("gdelt") ? gdelt : wiki,
+							text: gdelt,
 						}),
 		};
 		const [tool] = createSearchTools({

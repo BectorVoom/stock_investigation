@@ -3,12 +3,14 @@ import { readdir, readFile } from "node:fs/promises";
 import type { Effort } from "@research/agent-core";
 import {
 	buildClaudeArgs,
+	CLAUDE_MODEL_ALIASES,
 	createClaudeStreamInterpreter,
 } from "../../packages/adapters/src/providers/claudeCode.ts";
 import type { CliStreamInterpreter } from "../../packages/adapters/src/providers/cliTurn.ts";
 import {
 	buildCodexArgs,
 	createCodexStreamInterpreter,
+	parseCodexModelCatalog,
 } from "../../packages/adapters/src/providers/codex.ts";
 import {
 	buildChildEnv,
@@ -534,6 +536,33 @@ export const providersExporter: VectorExporter = {
 						await readFile(new URL("opencode/models.txt", fixtures), "utf8"),
 						" \uFEFFa/m\n\nb/m\na/m\n--bad\n日本語",
 					].map((input) => ({ input, output: parseModelList(input) })),
+					codexCatalogs: [
+						await readFile(new URL("codex/models.json", fixtures), "utf8"),
+						"",
+						"{",
+						"[]",
+						'{"models":{}}',
+						'{"models":[]}',
+						JSON.stringify({
+							models: [
+								{ slug: "late", visibility: "list" },
+								{ slug: "b", visibility: "list", priority: 2 },
+								{ slug: "a", visibility: "list", priority: 2 },
+								{ slug: "first", visibility: "list", priority: -1 },
+								{ slug: "hidden", visibility: "hide", priority: 0 },
+								{ slug: "no-visibility", priority: 0 },
+								{ slug: "--bad", visibility: "list", priority: 0 },
+								{ slug: "odd-priority", visibility: "list", priority: "1" },
+								{ slug: 7, visibility: "list", priority: 0 },
+								{ slug: "odd-visibility", visibility: 1, priority: 0 },
+								"not an object",
+								{ slug: "b", visibility: "list", priority: 0 },
+								{ slug: "x".repeat(101), visibility: "list", priority: 0 },
+							],
+						}),
+						`{"models":[{"slug":"huge","visibility":"list","priority":1e400}]}`,
+					].map((input) => ({ input, output: parseCodexModelCatalog(input) })),
+					claudeModelAliases: [...CLAUDE_MODEL_ALIASES],
 					preflight: ["2026-10-11T00:01:00+09:00", "2026-10-11T00:00:00.000Z", "soon"].map(
 						(deadline) => ({
 							input: { deadline, now: 0 },

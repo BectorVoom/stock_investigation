@@ -318,8 +318,7 @@ default. One page per tool call, robots.txt honoured, requests to one host space
 
 The `web.search` research tool (ADR-0025) discovers pages for `web.fetch_page`
 under the same gate: short keyword queries sent to `api.gdeltproject.org`
-(GDELT news, requests spaced 5 s apart) and `en.wikipedia.org` (Wikipedia
-search), headlines and snippets only.
+(GDELT news, requests spaced 5 s apart), headlines only.
 
 - **Where the files are:** `data/pages/` (or wherever `RUNNER_PAGES_DIR` points). File names carry the retrieval date, the host and a hash of the URL; each file's front matter records the requested and final URLs, the title, the retrieval time and a checksum of the Markdown.
 - **How to turn web access off:** uncheck "Allow the agent to open public web pages" in Settings → AI agent and save — the request then says `"off"`, the tool is not even advertised to the model, and without `RUNNER_PAGES_DIR` it is not registered at all.

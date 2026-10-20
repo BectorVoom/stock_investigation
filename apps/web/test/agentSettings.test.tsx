@@ -723,6 +723,96 @@ describe("Agent settings: openrouter free backend", () => {
 		);
 		chooseBackend("claude-code");
 		chooseOther();
-		expect(screen.getByLabelText("Model id").getAttribute("placeholder")).toBe("provider/model");
+		expect(screen.getByLabelText("Model id").getAttribute("placeholder")).toBe("model id");
+	});
+});
+
+/** What the runner reports for Codex and Claude Code: plain ids in the backend's own order. */
+const CLI_MODEL_AGENTS = agentsResponseSchema.parse({
+	...AGENTS,
+	agents: AGENTS.agents.map((agent) => {
+		if (agent.agentId === "claude-code") {
+			return {
+				...agent,
+				capabilities: { ...agent.capabilities, models: ["fable", "opus", "sonnet", "haiku"] },
+			};
+		}
+		if (agent.agentId === "codex") {
+			return {
+				...agent,
+				capabilities: {
+					...agent.capabilities,
+					models: ["gpt-6.1-sol", "gpt-6-astra", "gpt-5.6-luna"],
+				},
+				availability: { status: "available" },
+			};
+		}
+		return agent;
+	}),
+});
+
+function modelOptionTexts(): (string | null)[] {
+	return [...modelSelect().querySelectorAll("option")].map((option) => option.textContent);
+}
+
+describe("Agent settings: Codex and Claude Code model lists", () => {
+	it("offers Claude Code's models by name, so the owner never types an id", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), CLI_MODEL_AGENTS);
+		await sectionReady();
+		chooseBackend("claude-code");
+
+		expect(modelSelect().querySelectorAll("optgroup")).toHaveLength(0);
+		expect(modelOptionTexts()).toEqual([
+			"Backend default",
+			"Fable (latest)",
+			"Opus (latest)",
+			"Sonnet (latest)",
+			"Haiku (latest)",
+			"Other — type a model id…",
+		]);
+
+		chooseModel("opus");
+		fireEvent.click(saveButton());
+		await screen.findByText(/Saved /);
+		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toMatchObject({
+			defaultAgentId: "claude-code",
+			models: { "claude-code": "opus" },
+		});
+	});
+
+	it("lists Codex's models newest first, without a provider heading", async () => {
+		mount(agentSettingsResponseSchema.parse(UNSAVED), CLI_MODEL_AGENTS);
+		await sectionReady();
+		chooseBackend("codex");
+
+		expect(modelSelect().querySelectorAll("optgroup")).toHaveLength(0);
+		expect(modelOptionTexts()).toEqual([
+			"Backend default",
+			"gpt-6.1-sol",
+			"gpt-6-astra",
+			"gpt-5.6-luna",
+			"Other — type a model id…",
+		]);
+
+		chooseModel("gpt-6-astra");
+		fireEvent.click(saveButton());
+		await screen.findByText(/Saved /);
+		expect(backend.requestsTo("PUT", /settings\/agent/)[0]?.body).toMatchObject({
+			defaultAgentId: "codex",
+			models: { codex: "gpt-6-astra" },
+		});
+	});
+
+	it("keeps a stored dated Claude model id selected as a saved choice", async () => {
+		const saved = agentSettingsResponseSchema.parse({
+			settings: { ...AGENT_SETTINGS, models: { "claude-code": "claude-opus-5-5" } },
+			updatedAt: "2026-10-05T00:00:00Z",
+			origin: "saved",
+		});
+		mount(saved, CLI_MODEL_AGENTS);
+		await sectionReady();
+
+		expect(modelSelectValue()).toBe("claude-opus-5-5");
+		expect(modelOptionTexts()).toContain("claude-opus-5-5 (saved — not in the runner's list)");
 	});
 });

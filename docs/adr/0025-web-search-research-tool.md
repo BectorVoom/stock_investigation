@@ -1,6 +1,13 @@
 # ADR-0025: A web search research tool
 
-**Status:** Accepted · **Date:** 2026-10-16
+**Status:** Accepted · **Date:** 2026-10-16 · **Amended:** 2026-10-19 (Wikipedia search removed)
+
+> **Amendment (2026-10-19).** The owner asked to delete the Wikipedia search.
+> `web.search` now queries GDELT only: one request, pinned to
+> `api.gdeltproject.org`. A GDELT failure fails the call (`SEARCH_FAILED` with
+> its cause, retryable); there is no second backend to degrade to. The text
+> below describes the tool as amended; the original two-backend design is in
+> git history.
 
 ## Context
 
@@ -30,29 +37,27 @@ way to find some.
 
 **A `web.search` research tool** (`packages/adapters/src/tools/searchTools.ts`)
 discovers pages; `web.fetch_page` then reads them. One call takes
-`{ "query": "<2–200 characters of keywords>" }` and queries two key-free
-public APIs, in parallel, both through the runner's `SafeFetcher` pinned to
-their hosts:
+`{ "query": "<2–200 characters of keywords>" }` and queries one key-free
+public API through the runner's `SafeFetcher` pinned to its host:
 
 | Backend | Endpoint | What it gives |
 |---|---|---|
 | GDELT DOC 2.0 | `https://api.gdeltproject.org/api/v2/doc/doc?mode=artlist&format=json&sort=hybridrel&maxrecords=10&query=<q> sourcelang:english` | recent news articles: title, real article URL, domain, seen date |
-| Wikipedia search | `https://en.wikipedia.org/w/rest.php/v1/search/page?q=<q>&limit=3` | reference articles: title, description, excerpt |
 
-- Each result becomes one evidence item (title, publisher = domain or
-  "Wikipedia", URL, `publishedAt` = GDELT's seen date or null, retrieved text =
-  title + description/excerpt). Headlines and snippets only: `retainQuotes` is
-  false and `excerpt` null, as for web pages (DATA-010).
+- Each result becomes one evidence item (title, publisher = domain, URL,
+  `publishedAt` = GDELT's seen date or null, retrieved text = title).
+  Headlines only: `retainQuotes` is false and `excerpt` null, as for web
+  pages (DATA-010).
 - The model text lists each result with its evidence id and URL and tells the
   model to read promising pages with `web.fetch_page`.
-- One backend failing does not fail the call; the call fails (`SEARCH_FAILED`,
-  with both causes in the detail) only when both fail. Zero results from both
-  is a success with no evidence and says so in the model text.
+- A GDELT failure fails the call (`SEARCH_FAILED`, with the cause in the
+  detail). Zero results is a success with no evidence and says so in the
+  model text.
 - GDELT asks for at most one request every 5 seconds: requests to it are spaced
   5 s apart within the runner (abort-aware wait). Its non-JSON answers (rate
   limit or query errors are plain text) are a backend failure with the first
   line of the text as detail.
-- Both are APIs with their own usage policies, not crawled pages, so robots.txt
+- GDELT is an API with its own usage policy, not a crawled page, so robots.txt
   is not consulted (as for the SEC APIs); requests carry the descriptive
   User-Agent. No API key, no new setting.
 
@@ -60,7 +65,7 @@ their hosts:
 parties (the same threat as T17), so `web.search` declares
 `networkAllowlist: { kind: "public-web" }` and is advertised and authorized
 only when the request says `webAccess: "public-web"`. Inside the tool the
-fetcher is still pinned to the two hosts. It is registered independently of the
+fetcher is still pinned to the GDELT host. It is registered independently of the
 page archive (it writes nothing to disk).
 
 **The planner is told it must search when nothing fits.** The planning prompt
@@ -83,14 +88,14 @@ run had web access off.
 ## Consequences
 
 - Questions outside the subscribed feeds can now collect evidence (news
-  headlines, Wikipedia background, then fetched pages).
+  headlines, then fetched pages).
 - Search headlines are weak evidence; analysis and verification treat them as
   any other evidence item, and a claim backed only by a headline says only what
   the headline says.
 - GDELT's coverage is news only, recent months, and multilingual sources are
   filtered to English; it is a free service with no uptime promise. Market
   data (prices, charts) still needs the FRED / Twelve Data keys (ADR-0014).
-- Two more outbound hosts from the owner's machine when web access is on.
+- One more outbound host from the owner's machine when web access is on.
 - The collection allowance is now 3 of the 6 default steps, so a run whose
   first analysis draft fails its schema still reaches independent verification
   on its repair turn.

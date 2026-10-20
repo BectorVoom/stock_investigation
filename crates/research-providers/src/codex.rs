@@ -32,6 +32,43 @@ pub const CODEX_DISABLED_FEATURES: &[&str] = &[
 	"workspace_dependencies",
 	"skill_mcp_dependency_install",
 ];
+/// Output budget for `codex debug models`: one JSON line carrying every model's
+/// instructions (about 560 KB for 9 models in codex-cli 0.163.0).
+pub const CODEX_MODEL_CATALOG_MAX_CHARS: usize = 4 * 1024 * 1024;
+/// Model ids in Codex model-picker order: visibility "list", ascending priority
+/// (none = last), catalog order on ties; odd entries and invalid ids are skipped
+/// one by one and duplicates keep their first place. None when not a catalog.
+pub fn parse_codex_model_catalog(text: &str) -> Option<Vec<String>> {
+	let value = parse(text).ok()?;
+	let entries = value.as_object()?.get("models")?.as_array()?;
+	let mut listed: Vec<(&str, f64)> = Vec::new();
+	for entry in entries {
+		let parse_entry = || -> Result<Option<(&str, f64)>, Malformed> {
+			let entry = object(entry)?;
+			let slug = string(entry, "slug")?;
+			let visibility = optional_string(entry, "visibility")?;
+			let priority = match entry.get("priority") {
+				None => f64::INFINITY,
+				Some(v) => v.as_f64().filter(|p| p.is_finite()).ok_or(Malformed)?,
+			};
+			Ok((visibility == Some("list") && is_valid_model_id(slug)).then_some((slug, priority)))
+		};
+		if let Ok(Some(item)) = parse_entry() {
+			listed.push(item);
+		}
+	}
+	// Stable sort: equal priorities keep catalog order, as in JavaScript.
+	listed.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+	let mut seen = std::collections::HashSet::new();
+	Some(
+		listed
+			.into_iter()
+			.filter(|(slug, _)| seen.insert(*slug))
+			.take(300)
+			.map(|(slug, _)| slug.to_owned())
+			.collect(),
+	)
+}
 /// Exact literal argv, including quoted TOML values and final stdin marker.
 pub fn build_codex_args(scratch: &str, model: Option<&str>, effort: Effort) -> Vec<String> {
 	let mut args: Vec<_> = [
@@ -197,7 +234,7 @@ impl AgentRuntime for CodexRuntime {
 		ToolIsolation::Unverified
 	}
 	async fn probe(&self) -> AgentProbe {
-		let capabilities = AgentCapabilities {
+		let mut capabilities = AgentCapabilities {
 			supported: vec![],
 			model: None,
 			models: None,
@@ -255,6 +292,22 @@ impl AgentRuntime for CodexRuntime {
 				}
 			}
 		};
+		// Quota-free model-picker catalog for the settings selector; a failure omits the list.
+		if availability == AgentAvailability::Available {
+			if let Capture::Exited {
+				code: Some(0),
+				stdout,
+				..
+			} = capture_command_limited(
+				&self.environment.process_runner,
+				spec(&["debug", "models"]),
+				CODEX_MODEL_CATALOG_MAX_CHARS,
+			)
+			.await
+			{
+				capabilities.models = parse_codex_model_catalog(&stdout);
+			}
+		}
 		AgentProbe {
 			capabilities,
 			availability,

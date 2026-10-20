@@ -5,26 +5,26 @@
  * anything else ended with zero tool calls and `NO_EVIDENCE_COLLECTED`
  * (ADR-0025). This tool discovers pages; `web.fetch_page` then reads them.
  *
- * One call takes short keywords and queries two key-free public APIs in
- * parallel, both through the runner's `SafeFetcher` pinned to their single
- * host: GDELT DOC 2.0 for recent news, Wikipedia search for reference
- * articles. Each result becomes one evidence item (headlines and snippets
- * only: `retainQuotes` is false and `excerpt` null, as for web pages,
- * DATA-010), and the model text tells the model to read promising results
- * with `web.fetch_page` before relying on them.
+ * One call takes short keywords and queries one key-free public API, GDELT
+ * DOC 2.0 for recent news, through the runner's `SafeFetcher` pinned to its
+ * single host. (Wikipedia search was removed on 2026-10-19, ADR-0025.) Each
+ * result becomes one evidence item (headlines only: `retainQuotes` is false
+ * and `excerpt` null, as for web pages, DATA-010), and the model text tells
+ * the model to read promising results with `web.fetch_page` before relying
+ * on them.
  *
  * Everything retrieved is untrusted publisher text (SEC-001). It is passed on
  * as inert data in `modelText` / evidence; no part of it is interpreted, and
  * it cannot change which hosts are contacted or which tools run (AGT-007).
  *
- * Both backends are APIs with their own usage policies, not crawled pages, so
+ * GDELT is an API with its own usage policy, not a crawled page, so
  * robots.txt is not consulted (as for the SEC APIs); requests carry the
  * descriptive User-Agent. The tool does not depend on the page archive (it
  * writes nothing to disk), but the query is model-chosen text sent to third
  * parties — the same threat as T17 — so it declares
  * `networkAllowlist: { kind: "public-web" }` and is advertised only when the
  * run's request says `webAccess: "public-web"`. Inside the tool the fetcher
- * is still pinned to the two hosts.
+ * is still pinned to the GDELT host.
  */
 import {
 	type CollectedEvidence,
@@ -47,7 +47,6 @@ export interface SearchToolDeps {
 }
 
 const GDELT_HOST = "api.gdeltproject.org";
-const WIKIPEDIA_HOST = "en.wikipedia.org";
 /** One search response per call: at most 1 MiB, retrieved within 15 s (API-007). */
 const SEARCH_MAX_BYTES = 1_000_000;
 const SEARCH_TIMEOUT_MS = 15_000;
@@ -59,7 +58,7 @@ const SEARCH_USER_AGENT = "research-workspace/1.0 (personal research tool)";
  * least this far apart within the process (ADR-0025).
  */
 const GDELT_SPACING_MS = 5_000;
-/** A backend failure's cause is bounded so it cannot carry a whole error page into the detail. */
+/** A search failure's cause is bounded so it cannot carry a whole error page into the detail. */
 const MAX_CAUSE_CHARS = 200;
 
 const UNTRUSTED_NOTICE =
@@ -69,7 +68,7 @@ const UNTRUSTED_NOTICE =
  * GDELT DOC 2.0 `artlist` answers. `articles` may be missing (zero results).
  * Only the fields the tool uses are read, and only `url` and `title` are
  * required: one article without a date or domain must not fail the whole
- * backend. Unknown extra provider fields are stripped, not rejected.
+ * search. Unknown extra provider fields are stripped, not rejected.
  */
 const gdeltResponseSchema = z.object({
 	articles: z
@@ -84,35 +83,15 @@ const gdeltResponseSchema = z.object({
 		.optional(),
 });
 
-/**
- * Wikipedia REST `search/page` answers. `pages` may be missing (zero
- * results); a page always carries `key` and `title`, while `excerpt` and
- * `description` may be absent. The response also carries thumbnails and other
- * fields the tool does not need, so unknown keys are stripped, not rejected.
- */
-const wikipediaResponseSchema = z.object({
-	pages: z
-		.array(
-			z.object({
-				key: z.string(),
-				title: z.string(),
-				excerpt: z.string().optional(),
-				description: z.string().nullable().optional(),
-			}),
-		)
-		.optional(),
-});
-
 interface SearchHit {
 	readonly title: string;
 	readonly publisher: string;
 	readonly url: string;
 	readonly publishedAt: string | null;
 	readonly retrievedText: string;
-	readonly sourceClass: "news" | "other";
 }
 
-type BackendOutcome =
+type SearchOutcome =
 	| { readonly status: "ok"; readonly results: readonly SearchHit[] }
 	| { readonly status: "failed"; readonly cause: string }
 	| { readonly status: "aborted" };
@@ -148,55 +127,6 @@ function gdeltSeendateToIso(seendate: string): string | null {
 		return null;
 	}
 	return date.toISOString();
-}
-
-/**
- * Wikipedia excerpts arrive with `<span class="searchmatch">` markup: strip
- * every tag (they are highlight markers, never content), then decode entities
- * and collapse whitespace so the snippet reads as one line of text.
- */
-function plainExcerpt(excerpt: string): string {
-	return decodeBasicEntities(excerpt.replace(/<[^>]*>/g, ""))
-		.replace(/\s+/g, " ")
-		.trim();
-}
-
-const NAMED_ENTITIES: Readonly<Record<string, string>> = {
-	// The five predefined XML entities plus the typographic marks Wikipedia
-	// article text commonly carries; anything else stays as written rather
-	// than being guessed at.
-	amp: "&",
-	lt: "<",
-	gt: ">",
-	quot: '"',
-	apos: "'",
-	nbsp: " ",
-	ndash: "–",
-	mdash: "—",
-	hellip: "…",
-	lsquo: "‘",
-	rsquo: "’",
-	ldquo: "“",
-	rdquo: "”",
-	laquo: "«",
-	raquo: "»",
-};
-
-/** Decodes the basic entities and numeric character references; unknown names are left alone. */
-function decodeBasicEntities(text: string): string {
-	return text.replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (entity, body: string) => {
-		if (body.startsWith("#")) {
-			const hexadecimal = body[1] === "x" || body[1] === "X";
-			const codePoint = Number.parseInt(body.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
-			if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return entity;
-			try {
-				return String.fromCodePoint(codePoint);
-			} catch {
-				return entity;
-			}
-		}
-		return NAMED_ENTITIES[body] ?? entity;
-	});
 }
 
 function hostOrUnknown(url: string): string {
@@ -240,7 +170,7 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 		return true;
 	}
 
-	async function fetchGdelt(query: string, signal: AbortSignal): Promise<BackendOutcome> {
+	async function fetchGdelt(query: string, signal: AbortSignal): Promise<SearchOutcome> {
 		if (!(await waitGdeltSpacing(signal))) return { status: "aborted" };
 		const url =
 			`https://api.gdeltproject.org/api/v2/doc/doc` +
@@ -277,51 +207,6 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 				publishedAt: article.seendate === undefined ? null : gdeltSeendateToIso(article.seendate),
 				// GDELT gives headlines only: the title is the whole retrieved text.
 				retrievedText: title,
-				sourceClass: "news",
-			});
-		}
-		return { status: "ok", results };
-	}
-
-	async function fetchWikipedia(query: string, signal: AbortSignal): Promise<BackendOutcome> {
-		const url =
-			`https://en.wikipedia.org/w/rest.php/v1/search/page` +
-			`?q=${encodeURIComponent(query)}&limit=3`;
-		const fetched = await deps.fetcher.fetchText(url, {
-			maxBytes: SEARCH_MAX_BYTES,
-			timeoutMs: SEARCH_TIMEOUT_MS,
-			accept: SEARCH_ACCEPT,
-			signal,
-			allowedHosts: new Set([WIKIPEDIA_HOST]),
-			userAgent: SEARCH_USER_AGENT,
-		});
-		if (!fetched.ok) return { status: "failed", cause: fetchCause(fetched.error) };
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(fetched.value.text);
-		} catch {
-			return { status: "failed", cause: firstLine(fetched.value.text) };
-		}
-		const shaped = wikipediaResponseSchema.safeParse(parsed);
-		if (!shaped.success) return { status: "failed", cause: "unexpected response shape" };
-		const results: SearchHit[] = [];
-		for (const page of shaped.data.pages ?? []) {
-			const title = page.title.trim();
-			if (title === "" || page.key === "") continue;
-			const excerptText = plainExcerpt(page.excerpt ?? "");
-			const description = (page.description ?? "").trim();
-			const parts = [title];
-			if (description !== "") parts.push(description);
-			if (excerptText !== "" && excerptText !== description) parts.push(excerptText);
-			results.push({
-				title,
-				publisher: "Wikipedia",
-				url: `https://en.wikipedia.org/wiki/${encodeURIComponent(page.key)}`,
-				// A search hit carries no publication date; the model is told
-				// to treat undated material as possibly stale (DATA-002).
-				publishedAt: null,
-				retrievedText: parts.join("\n"),
-				sourceClass: "other",
 			});
 		}
 		return { status: "ok", results };
@@ -332,10 +217,10 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			toolId: "web.search",
 			version: "1.0.0",
 			description:
-				"Searches recent news (GDELT) and Wikipedia for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
+				"Searches recent news (GDELT) for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
 			argsSchema: z.strictObject({ query: z.string().trim().min(2).max(200) }),
 			argsHint: '{ "query": "<2–200 characters of keywords, e.g. gold price 2026>" }',
-			// Covers the 5 s GDELT spacing plus both requests (2 × 15 s) with margin (AGT-008).
+			// Covers the 5 s GDELT spacing plus the 15 s request with margin (AGT-008).
 			timeoutMs: 40_000,
 			permission: "research-read",
 			costCategory: "rate-limited",
@@ -343,37 +228,24 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			sideEffect: "external-read",
 			networkAllowlist: { kind: "public-web" },
 			async execute({ query }, context: ToolContext) {
-				// Both backends are queried in parallel; one failing does not
-				// fail the call — only both failing, or an abort, does.
-				const [gdelt, wikipedia] = await Promise.all([
-					fetchGdelt(query, context.signal),
-					fetchWikipedia(query, context.signal),
-				]);
-				if (gdelt.status === "aborted" || wikipedia.status === "aborted") {
+				const gdelt = await fetchGdelt(query, context.signal);
+				if (gdelt.status === "aborted") {
 					return err(toolFailure("TOOL_ABORTED", "run was cancelled"));
 				}
-				if (gdelt.status === "failed" && wikipedia.status === "failed") {
-					return err(toolFailure("SEARCH_FAILED", `${gdelt.cause}; ${wikipedia.cause}`, true));
+				if (gdelt.status === "failed") {
+					return err(toolFailure("SEARCH_FAILED", gdelt.cause, true));
 				}
 
 				const retrievedAt = context.nowIso();
 				const seenUrls = new Set<string>();
 				const evidence: CollectedEvidence[] = [];
 				const lines = [UNTRUSTED_NOTICE];
-				const hits =
-					gdelt.status === "ok" && wikipedia.status === "ok"
-						? [...gdelt.results, ...wikipedia.results]
-						: gdelt.status === "ok"
-							? gdelt.results
-							: wikipedia.status === "ok"
-								? wikipedia.results
-								: [];
-				for (const hit of hits) {
+				for (const hit of gdelt.results) {
 					// Only https public URLs are kept (SSRF policy, SEC-002):
 					// non-https or private result URLs are dropped, not fatal.
 					const target = validateFetchUrl(hit.url);
 					if (!target.ok) continue;
-					// The same page may surface in both backends; one evidence item per URL.
+					// GDELT may list the same page twice; one evidence item per URL.
 					if (seenUrls.has(target.value.href)) continue;
 					seenUrls.add(target.value.href);
 					const collected = await collectEvidence(deps.hasher, {
@@ -384,9 +256,9 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 						publishedAt: hit.publishedAt,
 						retrievedAt,
 						effectiveAt: null,
-						sourceClass: hit.sourceClass,
+						sourceClass: "news",
 						retrievedText: hit.retrievedText,
-						// Headlines and snippets only: nothing is stored (DATA-010).
+						// Headlines only: nothing is stored (DATA-010).
 						retainQuotes: false,
 						excerpt: null,
 					});
@@ -396,24 +268,14 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 						`[${item.evidenceId}] ${item.title} — ${item.publisher}; ${item.publishedAt ?? "undated"} — ${item.sourceUrl}`,
 					);
 				}
-				// A backend that failed while the other delivered nothing (or was
-				// not reached) is still named with its cause, so the model
-				// knows what it did not see.
-				const failureLines: string[] = [];
-				if (gdelt.status === "failed")
-					failureLines.push(`GDELT news search failed: ${gdelt.cause}.`);
-				if (wikipedia.status === "failed")
-					failureLines.push(`Wikipedia search failed: ${wikipedia.cause}.`);
 				if (evidence.length === 0) {
 					return ok({
 						...EMPTY_TOOL_OUTPUT,
 						modelText: boundModelText([
 							`No results for ${query}. Try shorter or different keywords.`,
-							...failureLines,
 						]),
 					});
 				}
-				lines.push(...failureLines);
 				lines.push("Read a promising result with web.fetch_page before relying on it.");
 				return ok({
 					...EMPTY_TOOL_OUTPUT,

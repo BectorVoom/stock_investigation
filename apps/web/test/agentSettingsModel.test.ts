@@ -11,6 +11,7 @@ import {
 	backendRequiresModel,
 	buildModelSelectOptions,
 	costStatement,
+	customModelPlaceholder,
 	defaultSpendDraft,
 	evaluateAgentSettings,
 	evaluateBudget,
@@ -20,6 +21,7 @@ import {
 	isFreeTierModelId,
 	isSettingsDraftChanged,
 	MODEL_OTHER_VALUE,
+	modelOptionLabel,
 	modelSelectValue,
 	reportedModels,
 	runnerNotice,
@@ -413,6 +415,37 @@ describe("model selector options", () => {
 		expect(buildModelSelectOptions(["a/x"], "kept/y", true).savedModel).toBe("kept/y");
 		expect(buildModelSelectOptions(["a/x"], "", true).savedModel).toBeNull();
 		expect(buildModelSelectOptions(["a/x"], ` ${"kept/y"} `, true).savedModel).toBe("kept/y");
+	});
+
+	it("shows a list without provider prefixes flat, in the runner's order", () => {
+		expect(
+			buildModelSelectOptions(
+				["gpt-6.1-sol", "gpt-6-astra", "gpt-6.1-sol", MODEL_OTHER_VALUE],
+				"",
+				false,
+			).groups,
+		).toEqual([{ provider: null, models: ["gpt-6.1-sol", "gpt-6-astra"] }]);
+		// One provider-prefixed id keeps the grouped, sorted layout.
+		expect(buildModelSelectOptions(["plain", "a/x"], "", false).groups).toEqual([
+			{ provider: "a", models: ["a/x"] },
+			{ provider: "other", models: ["plain"] },
+		]);
+	});
+
+	it("names Claude Code's aliases and leaves every other id as it is", () => {
+		expect(modelOptionLabel("claude-code", "opus")).toBe("Opus (latest)");
+		expect(modelOptionLabel("claude-code", "fable")).toBe("Fable (latest)");
+		expect(modelOptionLabel("claude-code", "claude-opus-5-5")).toBe("claude-opus-5-5");
+		expect(modelOptionLabel("codex", "gpt-6.1-sol")).toBe("gpt-6.1-sol");
+		expect(modelOptionLabel("opencode", "opus")).toBe("opus");
+	});
+
+	it("asks for the id shape each backend expects in the Other input", () => {
+		expect(customModelPlaceholder("opencode")).toBe("provider/model");
+		expect(customModelPlaceholder("openrouter")).toBe("provider/model");
+		expect(customModelPlaceholder(OPENROUTER_FREE_AGENT_ID)).toBe("provider/model:free");
+		expect(customModelPlaceholder("codex")).toBe("model id");
+		expect(customModelPlaceholder("claude-code")).toBe("model id");
 	});
 
 	it("falls back to first plus Other when no models are reported", () => {

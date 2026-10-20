@@ -224,6 +224,41 @@ async fn the_real_opencode_probe_prints_its_descriptor() {
 	);
 }
 
+/// Real-environment check (quota-free `codex debug models`): run with
+/// `cargo test -p research-runner --test process -- --ignored --nocapture`.
+#[tokio::test]
+#[ignore = "needs the codex CLI installed and logged in"]
+async fn the_real_codex_probe_lists_its_models() {
+	let runtime = research_providers::codex::CodexRuntime::new(environment(
+		Arc::new(runner()),
+		unused_http(),
+		real_env(),
+	));
+	let probe = runtime.probe().await;
+	println!(
+		"PROBE {}",
+		serde_json::json!({"capabilities": probe.capabilities, "availability": probe.availability})
+	);
+	assert!(probe.capabilities.models.is_some_and(|m| !m.is_empty()));
+}
+
+/// Real-environment check (quota-free `claude auth status`), run like the Codex one.
+#[tokio::test]
+#[ignore = "needs the claude CLI installed and logged in"]
+async fn the_real_claude_probe_lists_its_model_aliases() {
+	let runtime = research_providers::claude_code::ClaudeCodeRuntime::new(environment(
+		Arc::new(runner()),
+		unused_http(),
+		real_env(),
+	));
+	let probe = runtime.probe().await;
+	println!(
+		"PROBE {}",
+		serde_json::json!({"capabilities": probe.capabilities, "availability": probe.availability})
+	);
+	assert!(probe.capabilities.models.is_some_and(|m| !m.is_empty()));
+}
+
 fn alive(pid: &str) -> bool {
 	std::process::Command::new("kill")
 		.args(["-0", pid])

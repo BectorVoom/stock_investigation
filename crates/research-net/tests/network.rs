@@ -1372,10 +1372,6 @@ async fn measure_fresh_and_reused_search_requests() {
 	let gdelt = format!(
 		"https://api.gdeltproject.org/api/v2/doc/doc?query={query}&mode=artlist&format=json&maxrecords=10&sort=hybridrel"
 	);
-	let wikipedia = format!(
-		"https://en.wikipedia.org/w/rest.php/v1/search/page?q={}&limit=3",
-		research_js::uri::encode_uri_component("gold price")
-	);
 	let options = |host: &str| SafeFetchOptions {
 		max_bytes: 1_000_000,
 		timeout_ms: 15_000,
@@ -1388,10 +1384,7 @@ async fn measure_fresh_and_reused_search_requests() {
 		finnhub_token: None,
 		include_error_body: false,
 	};
-	for (name, url, host) in [
-		("GDELT", gdelt.as_str(), "api.gdeltproject.org"),
-		("Wikipedia", wikipedia.as_str(), "en.wikipedia.org"),
-	] {
+	for (name, url, host) in [("GDELT", gdelt.as_str(), "api.gdeltproject.org")] {
 		for attempt in ["fresh", "reused"] {
 			let opened_before = connect.connections_opened();
 			let started = Instant::now();

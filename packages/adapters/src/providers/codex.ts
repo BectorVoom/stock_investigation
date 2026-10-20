@@ -82,6 +82,7 @@ import {
 	failedEvent,
 	failureForHint,
 	hintFromText,
+	isValidModelId,
 	PROVIDER_FAILURES,
 	parseJsonLine,
 	preflightTurn,
@@ -95,6 +96,53 @@ const CODEX_ENV_KEYS = ["CODEX_HOME"] as const;
 
 /** No `stream` (whole messages only) and no `cancel` (a process kill is not a provider cancel). */
 const CAPABILITIES: AgentCapabilities = { supported: [] };
+
+/**
+ * Output budget for `codex debug models`. The catalog is one JSON line that
+ * carries each model's full instructions (about 560 KB for 9 models in
+ * codex-cli 0.163.0), so the status-command budget would cut it off.
+ */
+export const CODEX_MODEL_CATALOG_MAX_CHARS = 4 * 1024 * 1024;
+
+/** Contract cap on `capabilities.models`. */
+const MAX_REPORTED_MODELS = 300;
+
+const catalogEnvelopeSchema = z.looseObject({ models: z.array(z.unknown()) });
+
+const catalogEntrySchema = z.looseObject({
+	slug: z.string(),
+	visibility: z.string().optional(),
+	priority: z.number().optional(),
+});
+
+/**
+ * Model ids from `codex debug models`, in the order the Codex model picker
+ * shows them: entries with visibility "list", by ascending `priority` (an
+ * entry without one goes last), catalog order breaking ties. Each entry is
+ * checked on its own, so one odd entry never hides the rest; ids that fail
+ * the model-id validation are dropped and duplicates keep their first place.
+ * Null when the output is not a catalog at all.
+ */
+export function parseCodexModelCatalog(stdout: string): string[] | null {
+	const json = parseJsonLine(stdout);
+	const envelope = json.ok ? catalogEnvelopeSchema.safeParse(json.value) : null;
+	if (envelope === null || !envelope.success) return null;
+	const listed: { readonly slug: string; readonly priority: number }[] = [];
+	for (const entry of envelope.data.models) {
+		const parsed = catalogEntrySchema.safeParse(entry);
+		if (!parsed.success || parsed.data.visibility !== "list") continue;
+		if (!isValidModelId(parsed.data.slug)) continue;
+		listed.push({
+			slug: parsed.data.slug,
+			priority: parsed.data.priority ?? Number.POSITIVE_INFINITY,
+		});
+	}
+	// Array.prototype.sort is stable, so equal priorities keep catalog order.
+	listed.sort((left, right) =>
+		left.priority < right.priority ? -1 : left.priority > right.priority ? 1 : 0,
+	);
+	return [...new Set(listed.map((entry) => entry.slug))].slice(0, MAX_REPORTED_MODELS);
+}
 
 /** Feature flags that exist in codex-cli 0.160.0 and each add a tool or an ambient extension. */
 export const CODEX_DISABLED_FEATURES = [
@@ -283,7 +331,23 @@ export function createCodexRuntime(environment: ProviderEnvironment): AgentRunti
 				availability: unavailable("PROBE_FAILED", "`codex login status` output was not understood"),
 			};
 		}
-		return { capabilities: CAPABILITIES, availability: AVAILABLE };
+		// The model list lets Settings → AI agent offer a selector instead of
+		// asking the owner for an id. `codex debug models` prints the catalog
+		// the model picker uses; it sends no prompt and spends no quota. When
+		// it fails, the backend stays available and the list is omitted.
+		const catalog = await captureCommand(
+			environment.processRunner,
+			{ ...base, command: COMMAND, args: ["debug", "models"] },
+			{ maxOutputChars: CODEX_MODEL_CATALOG_MAX_CHARS },
+		);
+		const models =
+			catalog.kind === "exited" && catalog.code === 0
+				? parseCodexModelCatalog(catalog.stdout)
+				: null;
+		return {
+			capabilities: models === null ? CAPABILITIES : { ...CAPABILITIES, models },
+			availability: AVAILABLE,
+		};
 	}
 
 	async function* run(request: AgentRequest, context: AgentRunContext): AsyncGenerator<AgentEvent> {

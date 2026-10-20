@@ -34,7 +34,15 @@ pub enum Capture {
 	TimedOut,
 }
 /// Runs a status command with empty stdin and an independent abort token.
-pub async fn capture_command(runner: &Arc<dyn ProcessRunner>, mut spec: ProcessSpec) -> Capture {
+pub async fn capture_command(runner: &Arc<dyn ProcessRunner>, spec: ProcessSpec) -> Capture {
+	capture_command_limited(runner, spec, PROBE_MAX_OUTPUT_CHARS).await
+}
+/// `capture_command` with its own stdout budget, for a catalog larger than a status line.
+pub async fn capture_command_limited(
+	runner: &Arc<dyn ProcessRunner>,
+	mut spec: ProcessSpec,
+	max_output_chars: usize,
+) -> Capture {
 	spec.stdin.clear();
 	spec.cancel = tokio_util::sync::CancellationToken::new();
 	let cancel = spec.cancel.clone();
@@ -57,7 +65,7 @@ pub async fn capture_command(runner: &Arc<dyn ProcessRunner>, mut spec: ProcessS
 			let mut lines = Vec::new();
 			while let Some(line) = stream.next().await {
 				chars += utf16_len(&line) + 1;
-				if chars > PROBE_MAX_OUTPUT_CHARS {
+				if chars > max_output_chars {
 					break;
 				}
 				lines.push(line);

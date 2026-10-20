@@ -102,6 +102,15 @@ const CLAUDE_ENV_KEYS = ["CLAUDE_CONFIG_DIR", "CLAUDE_CODE_OAUTH_TOKEN"] as cons
 
 const CAPABILITIES: AgentCapabilities = { supported: ["stream"] };
 
+/**
+ * Models Settings → AI agent offers for this backend. The CLI has no command
+ * that lists models, but `--model` takes these aliases, each naming the newest
+ * model of its family, so the owner never needs a dated model id (checked
+ * with Claude Code 2.1.302 on a subscription login: fable, opus, sonnet and
+ * haiku each answered). Ordered from most to least capable.
+ */
+export const CLAUDE_MODEL_ALIASES = ["fable", "opus", "sonnet", "haiku"] as const;
+
 /** Replaces the CLI's coding-agent system prompt; the research instructions arrive in the prompt. */
 const SYSTEM_PROMPT =
 	"You are a text-generation backend for a research application. You have no tools and cannot take actions. Answer the user message with text only, in exactly the format it asks for.";
@@ -401,7 +410,14 @@ export function createClaudeCodeRuntime(environment: ProviderEnvironment): Agent
 				availability: unavailable("PROBE_FAILED", "`claude auth status` output was not understood"),
 			};
 		}
-		return { capabilities: CAPABILITIES, availability: availabilityForAuthStatus(parsed.data) };
+		const availability = availabilityForAuthStatus(parsed.data);
+		return {
+			capabilities:
+				availability.status === "available"
+					? { ...CAPABILITIES, models: [...CLAUDE_MODEL_ALIASES] }
+					: CAPABILITIES,
+			availability,
+		};
 	}
 
 	async function* run(request: AgentRequest, context: AgentRunContext): AsyncGenerator<AgentEvent> {

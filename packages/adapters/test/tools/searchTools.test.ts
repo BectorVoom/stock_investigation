@@ -1,12 +1,11 @@
 /**
- * Tests for `web.search`, the model's keyword search over recent news (GDELT)
- * and Wikipedia.
+ * Tests for `web.search`, the model's keyword search over recent news (GDELT).
  *
  * Every test uses a scripted fetcher, a controllable clock and a recording
  * sleep: no socket is ever opened. Asserted here are the tool's own contract —
- * both backends becoming evidence with the right URLs, publishers and dates,
- * Wikipedia markup stripped, a failed backend degrading instead of failing
- * the call, the GDELT 5 s spacing with its abort behaviour, and the URL
+ * GDELT articles becoming evidence with the right URLs, publishers and dates,
+ * a GDELT failure failing the call with its cause, Wikipedia never being
+ * contacted, the GDELT 5 s spacing with its abort behaviour, and the URL
  * policy dropping non-https and private result URLs. The SSRF hard gate lives
  * in `tests/security/`.
  */
@@ -18,7 +17,6 @@ import { MAX_MODEL_TEXT_BYTES } from "../../src/tools/shared.ts";
 import { createScriptedFetcher, createToolContext, NOW_ISO, type ScriptedPage } from "./support.ts";
 
 const GDELT_HOST = "api.gdeltproject.org";
-const WIKIPEDIA_HOST = "en.wikipedia.org";
 
 function gdeltUrl(query: string): string {
 	return (
@@ -26,10 +24,6 @@ function gdeltUrl(query: string): string {
 		`?query=${encodeURIComponent(`${query} sourcelang:english`)}` +
 		`&mode=artlist&format=json&maxrecords=10&sort=hybridrel`
 	);
-}
-
-function wikipediaUrl(query: string): string {
-	return `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(query)}&limit=3`;
 }
 
 const GDELT_OK = {
@@ -49,18 +43,6 @@ const GDELT_OK = {
 			domain: "markets.synthetic-wire.org",
 			language: "English",
 			sourcecountry: "United Kingdom",
-		},
-	],
-};
-
-const WIKIPEDIA_OK = {
-	pages: [
-		{
-			key: "Gold",
-			title: "Gold",
-			description: "Chemical element with symbol Au",
-			excerpt:
-				'<span class="searchmatch">Gold</span> is a chemical element with the symbol Au &amp; atomic number 79.',
 		},
 	],
 };
@@ -111,7 +93,6 @@ function setup(
 function pagesFor(query: string): { readonly [url: string]: ScriptedPage } {
 	return {
 		[gdeltUrl(query)]: { text: JSON.stringify(GDELT_OK), contentType: "application/json" },
-		[wikipediaUrl(query)]: { text: JSON.stringify(WIKIPEDIA_OK), contentType: "application/json" },
 	};
 }
 
@@ -143,10 +124,6 @@ describe("web.search: happy path", () => {
 				}),
 				contentType: "application/json",
 			},
-			[wikipediaUrl(query)]: {
-				text: JSON.stringify({ pages: [] }),
-				contentType: "application/json",
-			},
 		});
 		const result = await tool.execute({ query }, createToolContext());
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
@@ -154,10 +131,9 @@ describe("web.search: happy path", () => {
 		const bare = result.value.evidence[0]?.evidence;
 		expect(bare?.publisher).toBe("news.synthetic-wire.org");
 		expect(bare?.publishedAt).toBe(null);
-		expect(result.value.modelText).not.toContain("GDELT news search failed");
 	});
 
-	it("turns both backends' results into evidence with correct URLs, publishers and dates", async () => {
+	it("turns GDELT articles into evidence with correct URLs, publishers and dates", async () => {
 		const query = "gold price";
 		const { fetcher, tool } = setup(pagesFor(query));
 		const context = createToolContext();
@@ -165,19 +141,19 @@ describe("web.search: happy path", () => {
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
 		const output = result.value;
 
-		expect(output.evidence).toHaveLength(3);
+		expect(output.evidence).toHaveLength(2);
 		for (const collected of output.evidence) {
 			expect(evidenceSchema.safeParse(collected.evidence).success).toBe(true);
 			// Invariant relied on by verification: checksum === sha256(retrievedText).
 			expect(collected.evidence.checksum).toBe(sha256(collected.retrievedText));
-			// Headlines and snippets only: nothing is stored (DATA-010).
+			// Headlines only: nothing is stored (DATA-010).
 			expect(collected.retainQuotes).toBe(false);
 			expect(collected.evidence.excerpt).toBeNull();
 			expect(collected.evidence.retrievedAt).toBe(NOW_ISO);
 			expect(collected.evidence.effectiveAt).toBeNull();
 		}
 
-		const [gold, dealers, wiki] = output.evidence;
+		const [gold, dealers] = output.evidence;
 		expect(gold?.evidence).toMatchObject({
 			evidenceId: "run_test_ev1",
 			sourceUrl: "https://news.synthetic-wire.org/2026/10/gold-price-record",
@@ -190,23 +166,14 @@ describe("web.search: happy path", () => {
 		// A malformed GDELT seen date is null, never a guess — the result is kept.
 		expect(dealers?.evidence.publishedAt).toBeNull();
 		expect(dealers?.evidence.sourceUrl).toBe("https://markets.synthetic-wire.org/gold-outlook");
-		expect(wiki?.evidence).toMatchObject({
-			sourceUrl: "https://en.wikipedia.org/wiki/Gold",
-			title: "Gold",
-			publisher: "Wikipedia",
-			publishedAt: null,
-			sourceClass: "other",
-		});
-		expect(wiki?.retrievedText).toBe(
-			"Gold\nChemical element with symbol Au\nGold is a chemical element with the symbol Au & atomic number 79.",
-		);
+		expect(dealers?.evidence.sourceClass).toBe("news");
 
 		// The model text names every result with id, date-or-undated and URL,
 		// carries the untrusted-content notice, and points at the page tool.
 		expect(output.modelText).toContain(
 			"[run_test_ev1] Gold price hits record on safe-haven demand — news.synthetic-wire.org; 2026-10-16T11:15:00.000Z — https://news.synthetic-wire.org/2026/10/gold-price-record",
 		);
-		expect(output.modelText).toContain("undated — https://en.wikipedia.org/wiki/Gold");
+		expect(output.modelText).toContain("undated — https://markets.synthetic-wire.org/gold-outlook");
 		expect(output.modelText).toContain("untrusted publisher content");
 		expect(output.modelText).toContain(
 			"Read a promising result with web.fetch_page before relying on it.",
@@ -214,52 +181,45 @@ describe("web.search: happy path", () => {
 		expect(new TextEncoder().encode(output.modelText).byteLength).toBeLessThanOrEqual(
 			MAX_MODEL_TEXT_BYTES,
 		);
-		expect([...fetcher.urls()].sort()).toEqual([gdeltUrl(query), wikipediaUrl(query)].sort());
+		// GDELT is the only backend: Wikipedia is never contacted.
+		expect([...fetcher.urls()]).toEqual([gdeltUrl(query)]);
 	});
 
-	it("pins each backend to its single host with bounded JSON requests", async () => {
+	it("pins the request to the GDELT host with a bounded JSON request", async () => {
 		const query = "gold price";
 		const { fetcher, tool } = setup(pagesFor(query));
 		const context = createToolContext();
 		const result = await tool.execute({ query }, context);
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
-		const byUrl = new Map(fetcher.calls.map((call) => [call.url, call.options]));
-		const gdelt = byUrl.get(gdeltUrl(query));
-		const wikipedia = byUrl.get(wikipediaUrl(query));
-		expect(gdelt?.allowedHosts).toEqual(new Set([GDELT_HOST]));
-		expect(wikipedia?.allowedHosts).toEqual(new Set([WIKIPEDIA_HOST]));
-		for (const options of [gdelt, wikipedia]) {
-			expect(options?.maxBytes).toBeLessThanOrEqual(1_000_000);
-			expect(options?.timeoutMs).toBeLessThanOrEqual(15_000);
-			expect(options?.accept).toContain("application/json");
-			expect(options?.userAgent).toBe("research-workspace/1.0 (personal research tool)");
-			expect(options?.signal).toBe(context.signal);
-		}
+		expect(fetcher.calls).toHaveLength(1);
+		const options = fetcher.calls[0]?.options;
+		expect(options?.allowedHosts).toEqual(new Set([GDELT_HOST]));
+		expect(options?.maxBytes).toBeLessThanOrEqual(1_000_000);
+		expect(options?.timeoutMs).toBeLessThanOrEqual(15_000);
+		expect(options?.accept).toContain("application/json");
+		expect(options?.userAgent).toBe("research-workspace/1.0 (personal research tool)");
+		expect(options?.signal).toBe(context.signal);
 	});
 
-	it("deduplicates one URL seen in both backends", async () => {
+	it("deduplicates one URL GDELT lists twice", async () => {
 		const query = "gold";
+		const article = {
+			url: "https://news.synthetic-wire.org/2026/10/gold-price-record",
+			title: "Gold price hits record",
+			seendate: "20261016T111500Z",
+			domain: "news.synthetic-wire.org",
+		};
 		const { tool } = setup({
 			[gdeltUrl(query)]: {
 				text: JSON.stringify({
-					articles: [
-						{
-							url: "https://en.wikipedia.org/wiki/Gold",
-							title: "Gold price hits record",
-							seendate: "20261016T111500Z",
-							domain: "news.synthetic-wire.org",
-							language: "English",
-							sourcecountry: "United States",
-						},
-					],
+					articles: [article, { ...article, title: "Gold record (update)" }],
 				}),
 			},
-			[wikipediaUrl(query)]: { text: JSON.stringify(WIKIPEDIA_OK) },
 		});
 		const result = await tool.execute({ query }, createToolContext());
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
 		expect(result.value.evidence).toHaveLength(1);
-		expect(result.value.evidence[0]?.evidence.sourceUrl).toBe("https://en.wikipedia.org/wiki/Gold");
+		expect(result.value.evidence[0]?.evidence.title).toBe("Gold price hits record");
 	});
 
 	it("drops non-https and private result URLs without failing", async () => {
@@ -295,7 +255,6 @@ describe("web.search: happy path", () => {
 					],
 				}),
 			},
-			[wikipediaUrl(query)]: { text: JSON.stringify({ pages: [] }) },
 		});
 		const result = await tool.execute({ query }, createToolContext());
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
@@ -306,46 +265,29 @@ describe("web.search: happy path", () => {
 	});
 });
 
-describe("web.search: partial and empty results", () => {
-	it("keeps Wikipedia results when GDELT answers with plain text, naming the failed backend", async () => {
+describe("web.search: failures and empty results", () => {
+	it("fails with SEARCH_FAILED carrying the first line when GDELT answers with plain text", async () => {
 		const query = "gold price";
 		const { tool } = setup({
 			[gdeltUrl(query)]: {
 				text: "Please limit requests to one every 5 seconds.\nTry again later.",
 			},
-			[wikipediaUrl(query)]: { text: JSON.stringify(WIKIPEDIA_OK) },
 		});
 		const result = await tool.execute({ query }, createToolContext());
-		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
-		expect(result.value.evidence).toHaveLength(1);
-		expect(result.value.evidence[0]?.evidence.publisher).toBe("Wikipedia");
-		expect(result.value.modelText).toContain(
-			"GDELT news search failed: Please limit requests to one every 5 seconds.",
-		);
-		expect(result.value.modelText).toContain(
-			"Read a promising result with web.fetch_page before relying on it.",
-		);
-	});
-
-	it("keeps GDELT results when Wikipedia fails, naming the failed backend", async () => {
-		const query = "gold price";
-		const { tool } = setup({
-			[gdeltUrl(query)]: { text: JSON.stringify(GDELT_OK) },
-			[wikipediaUrl(query)]: {
-				error: { code: "TIMEOUT", detail: "no complete response within 15000 ms" },
+		expect(result).toMatchObject({
+			ok: false,
+			error: {
+				code: "SEARCH_FAILED",
+				detail: "Please limit requests to one every 5 seconds.",
+				retryable: true,
 			},
 		});
-		const result = await tool.execute({ query }, createToolContext());
-		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
-		expect(result.value.evidence).toHaveLength(2);
-		expect(result.value.modelText).toContain("Wikipedia search failed: TIMEOUT");
 	});
 
-	it("fails with SEARCH_FAILED carrying both causes only when both backends fail", async () => {
+	it("fails with SEARCH_FAILED carrying the fetch error", async () => {
 		const query = "gold price";
 		const { tool } = setup({
-			[gdeltUrl(query)]: { text: "The specified phrase is too short." },
-			[wikipediaUrl(query)]: {
+			[gdeltUrl(query)]: {
 				error: { code: "TIMEOUT", detail: "no complete response within 15000 ms" },
 			},
 		});
@@ -354,7 +296,7 @@ describe("web.search: partial and empty results", () => {
 			ok: false,
 			error: {
 				code: "SEARCH_FAILED",
-				detail: "The specified phrase is too short.; TIMEOUT: no complete response within 15000 ms",
+				detail: "TIMEOUT: no complete response within 15000 ms",
 				retryable: true,
 			},
 		});
@@ -365,29 +307,18 @@ describe("web.search: partial and empty results", () => {
 		const longLine = `x${"y".repeat(500)}`;
 		const { tool } = setup({
 			[gdeltUrl(query)]: { text: `${longLine}\nsecond line` },
-			[wikipediaUrl(query)]: { text: JSON.stringify({ pages: [] }) },
 		});
 		const result = await tool.execute({ query }, createToolContext());
-		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
-		// No evidence, but the backend failure is still named — the model
-		// must know the backend was not actually searched.
-		expect(result.value.evidence).toEqual([]);
-		expect(result.value.modelText).toContain(
-			"No results for gold price. Try shorter or different keywords.",
-		);
-		const causeLine = result.value.modelText
-			.split("\n")
-			.find((line) => line.startsWith("GDELT news search failed:"));
-		expect(causeLine).toBeDefined();
-		expect(causeLine?.length).toBeLessThanOrEqual("GDELT news search failed: ".length + 200 + 1);
-		expect(causeLine).not.toContain("second line");
+		if (result.ok) throw new Error("expected SEARCH_FAILED");
+		expect(result.error.code).toBe("SEARCH_FAILED");
+		expect(result.error.detail.length).toBeLessThanOrEqual(200);
+		expect(result.error.detail).not.toContain("second line");
 	});
 
-	it("answers zero results from both backends as a success with no evidence", async () => {
+	it("answers zero results as a success with no evidence", async () => {
 		const query = "zxqy wobble";
 		const { tool } = setup({
 			[gdeltUrl(query)]: { text: JSON.stringify({}) },
-			[wikipediaUrl(query)]: { text: JSON.stringify({ pages: [] }) },
 		});
 		const result = await tool.execute({ query }, createToolContext());
 		if (!result.ok) throw new Error(`unexpected failure ${result.error.code}`);
@@ -425,7 +356,7 @@ describe("web.search: GDELT spacing", () => {
 		const { tool, sleep, time } = setup(pagesFor(query), { advanceClockOnSleep: true });
 		expect((await tool.execute({ query }, createToolContext())).ok).toBe(true);
 		expect(sleep.waits).toEqual([]);
-		// Wikipedia may go at once; the second GDELT request waits the remainder.
+		// The second GDELT request waits the remainder of the 5 s.
 		time.advance(200);
 		expect((await tool.execute({ query }, createToolContext())).ok).toBe(true);
 		expect(sleep.waits).toEqual([4800]);

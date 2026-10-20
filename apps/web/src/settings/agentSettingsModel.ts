@@ -155,7 +155,8 @@ export const FREE_PLAN_NOTE =
 	"OpenRouter limits free models per minute and per day, and each agent step of a question uses one request. No spend is authorized for this backend.";
 
 export interface ModelProviderGroup {
-	readonly provider: string;
+	/** The `<optgroup>` heading, or null for a list shown without one. */
+	readonly provider: string | null;
 	readonly models: readonly string[];
 }
 
@@ -193,10 +194,19 @@ export interface ModelSelectOptions {
 	readonly savedModel: string | null;
 }
 
+function hasProviderPrefix(model: string): boolean {
+	return model.indexOf("/") > 0;
+}
+
 /**
  * Option-building rules for the "Model for this backend" selector: which
  * first option applies, grouping/sorting, and the saved-but-unlisted option.
  * `currentModel` is the trimmed model text for the selected backend.
+ *
+ * A list in which no id names a provider (Codex's catalog, Claude Code's
+ * aliases) is one flat list in the runner's order, which is the backend's
+ * own newest-first order; a heading or an alphabetical sort would only hide
+ * that. Provider-prefixed lists are grouped by provider as before.
  */
 export function buildModelSelectOptions(
 	reported: readonly string[] | null,
@@ -205,7 +215,11 @@ export function buildModelSelectOptions(
 ): ModelSelectOptions {
 	const trimmed = currentModel.trim();
 	const listed = reported ?? [];
-	const groups = groupModelsByProvider(listed);
+	const flat = [...new Set(listed)].filter((model) => model !== MODEL_OTHER_VALUE);
+	const groups =
+		flat.length > 0 && !flat.some(hasProviderPrefix)
+			? [{ provider: null, models: flat }]
+			: groupModelsByProvider(listed);
 	const inList = listed.includes(trimmed);
 	const savedModel = trimmed === "" || inList || trimmed === MODEL_OTHER_VALUE ? null : trimmed;
 	return {
@@ -213,6 +227,30 @@ export function buildModelSelectOptions(
 		groups,
 		savedModel,
 	};
+}
+
+/**
+ * Claude Code's `--model` aliases, each the newest model of its family. The
+ * runner reports the aliases; this only names them for the owner.
+ */
+const CLAUDE_ALIAS_LABELS: Readonly<Record<string, string>> = {
+	fable: "Fable (latest)",
+	opus: "Opus (latest)",
+	sonnet: "Sonnet (latest)",
+	haiku: "Haiku (latest)",
+};
+
+/** Text of a model's option: a readable name where one is known, otherwise the id itself. */
+export function modelOptionLabel(agentId: string, model: string): string {
+	if (agentId === "claude-code") return CLAUDE_ALIAS_LABELS[model] ?? model;
+	return model;
+}
+
+/** Placeholder of the "Other" text input: the id shape the backend expects. */
+export function customModelPlaceholder(agentId: string): string {
+	if (agentId === OPENROUTER_FREE_AGENT_ID) return "provider/model:free";
+	if (agentId === "opencode" || agentId === "openrouter") return "provider/model";
+	return "model id";
 }
 
 /**

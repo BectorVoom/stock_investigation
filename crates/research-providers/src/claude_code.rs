@@ -14,6 +14,9 @@ use research_contracts::agent::*;
 use research_js::json::{Object, Value};
 use std::path::PathBuf;
 
+/// `--model` aliases offered in settings, most capable first; each names the
+/// newest model of its family (the CLI has no model-listing command).
+pub const CLAUDE_MODEL_ALIASES: &[&str] = &["fable", "opus", "sonnet", "haiku"];
 /// Exact CLI argv with empty tool/settings lists and explicit subscription effort.
 pub fn build_claude_args(model: Option<&str>, effort: Effort) -> Vec<String> {
 	let mut args: Vec<_> = [
@@ -327,7 +330,7 @@ impl AgentRuntime for ClaudeCodeRuntime {
 		ToolIsolation::Enforced
 	}
 	async fn probe(&self) -> AgentProbe {
-		let capabilities = AgentCapabilities {
+		let mut capabilities = AgentCapabilities {
 			supported: vec![Capability::Stream],
 			model: None,
 			models: None,
@@ -373,6 +376,14 @@ impl AgentRuntime for ClaudeCodeRuntime {
 				),
 			},
 		};
+		if availability == AgentAvailability::Available {
+			capabilities.models = Some(
+				CLAUDE_MODEL_ALIASES
+					.iter()
+					.map(|m| (*m).to_owned())
+					.collect(),
+			);
+		}
 		AgentProbe {
 			capabilities,
 			availability,

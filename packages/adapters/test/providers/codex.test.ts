@@ -4,6 +4,7 @@ import {
 	collect,
 	createFakeProcessRunner,
 	fixtureLines,
+	fixtureText,
 	itemAt,
 	makeContext,
 	makeEnvironment,
@@ -270,25 +271,89 @@ describe("codex failures", () => {
 });
 
 describe("codex probe", () => {
+	const RECORDED_CATALOG = fixtureText("codex/models.json").trim();
+
 	function probeRuntime(
 		status: { stderrTail: string; code: number },
 		version = "codex-cli 0.160.0",
+		catalog: { lines: readonly string[]; code: number } = { lines: [RECORDED_CATALOG], code: 0 },
 	) {
-		const fake = createFakeProcessRunner((spec) =>
-			spec.args[0] === "--version" ? { lines: [version] } : { lines: [], exit: status },
-		);
+		const fake = createFakeProcessRunner((spec) => {
+			if (spec.args[0] === "--version") return { lines: [version] };
+			if (spec.args[0] === "debug") return { lines: catalog.lines, exit: { code: catalog.code } };
+			return { lines: [], exit: status };
+		});
 		return { fake, runtime: createCodexRuntime(makeEnvironment({ processRunner: fake.runner })) };
 	}
 
-	it("is available for a ChatGPT login, which the CLI reports on stderr", async () => {
+	it("is available for a ChatGPT login and lists the model-picker models, newest first", async () => {
 		const { fake, runtime } = probeRuntime({ stderrTail: "Logged in using ChatGPT\n", code: 0 });
 
 		const probe = await runtime.probe();
 
+		// Recorded from codex-cli 0.163.0: hidden models (gpt-reserve,
+		// codex-auto-review) are left out, the rest keep the picker's order.
 		expect(probe).toEqual({
+			capabilities: {
+				supported: [],
+				models: [
+					"gpt-6.1-sol",
+					"gpt-6-astra",
+					"gpt-6-sol",
+					"gpt-6-luna",
+					"gpt-5.6-sol",
+					"gpt-5.6-terra",
+					"gpt-5.6-luna",
+				],
+			},
+			availability: { status: "available" },
+		});
+		expect(fake.spawns.map((spawn) => spawn.args)).toEqual([
+			["--version"],
+			["login", "status"],
+			["debug", "models"],
+		]);
+		// A probe never sends a prompt.
+		expect(fake.spawns.every((spawn) => (spawn.stdin ?? "") === "")).toBe(true);
+	});
+
+	it("reads a catalog larger than a status command's output budget", async () => {
+		// The real catalog carries every model's instructions: about 560 KB on one line.
+		const padded = JSON.stringify({
+			models: [{ slug: "gpt-big", visibility: "list", priority: 1, notes: "x".repeat(600_000) }],
+		});
+		const { runtime } = probeRuntime(
+			{ stderrTail: "Logged in using ChatGPT\n", code: 0 },
+			undefined,
+			{
+				lines: [padded],
+				code: 0,
+			},
+		);
+
+		expect((await runtime.probe()).capabilities.models).toEqual(["gpt-big"]);
+	});
+
+	it.each([
+		["the catalog command fails", { lines: [], code: 2 }],
+		["the catalog output is not understood", { lines: ["error: unknown subcommand"], code: 0 }],
+	])("stays available without a model list when %s", async (_label, catalog) => {
+		const { runtime } = probeRuntime(
+			{ stderrTail: "Logged in using ChatGPT\n", code: 0 },
+			undefined,
+			catalog,
+		);
+
+		expect(await runtime.probe()).toEqual({
 			capabilities: { supported: [] },
 			availability: { status: "available" },
 		});
+	});
+
+	it("does not read the catalog when Codex is not usable", async () => {
+		const { fake, runtime } = probeRuntime({ stderrTail: "Not logged in\n", code: 1 });
+
+		expect((await runtime.probe()).capabilities).toEqual({ supported: [] });
 		expect(fake.spawns.map((spawn) => spawn.args)).toEqual([["--version"], ["login", "status"]]);
 	});
 

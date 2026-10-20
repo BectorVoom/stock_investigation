@@ -36,6 +36,7 @@ import {
 	agentOptions,
 	backendRequiresModel,
 	buildModelSelectOptions,
+	customModelPlaceholder,
 	evaluateAgentSettings,
 	FREE_PLAN_NOTE,
 	FREE_TIER_CAUTION,
@@ -44,6 +45,7 @@ import {
 	MODEL_OTHER_LABEL,
 	MODEL_OTHER_VALUE,
 	MODEL_SAVED_SUFFIX,
+	modelOptionLabel,
 	modelSelectValue,
 	runnerNotice,
 	settingsDraftFrom,
@@ -387,22 +389,27 @@ export function AgentSettingsSection(props: {
 									{selectOptions().firstOptionLabel}
 								</option>
 								<For each={selectOptions().groups}>
-									{(group) => (
-										<optgroup label={group.provider}>
+									{(group) => {
+										const options = (
 											<For each={group.models}>
 												{(model) => (
 													<option value={model} selected={selectValue() === model}>
-														{model}
+														{modelOptionLabel(selectedBackendId(), model)}
 													</option>
 												)}
 											</For>
-										</optgroup>
-									)}
+										);
+										return group.provider === null ? (
+											options
+										) : (
+											<optgroup label={group.provider}>{options}</optgroup>
+										);
+									}}
 								</For>
 								<Show when={selectOptions().savedModel}>
 									{(saved) => (
 										<option value={saved()} selected={selectValue() === saved()}>
-											{saved()}
+											{modelOptionLabel(selectedBackendId(), saved())}
 											{MODEL_SAVED_SUFFIX}
 										</option>
 									)}
@@ -420,7 +427,7 @@ export function AgentSettingsSection(props: {
 									type="text"
 									class={INPUT}
 									maxLength={100}
-									placeholder={isFreeBackend() ? "provider/model:free" : "provider/model"}
+									placeholder={customModelPlaceholder(selectedBackendId())}
 									value={modelText()}
 									onInput={(event) => setModelText(event.currentTarget.value)}
 								/>

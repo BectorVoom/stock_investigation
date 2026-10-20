@@ -84,7 +84,7 @@ impl SafeFetcher for Fetch {
 		Ok(FetchedDocument {
 			final_url: url.into(),
 			content_type: Some("text/plain".into()),
-			text: if url.contains("gdelt") || url.contains("wikipedia") {
+			text: if url.contains("gdelt") {
 				"{}".into()
 			} else if url.ends_with("robots.txt") {
 				"User-agent: *\nAllow: /".into()

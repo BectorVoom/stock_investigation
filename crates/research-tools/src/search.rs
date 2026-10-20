@@ -1,10 +1,9 @@
-//! Parallel GDELT/Wikipedia search (`searchTools.ts`, ADR-0025).
+//! GDELT news search (`searchTools.ts`, ADR-0025).
 use crate::{
-	news::{NOTICE, argument, invalid_args, meta, options, regex, string_args},
+	news::{NOTICE, argument, invalid_args, meta, options, string_args},
 	shared::*,
 };
 use async_trait::async_trait;
-use regex::Regex;
 use research_agent_core::tools::*;
 use research_application::ports::*;
 use research_contracts::records::SourceClass;
@@ -13,12 +12,12 @@ use research_js::{
 	date,
 	json::{self, Value},
 	uri::encode_uri_component,
-	whitespace::{collapse, trim},
+	whitespace::trim,
 };
 use std::{
 	collections::HashSet,
 	collections::VecDeque,
-	sync::{Arc, LazyLock, Mutex, PoisonError},
+	sync::{Arc, Mutex, PoisonError},
 	time::Duration,
 };
 use tokio_util::sync::CancellationToken;
@@ -67,9 +66,8 @@ struct Hit {
 	url: String,
 	published_at: Option<String>,
 	text: String,
-	class: SourceClass,
 }
-enum Backend {
+enum Search {
 	Ok(Vec<Hit>),
 	Failed(String),
 	Aborted,
@@ -82,7 +80,7 @@ pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		ledger: Ledger::new(GDELT_SPACING_MS, 1),
 		meta: meta(
 			"web.search",
-			"Searches recent news (GDELT) and Wikipedia for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
+			"Searches recent news (GDELT) for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
 			r#"{ "query": "<2–200 characters of keywords, e.g. gold price 2026>" }"#,
 			40_000,
 			ToolCostCategory::RateLimited,
@@ -116,62 +114,10 @@ fn seendate(text: &str) -> Option<String> {
 	let result = date::to_iso_string(date::parse(&iso))?;
 	(result == iso).then_some(result)
 }
-fn excerpt(text: &str) -> String {
-	static TAG: LazyLock<Option<Regex>> = LazyLock::new(|| regex("<[^>]*>"));
-	static ENTITY: LazyLock<Option<Regex>> =
-		LazyLock::new(|| regex(r"&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);"));
-	let stripped = TAG
-		.as_ref()
-		.map_or_else(|| text.into(), |r| r.replace_all(text, ""));
-	let decoded = ENTITY.as_ref().map_or_else(
-		|| stripped.clone(),
-		|r| {
-			r.replace_all(&stripped, |caps: &regex::Captures<'_>| {
-				let body = caps.get(1).map_or("", |m| m.as_str());
-				let named = match body {
-					"amp" => Some("&"),
-					"lt" => Some("<"),
-					"gt" => Some(">"),
-					"quot" => Some("\""),
-					"apos" => Some("'"),
-					"nbsp" => Some("\u{00A0}"),
-					"ndash" => Some("–"),
-					"mdash" => Some("—"),
-					"hellip" => Some("…"),
-					"lsquo" => Some("‘"),
-					"rsquo" => Some("’"),
-					"ldquo" => Some("“"),
-					"rdquo" => Some("”"),
-					"laquo" => Some("«"),
-					"raquo" => Some("»"),
-					_ => None,
-				};
-				if let Some(named) = named {
-					return named.to_owned();
-				}
-				if let Some(numeric) = body.strip_prefix('#') {
-					let (digits, radix) = numeric
-						.strip_prefix(['x', 'X'])
-						.map_or((numeric, 10), |s| (s, 16));
-					// Numeric references with arbitrarily many leading zeroes still parse in JS.
-					let digits = digits.trim_start_matches('0');
-					if let Ok(code) =
-						u32::from_str_radix(if digits.is_empty() { "0" } else { digits }, radix)
-					{
-						if code <= 0x10ffff {
-							return char::from_u32(code).unwrap_or('\u{FFFD}').to_string();
-						}
-					}
-				}
-				caps.get(0).map_or("", |m| m.as_str()).to_owned()
-			})
-		},
-	);
-	trim(&collapse(&decoded)).to_owned()
-}
-fn provider_items(value: &Value, gdelt: bool) -> Option<Vec<Hit>> {
+/// GDELT `artlist` articles; `None` when the answer has an unexpected shape.
+fn gdelt_hits(value: &Value) -> Option<Vec<Hit>> {
 	let root = value.as_object()?;
-	let items = match root.get(if gdelt { "articles" } else { "pages" }) {
+	let items = match root.get("articles") {
 		None => return Some(Vec::new()),
 		Some(value) => value.as_array()?,
 	};
@@ -183,101 +129,54 @@ fn provider_items(value: &Value, gdelt: bool) -> Option<Vec<Hit>> {
 			None => Some(None),
 			Some(value) => value.as_str().map(Some),
 		};
-		let hit = if gdelt {
-			let url = object.get("url")?.as_str()?;
-			let domain = optional_string("domain")?;
-			let seen = optional_string("seendate")?;
-			Hit {
-				title: title.into(),
-				publisher: domain.map_or_else(
-					|| {
-						validate_fetch_url(url)
-							.map_or_else(|_| "unknown publisher".into(), |v| v.hostname)
-					},
-					str::to_owned,
-				),
-				url: url.into(),
-				published_at: seen.and_then(seendate),
-				text: title.into(),
-				class: SourceClass::News,
-			}
-		} else {
-			let key = object.get("key")?.as_str()?;
-			let snippet = optional_string("excerpt")?;
-			let description = match object.get("description") {
-				None | Some(Value::Null) => "",
-				Some(value) => value.as_str()?,
-			};
-			let description = trim(description);
-			let snippet = excerpt(snippet.unwrap_or(""));
-			let mut parts = vec![title];
-			if !description.is_empty() {
-				parts.push(description);
-			}
-			if !snippet.is_empty() && snippet != description {
-				parts.push(&snippet);
-			}
-			if key.is_empty() {
-				continue;
-			}
-			Hit {
-				title: title.into(),
-				publisher: "Wikipedia".into(),
-				url: format!(
-					"https://en.wikipedia.org/wiki/{}",
-					encode_uri_component(key)
-				),
-				published_at: None,
-				text: parts.join("\n"),
-				class: SourceClass::Other,
-			}
-		};
-		if !title.is_empty() {
-			hits.push(hit);
+		let url = object.get("url")?.as_str()?;
+		let domain = optional_string("domain")?;
+		let seen = optional_string("seendate")?;
+		if title.is_empty() {
+			continue;
 		}
+		hits.push(Hit {
+			title: title.into(),
+			publisher: domain.map_or_else(
+				|| {
+					validate_fetch_url(url)
+						.map_or_else(|_| "unknown publisher".into(), |v| v.hostname)
+				},
+				str::to_owned,
+			),
+			url: url.into(),
+			published_at: seen.and_then(seendate),
+			text: title.into(),
+		});
 	}
 	Some(hits)
 }
 impl SearchTool {
-	async fn backend(&self, query: &str, gdelt: bool, context: &ToolContext) -> Backend {
+	async fn gdelt(&self, query: &str, context: &ToolContext) -> Search {
 		// C2: wait for the request's slot; a start is recorded only when sent.
-		if gdelt
-			&& !await_slot(
-				&self.ledger,
-				GDELT_KEY,
-				self.deps.clock.as_ref(),
-				self.deps.sleep.as_ref(),
-				&context.cancel,
-				false,
-			)
-			.await
+		if !await_slot(
+			&self.ledger,
+			GDELT_KEY,
+			self.deps.clock.as_ref(),
+			self.deps.sleep.as_ref(),
+			&context.cancel,
+			false,
+		)
+		.await
 		{
-			return Backend::Aborted;
+			return Search::Aborted;
 		}
-		let (host, url) = if gdelt {
-			(
-				"api.gdeltproject.org",
-				format!(
-					"https://api.gdeltproject.org/api/v2/doc/doc?query={}&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
-					encode_uri_component(&format!("{query} sourcelang:english"))
-				),
-			)
-		} else {
-			(
-				"en.wikipedia.org",
-				format!(
-					"https://en.wikipedia.org/w/rest.php/v1/search/page?q={}&limit=3",
-					encode_uri_component(query)
-				),
-			)
-		};
+		let url = format!(
+			"https://api.gdeltproject.org/api/v2/doc/doc?query={}&mode=artlist&format=json&maxrecords=10&sort=hybridrel",
+			encode_uri_component(&format!("{query} sourcelang:english"))
+		);
 		let mut opts = options(1_000_000, SEARCH_TIMEOUT_MS, "application/json", context);
-		opts.allowed_hosts = Some([host.into()].into());
+		opts.allowed_hosts = Some([GDELT_KEY.into()].into());
 		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
 		let fetched = match self.deps.fetcher.fetch_text(&url, &opts).await {
 			Ok(v) => v,
 			Err(e) => {
-				return Backend::Failed(
+				return Search::Failed(
 					truncate_text(&format!("{}: {}", e.code.as_str(), e.detail), 200).into_owned(),
 				);
 			}
@@ -285,7 +184,7 @@ impl SearchTool {
 		match json::parse(&fetched.text) {
 			Err(_) => {
 				let line = trim(fetched.text.split('\n').next().unwrap_or(""));
-				Backend::Failed(
+				Search::Failed(
 					truncate_text(
 						if line.is_empty() {
 							"empty response"
@@ -297,9 +196,9 @@ impl SearchTool {
 					.into_owned(),
 				)
 			}
-			Ok(value) => provider_items(&value, gdelt).map_or_else(
-				|| Backend::Failed("unexpected response shape".into()),
-				Backend::Ok,
+			Ok(value) => gdelt_hits(&value).map_or_else(
+				|| Search::Failed("unexpected response shape".into()),
+				Search::Ok,
 			),
 		}
 	}
@@ -315,73 +214,57 @@ impl Tool for SearchTool {
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let query = argument(&args, "query")?;
-		// Wikipedia is polled first: in the TypeScript GDELT's request always
-		// comes after at least one await (the spacing check), so Wikipedia's
-		// request is the first one made.
-		let (wiki, gdelt) = tokio::join!(
-			self.backend(&query, false, &context),
-			self.backend(&query, true, &context)
-		);
-		if matches!(gdelt, Backend::Aborted) || matches!(wiki, Backend::Aborted) {
-			return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
-		}
-		if let (Backend::Failed(a), Backend::Failed(b)) = (&gdelt, &wiki) {
-			return Err(tool_failure("SEARCH_FAILED", &format!("{a}; {b}"), true));
-		}
+		let hits = match self.gdelt(&query, &context).await {
+			Search::Aborted => {
+				return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
+			}
+			Search::Failed(cause) => return Err(tool_failure("SEARCH_FAILED", &cause, true)),
+			Search::Ok(hits) => hits,
+		};
 		let retrieved_at = (context.now_iso)();
 		let mut seen = HashSet::new();
 		let mut evidence = Vec::new();
 		let mut lines = vec![NOTICE.into()];
-		for backend in [&gdelt, &wiki] {
-			if let Backend::Ok(hits) = backend {
-				for hit in hits {
-					let Ok(target) = validate_fetch_url(&hit.url) else {
-						continue;
-					};
-					if !seen.insert(target.href.clone()) {
-						continue;
-					}
-					let collected = collect_evidence(
-						self.deps.hasher.as_ref(),
-						EvidenceInput {
-							evidence_id: context.ids.next_id("ev"),
-							source_url: target.href,
-							title: hit.title.clone(),
-							publisher: hit.publisher.clone(),
-							published_at: hit.published_at.clone(),
-							retrieved_at: retrieved_at.clone(),
-							effective_at: None,
-							source_class: hit.class,
-							retrieved_text: hit.text.clone(),
-							retain_quotes: false,
-							excerpt: None,
-						},
-					);
-					let e = &collected.evidence;
-					lines.push(format!(
-						"[{}] {} — {}; {} — {}",
-						e.evidence_id,
-						e.title,
-						e.publisher,
-						e.published_at.as_deref().unwrap_or("undated"),
-						e.source_url
-					));
-					evidence.push(collected);
-				}
+		for hit in hits {
+			let Ok(target) = validate_fetch_url(&hit.url) else {
+				continue;
+			};
+			// GDELT may list the same page twice; one evidence item per URL.
+			if !seen.insert(target.href.clone()) {
+				continue;
 			}
+			let collected = collect_evidence(
+				self.deps.hasher.as_ref(),
+				EvidenceInput {
+					evidence_id: context.ids.next_id("ev"),
+					source_url: target.href,
+					title: hit.title,
+					publisher: hit.publisher,
+					published_at: hit.published_at,
+					retrieved_at: retrieved_at.clone(),
+					effective_at: None,
+					source_class: SourceClass::News,
+					retrieved_text: hit.text,
+					retain_quotes: false,
+					excerpt: None,
+				},
+			);
+			let e = &collected.evidence;
+			lines.push(format!(
+				"[{}] {} — {}; {} — {}",
+				e.evidence_id,
+				e.title,
+				e.publisher,
+				e.published_at.as_deref().unwrap_or("undated"),
+				e.source_url
+			));
+			evidence.push(collected);
 		}
 		if evidence.is_empty() {
 			lines = vec![format!(
 				"No results for {query}. Try shorter or different keywords."
 			)];
-		}
-		if let Backend::Failed(cause) = gdelt {
-			lines.push(format!("GDELT news search failed: {cause}."));
-		}
-		if let Backend::Failed(cause) = wiki {
-			lines.push(format!("Wikipedia search failed: {cause}."));
-		}
-		if !evidence.is_empty() {
+		} else {
 			lines.push("Read a promising result with web.fetch_page before relying on it.".into());
 		}
 		Ok(ToolOutput {

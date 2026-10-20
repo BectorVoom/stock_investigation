@@ -433,8 +433,9 @@ describe("claude-code probe", () => {
 
 		const probe = await runtime.probe();
 
+		// The CLI cannot list models, so the probe offers its aliases, newest model of each family.
 		expect(probe).toEqual({
-			capabilities: { supported: ["stream"] },
+			capabilities: { supported: ["stream"], models: ["fable", "opus", "sonnet", "haiku"] },
 			availability: { status: "available" },
 		});
 		expect(fake.spawns.map((spawn) => spawn.args)).toEqual([
@@ -469,9 +470,11 @@ describe("claude-code probe", () => {
 			code: 0,
 		});
 
-		const availability = (await runtime.probe()).availability;
+		const { availability, capabilities } = await runtime.probe();
 
 		expect(availability).toMatchObject({ status: "unavailable", reasonCode: "NOT_CONFIGURED" });
+		// No models are offered for a backend that cannot run.
+		expect(capabilities).toEqual({ supported: ["stream"] });
 		expect(JSON.stringify(availability)).toMatch(/metered API key/);
 		expect(JSON.stringify(availability)).toMatch(/plan-limited/);
 		// Only the two local status commands ran; no prompt was sent.

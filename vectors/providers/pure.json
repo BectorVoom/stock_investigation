@@ -1471,6 +1471,18 @@
 			"output": null
 		},
 		{
+			"input": "fable",
+			"output": null
+		},
+		{
+			"input": "opus",
+			"output": null
+		},
+		{
+			"input": "haiku",
+			"output": null
+		},
+		{
 			"input": "available",
 			"output": null
 		},
@@ -2231,11 +2243,19 @@
 			"output": null
 		},
 		{
+			"input": "codex/models.json",
+			"output": null
+		},
+		{
 			"input": "codex-cli 0.160.0",
 			"output": null
 		},
 		{
-			"input": "is available for a ChatGPT login, which the CLI reports on stderr",
+			"input": "debug",
+			"output": null
+		},
+		{
+			"input": "is available for a ChatGPT login and lists the model-picker models, newest first",
 			"output": null
 		},
 		{
@@ -2243,16 +2263,80 @@
 			"output": null
 		},
 		{
+			"input": "gpt-6.1-sol",
+			"output": null
+		},
+		{
+			"input": "gpt-6-astra",
+			"output": null
+		},
+		{
+			"input": "gpt-6-sol",
+			"output": null
+		},
+		{
+			"input": "gpt-6-luna",
+			"output": null
+		},
+		{
+			"input": "gpt-5.6-sol",
+			"output": null
+		},
+		{
+			"input": "gpt-5.6-terra",
+			"output": null
+		},
+		{
+			"input": "gpt-5.6-luna",
+			"output": null
+		},
+		{
 			"input": "login",
 			"output": null
 		},
 		{
-			"input": "is NOT_AUTHENTICATED when the CLI reports no login (exit code 1)",
+			"input": "models",
+			"output": null
+		},
+		{
+			"input": "reads a catalog larger than a status command's output budget",
+			"output": null
+		},
+		{
+			"input": "gpt-big",
+			"output": null
+		},
+		{
+			"input": "list",
+			"output": null
+		},
+		{
+			"input": "the catalog command fails",
+			"output": null
+		},
+		{
+			"input": "the catalog output is not understood",
+			"output": null
+		},
+		{
+			"input": "error: unknown subcommand",
+			"output": null
+		},
+		{
+			"input": "stays available without a model list when %s",
+			"output": null
+		},
+		{
+			"input": "does not read the catalog when Codex is not usable",
 			"output": null
 		},
 		{
 			"input": "Not logged in\n",
 			"output": "auth"
+		},
+		{
+			"input": "is NOT_AUTHENTICATED when the CLI reports no login (exit code 1)",
+			"output": null
 		},
 		{
 			"input": "refuses a metered API-key login and never echoes the status line",
@@ -3251,19 +3335,11 @@
 			"output": null
 		},
 		{
-			"input": "models",
-			"output": null
-		},
-		{
 			"input": "is available for the recorded credential list, queried on a private server",
 			"output": null
 		},
 		{
 			"input": "opencode/auth-list.json",
-			"output": null
-		},
-		{
-			"input": "list",
 			"output": null
 		},
 		{
@@ -4428,10 +4504,6 @@
 		},
 		{
 			"input": "isValidModelId",
-			"output": null
-		},
-		{
-			"input": "gpt-6.1-sol",
 			"output": null
 		},
 		{
@@ -9509,6 +9581,59 @@
 				"b/m"
 			]
 		}
+	],
+	"codexCatalogs": [
+		{
+			"input": "{\n\t\"models\": [\n\t\t{\n\t\t\t\"slug\": \"gpt-6.1-sol\",\n\t\t\t\"display_name\": \"GPT-6.1-Sol\",\n\t\t\t\"description\": \"Latest workhorse model for coding and everyday work.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 1\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-6-astra\",\n\t\t\t\"display_name\": \"GPT-6-Astra\",\n\t\t\t\"description\": \"Frontier intelligence for the most demanding work.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 2\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-6-sol\",\n\t\t\t\"display_name\": \"GPT-6-Sol\",\n\t\t\t\"description\": \"Previous generation workhorse model.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 3\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-6-luna\",\n\t\t\t\"display_name\": \"GPT-6-Luna\",\n\t\t\t\"description\": \"Fast and affordable model for easier tasks.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 4\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-reserve\",\n\t\t\t\"display_name\": \"GPT-Reserve\",\n\t\t\t\"description\": \"Fast and affordable agentic coding model.\",\n\t\t\t\"visibility\": \"hide\",\n\t\t\t\"priority\": 4\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-5.6-sol\",\n\t\t\t\"display_name\": \"GPT-5.6-Sol\",\n\t\t\t\"description\": \"Older generation workhorse model.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 5\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-5.6-terra\",\n\t\t\t\"display_name\": \"GPT-5.6-Terra\",\n\t\t\t\"description\": \"Older balanced model for straightforward work.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 8\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"gpt-5.6-luna\",\n\t\t\t\"display_name\": \"GPT-5.6-Luna\",\n\t\t\t\"description\": \"Older fast and efficient model.\",\n\t\t\t\"visibility\": \"list\",\n\t\t\t\"priority\": 9\n\t\t},\n\t\t{\n\t\t\t\"slug\": \"codex-auto-review\",\n\t\t\t\"display_name\": \"Codex Auto Review\",\n\t\t\t\"description\": \"Automatic approval review model for Codex.\",\n\t\t\t\"visibility\": \"hide\",\n\t\t\t\"priority\": 43\n\t\t}\n\t]\n}\n",
+			"output": [
+				"gpt-6.1-sol",
+				"gpt-6-astra",
+				"gpt-6-sol",
+				"gpt-6-luna",
+				"gpt-5.6-sol",
+				"gpt-5.6-terra",
+				"gpt-5.6-luna"
+			]
+		},
+		{
+			"input": "",
+			"output": null
+		},
+		{
+			"input": "{",
+			"output": null
+		},
+		{
+			"input": "[]",
+			"output": null
+		},
+		{
+			"input": "{\"models\":{}}",
+			"output": null
+		},
+		{
+			"input": "{\"models\":[]}",
+			"output": []
+		},
+		{
+			"input": "{\"models\":[{\"slug\":\"late\",\"visibility\":\"list\"},{\"slug\":\"b\",\"visibility\":\"list\",\"priority\":2},{\"slug\":\"a\",\"visibility\":\"list\",\"priority\":2},{\"slug\":\"first\",\"visibility\":\"list\",\"priority\":-1},{\"slug\":\"hidden\",\"visibility\":\"hide\",\"priority\":0},{\"slug\":\"no-visibility\",\"priority\":0},{\"slug\":\"--bad\",\"visibility\":\"list\",\"priority\":0},{\"slug\":\"odd-priority\",\"visibility\":\"list\",\"priority\":\"1\"},{\"slug\":7,\"visibility\":\"list\",\"priority\":0},{\"slug\":\"odd-visibility\",\"visibility\":1,\"priority\":0},\"not an object\",{\"slug\":\"b\",\"visibility\":\"list\",\"priority\":0},{\"slug\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"visibility\":\"list\",\"priority\":0}]}",
+			"output": [
+				"first",
+				"b",
+				"a",
+				"late"
+			]
+		},
+		{
+			"input": "{\"models\":[{\"slug\":\"huge\",\"visibility\":\"list\",\"priority\":1e400}]}",
+			"output": []
+		}
+	],
+	"claudeModelAliases": [
+		"fable",
+		"opus",
+		"sonnet",
+		"haiku"
 	],
 	"preflight": [
 		{

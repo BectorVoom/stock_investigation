@@ -214,6 +214,15 @@ fn pure_model_hint_cost_retry_and_catalog_parity() {
 			case["output"]
 		);
 	}
+	for case in file["codexCatalogs"].as_array().unwrap() {
+		assert_eq!(
+			json!(parse_codex_model_catalog(case["input"].as_str().unwrap())),
+			case["output"],
+			"{}",
+			case["input"]
+		);
+	}
+	assert_eq!(json!(CLAUDE_MODEL_ALIASES), file["claudeModelAliases"]);
 	for case in file["preflight"].as_array().unwrap() {
 		let mut req = request();
 		req.deadline = case["input"]["deadline"].as_str().unwrap().to_owned();
