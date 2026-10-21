@@ -6,7 +6,7 @@ import {
 	idempotencyKeySchema,
 	idSchema,
 } from "@research/contracts";
-import { attemptResult, type EventLogger, UnexpectedError } from "@research/effects";
+import { attemptResult, type EventLogger, logIsolated, UnexpectedError } from "@research/effects";
 import { Data, Effect } from "effect";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -175,16 +175,14 @@ export function respond(
 						// content or identifiers (SEC-010). The log call itself is
 						// isolated: the stable INTERNAL answer must go out even when the
 						// log writer is down (the logger counts that failure itself).
-						try {
+						logIsolated(() =>
 							logger.error("unhandled_error", {
 								operation: error.operation,
 								name: error.errorName,
 								method: c.req.method,
 								route: c.req.routePath,
-							});
-						} catch {
-							// Logging never throws into its caller; fall through to the answer.
-						}
+							}),
+						);
 						return reject(c, "INTERNAL", "Internal error.");
 					}),
 			}),

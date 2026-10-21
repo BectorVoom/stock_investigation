@@ -8,7 +8,7 @@
  * data.
  */
 import type { SafeFetchError, SafeFetcher, SafeFetchOptions } from "@research/application";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, parseJson, type Result } from "@research/domain";
 
 /** HTTP status carried by an `HTTP_ERROR`, or null for any other failure. */
 export function httpStatusOf(error: SafeFetchError): number | null {
@@ -36,13 +36,9 @@ export async function fetchJsonDocument(
 ): Promise<Result<JsonDocument, SafeFetchError>> {
 	const fetched = await fetcher.fetchText(url, options);
 	if (!fetched.ok) return fetched;
-	let json: unknown;
-	try {
-		json = JSON.parse(fetched.value.text);
-	} catch {
-		return err({ code: "NETWORK_ERROR", detail: "response is not valid JSON" });
-	}
-	return ok({ finalUrl: fetched.value.finalUrl, json });
+	const json = parseJson(fetched.value.text);
+	if (!json.ok) return err({ code: "NETWORK_ERROR", detail: "response is not valid JSON" });
+	return ok({ finalUrl: fetched.value.finalUrl, json: json.value });
 }
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;

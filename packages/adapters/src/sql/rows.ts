@@ -42,7 +42,7 @@ import {
 	workspaceStateSchema,
 	workspaceSummarySchema,
 } from "@research/contracts";
-import { isJobState, type WorkspaceState } from "@research/domain";
+import { isJobState, parseJson, type WorkspaceState } from "@research/domain";
 import { z } from "zod";
 
 /**
@@ -72,13 +72,9 @@ export function decode<T>(table: string, schema: z.ZodType<T>, value: unknown): 
 /** Parses a JSON text column; malformed JSON is a storage fault, not user input. */
 export function parseJsonColumn<T>(table: string, schema: z.ZodType<T>, text: unknown): T {
 	if (typeof text !== "string") throw new StoredDataError(table, "JSON column is not text");
-	let value: unknown;
-	try {
-		value = JSON.parse(text);
-	} catch {
-		throw new StoredDataError(table, "JSON column is not parseable");
-	}
-	return decode(table, schema, value);
+	const value = parseJson(text);
+	if (!value.ok) throw new StoredDataError(table, "JSON column is not parseable");
+	return decode(table, schema, value.value);
 }
 
 const nullableText = z.string().nullable();

@@ -5,8 +5,15 @@ import {
 	type WidgetCore,
 	widgetCoreSchema,
 } from "@research/contracts";
+import { parseJsonOrNull } from "@research/domain";
 import { type Accessor, createSignal } from "solid-js";
 import { z } from "zod";
+import {
+	browserLocalStorage,
+	type KeyValueStorage,
+	readStoredText,
+	writeStoredText,
+} from "../lib/browserStorage.ts";
 import { duplicateWidget } from "./widgetModel.ts";
 
 /**
@@ -62,12 +69,7 @@ export function parseWidgetClipboard(raw: unknown): WidgetClipboardContent | nul
 
 /** Parses stored JSON text; invalid or absent text means an empty clipboard. */
 export function parseWidgetClipboardJson(raw: string | null): WidgetClipboardContent | null {
-	if (raw === null) return null;
-	try {
-		return parseWidgetClipboard(JSON.parse(raw) as unknown);
-	} catch {
-		return null;
-	}
+	return raw === null ? null : parseWidgetClipboard(parseJsonOrNull(raw));
 }
 
 function serializeWidgetClipboard(content: WidgetClipboardContent): string {
@@ -135,7 +137,7 @@ export function skippedResearchNoticeText(skipped: number): string {
 }
 
 /** The `Storage`-like surface the store needs (a fake in tests). */
-export type WidgetClipboardStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+export type WidgetClipboardStorage = KeyValueStorage;
 
 export interface WidgetClipboardStore {
 	/** The current content; null while the clipboard is empty. */
@@ -150,21 +152,15 @@ export interface WidgetClipboardStore {
 /**
  * The reactive shell around the pure parse/transform above: a Solid signal
  * holding the current content (so Paste buttons enable reactively), written
- * through to storage inside try/catch (storage may throw or be full — the
+ * through to storage (`browserStorage.ts`: storage may throw or be full — the
  * in-memory copy still holds). Cross-tab refresh arrives through `reload`
  * (the app singleton wires it to the `storage` event below).
  */
 export function createWidgetClipboardStore(
 	storage: WidgetClipboardStorage | null,
 ): WidgetClipboardStore {
-	const readStored = (): WidgetClipboardContent | null => {
-		if (storage === null) return null;
-		try {
-			return parseWidgetClipboardJson(storage.getItem(WIDGET_CLIPBOARD_STORAGE_KEY));
-		} catch {
-			return null;
-		}
-	};
+	const readStored = (): WidgetClipboardContent | null =>
+		parseWidgetClipboardJson(readStoredText(storage, WIDGET_CLIPBOARD_STORAGE_KEY));
 	const [content, setContent] = createSignal<WidgetClipboardContent | null>(readStored());
 	const isEmpty = (): boolean => content() === null;
 
@@ -172,13 +168,12 @@ export function createWidgetClipboardStore(
 		const next: WidgetClipboardContent | null =
 			entries.length === 0 ? null : { sourceWorkspaceId, entries: [...entries] };
 		setContent(next);
-		if (storage === null) return;
-		try {
-			if (next === null) storage.removeItem(WIDGET_CLIPBOARD_STORAGE_KEY);
-			else storage.setItem(WIDGET_CLIPBOARD_STORAGE_KEY, serializeWidgetClipboard(next));
-		} catch {
-			// Storage may throw or be full: the in-memory copy still holds.
-		}
+		// A refused write leaves the in-memory copy, which still holds for this visit.
+		writeStoredText(
+			storage,
+			WIDGET_CLIPBOARD_STORAGE_KEY,
+			next === null ? null : serializeWidgetClipboard(next),
+		);
 	};
 
 	const reload = (): void => {
@@ -186,16 +181,6 @@ export function createWidgetClipboardStore(
 	};
 
 	return { content, isEmpty, set, reload };
-}
-
-function defaultStorage(): WidgetClipboardStorage | null {
-	try {
-		if (typeof window === "undefined" || typeof window.localStorage === "undefined") return null;
-		return window.localStorage;
-	} catch {
-		// Storage is unavailable (e.g. blocked cookies): memory only.
-		return null;
-	}
 }
 
 let singleton: WidgetClipboardStore | null = null;
@@ -209,7 +194,7 @@ let subscribed = false;
  * so navigating between chats never unwires it.
  */
 export function widgetClipboard(): WidgetClipboardStore {
-	if (singleton === null) singleton = createWidgetClipboardStore(defaultStorage());
+	if (singleton === null) singleton = createWidgetClipboardStore(browserLocalStorage());
 	if (
 		!subscribed &&
 		typeof window !== "undefined" &&

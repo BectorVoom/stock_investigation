@@ -53,6 +53,7 @@ fn scientific_digits(formatted: &str) -> (Vec<u8>, i32) {
 /// positive and non-zero.
 fn shortest_digits(value: f64, scratch: &mut String) -> (Vec<u8>, i32) {
 	scratch.clear();
+	// Writing into a String cannot fail.
 	let _ = write!(scratch, "{value:e}");
 	let (digits, exponent) = scientific_digits(scratch);
 	let digits = prefer_even_on_tie(value, digits, exponent, scratch);
@@ -82,12 +83,14 @@ fn prefer_even_on_tie_slow(
 ) -> Vec<u8> {
 	let length = shortest.len();
 	scratch.clear();
+	// Writing into a String cannot fail.
 	let _ = write!(scratch, "{value:.length$e}");
 	if !ends_in_single_five(scratch, length) {
 		return shortest;
 	}
 	scratch.clear();
 	let extended = length + 20;
+	// Writing into a String cannot fail.
 	let _ = write!(scratch, "{value:.extended$e}");
 	if !ends_in_single_five(scratch, length) {
 		return shortest;
@@ -235,6 +238,7 @@ pub fn push_js_string(out: &mut String, value: f64) {
 		return;
 	}
 	if let Some(integer) = safe_integer(value) {
+		// Writing into a String cannot fail.
 		let _ = write!(out, "{integer}");
 		return;
 	}
@@ -278,6 +282,7 @@ pub fn push_js_string(out: &mut String, value: f64) {
 		}
 		out.push('e');
 		out.push(if exponent >= 0 { '+' } else { '-' });
+		// Writing into a String cannot fail.
 		let _ = write!(out, "{}", exponent.unsigned_abs());
 	}
 }

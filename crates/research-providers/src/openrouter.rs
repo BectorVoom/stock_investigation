@@ -286,13 +286,13 @@ struct Rejected {
 	usage: bool,
 }
 async fn send_end(sender: &TurnSender, cost: Option<f64>, failure: Option<ProviderFailure>) {
-	let _ = sender
-		.send(AgentEvent::Usage {
+	sender
+		.send_closing(AgentEvent::Usage {
 			known_cost_usd: cost,
 		})
 		.await;
-	let _ = sender
-		.send(failure.map_or(AgentEvent::Completed, ProviderFailure::event))
+	sender
+		.send_closing(failure.map_or(AgentEvent::Completed, ProviderFailure::event))
 		.await;
 }
 async fn attempt(
@@ -594,19 +594,19 @@ impl AgentRuntime for OpenRouterRuntime {
 				};
 				let Some(delay) = delay else {
 					if rejected.usage {
-						let _ = sender
-							.send(AgentEvent::Usage {
+						sender
+							.send_closing(AgentEvent::Usage {
 								known_cost_usd: None,
 							})
 							.await;
 					}
-					let _ = sender.send(rejected.failure.event()).await;
+					sender.send_closing(rejected.failure.event()).await;
 					break;
 				};
 				let stopped = tokio::select! { biased;_=guard.cancel.cancelled()=>true,_=tokio::time::sleep(Duration::from_secs_f64(delay.max(0.0)/1000.0))=>false };
 				if stopped {
-					let _ = sender
-						.send(
+					sender
+						.send_closing(
 							failure_for_stop(guard.reason().unwrap_or(StopReason::Aborted)).event(),
 						)
 						.await;

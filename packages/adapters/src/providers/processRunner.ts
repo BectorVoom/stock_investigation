@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { describeThrown } from "@research/domain";
 import { splitLines } from "./lines.ts";
 
 export interface ProcessSpec {
@@ -54,15 +55,6 @@ const KILL_CONFIRM_MS = 1_000;
 export const MAX_TERMINATION_MS = DEFAULT_KILL_GRACE_MS + KILL_CONFIRM_MS + 2 * GROUP_POLL_MS;
 
 export type TerminationSignal = "SIGTERM" | "SIGKILL";
-
-/** Short, content-free description of an unknown error for diagnostics. */
-export function describeError(error: unknown): string {
-	if (typeof error === "object" && error !== null) {
-		if ("code" in error && typeof error.code === "string") return error.code;
-		if (error instanceof Error) return error.name;
-	}
-	return "unknown error";
-}
 
 /** True for the error Node reports when the executable does not exist. */
 export function isCommandNotFound(error: unknown): boolean {
@@ -173,7 +165,7 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 		stderrTail = `${stderrTail}${text}`.slice(-STDERR_TAIL_CHARS);
 	};
 	child.onStderr(appendDiagnostic, (error) =>
-		appendDiagnostic(`\n[runner] stderr: ${describeError(error)}`),
+		appendDiagnostic(`\n[runner] stderr: ${describeThrown(error)}`),
 	);
 
 	let childClosed = false;
@@ -186,8 +178,8 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 			else child.kill(signal);
 		} catch (error) {
 			// ESRCH means the group is already gone, which is the state being asked for.
-			if (describeError(error) !== "ESRCH") {
-				appendDiagnostic(`\n[runner] ${signal}: ${describeError(error)}`);
+			if (describeThrown(error) !== "ESRCH") {
+				appendDiagnostic(`\n[runner] ${signal}: ${describeThrown(error)}`);
 			}
 		}
 	};
@@ -201,7 +193,7 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 			return true;
 		} catch (error) {
 			// ESRCH: no member is left. Anything else (e.g. EPERM) means something still is.
-			return describeError(error) !== "ESRCH";
+			return describeThrown(error) !== "ESRCH";
 		}
 	};
 
@@ -253,7 +245,7 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 	});
 	// Callers awaiting `exit` still observe the rejection; this only keeps a spawn
 	// failure nobody awaited from crashing the runner as an unhandled rejection.
-	exit.catch((error: unknown) => appendDiagnostic(`\n[runner] spawn: ${describeError(error)}`));
+	exit.catch((error: unknown) => appendDiagnostic(`\n[runner] spawn: ${describeThrown(error)}`));
 
 	if (spec.signal.aborted) onAbort();
 	else spec.signal.addEventListener("abort", onAbort, { once: true });
@@ -261,7 +253,7 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 	// A child that exits before reading its input closes the pipe (EPIPE); the exit
 	// status reports that failure, so it is recorded rather than thrown.
 	child.writeStdin(spec.stdin ?? "", (error) =>
-		appendDiagnostic(`\n[runner] stdin: ${describeError(error)}`),
+		appendDiagnostic(`\n[runner] stdin: ${describeThrown(error)}`),
 	);
 
 	async function* stdoutLines(): AsyncGenerator<string, void, undefined> {
@@ -269,7 +261,7 @@ function runProcess(spec: ProcessSpec, options: ResolvedOptions): ProcessHandle 
 			yield* splitLines(child.stdout, MAX_LINE_CHARS);
 		} catch (error) {
 			// A killed or failed child tears its pipe down mid-read; `exit` carries the outcome.
-			appendDiagnostic(`\n[runner] stdout: ${describeError(error)}`);
+			appendDiagnostic(`\n[runner] stdout: ${describeThrown(error)}`);
 		}
 	}
 

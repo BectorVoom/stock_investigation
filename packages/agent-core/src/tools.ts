@@ -7,7 +7,7 @@ import type {
 	Security,
 	SubscribedSourceRef,
 } from "@research/contracts";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, type Result, thrownName } from "@research/domain";
 import type { z } from "zod";
 
 /** Evidence plus the full retrieved text, kept in memory only for quote verification. */
@@ -180,10 +180,9 @@ export async function executeToolCall(
 			return await call.tool.execute(call.args, { ...context, signal });
 		} catch (error) {
 			// Adapters should return typed failures; a throw is unexpected and is reported, not hidden.
-			const detail = error instanceof Error ? error.name : "unknown error";
 			return err({
 				code: timeout.aborted ? "TOOL_TIMEOUT" : "TOOL_THREW",
-				detail,
+				detail: thrownName(error),
 				retryable: timeout.aborted,
 			});
 		}

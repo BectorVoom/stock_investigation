@@ -34,7 +34,7 @@ import {
 	type ToolDefinition,
 } from "@research/agent-core";
 import type { Clock, Hasher, SafeFetchError, SafeFetcher } from "@research/application";
-import { err, ok, validateFetchUrl } from "@research/domain";
+import { err, ok, parseJson, validateFetchUrl } from "@research/domain";
 import { z } from "zod";
 import { boundModelText, collectEvidence, toolFailure, truncateText } from "./shared.ts";
 
@@ -185,15 +185,11 @@ export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition
 			userAgent: SEARCH_USER_AGENT,
 		});
 		if (!fetched.ok) return { status: "failed", cause: fetchCause(fetched.error) };
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(fetched.value.text);
-		} catch {
-			// GDELT answers rate limits and bad queries with plain text (HTTP
-			// 200), never JSON: the first line of that text is the cause.
-			return { status: "failed", cause: firstLine(fetched.value.text) };
-		}
-		const shaped = gdeltResponseSchema.safeParse(parsed);
+		const parsed = parseJson(fetched.value.text);
+		// GDELT answers rate limits and bad queries with plain text (HTTP
+		// 200), never JSON: the first line of that text is the cause.
+		if (!parsed.ok) return { status: "failed", cause: firstLine(fetched.value.text) };
+		const shaped = gdeltResponseSchema.safeParse(parsed.value);
 		if (!shaped.success) return { status: "failed", cause: "unexpected response shape" };
 		const results: SearchHit[] = [];
 		for (const article of shaped.data.articles ?? []) {

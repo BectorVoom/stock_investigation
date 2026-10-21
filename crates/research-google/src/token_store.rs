@@ -105,6 +105,7 @@ pub async fn write_google_token_file(
 	}
 	.await;
 	if written.is_err() {
+		// Cleanup only: the write's own error is the one reported.
 		let _ = tokio::fs::remove_file(&temp).await;
 	}
 	written.map_err(TokenStoreError::Io)

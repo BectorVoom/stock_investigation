@@ -52,6 +52,44 @@ function unreadableWidget(widgetId: string, type: string): WidgetAgentFailure {
 	};
 }
 
+function rejectedWidget(type: string): WidgetAgentFailure {
+	return { code: "INVALID_WIDGET", message: `widget type "${type}" rejected the widget.` };
+}
+
+const ID_UNAVAILABLE: WidgetAgentFailure = {
+	code: "STORE_UNAVAILABLE",
+	message: "a new widget id could not be allocated.",
+};
+const STORE_UNREADABLE: WidgetAgentFailure = {
+	code: "STORE_UNAVAILABLE",
+	message: "the widget store could not be read.",
+};
+
+/**
+ * Calls host-supplied code (`configOf`, `build`, `newWidgetId`,
+ * `validateLayout`), any of which may throw; a throw becomes `failure`, so
+ * the host keeps its never-throws contract in one place.
+ */
+function guarded<T>(run: () => T, failure: WidgetAgentFailure): Result<T, WidgetAgentFailure> {
+	try {
+		return ok(run());
+	} catch {
+		return err(failure);
+	}
+}
+
+/** `guarded` for the store's promises. */
+async function guardedAsync<T>(
+	run: () => Promise<Result<T, WidgetAgentFailure>>,
+	failure: WidgetAgentFailure,
+): Promise<Result<T, WidgetAgentFailure>> {
+	try {
+		return await run();
+	} catch {
+		return err(failure);
+	}
+}
+
 export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 	options: CreateWidgetAgentHostOptions<W, Revision>,
 ): WidgetAgentHost {
@@ -62,6 +100,31 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 	const typeOf = (type: string): WidgetAgentType<W> | undefined =>
 		types.find((entry) => entry.type === type);
 
+	const configOf = (
+		agentType: WidgetAgentType<W>,
+		widget: W,
+	): Result<JsonObject, WidgetAgentFailure> =>
+		guarded(() => agentType.configOf(widget), unreadableWidget(widget.widgetId, widget.type));
+
+	const allocateWidgetId = (): Result<string, WidgetAgentFailure> => {
+		const allocated = guarded(newWidgetId, ID_UNAVAILABLE);
+		if (allocated.ok && allocated.value.length === 0) {
+			return err({ code: "INVALID_WIDGET", message: "the new widget id is empty." });
+		}
+		return allocated;
+	};
+
+	const buildWidget = (
+		agentType: WidgetAgentType<W>,
+		input: Parameters<WidgetAgentType<W>["build"]>[0],
+	): Result<W, WidgetAgentFailure> => {
+		const built = guarded(() => agentType.build(input), rejectedWidget(agentType.type));
+		if (!built.ok) return built;
+		return built.value.ok
+			? ok(built.value.value)
+			: err({ code: "INVALID_WIDGET", message: built.value.error });
+	};
+
 	const snapshotOf = (widgets: readonly W[]): Result<WidgetSnapshot, WidgetAgentFailure> => {
 		const snapshotWidgets: WidgetSnapshotWidget[] = [];
 		for (const [position, widget] of widgets.entries()) {
@@ -70,11 +133,9 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 			// with an empty config; it can be moved, reordered and removed.
 			let config: JsonObject = {};
 			if (agentType !== undefined) {
-				try {
-					config = agentType.configOf(widget);
-				} catch {
-					return err(unreadableWidget(widget.widgetId, widget.type));
-				}
+				const read = configOf(agentType, widget);
+				if (!read.ok) return read;
+				config = read.value;
 			}
 			snapshotWidgets.push({
 				widgetId: widget.widgetId,
@@ -130,35 +191,16 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 						message: `size "${size}" is not allowed for widget type "${command.type}".`,
 					});
 				}
-				let widgetId: string;
-				try {
-					widgetId = newWidgetId();
-				} catch {
-					return err({
-						code: "STORE_UNAVAILABLE",
-						message: "a new widget id could not be allocated.",
-					});
-				}
-				if (widgetId.length === 0) {
-					return err({ code: "INVALID_WIDGET", message: "the new widget id is empty." });
-				}
-				let widget: W;
-				try {
-					const built = agentType.build({
-						widgetId,
-						title: command.title,
-						size,
-						config: command.config ?? {},
-					});
-					if (!built.ok) return err({ code: "INVALID_WIDGET", message: built.error });
-					widget = built.value;
-				} catch {
-					return err({
-						code: "INVALID_WIDGET",
-						message: `widget type "${command.type}" rejected the widget.`,
-					});
-				}
-				return ok({ kind: "add", widget, toIndex: command.toIndex });
+				const widgetId = allocateWidgetId();
+				if (!widgetId.ok) return widgetId;
+				const widget = buildWidget(agentType, {
+					widgetId: widgetId.value,
+					title: command.title,
+					size,
+					config: command.config ?? {},
+				});
+				if (!widget.ok) return widget;
+				return ok({ kind: "add", widget: widget.value, toIndex: command.toIndex });
 			}
 			case "remove": {
 				return ok({ kind: "remove", widgetId: command.widgetId });
@@ -211,29 +253,16 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 						message: `widget "${command.widgetId}" has unknown type "${current.type}".`,
 					});
 				}
-				let config: JsonObject;
-				try {
-					config = { ...agentType.configOf(current), ...(command.config ?? {}) };
-				} catch {
-					return err(unreadableWidget(current.widgetId, current.type));
-				}
-				let widget: W;
-				try {
-					const built = agentType.build({
-						widgetId: current.widgetId,
-						title: command.title ?? current.title,
-						size: current.size,
-						config,
-					});
-					if (!built.ok) return err({ code: "INVALID_WIDGET", message: built.error });
-					widget = built.value;
-				} catch {
-					return err({
-						code: "INVALID_WIDGET",
-						message: `widget type "${current.type}" rejected the widget.`,
-					});
-				}
-				return ok({ kind: "replace", widget });
+				const config = configOf(agentType, current);
+				if (!config.ok) return config;
+				const widget = buildWidget(agentType, {
+					widgetId: current.widgetId,
+					title: command.title ?? current.title,
+					size: current.size,
+					config: { ...config.value, ...(command.config ?? {}) },
+				});
+				if (!widget.ok) return widget;
+				return ok({ kind: "replace", widget: widget.value });
 			}
 			case "duplicate": {
 				const index = widgets.findIndex((widget) => widget.widgetId === command.widgetId);
@@ -264,44 +293,21 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 				if (title.length === 0) {
 					return err({ code: "INVALID_WIDGET", message: "the duplicate title is empty." });
 				}
-				let config: JsonObject;
-				try {
-					config = agentType.configOf(current);
-				} catch {
-					return err(unreadableWidget(current.widgetId, current.type));
-				}
-				let widgetId: string;
-				try {
-					widgetId = newWidgetId();
-				} catch {
-					return err({
-						code: "STORE_UNAVAILABLE",
-						message: "a new widget id could not be allocated.",
-					});
-				}
-				if (widgetId.length === 0) {
-					return err({ code: "INVALID_WIDGET", message: "the new widget id is empty." });
-				}
-				let widget: W;
-				try {
-					const built = agentType.build({
-						widgetId,
-						title,
-						size: current.size,
-						config,
-					});
-					if (!built.ok) return err({ code: "INVALID_WIDGET", message: built.error });
-					widget = built.value;
-				} catch {
-					return err({
-						code: "INVALID_WIDGET",
-						message: `widget type "${current.type}" rejected the widget.`,
-					});
-				}
+				const config = configOf(agentType, current);
+				if (!config.ok) return config;
+				const widgetId = allocateWidgetId();
+				if (!widgetId.ok) return widgetId;
+				const widget = buildWidget(agentType, {
+					widgetId: widgetId.value,
+					title,
+					size: current.size,
+					config: config.value,
+				});
+				if (!widget.ok) return widget;
 				// A duplicate is an `add` of a copy right after the original —
 				// no new layout edit kind, so the proved Lean dashboard model
 				// still covers it.
-				return ok({ kind: "add", widget, toIndex: command.toIndex ?? index + 1 });
+				return ok({ kind: "add", widget: widget.value, toIndex: command.toIndex ?? index + 1 });
 			}
 		}
 	};
@@ -348,55 +354,43 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 		}
 	};
 
+	const readRecord = (): Promise<Result<WidgetLayoutRecord<W, Revision>, WidgetAgentFailure>> =>
+		guardedAsync(() => store.read(), STORE_UNREADABLE);
+
 	const describe = async (): Promise<Result<WidgetSnapshot, WidgetAgentFailure>> => {
-		try {
-			const read = await store.read();
-			if (!read.ok) return err(read.error);
-			return snapshotOf(read.value.widgets);
-		} catch {
-			return err({ code: "STORE_UNAVAILABLE", message: "the widget store could not be read." });
-		}
+		const read = await readRecord();
+		return read.ok ? snapshotOf(read.value.widgets) : read;
 	};
 
 	const apply = async (command: unknown): Promise<Result<WidgetSnapshot, WidgetAgentFailure>> => {
 		try {
 			const parsed = parseWidgetCommand(command);
 			if (!parsed.ok) return err(parsed.error);
-			let record: WidgetLayoutRecord<W, Revision>;
-			try {
-				const read = await store.read();
-				if (!read.ok) return err(read.error);
-				record = read.value;
-			} catch {
-				return err({ code: "STORE_UNAVAILABLE", message: "the widget store could not be read." });
-			}
+			const read = await readRecord();
+			if (!read.ok) return read;
+			const record = read.value;
 			const edit = buildEdit(parsed.value, record.widgets);
 			if (!edit.ok) return err(edit.error);
 			const applied = applyWidgetLayoutEdit(record.widgets, edit.value, limits);
 			if (!applied.ok)
 				return err(layoutFailure(applied.error, parsed.value, record.widgets.length));
 			if (validateLayout !== undefined) {
-				let validation: Result<void, string>;
-				try {
-					validation = validateLayout(applied.value);
-				} catch {
-					return err({ code: "INVALID_WIDGET", message: "the resulting layout was rejected." });
-				}
-				if (!validation.ok) return err({ code: "INVALID_WIDGET", message: validation.error });
-			}
-			let written: WidgetLayoutRecord<W, Revision>;
-			try {
-				const result = await store.write(applied.value, record.revision);
-				if (!result.ok) return err(result.error);
-				written = result.value;
-			} catch {
-				return err({
-					code: "STORE_UNAVAILABLE",
-					message: "the widget store could not be written.",
+				const validation = guarded(() => validateLayout(applied.value), {
+					code: "INVALID_WIDGET",
+					message: "the resulting layout was rejected.",
 				});
+				if (!validation.ok) return validation;
+				if (!validation.value.ok) {
+					return err({ code: "INVALID_WIDGET", message: validation.value.error });
+				}
 			}
-			return snapshotOf(written.widgets);
+			const written = await guardedAsync(() => store.write(applied.value, record.revision), {
+				code: "STORE_UNAVAILABLE",
+				message: "the widget store could not be written.",
+			});
+			return written.ok ? snapshotOf(written.value.widgets) : written;
 		} catch {
+			// Last line of the never-throws contract: anything not guarded above.
 			return err({
 				code: "STORE_UNAVAILABLE",
 				message: "the widget store failed before the command could be applied.",

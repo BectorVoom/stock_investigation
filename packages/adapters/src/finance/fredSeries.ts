@@ -33,7 +33,7 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailable,
 } from "@research/contracts";
-import { err, ok } from "@research/domain";
+import { err, ok, parseJsonOrNull } from "@research/domain";
 import { z } from "zod";
 import { fetchJsonDocument, httpStatusOf, isIsoDate, subtractDaysIso } from "./marketFetch.ts";
 
@@ -114,13 +114,7 @@ function mapFredErrorBody(error: FredError): MarketSourceUnavailable {
 function mapFredFailure(status: number | null, body: string | null): MarketSourceUnavailable {
 	if (status === 429) return unavailable("RATE_LIMITED");
 	if (body !== null) {
-		let parsed: unknown = null;
-		try {
-			parsed = JSON.parse(body);
-		} catch {
-			parsed = null;
-		}
-		const error = fredErrorSchema.safeParse(parsed);
+		const error = fredErrorSchema.safeParse(parseJsonOrNull(body));
 		if (error.success) return mapFredErrorBody(error.data);
 	}
 	return unavailable("SOURCE_FAILED");

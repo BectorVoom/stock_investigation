@@ -1,3 +1,4 @@
+import { parseUrl } from "@research/domain";
 /**
  * Numbering for NotebookLM-style citation chips in one scope (one chat answer
  * or one canvas component).
@@ -49,12 +50,8 @@ export function numbersForClaim(
 
 /** Host of a source URL for the card and sources row; null when unparseable. */
 export function sourceHost(sourceUrl: string): string | null {
-	try {
-		const url = new URL(sourceUrl);
-		return url.hostname === "" ? null : url.hostname;
-	} catch {
-		return null;
-	}
+	const hostname = parseUrl(sourceUrl)?.hostname ?? "";
+	return hostname === "" ? null : hostname;
 }
 
 /** Title with host fallback for accessible names and the sources row. */

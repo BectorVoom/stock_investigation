@@ -46,6 +46,8 @@
  * depth ahead of the parser would need a second tokenizer and its own parse
  * differentials, so depth itself is bounded only by the 2 MiB fetch cap.
  */
+
+import { parseUrl } from "@research/domain";
 import { Parser } from "htmlparser2";
 
 export interface OmittedCounts {
@@ -294,12 +296,8 @@ function collapseTitle(text: string): string {
 
 /** Resolves `href` against `baseUrl`; only http(s) results stay links (SEC-001). */
 function resolveLink(href: string, baseUrl: string): string | null {
-	let url: URL;
-	try {
-		url = new URL(href.trim(), baseUrl);
-	} catch {
-		return null;
-	}
+	const url = parseUrl(href.trim(), baseUrl);
+	if (url === null) return null;
 	return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
 }
 
@@ -344,14 +342,11 @@ function isSkipLinkText(text: string): boolean {
 
 /** The page URL without its fragment; null when `baseUrl` is not an http(s) URL. */
 function pageNoFragment(baseUrl: string): string | null {
-	try {
-		const pageUrl = new URL(baseUrl);
-		if (pageUrl.protocol !== "http:" && pageUrl.protocol !== "https:") return null;
-		const hashIndex = pageUrl.href.indexOf("#");
-		return hashIndex === -1 ? pageUrl.href : pageUrl.href.slice(0, hashIndex);
-	} catch {
-		return null;
-	}
+	const pageUrl = parseUrl(baseUrl);
+	if (pageUrl === null) return null;
+	if (pageUrl.protocol !== "http:" && pageUrl.protocol !== "https:") return null;
+	const hashIndex = pageUrl.href.indexOf("#");
+	return hashIndex === -1 ? pageUrl.href : pageUrl.href.slice(0, hashIndex);
 }
 
 /**
@@ -365,12 +360,8 @@ function isSamePageLink(
 	pageWithoutFragment: string | null,
 ): boolean {
 	if (pageWithoutFragment === null) return false;
-	let resolved: URL;
-	try {
-		resolved = new URL(href.trim(), baseUrl);
-	} catch {
-		return false;
-	}
+	const resolved = parseUrl(href.trim(), baseUrl);
+	if (resolved === null) return false;
 	if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return false;
 	const hashIndex = resolved.href.indexOf("#");
 	const resolvedWithoutFragment =

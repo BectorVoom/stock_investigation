@@ -26,9 +26,16 @@ import { lookup as dnsLookup } from "node:dns/promises";
 import type { ClientRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import type { LookupFunction } from "node:net";
-import { classifyIpAddress, err, ok, type Result } from "@research/domain";
+import {
+	classifyIpAddress,
+	describeThrown,
+	err,
+	ok,
+	type Result,
+	thrownName,
+} from "@research/domain";
 import { isSameIpAddress } from "../node/pinnedConnect.ts";
-import { describeError, ResponseBodyTooLargeError } from "../worker/safeFetchCore.ts";
+import { ResponseBodyTooLargeError } from "../worker/safeFetchCore.ts";
 
 /** The only hosts this port will ever contact. */
 export const GOOGLE_OAUTH_HOST = "oauth2.googleapis.com";
@@ -142,7 +149,7 @@ export function createGoogleHttp(
 		try {
 			addresses = await lookup(request.host);
 		} catch (error) {
-			return fail("DNS_FAILED", describeError(error));
+			return fail("DNS_FAILED", describeThrown(error));
 		}
 		if (addresses.length === 0) {
 			return fail("DNS_FAILED", "DNS lookup returned no addresses");
@@ -206,15 +213,14 @@ export function createGoogleHttp(
 				return;
 			}
 			outgoing.once("error", (error: unknown) => {
-				const name = error instanceof Error ? error.name : "unknown";
-				if (name === "AbortError") {
+				if (thrownName(error) === "AbortError") {
 					settle(
 						request.signal.aborted
 							? fail("TIMEOUT", "request was aborted")
 							: fail("TIMEOUT", "request timed out"),
 					);
 				} else {
-					settle(fail("NETWORK_ERROR", describeError(error)));
+					settle(fail("NETWORK_ERROR", describeThrown(error)));
 				}
 			});
 			outgoing.once("socket", (socket) => {
@@ -260,7 +266,7 @@ export function createGoogleHttp(
 					);
 				});
 				response.once("error", (error: unknown) => {
-					settle(fail("NETWORK_ERROR", describeError(error)));
+					settle(fail("NETWORK_ERROR", describeThrown(error)));
 				});
 			});
 			if (bodyBytes === null) outgoing.end();

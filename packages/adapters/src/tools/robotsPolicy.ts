@@ -249,6 +249,7 @@ export function isPathAllowed(rules: RobotsRules, pathAndQuery: string): boolean
 		}
 		return best === null ? true : best.allow;
 	} catch {
+		// Fail closed: a path that cannot be matched is not fetched.
 		return false;
 	}
 }

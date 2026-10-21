@@ -1,5 +1,5 @@
 import { type AgentEvent, agentEventSchema } from "@research/contracts";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, parseJson, type Result } from "@research/domain";
 
 /** Validates an adapter-produced event at the orchestrator's trust boundary. */
 export function parseAgentEvent(value: unknown): Result<AgentEvent, "INVALID_AGENT_EVENT"> {
@@ -58,12 +58,9 @@ export function extractJsonObject(text: string): Result<unknown, JsonExtractionE
 		const end = balancedObjectEnd(text, start);
 		if (end === -1) continue;
 		sawCandidate = true;
-		try {
-			const value: unknown = JSON.parse(text.slice(start, end));
-			return ok(value);
-		} catch {
-			// Balanced braces that are not JSON (e.g. prose or code); try the next opening brace.
-		}
+		// Balanced braces that are not JSON (e.g. prose or code) fall through to the next brace.
+		const parsed = parseJson(text.slice(start, end));
+		if (parsed.ok) return ok(parsed.value);
 	}
 	return err(sawCandidate ? "INVALID_JSON" : "NO_JSON_OBJECT");
 }

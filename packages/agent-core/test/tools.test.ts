@@ -241,7 +241,7 @@ describe("executeToolCall", () => {
 		});
 		expect(expectErr(await executeToolCall(authorized(tool), toolContext()))).toEqual({
 			code: "TOOL_THREW",
-			detail: "unknown error",
+			detail: "unknown",
 			retryable: false,
 		});
 	});

@@ -59,6 +59,7 @@ impl LoopbackHandle {
 	pub async fn close(&mut self) {
 		self.close.cancel();
 		if let Some(task) = self.task.take() {
+			// A listener that panicked or was cancelled has nothing left to close.
 			let _ = task.await;
 		}
 	}
@@ -190,6 +191,7 @@ async fn serve(mut socket: TcpStream, callback: Arc<Callback>, cancel: Cancellat
 		"HTTP/1.1 {status} {reason}\r\ncontent-type: text/html; charset=utf-8\r\ncontent-security-policy: default-src 'none'\r\ncache-control: no-store\r\nreferrer-policy: no-referrer\r\nx-content-type-options: nosniff\r\nconnection: close\r\ncontent-length: {}\r\n\r\n{page}",
 		page.len()
 	);
+	// Best effort: the browser may already have gone; `accepted` is decided either way.
 	let _ = socket.write_all(response.as_bytes()).await;
 	let _ = socket.shutdown().await;
 	accepted

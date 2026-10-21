@@ -21,7 +21,7 @@
  * never logged, stored or shown — only the stable code leaves this module.
  */
 import { createHash, randomBytes } from "node:crypto";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, parseJsonOrNull, type Result } from "@research/domain";
 import { z } from "zod";
 import { GOOGLE_CALENDAR_HOST, GOOGLE_OAUTH_HOST, type GoogleHttpError } from "./googleHttp.ts";
 
@@ -106,14 +106,6 @@ const tokenErrorSchema = z.object({
 	rateLimitExceeded: z.boolean().optional(),
 });
 
-function parseJson(text: string): unknown {
-	try {
-		return JSON.parse(text) as unknown;
-	} catch {
-		return null;
-	}
-}
-
 /**
  * Maps a token-endpoint failure to a stable code. `invalid_grant` (expired
  * or revoked refresh token — documentation-derived) is the only body that
@@ -124,7 +116,7 @@ function parseJson(text: string): unknown {
 export function mapTokenFailure(status: number | null, text: string | null): GoogleStableCode {
 	if (status === 429) return "GOOGLE_RATE_LIMITED";
 	if (status !== null && status >= 300 && status < 400) return "GOOGLE_REQUEST_FAILED";
-	const parsed = text === null ? null : tokenErrorSchema.safeParse(parseJson(text));
+	const parsed = text === null ? null : tokenErrorSchema.safeParse(parseJsonOrNull(text));
 	if (parsed?.success) {
 		const error = parsed.data.error;
 		const code = typeof error === "string" ? error : (error?.code ?? null);
@@ -182,7 +174,7 @@ export async function exchangeCode(
 	if (response.value.status !== 200) {
 		return err(mapTokenFailure(response.value.status, response.value.text));
 	}
-	const parsed = tokenResponseSchema.safeParse(parseJson(response.value.text));
+	const parsed = tokenResponseSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return err("GOOGLE_REQUEST_FAILED");
 	if (parsed.data.refresh_token === undefined) {
 		// No refresh token: without it there is nothing to store, so the
@@ -228,7 +220,7 @@ export async function refreshAccessToken(
 	if (response.value.status !== 200) {
 		return err(mapTokenFailure(response.value.status, response.value.text));
 	}
-	const parsed = tokenResponseSchema.safeParse(parseJson(response.value.text));
+	const parsed = tokenResponseSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return err("GOOGLE_REQUEST_FAILED");
 	return ok({ accessToken: parsed.data.access_token, expiresIn: parsed.data.expires_in ?? null });
 }

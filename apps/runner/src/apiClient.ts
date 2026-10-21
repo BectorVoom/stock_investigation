@@ -12,7 +12,7 @@ import {
 	RUNNER_API_PREFIX,
 	type RunnerEventsRequest,
 } from "@research/contracts";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, type Result, thrownName } from "@research/domain";
 import { z } from "zod";
 
 /** Failure of one runner API call. `code` is the API's stable code or a transport code. */
@@ -86,8 +86,7 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 				redirect: "error",
 			});
 		} catch (error) {
-			const name = error instanceof Error ? error.name : "unknown";
-			return err({ code: "TRANSPORT_ERROR", detail: name, transient: true });
+			return err({ code: "TRANSPORT_ERROR", detail: thrownName(error), transient: true });
 		}
 		let payload: unknown;
 		try {

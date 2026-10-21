@@ -29,7 +29,7 @@ use tokio_rustls::client::TlsStream;
 use crate::dns::ValidatedAddress;
 use crate::errors::io_error_code;
 
-/// A connection-level failure, as a `describeError` label (`ECONNREFUSED`,
+/// A connection-level failure, as a `describeThrown` label (`ECONNREFUSED`,
 /// `ERR_TLS_CERT_ALTNAME_INVALID`, `PINNED_ADDRESS_MISMATCH`, …).
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 #[error("{0}")]

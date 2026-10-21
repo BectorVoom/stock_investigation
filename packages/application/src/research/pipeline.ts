@@ -49,6 +49,7 @@ import {
 	type UiOperation,
 	verifyClaims,
 } from "@research/domain";
+import { agentThrewCode } from "../errors.ts";
 import type { Clock } from "../ports.ts";
 import {
 	analysisDraftSchema,
@@ -446,8 +447,7 @@ export async function runResearchPipeline(
 			}
 		} catch (error) {
 			// Adapters are contractually non-throwing; treat a throw as a provider failure, not a crash.
-			const name = error instanceof Error ? error.name : "unknown";
-			failure = { kind: "provider", code: `AGENT_THREW_${name}`.slice(0, 60), retryable: true };
+			failure = { kind: "provider", code: agentThrewCode(error), retryable: true };
 		}
 		usage = addUsage(usage, { costUsd: reportedCost ?? null });
 		if (typeof reportedCost === "number" && Number.isFinite(reportedCost)) {

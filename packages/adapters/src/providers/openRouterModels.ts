@@ -1,4 +1,5 @@
 import { isOpenRouterFreeModelId } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 import type { ProviderEnvironment } from "./environment.ts";
 import { isValidModelId } from "./turn.ts";
@@ -85,6 +86,7 @@ async function readBoundedBody(response: Response): Promise<string | null> {
 			if (next.done) break;
 			receivedBytes += next.value.byteLength;
 			if (receivedBytes > FREE_MODEL_MAX_BODY_BYTES) {
+				// A failed cancel has nothing left to release; the answer is already "too large".
 				await reader.cancel().catch(() => undefined);
 				return null;
 			}
@@ -133,19 +135,15 @@ export function createFreeModelCatalog(
 				signal: controller.signal,
 			});
 			if (!response.ok) {
+				// A failed cancel has nothing left to release; the answer is already a failure.
 				await response.body?.cancel().catch(() => undefined);
 				return onFailure();
 			}
 			const text = await readBoundedBody(response);
 			if (text === null) return onFailure();
-			let json: unknown;
-			try {
-				const parsed: unknown = JSON.parse(text);
-				json = parsed;
-			} catch {
-				return onFailure();
-			}
-			const ids = parseFreeModelIds(json);
+			const json = parseJson(text);
+			if (!json.ok) return onFailure();
+			const ids = parseFreeModelIds(json.value);
 			if (ids.length === 0) return onFailure();
 			cached = ids;
 			cachedAtMs = nowMs();

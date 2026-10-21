@@ -26,7 +26,7 @@ import type {
 	SafeFetchError,
 	SafeFetcher,
 } from "@research/application";
-import { err, ok, validateFetchUrl } from "@research/domain";
+import { err, ok, parseUrl, validateFetchUrl } from "@research/domain";
 import { z } from "zod";
 import { htmlToMarkdown } from "./htmlToMarkdown.ts";
 import {
@@ -85,23 +85,13 @@ interface RobotsCacheEntry {
 }
 
 function pathAndQuery(href: string): string | null {
-	let url: URL;
-	try {
-		url = new URL(href);
-	} catch {
-		return null;
-	}
-	return `${url.pathname}${url.search}`;
+	const url = parseUrl(href);
+	return url === null ? null : `${url.pathname}${url.search}`;
 }
 
 function hostOf(href: string): string | null {
-	let url: URL;
-	try {
-		url = new URL(href);
-	} catch {
-		return null;
-	}
-	return url.hostname.toLowerCase().replace(/\.$/, "");
+	const url = parseUrl(href);
+	return url === null ? null : url.hostname.toLowerCase().replace(/\.$/, "");
 }
 
 function cacheSet<Key, Entry>(
@@ -212,6 +202,7 @@ export function createWebTools(deps: WebToolDeps): readonly ToolDefinition[] {
 			if (!isPathAllowed(hopRules, hopPath)) return false;
 			return politeWait(hopHost, signal);
 		} catch {
+			// Fail closed: a hop whose robots.txt could not be checked is not taken.
 			return false;
 		}
 	}

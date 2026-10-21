@@ -211,18 +211,6 @@ export function settle<T>(work: Promise<T>): Promise<Settled<T>> {
 	);
 }
 
-export type JsonLine = { readonly ok: true; readonly value: unknown } | { readonly ok: false };
-
-export function parseJsonLine(line: string): JsonLine {
-	try {
-		const value: unknown = JSON.parse(line);
-		return { ok: true, value };
-	} catch {
-		// JSON.parse only throws SyntaxError; the caller counts the line against MAX_MALFORMED_LINES.
-		return { ok: false };
-	}
-}
-
 export type FailureHint = "auth" | "payment" | "rate-limit" | "unavailable";
 
 const AUTH_PATTERN =

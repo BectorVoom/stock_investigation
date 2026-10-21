@@ -3,6 +3,7 @@ import { type ClaimedJob, NOTEBOOK_LIMITS } from "@research/contracts";
 import { addUsage, EMPTY_USAGE, type ResourceUsage } from "@research/domain";
 import { isJsonObject, type JsonObject } from "@research/widget-grid/agent";
 import { z } from "zod";
+import { agentThrewCode } from "../errors.ts";
 import type { Clock } from "../ports.ts";
 import type { PipelineReporter } from "../research/pipeline.ts";
 import { applyNotebookCommands } from "./notebookAgent.ts";
@@ -175,8 +176,7 @@ export async function runNotebookAssistTurn(
 			}
 		} catch (error) {
 			// Adapters are contractually non-throwing; treat a throw as a provider failure, not a crash.
-			const name = error instanceof Error ? error.name : "unknown";
-			providerFailure = { code: `AGENT_THREW_${name}`.slice(0, 60), retryable: true };
+			providerFailure = { code: agentThrewCode(error), retryable: true };
 		}
 		usage = addUsage(usage, { costUsd: reportedCost ?? null });
 		await deps.reporter.usage(usage);

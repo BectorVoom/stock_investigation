@@ -42,7 +42,8 @@
  *  allowlist rather than relying on string checks").
  */
 import type { SafeFetcher } from "@research/application";
-import { createSafeFetcher, describeError, type HopOutcome } from "./safeFetchCore.ts";
+import { describeThrown } from "@research/domain";
+import { createSafeFetcher, type HopOutcome } from "./safeFetchCore.ts";
 
 function headerInteger(value: string | null): number | null {
 	if (value === null || !/^\d{1,15}$/.test(value.trim())) return null;
@@ -105,7 +106,7 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 				signal: request.signal,
 			});
 		} catch (error) {
-			return { kind: "network-error", detail: describeError(error) };
+			return { kind: "network-error", detail: describeThrown(error) };
 		}
 		const { body, discard } = responseBody(response);
 		return {

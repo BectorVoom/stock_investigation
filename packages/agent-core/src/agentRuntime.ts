@@ -8,6 +8,7 @@ import type {
 	CostModel,
 	ToolIsolation,
 } from "@research/contracts";
+import { thrownName } from "@research/domain";
 
 export type Effort = "low" | "medium" | "high";
 
@@ -71,7 +72,7 @@ export function createAgentRegistry(runtimes: readonly AgentRuntime[]): AgentReg
 							availability: {
 								status: "unavailable",
 								reasonCode: "PROBE_FAILED",
-								detail: error instanceof Error ? error.name : "probe threw",
+								detail: thrownName(error),
 							},
 						}),
 					);

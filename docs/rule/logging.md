@@ -14,12 +14,13 @@ One logger, built on Effect (`@research/effects`). See
   injected clock, `level` is `debug`/`info`/`warn`/`error` mapped from the
   Effect log level, `event` is a snake_case name such as `job_claimed`).
 - A log line MAY contain identifiers, codes and counts only: run ids,
-  attempts, operation names, error class names, safe OS error codes
+  attempts, operation names, error names, safe OS error codes
   (`EACCES`, `ENOENT`), ports, signal names, reasons from a fixed set.
 - A log line MUST NEVER contain tokens, prompts, retrieved text, error
   messages or stack traces (SEC-010). Error messages can carry stored content
-  or identifiers; only the thrown value's class name (and a safe OS-style
-  `code` token) is kept.
+  or identifiers; only the thrown value's name and a safe OS-style `code`
+  token are kept (`thrownName` / `thrownCode` / `describeThrown` in
+  `packages/domain/src/thrown.ts`; see [error handling](error_handling.md)).
 
 ## How it is enforced
 

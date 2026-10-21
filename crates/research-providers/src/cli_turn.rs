@@ -108,13 +108,13 @@ pub fn run_cli_turn(
 	})
 }
 async fn finish(sender: &TurnSender, cost: Option<f64>, failure: Option<ProviderFailure>) {
-	let _ = sender
-		.send(AgentEvent::Usage {
+	sender
+		.send_closing(AgentEvent::Usage {
 			known_cost_usd: cost,
 		})
 		.await;
-	let _ = sender
-		.send(failure.map_or(AgentEvent::Completed, ProviderFailure::event))
+	sender
+		.send_closing(failure.map_or(AgentEvent::Completed, ProviderFailure::event))
 		.await;
 }
 async fn drive_cli_turn(
@@ -126,7 +126,7 @@ async fn drive_cli_turn(
 ) {
 	let guard = TurnGuard::new(spec.cancel.clone(), deadline, now_ms());
 	if let Some(reason) = guard.reason() {
-		let _ = sender.send(failure_for_stop(reason).event()).await;
+		sender.send_closing(failure_for_stop(reason).event()).await;
 		return;
 	}
 	spec.cancel = guard.cancel.clone();
@@ -134,8 +134,8 @@ async fn drive_cli_turn(
 		Ok(handle) => handle,
 		Err(error) => {
 			guard.stop(StopReason::Finished);
-			let _ = sender
-				.send(
+			sender
+				.send_closing(
 					ProviderFailure::new(if error.kind() == std::io::ErrorKind::NotFound {
 						"PROVIDER_NOT_INSTALLED"
 					} else {
@@ -223,6 +223,7 @@ async fn drive_cli_turn(
 	if fatal.is_some() || finished || guard.reason().is_some() || consumer_gone {
 		let stop = guard.reason();
 		guard.stop(StopReason::Finished);
+		// A bounded wait for the stopped process to be reaped; a timeout leaves nothing more to do.
 		let _ = tokio::time::timeout(Duration::from_millis(PROCESS_REAP_WAIT_MS), &mut exit).await;
 		if !consumer_gone {
 			finish(
@@ -252,13 +253,14 @@ async fn drive_cli_turn(
 		None => {
 			let reason = guard.reason().unwrap_or(StopReason::Aborted);
 			guard.stop(StopReason::Finished);
+			// A bounded wait for the stopped process to be reaped; a timeout leaves nothing more to do.
 			let _ =
 				tokio::time::timeout(Duration::from_millis(PROCESS_REAP_WAIT_MS), &mut exit).await;
 			finish(&sender, None, Some(failure_for_stop(reason))).await;
 		}
 		Some(Err(error)) => {
-			let _ = sender
-				.send(
+			sender
+				.send_closing(
 					ProviderFailure::new(if error.kind() == std::io::ErrorKind::NotFound {
 						"PROVIDER_NOT_INSTALLED"
 					} else {
@@ -276,8 +278,8 @@ async fn drive_cli_turn(
 				conclusion.failure = Some(ProviderFailure::new("PROVIDER_OUTPUT_TOO_LARGE"));
 			}
 			if conclusion.failure.is_none() && !conclusion.trailing_text.is_empty() {
-				let _ = sender
-					.send(AgentEvent::TextDelta {
+				sender
+					.send_closing(AgentEvent::TextDelta {
 						text: conclusion.trailing_text,
 					})
 					.await;

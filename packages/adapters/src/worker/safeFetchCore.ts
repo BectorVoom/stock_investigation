@@ -26,7 +26,7 @@ import type {
 	SafeFetcher,
 	SafeFetchOptions,
 } from "@research/application";
-import { err, ok, type Result, validateFetchUrl } from "@research/domain";
+import { describeThrown, err, ok, type Result, validateFetchUrl } from "@research/domain";
 
 /** Redirects followed after the first request; one more is `TOO_MANY_REDIRECTS`. */
 export const MAX_REDIRECT_HOPS = 5;
@@ -93,27 +93,6 @@ export type HopTransport = (request: HopRequest) => Promise<HopOutcome>;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const HEADER_VALUE = /^[\x20-\x7e]{1,300}$/;
 const ABORTED = Symbol("aborted");
-
-/**
- * A short, log-safe label for an unexpected error: its `code` or `name` only.
- * Messages and stacks are dropped on purpose; Node puts the remote IP address
- * and port into socket error messages.
- */
-export function describeError(error: unknown): string {
-	if (typeof error === "object" && error !== null) {
-		if ("code" in error && typeof error.code === "string" && /^[A-Z0-9_]{1,60}$/.test(error.code)) {
-			return error.code;
-		}
-		if (
-			"name" in error &&
-			typeof error.name === "string" &&
-			/^[A-Za-z0-9_]{1,60}$/.test(error.name)
-		) {
-			return error.name;
-		}
-	}
-	return "unknown error";
-}
 
 function fail(code: SafeFetchError["code"], detail: string): Result<never, SafeFetchError> {
 	return err({ code, detail });
@@ -201,7 +180,7 @@ async function readBounded(
 		}
 	} catch (error) {
 		if (error instanceof ResponseBodyTooLargeError) return { kind: "too-large" };
-		return signal.aborted ? { kind: "aborted" } : { kind: "failed", detail: describeError(error) };
+		return signal.aborted ? { kind: "aborted" } : { kind: "failed", detail: describeThrown(error) };
 	}
 }
 
@@ -226,7 +205,7 @@ export function createSafeFetcher(transport: HopTransport): SafeFetcher {
 				return await fetchText(url, options);
 			} catch (error) {
 				// Nothing above is expected to throw; if it does, the port contract still holds.
-				return fail("NETWORK_ERROR", describeError(error));
+				return fail("NETWORK_ERROR", describeThrown(error));
 			}
 		},
 	};
@@ -252,7 +231,7 @@ export function createSafeBinaryFetcher(transport: HopTransport): SafeBinaryFetc
 				return ok(document);
 			} catch (error) {
 				// Nothing above is expected to throw; if it does, the port contract still holds.
-				return fail("NETWORK_ERROR", describeError(error));
+				return fail("NETWORK_ERROR", describeThrown(error));
 			}
 		},
 	};
@@ -370,7 +349,7 @@ async function fetchRawBytes(
 				signal,
 			);
 		} catch (error) {
-			outcome = { kind: "network-error", detail: describeError(error) };
+			outcome = { kind: "network-error", detail: describeThrown(error) };
 		}
 		if (outcome === ABORTED || signal.aborted) {
 			if (outcome !== ABORTED && outcome.kind === "response") outcome.discard();

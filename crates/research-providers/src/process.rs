@@ -315,6 +315,7 @@ impl ProcessRunner for UnixProcessRunner {
 							};
 							if handshake.get(..=newline) == Some(b"\x1eRESEARCH_PROCESS_READY\n") {
 								if let Some(tx) = ready.take() {
+									// The spawner may have stopped waiting (aborted); nothing to tell.
 									let _ = tx.send(());
 								}
 							} else {
@@ -346,6 +347,7 @@ impl ProcessRunner for UnixProcessRunner {
 			let wait_task = tokio::spawn(async move { child.wait().await });
 			let closed = async {
 				let status = wait_task.await.map_err(io::Error::other)?;
+				// The readers' output is already in the tail; their end must not hide the exit status.
 				let _ = stdout_task.await;
 				let _ = stderr_task.await;
 				status
@@ -381,6 +383,7 @@ impl ProcessRunner for UnixProcessRunner {
 					.unwrap_or_else(std::sync::PoisonError::into_inner)
 					.clone(),
 			});
+			// The handle may have been dropped (turn closed); nobody is left to tell.
 			let _ = exit_tx.send(result);
 		});
 		Ok(ProcessHandle {

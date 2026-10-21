@@ -1,5 +1,5 @@
-//! Log-safe failure labels in Node's vocabulary (`describeError` in
-//! `safeFetchCore.ts`, spec §4.12).
+//! Log-safe failure labels in Node's vocabulary (`describeThrown` in
+//! `packages/domain/src/thrown.ts`, spec §4.12).
 //!
 //! The TypeScript reports an unexpected failure by its `code` (`ECONNRESET`,
 //! `ERR_TLS_CERT_ALTNAME_INVALID`, `Z_DATA_ERROR`, …) or its class name —
@@ -10,11 +10,11 @@
 
 use std::io;
 
-/// `describeError` of an error that carries neither a code nor a usable name.
+/// `describeThrown` of an error that carries neither a code nor a usable name.
 pub const UNKNOWN_ERROR: &str = "unknown error";
 
 /// The `code` Node gives an [`io::Error`], or the class name `Error` when it
-/// has none (what `describeError` falls back to for a plain JS `Error`).
+/// has none (what `describeThrown` falls back to for a plain JS `Error`).
 #[must_use]
 pub fn io_error_code(error: &io::Error) -> &'static str {
 	if let Some(code) = error

@@ -21,6 +21,7 @@ import { randomBytes } from "node:crypto";
 import { chmod, mkdir, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ArchivedPage, Hasher, PageArchive } from "@research/application";
+import { parseUrl } from "@research/domain";
 import { attempt, Effect, toResult } from "@research/effects";
 
 export interface FilePageArchiveOptions {
@@ -37,12 +38,8 @@ function datePart(retrievedAt: string): string {
 
 /** Hostname reduced to `[a-z0-9.-]` and cut to 80 characters; never empty. */
 function safeHost(finalUrl: string): string {
-	let host = "unknown-host";
-	try {
-		host = new URL(finalUrl).hostname.toLowerCase();
-	} catch {
-		// A malformed URL names no host; the hash below still keeps the file unique.
-	}
+	// A malformed URL names no host; the hash below still keeps the file unique.
+	const host = parseUrl(finalUrl)?.hostname.toLowerCase() ?? "unknown-host";
 	const cleaned = host.replace(/[^a-z0-9.-]/g, "").slice(0, 80);
 	return cleaned === "" ? "unknown-host" : cleaned;
 }

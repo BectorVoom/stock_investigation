@@ -11,6 +11,7 @@
  */
 import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 
 const tokenFileSchema = z.strictObject({
@@ -31,13 +32,9 @@ export async function readGoogleTokenFile(path: string): Promise<GoogleTokenReco
 	} catch {
 		return null;
 	}
-	let value: unknown;
-	try {
-		value = JSON.parse(text) as unknown;
-	} catch {
-		return null;
-	}
-	const parsed = tokenFileSchema.safeParse(value);
+	const value = parseJson(text);
+	if (!value.ok) return null;
+	const parsed = tokenFileSchema.safeParse(value.value);
 	return parsed.success ? parsed.data : null;
 }
 

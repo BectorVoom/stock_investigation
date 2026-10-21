@@ -12,7 +12,7 @@
  * SEC hosts, with a byte cap and a timeout per request (API-007).
  */
 import type { Clock, SafeFetchError, SafeFetcher, SafeFetchOptions } from "@research/application";
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, parseJson, type Result } from "@research/domain";
 
 export const SEC_HOSTS: readonly string[] = ["www.sec.gov", "data.sec.gov"];
 export const SEC_PUBLISHER = "U.S. Securities and Exchange Commission (EDGAR)";
@@ -156,12 +156,10 @@ export function createSecClient(deps: SecClientDeps): SecClient {
 }
 
 export function parseSecJson(document: SecDocument): Result<unknown, SecError> {
-	try {
-		const value: unknown = JSON.parse(document.text);
-		return ok(value);
-	} catch {
-		return err(secError("UNEXPECTED_RESPONSE", "SEC response is not valid JSON"));
-	}
+	const parsed = parseJson(document.text);
+	return parsed.ok
+		? parsed
+		: err(secError("UNEXPECTED_RESPONSE", "SEC response is not valid JSON"));
 }
 
 /** Ten-digit zero-padded CIK, or null when the text is not a CIK. */

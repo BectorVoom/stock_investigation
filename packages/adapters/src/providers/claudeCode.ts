@@ -63,6 +63,7 @@ import type {
 	AgentEvent,
 	AgentRequest,
 } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 import {
 	AVAILABLE,
@@ -89,7 +90,6 @@ import {
 	hintFromText,
 	PROVIDER_FAILURES,
 	type ProviderFailure,
-	parseJsonLine,
 	preflightTurn,
 } from "./turn.ts";
 
@@ -291,7 +291,7 @@ export function createClaudeStreamInterpreter(): CliStreamInterpreter {
 
 	return {
 		interpretLine(line) {
-			const json = parseJsonLine(line);
+			const json = parseJson(line);
 			if (!json.ok) return MALFORMED;
 			const typed = typedLineSchema.safeParse(json.value);
 			if (!typed.success) return MALFORMED;
@@ -402,7 +402,7 @@ export function createClaudeCodeRuntime(environment: ProviderEnvironment): Agent
 				availability: unavailable("PROBE_FAILED", "`claude auth status` did not complete"),
 			};
 		}
-		const json = parseJsonLine(status.stdout);
+		const json = parseJson(status.stdout);
 		const parsed = json.ok ? authStatusSchema.safeParse(json.value) : null;
 		if (parsed === null || !parsed.success) {
 			return {

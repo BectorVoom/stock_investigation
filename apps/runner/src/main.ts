@@ -23,6 +23,7 @@ import {
 	unconfiguredMarketSeriesSource,
 } from "@research/application";
 import { marketUnavailableReason } from "@research/contracts";
+import { thrownName } from "@research/domain";
 import { attempt, createEventLogger, type EventLogger, UnexpectedError } from "@research/effects";
 import { Effect } from "effect";
 import { createHttpRunnerApi } from "./apiClient.ts";
@@ -72,12 +73,6 @@ function createScratchDirectories(root: string): ScratchDirectories {
 		},
 		remove: (path) => rm(path, { recursive: true, force: true }),
 	};
-}
-
-/** Class name of an escaped defect for the crash log — never its message (SEC-010). */
-function defectName(defect: unknown): string {
-	if (defect instanceof Error) return defect.constructor.name;
-	return "unknown";
 }
 
 /**
@@ -303,7 +298,7 @@ async function main(): Promise<number> {
 			Effect.catchDefect((defect) =>
 				reportFailure(
 					logger,
-					new UnexpectedError({ operation: "run_runner", errorName: defectName(defect) }),
+					new UnexpectedError({ operation: "run_runner", errorName: thrownName(defect) }),
 				),
 			),
 		),

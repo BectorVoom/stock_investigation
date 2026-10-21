@@ -68,6 +68,7 @@ import {
 	isOpenRouterFreeModelId,
 	OPENROUTER_FREE_AGENT_ID,
 } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 import { AVAILABLE, unavailable } from "./cliProbe.ts";
 import type { ProviderEnvironment } from "./environment.ts";
@@ -87,7 +88,6 @@ import {
 	MAX_RAW_STREAM_CHARS,
 	PROVIDER_FAILURES,
 	type ProviderFailure,
-	parseJsonLine,
 	preflightTurn,
 	type Raced,
 	raceStop,
@@ -187,7 +187,7 @@ export function interpretSseLine(line: string): SseVerdict {
 	if (!line.startsWith("data:")) return { kind: "ignored" };
 	const payload = line.slice("data:".length).trim();
 	if (payload === "[DONE]") return { kind: "done" };
-	const json = parseJsonLine(payload);
+	const json = parseJson(payload);
 	if (!json.ok) return { kind: "malformed" };
 	const parsed = chunkSchema.safeParse(json.value);
 	if (!parsed.success) return { kind: "malformed" };

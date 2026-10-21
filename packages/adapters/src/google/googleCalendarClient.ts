@@ -21,7 +21,7 @@
  * stable codes.
  */
 
-import { err, ok, type Result } from "@research/domain";
+import { err, ok, parseJsonOrNull, type Result } from "@research/domain";
 import { z } from "zod";
 import { GOOGLE_CALENDAR_HOST, type GoogleHttpError, type GoogleHttpMethod } from "./googleHttp.ts";
 
@@ -123,14 +123,6 @@ const errorBodySchema = z.object({
 		.optional(),
 });
 
-function parseJson(text: string): unknown {
-	try {
-		return JSON.parse(text) as unknown;
-	} catch {
-		return null;
-	}
-}
-
 function fail<T>(code: GoogleCallCode): GoogleCallResult<T> {
 	return err({ code });
 }
@@ -144,7 +136,7 @@ const RATE_LIMIT_REASONS: ReadonlySet<string> = new Set([
 
 /** Every reason-like value of a provider error body (never shown, never logged). */
 function errorReasons(text: string): readonly string[] {
-	const parsed = errorBodySchema.safeParse(parseJson(text));
+	const parsed = errorBodySchema.safeParse(parseJsonOrNull(text));
 	if (!parsed.success) return [];
 	const error = parsed.data.error;
 	if (error === undefined) return [];
@@ -274,7 +266,7 @@ export async function createCalendar(
 	if (response.value.status !== 200) {
 		return fail(mapStatus(response.value.status, response.value.text));
 	}
-	const parsed = calendarSchema.safeParse(parseJson(response.value.text));
+	const parsed = calendarSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
 	return ok({ id: parsed.data.id });
 }
@@ -299,7 +291,7 @@ export async function getCalendar(
 	if (response.value.status !== 200) {
 		return fail(mapStatus(response.value.status, response.value.text));
 	}
-	const parsed = calendarSchema.safeParse(parseJson(response.value.text));
+	const parsed = calendarSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
 	return ok({ found: true, id: parsed.data.id });
 }
@@ -335,7 +327,7 @@ export async function listManagedEvents(
 		if (response.value.status !== 200) {
 			return fail(mapStatus(response.value.status, response.value.text));
 		}
-		const parsed = eventsListSchema.safeParse(parseJson(response.value.text));
+		const parsed = eventsListSchema.safeParse(parseJsonOrNull(response.value.text));
 		if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
 		for (const item of parsed.data.items ?? []) events.push(toManaged(item));
 		pageToken = parsed.data.nextPageToken ?? null;

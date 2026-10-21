@@ -60,6 +60,7 @@
  */
 import type { AgentProbe, AgentRunContext, AgentRuntime, Effort } from "@research/agent-core";
 import type { AgentCapabilities, AgentEvent, AgentRequest } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 import {
 	AVAILABLE,
@@ -84,7 +85,6 @@ import {
 	hintFromText,
 	isValidModelId,
 	PROVIDER_FAILURES,
-	parseJsonLine,
 	preflightTurn,
 } from "./turn.ts";
 
@@ -124,7 +124,7 @@ const catalogEntrySchema = z.looseObject({
  * Null when the output is not a catalog at all.
  */
 export function parseCodexModelCatalog(stdout: string): string[] | null {
-	const json = parseJsonLine(stdout);
+	const json = parseJson(stdout);
 	const envelope = json.ok ? catalogEnvelopeSchema.safeParse(json.value) : null;
 	if (envelope === null || !envelope.success) return null;
 	const listed: { readonly slug: string; readonly priority: number }[] = [];
@@ -244,7 +244,7 @@ export function createCodexStreamInterpreter(): CliStreamInterpreter {
 
 	return {
 		interpretLine(line) {
-			const json = parseJsonLine(line);
+			const json = parseJson(line);
 			if (!json.ok) return MALFORMED;
 			const typed = typedLineSchema.safeParse(json.value);
 			if (!typed.success) return MALFORMED;

@@ -315,3 +315,19 @@ export const silentEventLogger: EventLogger = {
 	error: () => {},
 	logFailures: () => 0,
 };
+
+/**
+ * Runs one log call so that it can never throw into its caller. Used where a
+ * boundary must still answer, or a detached chain must not reject, even when
+ * an `EventLogger` implementation throws: the HTTP boundaries (`respond`,
+ * `app.onError`) and the runner's heartbeat. `createEventLogger` itself never
+ * throws (it counts writer failures in `logFailures`), but `EventLogger` is an
+ * interface and these call sites must hold for every implementation.
+ */
+export function logIsolated(log: () => void): void {
+	try {
+		log();
+	} catch {
+		// Nowhere left to report it: the caller's answer matters more than the line.
+	}
+}

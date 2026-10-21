@@ -118,6 +118,7 @@ impl TurnGuard {
 		let cancel = CancellationToken::new();
 		let reason = Arc::new(OnceLock::new());
 		if external.is_cancelled() {
+			// The first stop reason wins; a later `set` is meant to lose.
 			let _ = reason.set(StopReason::Aborted);
 			cancel.cancel();
 		}
@@ -131,6 +132,7 @@ impl TurnGuard {
 				_ = external.cancelled() => StopReason::Aborted,
 				_ = tokio::time::sleep(delay) => StopReason::Deadline,
 			};
+			// The first stop reason wins; a later `set` is meant to lose.
 			let _ = why.set(stopped);
 			token.cancel();
 		});
@@ -142,6 +144,7 @@ impl TurnGuard {
 	}
 	/// Stops once; a late deadline cannot relabel an abort.
 	pub fn stop(&self, reason: StopReason) {
+		// The first stop reason wins; a later `set` is meant to lose.
 		let _ = self.reason.set(reason);
 		self.cancel.cancel();
 	}

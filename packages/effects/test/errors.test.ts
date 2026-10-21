@@ -91,7 +91,7 @@ describe("attempt errorCode", () => {
 		["free text", "EACCES: permission denied, open '/data/pages/x.md'"],
 		["lowercase", "eacces"],
 		["a single letter", "E"],
-		["a 33-character token", "E12345678901234567890123456789012"],
+		["a 61-character token", `E${"1".repeat(60)}`],
 		["an empty string", ""],
 		["a non-string", 13],
 	])("drops %s instead of leaking it", async (_label, code) => {

@@ -98,7 +98,7 @@ pub enum BodyError {
 	/// The transport stopped reading because a byte ceiling was passed
 	/// (`ResponseBodyTooLargeError`).
 	TooLarge,
-	/// Any other failure, as a `describeError` label.
+	/// Any other failure, as a `describeThrown` label.
 	Failed(String),
 }
 
@@ -148,7 +148,7 @@ pub enum HopOutcome {
 	},
 	/// DNS, connection, TLS or protocol failure.
 	NetworkError {
-		/// A `describeError`-style label.
+		/// A `describeThrown`-style label.
 		detail: String,
 	},
 }

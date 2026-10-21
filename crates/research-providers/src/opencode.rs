@@ -437,19 +437,19 @@ impl AgentRuntime for OpenCodeRuntime {
 			let deadline = match preflight_turn(&request, &context, now_ms()) {
 				Ok(v) => v,
 				Err(f) => {
-					let _ = sender.send(f.event()).await;
+					sender.send_closing(f.event()).await;
 					return;
 				}
 			};
 			let Some(scratch) = context.scratch_directory else {
-				let _ = sender
-					.send(ProviderFailure::new("SCRATCH_DIRECTORY_REQUIRED").event())
+				sender
+					.send_closing(ProviderFailure::new("SCRATCH_DIRECTORY_REQUIRED").event())
 					.await;
 				return;
 			};
 			let Some(model) = context.model.or_else(|| runtime.configured_model()) else {
-				let _ = sender
-					.send(ProviderFailure::new("PROVIDER_MODEL_REQUIRED").event())
+				sender
+					.send_closing(ProviderFailure::new("PROVIDER_MODEL_REQUIRED").event())
 					.await;
 				return;
 			};
@@ -465,8 +465,8 @@ impl AgentRuntime for OpenCodeRuntime {
 			}
 			.await;
 			if write.is_err() {
-				let _ = sender
-					.send(ProviderFailure::new("PROVIDER_CONFIG_WRITE_FAILED").event())
+				sender
+					.send_closing(ProviderFailure::new("PROVIDER_CONFIG_WRITE_FAILED").event())
 					.await;
 				return;
 			}
@@ -535,8 +535,8 @@ impl AgentRuntime for OpenCodeRuntime {
 				if turn.close().await == TurnEnd::Panicked {
 					// A throwing inner turn is the TypeScript's AGENT_THREW path: end the outer
 					// turn with a failure event, then let the panic reach `close()`.
-					let _ = sender
-						.send(ProviderFailure::new("PROVIDER_ERROR").event())
+					sender
+						.send_closing(ProviderFailure::new("PROVIDER_ERROR").event())
 						.await;
 					std::panic::resume_unwind(Box::new("inner OpenCode turn panicked"));
 				}
@@ -547,7 +547,7 @@ impl AgentRuntime for OpenCodeRuntime {
 					continue;
 				}
 				if let Some(usage) = usage {
-					let _ = sender.send(usage).await;
+					sender.send_closing(usage).await;
 				}
 				return;
 			}

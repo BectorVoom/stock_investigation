@@ -115,6 +115,7 @@ pub fn run_process(
 	if let Some(path) = env_file_argument(arguments)
 		&& let Err(error) = apply_env_file(&mut process_env, std::path::Path::new(&path))
 	{
+		// stderr is the last place to report to; the exit code still says it failed.
 		let _ = std::io::stderr().write_all(format!("{path}: {error}\n").as_bytes());
 		return ENV_FILE_EXIT;
 	}

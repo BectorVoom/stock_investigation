@@ -40,7 +40,8 @@ import {
 	updateSourceRequestSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
-import { attempt, createEventLogger, type EventLogger } from "@research/effects";
+import { thrownName } from "@research/domain";
+import { attempt, createEventLogger, type EventLogger, logIsolated } from "@research/effects";
 import { Effect } from "effect";
 import { Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -85,16 +86,14 @@ export function appEnvironment(env: Env): "development" | "production" {
  * throws into its caller).
  */
 export function defectResponse(logger: EventLogger, error: Error, c: AppContext): Response {
-	try {
-		// Log the error class and route only: messages may carry stored content or identifiers.
+	// Log the error name and route only: messages may carry stored content or identifiers.
+	logIsolated(() =>
 		logger.error("unhandled_error", {
-			name: error.name,
+			name: thrownName(error),
 			method: c.req.method,
 			route: c.req.routePath,
-		});
-	} catch {
-		// Logging never throws into its caller; fall through to the answer.
-	}
+		}),
+	);
 	return reject(c, "INTERNAL", "Internal error.");
 }
 

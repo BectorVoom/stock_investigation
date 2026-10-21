@@ -656,6 +656,7 @@ pub async fn execute_job(job: ClaimedJob, deps: Arc<JobDeps>, shutdown: Cancella
 	// Always: stop the heartbeat, detach from shutdown, remove the scratch directory.
 	heartbeat.abort();
 	finished.cancel();
+	// Both tasks were just stopped; the job's outcome is already reported above.
 	let _ = heartbeat.await;
 	let _ = watcher.await;
 	let scratch = scratch_cell

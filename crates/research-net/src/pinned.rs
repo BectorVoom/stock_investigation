@@ -20,7 +20,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use async_trait::async_trait;
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 use http::header::{
 	ACCEPT, ACCEPT_ENCODING, AUTHORIZATION, CONNECTION, CONTENT_ENCODING, CONTENT_LENGTH,
 	CONTENT_TYPE, HOST, LOCATION, USER_AGENT,
@@ -517,7 +517,7 @@ impl<W: WireFrames> PinnedBody<W> {
 				.step(&self.pending, &mut self.buffer)
 				.map_err(|error| BodyError::Failed(error.0))?;
 			let consumed = step.consumed.min(self.pending.len());
-			let _ = self.pending.split_to(consumed);
+			self.pending.advance(consumed);
 			if step.ended {
 				// The rest of the body is never read, so the connection is not
 				// reusable: `complete` runs with the release dropped.

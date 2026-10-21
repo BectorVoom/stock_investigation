@@ -5,6 +5,7 @@ import {
 	CSRF_HEADER_VALUE,
 	IDEMPOTENCY_KEY_HEADER,
 } from "@research/contracts";
+import { parseJson } from "@research/domain";
 
 /** Failure codes produced by the client itself, alongside the server's `ApiErrorCode`s. */
 export type ClientErrorCode =
@@ -123,19 +124,6 @@ export interface RequestSpec {
 	/** Sent as If-None-Match; a 304 is then returned to the caller as a success. */
 	readonly ifNoneMatch?: string | null;
 	readonly accept?: string;
-}
-
-/** Parses text as JSON. Kept apart from reading the body so only real syntax errors land here. */
-function parseJson(
-	text: string,
-): { readonly ok: true; readonly value: unknown } | { readonly ok: false } {
-	try {
-		const value: unknown = JSON.parse(text);
-		return { ok: true, value };
-	} catch {
-		// The body arrived in full but is not JSON; callers map this to a typed failure.
-		return { ok: false };
-	}
 }
 
 async function readErrorBody(response: Response): Promise<ApiFailure> {

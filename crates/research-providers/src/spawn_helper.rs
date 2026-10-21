@@ -24,6 +24,7 @@ pub fn run() -> ExitCode {
 		return ExitCode::from(126);
 	};
 	let error = Command::new(command).arg0(argv0).args(args).exec();
+	// stderr is the last place to report to; the exit code still says it failed.
 	let _ = std::io::stderr().write_all(
 		format!(
 			"\n[runner] spawn: {}",

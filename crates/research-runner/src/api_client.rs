@@ -334,6 +334,7 @@ impl HttpRunnerApi {
 		Ok(Connection {
 			sender,
 			driver: tokio::spawn(async move {
+				// A broken connection surfaces through the request that uses it.
 				let _ = connection.await;
 			}),
 			idle_since: Instant::now(),

@@ -36,11 +36,10 @@
  */
 import { lookup as dnsLookup } from "node:dns/promises";
 import type { SafeBinaryFetcher, SafeFetcher } from "@research/application";
-import { classifyIpAddress } from "@research/domain";
+import { classifyIpAddress, describeThrown } from "@research/domain";
 import {
 	createSafeBinaryFetcher,
 	createSafeFetcher,
-	describeError,
 	type HopOutcome,
 	type HopRequest,
 	type HopTransport,
@@ -137,7 +136,7 @@ function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTranspo
 		try {
 			addresses = await lookup(request.hostname);
 		} catch (error) {
-			return { kind: "network-error", detail: `DNS lookup failed: ${describeError(error)}` };
+			return { kind: "network-error", detail: `DNS lookup failed: ${describeThrown(error)}` };
 		}
 		if (addresses.length === 0) {
 			return { kind: "network-error", detail: "DNS lookup returned no addresses" };
@@ -165,7 +164,7 @@ function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTranspo
 				return toOutcome(response);
 			} catch (error) {
 				// Typically an unreachable address family; the next validated address may work.
-				lastFailure = describeError(error);
+				lastFailure = describeThrown(error);
 			}
 		}
 		return { kind: "network-error", detail: lastFailure };

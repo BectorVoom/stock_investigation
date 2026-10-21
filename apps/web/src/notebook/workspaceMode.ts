@@ -1,4 +1,6 @@
+import { parseJson } from "@research/domain";
 import { type Accessor, createEffect, createSignal } from "solid-js";
+import { browserLocalStorage, readStoredText, writeStoredText } from "../lib/browserStorage.ts";
 import type { WorkspaceMode } from "./types.ts";
 
 /**
@@ -8,34 +10,13 @@ import type { WorkspaceMode } from "./types.ts";
  * storage failure means `"chat"` (Chat-first), never a throw.
  */
 
-function storage(): Storage | null {
-	try {
-		if (typeof window === "undefined" || typeof window.localStorage === "undefined") return null;
-		return window.localStorage;
-	} catch {
-		// Storage is unavailable (e.g. blocked cookies): fall back to the default.
-		return null;
-	}
-}
-
 function readKey(key: string): string | null {
-	const store = storage();
-	if (store === null) return null;
-	try {
-		return store.getItem(key);
-	} catch {
-		return null;
-	}
+	return readStoredText(browserLocalStorage(), key);
 }
 
+/** A convenience that cannot be kept still holds for this visit, so a refusal is ignored. */
 function writeKey(key: string, value: string): void {
-	const store = storage();
-	if (store === null) return;
-	try {
-		store.setItem(key, value);
-	} catch {
-		// A convenience that cannot be kept: the mode still holds for this visit.
-	}
+	writeStoredText(browserLocalStorage(), key, value);
 }
 
 function modeKey(workspaceId: string): string {
@@ -76,17 +57,15 @@ export function dismissNotebookSuggest(workspaceId: string): void {
 export function readKeptRemovals(workspaceId: string): Readonly<Record<string, true>> {
 	const raw = readKey(keepKey(workspaceId));
 	if (raw === null) return {};
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
-		const kept: Record<string, true> = {};
-		for (const [key, value] of Object.entries(parsed)) {
-			if (value === true) kept[key] = true;
-		}
-		return kept;
-	} catch {
-		return {};
+	const parsed = parseJson(raw);
+	if (!parsed.ok) return {};
+	const value = parsed.value;
+	if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+	const kept: Record<string, true> = {};
+	for (const [key, flag] of Object.entries(value)) {
+		if (flag === true) kept[key] = true;
 	}
+	return kept;
 }
 
 function keptRemovalKey(runId: string, widgetId: string): string {
@@ -108,11 +87,7 @@ export function rememberKeptRemoval(
 	widgetId: string,
 ): Readonly<Record<string, true>> {
 	const next = { ...kept, [keptRemovalKey(runId, widgetId)]: true as const };
-	try {
-		writeKey(keepKey(workspaceId), JSON.stringify(next));
-	} catch {
-		// A convenience that cannot be kept: the row still stays dismissed this visit.
-	}
+	writeKey(keepKey(workspaceId), JSON.stringify(next));
 	return next;
 }
 

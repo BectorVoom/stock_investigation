@@ -102,6 +102,15 @@ impl TurnSender {
 		self.events.send(event).await.is_ok()
 	}
 
+	/// Sends one of the turn's closing events (usage, completed, a failure),
+	/// after which the producer returns whether or not it was delivered: a
+	/// consumer that is gone has stopped listening, so there is nothing left
+	/// to report to (docs/rule/error_handling.md, "Best-effort discards").
+	pub async fn send_closing(&self, event: AgentEvent) {
+		// Delivery does not change what the producer does next.
+		let _ = self.send(event).await;
+	}
+
 	/// Cancelled by the run's token or by [`AgentTurn::close`] / drop.
 	#[must_use]
 	pub fn cancel_token(&self) -> &CancellationToken {

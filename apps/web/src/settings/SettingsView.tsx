@@ -1,4 +1,5 @@
 import { MAX_REQUEST_BODY_BYTES, type WorkspaceSummary } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
 import type { ApiClient, IssuedRunnerCredential, Session } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
@@ -266,18 +267,6 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 
 /* ---------- Export / import ---------- */
 
-function parseJsonFile(
-	text: string,
-): { readonly ok: true; readonly value: unknown } | { readonly ok: false } {
-	try {
-		const value: unknown = JSON.parse(text);
-		return { ok: true, value };
-	} catch {
-		// Not JSON at all: reported to the owner as an invalid import file.
-		return { ok: false };
-	}
-}
-
 function invalidFile(message: string): ActionFailure {
 	return {
 		title: "The file was not imported.",
@@ -344,7 +333,7 @@ function ExportImport(props: {
 				invalidFile(`The file is larger than the ${MAX_REQUEST_BODY_BYTES} byte import limit.`),
 			);
 		} else {
-			const parsed = parseJsonFile(await file.text());
+			const parsed = parseJson(await file.text());
 			if (!parsed.ok) {
 				setFailure(invalidFile("The file is not valid JSON."));
 			} else {

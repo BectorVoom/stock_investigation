@@ -51,7 +51,7 @@ import {
 	supplierLinkSchema,
 	type UpdateSourceRequest,
 } from "@research/contracts";
-import { LEASED_JOB_STATES, TERMINAL_JOB_STATES } from "@research/domain";
+import { LEASED_JOB_STATES, parseJsonOrNull, TERMINAL_JOB_STATES } from "@research/domain";
 import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
@@ -181,13 +181,16 @@ const cursorSchema = z.tuple([z.string(), z.string()]);
 
 function decodeCursor(cursor: string | null): readonly [string, string] | null {
 	if (cursor === null) return null;
+	// An unreadable cursor is treated as "start from the beginning", not an error.
+	let decoded: string;
 	try {
-		const parsed = cursorSchema.safeParse(JSON.parse(atob(cursor)));
-		return parsed.success ? parsed.data : null;
+		decoded = atob(cursor);
 	} catch {
-		// An unreadable cursor is treated as "start from the beginning", not an error.
+		// atob throws only InvalidCharacterError: the cursor is not base64.
 		return null;
 	}
+	const parsed = cursorSchema.safeParse(parseJsonOrNull(decoded));
+	return parsed.success ? parsed.data : null;
 }
 
 export function createArticleRepository(db: SqlDatabase): ArticleRepository {

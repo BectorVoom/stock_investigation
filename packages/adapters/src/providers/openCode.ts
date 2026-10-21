@@ -100,6 +100,7 @@ import type { AgentProbe, AgentRunContext, AgentRuntime, Effort } from "@researc
 import type { AgentCapabilities, AgentEvent, AgentRequest } from "@research/contracts";
 import { isFreeTierModelId, jsonValueSchema } from "@research/contracts";
 import type { JsonObject, JsonValue } from "@research/domain";
+import { parseJson } from "@research/domain";
 import { z } from "zod";
 import {
 	AVAILABLE,
@@ -126,7 +127,6 @@ import {
 	isValidModelId,
 	PROVIDER_FAILURES,
 	type ProviderFailure,
-	parseJsonLine,
 	preflightTurn,
 	settle,
 } from "./turn.ts";
@@ -392,7 +392,7 @@ export function createOpenCodeStreamInterpreter(
 
 	return {
 		interpretLine(line) {
-			const json = parseJsonLine(line);
+			const json = parseJson(line);
 			if (!json.ok) return MALFORMED;
 			const parsed = eventLineSchema.safeParse(json.value);
 			if (!parsed.success) return MALFORMED;
@@ -555,7 +555,7 @@ export function createOpenCodeRuntime(
 				availability: unavailable("PROBE_FAILED", "`opencode auth list` did not complete"),
 			};
 		}
-		const json = parseJsonLine(status.stdout);
+		const json = parseJson(status.stdout);
 		const parsed = json.ok ? authListSchema.safeParse(json.value) : null;
 		if (parsed === null || !parsed.success) {
 			return {

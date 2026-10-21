@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "../result.ts";
+import { parseUrl } from "../url.ts";
 import { looksLikeIpLiteral } from "./ipClassification.ts";
 
 /**
@@ -41,12 +42,8 @@ export interface ValidatedFetchUrl {
 
 export function validateFetchUrl(rawUrl: string): Result<ValidatedFetchUrl, UrlPolicyError> {
 	if (rawUrl.length > MAX_URL_LENGTH) return err("URL_TOO_LONG");
-	let url: URL;
-	try {
-		url = new URL(rawUrl);
-	} catch {
-		return err("MALFORMED_URL");
-	}
+	const url = parseUrl(rawUrl);
+	if (url === null) return err("MALFORMED_URL");
 	if (url.protocol !== "https:") return err("SCHEME_NOT_ALLOWED");
 	if (url.username !== "" || url.password !== "") return err("CREDENTIALS_NOT_ALLOWED");
 	// URL normalizes the default port to "", so any explicit value is a non-443 port.

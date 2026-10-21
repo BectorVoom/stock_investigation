@@ -31,8 +31,9 @@ import {
 	EMPTY_USAGE,
 	parseMarketSeriesId,
 	type ResourceUsage,
+	thrownName,
 } from "@research/domain";
-import type { EventLogger, LogFields } from "@research/effects";
+import { type EventLogger, type LogFields, logIsolated } from "@research/effects";
 import type { RunnerApi, RunnerApiResult } from "./apiClient.ts";
 import {
 	discardStoredGoogleGrant,
@@ -250,12 +251,7 @@ export async function executeJob(
 	// (`void`), so a rejection here would escape as an unhandled rejection that
 	// the `attempt(...)` around `runRunnerLoop` cannot catch.
 	const recordHeartbeatFailure = (code: string): void => {
-		try {
-			logger.warn("heartbeat_failed", { runId: job.runId, code });
-		} catch {
-			// The logger counts its own writer failures (`logFailures`); a
-			// detached timer has nothing further to do with one.
-		}
+		logIsolated(() => logger.warn("heartbeat_failed", { runId: job.runId, code }));
 	};
 	const stopHeartbeat = deps.every(job.heartbeatIntervalMs, () => {
 		if (heartbeatInFlight || currentStopReason() !== null) return;
@@ -464,7 +460,7 @@ export async function executeJob(
 		}
 	} catch (error) {
 		// Unexpected fault inside the runner. Report it so the job can be retried; never swallow it.
-		const name = error instanceof Error ? error.name : "unknown";
+		const name = thrownName(error);
 		logger.error("job_crashed", { runId: job.runId, error: name });
 		const completion: CompleteJobRequest = {
 			outcome: "failed",
@@ -489,7 +485,7 @@ export async function executeJob(
 			await deps.scratch.remove(scratchDirectory).catch((error: unknown) => {
 				logger.warn("scratch_not_removed", {
 					runId: job.runId,
-					error: error instanceof Error ? error.name : "unknown",
+					error: thrownName(error),
 				});
 			});
 		}
@@ -565,7 +561,7 @@ async function executeMarketRefresh(
 			// failed without aborting the others.
 			deps.logger.warn("market_series_failed", {
 				seriesId: query.seriesId,
-				error: error instanceof Error ? error.name : "unknown",
+				error: thrownName(error),
 			});
 			series.push({
 				seriesId: query.seriesId,
@@ -693,7 +689,7 @@ async function executeEarningsRefresh(
 			// this source as failed without aborting the other source.
 			deps.logger.warn("earnings_source_failed", {
 				source: sourceId,
-				error: error instanceof Error ? error.name : "unknown",
+				error: thrownName(error),
 			});
 			for (const item of order.filter((entry) =>
 				group.some((member) => member.symbol === entry.symbol),
