@@ -8,6 +8,7 @@ import {
 	type ResearchRun,
 	type RunRecords,
 	runBudget,
+	type TaskSpendConsent,
 } from "@research/contracts";
 import {
 	EMPTY_USAGE,
@@ -102,15 +103,67 @@ export function retryRequest(
 	costModelOf: (agentId: string) => CostModel,
 ): ResearchRequest {
 	if (saved === null || saved.defaultAgentId === null) return original;
-	const agentId = saved.defaultAgentId;
+	return { ...original, ...savedAgentChoice(saved, saved.defaultAgentId, costModelOf) };
+}
+
+/** The agent half of a research request: the fields Settings → AI agent decides. */
+export type AgentChoice = Pick<
+	ResearchRequest,
+	"agentId" | "model" | "effort" | "webAccess" | "budget"
+>;
+
+/**
+ * The agent choice saved in Settings → AI agent for `agentId`, under the
+ * fixed limits (RUN_LIMITS, ADR-0029). A plan-limited backend never carries
+ * a spend allowance, as in the composer. Shared by Retry and by scheduled
+ * tasks (ADR-0033 §4), which both run on the choice saved at that moment.
+ */
+function savedAgentChoice(
+	saved: AgentSettings,
+	agentId: string,
+	costModelOf: (agentId: string) => CostModel,
+): AgentChoice {
 	return {
-		...original,
 		agentId,
 		model: saved.models[agentId] ?? null,
 		effort: saved.effort,
 		webAccess: saved.webAccess,
 		budget: runBudget(costModelOf(agentId) === "plan-limited" ? null : saved.budget.maxSpendUsd),
 	};
+}
+
+/**
+ * Whether a scheduled task's stored consent covers a metered request
+ * (AGT-012, ADR-0033 §4): the backend, model and spend ceiling saved now
+ * must all equal what the owner consented to in the task editor.
+ */
+export function taskConsentCovers(
+	consent: TaskSpendConsent | null,
+	request: Pick<ResearchRequest, "agentId" | "model" | "budget">,
+): boolean {
+	return (
+		consent !== null &&
+		consent.agentId === request.agentId &&
+		consent.model === request.model &&
+		consent.maxSpendUsd === request.budget.maxSpendUsd
+	);
+}
+
+/** One run a scheduled task asks for — a due occurrence or "Run now" (ADR-0033). */
+export interface TaskRunInput {
+	readonly taskId: string;
+	/** The task's question, in its own conversation. */
+	readonly question: Pick<ResearchRequest, "workspaceId" | "question" | "horizonYears" | "markets">;
+	readonly spendConsent: TaskSpendConsent | null;
+	readonly idempotencyKey: string;
+	/**
+	 * Fixed per occurrence (`task:<id>:<slot>`, `task-run:<id>`), never the
+	 * built request: the saved agent choice may change between a crash and
+	 * its replay, and the replay must still answer the run it created.
+	 */
+	readonly requestFingerprint: string;
+	/** `scheduler` for a due occurrence, `owner` for "Run now". */
+	readonly actor: "owner" | "scheduler";
 }
 
 /**
@@ -264,6 +317,46 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		return ok(undefined);
 	}
 
+	/**
+	 * Inserts a research job with the owner's question in its conversation
+	 * (one batch, ADR-0004) after the caller's admission checks passed.
+	 */
+	async function enqueueQuestion(
+		ownerId: string,
+		request: ResearchRequest,
+		idempotencyKey: string,
+		requestFingerprint: string,
+		audit: { readonly actor: string; readonly detail: string },
+	): Promise<UseCaseResult<CreatedRun>> {
+		const job = newJob(ownerId, {
+			kind: "research",
+			request,
+			workspaceId: request.workspaceId,
+			retryOfRunId: null,
+			// The enqueue stamps the owner's question seq onto the job in the
+			// same batch; reads below see it once the insert committed.
+			contextAnchorSeq: null,
+		});
+		const outcome = await deps.unitOfWork.enqueueResearch({
+			job,
+			idempotencyKey,
+			requestFingerprint,
+			ownerMessage: { messageId: deps.ids.newId("msg"), text: request.question },
+			maxUnfinished: MAX_UNFINISHED_JOBS,
+		});
+		if (outcome.kind === "inserted") {
+			await deps.audit.record({
+				ownerId,
+				actor: audit.actor,
+				action: "run.create",
+				resource: job.runId,
+				detail: audit.detail,
+				at: job.createdAt,
+			});
+		}
+		return enqueued(outcome, job);
+	}
+
 	async function mutate(
 		ownerId: string,
 		runId: string,
@@ -307,34 +400,66 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 			if (!agent.ok) return agent;
 			const admitted = await admit(ownerId);
 			if (!admitted.ok) return admitted;
+			return enqueueQuestion(ownerId, request, idempotencyKey, requestFingerprint, {
+				actor: "owner",
+				detail: `agent=${request.agentId}`,
+			});
+		},
 
-			const job = newJob(ownerId, {
-				kind: "research",
-				request,
-				workspaceId: request.workspaceId,
-				retryOfRunId: null,
-				// The enqueue stamps the owner's question seq onto the job in the
-				// same batch; reads below see it once the insert committed.
-				contextAnchorSeq: null,
-			});
-			const outcome = await deps.unitOfWork.enqueueResearch({
-				job,
-				idempotencyKey,
-				requestFingerprint,
-				ownerMessage: { messageId: deps.ids.newId("msg"), text: request.question },
-				maxUnfinished: MAX_UNFINISHED_JOBS,
-			});
-			if (outcome.kind === "inserted") {
-				await deps.audit.record({
-					ownerId,
-					actor: "owner",
-					action: "run.create",
-					resource: job.runId,
-					detail: `agent=${request.agentId}`,
-					at: job.createdAt,
-				});
+		/**
+		 * Queues one run of a scheduled task (ADR-0033 §2–§5) on the agent
+		 * choice saved in Settings → AI agent NOW, like Retry. Errors:
+		 * `AGENT_NOT_CONFIGURED` (nothing saved), `VALIDATION_FAILED` (the
+		 * saved backend needs a model), `SPEND_CONSENT_REQUIRED` (metered and
+		 * the task's consent does not cover backend, model and ceiling),
+		 * `UNKNOWN_AGENT`, `NOT_FOUND` (conversation gone), `RATE_LIMITED`
+		 * (hourly allowance or unfinished-run cap). A repeated key answers
+		 * its run before any of these checks (ARCH-016).
+		 */
+		async createForTask(ownerId: string, input: TaskRunInput): Promise<UseCaseResult<CreatedRun>> {
+			const replay = await replayOf(ownerId, input.idempotencyKey, input.requestFingerprint);
+			if (replay !== null) return replay;
+
+			const saved = await deps.settings.getAgentSettings(ownerId);
+			if (saved === null || saved.settings.defaultAgentId === null) {
+				return fail(
+					"AGENT_NOT_CONFIGURED",
+					"No AI backend is configured. Choose one in Settings → AI agent.",
+				);
 			}
-			return enqueued(outcome, job);
+			const models = await costModels(ownerId);
+			const request: ResearchRequest = {
+				workspaceId: input.question.workspaceId,
+				question: input.question.question,
+				horizonYears: input.question.horizonYears,
+				markets: [...input.question.markets],
+				...savedAgentChoice(saved.settings, saved.settings.defaultAgentId, models.of),
+			};
+			if (MODEL_REQUIRED_AGENT_IDS.includes(request.agentId) && request.model === null) {
+				return fail(
+					"VALIDATION_FAILED",
+					"The backend saved in Settings → AI agent needs a model; choose one there.",
+				);
+			}
+			if (
+				models.of(request.agentId) === "metered" &&
+				!taskConsentCovers(input.spendConsent, request)
+			) {
+				return fail(
+					"SPEND_CONSENT_REQUIRED",
+					"The backend saved in Settings → AI agent is metered and this task has no matching spend consent; edit the task to allow it.",
+				);
+			}
+			const agent = await checkAgentAndConsent(ownerId, request.agentId, request.budget, models);
+			if (!agent.ok) return agent;
+			const workspace = await deps.workspaces.get(ownerId, request.workspaceId);
+			if (workspace === null) return fail("NOT_FOUND", "Workspace not found.");
+			const admitted = await admit(ownerId);
+			if (!admitted.ok) return admitted;
+			return enqueueQuestion(ownerId, request, input.idempotencyKey, input.requestFingerprint, {
+				actor: input.actor,
+				detail: `agent=${request.agentId} task=${input.taskId}`,
+			});
 		},
 
 		/** Queues retrieval of every active subscribed source (FR-003). */

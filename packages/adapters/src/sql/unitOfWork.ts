@@ -36,6 +36,11 @@ import {
 	TERMINAL_SQL,
 } from "./repositories.ts";
 import { numberColumn } from "./rows.ts";
+import {
+	ACTIVE_TASK_COUNT_BELOW_SQL,
+	insertScheduledTaskStatement,
+	TASK_COUNT_BELOW_SQL,
+} from "./scheduledTasks.ts";
 
 interface Guard {
 	readonly sql: string;
@@ -1103,6 +1108,11 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 					ownerId,
 					workspaceId,
 				]),
+				// ADR-0033 §5: the conversation's scheduled tasks go with it.
+				prep(`DELETE FROM scheduled_tasks WHERE owner_id = ? AND workspace_id = ?`, [
+					ownerId,
+					workspaceId,
+				]),
 				prep(`DELETE FROM workspaces WHERE owner_id = ? AND workspace_id = ?`, [
 					ownerId,
 					workspaceId,
@@ -1118,6 +1128,54 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				.bind(ownerId, workspaceId)
 				.first();
 			return workspace === null ? "not-found" : "has-unfinished";
+		},
+
+		/**
+		 * The task's conversation and the task in one atomic batch (ADR-0033
+		 * §7). The conversation INSERT carries the limits in its own WHERE
+		 * clause — fewer than `maxTasks` tasks, fewer than `maxActive` active
+		 * ones when the new task is active, and no task with this id yet (a
+		 * replayed create) — so concurrent creates cannot both slip under a
+		 * limit; the task INSERT is conditional on that row's mutation stamp.
+		 * "full" means nothing was written.
+		 */
+		async createScheduledTask({ ownerId, workspace, task, maxTasks, maxActive }) {
+			const mutationId = crypto.randomUUID();
+			const { summary, state } = workspace;
+			const limits: Guard =
+				task.status === "active"
+					? {
+							sql: `${TASK_COUNT_BELOW_SQL} AND ${ACTIVE_TASK_COUNT_BELOW_SQL}`,
+							values: [ownerId, maxTasks, ownerId, maxActive],
+						}
+					: { sql: TASK_COUNT_BELOW_SQL, values: [ownerId, maxTasks] };
+			const results = await db.batch([
+				db
+					.prepare(
+						`INSERT INTO workspaces (owner_id, workspace_id, title, version, state_json, last_mutation_id, created_at, updated_at)
+						SELECT ?, ?, ?, ?, ?, ?, ?, ?
+						WHERE ${limits.sql}
+							AND NOT EXISTS (SELECT 1 FROM scheduled_tasks WHERE owner_id = ? AND task_id = ?)`,
+					)
+					.bind(
+						ownerId,
+						summary.workspaceId,
+						summary.title,
+						state.version,
+						JSON.stringify(state),
+						mutationId,
+						summary.createdAt,
+						summary.updatedAt,
+						...limits.values,
+						ownerId,
+						task.taskId,
+					),
+				insertScheduledTaskStatement(db, task, {
+					sql: "EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ? AND last_mutation_id = ?)",
+					values: [ownerId, summary.workspaceId, mutationId],
+				}),
+			]);
+			return results[1]?.meta.changes === 1 ? "created" : "full";
 		},
 	};
 }

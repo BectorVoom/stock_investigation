@@ -26,7 +26,8 @@ import type {
 } from "./ports.ts";
 import { commandContext, knownIds, toLookup, workspaceReferences } from "./workspaceCommands.ts";
 
-const MAX_WORKSPACES = 50;
+/** Conversations one owner may keep; a scheduled task's own conversation counts too. */
+export const MAX_WORKSPACES = 50;
 /** A first-question title carries at most this many characters, ellipsis included. */
 export const CONVERSATION_TITLE_LIMIT = 60;
 /** Default and maximum page size for one conversation; the list endpoint shares the cap. */

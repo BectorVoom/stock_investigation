@@ -35,6 +35,7 @@ import {
 	ok,
 	type ResourceUsage,
 	type Result,
+	thrownName,
 	transitionJob,
 } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
@@ -140,6 +141,18 @@ export interface RunnerJobServiceDeps {
 	/** `google-auth-url` events and terminal bookkeeping (FR-019). */
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly audit: AuditLog;
+	/** Fires the owner's due scheduled tasks at the start of every claim (ADR-0033 §2). */
+	readonly scheduler: ClaimTimeScheduler;
+	/**
+	 * Told when the claim-time firing threw; the claim goes on. Receives the
+	 * thrown value's class name only (SEC-010); the composition root logs it.
+	 */
+	readonly onSchedulerFailure: (errorName: string) => void;
+}
+
+/** Work a claim does before it scans for jobs: materialising due scheduled tasks. */
+export interface ClaimTimeScheduler {
+	materializeDue(ownerId: string): Promise<unknown>;
 }
 
 /**
@@ -185,6 +198,25 @@ function toArticle(article: IngestedArticle): Article {
 }
 
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
+	/**
+	 * Due scheduled tasks become ordinary research jobs here, after the
+	 * runner's agents were recorded (the run service reads them for cost
+	 * models) and before the candidate scan, so a fired run is claimed in
+	 * this same request (ADR-0033 §2).
+	 */
+	async function fireDueTasks(ownerId: string): Promise<void> {
+		try {
+			await deps.scheduler.materializeDue(ownerId);
+		} catch (error) {
+			// Convert (error_handling §5.1): firing is a side duty of the
+			// claim and must never cost the runner its job. The documented
+			// fallback is "nothing fired this claim": every due task stays
+			// due (its run is created before the task advances), so the
+			// next claim tries again. Reported by class name only.
+			deps.onSchedulerFailure(thrownName(error));
+		}
+	}
+
 	async function marketDashboard(ownerId: string): Promise<HomeDashboard> {
 		const stored = await deps.homeDashboard.get(ownerId);
 		// An unreadable stored dashboard claims the defaults (like an absent
@@ -499,6 +531,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					.filter((agent) => agent.availability.status === "available")
 					.map((agent) => agent.agentId),
 			);
+			await fireDueTasks(runner.ownerId);
 			const candidates = await deps.jobs.listClaimCandidates(runner.ownerId, now, CLAIM_SCAN_LIMIT);
 			for (const job of candidates) {
 				const write = (patch: JobPatch, audits: readonly TransitionAudit[]) =>

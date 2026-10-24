@@ -1,9 +1,18 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.6
-**Date:** 2026-10-15
+**Version:** 1.7
+**Date:** 2026-10-24
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.6 → 1.7):** FR-021 (scheduled tasks) is a new Must
+requirement (ADR-0033): a research question saved with a schedule runs by
+itself in its own conversation, on the agent saved in Settings → AI agent;
+tasks are managed on a new Tasks page (`#/tasks`) and shown by a new
+`scheduled-tasks` widget on Home and in the Notebook. A task fires when a
+runner claims work (no cron; ADR-0004 stands), missed times collapse into
+one run, and a refused occurrence is skipped with its reason. The journey
+list gains step 10 and the endpoint list the five task routes.
 
 **Change note (1.5 → 1.6):** at the owner's request (ADR-0022) the calendar
 settings — the Google Calendar card, the `.ics` download and the
@@ -83,6 +92,7 @@ Automatic order placement, brokerage credentials, multi-user collaboration, auto
 7. **Continue without local compute:** when the local runner is offline, browse prior findings and queue research; pending jobs resume when a valid runner reconnects.
 8. **Check market prices at a glance:** arrange Home widgets over market series and queue a market-data refresh for the local runner; every number shows its unit, as-of date and source link.
 9. **Follow earnings dates:** register US and Japanese stocks on the Watchlist — each add queues its own earnings-date refresh, and opening Watchlist or Home with dates never fetched or more than a day old queues one refresh (once per visit) — browse the month calendar, keep a dedicated Google calendar in step (connect once, then sync on request or automatically when the dates drift), keep the dates in your own calendar (`.ics` download, per-date links, secret subscription feed), and watch the window on Home; an unknown date is "unavailable (reason)", never a guess.
+10. **Schedule a research question:** save a question with a schedule (once, daily, weekdays, weekly, monthly, in a time zone) on the Tasks page; it runs by itself on the agent saved in Settings, its answers collect in the task's own conversation, and a Scheduled tasks widget on Home or in a Notebook shows the next runs and the latest results with Pause and Run now.
 
 The page for each journey step is mapped in [PAGES.md](PAGES.md).
 
@@ -109,6 +119,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
 | FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Watchlist page (`#/watchlist`) with add/remove/refresh and per-date Google/Outlook links; Settings → Calendar (`#/settings/calendar`) with the `.ics` download and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
 | FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Settings → Calendar (`#/settings/calendar`) with the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines and the only month grid (announcement days link to the Watchlist page, at most 3 next announcements, one status line, Refresh + Open Watchlist; amended by ADR-0022, which removed the Watchlist page's full month calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
+| FR-021 | Scheduled tasks: research questions that run on a schedule (ADR-0033) | Must | Tasks page (`#/tasks`): create, edit, pause/resume, run now and delete (with confirmation) tasks with a title, question, horizon, markets, schedule (once / daily / weekdays / weekly / monthly at a local time) and time zone; at most 10 active and 30 stored; each task has its own conversation where its runs' questions and answers land; a task fires when a runner claims work, with at most one unfinished run per task, missed times collapsing into one run, a skipped occurrence recorded with its reason, and a metered backend only with the task's own spend consent (AGT-012); `scheduled-tasks` widget on Home and in the Notebook (next runs, latest results, Pause/Resume, Run now, New task, Open Tasks); stored on the server and surviving reload |
 | FR-020 | Chat-first to Notebook-first workspace: think in Chat, keep results as widgets, organise them in a Notebook the AI can also edit | Must | Chat page (`#/chat/<id>`) in exactly two states — Chat-first and Notebook-first, switched directly, remembered per conversation; a per-conversation Notebook (text, metric, chart, table and research widgets; S/M/L sizes; drag to reorder; edit, duplicate, remove with confirmation; 20-step undo) persisted with compare-and-set; "Add to Notebook" on answers and research results; a notebook assistant that creates, edits, moves, resizes and duplicates widgets of the selected context through validated commands, proposes removals for the owner to confirm, and shows every change with Undo (ADR-0020) |
 
 ## 4. Deployment and component architecture
@@ -363,6 +374,11 @@ POST   /api/v1/google-calendar/connect
 POST   /api/v1/google-calendar/sync
 POST   /api/v1/google-calendar/disconnect
 GET    /api/v1/calendar-feed/:token/earnings.ics
+GET    /api/v1/scheduled-tasks
+POST   /api/v1/scheduled-tasks
+PATCH  /api/v1/scheduled-tasks/:id
+DELETE /api/v1/scheduled-tasks/:id
+POST   /api/v1/scheduled-tasks/:id/run
 GET    /api/v1/runner/credential
 POST   /api/v1/runner/credentials/renew
 POST   /api/v1/runner/jobs/claim

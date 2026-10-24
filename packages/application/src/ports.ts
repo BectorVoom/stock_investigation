@@ -23,6 +23,7 @@ import type {
 	NotebookAssistJobRequest,
 	NotebookTurn,
 	ResearchBundle,
+	ResearchMarket,
 	ResearchRequest,
 	RunnerCredential,
 	RunnerEvent,

@@ -22,6 +22,7 @@ import type {
 	ResearchUnitOfWork,
 	RunnerCredentialRepository,
 	RunnerStatusRepository,
+	ScheduledTaskRepository,
 	SettingsRepository,
 	SourceRepository,
 	WatchlistRepository,
@@ -49,6 +50,7 @@ import {
 	createWatchlistRepository,
 	createWorkspaceRepository,
 } from "./repositories.ts";
+import { createScheduledTaskRepository } from "./scheduledTasks.ts";
 import { createResearchUnitOfWork } from "./unitOfWork.ts";
 
 export type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
@@ -73,6 +75,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const earnings: EarningsRepository = createEarningsRepository(db);
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
 	const googleCalendar: GoogleCalendarRepository = createGoogleCalendarRepository(db);
+	const scheduledTasks: ScheduledTaskRepository = createScheduledTaskRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
@@ -94,6 +97,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		earnings,
 		calendarFeed,
 		googleCalendar,
+		scheduledTasks,
 		rateLimiter,
 		audit,
 		unitOfWork,
