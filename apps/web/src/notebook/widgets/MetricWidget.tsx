@@ -1,11 +1,13 @@
 import type { WidgetCore } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { createMemo, Show } from "solid-js";
+import { commonMessages } from "../../i18n/common.messages.ts";
+import { notebookWidgetMessages } from "./notebookWidgets.messages.tsx";
 
 type Metric = Extract<WidgetCore, { readonly type: "metric" }>;
 
 const DIRECTION_MARK = { up: "▲", down: "▼", unchanged: "▬" } as const;
-const DIRECTION_WORD = { up: "up", down: "down", unchanged: "unchanged" } as const;
 
 type Direction = keyof typeof DIRECTION_MARK;
 
@@ -23,6 +25,8 @@ const signedFormat = new Intl.NumberFormat("en-US", {
 
 /** One headline number with unit, change, caption and as-of date. */
 export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
+	const m = useMessages(notebookWidgetMessages);
+	const common = useMessages(commonMessages);
 	const value = createMemo((): { readonly display: number } | null => {
 		const current = props.widget.value;
 		return current === null ? null : { display: current };
@@ -43,7 +47,9 @@ export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
 		<div data-widget-body="metric" class="space-y-1">
 			<Show
 				when={value()}
-				fallback={<p class="text-sm italic text-slate-600">unavailable (no value recorded)</p>}
+				fallback={
+					<p class="text-sm italic text-slate-600">{common().unavailable(m().noValueRecorded)}</p>
+				}
 			>
 				{(entry) => (
 					<p class="text-sm text-slate-900">
@@ -64,7 +70,7 @@ export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
 						<Show when={unit().trim().length > 0}>
 							<span> {unit()}</span>
 						</Show>{" "}
-						<span>({DIRECTION_WORD[entry().direction]})</span>
+						<span>({m()[entry().direction]})</span>
 					</p>
 				)}
 			</Show>
@@ -72,12 +78,8 @@ export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
 				<p class="text-xs text-slate-600">{caption()}</p>
 			</Show>
 			<p class="text-2xs text-slate-600">
-				<Show when={asOf()} fallback={<span class="italic">as-of date not stated</span>}>
-					{(date) => (
-						<span>
-							as of <time dateTime={date().date}>{date().date}</time>
-						</span>
-					)}
+				<Show when={asOf()} fallback={<span class="italic">{m().asOfNotStated}</span>}>
+					{(date) => <span>{m().asOf(<time dateTime={date().date}>{date().date}</time>)}</span>}
 				</Show>
 			</p>
 		</div>

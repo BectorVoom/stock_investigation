@@ -14,13 +14,16 @@ import {
 	type WidgetSize,
 	widgetSeriesIds,
 } from "@research/contracts";
-import { WIDGET_SIZE_SHAPES } from "@research/widget-grid/core";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, onMount, Show } from "solid-js";
 import { DisclosureSummary, IconButton } from "../components/ui.tsx";
-import { HOME_RANGE_LABELS, HOME_RANGES } from "../home/homeModel.ts";
+import { HOME_RANGES } from "../home/homeModel.ts";
 import "../home/shoelace.ts";
 import { WIDGET_REGISTRY } from "../home/widgetRegistry.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { marketWidgetDialogMessages } from "./marketWidgetDialog.messages.ts";
 import { newWidgetId } from "./widgetModel.ts";
+import { widgetTypeMessages } from "./widgetTypes.messages.ts";
 
 /**
  * Add / edit dialog of the live market widgets, the same on Home and in the
@@ -44,23 +47,6 @@ export interface MarketWidgetLimits {
 }
 
 const PROVIDERS: readonly MarketProviderId[] = ["fred", "twelve-data"];
-
-const PROVIDER_SYMBOLS: { readonly [P in MarketProviderId]: string } = {
-	fred: "e.g. VIXCLS",
-	"twelve-data": "e.g. AAPL, XAU/USD, 7203:JPX",
-};
-
-const CATEGORY_LABELS: { readonly [C in MarketCatalogEntry["category"]]: string } = {
-	volatility: "Volatility",
-	rates: "Rates",
-	inflation: "Inflation",
-	labour: "Labour",
-	growth: "Growth",
-	"equity-index": "Equity indices",
-	fx: "Currencies",
-	commodity: "Commodities",
-	equity: "Equities",
-};
 
 /** Days-ahead choices for the earnings calendar (contract `daysAhead` union). */
 const DAYS_AHEAD_OPTIONS: readonly EarningsCalendarDaysAhead[] = [30, 60, 90, 180];
@@ -162,6 +148,9 @@ interface MarketWidgetFormProps {
 }
 
 function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
+	const m = useMessages(marketWidgetDialogMessages);
+	const common = useMessages(commonMessages);
+	const typeWords = useMessages(widgetTypeMessages);
 	/** The type is chosen before the form opens (the add menu) and never changes in it. */
 	const widgetType = (): MarketWidgetType => props.initial?.type ?? props.type;
 	const [title, setTitle] = createSignal(props.initial?.title ?? "");
@@ -198,47 +187,45 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 		}
 		const catalogGroups: OptionGroup[] = [...groups.entries()].map(([category, options]) => ({
 			key: category,
-			label: CATEGORY_LABELS[category],
+			label: m().category(category),
 			options,
 		}));
 		const fresh = customIds().flatMap((seriesId) => {
 			if ((props.catalog ?? []).some((entry) => entry.seriesId === seriesId)) return [];
 			const parsed = parseMarketSeriesId(seriesId);
 			if (parsed === null) return [];
-			const providerLabel = parsed.provider === "fred" ? "FRED" : "Twelve Data";
 			return [
 				{
 					seriesId,
-					label: `${parsed.symbol} (custom ${providerLabel})`,
+					label: m().customOption(parsed.symbol, parsed.provider),
 					category: "equity" as const,
-					description: "Custom series.",
+					description: m().customDescription,
 				},
 			];
 		});
 		return fresh.length === 0
 			? catalogGroups
-			: [{ key: "custom", label: "Custom", options: fresh }, ...catalogGroups];
+			: [{ key: "custom", label: m().customGroup, options: fresh }, ...catalogGroups];
 	});
 
 	const problems = createMemo((): readonly string[] => {
 		const found: string[] = [];
 		const trimmed = title().trim();
-		if (trimmed === "") found.push("Enter a title.");
+		const words = m();
+		if (trimmed === "") found.push(words.enterTitle);
 		if (trimmed.length > WIDGET_LIMITS.maxTitleChars) {
-			found.push(`Shorten the title to ${WIDGET_LIMITS.maxTitleChars} characters or fewer.`);
+			found.push(words.shortenTitle(WIDGET_LIMITS.maxTitleChars));
 		}
 		const ids = selected();
 		if (ids.length < info().minSeries) {
-			found.push(
-				info().minSeries === 1 ? "Choose a series." : `Choose at least ${info().minSeries} series.`,
-			);
+			found.push(words.chooseSeries(info().minSeries));
 		}
 		if (ids.length > info().maxSeries) {
-			found.push(`This widget holds at most ${info().maxSeries} series.`);
+			found.push(words.tooManySeries(info().maxSeries));
 		}
-		if (new Set(ids).size !== ids.length) found.push("A widget must not repeat a series.");
+		if (new Set(ids).size !== ids.length) found.push(words.repeatedSeries);
 		for (const id of ids) {
-			if (parseMarketSeriesId(id) === null) found.push(`"${id}" is not a valid series id.`);
+			if (parseMarketSeriesId(id) === null) found.push(words.invalidSeriesId(id));
 		}
 		if (info().seriesKind === "multi-same-unit") {
 			const known = ids.flatMap((id) => {
@@ -247,19 +234,19 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 			});
 			const distinct = [...new Set(known)];
 			if (distinct.length > 1) {
-				found.push(`Line-chart series must share one unit (found: ${distinct.join(", ")}).`);
+				found.push(words.unitsDiffer(distinct.join(", ")));
 			}
 		}
 		const { scope, maxWidgets, maxSeries } = props.limits;
 		if (props.mode === "add" && props.widgets.length >= maxWidgets) {
-			found.push(`The ${scope} already holds ${maxWidgets} widgets; remove one first.`);
+			found.push(words.pageFull(scope, maxWidgets));
 		}
 		// The page's series without this widget's own, plus the chosen ones.
 		const others = props.widgets.filter((widget) => widget.widgetId !== props.initial?.widgetId);
 		const distinct = new Set<string>(distinctWidgetSeriesIds(others));
 		for (const id of ids) distinct.add(id);
 		if (distinct.size > maxSeries) {
-			found.push(`The ${scope} holds at most ${maxSeries} distinct series; remove one first.`);
+			found.push(words.pageSeriesFull(scope, maxSeries));
 		}
 		return found;
 	});
@@ -271,23 +258,22 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 			return unit === undefined || unit === "";
 		});
 		if (unknown.length === 0) return null;
-		return `Unit unknown until refreshed: ${unknown.join(", ")}. Units must match before saving with data.`;
+		return m().unitUnknown(unknown.join(", "));
 	});
 
 	const problemsId = `widget-problems-${props.mode}`;
 
 	/** F3: the pristine lead names what to do; the dirty lead names what is wrong. */
 	const problemsLead = () => {
-		if (dirty()) return "Fix before saving:";
-		return props.mode === "add" ? "To add this widget:" : "To save this widget:";
+		if (dirty()) return m().fixBeforeSaving;
+		return props.mode === "add" ? m().toAdd : m().toSave;
 	};
 
 	const addCustom = () => {
 		const symbol = customSymbol().trim().toUpperCase();
 		const candidate = `${customProvider()}:${symbol}`;
 		if (parseMarketSeriesId(candidate) === null) {
-			const providerLabel = customProvider() === "fred" ? "FRED" : "Twelve Data";
-			setCustomError(`"${customSymbol().trim()}" is not a valid ${providerLabel} symbol id.`);
+			setCustomError(m().invalidSymbol(customSymbol().trim(), customProvider()));
 			return;
 		}
 		setDirty(true);
@@ -322,7 +308,11 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 
 	return (
 		<sl-dialog
-			label={`${props.mode === "add" ? "Add" : "Edit"} ${WIDGET_TYPE_META[widgetType()].label.toLowerCase()} widget`}
+			label={
+				props.mode === "add"
+					? typeWords().addWidget(widgetType())
+					: typeWords().editWidget(widgetType())
+			}
 			open
 			on:sl-after-show={props.onShown}
 			on:sl-after-hide={props.onHidden}
@@ -342,18 +332,14 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 						}
 					>
 						<p class="font-medium">{problemsLead()}</p>
-						<ul
-							aria-label="Before you can save this widget"
-							id={problemsId}
-							class="list-disc space-y-0.5 pl-5"
-						>
+						<ul aria-label={m().problemsList} id={problemsId} class="list-disc space-y-0.5 pl-5">
 							<For each={problems()}>{(problem) => <li>{problem}</li>}</For>
 						</ul>
 					</div>
 				</Show>
-				<p class="text-2xs text-slate-600">{info().description}</p>
+				<p class="text-2xs text-slate-600">{typeWords().typeDescription(widgetType())}</p>
 				<sl-input
-					label="Title"
+					attr:label={m().title}
 					value={title()}
 					size="small"
 					maxlength={WIDGET_LIMITS.maxTitleChars}
@@ -364,11 +350,11 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 					}}
 				/>
 				<sl-select
-					label="Size"
+					attr:label={m().size}
 					value={size()}
 					size="small"
 					hoist
-					attr:help-text={`Small is ${WIDGET_SIZE_SHAPES.small}, Medium is ${WIDGET_SIZE_SHAPES.medium}, Large is ${WIDGET_SIZE_SHAPES.large}.`}
+					attr:help-text={m().sizeHelp}
 					on:sl-change={(event) => {
 						if (!isDirectShoelaceEvent(event)) return;
 						const next = event.currentTarget.value;
@@ -379,13 +365,13 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 						}
 					}}
 				>
-					<sl-option value="small">Small</sl-option>
-					<sl-option value="medium">Medium</sl-option>
-					<sl-option value="large">Large</sl-option>
+					<sl-option value="small">{m().small}</sl-option>
+					<sl-option value="medium">{m().medium}</sl-option>
+					<sl-option value="large">{m().large}</sl-option>
 				</sl-select>
 				<Show when={info().hasDaysAhead}>
 					<sl-select
-						label="Days ahead"
+						attr:label={m().daysAhead}
 						value={String(daysAhead())}
 						size="small"
 						hoist
@@ -401,14 +387,14 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 						}}
 					>
 						<For each={DAYS_AHEAD_OPTIONS}>
-							{(entry) => <sl-option value={String(entry)}>Next {entry} days</sl-option>}
+							{(entry) => <sl-option value={String(entry)}>{m().nextDays(entry)}</sl-option>}
 						</For>
 					</sl-select>
 				</Show>
 				<Show when={info().seriesKind !== "none"}>
 					<div>
 						<sl-select
-							label="Series"
+							attr:label={m().series}
 							value={info().seriesKind === "single" ? (selected()[0] ?? "") : [...selected()]}
 							size="small"
 							multiple={info().seriesKind !== "single"}
@@ -433,7 +419,7 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 								when={props.catalogState !== "error"}
 								fallback={
 									<sl-option value="" disabled={true}>
-										Catalog unavailable
+										{m().catalogUnavailable}
 									</sl-option>
 								}
 							>
@@ -462,10 +448,10 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 				</Show>
 				<Show when={info().seriesKind !== "none"}>
 					<details class="group text-xs">
-						<DisclosureSummary>Use a custom series id</DisclosureSummary>
+						<DisclosureSummary>{m().customSeriesId}</DisclosureSummary>
 						<div class="mt-1 flex flex-wrap items-end gap-2">
 							<sl-select
-								label="Provider"
+								attr:label={m().provider}
 								value={customProvider()}
 								size="small"
 								hoist
@@ -481,15 +467,13 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 							>
 								<For each={PROVIDERS}>
 									{(provider) => (
-										<sl-option value={provider}>
-											{provider === "fred" ? "FRED" : "Twelve Data"}
-										</sl-option>
+										<sl-option value={provider}>{m().providerName(provider)}</sl-option>
 									)}
 								</For>
 							</sl-select>
 							<sl-input
-								label="Symbol"
-								placeholder={PROVIDER_SYMBOLS[customProvider()]}
+								attr:label={m().symbol}
+								placeholder={m().symbolExample(customProvider())}
 								size="small"
 								value={customSymbol()}
 								on:sl-input={(event) => {
@@ -498,7 +482,7 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 									setCustomSymbol(event.currentTarget.value);
 								}}
 							/>
-							<IconButton label="Add series" icon="plus-lg" onClick={addCustom} />
+							<IconButton label={m().addSeries} icon="plus-lg" onClick={addCustom} />
 						</div>
 						<Show when={customError()}>
 							{(error) => (
@@ -511,7 +495,7 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 				</Show>
 				<Show when={info().hasRange}>
 					<sl-select
-						label="Range"
+						attr:label={m().range}
 						value={range()}
 						size="small"
 						hoist
@@ -527,15 +511,15 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 						}}
 					>
 						<For each={HOME_RANGES}>
-							{(entry) => <sl-option value={entry}>{HOME_RANGE_LABELS[entry]}</sl-option>}
+							{(entry) => <sl-option value={entry}>{m().rangeLabel(entry)}</sl-option>}
 						</For>
 					</sl-select>
 				</Show>
 			</div>
 			<div slot="footer" class="flex justify-end gap-1">
-				<IconButton label="Cancel" icon="x-lg" onClick={() => props.onClose()} />
+				<IconButton label={common().cancel} icon="x-lg" onClick={() => props.onClose()} />
 				<IconButton
-					label={props.mode === "add" ? "Add widget" : "Save widget"}
+					label={props.mode === "add" ? m().addWidget : m().saveWidget}
 					icon="check-lg"
 					variant="primary"
 					disabled={problems().length > 0}

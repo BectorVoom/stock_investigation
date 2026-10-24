@@ -1,7 +1,9 @@
 import type { WidgetCore, WorkspaceView } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { type UiRegistry, WorkspaceComponentView } from "@research/ui-registry";
 import type { JSX } from "solid-js";
 import { createMemo, Show } from "solid-js";
+import { notebookWidgetMessages } from "./notebookWidgets.messages.tsx";
 
 /**
  * A research component of the same conversation rendered through the
@@ -13,6 +15,7 @@ export function ResearchWidget(props: {
 	readonly view: WorkspaceView | null;
 	readonly registry: UiRegistry;
 }): JSX.Element {
+	const m = useMessages(notebookWidgetMessages);
 	const component = createMemo(() => {
 		const view = props.view;
 		if (view === null) return null;
@@ -35,9 +38,7 @@ export function ResearchWidget(props: {
 		<div data-widget-body="research">
 			<Show
 				when={component() ?? undefined}
-				fallback={
-					<p class="text-sm italic text-slate-600">This research result is no longer available.</p>
-				}
+				fallback={<p class="text-sm italic text-slate-600">{m().researchGone}</p>}
 			>
 				{(found) => (
 					<WorkspaceComponentView

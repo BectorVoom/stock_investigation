@@ -1,9 +1,11 @@
 import { chartWidgetCitedIds, type WidgetCore, type WidgetSize } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import {
 	applyWidgetLayoutEdit,
 	type WidgetBase,
 	type WidgetLayoutEdit,
 } from "@research/widget-grid/core";
+import { widgetModelMessages } from "./widgetModel.messages.ts";
 
 /**
  * Pure widget edits shared by Home and the Notebook (ADR-0024): fresh ids,
@@ -24,19 +26,24 @@ export function isStarterWidgetType(type: string): type is StarterWidgetType {
 	return type === "text" || type === "metric" || type === "chart" || type === "table";
 }
 
-/** A new widget of a content type, ready to be edited. */
+/**
+ * A new widget of a content type, ready to be edited. Its starter words are
+ * UI text in the current language (`words`, English by default); once saved
+ * they are the owner's content.
+ */
 export function starterWidget(
 	type: StarterWidgetType,
 	widgetId: string = newWidgetId(),
+	words: MessagesOf<typeof widgetModelMessages> = widgetModelMessages.en,
 ): WidgetCore {
 	switch (type) {
 		case "text":
-			return { widgetId, type, title: "New note", size: "small", text: "New note" };
+			return { widgetId, type, title: words.newNote, size: "small", text: words.newNote };
 		case "metric":
 			return {
 				widgetId,
 				type,
-				title: "New metric",
+				title: words.newMetric,
 				size: "small",
 				value: null,
 				unit: "",
@@ -48,13 +55,13 @@ export function starterWidget(
 			return {
 				widgetId,
 				type,
-				title: "New chart",
+				title: words.newChart,
 				size: "small",
 				chartType: "line",
 				unit: "",
 				series: [
 					{
-						name: "Series 1",
+						name: words.firstSeries,
 						points: [
 							{ x: "A", y: 1 },
 							{ x: "B", y: 2 },
@@ -66,10 +73,10 @@ export function starterWidget(
 			return {
 				widgetId,
 				type,
-				title: "New table",
+				title: words.newTable,
 				size: "small",
-				columns: ["Label", "Value"],
-				rows: [["Example", 1]],
+				columns: [words.labelColumn, words.valueColumn],
+				rows: [[words.exampleRow, 1]],
 			};
 	}
 }

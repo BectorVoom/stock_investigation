@@ -9,10 +9,12 @@ import {
 	type WidgetSize,
 	type WidgetType,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMoveAnnouncer, MoveAnnouncerView, type WidgetDragDrop } from "@research/widget-grid";
 import { type Accessor, createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ActionMenu, type ActionMenuItem, BUTTON, IconButton, Notice } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { ContentWidgetEditor } from "./ContentWidgetEditor.tsx";
 import { createWidgetGridEntries } from "./gridEntries.ts";
 import {
@@ -20,6 +22,8 @@ import {
 	type MarketWidgetDialogState,
 	type MarketWidgetLimits,
 } from "./MarketWidgetDialog.tsx";
+import { widgetBoardMessages } from "./widgetBoard.messages.ts";
+import { widgetClipboardMessages } from "./widgetClipboard.messages.ts";
 import {
 	clipboardCountText,
 	removedCountText,
@@ -28,6 +32,7 @@ import {
 	type WidgetClipboardEntry,
 	type WidgetClipboardStore,
 } from "./widgetClipboard.ts";
+import { widgetModelMessages } from "./widgetModel.messages.ts";
 import {
 	duplicateWidget,
 	isStarterWidgetType,
@@ -36,6 +41,7 @@ import {
 	resizeWidget,
 	starterWidget,
 } from "./widgetModel.ts";
+import { widgetTypeMessages } from "./widgetTypes.messages.ts";
 
 /**
  * The one widget board of the app (ADR-0024): everything the owner can do to
@@ -112,12 +118,6 @@ export function widgetCoreOf(widget: WidgetCore): WidgetCore {
 	return duplicateWidget(widget, widget.widgetId);
 }
 
-const SIZE_LABELS: { readonly [S in WidgetSize]: string } = {
-	small: "Small",
-	medium: "Medium",
-	large: "Large",
-};
-
 /**
  * Targets a clipboard shortcut must never steal: text fields, the in-place
  * rich-text editor, dialogs and menus.
@@ -131,6 +131,11 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const pending = session.pending;
 	const entries = createWidgetGridEntries(widgets);
 	const announcer = createMoveAnnouncer();
+	const m = useMessages(widgetBoardMessages);
+	const common = useMessages(commonMessages);
+	const typeWords = useMessages(widgetTypeMessages);
+	const clipboardWords = useMessages(widgetClipboardMessages);
+	const starterWords = useMessages(widgetModelMessages);
 
 	const [editorId, setEditorId] = createSignal<string | null>(null);
 	const [editorOpener, setEditorOpener] = createSignal<HTMLElement | null>(null);
@@ -247,7 +252,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
 		if (isStarterWidgetType(type)) {
-			const core = starterWidget(type);
+			const core = starterWidget(type, undefined, starterWords());
 			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
 				if (ids === null || disposed) return;
 				options.onAdded?.([core]);
@@ -344,7 +349,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		void session
 			.edit((current) => current.filter((widget) => !wanted.has(widget.widgetId)))
 			.then((saved) => {
-				if (saved) announceAction(removedCountText(count));
+				if (saved) announceAction(removedCountText(count, clipboardWords()));
 			});
 	};
 
@@ -374,7 +379,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 
 	const copyIds = (ids: readonly string[]): void => {
 		const count = copyToClipboard(ids);
-		if (count > 0) announceAction(clipboardCountText(count, "Copied"));
+		if (count > 0) announceAction(clipboardCountText(count, "Copied", clipboardWords()));
 	};
 
 	/**
@@ -390,7 +395,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		void session
 			.edit((current) => current.filter((widget) => !wanted.has(widget.widgetId)))
 			.then((saved) => {
-				if (saved) announceAction(clipboardCountText(count, "Cut"));
+				if (saved) announceAction(clipboardCountText(count, "Cut", clipboardWords()));
 			});
 	};
 
@@ -407,7 +412,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		const skipped = resolved.skippedResearch + (resolved.entries.length - accepted.length);
 		if (accepted.length === 0) {
 			// Everything on the clipboard belongs to another chat: say so.
-			if (skipped > 0) setPasteNotice(skippedResearchNoticeText(skipped));
+			if (skipped > 0) setPasteNotice(skippedResearchNoticeText(skipped, clipboardWords()));
 			return;
 		}
 		const current = widgets();
@@ -422,8 +427,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			if (ids === null || disposed) return;
 			session.select(null, "replace");
 			for (const id of ids) session.select(id, "toggle");
-			announceAction(clipboardCountText(ids.length, "Pasted"));
-			setPasteNotice(skipped > 0 ? skippedResearchNoticeText(skipped) : null);
+			announceAction(clipboardCountText(ids.length, "Pasted", clipboardWords()));
+			setPasteNotice(skipped > 0 ? skippedResearchNoticeText(skipped, clipboardWords()) : null);
 			options.onAdded?.(accepted.map((entry) => entry.core));
 		});
 	};
@@ -510,7 +515,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		return [
 			{
 				value: "edit",
-				label: "Edit…",
+				label: m().edit,
 				icon: "pencil",
 				disabled: busy,
 				onSelect: () => openEditor(widget.widgetId),
@@ -518,48 +523,48 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			...sizes.map(
 				(size): ActionMenuItem => ({
 					value: `size-${size}`,
-					label: `Size: ${SIZE_LABELS[size]}`,
+					label: m().size(size),
 					disabled: busy || widget.size === size,
 					onSelect: () => resize(widget, size),
 				}),
 			),
 			{
 				value: "cut",
-				label: "Cut",
+				label: common().cut,
 				icon: "scissors",
 				disabled: busy,
 				onSelect: () => cutIds([widget.widgetId]),
 			},
 			{
 				value: "copy",
-				label: "Copy",
+				label: common().copy,
 				icon: "copy",
 				onSelect: () => copyIds([widget.widgetId]),
 			},
 			{
 				value: "paste-after",
-				label: "Paste after",
+				label: m().pasteAfter,
 				icon: "clipboard",
 				disabled: options.clipboard.isEmpty() || busy,
 				onSelect: () => pasteAfter(widget.widgetId),
 			},
 			{
 				value: "duplicate",
-				label: "Duplicate",
+				label: common().duplicate,
 				icon: "plus-square",
 				disabled: busy,
 				onSelect: () => duplicateIds([widget.widgetId]),
 			},
 			{
 				value: "earlier",
-				label: "Move earlier",
+				label: m().moveEarlier,
 				icon: "arrow-left",
 				disabled: busy || index === 0,
 				onSelect: () => move(widget, "earlier"),
 			},
 			{
 				value: "later",
-				label: "Move later",
+				label: m().moveLater,
 				icon: "arrow-right",
 				disabled: busy || index === widgets().length - 1,
 				onSelect: () => move(widget, "later"),
@@ -567,7 +572,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			...(options.pageItems?.(widget) ?? []),
 			{
 				value: "remove",
-				label: "Remove",
+				label: common().remove,
 				icon: "trash",
 				disabled: busy,
 				onSelect: () => removeIds([widget.widgetId]),
@@ -584,8 +589,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/** The frame's actions button and menu (`data-widget-actions` names the widget). */
 	const ActionsMenu = (props: { readonly widget: W; readonly index: number }): JSX.Element => (
 		<ActionMenu
-			buttonLabel={`${props.widget.title} actions`}
-			menuLabel={`Actions for ${props.widget.title}`}
+			buttonLabel={m().actionsButton(props.widget.title)}
+			menuLabel={m().actionsMenu(props.widget.title)}
 			iconTrigger={{
 				icon: "three-dots",
 				disabled: pending(),
@@ -599,25 +604,25 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const HeaderButtons = (): JSX.Element => (
 		<>
 			<IconButton
-				label="Paste widgets"
+				label={m().pasteWidgets}
 				icon="clipboard"
 				disabled={options.clipboard.isEmpty() || pending()}
 				onClick={() => pasteAfter(null)}
 			/>
 			<IconButton
-				label="Undo"
+				label={common().undo}
 				icon="arrow-counterclockwise"
 				disabled={!session.undoAvailable() || pending()}
 				onClick={() => void session.undo()}
 			/>
 			<ActionMenu
-				buttonLabel="Add widget"
-				menuLabel="Add widget"
+				buttonLabel={m().addWidget}
+				menuLabel={m().addWidget}
 				iconTrigger={{ icon: "plus-lg", disabled: pending() }}
 				items={addableTypes().map(
 					(type): ActionMenuItem => ({
 						value: type,
-						label: WIDGET_TYPE_META[type].label,
+						label: typeWords().typeLabel(type),
 						onSelect: () => addType(type),
 					}),
 				)}
@@ -630,36 +635,38 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		<Show when={session.selection().length > 0}>
 			<div
 				role="toolbar"
-				aria-label="Selected widgets"
+				aria-label={m().selectedWidgets}
 				class="flex flex-wrap items-center gap-1 rounded bg-slate-100 p-1"
 			>
-				<span class="px-1 text-xs text-slate-700">{session.selection().length} selected</span>
+				<span class="px-1 text-xs text-slate-700">
+					{m().selectedCount(session.selection().length)}
+				</span>
 				{props.children}
 				<IconButton
-					label="Duplicate selected widgets"
+					label={m().duplicateSelected}
 					icon="plus-square"
 					disabled={pending()}
 					onClick={() => duplicateIds(orderedSelection())}
 				/>
 				<IconButton
-					label="Cut selected widgets"
+					label={m().cutSelected}
 					icon="scissors"
 					disabled={pending()}
 					onClick={() => cutIds(orderedSelection())}
 				/>
 				<IconButton
-					label="Copy selected widgets"
+					label={m().copySelected}
 					icon="copy"
 					onClick={() => copyIds(orderedSelection())}
 				/>
 				<IconButton
-					label="Remove selected widgets"
+					label={m().removeSelected}
 					icon="trash"
 					disabled={pending()}
 					onClick={() => removeIds(orderedSelection())}
 				/>
 				<IconButton
-					label="Clear selection"
+					label={m().clearSelection}
 					icon="x-lg"
 					onClick={() => session.select(null, "replace")}
 				/>
@@ -676,7 +683,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 						<span class="flex flex-wrap items-center gap-2">
 							<span>{text()}</span>
 							<button type="button" class={BUTTON} onClick={() => setPasteNotice(null)}>
-								Dismiss
+								{m().dismiss}
 							</button>
 						</span>
 					</Notice>

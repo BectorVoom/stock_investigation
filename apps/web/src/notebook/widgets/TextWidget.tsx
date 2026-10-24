@@ -1,10 +1,12 @@
 import type { WidgetCore } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { createSignal, Show } from "solid-js";
 import { parseRichText } from "../richText/parser.ts";
 import { RichTextEditor } from "../richText/RichTextEditor.tsx";
 import { RichTextView } from "../richText/RichTextView.tsx";
 import { toggleTodoLine } from "../richText/serializer.ts";
+import { notebookWidgetMessages } from "./notebookWidgets.messages.tsx";
 
 /**
  * A Text widget: the `WIDGET_TEXT_MARKDOWN` source rendered without
@@ -24,6 +26,7 @@ export function TextWidget(props: {
 	/** Saves a new Markdown source; resolves false when the save failed. */
 	readonly onSaveText: (widgetId: string, text: string) => Promise<boolean>;
 }): JSX.Element {
+	const m = useMessages(notebookWidgetMessages);
 	const [editing, setEditing] = createSignal(false);
 	let body: HTMLDivElement | undefined;
 	const size = () => props.widget.size;
@@ -96,7 +99,7 @@ export function TextWidget(props: {
 				}}
 				tabIndex={0}
 				role="button"
-				aria-label="Edit note"
+				aria-label={m().editNote}
 				class="rich-text-view rounded"
 				onClick={openFromBody}
 				onKeyDown={openFromKeyboard}

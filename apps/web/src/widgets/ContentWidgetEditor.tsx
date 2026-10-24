@@ -4,6 +4,7 @@ import {
 	type WidgetCore,
 	widgetCoreSchema,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { WidgetSizePicker } from "@research/widget-grid";
 import {
 	createSignal,
@@ -17,7 +18,10 @@ import {
 	Switch,
 } from "solid-js";
 import { BUTTON, BUTTON_PRIMARY, INPUT, LABEL } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { contentWidgetEditorMessages } from "./contentWidgetEditor.messages.ts";
 import { carryChartProvenance } from "./widgetModel.ts";
+import { widgetTypeMessages } from "./widgetTypes.messages.ts";
 
 interface ChartSeriesDraft {
 	name: string;
@@ -35,6 +39,9 @@ export function ContentWidgetEditor(props: {
 	readonly onSave: (core: WidgetCore) => Promise<boolean>;
 	readonly onClose: () => void;
 }): JSX.Element {
+	const m = useMessages(contentWidgetEditorMessages);
+	const common = useMessages(commonMessages);
+	const typeWords = useMessages(widgetTypeMessages);
 	const headingId = createUniqueId();
 	let dialog: HTMLDialogElement | undefined;
 	const [title, setTitle] = createSignal(props.widget.title);
@@ -115,7 +122,7 @@ export function ContentWidgetEditor(props: {
 				props.onClose();
 				closeToOpener();
 			} else {
-				setSaveError("The widget was not saved. The notice above the widgets says why.");
+				setSaveError(m().notSaved);
 			}
 		} finally {
 			setSaving(false);
@@ -132,9 +139,9 @@ export function ContentWidgetEditor(props: {
 			return { widgetId, type: "text", title: trimmedTitle, size: widgetSize, text: text() };
 		}
 		if (widget.type === "metric") {
-			const value = parseOptionalNumber(metricValue(), "Value");
+			const value = parseOptionalNumber(metricValue(), m().valueField);
 			if (value === undefined) return null;
-			const change = parseOptionalNumber(metricChange(), "Change");
+			const change = parseOptionalNumber(metricChange(), m().changeField);
 			if (change === undefined) return null;
 			const asOf = metricAsOf().trim() === "" ? null : metricAsOf().trim();
 			return {
@@ -190,7 +197,7 @@ export function ContentWidgetEditor(props: {
 		if (trimmed === "") return null;
 		const value = Number(trimmed);
 		if (!Number.isFinite(value)) {
-			setProblems([`${field}: enter a number or leave it empty.`]);
+			setProblems([m().notANumber(field)]);
 			return undefined;
 		}
 		return value;
@@ -209,25 +216,25 @@ export function ContentWidgetEditor(props: {
 				.filter((line) => line.length > 0);
 			const name = lines[0] ?? "";
 			if (name === "") {
-				errors.push(`Series ${blockIndex + 1}: give the series a name on its first line.`);
+				errors.push(m().seriesNameMissing(blockIndex + 1));
 				return [];
 			}
 			const points = lines.slice(1).flatMap((line, lineIndex) => {
 				const comma = line.indexOf(",");
 				if (comma < 0) {
-					errors.push(`Series "${name}" line ${lineIndex + 1}: use "label, value".`);
+					errors.push(m().seriesLineNoComma(name, lineIndex + 1));
 					return [];
 				}
 				const x = line.slice(0, comma).trim();
 				const y = Number(line.slice(comma + 1).trim());
 				if (x === "" || !Number.isFinite(y)) {
-					errors.push(`Series "${name}" line ${lineIndex + 1}: use "label, value" with a number.`);
+					errors.push(m().seriesLineNotNumber(name, lineIndex + 1));
 					return [];
 				}
 				return [{ x, y }];
 			});
 			if (points.length === 0) {
-				errors.push(`Series "${name}": add at least one "label, value" line.`);
+				errors.push(m().seriesNoPoints(name));
 				return [];
 			}
 			return [{ name, points }];
@@ -237,7 +244,7 @@ export function ContentWidgetEditor(props: {
 			return null;
 		}
 		if (series.length === 0) {
-			setProblems(['Series: add one block per series: the name, then "label, value" lines.']);
+			setProblems([m().seriesNone]);
 			return null;
 		}
 		return series;
@@ -252,7 +259,7 @@ export function ContentWidgetEditor(props: {
 			.map((column) => column.trim())
 			.filter((column) => column.length > 0);
 		if (columns.length === 0) {
-			setProblems(["Columns: list at least one column name, separated by commas."]);
+			setProblems([m().columnsNone]);
 			return null;
 		}
 		const errors: string[] = [];
@@ -263,7 +270,7 @@ export function ContentWidgetEditor(props: {
 			.map((line, lineIndex) => {
 				const cells = line.split(",").map((cell) => parseTableCell(cell.trim()));
 				if (cells.length !== columns.length) {
-					errors.push(`Row ${lineIndex + 1}: needs ${columns.length} cells, has ${cells.length}.`);
+					errors.push(m().rowCellCount(lineIndex + 1, columns.length, cells.length));
 				}
 				return cells;
 			});
@@ -291,13 +298,13 @@ export function ContentWidgetEditor(props: {
 			onClose={() => closeToOpener()}
 		>
 			<h3 id={headingId} class="text-base font-semibold text-slate-900">
-				Edit {WIDGET_TYPE_META[props.widget.type].label.toLowerCase()} widget
+				{typeWords().editWidget(props.widget.type)}
 			</h3>
 			<div class="mt-2 max-w-md space-y-2">
 				<Show when={problems().length > 0}>
 					<ul
 						id={problemsId}
-						aria-label="Problems"
+						aria-label={m().problems}
 						class="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900"
 					>
 						<For each={problems()}>{(problem) => <li>{problem}</li>}</For>
@@ -306,7 +313,7 @@ export function ContentWidgetEditor(props: {
 				<Show when={saveError()}>{(error) => <p class="text-xs text-red-900">{error()}</p>}</Show>
 				<div>
 					<label for={`${headingId}-title`} class={LABEL}>
-						Title
+						{m().title}
 					</label>
 					<input
 						id={`${headingId}-title`}
@@ -320,14 +327,14 @@ export function ContentWidgetEditor(props: {
 				<WidgetSizePicker
 					value={size()}
 					sizes={[...WIDGET_TYPE_META[props.widget.type].sizes]}
-					label={`Size of “${props.widget.title}”`}
+					label={m().sizeOf(props.widget.title)}
 					onChange={setSize}
 				/>
 				<Switch>
 					<Match when={props.widget.type === "text"}>
 						<div>
 							<label for={`${headingId}-text`} class={LABEL}>
-								Text (Markdown)
+								{m().textMarkdown}
 							</label>
 							<textarea
 								id={`${headingId}-text`}
@@ -339,9 +346,7 @@ export function ContentWidgetEditor(props: {
 								onInput={(event) => setText(event.currentTarget.value)}
 							/>
 							<p id={`${headingId}-text-hint`} class="mt-1 text-xs text-slate-600">
-								Markdown: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`,
-								[label](https://…) links, - bullets, 1. numbered, - [ ] to-dos, &gt; quotes, ```
-								code blocks, --- dividers.
+								{m().markdownHint}
 							</p>
 						</div>
 					</Match>
@@ -349,7 +354,7 @@ export function ContentWidgetEditor(props: {
 						<div class="space-y-2">
 							<div>
 								<label for={`${headingId}-value`} class={LABEL}>
-									Value (empty means unavailable)
+									{m().valueLabel}
 								</label>
 								<input
 									id={`${headingId}-value`}
@@ -362,7 +367,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-unit`} class={LABEL}>
-									Unit
+									{m().unit}
 								</label>
 								<input
 									id={`${headingId}-unit`}
@@ -375,7 +380,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-change`} class={LABEL}>
-									Change (empty means unknown)
+									{m().changeLabel}
 								</label>
 								<input
 									id={`${headingId}-change`}
@@ -388,7 +393,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-caption`} class={LABEL}>
-									Caption
+									{m().caption}
 								</label>
 								<input
 									id={`${headingId}-caption`}
@@ -401,7 +406,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-asof`} class={LABEL}>
-									As-of date (YYYY-MM-DD, empty means unstated)
+									{m().asOfLabel}
 								</label>
 								<input
 									id={`${headingId}-asof`}
@@ -418,21 +423,24 @@ export function ContentWidgetEditor(props: {
 						<div class="space-y-2">
 							<div>
 								<label for={`${headingId}-charttype`} class={LABEL}>
-									Chart type
+									{m().chartType}
 								</label>
 								<select
 									id={`${headingId}-charttype`}
 									class="min-h-6 w-full rounded border border-slate-400 bg-white px-2 py-1 text-sm text-slate-900"
 									value={chartType()}
-									onChange={(event) => setChartType(event.currentTarget.value as "line" | "bar")}
+									onChange={(event) => {
+										const value = event.currentTarget.value;
+										if (value === "line" || value === "bar") setChartType(value);
+									}}
 								>
-									<option value="line">Line</option>
-									<option value="bar">Bar</option>
+									<option value="line">{m().line}</option>
+									<option value="bar">{m().bar}</option>
 								</select>
 							</div>
 							<div>
 								<label for={`${headingId}-chartunit`} class={LABEL}>
-									Unit
+									{m().unit}
 								</label>
 								<input
 									id={`${headingId}-chartunit`}
@@ -445,7 +453,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-series`} class={LABEL}>
-									Series (one block per series: the name, then “label, value” lines)
+									{m().seriesLabel}
 								</label>
 								<textarea
 									id={`${headingId}-series`}
@@ -461,7 +469,7 @@ export function ContentWidgetEditor(props: {
 						<div class="space-y-2">
 							<div>
 								<label for={`${headingId}-columns`} class={LABEL}>
-									Columns (comma-separated)
+									{m().columnsLabel}
 								</label>
 								<input
 									id={`${headingId}-columns`}
@@ -473,7 +481,7 @@ export function ContentWidgetEditor(props: {
 							</div>
 							<div>
 								<label for={`${headingId}-rows`} class={LABEL}>
-									Rows (one line per row, comma-separated)
+									{m().rowsLabel}
 								</label>
 								<textarea
 									id={`${headingId}-rows`}
@@ -486,9 +494,7 @@ export function ContentWidgetEditor(props: {
 						</div>
 					</Match>
 					<Match when={props.widget.type === "research"}>
-						<p class="text-xs text-slate-600">
-							Research content is read-only; only the title and size can be changed here.
-						</p>
+						<p class="text-xs text-slate-600">{m().researchReadOnly}</p>
 					</Match>
 				</Switch>
 			</div>
@@ -502,7 +508,7 @@ export function ContentWidgetEditor(props: {
 						closeToOpener();
 					}}
 				>
-					Cancel
+					{common().cancel}
 				</button>
 				<button
 					type="button"
@@ -511,7 +517,7 @@ export function ContentWidgetEditor(props: {
 					aria-describedby={problems().length > 0 ? problemsId : undefined}
 					onClick={() => void save()}
 				>
-					{saving() ? "Saving…" : "Save widget"}
+					{saving() ? common().saving : m().saveWidget}
 				</button>
 			</div>
 		</dialog>

@@ -1,6 +1,8 @@
+import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { For, Show } from "solid-js";
 import { type BlockNode, type InlineNode, plainText } from "./model.ts";
+import { richTextMessages } from "./richText.messages.ts";
 
 /**
  * Renders a parsed document with real elements, never `innerHTML`: every
@@ -73,6 +75,7 @@ export function RichTextView(props: {
 	readonly onToggleTodo: ((line: number) => void) | null;
 	readonly checkboxesDisabled: boolean;
 }): JSX.Element {
+	const m = useMessages(richTextMessages);
 	return (
 		<div data-rich-text-view class="space-y-2">
 			<For each={props.doc.blocks}>
@@ -136,7 +139,7 @@ export function RichTextView(props: {
 												class="rich-text-todo mt-0.5 shrink-0"
 												checked={item.checked}
 												disabled={props.onToggleTodo === null || props.checkboxesDisabled}
-												aria-label={`To-do: ${plainText(item.inline)}`}
+												aria-label={m().todoItem(plainText(item.inline))}
 												onChange={() => props.onToggleTodo?.(item.line)}
 											/>
 											<span classList={{ "text-slate-600 line-through": item.checked }}>

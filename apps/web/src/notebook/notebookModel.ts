@@ -8,12 +8,14 @@ import {
 	type WidgetCore,
 	widgetCoreSchema,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import {
 	chartWidgetToGuardedDataset,
 	guardDataset,
 	presentedSeriesLabels,
 } from "@research/ui-registry";
 import { newWidgetId } from "../widgets/widgetModel.ts";
+import { notebookModelMessages } from "./notebook.messages.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
@@ -340,16 +342,23 @@ export function widgetFromComponent(
 	}
 }
 
-/** An editable text widget from an assistant answer (citation chips become `[n]` text). */
-export function widgetFromAnswer(message: ChatMessage): WidgetCore {
+/**
+ * An editable text widget from an assistant answer (citation chips become
+ * `[n]` text). The answer is content and stays as written; `words` (English
+ * by default) name only what the UI makes up for an empty answer.
+ */
+export function widgetFromAnswer(
+	message: ChatMessage,
+	words: MessagesOf<typeof notebookModelMessages> = notebookModelMessages.en,
+): WidgetCore {
 	const text =
 		message.text.trim().length > 0
 			? truncateText(message.text.trim(), NOTEBOOK_LIMITS.maxTextChars)
-			: "(empty answer)";
+			: words.emptyAnswer;
 	return {
 		widgetId: newWidgetId(),
 		type: "text",
-		title: titleFromText(message.text, "Answer"),
+		title: titleFromText(message.text, words.answerTitle),
 		size: WIDGET_TYPE_META.text.defaultSize,
 		text,
 	};

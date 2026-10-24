@@ -1,6 +1,8 @@
 import type { WidgetCore } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { For } from "solid-js";
+import { notebookWidgetMessages } from "./notebookWidgets.messages.tsx";
 
 type TableWidget = Extract<WidgetCore, { readonly type: "table" }>;
 
@@ -15,11 +17,14 @@ function isNumberCell(cell: string | number | null): boolean {
 
 /** Structured rows under named columns; scrolls inside the frame, numbers right-aligned. */
 export function TableWidget(props: { readonly widget: TableWidget }): JSX.Element {
+	const m = useMessages(notebookWidgetMessages);
 	const widget = () => props.widget;
 	return (
 		<div data-widget-body="table" class="overflow-auto">
 			<table class="w-full border-collapse text-sm text-slate-900">
-				<caption class="text-left text-2xs text-slate-600">{`${widget().columns.length} columns, ${widget().rows.length} rows`}</caption>
+				<caption class="text-left text-2xs text-slate-600">
+					{m().tableCaption(widget().columns.length, widget().rows.length)}
+				</caption>
 				<thead>
 					<tr>
 						<For each={widget().columns}>

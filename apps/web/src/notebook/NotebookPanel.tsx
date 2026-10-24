@@ -5,6 +5,7 @@ import {
 	WIDGET_TYPES,
 	type WorkspaceView,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
 import { WidgetFrame, WidgetGrid } from "@research/widget-grid";
 // The package stylesheet: without it the grid and the frames are unstyled
@@ -17,6 +18,7 @@ import { ensureHomeIconLibraries } from "../home/shoelace.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard } from "../widgets/widgetBoard.tsx";
 import { type WidgetClipboardStore, widgetClipboard } from "../widgets/widgetClipboard.ts";
+import { notebookPanelMessages } from "./notebook.messages.ts";
 import { createNotebookMarketContext } from "./notebookMarket.ts";
 import type { NotebookSession } from "./notebookSession.ts";
 import type { WorkspaceMode } from "./types.ts";
@@ -57,6 +59,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	// form): point the icon libraries at the shipped SVGs like Home does, so
 	// no `data:` fetch ever hits `connect-src`. Idempotent.
 	ensureHomeIconLibraries();
+	const m = useMessages(notebookPanelMessages);
 	const widgets = () => props.session.widgets();
 	/**
 	 * Live market data for the notebook's market widgets (ADR-0021): the
@@ -87,7 +90,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		pageItems: (widget) => [
 			{
 				value: "ask",
-				label: "Ask AI",
+				label: m().askAi,
 				icon: "chat",
 				disabled: pending(),
 				onSelect: () => props.onAskAssistant([widget.widgetId]),
@@ -96,7 +99,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 				? [
 						{
 							value: "source",
-							label: "Go to source",
+							label: m().goToSource,
 							disabled: pending(),
 							onSelect: () => props.onOpenOrigin?.(widget.origin),
 						},
@@ -107,7 +110,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 
 	return (
 		<section
-			aria-label="Notebook"
+			aria-label={m().notebook}
 			data-panel="notebook"
 			data-mode={props.mode}
 			class="flex min-h-0 min-w-0 flex-1 flex-col gap-2"
@@ -116,7 +119,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 		>
 			<div class="flex items-center gap-1">
 				<h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
-					Notebook
+					{m().notebook}
 					<span class="font-normal text-slate-600"> ({widgets().length})</span>
 				</h3>
 				{props.headerActions}
@@ -129,7 +132,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 						<span class="flex flex-wrap items-center gap-2">
 							<span>{item().text}</span>
 							<button type="button" class={BUTTON} onClick={() => props.session.dismissNotice()}>
-								Dismiss
+								{m().dismiss}
 							</button>
 						</span>
 					</Notice>
@@ -138,7 +141,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 
 			<board.SelectionToolbar>
 				<IconButton
-					label="Ask AI about the selected widgets"
+					label={m().askAboutSelected}
 					icon="chat"
 					onClick={() => props.onAskAssistant(props.session.selection())}
 				/>
@@ -155,19 +158,19 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 			>
 				<Switch>
 					<Match when={props.session.state() === null && props.session.loadError() === null}>
-						<Loading label="notebook" />
+						<Loading label={m().loadingLabel} />
 					</Match>
 					<Match when={props.session.loadError()}>
 						{(error) => (
 							<ErrorNotice
 								failure={error()}
-								title="Could not load the notebook."
+								title={m().loadFailed}
 								onRetry={() => void props.session.reload()}
 							/>
 						)}
 					</Match>
 					<Match when={widgets().length === 0}>
-						<Empty>Save answers, charts and tables from Chat to build your notebook.</Empty>
+						<Empty>{m().empty}</Empty>
 					</Match>
 					<Match when={widgets().length > 0}>
 						<WidgetGrid

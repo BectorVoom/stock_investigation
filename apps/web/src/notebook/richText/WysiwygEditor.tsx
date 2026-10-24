@@ -1,9 +1,11 @@
 import { NOTEBOOK_LIMITS } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { lift, setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
-import { Fragment } from "prosemirror-model";
+import { DOMSerializer, Fragment } from "prosemirror-model";
 import { liftListItem, wrapInList } from "prosemirror-schema-list";
 import { EditorState, TextSelection } from "prosemirror-state";
-import { EditorView } from "prosemirror-view";
+import { EditorView, type NodeView } from "prosemirror-view";
 import {
 	createEffect,
 	createSignal,
@@ -14,12 +16,15 @@ import {
 	onMount,
 	Show,
 } from "solid-js";
+import { commonMessages } from "../../i18n/common.messages.ts";
+import { notebookWidgetMessages } from "../widgets/notebookWidgets.messages.tsx";
 import { modelToPm, pmToModel } from "./docConvert.ts";
 import { isAllowedLinkTarget } from "./model.ts";
 import { parseRichText } from "./parser.ts";
 import { sanitizePastedHTML } from "./pasteSanitize.ts";
 import { richTextPlugins } from "./pmRules.ts";
-import { richTextSchema } from "./schema.ts";
+import { type BlockOptionId, richTextMessages } from "./richText.messages.ts";
+import { richTextSchema, todoItemDOM } from "./schema.ts";
 import { serializeRichText } from "./serializer.ts";
 
 /**
@@ -50,29 +55,52 @@ export function wysiwygViewFor(element: HTMLDivElement): EditorView | undefined 
 	return testViews.get(element);
 }
 
+type RichTextWords = MessagesOf<typeof richTextMessages>;
+
 interface BlockOption {
-	readonly id: string;
+	readonly id: BlockOptionId;
 	readonly label: string;
 	readonly hint: string;
 }
 
-const BLOCK_MENU: readonly BlockOption[] = [
-	{ id: "text", label: "Text", hint: "Plain paragraph" },
-	{ id: "h1", label: "Heading 1", hint: "Large section heading" },
-	{ id: "h2", label: "Heading 2", hint: "Medium section heading" },
-	{ id: "h3", label: "Heading 3", hint: "Small section heading" },
-	{ id: "bullet", label: "Bulleted list", hint: "Dash list item" },
-	{ id: "numbered", label: "Numbered list", hint: "Counted list item" },
-	{ id: "todo", label: "To-do", hint: "Checkbox list item" },
-	{ id: "quote", label: "Quote", hint: "Quoted paragraph" },
-	{ id: "code", label: "Code", hint: "Fenced code block" },
-	{ id: "divider", label: "Divider", hint: "Horizontal rule" },
+const BLOCK_MENU: readonly BlockOptionId[] = [
+	"text",
+	"h1",
+	"h2",
+	"h3",
+	"bullet",
+	"numbered",
+	"todo",
+	"quote",
+	"code",
+	"divider",
 ];
 
-function matchingOptions(filter: string): readonly BlockOption[] {
+/**
+ * The "/" menu's options for a typed filter, labelled in the current
+ * language. The filter matches the shown label or the English one, so
+ * "/head" keeps working whatever the UI language.
+ */
+function matchingOptions(filter: string, words: RichTextWords): readonly BlockOption[] {
 	const query = filter.trim().toLowerCase();
-	if (query === "") return BLOCK_MENU;
-	return BLOCK_MENU.filter((option) => option.label.toLowerCase().includes(query));
+	const english = richTextMessages.en;
+	return BLOCK_MENU.filter(
+		(id) =>
+			query === "" ||
+			words.blockLabel(id).toLowerCase().includes(query) ||
+			english.blockLabel(id).toLowerCase().includes(query),
+	).map((id) => ({ id, label: words.blockLabel(id), hint: words.blockHint(id) }));
+}
+
+/**
+ * A to-do item rendered like the schema's own DOM, plus the checkbox's
+ * accessible name in the current language. Without `update`, ProseMirror
+ * redraws the view whenever the node's markup (its `checked`) changes, as
+ * it does for schema-rendered nodes.
+ */
+function todoItemView(checked: boolean, toggleLabel: string): NodeView {
+	const rendered = DOMSerializer.renderSpec(document, todoItemDOM(checked, toggleLabel));
+	return { dom: rendered.dom, contentDOM: rendered.contentDOM ?? null };
 }
 
 function serializeDoc(doc: ReturnType<typeof modelToPm>): string {
@@ -86,6 +114,9 @@ export function WysiwygEditor(props: {
 	/** Leaves the editor (Escape, or focus moving outside): the loader saves, then closes. */
 	readonly onLeave: () => void;
 }): JSX.Element {
+	const m = useMessages(richTextMessages);
+	const common = useMessages(commonMessages);
+	const widgetWords = useMessages(notebookWidgetMessages);
 	let mount: HTMLDivElement | undefined;
 	let root: HTMLDivElement | undefined;
 	let view: EditorView | undefined;
@@ -104,7 +135,7 @@ export function WysiwygEditor(props: {
 	} | null>(null);
 
 	const options = (): readonly BlockOption[] =>
-		menuFilter() === null ? [] : matchingOptions(menuFilter() ?? "");
+		menuFilter() === null ? [] : matchingOptions(menuFilter() ?? "", m());
 
 	const syncFromState = (): void => {
 		const current = view;
@@ -120,7 +151,8 @@ export function WysiwygEditor(props: {
 			$from.parent.type !== nodes.code_block
 		) {
 			const text = $from.parent.textContent;
-			const match = /^\/([a-z ]*)$/i.exec(text);
+			// Letters of any script, so a Japanese filter ("/見出し") keeps the menu open.
+			const match = /^\/([\p{L} ]*)$/iu.exec(text);
 			if (match !== null) {
 				const next = match[1] ?? "";
 				if (menuFilter() !== next) setMenuActive(0);
@@ -203,7 +235,7 @@ export function WysiwygEditor(props: {
 		if (current === undefined || range === null) return;
 		const url = linkUrl().trim();
 		if (!isAllowedLinkTarget(url)) {
-			setLinkError("Use an http(s) or mailto link, without spaces.");
+			setLinkError(m().invalidLink);
 			return;
 		}
 		// Focus home before the popover unmounts (see `closeOverlay`).
@@ -405,7 +437,7 @@ export function WysiwygEditor(props: {
 		const next = new EditorView(element, {
 			state,
 			attributes: {
-				"aria-label": "Edit note",
+				"aria-label": widgetWords().editNote,
 				role: "textbox",
 				"aria-multiline": "true",
 			},
@@ -446,6 +478,9 @@ export function WysiwygEditor(props: {
 					return true;
 				}
 				return false;
+			},
+			nodeViews: {
+				todo_item: (node) => todoItemView(node.attrs.checked === true, m().toggleTodo),
 			},
 			transformPastedHTML: (html) => sanitizePastedHTML(html),
 			transformPastedText: (text) => {
@@ -498,11 +533,11 @@ export function WysiwygEditor(props: {
 			onFocusOut={onFocusOut}
 		>
 			<Show when={hasSelection() && !linkOpen()}>
-				<div role="toolbar" aria-label="Formatting" class="mb-1 flex flex-wrap gap-1">
+				<div role="toolbar" aria-label={m().formatting} class="mb-1 flex flex-wrap gap-1">
 					<button
 						type="button"
 						class="rounded border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-800"
-						aria-label="Bold"
+						aria-label={m().bold}
 						onMouseDown={(event) => event.preventDefault()}
 						onClick={() => applyMark("strong")}
 					>
@@ -511,7 +546,7 @@ export function WysiwygEditor(props: {
 					<button
 						type="button"
 						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label="Italic"
+						aria-label={m().italic}
 						onMouseDown={(event) => event.preventDefault()}
 						onClick={() => applyMark("em")}
 					>
@@ -520,7 +555,7 @@ export function WysiwygEditor(props: {
 					<button
 						type="button"
 						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label="Strikethrough"
+						aria-label={m().strikethrough}
 						onMouseDown={(event) => event.preventDefault()}
 						onClick={() => applyMark("strike")}
 					>
@@ -529,7 +564,7 @@ export function WysiwygEditor(props: {
 					<button
 						type="button"
 						class="rounded border border-slate-300 px-2 py-0.5 font-mono text-xs text-slate-800"
-						aria-label="Code"
+						aria-label={m().code}
 						onMouseDown={(event) => event.preventDefault()}
 						onClick={() => applyMark("code")}
 					>
@@ -538,11 +573,11 @@ export function WysiwygEditor(props: {
 					<button
 						type="button"
 						class="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-800"
-						aria-label="Link"
+						aria-label={m().link}
 						onMouseDown={(event) => event.preventDefault()}
 						onClick={openLinkPopover}
 					>
-						Link
+						{m().link}
 					</button>
 				</div>
 			</Show>
@@ -563,11 +598,11 @@ export function WysiwygEditor(props: {
 				<div
 					id={menuId}
 					role="listbox"
-					aria-label="Insert block"
+					aria-label={m().insertBlock}
 					class="absolute right-2 left-2 z-10 max-h-56 overflow-y-auto rounded border border-slate-300 bg-white py-1"
 				>
 					<Show when={options().length === 0} fallback={null}>
-						<div class="px-3 py-1 text-xs text-slate-600">No matching blocks</div>
+						<div class="px-3 py-1 text-xs text-slate-600">{m().noMatchingBlocks}</div>
 					</Show>
 					<For each={options()}>
 						{(option, index) => (
@@ -597,11 +632,11 @@ export function WysiwygEditor(props: {
 			<Show when={linkOpen()}>
 				<div
 					role="dialog"
-					aria-label="Edit link"
+					aria-label={m().editLink}
 					class="absolute right-2 left-2 z-10 rounded border border-slate-300 bg-white p-2"
 				>
 					<label class="block text-xs font-medium text-slate-700" for={`${menuId}-url`}>
-						Link URL (http, https or mailto)
+						{m().linkUrl}
 					</label>
 					<input
 						id={`${menuId}-url`}
@@ -642,7 +677,7 @@ export function WysiwygEditor(props: {
 							onMouseDown={(event) => event.preventDefault()}
 							onClick={applyLink}
 						>
-							Save link
+							{m().saveLink}
 						</button>
 						<button
 							type="button"
@@ -650,7 +685,7 @@ export function WysiwygEditor(props: {
 							onMouseDown={(event) => event.preventDefault()}
 							onClick={removeLink}
 						>
-							Remove link
+							{m().removeLink}
 						</button>
 						<button
 							type="button"
@@ -661,7 +696,7 @@ export function WysiwygEditor(props: {
 								setLinkOpen(false);
 							}}
 						>
-							Cancel
+							{common().cancel}
 						</button>
 					</div>
 				</div>

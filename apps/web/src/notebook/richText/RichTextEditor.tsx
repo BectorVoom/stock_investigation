@@ -1,5 +1,8 @@
 import { NOTEBOOK_LIMITS } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createSignal, type JSX, lazy, Show, Suspense } from "solid-js";
+import { commonMessages } from "../../i18n/common.messages.ts";
+import { richTextMessages } from "./richText.messages.ts";
 
 /**
  * In-place WYSIWYG editor for a Text widget (ADR-0021 task W4b). This module
@@ -27,6 +30,8 @@ export function RichTextEditor(props: {
 	/** Leaves the editor after everything saved; the owner's text is never dropped. */
 	readonly onDone: () => void;
 }): JSX.Element {
+	const m = useMessages(richTextMessages);
+	const common = useMessages(commonMessages);
 	let root: HTMLDivElement | undefined;
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let leaveRequested = false;
@@ -120,7 +125,7 @@ export function RichTextEditor(props: {
 			class="relative rounded border border-blue-700 bg-white p-2"
 			onFocusOut={onFocusOut}
 		>
-			<Suspense fallback={<div class="p-2 text-sm text-slate-600">Loading editor…</div>}>
+			<Suspense fallback={<div class="p-2 text-sm text-slate-600">{m().loadingEditor}</div>}>
 				<LazyEditor
 					initialText={props.initialText}
 					size={props.size}
@@ -133,19 +138,12 @@ export function RichTextEditor(props: {
 			<Show when={saving() || draft() === "" || counterVisible()}>
 				<div class="mt-1 flex items-baseline justify-between gap-2">
 					<p class="text-2xs text-slate-600">
-						<Show
-							when={saving()}
-							fallback={
-								draft() === "" ? "Type # for headings, / for blocks, select text to format" : ""
-							}
-						>
-							Saving…
+						<Show when={saving()} fallback={draft() === "" ? m().emptyHint : ""}>
+							{common().saving}
 						</Show>
 					</p>
 					<Show when={counterVisible()}>
-						<p class="text-2xs text-slate-600">
-							{draft().length} / {MAX_CHARS} characters
-						</p>
+						<p class="text-2xs text-slate-600">{m().characterCount(draft().length, MAX_CHARS)}</p>
 					</Show>
 				</div>
 			</Show>

@@ -6,6 +6,7 @@ import {
 	widgetCoreSchema,
 } from "@research/contracts";
 import { parseJsonOrNull } from "@research/domain";
+import type { MessagesOf } from "@research/i18n";
 import { type Accessor, createSignal } from "solid-js";
 import { z } from "zod";
 import {
@@ -14,6 +15,7 @@ import {
 	readStoredText,
 	writeStoredText,
 } from "../lib/browserStorage.ts";
+import { widgetClipboardMessages } from "./widgetClipboard.messages.ts";
 import { duplicateWidget } from "./widgetModel.ts";
 
 /**
@@ -119,21 +121,36 @@ export function resolveClipboardPaste(
 	return { entries, skippedResearch };
 }
 
-/** "1 widget" / "2 widgets" for the clipboard announcements. */
-export function clipboardCountText(count: number, verb: "Cut" | "Copied" | "Pasted"): string {
-	return `${verb} ${count} widget${count === 1 ? "" : "s"}.`;
+type ClipboardWords = MessagesOf<typeof widgetClipboardMessages>;
+
+/**
+ * The announcement after cut, copy or paste ("Cut 2 widgets."), in the
+ * language of `words` (English by default).
+ */
+export function clipboardCountText(
+	count: number,
+	verb: "Cut" | "Copied" | "Pasted",
+	words: ClipboardWords = widgetClipboardMessages.en,
+): string {
+	if (verb === "Cut") return words.cutCount(count);
+	if (verb === "Copied") return words.copiedCount(count);
+	return words.pastedCount(count);
 }
 
 /** The announcement after Remove (no confirmation: Undo restores). */
-export function removedCountText(count: number): string {
-	return `Removed ${count} widget${count === 1 ? "" : "s"}. Undo restores ${count === 1 ? "it" : "them"}.`;
+export function removedCountText(
+	count: number,
+	words: ClipboardWords = widgetClipboardMessages.en,
+): string {
+	return words.removedCount(count);
 }
 
 /** The notice when research widgets stayed behind in their own chat. */
-export function skippedResearchNoticeText(skipped: number): string {
-	return skipped === 1
-		? "1 research result stays in its own chat and was not pasted."
-		: `${skipped} research results stay in their own chat and were not pasted.`;
+export function skippedResearchNoticeText(
+	skipped: number,
+	words: ClipboardWords = widgetClipboardMessages.en,
+): string {
+	return words.skippedResearch(skipped);
 }
 
 /** The `Storage`-like surface the store needs (a fake in tests). */

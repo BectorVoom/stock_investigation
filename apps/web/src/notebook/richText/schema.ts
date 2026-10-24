@@ -18,6 +18,43 @@ import { Schema } from "prosemirror-model";
  * `apps/web/src/styles.css`: the editor sets no inline style attributes and
  * injects no `<style>`, keeping the app's `style-src 'self'` CSP intact.
  */
+/**
+ * A to-do item's DOM. The checkbox's accessible name is UI text in the
+ * current language, so the editor's node view passes it (`toggleLabel`);
+ * the schema's own rendering (clipboard HTML) has none.
+ */
+export function todoItemDOM(checked: boolean, toggleLabel: string | null): DOMOutputSpec {
+	return [
+		"li",
+		{
+			class: "flex items-start gap-2",
+			"data-todo-item": checked ? "checked" : "open",
+		},
+		[
+			"input",
+			{
+				type: "checkbox",
+				class: "rich-text-todo mt-0.5 shrink-0",
+				contenteditable: "false",
+				// Mouse-only inside the editor: keyboard toggling
+				// lives in the read view (a focused checkbox that
+				// ProseMirror re-renders would drop focus to the
+				// body, which reads as "leave the editor").
+				tabindex: "-1",
+				...(toggleLabel === null ? {} : { "aria-label": toggleLabel }),
+				...(checked ? { checked: "" } : {}),
+			},
+		],
+		[
+			"div",
+			{
+				class: checked ? "min-w-0 flex-1 text-slate-600 line-through" : "min-w-0 flex-1",
+			},
+			0,
+		],
+	];
+}
+
 export const richTextSchema = new Schema({
 	nodes: {
 		doc: { content: "block+" },
@@ -75,38 +112,7 @@ export const richTextSchema = new Schema({
 		todo_item: {
 			attrs: { checked: { default: false } },
 			content: "paragraph",
-			toDOM: (node): DOMOutputSpec => {
-				const checked = node.attrs.checked === true;
-				return [
-					"li",
-					{
-						class: "flex items-start gap-2",
-						"data-todo-item": checked ? "checked" : "open",
-					},
-					[
-						"input",
-						{
-							type: "checkbox",
-							class: "rich-text-todo mt-0.5 shrink-0",
-							contenteditable: "false",
-							// Mouse-only inside the editor: keyboard toggling
-							// lives in the read view (a focused checkbox that
-							// ProseMirror re-renders would drop focus to the
-							// body, which reads as "leave the editor").
-							tabindex: "-1",
-							"aria-label": "Toggle to-do",
-							...(checked ? { checked: "" } : {}),
-						},
-					],
-					[
-						"div",
-						{
-							class: checked ? "min-w-0 flex-1 text-slate-600 line-through" : "min-w-0 flex-1",
-						},
-						0,
-					],
-				];
-			},
+			toDOM: (node): DOMOutputSpec => todoItemDOM(node.attrs.checked === true, null),
 			parseDOM: [{ tag: "li[data-todo-item]" }],
 		},
 		blockquote: {

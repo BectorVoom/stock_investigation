@@ -1,4 +1,5 @@
 import {
+	type NotebookCapacityProblem,
 	type NotebookResponse,
 	type NotebookTurn,
 	type NotebookWidget,
@@ -6,10 +7,15 @@ import {
 	notebookCapacityProblem,
 	type WidgetCore,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
+import { notebookSessionMessages } from "./notebook.messages.ts";
+
+/** The words of the session's notices (`notebookSessionMessages`). */
+export type NotebookSessionWords = MessagesOf<typeof notebookSessionMessages>;
 
 /**
  * One notebook session per open conversation, created next to the workspace
@@ -75,8 +81,23 @@ export interface NotebookSession {
 	readonly removeWidgets: (widgetIds: readonly string[]) => Promise<boolean>;
 }
 
-export const NOTEBOOK_CONFLICT_NOTICE =
-	"The notebook changed elsewhere; showing the latest version.";
+/** Why the session shows a notice; worded when read, so it follows a language change. */
+type NoticeCause =
+	| { readonly kind: "conflict" | "notSaved" | "notRestored"; readonly failure: ApiFailure }
+	| { readonly kind: "capacity"; readonly problem: NotebookCapacityProblem };
+
+function noticeText(cause: NoticeCause, words: NotebookSessionWords): string {
+	switch (cause.kind) {
+		case "conflict":
+			return words.conflict;
+		case "notSaved":
+			return words.notSaved(cause.failure);
+		case "notRestored":
+			return words.notRestored(cause.failure);
+		case "capacity":
+			return words.capacity(cause.problem);
+	}
+}
 
 function confirmedWidgets(state: NotebookResponse | null): readonly NotebookWidget[] {
 	return state?.notebook.widgets ?? [];
@@ -113,18 +134,28 @@ function orderSelection(
 		.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
 }
 
+/**
+ * `words` gives the notices' words in the current language (the caller
+ * passes `useMessages(notebookSessionMessages)`); English without it.
+ */
 export function createNotebookSession(
 	api: ApiClient,
 	workspaceId: string,
 	visibility: VisibilitySource,
+	words: Accessor<NotebookSessionWords> = () => notebookSessionMessages.en,
 ): NotebookSession {
 	const [state, setState] = createSignal<NotebookResponse | null>(null);
 	const [optimistic, setOptimistic] = createSignal<readonly NotebookWidget[] | null>(null);
 	const [loadError, setLoadError] = createSignal<ApiFailure | null>(null);
-	const [notice, setNotice] = createSignal<{
-		readonly text: string;
-		readonly failure: ApiFailure | null;
-	} | null>(null);
+	const [noticeCause, setNotice] = createSignal<NoticeCause | null>(null);
+	const notice: NotebookSession["notice"] = () => {
+		const cause = noticeCause();
+		if (cause === null) return null;
+		return {
+			text: noticeText(cause, words()),
+			failure: cause.kind === "capacity" ? null : cause.failure,
+		};
+	};
 	const [pending, setPending] = createSignal(false);
 	const [selection, setSelection] = createSignal<readonly string[]>([]);
 
@@ -223,7 +254,7 @@ export function createNotebookSession(
 					setOptimistic(null);
 					pruneSelection(confirmedWidgets(state()));
 				}
-				setNotice({ text: NOTEBOOK_CONFLICT_NOTICE, failure: result.error });
+				setNotice({ kind: "conflict", failure: result.error });
 				for (const entry of batch) entry.resolve(false);
 			} else {
 				// Rolls back the failed batch; queued edits stay queued.
@@ -235,10 +266,7 @@ export function createNotebookSession(
 					setOptimistic(next);
 				}
 				pruneSelection(displayed());
-				setNotice({
-					text: `The notebook was not saved: ${result.error.message}`,
-					failure: result.error,
-				});
+				setNotice({ kind: "notSaved", failure: result.error });
 				for (const entry of batch) entry.resolve(false);
 			}
 		} finally {
@@ -259,7 +287,7 @@ export function createNotebookSession(
 		// instead of flashing the widget in and rolling it back.
 		const capacity = notebookCapacityProblem(next, current);
 		if (capacity !== null) {
-			setNotice({ text: capacity.message, failure: null });
+			setNotice({ kind: "capacity", problem: capacity });
 			return Promise.resolve(false);
 		}
 		setOptimistic(next);
@@ -357,10 +385,7 @@ export function createNotebookSession(
 					setNotice(null);
 					return true;
 				}
-				setNotice({
-					text: `The notebook was not restored: ${result.error.message}`,
-					failure: result.error,
-				});
+				setNotice({ kind: "notRestored", failure: result.error });
 				return false;
 			} finally {
 				pendingUndo = false;

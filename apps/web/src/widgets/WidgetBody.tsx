@@ -5,6 +5,7 @@ import {
 	type WidgetCore,
 	type WorkspaceView,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -15,6 +16,7 @@ import { ResearchWidget } from "../notebook/widgets/ResearchWidget.tsx";
 import { TableWidget } from "../notebook/widgets/TableWidget.tsx";
 import { TextWidget } from "../notebook/widgets/TextWidget.tsx";
 import type { WidgetMarketContext } from "./marketContext.ts";
+import { widgetBodyMessages } from "./widgetBody.messages.ts";
 
 /**
  * One widget body by type, for Home and the Notebook alike (ADR-0024), plus
@@ -39,6 +41,7 @@ export function WidgetBody(props: {
 	/** Saves a market widget edited through its own component (today: the line-chart range). */
 	readonly onSaveMarketWidget: (widget: MarketWidgetCore) => void;
 }): JSX.Element {
+	const m = useMessages(widgetBodyMessages);
 	const assistantWritten = () =>
 		"origin" in props.widget && props.widget.origin.kind === "assistant";
 	return (
@@ -57,7 +60,9 @@ export function WidgetBody(props: {
 					{(market) => (
 						<Show
 							when={props.market}
-							fallback={<output class="block text-sm text-slate-600">Loading market data…</output>}
+							fallback={
+								<output class="block text-sm text-slate-600">{m().loadingMarketData}</output>
+							}
 						>
 							{(context) => (
 								<Dynamic
@@ -89,11 +94,7 @@ export function WidgetBody(props: {
 					{(research) => (
 						<Show
 							when={props.registry}
-							fallback={
-								<p class="text-sm text-slate-600">
-									This research result belongs to a conversation and shows only there.
-								</p>
-							}
+							fallback={<p class="text-sm text-slate-600">{m().researchElsewhere}</p>}
 						>
 							{(registry) => (
 								<ResearchWidget widget={research()} view={props.view} registry={registry()} />
@@ -103,7 +104,7 @@ export function WidgetBody(props: {
 				</Match>
 			</Switch>
 			<Show when={assistantWritten()}>
-				<p class="mt-2 text-2xs text-slate-600">Written by the assistant</p>
+				<p class="mt-2 text-2xs text-slate-600">{m().writtenByAssistant}</p>
 			</Show>
 		</div>
 	);
