@@ -613,7 +613,7 @@ export function WatchlistView(props: {
 					/>
 					<output
 						data-field="selected-stock"
-						class="block min-h-5 text-sm font-medium text-slate-900"
+						class="block text-sm font-medium text-slate-900 empty:hidden"
 					>
 						{selectedText()}
 					</output>
