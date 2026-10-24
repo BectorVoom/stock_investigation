@@ -73,3 +73,9 @@ Two free, official lists cover the need (measured 2026-10-24):
   runner's allowlist.
 - Company names come from the directory when a stock is added from a search
   hit; the earnings refresh still fills names for stocks added by symbol.
+- Known limit: the contract allows up to `maxEntriesPerMarket` (10,000) rows
+  with names up to 200 characters, which could exceed the 1,000,000-byte body
+  cap; today's US list is about 530 KB. If the US list grows by roughly 80%,
+  the US completion is refused as too large and the stored list stays as it
+  was. The remedy then is a split US completion (for example by first
+  letter), not a larger body cap.
