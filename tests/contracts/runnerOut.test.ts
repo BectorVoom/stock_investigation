@@ -26,6 +26,14 @@ import type { ZodType } from "zod";
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const outDirectory = join(repoRoot, "vectors/runner/out");
 
+/** The runner events of a stock-directory refresh (ADR-0033), logged by both runners. */
+const STOCK_DIRECTORY_EVENTS = [
+	"stock_directory_fetched",
+	"stock_directory_rejected",
+	"stock_directory_source_failed",
+	"stock_directory_rows_dropped",
+] as const;
+
 const SCHEMAS: Readonly<Record<string, ZodType>> = {
 	claimJobRequest: claimJobRequestSchema,
 	heartbeatRequest: heartbeatRequestSchema,
@@ -75,7 +83,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 		expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
 	});
 
-	it("covers all 12 completion outcomes and every event type the runner sends", () => {
+	it("covers all 13 completion outcomes and every event type the runner sends", () => {
 		const outcomes = new Set<string>();
 		const eventTypes = new Set<string>();
 		for (const golden of goldens) {
@@ -111,6 +119,7 @@ describe("payloads the Rust runner sends to the Worker", () => {
 			"market-refreshed",
 			"notebook-assisted",
 			"partial",
+			"stock-directory-refreshed",
 			"waiting_approval",
 		]);
 		// `provider-session` is part of the schema but the runner never sends it.
@@ -150,5 +159,8 @@ describe("log event names in the Rust crates", () => {
 		for (const reserved of ["invalid_configuration", "unsupported_runtime", "runner_crashed"]) {
 			expect(names.has(reserved), reserved).toBe(true);
 		}
+		// The stock-directory events (ADR-0033, docs/OPERATIONS.md) keep the
+		// names the TypeScript runner logs.
+		for (const event of STOCK_DIRECTORY_EVENTS) expect(names.has(event), event).toBe(true);
 	});
 });

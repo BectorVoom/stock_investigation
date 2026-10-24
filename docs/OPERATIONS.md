@@ -607,6 +607,19 @@ Persistence sits behind two seams, so the database can be switched without touch
   jobs only), usage counts, whether cost is known and its known portion
   (never $0 for unknown), failure code, verification status, and the number
   and kinds of progress entries.
+  A `stock-directory-refresh` job (ADR-0033) adds four events, logged the same
+  way by the Rust and the TypeScript runner, each with ids, codes and counts
+  only (never a company name or provider text):
+  `stock_directory_fetched` (info: `runId`, `market`, `entries` — the list
+  passed the completion contract and is being sent),
+  `stock_directory_rejected` (warn: `runId`, `market` — the list would break
+  the completion contract, e.g. fewer than 1,000 rows, so the job fails
+  `DIRECTORY_PARSE_FAILED` and the stored list is kept),
+  `stock_directory_source_failed` (warn: `market`, `error` — the source threw
+  or panicked; only the class name is logged and the job fails
+  `DIRECTORY_SOURCE_FAILED`), and
+  `stock_directory_rows_dropped` (info: `market`, `count` — rows left out
+  because neither of their names fits the 200-character limit).
 - Audit: `audit_log` (owner actions) and `job_transitions` (every state change with lease generation and actor).
 
 ## Deploying to Cloudflare (optional, postponed)

@@ -2297,6 +2297,25 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
+	/* stock-directory refresh (ADR-0033): a JP list at the floor */
+	let api = FakeApi::new(ApiScript::default());
+	let directory = harness(
+		Arc::clone(&api),
+		Options {
+			directory_sources: vec![(
+				research_contracts::watchlist::WatchMarket::Jp,
+				Arc::new(FakeDirectory::answering(Ok(jp_directory(1_000)))),
+			)],
+			..Options::default()
+		},
+	);
+	run(directory_job("JP"), &directory).await;
+	out.push(Golden {
+		name: "complete-stock-directory-refreshed".to_owned(),
+		schema: "completeJobRequest",
+		body: wire(&first_completion(&api)),
+	});
+
 	/* notebook assistant */
 	let api = FakeApi::new(ApiScript::default());
 	let notebook = harness(
@@ -2388,7 +2407,7 @@ async fn golden_outgoing_payloads_are_current() {
 			)
 		})
 		.collect();
-	assert_eq!(outcomes.len(), 12, "{outcomes:?}");
+	assert_eq!(outcomes.len(), 13, "{outcomes:?}");
 	let event_types: std::collections::BTreeSet<String> = out
 		.iter()
 		.filter(|golden| golden.schema == "runnerEventsRequest")

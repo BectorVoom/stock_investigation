@@ -38,6 +38,20 @@ function collectProductionEventNames(): string[] {
 	return [...names].sort();
 }
 
+describe("the stock-directory events (ADR-0033, docs/OPERATIONS.md)", () => {
+	it("are logged by the TypeScript runner under the documented names", () => {
+		const names = collectProductionEventNames();
+		for (const event of [
+			"stock_directory_fetched",
+			"stock_directory_rejected",
+			"stock_directory_source_failed",
+			"stock_directory_rows_dropped",
+		]) {
+			expect(names, event).toContain(event);
+		}
+	});
+});
+
 describe("existing production events still log unchanged (A1-1)", () => {
 	it("every event name in apps/api and apps/runner matches the pattern and logs as-is", () => {
 		const names = collectProductionEventNames();
