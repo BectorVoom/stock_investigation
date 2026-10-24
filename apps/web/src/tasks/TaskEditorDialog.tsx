@@ -192,7 +192,7 @@ export function TaskEditorDialog(props: {
 				dialog = element;
 			}}
 			aria-labelledby={headingId}
-			class="w-full max-w-lg rounded bg-slate-100 p-4"
+			class="m-auto w-full max-w-xl rounded bg-slate-100 p-4"
 			onCancel={(event) => {
 				event.preventDefault();
 				props.onClose();
@@ -343,11 +343,12 @@ export function TaskEditorDialog(props: {
 					</Field>
 				</div>
 				<Show when={draft().choice === "weekly"}>
-					<fieldset class="flex flex-wrap gap-3 text-sm text-slate-900">
-						<legend class={LABEL}>{m().days}</legend>
+					{/* Seven columns on a phone (box above the day) so the week never wraps one day onto its own line. */}
+					<fieldset class="grid grid-cols-7 gap-1 text-sm text-slate-900 sm:flex sm:flex-wrap sm:gap-3">
+						<legend class={`${LABEL} mb-1`}>{m().days}</legend>
 						<For each={WEEKDAYS}>
 							{(day: ScheduleWeekday) => (
-								<label class="flex min-h-6 items-center gap-1">
+								<label class="flex min-h-6 flex-col items-center gap-0.5 sm:flex-row sm:gap-1">
 									<input
 										type="checkbox"
 										checked={draft().days.includes(day)}
@@ -414,13 +415,14 @@ export function TaskEditorDialog(props: {
 					)}
 				</Show>
 				<Show when={visibleProblems().length > 0}>
-					<ul
-						id={problemsId}
-						aria-label={m().beforeSave}
-						class="list-disc rounded border border-slate-300 bg-white py-2 pl-7 pr-3 text-xs text-slate-800"
-					>
-						<For each={visibleProblems()}>{(problem) => <li>{problem}</li>}</For>
-					</ul>
+					<div class="rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
+						<p id={`${problemsId}-intro`} class="font-medium text-slate-900">
+							{m().beforeSave}
+						</p>
+						<ul id={problemsId} aria-labelledby={`${problemsId}-intro`} class="list-disc pl-4">
+							<For each={visibleProblems()}>{(problem) => <li>{problem}</li>}</For>
+						</ul>
+					</div>
 				</Show>
 				<Show when={failure()}>
 					{(error) => <TaskFailure failure={error()} title={m().notSaved} />}

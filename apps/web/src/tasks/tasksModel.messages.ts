@@ -93,6 +93,7 @@ export const tasksModelMessages = defineMessages({
 		dueNow: "Due now: it starts when the local runner next asks for work.",
 		pausedLine: "Paused: it does not run until you resume it.",
 		completedLine: "Completed: this one-time task has run.",
+		completedSkippedLine: "Completed: its one time was skipped, so it did not run.",
 
 		notRunYet: "Not run yet",
 		lastRun: (state: string) => `Last run: ${state}`,
@@ -145,6 +146,7 @@ export const tasksModelMessages = defineMessages({
 		dueNow: "予定時刻です。ローカルのランナーが次に作業を取りに来たときに始まります。",
 		pausedLine: "一時停止中です。再開するまで実行されません。",
 		completedLine: "完了しました。この 1 回限りのタスクは実行済みです。",
+		completedSkippedLine: "完了しました。1 回限りの実行がスキップされたため、実行されていません。",
 
 		notRunYet: "まだ実行されていません",
 		lastRun: (state) => `前回の実行: ${state}`,

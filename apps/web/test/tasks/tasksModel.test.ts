@@ -2,6 +2,7 @@ import { agentsResponseSchema } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import type { ApiFailure } from "../../src/api/http.ts";
 import { agentSettingsModelMessages } from "../../src/settings/agentSettingsModel.messages.ts";
+import { outcomeStillCurrent, subjectOf } from "../../src/tasks/taskActions.ts";
 import { tasksModelMessages } from "../../src/tasks/tasksModel.messages.ts";
 import {
 	defaultTaskDraft,
@@ -129,6 +130,42 @@ describe("nextRunText", () => {
 		expect(nextRunText(paused, NOW_MS, TOKYO, "en", en)).toBe(en.pausedLine);
 		const completed = makeTask({ status: "completed", nextRunAt: null });
 		expect(nextRunText(completed, NOW_MS, TOKYO, "en", en)).toBe(en.completedLine);
+	});
+
+	it("does not say a one-time task has run when its only occurrence was skipped", () => {
+		const skip = {
+			code: "AGENT_NOT_CONFIGURED" as const,
+			slotAt: "2026-10-24T08:00:00.000Z",
+			at: "2026-10-24T08:00:10.000Z",
+		};
+		const run = (queuedAt: string) => ({
+			runId: "run_1",
+			state: "completed" as const,
+			slotAt: null,
+			queuedAt,
+			failureCode: null,
+		});
+		const skipped = makeTask({ status: "completed", nextRunAt: null, lastSkip: skip });
+		expect(nextRunText(skipped, NOW_MS, TOKYO, "en", en)).toBe(
+			"Completed: its one time was skipped, so it did not run.",
+		);
+		expect(nextRunText(skipped, NOW_MS, TOKYO, "ja", ja)).toBe(ja.completedSkippedLine);
+		// A "Run now" queued before the skipped slot does not make the slot a run.
+		const ranEarlier = makeTask({
+			status: "completed",
+			nextRunAt: null,
+			lastSkip: skip,
+			lastRun: run("2026-10-24T07:00:00.000Z"),
+		});
+		expect(nextRunText(ranEarlier, NOW_MS, TOKYO, "en", en)).toBe(en.completedSkippedLine);
+		// A run queued after the skip supersedes it.
+		const ranLater = makeTask({
+			status: "completed",
+			nextRunAt: null,
+			lastSkip: skip,
+			lastRun: run("2026-10-24T09:00:00.000Z"),
+		});
+		expect(nextRunText(ranLater, NOW_MS, TOKYO, "en", en)).toBe(en.completedLine);
 	});
 
 	it("never says 'in 0 min'", () => {
@@ -370,5 +407,40 @@ describe("taskFailureHint", () => {
 		);
 		expect(taskFailureHint(failure("VERSION_CONFLICT", null), en)).toBe(en.versionConflict);
 		expect(taskFailureHint(failure("RATE_LIMITED", null), en)).toBeNull();
+	});
+});
+
+describe("outcomeStillCurrent", () => {
+	it("keeps a 'Created' notice until the list shows the task fired, was skipped or is gone", () => {
+		const created = makeTask();
+		const notice = { kind: "created" as const, title: created.title, subject: subjectOf(created) };
+		expect(outcomeStillCurrent(notice, [created])).toBe(true);
+		// Not loaded yet: nothing says it is stale.
+		expect(outcomeStillCurrent(notice, null)).toBe(true);
+		const skipped = makeTask({
+			version: 2,
+			lastSkip: {
+				code: "AGENT_NOT_CONFIGURED",
+				slotAt: "2026-10-23T23:00:00.000Z",
+				at: "2026-10-23T23:00:05.000Z",
+			},
+		});
+		expect(outcomeStillCurrent(notice, [skipped])).toBe(false);
+		const fired = makeTask({
+			version: 2,
+			lastRun: {
+				runId: "run_1",
+				state: "pending",
+				slotAt: "2026-10-23T23:00:00.000Z",
+				queuedAt: "2026-10-23T23:00:05.000Z",
+				failureCode: null,
+			},
+		});
+		expect(outcomeStillCurrent(notice, [fired])).toBe(false);
+		expect(outcomeStillCurrent(notice, [])).toBe(false);
+	});
+
+	it("keeps failures and 'Deleted' until the next action replaces them", () => {
+		expect(outcomeStillCurrent({ kind: "deleted", title: "Gone" }, [])).toBe(true);
 	});
 });

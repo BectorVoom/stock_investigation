@@ -4,18 +4,58 @@ import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import type { TasksStore } from "./tasksStore.ts";
 
+/**
+ * The task a success notice is about, as the server answered: once the list
+ * shows that task changed (it fired, was skipped, its run moved on) or gone,
+ * the notice is stale and is no longer shown.
+ */
+export interface OutcomeSubject {
+	readonly taskId: string;
+	readonly stamp: string;
+}
+
 /** What one action on a task ended with, for the view's notice. */
 export type TaskActionOutcome =
 	| {
-			readonly kind: "created" | "saved" | "paused" | "resumed" | "deleted";
+			readonly kind: "created" | "saved" | "paused" | "resumed";
 			readonly title: string;
+			readonly subject: OutcomeSubject;
 	  }
-	| { readonly kind: "run"; readonly title: string; readonly replayed: boolean }
+	| { readonly kind: "deleted"; readonly title: string }
+	| {
+			readonly kind: "run";
+			readonly title: string;
+			readonly replayed: boolean;
+			readonly subject: OutcomeSubject;
+	  }
 	| {
 			readonly kind: "failed";
 			readonly action: "pause" | "resume" | "run" | "delete";
 			readonly failure: ApiFailure;
 	  };
+
+/** What of a task a notice reflects: its version, status, last run and last skip. */
+export function subjectOf(task: ScheduledTask): OutcomeSubject {
+	const run = task.lastRun === null ? "" : `${task.lastRun.runId}:${task.lastRun.state}`;
+	return {
+		taskId: task.taskId,
+		stamp: `${task.version}|${task.status}|${run}|${task.lastSkip?.at ?? ""}`,
+	};
+}
+
+/**
+ * Whether a notice still describes the list: a success about a task stops
+ * showing once the list holds that task in another state (or not at all).
+ * Failures and "deleted" stay until the next action replaces them.
+ */
+export function outcomeStillCurrent(
+	outcome: TaskActionOutcome,
+	tasks: readonly ScheduledTask[] | null,
+): boolean {
+	if (outcome.kind === "failed" || outcome.kind === "deleted" || tasks === null) return true;
+	const task = tasks.find((entry) => entry.taskId === outcome.subject.taskId);
+	return task !== undefined && subjectOf(task).stamp === outcome.subject.stamp;
+}
 
 /**
  * Pause / Resume, Run now and Delete as the Tasks page and the widget both
@@ -61,7 +101,11 @@ export function createTaskActions(api: ApiClient, store: TasksStore) {
 			return { kind: "failed", action: paused ? "pause" : "resume", failure: result.error };
 		}
 		store.putTask(result.value);
-		return { kind: paused ? "paused" : "resumed", title: result.value.title };
+		return {
+			kind: paused ? "paused" : "resumed",
+			title: result.value.title,
+			subject: subjectOf(result.value),
+		};
 	};
 
 	const runNow = async (task: ScheduledTask): Promise<TaskActionOutcome | null> => {
@@ -77,7 +121,12 @@ export function createTaskActions(api: ApiClient, store: TasksStore) {
 			return { kind: "failed", action: "run", failure: result.error };
 		}
 		store.putTask(result.value.task);
-		return { kind: "run", title: result.value.task.title, replayed: result.value.replayed };
+		return {
+			kind: "run",
+			title: result.value.task.title,
+			replayed: result.value.replayed,
+			subject: subjectOf(result.value.task),
+		};
 	};
 
 	const remove = async (task: ScheduledTask): Promise<TaskActionOutcome | null> => {

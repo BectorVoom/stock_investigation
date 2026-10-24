@@ -2,7 +2,7 @@ import type { ScheduledTask, WidgetCore } from "@research/contracts";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
-import { Empty, ErrorNotice, IconButton } from "../components/ui.tsx";
+import { BUTTON, ErrorNotice, IconButton } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
 import { runStateMessages } from "../i18n/runState.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -10,7 +10,12 @@ import { chatHash, TASKS_HASH } from "../router.ts";
 import { createClock } from "./clock.ts";
 import { TaskEditorDialog } from "./TaskEditorDialog.tsx";
 import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
-import { createTaskActions, type TaskActionOutcome } from "./taskActions.ts";
+import {
+	createTaskActions,
+	outcomeStillCurrent,
+	subjectOf,
+	type TaskActionOutcome,
+} from "./taskActions.ts";
 import { tasksMessages } from "./tasks.messages.ts";
 import { tasksModelMessages } from "./tasksModel.messages.ts";
 import {
@@ -63,6 +68,13 @@ export function ScheduledTasksWidget(props: {
 		const active = list.tasks.filter((task) => task.status === "active").length;
 		return m().tasksSummary(active, list.tasks.length);
 	};
+	/** The last action's notice while the list still shows what it said (a fired or skipped task retires it). */
+	const shownOutcome = (): TaskActionOutcome | null => {
+		const current = outcome();
+		return current !== null && outcomeStillCurrent(current, store.list()?.tasks ?? null)
+			? current
+			: null;
+	};
 	const act = async (run: () => Promise<TaskActionOutcome | null>): Promise<void> => {
 		const result = await run();
 		if (result !== null) setOutcome(result);
@@ -74,11 +86,24 @@ export function ScheduledTasksWidget(props: {
 
 	return (
 		<div class="flex flex-col gap-2" data-widget-kind="scheduled-tasks">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<span class="text-xs font-semibold text-slate-900">{summary()}</span>
+			{/* The frame shows no title (ADR-0024), so the body names itself, as the market widgets do. */}
+			<div class="flex flex-wrap items-center justify-between gap-x-2">
+				<p class="text-xs text-slate-700">
+					<span class="font-semibold text-slate-900">{m().listTitle}</span>
+					<Show when={summary()}>
+						{(line) => (
+							<>
+								<span aria-hidden="true"> · </span>
+								<span>{line()}</span>
+							</>
+						)}
+					</Show>
+				</p>
 				<div class="flex items-center gap-1">
-					<IconButton label={m().newTask} icon="plus-lg" onClick={openEditor} />
-					<a href={TASKS_HASH} class={`${TASK_LINK} text-xs`}>
+					<Show when={view().shown.length > 0}>
+						<IconButton label={m().newTask} icon="plus-lg" onClick={openEditor} />
+					</Show>
+					<a href={TASKS_HASH} class={`${TASK_LINK} whitespace-nowrap text-xs`}>
 						{m().openTasks}
 					</a>
 				</div>
@@ -103,8 +128,18 @@ export function ScheduledTasksWidget(props: {
 					</Show>
 				}
 			>
-				<Show when={view().shown.length > 0} fallback={<Empty>{m().widgetEmpty}</Empty>}>
-					<ul aria-label={m().taskList} class="space-y-2">
+				<Show
+					when={view().shown.length > 0}
+					fallback={
+						<div class="space-y-2 rounded border border-dashed border-slate-300 px-3 py-2">
+							<p class="text-sm text-slate-700">{m().widgetEmpty}</p>
+							<button type="button" class={BUTTON} onClick={openEditor}>
+								{m().newTask}
+							</button>
+						</div>
+					}
+				>
+					<ul aria-label={m().taskList} class="divide-y divide-slate-200">
 						<For each={view().shown}>
 							{(task) => (
 								<WidgetTaskRow
@@ -125,14 +160,16 @@ export function ScheduledTasksWidget(props: {
 					</Show>
 				</Show>
 			</Show>
-			<TaskOutcomeNotice outcome={outcome()} compact />
+			<TaskOutcomeNotice outcome={shownOutcome()} compact />
 			<Show when={editorOpen()}>
 				<TaskEditorDialog
 					api={props.api}
 					store={store}
 					task={null}
 					opener={opener()}
-					onSaved={(task) => setOutcome({ kind: "created", title: task.title })}
+					onSaved={(task) =>
+						setOutcome({ kind: "created", title: task.title, subject: subjectOf(task) })
+					}
 					onClose={() => setEditorOpen(false)}
 				/>
 			</Show>
@@ -148,9 +185,21 @@ export function ScheduledTasksWidget(props: {
 	}): JSX.Element {
 		const skip = () => skipView(row.task, viewerZone, locale(), text());
 		return (
-			<li class="flex items-start justify-between gap-2" data-task-id={row.task.taskId}>
-				<div class="min-w-0 space-y-0.5">
-					<p class="truncate text-sm font-medium text-slate-900">{row.task.title}</p>
+			// When the row is too narrow for 12rem of text beside the two actions
+			// (a Small widget on a phone) the actions wrap under the text, so the
+			// title keeps the whole width instead of an ellipsis. Wrapping, not a
+			// container query: WebKit squeezed the actions inside a Notebook column.
+			<li
+				class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 py-2 first:pt-0"
+				data-task-id={row.task.taskId}
+			>
+				<div class="min-w-0 flex-[1_1_12rem] space-y-0.5">
+					<p
+						class="line-clamp-2 break-words text-sm font-medium text-slate-900"
+						title={row.task.title}
+					>
+						{row.task.title}
+					</p>
 					<p class="text-xs text-slate-700">
 						{scheduleText(row.task.schedule, row.task.timeZone, viewerZone, text())}
 					</p>
@@ -163,7 +212,7 @@ export function ScheduledTasksWidget(props: {
 						</span>
 						<a
 							href={chatHash(row.task.workspaceId)}
-							class={TASK_LINK}
+							class={`${TASK_LINK} whitespace-nowrap`}
 							aria-label={m().openChatNamed(row.task.title)}
 						>
 							{m().openChat}

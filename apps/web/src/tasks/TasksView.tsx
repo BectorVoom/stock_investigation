@@ -18,7 +18,12 @@ import { chatHash } from "../router.ts";
 import { createClock } from "./clock.ts";
 import { TaskEditorDialog } from "./TaskEditorDialog.tsx";
 import { SkipLine, TASK_LINK, TaskOutcomeNotice } from "./TaskParts.tsx";
-import { createTaskActions, type TaskActionOutcome } from "./taskActions.ts";
+import {
+	createTaskActions,
+	outcomeStillCurrent,
+	subjectOf,
+	type TaskActionOutcome,
+} from "./taskActions.ts";
 import { tasksMessages } from "./tasks.messages.ts";
 import { tasksModelMessages } from "./tasksModel.messages.ts";
 import {
@@ -76,6 +81,13 @@ export function TasksView(props: {
 		setOpener(openerOf(event));
 		setEditor(state);
 	};
+	/** The last action's notice while the list still shows what it said (a fired or skipped task retires it). */
+	const shownOutcome = (): TaskActionOutcome | null => {
+		const current = outcome();
+		return current !== null && outcomeStillCurrent(current, store.list()?.tasks ?? null)
+			? current
+			: null;
+	};
 	const act = async (run: () => Promise<TaskActionOutcome | null>): Promise<void> => {
 		const result = await run();
 		if (result !== null) setOutcome(result);
@@ -113,7 +125,7 @@ export function TasksView(props: {
 				}
 			>
 				<div class="mt-2 space-y-2">
-					<TaskOutcomeNotice outcome={outcome()} />
+					<TaskOutcomeNotice outcome={shownOutcome()} />
 					<Show when={store.failure()}>
 						{(error) => (
 							<ErrorNotice
@@ -167,7 +179,11 @@ export function TasksView(props: {
 						task={state().kind === "edit" ? taskOf(state()) : null}
 						opener={opener()}
 						onSaved={(task, created) =>
-							setOutcome({ kind: created ? "created" : "saved", title: task.title })
+							setOutcome({
+								kind: created ? "created" : "saved",
+								title: task.title,
+								subject: subjectOf(task),
+							})
 						}
 						onClose={() => setEditor(null)}
 					/>
@@ -212,9 +228,14 @@ export function TasksView(props: {
 					: null;
 		return (
 			<li class="py-2" data-task-id={row.task.taskId}>
-				<article aria-labelledby={headingId} class="space-y-1">
-					<div class="flex flex-wrap items-start justify-between gap-2">
-						<div class="min-w-0">
+				{/* On a phone the actions follow the text, so they never split the
+				    schedule from the question it belongs to; from sm up they sit on the right. */}
+				<article
+					aria-labelledby={headingId}
+					class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+				>
+					<div class="min-w-0 space-y-1">
+						<div>
 							<h4 id={headingId} class="text-sm font-semibold text-slate-900">
 								{row.task.title}
 								<Show when={statusWord()}>
@@ -229,68 +250,68 @@ export function TasksView(props: {
 								{scheduleText(row.task.schedule, row.task.timeZone, row.viewerZone, text())}
 							</p>
 						</div>
-						<div class="flex flex-wrap gap-1">
-							<button
-								type="button"
-								class={BUTTON}
-								aria-label={m().editNamed(row.task.title)}
-								disabled={row.busy}
-								onClick={(event) => row.onEdit(event)}
+						<p class="line-clamp-2 text-sm text-slate-800">{row.task.question}</p>
+						<p class="text-xs text-slate-800" data-field="task-next-run">
+							{nextRunText(row.task, row.now, row.viewerZone, locale(), text())}
+						</p>
+						<p class="flex flex-wrap items-center gap-x-2 text-xs text-slate-700">
+							<span data-field="task-last-run">
+								{lastRunText(row.task, (state) => runState().name(state), text())}
+							</span>
+							<a
+								href={chatHash(row.task.workspaceId)}
+								class={TASK_LINK}
+								aria-label={m().openChatNamed(row.task.title)}
 							>
-								{m().edit}
-							</button>
-							<Show when={row.task.status !== "completed"}>
-								<button
-									type="button"
-									class={BUTTON}
-									aria-label={
-										row.task.status === "active"
-											? m().pauseNamed(row.task.title)
-											: m().resumeNamed(row.task.title)
-									}
-									disabled={row.busy}
-									onClick={() => row.onTogglePause()}
-								>
-									{row.task.status === "active" ? m().pause : m().resume}
-								</button>
-							</Show>
-							<button
-								type="button"
-								class={BUTTON}
-								aria-label={m().runNowNamed(row.task.title)}
-								disabled={row.busy}
-								onClick={() => row.onRunNow()}
-							>
-								{m().runNow}
-							</button>
-							<button
-								type="button"
-								class={BUTTON_DANGER}
-								aria-label={m().deleteNamed(row.task.title)}
-								disabled={row.busy}
-								onClick={(event) => row.onDelete(event)}
-							>
-								{m().delete}
-							</button>
-						</div>
+								{m().openChat}
+							</a>
+						</p>
+						<Show when={skip()}>{(current) => <SkipLine skip={current()} />}</Show>
 					</div>
-					<p class="line-clamp-2 text-sm text-slate-800">{row.task.question}</p>
-					<p class="text-xs text-slate-800" data-field="task-next-run">
-						{nextRunText(row.task, row.now, row.viewerZone, locale(), text())}
-					</p>
-					<p class="flex flex-wrap items-center gap-x-2 text-xs text-slate-700">
-						<span data-field="task-last-run">
-							{lastRunText(row.task, (state) => runState().name(state), text())}
-						</span>
-						<a
-							href={chatHash(row.task.workspaceId)}
-							class={TASK_LINK}
-							aria-label={m().openChatNamed(row.task.title)}
+					<div class="flex shrink-0 flex-wrap gap-1">
+						<button
+							type="button"
+							class={BUTTON}
+							aria-label={m().editNamed(row.task.title)}
+							disabled={row.busy}
+							onClick={(event) => row.onEdit(event)}
 						>
-							{m().openChat}
-						</a>
-					</p>
-					<Show when={skip()}>{(current) => <SkipLine skip={current()} />}</Show>
+							{m().edit}
+						</button>
+						<Show when={row.task.status !== "completed"}>
+							<button
+								type="button"
+								class={BUTTON}
+								aria-label={
+									row.task.status === "active"
+										? m().pauseNamed(row.task.title)
+										: m().resumeNamed(row.task.title)
+								}
+								disabled={row.busy}
+								onClick={() => row.onTogglePause()}
+							>
+								{row.task.status === "active" ? m().pause : m().resume}
+							</button>
+						</Show>
+						<button
+							type="button"
+							class={BUTTON}
+							aria-label={m().runNowNamed(row.task.title)}
+							disabled={row.busy}
+							onClick={() => row.onRunNow()}
+						>
+							{m().runNow}
+						</button>
+						<button
+							type="button"
+							class={BUTTON_DANGER}
+							aria-label={m().deleteNamed(row.task.title)}
+							disabled={row.busy}
+							onClick={(event) => row.onDelete(event)}
+						>
+							{m().delete}
+						</button>
+					</div>
 				</article>
 			</li>
 		);

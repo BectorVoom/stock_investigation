@@ -194,7 +194,9 @@ export function nextRunText(
 	text: TasksText,
 ): string {
 	if (task.status === "paused") return text.pausedLine;
-	if (task.status === "completed" || task.nextRunAt === null) return text.completedLine;
+	if (task.status === "completed" || task.nextRunAt === null)
+		// A one-time task whose only occurrence was skipped never ran: saying it "has run" would contradict the skip line.
+		return currentSkip(task) === null ? text.completedLine : text.completedSkippedLine;
 	const nextMs = Date.parse(task.nextRunAt);
 	if (!Number.isFinite(nextMs)) return text.nextRunAt(task.nextRunAt);
 	const delta = nextMs - nowMs;
@@ -224,6 +226,14 @@ export interface SkipView {
 	readonly settingsFix: boolean;
 }
 
+/** The task's last skip unless a run queued after it superseded it. */
+function currentSkip(task: ScheduledTask): TaskSkip | null {
+	const skip = task.lastSkip;
+	if (skip === null) return null;
+	if (task.lastRun !== null && instantMs(task.lastRun.queuedAt) > instantMs(skip.at)) return null;
+	return skip;
+}
+
 /**
  * The last skipped occurrence with its reason and the fix (ADR-0033 §3),
  * or null when it is older than the last queued run (that run superseded it).
@@ -234,9 +244,8 @@ export function skipView(
 	locale: Locale,
 	text: TasksText,
 ): SkipView | null {
-	const skip: TaskSkip | null = task.lastSkip;
+	const skip = currentSkip(task);
 	if (skip === null) return null;
-	if (task.lastRun !== null && instantMs(task.lastRun.queuedAt) > instantMs(skip.at)) return null;
 	return {
 		headline: text.skipped(taskTimeText(skip.slotAt, task.timeZone, viewerZone, locale, text)),
 		reason: text.skipReason(skip.code),

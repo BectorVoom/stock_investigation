@@ -117,8 +117,9 @@ describe("scheduled-tasks widget (ADR-0033 §9)", () => {
 				"No scheduled tasks yet. A task runs a research question on a schedule.",
 			),
 		).toBeTruthy();
+		// A labelled button in the empty body, not only the header's icon.
 		const newTask = screen.getByRole("button", { name: "New task" });
-		expect(newTask.getAttribute("title")).toBe("New task");
+		expect(newTask.textContent).toBe("New task");
 		fireEvent.click(newTask);
 		expect(await screen.findByRole("dialog", { name: "New task" })).toBeTruthy();
 	});
@@ -207,6 +208,24 @@ describe("scheduled-tasks widget polling", () => {
 		expect(server.listRequests()).toHaveLength(3);
 		await vi.advanceTimersByTimeAsync(5_000);
 		expect(server.listRequests()).toHaveLength(4);
+	});
+
+	it("retires the 'Queued a run' notice once the list shows the run moving on", async () => {
+		const server = createTasksServer({ tasks: [makeTask()] });
+		renderWidget(server, "medium");
+		fireEvent.click(await screen.findByRole("button", { name: "Run Morning storage brief now" }));
+		await screen.findByText(/Queued a run of Morning storage brief/);
+		// The next poll still shows the run as queued: the notice stays.
+		await vi.advanceTimersByTimeAsync(5_000);
+		await flush();
+		expect(screen.queryByText(/Queued a run of Morning storage brief/)).not.toBeNull();
+		const queued = server.state.tasks[0];
+		if (queued?.lastRun == null) throw new Error("the run was not queued");
+		server.update({ ...queued, lastRun: { ...queued.lastRun, state: "collecting" } });
+		await vi.advanceTimersByTimeAsync(5_000);
+		await flush();
+		expect(screen.getByText("Last run: collecting")).toBeTruthy();
+		expect(screen.queryByText(/Queued a run of Morning storage brief/)).toBeNull();
 	});
 
 	it("sends nothing while the tab is hidden and catches up when it shows again", async () => {
