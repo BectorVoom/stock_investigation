@@ -16,9 +16,11 @@ import {
 	homeDataDigestEtag,
 	notebookAssistPrompt,
 	stampNotebook,
+	stockDirectoryRows,
 } from "@research/application";
 import {
 	BASELINE_COMPONENT_DEFINITIONS,
+	completeJobRequestSchema,
 	createComponentCatalog,
 	type HomeDashboard,
 	homeDataResponseSchema,
@@ -29,6 +31,7 @@ import {
 	notebookSchema,
 	type ResearchBundle,
 	researchBundleSchema,
+	type StockDirectoryEntry,
 	WIDGET_LIMITS,
 	type WidgetCore,
 } from "@research/contracts";
@@ -817,7 +820,40 @@ const NOTEBOOK_BENCH_CHART = {
 	})),
 } satisfies Extract<WidgetCore, { readonly type: "chart" }>;
 
+/* Stock directory (ADR-0033): full-size lists shaped like the measured ones
+ * (US 7,691 rows, ~25-character names; JP 3,700 rows with Japanese names). */
+const usDirectory: StockDirectoryEntry[] = Array.from({ length: 7_691 }, (_, index) => ({
+	symbol: `S${index.toString(36).toUpperCase()}`,
+	name: `EXAMPLE HOLDINGS CORP ${index}`,
+	listing: index % 2 === 0 ? "nasdaq" : "nyse",
+}));
+const jpDirectory: StockDirectoryEntry[] = Array.from({ length: 3_700 }, (_, index) => ({
+	symbol: String(1000 + index),
+	name: `EXAMPLE INDUSTRIES CO.,LTD. ${index}`,
+	localName: `サンプル工業ホールディングス${index}`,
+	listing: "tse-prime",
+}));
+const usDirectoryCompletionJson = JSON.stringify({
+	outcome: "stock-directory-refreshed",
+	leaseGeneration: 1,
+	usage: { agentSteps: 0, toolCalls: 0, inputBytes: 0, knownCostUsd: 0, hasUnmeteredUsage: false },
+	market: "US",
+	asOf: null,
+	fetchedAt: "2026-10-24T00:00:00Z",
+	entries: usDirectory,
+});
+
 const cases: Case[] = [
+	{
+		name: `parse + validate a full US stock-list completion (${Math.round(usDirectoryCompletionJson.length / 1024)} KB, 7,691 rows)`,
+		budgetMs: 30,
+		run: () => completeJobRequestSchema.parse(JSON.parse(usDirectoryCompletionJson)),
+	},
+	{
+		name: "fold the search keys of both stock lists (11,391 rows)",
+		budgetMs: 20,
+		run: () => [stockDirectoryRows("US", usDirectory), stockDirectoryRows("JP", jpDirectory)],
+	},
 	{
 		name: `parse + validate a maximal bundle (${Math.round(bundleJson.length / 1024)} KB)`,
 		budgetMs: 10,

@@ -28,12 +28,43 @@ export const STOCK_SEARCH_LIMITS = {
  */
 export const STOCK_SEARCH_FOLD_VERSION = 2;
 
-const WHITESPACE = /\s/u;
-/** Kana voicing marks: after the hiragana shift they may compose with the katakana before them. */
-const KANA_VOICING_MARKS = /[\u3099\u309a]/u;
 const HIRAGANA_FIRST = 0x3041;
 const HIRAGANA_LAST = 0x3096;
 const HIRAGANA_TO_KATAKANA = 0x60;
+const KANA_VOICED_MARK = 0x3099;
+const KANA_SEMI_VOICED_MARK = 0x309a;
+/** Code units per `String.fromCharCode` call, well under engines' argument limits. */
+const FROM_CHAR_CODE_CHUNK = 8_192;
+
+/**
+ * Exactly the code points JavaScript's `\s` matches (ECMAScript WhiteSpace and
+ * LineTerminator). All lie in the Basic Multilingual Plane, so testing UTF-16
+ * code units is exact.
+ */
+function isWhitespace(code: number): boolean {
+	if (code <= 0x20) return code === 0x20 || (code >= 0x09 && code <= 0x0d);
+	if (code < 0xa0) return false;
+	return (
+		code === 0xa0 ||
+		code === 0x1680 ||
+		(code >= 0x2000 && code <= 0x200a) ||
+		code === 0x2028 ||
+		code === 0x2029 ||
+		code === 0x202f ||
+		code === 0x205f ||
+		code === 0x3000 ||
+		code === 0xfeff
+	);
+}
+
+function fromCodeUnits(units: readonly number[]): string {
+	if (units.length <= FROM_CHAR_CODE_CHUNK) return String.fromCharCode(...units);
+	let text = "";
+	for (let start = 0; start < units.length; start += FROM_CHAR_CODE_CHUNK) {
+		text += String.fromCharCode(...units.slice(start, start + FROM_CHAR_CODE_CHUNK));
+	}
+	return text;
+}
 
 /**
  * Folds text for matching: NFKC (full-width letters and digits to
@@ -49,27 +80,34 @@ const HIRAGANA_TO_KATAKANA = 0x60;
  */
 export function foldStockSearchText(text: string): string {
 	const normalized = text.normalize("NFKC");
-	let folded = "";
+	// One pass over UTF-16 code units: every unit the fold changes is in the
+	// BMP, so surrogate pairs pass through untouched, exactly as a
+	// code-point loop would leave them (measured about 3x faster than one regex
+	// test and one string append per character; see `bun run bench`).
+	const units: number[] = [];
 	let pendingSpace = false;
-	for (const char of normalized) {
-		const code = char.codePointAt(0) ?? 0;
-		if (WHITESPACE.test(char)) {
-			pendingSpace = folded.length > 0;
+	let hasVoicingMark = false;
+	for (let index = 0; index < normalized.length; index += 1) {
+		const code = normalized.charCodeAt(index);
+		if (isWhitespace(code)) {
+			pendingSpace = units.length > 0;
 			continue;
 		}
 		if (pendingSpace) {
-			folded += " ";
+			units.push(0x20);
 			pendingSpace = false;
 		}
 		if (code >= 0x41 && code <= 0x5a) {
-			folded += String.fromCharCode(code + 0x20);
+			units.push(code + 0x20);
 		} else if (code >= HIRAGANA_FIRST && code <= HIRAGANA_LAST) {
-			folded += String.fromCharCode(code + HIRAGANA_TO_KATAKANA);
+			units.push(code + HIRAGANA_TO_KATAKANA);
 		} else {
-			folded += char;
+			if (code === KANA_VOICED_MARK || code === KANA_SEMI_VOICED_MARK) hasVoicingMark = true;
+			units.push(code);
 		}
 	}
-	return KANA_VOICING_MARKS.test(folded) ? folded.normalize("NFC") : folded;
+	const folded = fromCodeUnits(units);
+	return hasVoicingMark ? folded.normalize("NFC") : folded;
 }
 
 /** The folded query split into terms; empty for a blank query. */
