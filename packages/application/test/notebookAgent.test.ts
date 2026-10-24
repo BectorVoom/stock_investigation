@@ -367,6 +367,51 @@ describe("applyNotebookCommands", () => {
 		expect(applied.error.failure.code).toBe("SIZE_NOT_ALLOWED");
 	});
 
+	it("places a scheduled-tasks widget but lets no field ride in on it (ADR-0033)", async () => {
+		const placed = await applyNotebookCommands(
+			notebookOf([textWidget("w-1")]),
+			[
+				{ kind: "add", type: "scheduled-tasks", title: "My tasks" },
+				{ kind: "resize", widgetId: "w-new-1", size: "small" },
+			],
+			context(),
+		);
+		if (!placed.ok) throw new Error(`expected success: ${placed.error.failure.message}`);
+		expect(placed.value.widgets[1]).toEqual({
+			widgetId: "w-new-1",
+			type: "scheduled-tasks",
+			title: "My tasks",
+			size: "small",
+		});
+		// The change card names the widget, not a blank frame.
+		expect(placed.value.changes[0]).toMatchObject({ kind: "added", after: "Scheduled tasks" });
+
+		const tasksWidget: NotebookWidget = {
+			widgetId: "w-2",
+			type: "scheduled-tasks",
+			title: "Tasks",
+			size: "medium",
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		};
+		// An agent cannot create or edit a task through the widget: it has no fields.
+		for (const command of [
+			{
+				kind: "add",
+				type: "scheduled-tasks",
+				title: "Tasks",
+				config: { question: "Summarise the market daily" },
+			},
+			{ kind: "update", widgetId: "w-2", config: { schedule: { kind: "daily", time: "08:00" } } },
+		] as const) {
+			const applied = await applyNotebookCommands(notebookOf([tasksWidget]), [command], context());
+			if (applied.ok) throw new Error(`expected ${command.kind} with a field to fail`);
+			expect(applied.error.failure.code).toBe("INVALID_WIDGET");
+		}
+	});
+
 	it("rejects an unknown widget type", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

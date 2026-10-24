@@ -278,6 +278,7 @@ describe("notebook market data (ADR-0021)", () => {
 				commitCompletion: async () => ({ kind: "job-conflict" }) as const,
 				importWorkspace: async () => {},
 				deleteWorkspace: async () => "deleted" as const,
+				createScheduledTask: async () => "full" as const,
 			},
 			clock: fixedClock().clock,
 			ids: { newId: (prefix) => `${prefix}_1` },

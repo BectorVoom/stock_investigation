@@ -278,6 +278,7 @@ describe("home widget type metadata", () => {
 			"line-chart",
 			"market-metric",
 			"metric",
+			"scheduled-tasks",
 			"stock-table",
 			"table",
 			"text",

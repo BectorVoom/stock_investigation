@@ -70,7 +70,7 @@ The decision is pure (`packages/domain/src/schedule/`):
   disambiguation: a time skipped by a daylight-saving jump runs that many
   minutes later (02:30 in a 02:00→03:00 gap runs at 03:30), and a repeated
   time runs at its first occurrence;
-- `decideTaskTick(task, nowMs, hasUnfinishedRun)` — `idle` (paused,
+- `decideTaskTick({ status, nextRunAtMs, hasUnfinishedRun }, nowMs, nextAfter)` — `idle` (paused,
   completed or not yet due), `wait` (due, but the task's last run has not
   finished), or `fire` with the slot and the next `nextRunAt`, computed
   **strictly after now** — so every missed slot collapses into this one run
@@ -78,6 +78,12 @@ The decision is pure (`packages/domain/src/schedule/`):
 
 At most one run per task is unfinished at any time: a due task whose last
 run is still pending or running waits, and fires (once) when it ends.
+
+A successful fire clears `lastSkip`. A materialiser failure never fails
+the claim: it is contained and logged as `scheduled_tasks_materialize_failed`
+(error class only), and the claim scans candidates as usual. Audit actions:
+`scheduled_task.create`, `.update`, `.delete`, `.run_now` (actor `owner`),
+`scheduled_task.fire`, `.skip` (actor `scheduler`).
 
 The materialiser creates the run through the research-run service with
 idempotency key `task_<sha256(taskId, slot)>` and then advances the task
@@ -100,8 +106,10 @@ show the skip with its reason and the fix (Settings → AI agent).
 
 ### 4. Which agent, and spend consent
 
-A scheduled run uses the agent choice saved in **Settings → AI agent at
-the moment it fires** — backend, model, effort, web access — under the
+A scheduled run uses the agent choice **explicitly saved** in **Settings →
+AI agent at the moment it fires** (not a carried-over default the page may
+show before the first save; with nothing saved each occurrence is skipped
+as `AGENT_NOT_CONFIGURED`, as for the notebook assistant) — backend, model, effort, web access — under the
 fixed limits (ADR-0029), exactly like Retry (`retryRequest`). A metered
 backend needs the owner's consent, which a run nobody watches cannot ask
 for: the task editor shows a consent checkbox ("Allow this task to spend up
@@ -119,8 +127,15 @@ model and ceiling equal the consent (AGT-012); otherwise it is skipped with
   slot while paused never runs). Resuming a `once` task whose time has
   passed, or creating one, answers `VALIDATION_FAILED` / `SCHEDULE_IN_PAST`.
 - **Edit** (title, question, horizon, markets, schedule, time zone,
-  consent) recomputes `nextRunAt` for an active task; compare-and-set on
-  `expectedVersion` (409 `VERSION_CONFLICT`).
+  consent) recomputes `nextRunAt` for an active task only when the
+  schedule, the time zone or the status changes — an edit of the question
+  keeps a due occurrence that waits for the last run; compare-and-set on
+  `expectedVersion` (409 `VERSION_CONFLICT`). Pausing a completed task
+  answers `TASK_COMPLETED`; a completed `once` task resumes with a new
+  future date.
+- **Create** is idempotent: the task id is derived from the
+  `Idempotency-Key`, so a repeated key answers the task it created. The
+  task's conversation counts against the 50-conversation cap (`CONFLICT`).
 - **Delete** removes the task and keeps its conversation (the answers are
   the owner's). Deleting the conversation deletes its tasks in the same
   atomic batch.

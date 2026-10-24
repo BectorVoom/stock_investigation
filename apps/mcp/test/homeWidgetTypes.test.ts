@@ -30,6 +30,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			"line-chart",
 			"market-metric",
 			"metric",
+			"scheduled-tasks",
 			"stock-table",
 			"table",
 			"text",
@@ -51,6 +52,13 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		// The static types tell the agent to use the live types for market data.
 		expect(byType("metric").description).toContain("market-metric");
 		expect(byType("chart").description).toContain("line-chart");
+		// ADR-0033: agents may place the tasks widget, never create or run tasks through it.
+		const tasks = byType("scheduled-tasks");
+		expect(tasks.label).toBe("Scheduled tasks");
+		expect(tasks.defaultSize).toBe("medium");
+		expect(tasks.description).toContain("No fields");
+		expect(tasks.description).toContain("cannot create, edit or run tasks");
+		expect(tasks.description).not.toContain("fred:");
 	});
 
 	it("generates config schemas with no generic fields", () => {
@@ -58,8 +66,12 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			expect(entry.configSchema.type).toBe("object");
 			const keys = Object.keys(propertiesOf(entry.configSchema));
 			expect(keys.filter((key) => GENERIC_FIELDS.includes(key))).toEqual([]);
-			expect(keys.length).toBeGreaterThan(0);
+			// Only the scheduled-tasks widget has no content fields (ADR-0033).
+			if (entry.type !== "scheduled-tasks") expect(keys.length).toBeGreaterThan(0);
 		}
+		const tasksSchema = byType("scheduled-tasks").configSchema;
+		expect(propertiesOf(tasksSchema)).toEqual({});
+		expect(tasksSchema.additionalProperties).toBe(false);
 		expect(Object.keys(propertiesOf(byType("market-metric").configSchema)).sort()).toEqual([
 			"seriesId",
 		]);
@@ -80,6 +92,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			{ type: "stock-table", config: { seriesIds: ["twelve-data:AAPL", "twelve-data:MSFT"] } },
 			{ type: "indicator-table", config: { seriesIds: ["fred:CPIAUCSL"] } },
 			{ type: "earnings-calendar", config: { daysAhead: 90 } },
+			{ type: "scheduled-tasks", config: {} },
 			{ type: "text", config: { text: "## Note\n\n**Bold** idea." } },
 			{
 				type: "metric",
@@ -115,6 +128,8 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			{ type: "line-chart", config: { seriesIds: [], range: "1y" }, field: "seriesIds" },
 			{ type: "line-chart", config: { seriesIds: ["fred:VIXCLS"], range: "9y" }, field: "range" },
 			{ type: "earnings-calendar", config: { daysAhead: 45 }, field: "daysAhead" },
+			// A task's question cannot ride in on the widget: the type has no fields.
+			{ type: "scheduled-tasks", config: { question: "Run this daily" }, field: "question" },
 		];
 		for (const { type, config, field } of cases) {
 			const built = byType(type).build({ widgetId: "w-1", title: "T", size: "small", config });
@@ -153,6 +168,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			{ type: "stock-table", config: { seriesIds: ["twelve-data:NVDA"] } },
 			{ type: "indicator-table", config: { seriesIds: ["fred:UNRATE", "fred:CPIAUCSL"] } },
 			{ type: "earnings-calendar", config: { daysAhead: 30 } },
+			{ type: "scheduled-tasks", config: {} },
 		];
 		for (const { type, config } of cases) {
 			const agentType = byType(type);

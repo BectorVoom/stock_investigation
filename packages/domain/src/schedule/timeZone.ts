@@ -97,7 +97,15 @@ export function nextRunAtMs(
 	timeZone: string,
 	afterMs: number,
 ): number | null {
-	let local = utcMsToLocalMinute(afterMs, timeZone);
+	const afterLocal = utcMsToLocalMinute(afterMs, timeZone);
+	// A slot skipped by a forward jump within the last day resolves after its
+	// wall-clock minute (02:30 in a 02:00→03:00 gap runs at 03:30), so it can
+	// still lie ahead of `afterMs` while its wall-clock minute is behind
+	// `afterLocal`. Starting the local search the jump's size earlier keeps such
+	// a slot; every slot before that start resolves at or before `afterMs`.
+	const offsetNow = afterLocal - Math.floor(afterMs / MS_PER_MINUTE);
+	const jump = offsetNow - offsetMinutesAt(afterMs - MINUTES_PER_DAY * MS_PER_MINUTE, timeZone);
+	let local = afterLocal - Math.max(0, jump);
 	for (let step = 0; step < MAX_RESOLVE_STEPS; step += 1) {
 		const slot = nextLocalSlot(schedule, local);
 		if (slot === null) return null;

@@ -219,7 +219,9 @@ function preview(widget: WidgetCore | undefined): string | null {
 						? `${widget.columns.length} columns, ${widget.rows.length} rows`
 						: widget.type === "research"
 							? `research component ${widget.componentId}`
-							: marketPreview(widget);
+							: widget.type === "scheduled-tasks"
+								? WIDGET_TYPE_META[widget.type].label
+								: marketPreview(widget);
 	return text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS - 1)}…` : text;
 }
 

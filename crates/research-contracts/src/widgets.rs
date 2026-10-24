@@ -76,6 +76,7 @@ js_enum! {
 		StockTable = "stock-table",
 		IndicatorTable = "indicator-table",
 		EarningsCalendar = "earnings-calendar",
+		ScheduledTasks = "scheduled-tasks",
 	}
 }
 
@@ -92,9 +93,12 @@ impl WidgetType {
 		match self {
 			Self::Metric | Self::MarketMetric => WidgetSize::Small,
 			Self::Research | Self::IndicatorTable | Self::EarningsCalendar => WidgetSize::Large,
-			Self::Text | Self::Chart | Self::Table | Self::LineChart | Self::StockTable => {
-				WidgetSize::Medium
-			}
+			Self::Text
+			| Self::Chart
+			| Self::Table
+			| Self::LineChart
+			| Self::StockTable
+			| Self::ScheduledTasks => WidgetSize::Medium,
 		}
 	}
 
@@ -369,10 +373,13 @@ pub enum WidgetContent {
 		/// 30, 60, 90 or 180.
 		days_ahead: f64,
 	},
+	/// The owner's scheduled tasks (ADR-0033): no content fields and no series.
+	#[serde(rename = "scheduled-tasks")]
+	ScheduledTasks,
 }
 
 /// Content keys per type, in shape order (after the discriminator).
-const CONTENT_KEYS: [&[&str]; 10] = [
+const CONTENT_KEYS: [&[&str]; 11] = [
 	&["text"],
 	&["value", "unit", "change", "caption", "asOf"],
 	&[
@@ -392,6 +399,7 @@ const CONTENT_KEYS: [&[&str]; 10] = [
 	&["seriesIds"],
 	&["seriesIds"],
 	&["daysAhead"],
+	&[],
 ];
 
 const TABLE_SERIES: &[ArrCheck] = &[
@@ -414,6 +422,7 @@ impl WidgetContent {
 			Self::StockTable { .. } => WidgetType::StockTable,
 			Self::IndicatorTable { .. } => WidgetType::IndicatorTable,
 			Self::EarningsCalendar { .. } => WidgetType::EarningsCalendar,
+			Self::ScheduledTasks => WidgetType::ScheduledTasks,
 		}
 	}
 
@@ -460,9 +469,10 @@ impl WidgetContent {
 			8 => decode_fields!(cx, object, Self::IndicatorTable {
 				series_ids: "seriesIds" => array(market_series_id, TABLE_SERIES),
 			}),
-			_ => decode_fields!(cx, object, Self::EarningsCalendar {
+			9 => decode_fields!(cx, object, Self::EarningsCalendar {
 				days_ahead: "daysAhead" => earnings_calendar_days_ahead,
 			}),
+			_ => Some(Self::ScheduledTasks),
 		}
 	}
 

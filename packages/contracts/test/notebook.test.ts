@@ -54,6 +54,7 @@ describe("notebook widgets", () => {
 			"market-metric",
 			"metric",
 			"research",
+			"scheduled-tasks",
 			"stock-table",
 			"table",
 			"text",

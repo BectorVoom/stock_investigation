@@ -13,3 +13,4 @@ import ResearchFormal.GoogleSync
 import ResearchFormal.DragTarget
 import ResearchFormal.ChartWindow
 import ResearchFormal.Spacing
+import ResearchFormal.Schedule
