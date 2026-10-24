@@ -14,10 +14,12 @@ import {
 	type CalendarFeedIssued,
 	type Conversation,
 	type ConversationSummary,
+	type CreateScheduledTaskRequest,
 	calendarFeedIssuedSchema,
 	conversationListResponseSchema,
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
+	createScheduledTaskRequestSchema,
 	createWorkspaceRequestSchema,
 	dropLegacyEmptyAssets,
 	type HomeDashboard,
@@ -47,6 +49,7 @@ import {
 	type ResearchRun,
 	type RunnerCredential,
 	type RunRecords,
+	type RunScheduledTaskResponse,
 	recommendedSourcesResponseSchema,
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
@@ -55,10 +58,15 @@ import {
 	researchRunResponseSchema,
 	runnerCredentialListResponseSchema,
 	runRecordsResponseSchema,
+	runScheduledTaskResponseSchema,
+	type ScheduledTask,
+	type ScheduledTaskListResponse,
 	type SourcePreview,
 	type StockDirectoryRefreshResponse,
 	type StockDirectorySearchResponse,
 	type StockDirectoryStatusResponse,
+	scheduledTaskListResponseSchema,
+	scheduledTaskResponseSchema,
 	sessionResponseSchema,
 	sourceListResponseSchema,
 	sourcePreviewSchema,
@@ -68,9 +76,11 @@ import {
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
 	submitCommandResponseSchema,
+	type UpdateScheduledTaskRequest,
 	type UpdateSourceRequest,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
+	updateScheduledTaskRequestSchema,
 	updateSourceRequestSchema,
 	type WatchlistResponse,
 	type WatchMarket,
@@ -108,6 +118,11 @@ export type {
 	StockDirectoryRefreshResponse,
 	StockDirectorySearchResponse,
 	StockDirectoryStatusResponse,
+	CreateScheduledTaskRequest,
+	RunScheduledTaskResponse,
+	ScheduledTask,
+	ScheduledTaskListResponse,
+	UpdateScheduledTaskRequest,
 };
 /** One stock-directory search as the Watchlist's search box asks it (ADR-0034). */
 export interface StockDirectorySearch {
@@ -209,6 +224,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const sources = `${API_PREFIX}/sources`;
 	const workspaces = `${API_PREFIX}/workspaces`;
 	const credentials = `${API_PREFIX}/runner-credentials`;
+	const scheduledTasks = `${API_PREFIX}/scheduled-tasks`;
 
 	return {
 		/** Fresh key for one logical write; reuse it when re-sending that same write. */
@@ -755,6 +771,64 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				researchRunResponseSchema,
 			);
 			return result.ok ? ok(result.value.run) : result;
+		},
+
+		/* ----- scheduled tasks (ADR-0033) ----- */
+		/**
+		 * Conditional read of the owner's tasks for visibility-aware polling
+		 * (the Tasks page and the widget share one poll): an unchanged list
+		 * answers a cheap 304.
+		 */
+		listScheduledTasks: (
+			etag: string | null = null,
+		): Promise<ApiResult<Conditional<ScheduledTaskListResponse>>> =>
+			conditionalGet(scheduledTasks, scheduledTaskListResponseSchema, etag),
+		/** Creates the task and its own conversation; reuse the key when re-sending the same create. */
+		createScheduledTask: async (
+			request: CreateScheduledTaskRequest,
+			idempotencyKey: string,
+		): Promise<ApiResult<ScheduledTask>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			const result = await write(
+				{ method: "POST", path: scheduledTasks, idempotencyKey: key.value },
+				createScheduledTaskRequestSchema,
+				request,
+				scheduledTaskResponseSchema,
+			);
+			return result.ok ? ok(result.value.task) : result;
+		},
+		/** Edit, pause (`status: "paused"`) or resume (`"active"`); 409 VERSION_CONFLICT when stale. */
+		updateScheduledTask: async (
+			taskId: string,
+			request: UpdateScheduledTaskRequest,
+		): Promise<ApiResult<ScheduledTask>> => {
+			const result = await write(
+				{ method: "PATCH", path: `${scheduledTasks}/${segment(taskId)}` },
+				updateScheduledTaskRequestSchema,
+				request,
+				scheduledTaskResponseSchema,
+			);
+			return result.ok ? ok(result.value.task) : result;
+		},
+		/** Deletes the task; its conversation (the answers) stays. */
+		deleteScheduledTask: (taskId: string): Promise<ApiResult<null>> =>
+			requestEmpty({ method: "DELETE", path: `${scheduledTasks}/${segment(taskId)}` }),
+		/** Run now: queues one run without moving the schedule, or answers the unfinished one. */
+		runScheduledTask: async (
+			taskId: string,
+			idempotencyKey: string,
+		): Promise<ApiResult<RunScheduledTaskResponse>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			return requestJson(
+				{
+					method: "POST",
+					path: `${scheduledTasks}/${segment(taskId)}/run`,
+					idempotencyKey: key.value,
+				},
+				runScheduledTaskResponseSchema,
+			);
 		},
 
 		/* ----- runner credentials ----- */

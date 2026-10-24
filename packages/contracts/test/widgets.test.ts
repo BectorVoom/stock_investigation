@@ -7,6 +7,7 @@ import {
 	homeDashboardSchema,
 	homeWidgetSchema,
 	MARKET_LIMITS,
+	notebookWidgetSchema,
 	putHomeDashboardRequestSchema,
 	storedHomeDashboardSchema,
 	WIDGET_LIMITS,
@@ -59,6 +60,36 @@ describe("one widget specification", () => {
 		const parsed = widgetCoreSchema.parse(research);
 		expect(asHomeWidget(parsed)).toBeNull();
 		expect(asHomeWidget(widgetCoreSchema.parse(note))).toEqual(note);
+	});
+
+	it("has a scheduled-tasks widget with no content fields, on Home and in the Notebook (ADR-0033)", () => {
+		const tasks = {
+			widgetId: "w-tasks",
+			type: "scheduled-tasks",
+			title: "Tasks",
+			size: "medium",
+		} as const;
+		expect(WIDGET_TYPE_META["scheduled-tasks"].defaultSize).toBe("medium");
+		expect([...WIDGET_TYPE_META["scheduled-tasks"].sizes].sort()).toEqual([
+			"large",
+			"medium",
+			"small",
+		]);
+		expect(widgetAgentDescription("scheduled-tasks")).toContain("cannot create, edit or run tasks");
+		for (const size of ["small", "medium", "large"] as const) {
+			expectAccepted(widgetCoreSchema, { ...tasks, size });
+			expectAccepted(homeWidgetSchema, { ...tasks, size });
+		}
+		expectAccepted(notebookWidgetSchema, {
+			...tasks,
+			createdAt: "2026-10-24T00:00:00.000Z",
+			updatedAt: "2026-10-24T00:00:00.000Z",
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		});
+		// A task cannot be smuggled in through the widget.
+		expectRejected(widgetCoreSchema, { ...tasks, question: "Summarise the market" });
+		expectRejected(homeWidgetSchema, { ...tasks, daysAhead: 30 });
 	});
 
 	it("applies one title rule to every widget on every page", () => {

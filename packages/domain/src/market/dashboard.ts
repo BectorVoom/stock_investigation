@@ -12,8 +12,11 @@ export type DashboardWidgetSize = "small" | "medium" | "large";
  */
 export type DashboardWidget =
 	| {
-			/** Static content: rich text, a number, a chart or table with its own data, a research result. */
-			readonly type: "text" | "metric" | "chart" | "table" | "research";
+			/**
+			 * Static content (rich text, a number, a chart or table with its own
+			 * data, a research result) or the scheduled-tasks list: no series.
+			 */
+			readonly type: "text" | "metric" | "chart" | "table" | "research" | "scheduled-tasks";
 			readonly widgetId: string;
 			readonly title: string;
 			readonly size: DashboardWidgetSize;

@@ -493,6 +493,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				<NotebookPanel
 					session={notebookSession}
 					api={props.api}
+					visibility={props.visibility}
 					registry={props.registry}
 					view={session.view()}
 					mode={props.mode}

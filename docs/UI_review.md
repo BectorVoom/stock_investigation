@@ -308,3 +308,57 @@ baseline), against 103 on the baseline commit.
 - The Chats panel stays open in Notebook-first unless collapsed, so the
   Notebook takes three quarters of the space beside it, not of the window.
 - The chosen state is remembered per browser (local storage), not per account.
+
+# UI review — Scheduled tasks (ADR-0033)
+
+**Date:** 2026-10-24 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Widget guideline:** Apple Human Interface Guidelines for widgets ([ADR-0017](adr/0017-home-widgets-follow-apple-hig.md)) · **Tool:** `tests/ui-review/tasksReview.spec.ts` (part of `bun run review:ui`; run alone with `REVIEW_BROWSER=<engine> node_modules/.bin/playwright test --config tests/ui-review/playwright.config.ts tasksReview.spec.ts`)
+
+## How it was reviewed
+
+The review runs as its own owner (`X-E2E-Owner`) with its own runner harness against the built SPA, and creates every state through the API and the runner — nothing is written into the database file. The skip is real: a daily task due a minute after creation while no backend is saved, which the runner's next claim records as `AGENT_NOT_CONFIGURED`. The completed one-off task really fired, and "Run now" really ran through the scripted agent. Every screenshot (64 per engine, `test-results/ui-review/<engine>/tasks-*.png`) was read, with `findings.json`.
+
+**States** at 1440×900, 820×1180 and 390×844: the Tasks page empty (fresh owner) and with nine tasks of every kind and status (daily, weekdays, weekly, monthly on day 31 and 15, once and completed, two paused, one skipped, one run now, a 95-character title with a long question), top and bottom; the editor dialog for a new task with the once, weekly and monthly field sets, the problems list, and editing a task of each set; the delete confirmation; Home with the `scheduled-tasks` widget at Small, Medium and Large, empty and populated, with a crop of each widget; the widget's own New task dialog; the widget in a chat's Notebook (Notebook-first). Japanese (`ja-JP`) at 1440 and 390: the Tasks page, the weekly editor, Home and each widget size. The dialogs are checked for focus moving in, Escape closing them and focus returning to the opener.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots | The widget showed only "6 active of 9" at its top: frames show no title (ADR-0024), so nothing said what the widget was | Fixed: the body names itself ("Scheduled tasks · 6 active of 9"), as the market widgets name their series |
+| Screenshots | Medium and Large widgets read as one block of text: four lines per task with no separation | Fixed: hairline dividers between tasks, as on the Tasks page |
+| Automated (clipped-text) / screenshots | A Small widget on a phone (~170 px) cut the title to "Morning…" beside the two icon buttons; long titles were cut without a way to read them | Fixed: titles wrap to two lines with the full title as a tooltip; when the row has less than 12rem for the text the two buttons wrap under it |
+| Screenshots | The empty widget offered only a 24 px "+" in its corner | Fixed: the empty state has a labelled "New task" button (the corner "+" appears once there are tasks) |
+| Screenshots (Japanese) | "チャットを開く" broke across two lines in a Small widget | Fixed: the link does not wrap |
+| Screenshots | On a phone the Tasks page put Edit / Pause / Run now / Delete between the schedule and the question it belongs to | Fixed: on a phone the actions follow the task's text; from 640 px they sit on the right |
+| Screenshots | The editor dialog opened in the top-left corner of a desktop window | Fixed: it is centred (`m-auto`), 36rem wide so the monthly set (Repeat, Day of month, Time) fits on one line |
+| Screenshots | On a phone the weekly editor wrapped "Sat" onto a line of its own | Fixed: below 640 px the seven days are seven columns (box above the day) |
+| Screenshots | The problems list ("Enter a title.") had no visible lead-in, unlike Home's "To add this widget:" | Fixed: "Before you can save this task" heads the list and names it |
+| WebKit review (content-wider-than-box ×9) | A first fix used a CSS container query; inside a Notebook column WebKit squeezed the two buttons and hid Run now | Replaced by wrapping (no container query); WebKit and Chrome now lay the widget out the same |
+| Real-environment run (coordinator) | A one-off task whose only occurrence was skipped said "Completed: this one-time task has run." beside "Not run yet" and the skip line | Fixed: "Completed: its one time was skipped, so it did not run." (EN/JA) when the skip is newer than the last run; unit-tested |
+| Real-environment run (coordinator) | "Created …" (and the other success notices) stayed after the task had fired or been skipped | Fixed: a success notice shows only while the list still holds that task as the action left it (version, status, last run, last skip); failures stay until the next action; unit-tested on the model and on the widget |
+| Automated (obscured, small-target) | The widget frame's selection control (`Select "Scheduled tasks"`, 2×2 px) on every widget | Not this feature: the shared `@research/widget-grid` frame, same on every widget type |
+| Automated (obscured) | Notebook-first desktop: a source button of the narrow chat panel's table lies under the Notebook | Not this feature: the chat thread's preview table in Notebook-first |
+| Review tooling | Items of the phone's closed "Chats" list were reported as obscured | The audit now skips content of a closed `<details>`, as the Chat review does |
+
+Findings per engine (rule → count):
+
+| Engine | Before | After |
+|---|---|---|
+| Chrome (Chrome channel) | obscured 79, small-target 37, clipped-text 10 — 126 | obscured 38, small-target 37 — 75; all but one are the shared frame's selection control (above), the last is the chat-table item |
+| Safari engine (Playwright WebKit) | First run after the Chrome fixes: obscured 39, small-target 39, content-wider-than-box 9 — 87 | obscured 39, small-target 39 — 78; the frame's selection control, the chat-table item and the chat preview table's 20×96 px "Select" button (Notebook-first) |
+
+The dialog checks (focus in, Escape, focus back on the opener) found nothing in either engine.
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (scripted review, screenshots read) |
+| Safari engine (Playwright WebKit) | Reviewed (scripted review, screenshots read) |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine; the owner runs `REVIEW_BROWSER=firefox bun run review:ui` |
+
+## Known limits
+
+- The delete confirmation is the shared `ConfirmDialog` and still opens in the top-left corner, as everywhere in the app; only the task editor was centred. A global `dialog:modal { margin: auto }` would centre them all.
+- Touch was not emulated: the 44 px coarse-pointer sizes (icon buttons and links) were not measured; the Tasks page's text buttons are the app's 24 px `BUTTON`, as on the Watchlist page.
+- A skipped one-off task, a spend-consent checkbox (metered backend) and a failed run were not in the screenshots: the first two need a skipped once slot or a Claude API key, the third a failing agent; their wording is covered by unit tests.
+- The Notebook-first chat panel beside the Notebook is narrow at 1440 px and squeezes its result tables; that is the chat's layout, not this feature's.

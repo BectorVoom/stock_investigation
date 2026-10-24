@@ -9,6 +9,7 @@ export * from "./market.ts";
 export * from "./notebook.ts";
 export * from "./primitives.ts";
 export * from "./records.ts";
+export * from "./scheduledTasks.ts";
 export * from "./settings.ts";
 export * from "./stockDirectory.ts";
 export * from "./ui.ts";

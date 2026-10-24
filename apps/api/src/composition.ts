@@ -18,6 +18,7 @@ import {
 	createResearchRunService,
 	createRunnerCredentialService,
 	createRunnerJobService,
+	createScheduledTaskService,
 	createSourceService,
 	createStockDirectoryService,
 	createWatchlistService,
@@ -33,6 +34,7 @@ import {
 	type ComponentDefinition,
 	createComponentCatalog,
 } from "@research/contracts";
+import { createEventLogger, type EventLogger, logIsolated } from "@research/effects";
 import { type OwnerAuthenticator, ownerAuthenticatorFor } from "./auth.ts";
 import type { Env } from "./env.ts";
 
@@ -55,8 +57,13 @@ export interface CompositionOverrides {
  * feed parser, fetcher) come from `createSharedParts` and are reused.
  */
 /** Everything that does not depend on a request's bindings, built once per isolate. */
-export function createSharedParts(overrides: CompositionOverrides = {}) {
+export function createSharedParts(
+	overrides: CompositionOverrides = {},
+	logger: EventLogger = createEventLogger((line) => console.error(line.trimEnd())),
+) {
 	return {
+		/** For failures a use case contains instead of answering (the claim-time scheduler). */
+		logger,
 		catalog: createComponentCatalog([
 			...BASELINE_COMPONENT_DEFINITIONS,
 			...(overrides.extraComponents ?? []),
@@ -78,6 +85,31 @@ export function createServices(
 	const ids = overrides.ids ?? randomIdGenerator;
 	const hasher = webCryptoHasher;
 	const { catalog } = shared;
+	const runs = createResearchRunService({
+		jobs: persistence.jobs,
+		workspaces: persistence.workspaces,
+		records: persistence.records,
+		runnerStatus: persistence.runnerStatus,
+		settings: persistence.settings,
+		unitOfWork: persistence.unitOfWork,
+		clock,
+		ids,
+		hasher,
+		rateLimiter: persistence.rateLimiter,
+		audit: persistence.audit,
+		googleCalendar: persistence.googleCalendar,
+	});
+	const scheduledTasks = createScheduledTaskService({
+		scheduledTasks: persistence.scheduledTasks,
+		unitOfWork: persistence.unitOfWork,
+		jobs: persistence.jobs,
+		runs,
+		workspaces: persistence.workspaces,
+		clock,
+		ids,
+		hasher,
+		audit: persistence.audit,
+	});
 	return {
 		authenticateOwner: overrides.ownerAuthenticator ?? ownerAuthenticatorFor(env),
 		runnerStatus: persistence.runnerStatus,
@@ -93,20 +125,8 @@ export function createServices(
 			audit: persistence.audit,
 			recommended: RECOMMENDED_SOURCES,
 		}),
-		runs: createResearchRunService({
-			jobs: persistence.jobs,
-			workspaces: persistence.workspaces,
-			records: persistence.records,
-			runnerStatus: persistence.runnerStatus,
-			settings: persistence.settings,
-			unitOfWork: persistence.unitOfWork,
-			clock,
-			ids,
-			hasher,
-			rateLimiter: persistence.rateLimiter,
-			audit: persistence.audit,
-			googleCalendar: persistence.googleCalendar,
-		}),
+		runs,
+		scheduledTasks,
 		notebook: createNotebookService({
 			notebooks: persistence.notebooks,
 			workspaces: persistence.workspaces,
@@ -141,6 +161,9 @@ export function createServices(
 			hasher,
 			googleCalendar: persistence.googleCalendar,
 			audit: persistence.audit,
+			scheduler: scheduledTasks,
+			onSchedulerFailure: (name) =>
+				logIsolated(() => shared.logger.error("scheduled_tasks_materialize_failed", { name })),
 		}),
 		workspaces: createWorkspaceService({
 			workspaces: persistence.workspaces,

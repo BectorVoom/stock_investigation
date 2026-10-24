@@ -70,4 +70,6 @@ export const jsonObjectSchema: z.ZodType<JsonObject> = z.custom<JsonObject>(
 );
 
 export const marketSchema = z.enum(["JP", "US"]);
+/** A research market: Japanese or US listings. */
+export type ResearchMarket = z.infer<typeof marketSchema>;
 export const currencySchema = z.string().regex(/^[A-Z]{3}$/, "ISO 4217 code expected");

@@ -16,6 +16,7 @@ import {
 	claimJobRequestSchema,
 	completeJobRequestSchema,
 	createResearchRunRequestSchema,
+	createScheduledTaskRequestSchema,
 	createWorkspaceRequestSchema,
 	DEFAULT_CONVERSATION_TITLE,
 	heartbeatRequestSchema,
@@ -35,6 +36,9 @@ import {
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
+	runScheduledTaskResponseSchema,
+	scheduledTaskListResponseSchema,
+	scheduledTaskResponseSchema,
 	stockDirectoryRefreshRequestSchema,
 	stockDirectoryRefreshResponseSchema,
 	stockDirectorySearchQuerySchema,
@@ -42,6 +46,7 @@ import {
 	stockDirectoryStatusResponseSchema,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
+	updateScheduledTaskRequestSchema,
 	updateSourceRequestSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
@@ -116,8 +121,8 @@ export interface AppOptions {
  */
 export function createApp(options: AppOptions = {}) {
 	const app = new Hono<AppEnv>();
-	const shared = createSharedParts(options.overrides);
 	const logger = createEventLogger((line) => console.error(line.trimEnd()));
+	const shared = createSharedParts(options.overrides, logger);
 
 	// The platform also serves the Worker's hostname over plain HTTP. Credentials (the Access
 	// token, a runner bearer token) must never travel that way, so the API refuses it: a safe
@@ -1038,6 +1043,81 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.runs.createMarketRefresh(owner(c), key),
 				);
 				return c.json({ run: created.run }, 202);
+			}),
+		),
+	);
+
+	/* Scheduled tasks (ADR-0033 §6): research questions that run on a schedule */
+	api.get("/scheduled-tasks", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const list = yield* useCase("scheduled_tasks.list", () =>
+					c.var.services.scheduledTasks.list(owner(c)),
+				);
+				const parsed = scheduledTaskListResponseSchema.parse(list);
+				// The list is one query, so the validator covers the whole body:
+				// a last run's state change moves it like an edit does.
+				return conditionalJson(c, `tasks.${fingerprint(JSON.stringify(parsed))}`, parsed);
+			}),
+		),
+	);
+	api.post("/scheduled-tasks", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const key = yield* idempotencyKey(c);
+				const body = yield* readJson(c, createScheduledTaskRequestSchema);
+				const created = yield* useCase("scheduled_tasks.create", () =>
+					c.var.services.scheduledTasks.create(owner(c), body, key),
+				);
+				return c.json(
+					scheduledTaskResponseSchema.parse({ task: created.task }),
+					created.replayed ? 200 : 201,
+				);
+			}),
+		),
+	);
+	api.patch("/scheduled-tasks/:id", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const taskId = yield* pathId(c, "id");
+				const body = yield* readJson(c, updateScheduledTaskRequestSchema);
+				const task = yield* useCase("scheduled_tasks.update", () =>
+					c.var.services.scheduledTasks.update(owner(c), taskId, body),
+				);
+				return c.json(scheduledTaskResponseSchema.parse({ task }));
+			}),
+		),
+	);
+	api.delete("/scheduled-tasks/:id", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const taskId = yield* pathId(c, "id");
+				yield* useCase("scheduled_tasks.remove", () =>
+					c.var.services.scheduledTasks.remove(owner(c), taskId),
+				);
+				return c.body(null, 204);
+			}),
+		),
+	);
+	api.post("/scheduled-tasks/:id/run", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const taskId = yield* pathId(c, "id");
+				const key = yield* idempotencyKey(c);
+				const ran = yield* useCase("scheduled_tasks.run_now", () =>
+					c.var.services.scheduledTasks.runNow(owner(c), taskId, key),
+				);
+				return c.json(runScheduledTaskResponseSchema.parse(ran), 202);
 			}),
 		),
 	);

@@ -81,7 +81,19 @@ export const INHERITED_ENV_ALLOWLIST: readonly string[] =
 				"TMP",
 				...RUST_TOOLCHAIN_PLUMBING,
 			]
-		: ["PATH", "HOME", "LANG", "LC_ALL", "LC_MESSAGES", "TZ", ...RUST_TOOLCHAIN_PLUMBING];
+		: [
+				"PATH",
+				"HOME",
+				// An identity, not a path: Claude Code on macOS finds its
+				// subscription login in the Keychain under $USER, so without it
+				// a live run sees the backend as signed out (observed 2026-10-24).
+				"USER",
+				"LANG",
+				"LC_ALL",
+				"LC_MESSAGES",
+				"TZ",
+				...RUST_TOOLCHAIN_PLUMBING,
+			];
 
 /** Every directory a launcher run writes: all must be explicit throwaway values. */
 export const REQUIRED_PATH_SETTINGS = [

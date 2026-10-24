@@ -172,6 +172,9 @@ function stubUnitOfWork(outcome: DeleteWorkspaceOutcome): ResearchUnitOfWork & {
 			seen.push(input);
 			return outcome;
 		},
+		createScheduledTask: async () => {
+			throw new Error("unused");
+		},
 	};
 }
 

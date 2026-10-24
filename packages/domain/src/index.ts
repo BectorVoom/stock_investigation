@@ -27,6 +27,8 @@ export * from "./news/feed.ts";
 export * from "./news/ipClassification.ts";
 export * from "./news/urlPolicy.ts";
 export * from "./result.ts";
+export * from "./schedule/schedule.ts";
+export * from "./schedule/timeZone.ts";
 export * from "./text/recentWithinBudget.ts";
 export * from "./text/truncate.ts";
 export * from "./thrown.ts";

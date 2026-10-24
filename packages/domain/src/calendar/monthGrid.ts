@@ -63,7 +63,7 @@ function floorDiv(a: number, b: number): number {
  * arithmetic only — no `Date` objects in this module). Valid for the whole
  * 1970–9999 grid range.
  */
-function daysFromCivil(year: number, month: number, day: number): number {
+export function daysFromCivil(year: number, month: number, day: number): number {
 	const adjustedYear = month <= 2 ? year - 1 : year;
 	const era = floorDiv(adjustedYear >= 0 ? adjustedYear : adjustedYear - 399, 400);
 	const yearOfEra = adjustedYear - era * 400;
@@ -74,7 +74,8 @@ function daysFromCivil(year: number, month: number, day: number): number {
 	return era * 146097 + dayOfEra - 719468;
 }
 
-function civilFromDays(days: number): {
+/** The civil date of a day number since 1970-01-01 (Hinnant's `civil_from_days`). */
+export function civilFromDays(days: number): {
 	readonly year: number;
 	readonly month: number;
 	readonly day: number;

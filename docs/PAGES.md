@@ -1,13 +1,13 @@
 # Pages
 
-The SPA is split into four pages by user action (MECE): every action lives on
+The SPA is split into six pages by user action (MECE): every action lives on
 exactly one page, and every primary journey step has a page. A "chat" and a
 "workspace" are the same stored thing (one conversation with its research
 results and notebook); the UI
 says "chat" for a conversation everywhere.
 
 Routes: `#/home` (default), `#/chat` and `#/chat/<workspaceId>`, `#/sources`,
-`#/settings` and `#/watchlist`. The old `#/canvas`, `#/canvas/<workspaceId>`,
+`#/settings`, `#/watchlist` and `#/tasks`. The old `#/canvas`, `#/canvas/<workspaceId>`,
 `#/workspace/<workspaceId>` and `#/workspace` hashes open the Chat page for
 that conversation so old bookmarks keep working. `#/settings/agent`
 scrolls the AI agent section into view and moves focus to its Default backend
@@ -33,7 +33,8 @@ accessible name), and Home takes every type except a research result.
 
 - Add a widget from the + menu: Text, Metric, Chart, Table (added and opened
   in their editor) or a live market type — Market metric, Line chart, Stock
-  table, Indicator table, Earnings calendar (its dialog opens first).
+  table, Indicator table, Earnings calendar (its dialog opens first), or
+  Scheduled tasks (no fields: placed at once, and its menu has no Edit…).
 - Edit a widget (Edit…: the content editor, or the market dialog for series,
   range, days ahead), edit a Text widget in place, or change its size from the
   menu (Size: Small / Medium / Large).
@@ -94,6 +95,15 @@ former label); the per-widget actions open a text menu with leading icons.
   refreshed), and one sentence for the stocks with no upcoming date. The
   widget is the only month calendar; the `.ics` download, the subscription
   feed and the Google Calendar card live in Settings → Calendar.
+- The scheduled-tasks widget, when arranged (ADR-0033 §9) — glanceable,
+  after the Apple widget guidelines: the tasks by next run (active, then
+  paused, then completed), each with its title, schedule in words, next run
+  (relative within a day), last run state with an "Open chat" link, the last
+  skip with its reason, and Pause/Resume and Run now icon buttons; a header
+  line with "New task" (the Tasks page's editor dialog) and "Open Tasks".
+  Small shows the next task only, Medium up to four, Large up to eight and
+  then "N more". It polls the list (30 s; 5 s while a run is unfinished)
+  only while the tab is visible, one poll for all such widgets.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
@@ -110,6 +120,8 @@ former label); the per-widget actions open a text menu with leading icons.
 - Runner credentials or export — see Settings (`#/settings`).
 - Registering stocks or tracking earnings announcement dates — see Watchlist
   (`#/watchlist`).
+- Creating, editing or deleting scheduled tasks — see Tasks (`#/tasks`); the
+  widget only pauses, resumes and runs them.
 
 ## Watchlist — `#/watchlist`
 
@@ -184,6 +196,59 @@ Register the stocks you follow and see their earnings announcement dates.
 - Runner credentials or export — see Settings (`#/settings`).
 - Google Calendar, the `.ics` download and the subscription link — see
   Settings → Calendar (`#/settings/calendar`).
+- Scheduling research questions — see Tasks (`#/tasks`).
+
+## Tasks — `#/tasks`
+
+**Purpose**
+
+Schedule research questions to run by themselves and see when each runs next and how it last went.
+
+A task (ADR-0033) is a research question with a schedule — once, daily,
+weekdays, weekly or monthly, at a local time in its own time zone — that
+runs by itself in its own chat. It fires when the local runner next asks for
+work after its time; times missed while no runner polled run once on
+return. At most 10 tasks are active and 30 stored.
+
+**User actions**
+
+- Create a task with "New task" (the editor dialog): title, question,
+  horizon, markets, Repeat (Once / Daily / Weekdays / Weekly / Monthly) with
+  its date, days or day of the month, the time and the time zone (the
+  browser's by default), and — only while the backend saved in Settings → AI
+  agent bills per use — the spend consent ("Allow this task to spend up to
+  $X per run on <backend> <model>").
+- Edit a task in the same dialog.
+- Pause or resume a task (a time missed while paused never runs).
+- Run a task now (queues one run without moving its schedule; while its last
+  run is unfinished it answers that run instead of a second one).
+- Delete a task, with confirmation (its chat and answers stay).
+- Open a task's chat (`#/chat/<workspaceId>`), where every run's question and
+  answer land.
+
+**Shows**
+
+- The tasks, active first by next run, then paused, then completed: title,
+  status, schedule in words (naming the zone when it is not the browser's),
+  the question, the next run in local time (relative within a day; "due
+  now" until the runner next asks for work), the last run's state with its
+  failure code and "Open chat", and the last skipped occurrence with its
+  reason and fix (a link to Settings → AI agent when the fix lives there).
+- The counts against the limits ("3 of 10 active · 5 of 30 tasks"), a note
+  that each run uses the agent choice saved in Settings → AI agent, and an
+  empty state that explains what a task is.
+- The outcome of the last action, or its failure with the stable code and
+  what to do (task limits reached, time in the past, changed elsewhere).
+
+**Not here**
+
+- Asking a question once or reading the answers — see Chat (`#/chat`).
+- Choosing the AI backend, model or spend ceiling the runs use — see
+  Settings → AI agent (`#/settings/agent`).
+- Checking market prices or arranging widgets (the scheduled-tasks widget
+  included) — see Home (`#/home`).
+- Registering stocks or tracking earnings announcement dates — see Watchlist
+  (`#/watchlist`).
 
 ## Chat — `#/chat`
 
@@ -302,7 +367,8 @@ Ask research questions and read the answers, with their sources and run progress
   Sources list as in Chat; a chart without provenance (owner- or
   assistant-made) is marked "basis not stated". The
   earnings calendar reads the Watchlist page's stocks with its own refresh
-  button. Titles stay in the data but the frames hide them.
+  button. The scheduled-tasks widget is Home's too (see Home): it lists the
+  owner's tasks, not this chat's. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header
   and toolbar; dragging near its top or bottom edge scrolls it.
 - Cut, copy and paste widgets (ADR-0023): Cut / Copy / Paste after in each
@@ -326,6 +392,8 @@ Ask research questions and read the answers, with their sources and run progress
 - Runner credentials or export — see Settings (`#/settings`).
 - Registering stocks or tracking earnings announcement dates — see Watchlist
   (`#/watchlist`).
+- Scheduling a question to run by itself — see Tasks (`#/tasks`); a task's
+  answers still arrive here, in its own chat.
 
 ## Sources — `#/sources`
 
@@ -354,6 +422,7 @@ Choose which news sources research may read.
 - Runner credentials or export — see Settings (`#/settings`).
 - Registering stocks or tracking earnings announcement dates — see Watchlist
   (`#/watchlist`).
+- Scheduling research questions — see Tasks (`#/tasks`).
 
 ## Settings — `#/settings`
 
@@ -405,6 +474,8 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 - Subscribing to news — see Sources (`#/sources`).
 - Registering stocks or tracking earnings announcement dates — see Watchlist
   (`#/watchlist`).
+- Scheduling research questions — see Tasks (`#/tasks`); their runs use the
+  AI agent choice saved here.
 
 ## Journeys to pages
 
@@ -419,6 +490,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
+| 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks") and Chat (each task's answers in its own chat) |
 
 ## How the split was checked
 

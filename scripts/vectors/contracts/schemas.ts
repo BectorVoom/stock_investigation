@@ -155,6 +155,15 @@ const widgetCores: Json[] = [
 		seriesIds: ["fred:CPIAUCSL"],
 	},
 	{ widgetId: "w-10", type: "earnings-calendar", title: "Earnings", size: "large", daysAhead: 90 },
+	{ widgetId: "w-11", type: "scheduled-tasks", title: "Tasks", size: "medium" },
+	{ widgetId: "w-12", type: "scheduled-tasks", title: "Next task", size: "small" },
+];
+/** A scheduled-tasks widget has no content fields: any one is rejected (ADR-0033). */
+const scheduledTasksRejected = [
+	'{"widgetId":"w-11","type":"scheduled-tasks","title":"Tasks","size":"medium","daysAhead":30}',
+	'{"widgetId":"w-11","type":"scheduled-tasks","title":"Tasks","size":"medium","tasks":[]}',
+	'{"widgetId":"w-11","type":"scheduled-tasks","title":"Tasks","size":"huge"}',
+	'{"widgetId":"w-11","type":"scheduled-task","title":"Tasks","size":"medium"}',
 ];
 const notebookWidgets: Json[] = widgetCores.map((core) => ({
 	...(core as Record<string, Json>),
@@ -885,8 +894,23 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			},
 		],
 	},
-	{ name: "widgetCore", schema: contracts.widgetCoreSchema, baselines: widgetCores },
-	{ name: "notebookWidget", schema: contracts.notebookWidgetSchema, baselines: notebookWidgets },
+	{
+		name: "widgetCore",
+		schema: contracts.widgetCoreSchema,
+		baselines: widgetCores,
+		extra: scheduledTasksRejected,
+	},
+	{
+		name: "notebookWidget",
+		schema: contracts.notebookWidgetSchema,
+		baselines: notebookWidgets,
+		extra: scheduledTasksRejected.map((text) =>
+			text.replace(
+				"{",
+				`{"createdAt":"2026-10-14T00:00:00.000Z","updatedAt":"2026-10-14T00:00:00.000Z","revision":1,"origin":${JSON.stringify(origin)},`,
+			),
+		),
+	},
 	{
 		name: "notebook",
 		schema: contracts.notebookSchema,

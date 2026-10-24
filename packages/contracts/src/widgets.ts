@@ -76,6 +76,7 @@ export const WIDGET_TYPES = [
 	"table",
 	"research",
 	...MARKET_WIDGET_TYPES,
+	"scheduled-tasks",
 ] as const;
 export const widgetTypeSchema = z.enum(WIDGET_TYPES);
 export type WidgetType = z.infer<typeof widgetTypeSchema>;
@@ -87,6 +88,7 @@ export const HOME_WIDGET_TYPES = [
 	"chart",
 	"table",
 	...MARKET_WIDGET_TYPES,
+	"scheduled-tasks",
 ] as const;
 export type HomeWidgetType = (typeof HOME_WIDGET_TYPES)[number];
 
@@ -242,6 +244,14 @@ export const WIDGET_CONTENT_SHAPES = {
 		type: z.literal("earnings-calendar"),
 		daysAhead: earningsCalendarDaysAheadSchema,
 	},
+	/**
+	 * The owner's scheduled tasks (ADR-0033): next runs, last results and
+	 * quick actions, read from the tasks API. No content fields and no
+	 * series — every series walk treats it as zero series.
+	 */
+	"scheduled-tasks": {
+		type: z.literal("scheduled-tasks"),
+	},
 } as const;
 
 /** The content fields of one type without its discriminator: an agent's `config`. */
@@ -339,6 +349,7 @@ export const widgetCoreSchema = z
 		z.strictObject({ ...C, ...S["stock-table"] }),
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
+		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -531,6 +542,7 @@ export const homeWidgetSchema = z
 		z.strictObject({ ...C, ...S["stock-table"] }),
 		z.strictObject({ ...C, ...S["indicator-table"] }),
 		z.strictObject({ ...C, ...S["earnings-calendar"] }),
+		z.strictObject({ ...C, ...S["scheduled-tasks"] }),
 	])
 	.refine(widgetRowsMatchColumns, widgetRowsMatchColumnsIssue)
 	.refine(widgetSeriesNotRepeated, widgetSeriesNotRepeatedIssue)
@@ -668,6 +680,15 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 		agentNote:
 			"No market series: it shows the Watchlist page's upcoming earnings dates. Choose daysAhead (30, 60, 90 or 180).",
 		defaultSize: "large",
+		sizes: WIDGET_SIZES,
+	},
+	"scheduled-tasks": {
+		label: "Scheduled tasks",
+		description:
+			"Your scheduled research tasks at a glance: next runs, latest results, pause and run now; tasks are managed on the Tasks page.",
+		agentNote:
+			"No fields: it lists the owner's scheduled tasks. Agents can place it but cannot create, edit or run tasks.",
+		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
 	},
 };

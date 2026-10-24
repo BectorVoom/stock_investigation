@@ -55,10 +55,12 @@ import {
 	type ManagedGoogleEvent,
 	type MarketPoint,
 	movingAverage,
+	nextRunAtMs,
 	normalizeFeed,
 	planGoogleSync,
 	type RawFeed,
 	resampleSeries,
+	type TaskSchedule,
 	verifyClaims,
 	visibleSlice,
 	type WorkspaceState,
@@ -726,6 +728,26 @@ const CHART_BENCH_MIDDLE = {
 	from: CHART_BENCH_DAILY_BARS[500]?.day ?? 0,
 	to: CHART_BENCH_DAILY_BARS[999]?.day ?? 0,
 };
+/*
+ * Scheduled tasks (ADR-0033): every runner claim materialises the owner's due
+ * tasks, each computing its next run through the zone's Intl data. Worst case:
+ * all 10 active tasks due at once, every schedule kind, zones with daylight
+ * saving, at an instant inside New York's spring-forward day.
+ */
+const SCHEDULE_BENCH_TASKS: readonly { schedule: TaskSchedule; timeZone: string }[] = [
+	{ schedule: { kind: "daily", time: "02:30" }, timeZone: "America/New_York" },
+	{ schedule: { kind: "weekly", days: [1, 2, 3, 4, 5], time: "08:00" }, timeZone: "Asia/Tokyo" },
+	{ schedule: { kind: "monthly", day: 31, time: "09:00" }, timeZone: "Europe/London" },
+	{ schedule: { kind: "once", date: "2026-12-31", time: "23:59" }, timeZone: "UTC" },
+	{ schedule: { kind: "weekly", days: [0], time: "23:59" }, timeZone: "America/Los_Angeles" },
+	{ schedule: { kind: "daily", time: "00:00" }, timeZone: "Australia/Sydney" },
+	{ schedule: { kind: "monthly", day: 1, time: "06:00" }, timeZone: "America/New_York" },
+	{ schedule: { kind: "weekly", days: [3, 6], time: "12:15" }, timeZone: "Europe/Berlin" },
+	{ schedule: { kind: "daily", time: "17:45" }, timeZone: "Asia/Kolkata" },
+	{ schedule: { kind: "monthly", day: 29, time: "21:00" }, timeZone: "Asia/Tokyo" },
+];
+const SCHEDULE_BENCH_NOW = Date.parse("2026-03-08T07:10:00Z");
+
 const CHART_BENCH_VALUES = (CHART_BENCH_SERIES[0] ?? []).map((point) => point.value);
 
 /* The viewer builds one render model per window change over 4 × 1,500 daily
@@ -1100,6 +1122,14 @@ const cases: Case[] = [
 			if (!grid.ok) throw new Error("benchmark: month grid failed");
 			return groupEventsByDate(ICS_BENCH_EVENTS);
 		},
+	},
+	{
+		name: "nextRunAtMs for 10 due scheduled tasks in 9 zones (one runner claim)",
+		budgetMs: 1,
+		run: () =>
+			SCHEDULE_BENCH_TASKS.map(({ schedule, timeZone }) =>
+				nextRunAtMs(schedule, timeZone, SCHEDULE_BENCH_NOW),
+			),
 	},
 	{
 		name: "plan a Google sync for 400 desired x 400 existing events",

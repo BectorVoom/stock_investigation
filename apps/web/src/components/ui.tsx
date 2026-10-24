@@ -62,7 +62,10 @@ export type IconButtonName =
 	| "clipboard"
 	| "search"
 	| "journal-text"
-	| "plus-square";
+	| "plus-square"
+	| "pause-fill"
+	| "play-fill"
+	| "lightning-charge";
 
 function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 	switch (props.name) {
@@ -185,6 +188,19 @@ function IconGlyphPaths(props: { readonly name: IconButtonName }): JSX.Element {
 					<path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
 					<path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
 				</>
+			);
+		// Scheduled tasks (ADR-0033): Pause, Resume and Run now in the widget.
+		case "pause-fill":
+			return (
+				<path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5" />
+			);
+		case "play-fill":
+			return (
+				<path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393" />
+			);
+		case "lightning-charge":
+			return (
+				<path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09zM4.157 8.5H7a.5.5 0 0 1 .478.647L6.11 13.59l5.732-6.09H9a.5.5 0 0 1-.478-.647L9.89 2.41z" />
 			);
 		case "journal-text":
 			return (

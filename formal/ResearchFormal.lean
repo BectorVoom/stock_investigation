@@ -14,3 +14,4 @@ import ResearchFormal.DragTarget
 import ResearchFormal.ChartWindow
 import ResearchFormal.Spacing
 import ResearchFormal.StockSearch
+import ResearchFormal.Schedule

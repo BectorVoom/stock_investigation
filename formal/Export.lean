@@ -835,6 +835,82 @@ def ssVectorsJson : String :=
   "\n], \"tier\": [\n" ++ ",\n".intercalate ssTierVectors ++
   "\n], \"rank\": [\n" ++ ",\n".intercalate ssRankVectors ++ "\n]}"
 
+/-! ## Scheduled tasks: next local slot and tick (ADR-0033) -/
+
+def hhmm (minute : Nat) : String := pad2 (minute / 60) ++ ":" ++ pad2 (minute % 60)
+def isoDate (y m d : Nat) : String := pad4 y ++ "-" ++ pad2 m ++ "-" ++ pad2 d
+
+def schedJson : Schedule.Sched → String
+  | .once y m d t =>
+    jsonObj [("kind", jsonStr "once"), ("date", jsonStr (isoDate y m d)), ("time", jsonStr (hhmm t))]
+  | .daily t => jsonObj [("kind", jsonStr "daily"), ("time", jsonStr (hhmm t))]
+  | .weekly ds t =>
+    jsonObj [("kind", jsonStr "weekly"), ("days", jsonNatList ds), ("time", jsonStr (hhmm t))]
+  | .monthly d t =>
+    jsonObj [("kind", jsonStr "monthly"), ("day", jsonNat d), ("time", jsonStr (hhmm t))]
+
+/-- Schedules: every kind, month-end and leap-day clamping, and malformed ones. -/
+def scheduleSamples : List Schedule.Sched :=
+  [.daily 0, .daily 510, .daily 540, .daily 1439,
+   .weekly [1, 2, 3, 4, 5] 480, .weekly [0] 1439, .weekly [6] 0, .weekly [0, 6] 540,
+   .weekly [3] 540, .weekly [0, 1, 2, 3, 4, 5, 6] 720,
+   .weekly [3, 1] 540, .weekly [2, 2] 540, .weekly [] 540, .weekly [7] 540,
+   .monthly 1 0, .monthly 15 540, .monthly 28 540, .monthly 29 540, .monthly 30 540,
+   .monthly 31 540, .monthly 31 1439, .monthly 0 540, .monthly 32 540,
+   .once 2026 10 24 540, .once 2024 2 29 720, .once 2026 12 31 1439, .once 2100 2 28 540,
+   .once 2026 2 29 540, .once 2026 13 1 540, .once 2026 4 31 540, .once 2100 2 29 540]
+
+/-- Local instants (year, month, day, minute of day) around the boundaries that matter. -/
+def afterSamples : List (Nat × Nat × Nat × Nat) :=
+  [(1970, 1, 1, 0), (2024, 1, 31, 540), (2024, 1, 31, 541), (2024, 2, 28, 1439),
+   (2024, 2, 29, 0), (2024, 2, 29, 720), (2025, 1, 30, 539), (2025, 2, 28, 540),
+   (2026, 3, 31, 600), (2026, 4, 29, 1439), (2026, 4, 30, 540), (2026, 6, 30, 1439),
+   (2026, 10, 23, 1439), (2026, 10, 24, 539), (2026, 10, 24, 540), (2026, 10, 24, 541),
+   (2026, 10, 25, 0), (2026, 12, 31, 1439), (2027, 1, 1, 0), (2000, 2, 28, 540),
+   (2100, 2, 28, 540), (2100, 3, 1, 0)]
+
+def localMinuteOf (y m d t : Nat) : Nat := Schedule.onceSlot y m d t
+
+def nextSlotVectors : List String :=
+  scheduleSamples.flatMap fun s =>
+    afterSamples.map fun (y, m, d, t) =>
+      let after := localMinuteOf y m d t
+      jsonObj [("schedule", schedJson s), ("afterDate", jsonStr (isoDate y m d)),
+        ("afterTime", jsonStr (hhmm t)), ("after", jsonNat after),
+        ("valid", jsonBool s.valid), ("slot", jsonOptNat (Schedule.nextLocalSlot s after))]
+
+def statusName : Schedule.Status → String
+  | .active => "active"
+  | .paused => "paused"
+  | .completed => "completed"
+
+def tickJson : Schedule.Tick → String
+  | .idle => jsonObj [("kind", jsonStr "idle")]
+  | .wait => jsonObj [("kind", jsonStr "wait")]
+  | .fire slot next st =>
+    jsonObj [("kind", jsonStr "fire"), ("slot", jsonNat slot), ("nextRunAt", jsonOptNat next),
+      ("status", jsonStr (statusName st))]
+
+def tickVectors : List String := Id.run do
+  let mut out := []
+  let schedules : List Schedule.Sched :=
+    [.daily 540, .weekly [1, 2, 3, 4, 5] 480, .monthly 31 540, .once 2026 10 24 540,
+     .once 2026 12 31 1439]
+  let nows := [localMinuteOf 2026 10 24 540, localMinuteOf 2026 10 31 600,
+    localMinuteOf 2027 1 1 0]
+  for s in schedules do
+    for now in nows do
+      for status in [Schedule.Status.active, .paused, .completed] do
+        for next in [none, some (now - 3 * 1440), some now, some (now + 1)] do
+          for unfinished in [false, true] do
+            let task : Schedule.TaskT :=
+              { status, nextRunAt := next, hasUnfinishedRun := unfinished }
+            out := jsonObj [("schedule", schedJson s), ("now", jsonNat now),
+              ("status", jsonStr (statusName status)), ("nextRunAt", jsonOptNat next),
+              ("hasUnfinishedRun", jsonBool unfinished),
+              ("tick", tickJson (Schedule.decideTaskTick task now (Schedule.nextLocalSlot s)))] :: out
+  return out.reverse
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -872,5 +948,7 @@ def main : IO Unit := do
   IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
   IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n],")
   IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n],")
+  IO.println ("\"nextLocalSlot\": [\n" ++ ",\n".intercalate nextSlotVectors ++ "\n],")
+  IO.println ("\"taskTick\": [\n" ++ ",\n".intercalate tickVectors ++ "\n],")
   IO.println ("\"stockSearch\": " ++ ssVectorsJson)
   IO.println "}"

@@ -16,6 +16,12 @@ export const PAGES = [
 		purpose: "Register the stocks you follow and see their earnings announcement dates.",
 	},
 	{
+		view: "tasks",
+		title: "Tasks",
+		purpose:
+			"Schedule research questions to run by themselves and see when each runs next and how it last went.",
+	},
+	{
 		view: "chat",
 		title: "Chat",
 		purpose: "Ask research questions and read the answers, with their sources and run progress.",

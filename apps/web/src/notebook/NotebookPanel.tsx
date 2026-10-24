@@ -15,6 +15,7 @@ import { type JSX, Match, Show, Switch } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { BUTTON, Empty, ErrorNotice, IconButton, Loading, Notice } from "../components/ui.tsx";
 import { ensureHomeIconLibraries } from "../home/shoelace.ts";
+import { documentVisibility, type VisibilitySource } from "../lib/polling.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard } from "../widgets/widgetBoard.tsx";
 import { type WidgetClipboardStore, widgetClipboard } from "../widgets/widgetClipboard.ts";
@@ -52,6 +53,8 @@ export interface NotebookPanelProps {
 	readonly clipboard?: WidgetClipboardStore;
 	/** Typed backend access for market widgets (series data, refresh, watchlist). */
 	readonly api: ApiClient;
+	/** Tab visibility for widgets that poll (scheduled tasks); the document's by default. */
+	readonly visibility?: VisibilitySource;
 }
 
 export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
@@ -60,6 +63,7 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 	// no `data:` fetch ever hits `connect-src`. Idempotent.
 	ensureHomeIconLibraries();
 	const m = useMessages(notebookPanelMessages);
+	const visibility = props.visibility ?? documentVisibility(document);
 	const widgets = () => props.session.widgets();
 	/**
 	 * Live market data for the notebook's market widgets (ADR-0021): the
@@ -192,6 +196,8 @@ export function NotebookPanel(props: NotebookPanelProps): JSX.Element {
 									<WidgetBody
 										widget={entry.widget}
 										view={props.view}
+										api={props.api}
+										visibility={visibility}
 										registry={props.registry}
 										market={market}
 										editingDisabled={pending()}

@@ -9,12 +9,15 @@ import { useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
 import { type JSX, Match, Show, Switch } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import type { ApiClient } from "../api/client.ts";
 import { WIDGET_REGISTRY } from "../home/widgetRegistry.tsx";
+import type { VisibilitySource } from "../lib/polling.ts";
 import { ChartWidget } from "../notebook/widgets/ChartWidget.tsx";
 import { MetricWidget } from "../notebook/widgets/MetricWidget.tsx";
 import { ResearchWidget } from "../notebook/widgets/ResearchWidget.tsx";
 import { TableWidget } from "../notebook/widgets/TableWidget.tsx";
 import { TextWidget } from "../notebook/widgets/TextWidget.tsx";
+import { ScheduledTasksWidget } from "../tasks/ScheduledTasksWidget.tsx";
 import type { WidgetMarketContext } from "./marketContext.ts";
 import { widgetBodyMessages } from "./widgetBody.messages.ts";
 
@@ -32,6 +35,10 @@ export function WidgetBody(props: {
 	readonly view: WorkspaceView | null;
 	/** The component registry `research` widgets render through (absent on Home, which has none). */
 	readonly registry?: UiRegistry;
+	/** The backend, for widgets that load their own data (scheduled tasks). */
+	readonly api: ApiClient;
+	/** Whether the tab is visible: widgets that poll stop while it is hidden. */
+	readonly visibility: VisibilitySource;
 	/** Live data for market widgets; null until the page's market data is wired. */
 	readonly market: WidgetMarketContext | null;
 	/** True while the page saves: in-place editors stay read-only. */
@@ -89,6 +96,11 @@ export function WidgetBody(props: {
 				</Match>
 				<Match when={props.widget.type === "table" ? props.widget : null}>
 					{(table) => <TableWidget widget={table()} />}
+				</Match>
+				<Match when={props.widget.type === "scheduled-tasks" ? props.widget : null}>
+					{(tasks) => (
+						<ScheduledTasksWidget widget={tasks()} api={props.api} visibility={props.visibility} />
+					)}
 				</Match>
 				<Match when={props.widget.type === "research" ? props.widget : null}>
 					{(research) => (

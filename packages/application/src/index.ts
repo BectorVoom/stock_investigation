@@ -21,6 +21,7 @@ export * from "./research/prompts.ts";
 export * from "./researchRuns.ts";
 export * from "./runnerJobs.ts";
 export * from "./runView.ts";
+export * from "./scheduledTasks.ts";
 export * from "./sources.ts";
 export * from "./stockDirectory.ts";
 export * from "./watchlist.ts";

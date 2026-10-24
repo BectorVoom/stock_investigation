@@ -23,6 +23,7 @@ import type {
 	NotebookAssistJobRequest,
 	NotebookTurn,
 	ResearchBundle,
+	ResearchMarket,
 	ResearchRequest,
 	RunnerCredential,
 	RunnerEvent,
@@ -30,6 +31,10 @@ import type {
 	StockDirectoryEntry,
 	StockDirectoryFailureCode,
 	StockListing,
+	TaskSchedule,
+	TaskSkip,
+	TaskSpendConsent,
+	TaskStatus,
 	UpdateSourceRequest,
 	WatchMarket,
 	WorkspaceSummary,
@@ -643,7 +648,97 @@ export interface ResearchUnitOfWork {
 	 * deleted.
 	 */
 	deleteWorkspace(input: DeleteWorkspaceInput): Promise<DeleteWorkspaceOutcome>;
+	/**
+	 * Inserts a scheduled task and its new conversation together (ADR-0033
+	 * §7). The limits — at most `maxTasks` tasks, and at most `maxActive`
+	 * active ones when the task is active — are checked inside the guarded
+	 * insert, so concurrent creates cannot both slip under them; "full" means
+	 * nothing was written.
+	 */
+	createScheduledTask(input: {
+		readonly ownerId: string;
+		readonly workspace: WorkspaceRecord;
+		readonly task: StoredScheduledTask;
+		readonly maxTasks: number;
+		readonly maxActive: number;
+	}): Promise<CreateScheduledTaskOutcome>;
 }
+
+/* ---------- Scheduled tasks (ADR-0033) ---------- */
+
+/** A stored scheduled task: the contract's fields without the joined last-run view. */
+export interface StoredScheduledTask {
+	readonly ownerId: string;
+	readonly taskId: string;
+	readonly workspaceId: string;
+	readonly title: string;
+	readonly question: string;
+	readonly horizonYears: 3 | 4 | 5;
+	readonly markets: readonly ResearchMarket[];
+	readonly schedule: TaskSchedule;
+	readonly timeZone: string;
+	readonly spendConsent: TaskSpendConsent | null;
+	readonly status: TaskStatus;
+	/** Null unless active. */
+	readonly nextRunAt: string | null;
+	readonly lastRunId: string | null;
+	/** The slot the last run was queued for; null for a "Run now" (or no run yet). */
+	readonly lastSlotAt: string | null;
+	readonly lastQueuedAt: string | null;
+	readonly lastSkip: TaskSkip | null;
+	/** Compare-and-set version; every write bumps it by one. */
+	readonly version: number;
+	readonly createdAt: string;
+	readonly updatedAt: string;
+}
+
+/** Mutable task columns; identity, owner, conversation and creation time never change. */
+export type ScheduledTaskPatch = Partial<
+	Omit<StoredScheduledTask, "ownerId" | "taskId" | "workspaceId" | "version" | "createdAt">
+>;
+
+/** The joined state of a task's last run (the list's one join; null when it has none or it is gone). */
+export interface ScheduledTaskRunState {
+	readonly state: JobState;
+	readonly failureCode: string | null;
+}
+
+export interface ScheduledTaskRepository {
+	/**
+	 * Every task of the owner with its last run's state, in one query (no
+	 * N+1): active first by `next_run_at`, then paused, then completed,
+	 * newest first within those two.
+	 */
+	list(ownerId: string): Promise<
+		readonly {
+			readonly task: StoredScheduledTask;
+			readonly lastRun: ScheduledTaskRunState | null;
+		}[]
+	>;
+	get(ownerId: string, taskId: string): Promise<StoredScheduledTask | null>;
+	/** Active tasks with `next_run_at <= nowIso`, earliest first, at most `limit` (the claim's due scan). */
+	listDue(ownerId: string, nowIso: string, limit: number): Promise<readonly StoredScheduledTask[]>;
+	/** How many tasks the owner has, and how many are active (create/resume limits). */
+	counts(ownerId: string): Promise<{ readonly total: number; readonly active: number }>;
+	/**
+	 * Compare-and-set: writes the patch and `version + 1` only when the stored
+	 * version is `expectedVersion`. False when it moved on (or the task is gone).
+	 * A patch that makes the task active is refused (false) when that would
+	 * exceed `maxActive` active tasks — checked inside the same statement.
+	 */
+	write(
+		ownerId: string,
+		taskId: string,
+		expectedVersion: number,
+		patch: ScheduledTaskPatch,
+		at: string,
+		maxActive: number,
+	): Promise<boolean>;
+	/** Removes the task (its conversation stays). False when there was none. */
+	delete(ownerId: string, taskId: string): Promise<boolean>;
+}
+
+export type CreateScheduledTaskOutcome = "created" | "full";
 
 export interface StoredRunnerCredential extends RunnerCredential {
 	readonly ownerId: string;
@@ -1296,6 +1391,7 @@ export interface Persistence {
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
 	readonly stockDirectory: StockDirectoryRepository;
+	readonly scheduledTasks: ScheduledTaskRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;

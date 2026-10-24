@@ -1,5 +1,5 @@
 /**
- * Targeted cases for what the seeded corpus does not reach: all ten widget types,
+ * Targeted cases for what the seeded corpus does not reach: all eleven widget types,
  * chart provenance and evidence copies, a history longer than the context budget,
  * and the repair prompt in each of its three selection modes.
  */
@@ -137,6 +137,13 @@ function allTypes(): NotebookWidget[] {
 			type: "earnings-calendar",
 			daysAhead: 90,
 		},
+		{
+			widgetId: "sch1",
+			title: "Scheduled tasks",
+			size: "medium",
+			...META,
+			type: "scheduled-tasks",
+		},
 	];
 }
 
@@ -204,6 +211,13 @@ export async function coverageTurns(): Promise<void> {
 		{ kind: "add", type: "stock-table", title: "New", config: { seriesIds: [] } },
 		{ kind: "add", type: "indicator-table", title: "New", config: { seriesIds: ["bogus"] } },
 		{ kind: "add", type: "earnings-calendar", title: "New", config: { daysAhead: 45 } },
+		{ kind: "add", type: "scheduled-tasks", title: "Tasks", config: {} },
+		{ kind: "add", type: "scheduled-tasks", title: "Tasks", size: "large" },
+		{ kind: "add", type: "scheduled-tasks", title: "Tasks", config: { daysAhead: 30 } },
+		{ kind: "update", widgetId: "sch1", title: "My tasks" },
+		{ kind: "update", widgetId: "sch1", config: { question: "run this" } },
+		{ kind: "resize", widgetId: "sch1", size: "small" },
+		{ kind: "duplicate", widgetId: "sch1" },
 		{ kind: "add", type: "research", title: "New", config: { componentId: "comp_1" } },
 		{
 			kind: "add",

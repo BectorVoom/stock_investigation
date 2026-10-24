@@ -270,6 +270,9 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 		async deleteWorkspace() {
 			return "deleted" as const;
 		},
+		async createScheduledTask() {
+			throw new Error("not used by the notebook service tests");
+		},
 	};
 	const auditEntries: Fakes["auditEntries"] = [];
 	const audit: AuditLog = {

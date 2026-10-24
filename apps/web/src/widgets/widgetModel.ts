@@ -19,6 +19,19 @@ export function newWidgetId(): string {
 	return `w-${crypto.randomUUID()}`;
 }
 
+/**
+ * A new scheduled-tasks widget (ADR-0033): it has no content fields, so the
+ * add menu places it at once with no dialog. Its title is the type's name in
+ * the current language — hidden on screen, it stays the frame's accessible
+ * name.
+ */
+export function scheduledTasksWidget(
+	title: string,
+	widgetId: string = newWidgetId(),
+): Extract<WidgetCore, { readonly type: "scheduled-tasks" }> {
+	return { widgetId, type: "scheduled-tasks", title, size: "medium" };
+}
+
 /** The content types that are added as a starter and then edited in place or in the editor. */
 export type StarterWidgetType = "text" | "metric" | "chart" | "table";
 
@@ -138,6 +151,8 @@ export function duplicateWidget(widget: WidgetCore, widgetId: string = newWidget
 			return { ...base, type: "indicator-table", seriesIds: [...widget.seriesIds] };
 		case "earnings-calendar":
 			return { ...base, type: "earnings-calendar", daysAhead: widget.daysAhead };
+		case "scheduled-tasks":
+			return { ...base, type: "scheduled-tasks" };
 	}
 }
 
