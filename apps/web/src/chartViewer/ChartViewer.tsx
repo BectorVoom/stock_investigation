@@ -20,6 +20,7 @@ import {
 	windowStats,
 	zoomWindow,
 } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import {
 	buildDetailChartModel,
 	ChartLegend,
@@ -46,15 +47,19 @@ import {
 } from "solid-js";
 import { BUTTON, BUTTON_PRIMARY, DisclosureSummary, INPUT, LABEL } from "../components/ui.tsx";
 import { SingleSeriesFooter } from "../home/HomeFrame.tsx";
+import { homeModelMessages } from "../home/homeModel.messages.ts";
 import {
 	formatChange,
 	formatPctValue,
 	formatSignedDelta,
 	formatValue,
+	type HomeModelText,
 	latestPoint,
 } from "../home/homeModel.ts";
+import { commonMessages } from "../i18n/common.messages.ts";
 import "../home/shoelace.ts";
 import type { SlSelectElement } from "../home/sl-elements.d.ts";
+import { chartReadoutMessages, chartViewerMessages } from "./chartViewer.messages.tsx";
 import { DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
 import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
@@ -70,33 +75,10 @@ import { buildReadoutText } from "./readout.ts";
  * (series, interval). Entry points (phase 3) pass the widget's series in.
  */
 
-const PRESETS: readonly { readonly preset: ChartPreset; readonly label: string }[] = [
-	{ preset: "1w", label: "1W" },
-	{ preset: "1m", label: "1M" },
-	{ preset: "3m", label: "3M" },
-	{ preset: "6m", label: "6M" },
-	{ preset: "ytd", label: "YTD" },
-	{ preset: "1y", label: "1Y" },
-	{ preset: "3y", label: "3Y" },
-	{ preset: "5y", label: "5Y" },
-	{ preset: "max", label: "Max" },
-];
+/** The range presets in button order; their names are in `chartViewerMessages`. */
+const PRESETS: readonly ChartPreset[] = ["1w", "1m", "3m", "6m", "ytd", "1y", "3y", "5y", "max"];
 
-const INTERVALS: readonly { readonly value: ChartInterval; readonly label: string }[] = [
-	{ value: "daily", label: "Daily" },
-	{ value: "weekly", label: "Weekly" },
-	{ value: "monthly", label: "Monthly" },
-	{ value: "quarterly", label: "Quarterly" },
-	{ value: "yearly", label: "Yearly" },
-];
-
-const INTERVAL_LABELS: { readonly [I in ChartInterval]: string } = {
-	daily: "Daily",
-	weekly: "Weekly",
-	monthly: "Monthly",
-	quarterly: "Quarterly",
-	yearly: "Yearly",
-};
+const INTERVALS: readonly ChartInterval[] = ["daily", "weekly", "monthly", "quarterly", "yearly"];
 
 const INTERVAL_RANK: { readonly [I in ChartInterval]: number } = {
 	daily: 0,
@@ -219,15 +201,20 @@ function isoOf(day: number): string {
 	return iso.ok ? iso.value : "";
 }
 
-/** Change over the visible window, never colour alone (mark plus word). */
+/**
+ * Change over the visible window, never colour alone (mark plus word), or
+ * `unavailable` when no bar is visible.
+ */
 function describeChange(
 	computed: ChartStats | null,
 	unit: string,
 	first: ChartBar | undefined,
 	last: ChartBar | undefined,
+	text: HomeModelText,
+	unavailable: string,
 ): string {
 	if (computed === null || first === undefined || last === undefined) {
-		return "unavailable (no visible bars)";
+		return unavailable;
 	}
 	const change: MarketChange = {
 		previous: { observedOn: first.observedOn, value: computed.open },
@@ -235,7 +222,7 @@ function describeChange(
 		absoluteChange: computed.change,
 		percentChange: computed.percentChange,
 	};
-	const formatted = formatChange(change, unit);
+	const formatted = formatChange(change, unit, text);
 	return `${formatted.text} ${formatted.word}`;
 }
 
@@ -254,14 +241,15 @@ interface SeriesStats {
  */
 function IntervalOption(props: {
 	readonly value: ChartInterval;
-	readonly label: string;
 	readonly rank: number;
-	readonly coarsest: Accessor<{ readonly rank: number; readonly word: string }>;
+	readonly coarsest: Accessor<{ readonly rank: number; readonly word: MarketFrequency }>;
 }): JSX.Element {
+	const m = useMessages(chartViewerMessages);
 	const blocked = createMemo(() => props.rank < props.coarsest().rank);
-	const text = createMemo(() =>
-		blocked() ? `${props.label} — source is ${props.coarsest().word}` : props.label,
-	);
+	const text = createMemo(() => {
+		const label = m().interval(props.value);
+		return blocked() ? m().intervalBlocked(label, m().frequency(props.coarsest().word)) : label;
+	});
 	return (
 		<sl-option value={props.value} disabled={blocked() ? true : undefined}>
 			{text()}
@@ -294,6 +282,10 @@ export interface ChartViewerProps {
 }
 
 export function ChartViewer(props: ChartViewerProps): JSX.Element {
+	const m = useMessages(chartViewerMessages);
+	const readoutText = useMessages(chartReadoutMessages);
+	const homeText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const fromId = createUniqueId();
 	const toId = createUniqueId();
 
@@ -424,7 +416,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 				seriesKey: first.entry.seriesId,
 				color: seriesColor(0),
 				period,
-				label: `MA ${period}`,
+				label: m().movingAverageShort(period),
 				days,
 				values: averaged.value,
 			});
@@ -541,7 +533,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	const units = createMemo(() => props.series().map((entry) => entry.unit));
 	const unitCaption = createMemo(() => {
 		const seen = new Set(units());
-		return seen.size <= 1 ? (units()[0] ?? "") : "Mixed units — values share one axis";
+		return seen.size <= 1 ? (units()[0] ?? "") : m().mixedUnits;
 	});
 
 	// The crosshair's bar index in the current model: the bar whose bucket
@@ -562,7 +554,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		const ready = view();
 		const index = crosshair();
 		if (ready === null || index === null) return "";
-		return buildReadoutText(ready.model, index, units());
+		return buildReadoutText(ready.model, index, units(), readoutText());
 	});
 
 	const stats = createMemo<readonly SeriesStats[]>(() =>
@@ -658,11 +650,11 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		const from = isoToDayNumber(fromText);
 		const to = isoToDayNumber(toText);
 		if (!from.ok || !to.ok) {
-			setRangeError("Enter both dates as calendar days.");
+			setRangeError(m().bothDatesNeeded);
 			return false;
 		}
 		if (from.value > to.value) {
-			setRangeError("The From date is after the To date; nothing changed.");
+			setRangeError(m().fromAfterTo);
 			return false;
 		}
 		const full = extent();
@@ -778,11 +770,11 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		readonly display: number | null;
 		readonly unit: string;
 	}): string => {
-		if (cell.raw === null || !Number.isFinite(cell.raw)) return "unavailable (no bar)";
+		if (cell.raw === null || !Number.isFinite(cell.raw)) return common().unavailable(m().noBar);
 		const suffix = cell.unit === "" ? "" : ` ${cell.unit}`;
 		if (mode() !== "percent") return `${formatValue(cell.raw)}${suffix}`;
 		if (cell.display === null || !Number.isFinite(cell.display)) {
-			return `${formatValue(cell.raw)}${suffix} (rebased unavailable (zero base))`;
+			return m().withRebasedUnavailable(`${formatValue(cell.raw)}${suffix}`);
 		}
 		return `${formatValue(cell.raw)}${suffix} (${formatSignedDelta(cell.display, cell.display)}%)`;
 	};
@@ -790,16 +782,14 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 	const percentCell = (percentChange: number | null, unit: string, open: number): string => {
 		const text = formatPctValue(percentChange, unit);
 		if (text !== null) return text;
-		if (percentChange === null && open === 0) return "unavailable (zero base)";
-		return "unavailable (percent of a percent)";
+		if (percentChange === null && open === 0) return common().unavailable(m().zeroBase);
+		return common().unavailable(m().percentOfPercent);
 	};
 
 	const modelFallback = (): string => {
-		if (extent() === null) return "unavailable (this widget holds no observations)";
-		if (scale() === "log" && logBlocked()) {
-			return "Log scale needs values above zero in the visible window. Switch to Linear or zoom to a positive range.";
-		}
-		return "unavailable (no bars in the visible window)";
+		if (extent() === null) return common().unavailable(m().noHeldObservations);
+		if (scale() === "log" && logBlocked()) return m().logNeedsPositive;
+		return common().unavailable(m().noBarsInWindow);
 	};
 
 	return (
@@ -811,7 +801,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 				on:sl-request-close={() => handleClose()}
 			>
 				<div class="chart-viewer-scroll space-y-3">
-					<section aria-label="Series">
+					<section aria-label={m().seriesRegion}>
 						<div class="space-y-1 text-sm">
 							<For each={stats()}>
 								{(row) => {
@@ -820,19 +810,28 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 										<p>
 											<span class="font-semibold">{row.entry.title}</span>:{" "}
 											{latest === null ? (
-												<span>unavailable (no observations)</span>
+												<span>{common().unavailable(m().noObservations)}</span>
 											) : (
 												<>
 													<span class="tabular-nums">
 														{formatValue(latest.value)} {row.entry.unit}
 													</span>{" "}
 													<span class="text-xs text-slate-600">
-														as of <time dateTime={latest.observedOn}>{latest.observedOn}</time>
+														{m().asOf(
+															<time dateTime={latest.observedOn}>{latest.observedOn}</time>,
+														)}
 													</span>
 												</>
 											)}{" "}
 											<span class="tabular-nums">
-												{describeChange(row.computed, row.entry.unit, row.first, row.last)}
+												{describeChange(
+													row.computed,
+													row.entry.unit,
+													row.first,
+													row.last,
+													homeText(),
+													common().unavailable(m().noVisibleBars),
+												)}
 											</span>
 										</p>
 									);
@@ -840,18 +839,18 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 							</For>
 						</div>
 					</section>
-					<section aria-label="Time range">
+					<section aria-label={m().timeRange}>
 						<fieldset class="m-0 flex flex-wrap items-center gap-1 border-0 p-0">
-							<legend class="sr-only">Presets</legend>
+							<legend class="sr-only">{m().presets}</legend>
 							<For each={PRESETS}>
-								{({ preset, label }) => (
+								{(preset) => (
 									<button
 										type="button"
 										class={`${pressedPreset() === preset ? BUTTON_PRIMARY : BUTTON} pointer-coarse:min-h-11`}
 										aria-pressed={pressedPreset() === preset}
 										onClick={() => applyPreset(preset)}
 									>
-										{label}
+										{m().preset(preset)}
 									</button>
 								)}
 							</For>
@@ -859,7 +858,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 						<div class="mt-2 flex flex-wrap items-end gap-2">
 							<div class="w-40">
 								<label class={LABEL} for={fromId}>
-									From
+									{m().from}
 								</label>
 								<input
 									id={fromId}
@@ -877,7 +876,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 							</div>
 							<div class="w-40">
 								<label class={LABEL} for={toId}>
-									To
+									{m().to}
 								</label>
 								<input
 									id={toId}
@@ -898,7 +897,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 								class={`${BUTTON} pointer-coarse:min-h-11`}
 								onClick={() => resetToOpening()}
 							>
-								Reset
+								{m().reset}
 							</button>
 						</div>
 						<Show when={rangeError()}>
@@ -909,10 +908,10 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 							)}
 						</Show>
 					</section>
-					<section aria-label="Display controls">
+					<section aria-label={m().displayControls}>
 						<div class="flex flex-wrap items-end gap-2">
 							<sl-select
-								label="Interval"
+								attr:label={m().intervalLabel}
 								value={intervalChoice()}
 								size="small"
 								hoist
@@ -922,53 +921,47 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 								    displayed label only on a selection change or a
 								    slotchange, never when an option's text node is edited
 								    in place — so the resolved interval is shown beside. */}
-								<sl-option value="auto">Auto</sl-option>
+								<sl-option value="auto">{m().auto}</sl-option>
 								<For each={INTERVALS}>
-									{({ value, label }) => (
-										<IntervalOption
-											value={value}
-											label={label}
-											rank={INTERVAL_RANK[value]}
-											coarsest={coarsest}
-										/>
+									{(value) => (
+										<IntervalOption value={value} rank={INTERVAL_RANK[value]} coarsest={coarsest} />
 									)}
 								</For>
 							</sl-select>
 							<Show when={intervalChoice() === "auto"}>
 								<span data-field="auto-interval" class="pb-1.5 text-xs text-slate-600">
-									Auto · {INTERVAL_LABELS[resolvedInterval()]}
+									{m().autoResolved(m().interval(resolvedInterval()))}
 								</span>
 							</Show>
 							<sl-select
-								label="Scale"
+								attr:label={m().scaleLabel}
 								value={scale()}
 								size="small"
 								hoist
 								on:sl-change={onScaleChange}
 							>
-								<sl-option value="linear">Linear</sl-option>
+								<sl-option value="linear">{m().linear}</sl-option>
 								<sl-option value="log" disabled={logBlocked() ? true : undefined}>
-									{logBlocked() ? "Log — needs values above zero" : "Log"}
+									{logBlocked() ? m().logBlocked : m().log}
 								</sl-option>
 							</sl-select>
 							<Show when={logAutoNote() && logBlocked() && scale() === "linear"}>
-								<output class="w-full text-xs text-slate-600">
-									Log scale needs values above zero in the visible window, so the chart switched
-									back to Linear. Zoom to a positive range to use Log.
-								</output>
+								<output class="w-full text-xs text-slate-600">{m().logSwitchedBack}</output>
 							</Show>
 							<sl-select
-								label="Values"
+								attr:label={m().valuesLabel}
 								value={mode()}
 								size="small"
 								hoist
 								on:sl-change={onModeChange}
 							>
-								<sl-option value="value">Value</sl-option>
-								<sl-option value="percent">% change</sl-option>
+								<sl-option value="value">{m().value}</sl-option>
+								<sl-option value="percent">{m().percentChange}</sl-option>
 							</sl-select>
 							<fieldset class="m-0 border-0 p-0">
-								<legend class="block text-xs font-medium text-slate-700">Moving average</legend>
+								<legend class="block text-xs font-medium text-slate-700">
+									{m().movingAverage}
+								</legend>
 								<div class="flex gap-1">
 									<For each={MA_PERIODS}>
 										{(period) => (
@@ -979,7 +972,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 												disabled={singleSeries() ? undefined : true}
 												onClick={() => toggleMa(period)}
 											>
-												MA {period}
+												{m().movingAverageShort(period)}
 											</button>
 										)}
 									</For>
@@ -987,15 +980,15 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 							</fieldset>
 						</div>
 						<Show when={!singleSeries()}>
-							<p class="mt-1 text-xs text-slate-600">Moving averages need exactly one series.</p>
+							<p class="mt-1 text-xs text-slate-600">{m().movingAverageNeedsOne}</p>
 						</Show>
 					</section>
 					<Show when={view()} fallback={<p class="text-sm text-amber-900">{modelFallback()}</p>}>
 						{(ready) => (
 							<>
-								<section aria-label="Chart" class="chart-viewer-chart">
+								<section aria-label={m().chartRegion} class="chart-viewer-chart">
 									<p class="mb-1 text-xs text-slate-600">
-										{unitCaption()} · {INTERVAL_LABELS[resolvedInterval()]} bars
+										{unitCaption()} · {m().intervalBars(resolvedInterval())}
 									</p>
 									<DetailChart
 										model={ready().model}
@@ -1032,13 +1025,11 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 										]}
 									/>
 									<Show when={ready().model.zeroBaseKeys.length > 0}>
-										<p class="mt-1 text-xs text-amber-900">
-											unavailable (zero base): percent change cannot be computed from a zero value.
-										</p>
+										<p class="mt-1 text-xs text-amber-900">{m().zeroBaseNote}</p>
 									</Show>
 								</section>
 								<Show when={navigatorReady()}>
-									<section aria-label="Overview">
+									<section aria-label={m().overviewRegion}>
 										<Navigator
 											days={overview().days}
 											values={overview().values}
@@ -1046,48 +1037,47 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 											extent={extent() ?? ready().window}
 											minSpanDays={minSpanDays()}
 											onWindow={onWindow}
-											windowLabel={`Overview of all held data; visible window ${fromIso()} to ${toIso()}`}
+											windowLabel={m().overviewWindow(fromIso(), toIso())}
 										/>
 									</section>
 								</Show>
-								<section aria-label="Statistics for the visible window">
+								<section aria-label={m().statsRegion}>
 									<div class="overflow-x-auto">
 										<table class="w-full border-collapse text-left text-sm">
 											<caption class="caption-top pb-1 text-left text-xs text-slate-600">
-												Statistics for the visible window ({INTERVAL_LABELS[resolvedInterval()]}{" "}
-												bars)
+												{m().statsCaption(m().intervalBars(resolvedInterval()))}
 											</caption>
 											<thead>
 												<tr class="border-b border-slate-200">
 													<th scope="col" class="py-1 pr-3 font-semibold">
-														Series
+														{m().seriesColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Open
+														{m().openColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Close
+														{m().closeColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Change
+														{m().changeColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														% change
+														{m().percentChangeColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														High
+														{m().highColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Low
+														{m().lowColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Average
+														{m().averageColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Max drawdown
+														{m().maxDrawdownColumn}
 													</th>
 													<th scope="col" class="py-1 pr-3 text-right font-semibold">
-														Bars
+														{m().barsColumn}
 													</th>
 												</tr>
 											</thead>
@@ -1100,7 +1090,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 															</th>
 															{row.computed === null ? (
 																<td colspan={9} class="py-1 pr-3 text-right tabular-nums">
-																	unavailable (no visible bars)
+																	{common().unavailable(m().noVisibleBars)}
 																</td>
 															) : (
 																<>
@@ -1137,7 +1127,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 																	</td>
 																	<td class="py-1 pr-3 text-right tabular-nums">
 																		{row.computed.maxDrawdown === null
-																			? "unavailable (non-positive peak)"
+																			? common().unavailable(m().nonPositivePeak)
 																			: `${formatValue(row.computed.maxDrawdown)}%`}
 																	</td>
 																	<td class="py-1 pr-3 text-right tabular-nums">
@@ -1156,18 +1146,21 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 									class="group mt-1 text-xs"
 									onToggle={(event) => setTwinOpen(event.currentTarget.open)}
 								>
-									<DisclosureSummary>Data table: {props.title}</DisclosureSummary>
+									<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
 									<div class="overflow-x-auto">
 										<table class="w-full border-collapse text-left text-xs">
 											<caption class="caption-top pb-1 text-left text-slate-600">
-												Values plotted in "{props.title}" ({unitCaption()};{" "}
-												{INTERVAL_LABELS[resolvedInterval()]} bars
-												{mode() === "percent" ? "; % change from the first visible bar" : ""}
+												{m().dataTableCaption(
+													props.title,
+													unitCaption(),
+													m().intervalBars(resolvedInterval()),
+													mode() === "percent",
+												)}
 											</caption>
 											<thead>
 												<tr class="border-b border-slate-200">
 													<th scope="col" class="py-1 pr-3 font-semibold">
-														Date
+														{m().dateColumn}
 													</th>
 													<For each={ready().model.seriesPaths}>
 														{(entry) => (
@@ -1213,7 +1206,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 											</For>
 										</ul>
 										<Show when={shows800Note()}>
-											<p class="mt-1">This viewer shows the newest 800 held observations.</p>
+											<p class="mt-1">{m().newest800}</p>
 										</Show>
 									</div>
 								</details>
@@ -1226,7 +1219,7 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 							class={`${BUTTON} pointer-coarse:min-h-11`}
 							onClick={() => handleClose()}
 						>
-							Close
+							{common().close}
 						</button>
 					</div>
 				</div>

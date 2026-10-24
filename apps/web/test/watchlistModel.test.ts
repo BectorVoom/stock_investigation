@@ -2,6 +2,7 @@ import type { WatchlistResponse, WatchlistStock } from "@research/contracts";
 import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
+import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
 	EARNINGS_AUTO_REFRESH_NOTICE,
 	EARNINGS_AUTO_REFRESH_STALE_MS,
@@ -16,7 +17,6 @@ import {
 	isWatchlistRefreshActive,
 	nextDatedEvent,
 	normaliseSymbol,
-	STORED_DATES_PASSED_NOTICE,
 	storedDatesPassed,
 	timingText,
 	utcTodayIso,
@@ -25,6 +25,9 @@ import {
 	watchlistStatusText,
 	withoutUpcomingReason,
 } from "../src/watchlist/watchlistModel.ts";
+
+/** The English words the model's sentences are checked against. */
+const EN = watchlistModelMessages.en;
 
 function stock(overrides: Partial<WatchlistStock> = {}): WatchlistStock {
 	return {
@@ -46,23 +49,23 @@ function stock(overrides: Partial<WatchlistStock> = {}): WatchlistStock {
 
 describe("validateNewStock", () => {
 	it("accepts a US symbol and a Japanese code, trimmed and upper-cased before checking", () => {
-		expect(validateNewStock("US", "AAPL")).toEqual([]);
-		expect(validateNewStock("US", "  aapl ")).toEqual([]);
-		expect(validateNewStock("JP", "7203")).toEqual([]);
-		expect(validateNewStock("JP", "130a")).toEqual([]);
+		expect(validateNewStock("US", "AAPL", EN)).toEqual([]);
+		expect(validateNewStock("US", "  aapl ", EN)).toEqual([]);
+		expect(validateNewStock("JP", "7203", EN)).toEqual([]);
+		expect(validateNewStock("JP", "130a", EN)).toEqual([]);
 		expect(normaliseSymbol("  aapl ")).toBe("AAPL");
 	});
 
 	it("lists every problem the guideline way", () => {
-		expect(validateNewStock("EU", "AAPL")).toEqual(["Choose a market."]);
-		expect(validateNewStock("US", "   ")).toEqual(["Enter a symbol."]);
-		expect(validateNewStock("US", "aapl!")).toEqual([
+		expect(validateNewStock("EU", "AAPL", EN)).toEqual(["Choose a market."]);
+		expect(validateNewStock("US", "   ", EN)).toEqual(["Enter a symbol."]);
+		expect(validateNewStock("US", "aapl!", EN)).toEqual([
 			'"aapl!" is not a valid symbol. A US symbol starts with a letter, e.g. AAPL.',
 		]);
-		expect(validateNewStock("JP", "720")).toEqual([
+		expect(validateNewStock("JP", "720", EN)).toEqual([
 			'"720" is not a valid symbol. A Japanese code has four characters, e.g. 7203.',
 		]);
-		expect(validateNewStock("JP", "72034")).toEqual([
+		expect(validateNewStock("JP", "72034", EN)).toEqual([
 			'"72034" is not a valid symbol. A Japanese code has four characters, e.g. 7203.',
 		]);
 	});
@@ -107,20 +110,20 @@ describe("event helpers", () => {
 		expect(storedDatesPassed(stock({ events: [past] }), TODAY)).toBe(true);
 		expect(storedDatesPassed(stock({ events: [past, dated] }), TODAY)).toBe(false);
 		expect(storedDatesPassed(stock({ events: [dated] }), "2026-10-30")).toBe(true);
-		expect(STORED_DATES_PASSED_NOTICE).toBe(
+		expect(EN.storedDatesPassed).toBe(
 			"unavailable (the stored dates have passed; refresh to update)",
 		);
 	});
 
 	it("names the timing, or nothing when the source states none", () => {
-		expect(timingText("after-close")).toBe("after market close");
-		expect(timingText("before-open")).toBe("before market open");
-		expect(timingText("during-session")).toBe("during the trading session");
-		expect(timingText("unknown")).toBe(null);
+		expect(timingText("after-close", EN)).toBe("after market close");
+		expect(timingText("before-open", EN)).toBe("before market open");
+		expect(timingText("during-session", EN)).toBe("during the trading session");
+		expect(timingText("unknown", EN)).toBe(null);
 	});
 
 	it("explains why a stock has no upcoming date without guessing", () => {
-		expect(withoutUpcomingReason(stock(), 90, TODAY)).toBe(
+		expect(withoutUpcomingReason(stock(), 90, TODAY, EN)).toBe(
 			"No earnings dates have been refreshed yet; queue a refresh.",
 		);
 		expect(
@@ -130,12 +133,13 @@ describe("event helpers", () => {
 				}),
 				90,
 				TODAY,
+				EN,
 			),
 		).toBe("The provider rate limit was reached.");
-		expect(withoutUpcomingReason(stock({ events: [undecided] }), 90, TODAY)).toBe(
+		expect(withoutUpcomingReason(stock({ events: [undecided] }), 90, TODAY, EN)).toBe(
 			"The source lists the announcement with the date undecided.",
 		);
-		expect(withoutUpcomingReason(stock({ events: [dated] }), 90, TODAY)).toBe(
+		expect(withoutUpcomingReason(stock({ events: [dated] }), 90, TODAY, EN)).toBe(
 			"The source lists no announcement in the next 90 days.",
 		);
 		// Stored dates that have all passed say so, even beside a failure reason.
@@ -147,8 +151,9 @@ describe("event helpers", () => {
 				}),
 				90,
 				TODAY,
+				EN,
 			),
-		).toBe(STORED_DATES_PASSED_NOTICE);
+		).toBe(EN.storedDatesPassed);
 	});
 });
 
@@ -220,31 +225,37 @@ describe("refresh status", () => {
 	});
 
 	it("tells success and failure apart like Home does", () => {
-		const text = watchlistStatusText({
-			stocks: [],
-			refresh: {
-				activeRunId: null,
-				activeRunState: null,
-				lastSucceededAt: "2026-10-12T12:00:00Z",
-				lastFailure: { state: "failed", code: "RUNNER_FAILED", at: "2026-10-12T13:00:00Z" },
-			},
-			feed: { enabled: false, createdAt: null },
-			googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
-		});
-		expect(text).toContain("Last successful refresh:");
-		expect(text).toContain("Last refresh failed (RUNNER_FAILED)");
-		expect(
-			watchlistStatusText({
+		const text = watchlistStatusText(
+			{
 				stocks: [],
 				refresh: {
-					activeRunId: "run_1",
-					activeRunState: "claimed",
-					lastSucceededAt: null,
-					lastFailure: null,
+					activeRunId: null,
+					activeRunState: null,
+					lastSucceededAt: "2026-10-12T12:00:00Z",
+					lastFailure: { state: "failed", code: "RUNNER_FAILED", at: "2026-10-12T13:00:00Z" },
 				},
 				feed: { enabled: false, createdAt: null },
 				googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
-			}),
+			},
+			EN,
+		);
+		expect(text).toContain("Last successful refresh:");
+		expect(text).toContain("Last refresh failed (RUNNER_FAILED)");
+		expect(
+			watchlistStatusText(
+				{
+					stocks: [],
+					refresh: {
+						activeRunId: "run_1",
+						activeRunState: "claimed",
+						lastSucceededAt: null,
+						lastFailure: null,
+					},
+					feed: { enabled: false, createdAt: null },
+					googleCalendar: DISCONNECTED_GOOGLE_CALENDAR_STATE,
+				},
+				EN,
+			),
 		).toContain("run run_1");
 	});
 

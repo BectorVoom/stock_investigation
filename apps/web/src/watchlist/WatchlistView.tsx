@@ -9,6 +9,7 @@ import {
 	googleCalendarUrl,
 	outlookCalendarUrl,
 } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -27,19 +28,19 @@ import {
 	Section,
 	Select,
 } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
+import { watchlistMessages } from "./watchlist.messages.ts";
+import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 import {
-	EARNINGS_AUTO_REFRESH_NOTICE,
 	earningsAutoRefreshReason,
 	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
 	isWatchlistRefreshActive,
-	MARKET_LABELS,
 	nextDatedEvent,
-	STORED_DATES_PASSED_NOTICE,
 	storedDatesPassed,
 	timingText,
 	utcTodayIso,
@@ -48,6 +49,17 @@ import {
 	watchlistRefreshSignal,
 	watchlistStatusText,
 } from "./watchlistModel.ts";
+
+/**
+ * A notice above the page. One that names a queued run goes stale when the
+ * run ends (the status line then tells the outcome), so it is marked to be
+ * cleared then; the decision is recorded with the text instead of being read
+ * back from the words, which differ per language.
+ */
+interface PageNotice {
+	readonly text: string;
+	readonly clearsWhenRunEnds: boolean;
+}
 
 /** One dated event with its stock's context for the calendar links, or null. */
 function toCalendarEvent(
@@ -77,6 +89,7 @@ function CalendarLinks(props: {
 	readonly stock: WatchlistStock;
 	readonly event: EarningsEvent;
 }): JSX.Element {
+	const m = useMessages(watchlistMessages);
 	const calendarEvent = () => toCalendarEvent(props.stock, props.event);
 	const google = () => {
 		const dated = calendarEvent();
@@ -92,14 +105,17 @@ function CalendarLinks(props: {
 	return (
 		<span>
 			<Show when={google()}>
-				{(url) => <SafeLink url={url()}>Add to Google Calendar</SafeLink>}
+				{(url) => <SafeLink url={url()}>{m().addToGoogleCalendar}</SafeLink>}
 			</Show>{" "}
-			<Show when={outlook()}>{(url) => <SafeLink url={url()}>Add to Outlook</SafeLink>}</Show>
+			<Show when={outlook()}>{(url) => <SafeLink url={url()}>{m().addToOutlook}</SafeLink>}</Show>
 		</span>
 	);
 }
 
 function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.Element {
+	const m = useMessages(watchlistMessages);
+	const model = useMessages(watchlistModelMessages);
+	const common = useMessages(commonMessages);
 	const stock = () => props.stock;
 	const today = () => utcTodayIso(Date.now());
 	const next = () => nextDatedEvent(stock(), today());
@@ -122,12 +138,12 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 						<Show
 							when={passed()}
 							fallback={
-								<Show when={stock().unavailable} fallback={<span>date undecided</span>}>
-									{(unavailable) => <span>unavailable ({unavailable().reason})</span>}
+								<Show when={stock().unavailable} fallback={<span>{m().dateUndecided}</span>}>
+									{(unavailable) => <span>{common().unavailable(unavailable().reason)}</span>}
 								</Show>
 							}
 						>
-							<span>{STORED_DATES_PASSED_NOTICE}</span>
+							<span>{model().storedDatesPassed}</span>
 						</Show>
 					</span>
 				}
@@ -139,7 +155,9 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 						</time>{" "}
 						<span>
 							({event().fiscalPeriodLabel}
-							<Show when={timingText(event().timing)}>{(timing) => <span>, {timing()}</span>}</Show>
+							<Show when={timingText(event().timing, model())}>
+								{(timing) => <span>, {timing()}</span>}
+							</Show>
 							)
 						</span>
 						<div class="mt-0.5">
@@ -150,9 +168,7 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 			</Show>
 			<Show when={further().length > 0}>
 				<details class="group mt-1 text-xs">
-					<DisclosureSummary>
-						{further().length} further date{further().length === 1 ? "" : "s"}
-					</DisclosureSummary>
+					<DisclosureSummary>{m().furtherDates(further().length)}</DisclosureSummary>
 					<ul class="mt-1 space-y-1">
 						<For each={further()}>
 							{(event) => (
@@ -161,7 +177,7 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 										{event.announcementDate}
 									</time>{" "}
 									({event.fiscalPeriodLabel}
-									<Show when={timingText(event.timing)}>
+									<Show when={timingText(event.timing, model())}>
 										{(timing) => <span>, {timing()}</span>}
 									</Show>
 									)
@@ -175,7 +191,7 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 				</details>
 			</Show>
 			<Show when={next() !== null && undecided()}>
-				<p class="mt-1 text-xs text-slate-700">One further announcement has its date undecided.</p>
+				<p class="mt-1 text-xs text-slate-700">{m().oneFurtherUndecided}</p>
 			</Show>
 		</div>
 	);
@@ -186,21 +202,27 @@ function StockRow(props: {
 	readonly busy: boolean;
 	readonly onRemove: (stock: WatchlistStock, opener: HTMLElement) => void;
 }): JSX.Element {
+	const m = useMessages(watchlistMessages);
+	const model = useMessages(watchlistModelMessages);
+	const common = useMessages(commonMessages);
 	const stock = () => props.stock;
 	return (
 		<tr class="border-b border-slate-200 align-top" data-stock-id={stock().stockId}>
 			<th scope="row" class="py-1 pr-2 font-medium">
 				<span class="block font-mono">{stock().symbol}</span>
 				<span class="block font-normal text-slate-600">
-					{stock().name ?? "unavailable (not retrieved yet)"}
+					{stock().name ?? common().unavailable(m().notRetrievedYet)}
 				</span>
 			</th>
-			<td class="py-1 pr-2">{MARKET_LABELS[stock().market]}</td>
+			<td class="py-1 pr-2">{model().marketName(stock().market)}</td>
 			<td class="py-1 pr-2">
 				<NextAnnouncementCell stock={stock()} />
 			</td>
 			<td class="py-1 pr-2 text-slate-700">
-				<Show when={stock().retrievedAt} fallback={<span class="italic">not retrieved yet</span>}>
+				<Show
+					when={stock().retrievedAt}
+					fallback={<span class="italic">{m().notRetrievedYet}</span>}
+				>
 					{(at) => <time dateTime={at()}>{formatInstant(at())}</time>}
 				</Show>
 			</td>
@@ -211,11 +233,11 @@ function StockRow(props: {
 				<button
 					type="button"
 					class={BUTTON_DANGER}
-					aria-label={`Remove ${stock().symbol}`}
+					aria-label={m().removeNamed(stock().symbol)}
 					disabled={props.busy}
 					onClick={(event) => props.onRemove(stock(), event.currentTarget)}
 				>
-					Remove
+					{common().remove}
 				</button>
 			</td>
 		</tr>
@@ -233,11 +255,16 @@ export function WatchlistView(props: {
 	readonly api: ApiClient;
 	readonly visibility: VisibilitySource;
 }): JSX.Element {
+	const m = useMessages(watchlistMessages);
+	const model = useMessages(watchlistModelMessages);
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
 	const [loading, setLoading] = createSignal(true);
 	const [failure, setFailure] = createSignal<{ title: string; error: ApiFailure } | null>(null);
-	const [notice, setNotice] = createSignal<string | null>(null);
+	const [notice, setNotice] = createSignal<PageNotice | null>(null);
+	const say = (text: string): void => {
+		setNotice({ text, clearsWhenRunEnds: false });
+	};
 	const [busy, setBusy] = createSignal(false);
 	const [market, setMarket] = createSignal<WatchMarket>("US");
 	const [symbol, setSymbol] = createSignal("");
@@ -259,18 +286,11 @@ export function WatchlistView(props: {
 	 * A notice that names a queued run ("…queued for the local runner.",
 	 * "…are being fetched…", "…so one refresh was queued.") goes stale when
 	 * the run ends — the status line then tells the outcome — so the poller
-	 * clears it. Any other notice (added/removed, plain failures) is kept.
+	 * clears it. Any other notice (added/removed, plain failures, the
+	 * follow-up announcement) is kept.
 	 */
 	const clearQueuedNotice = (): void => {
-		const text = notice();
-		if (
-			text !== null &&
-			(text.includes("queued for the local runner") ||
-				text.includes("being fetched") ||
-				text.includes("so one refresh was queued"))
-		) {
-			setNotice(null);
-		}
+		if (notice()?.clearsWhenRunEnds === true) setNotice(null);
 	};
 
 	const loadWatchlist = async (): Promise<PollSignal> => {
@@ -278,9 +298,9 @@ export function WatchlistView(props: {
 		if (disposed) return "unchanged";
 		if (!result.ok) {
 			if (data() === null) {
-				setFailure({ title: "Could not load the watchlist.", error: result.error });
+				setFailure({ title: m().loadFailed, error: result.error });
 			} else {
-				setNotice("The watchlist did not refresh.");
+				say(m().didNotRefresh);
 			}
 			setLoading(false);
 			return "failed";
@@ -341,7 +361,7 @@ export function WatchlistView(props: {
 		const reason = earningsAutoRefreshReason(current, Date.now());
 		if (reason === null) return;
 		autoRefreshTried = true;
-		void queueRefresh(EARNINGS_AUTO_REFRESH_NOTICE[reason]);
+		void queueRefresh({ text: model().autoRefreshNotice(reason), clearsWhenRunEnds: true });
 	};
 
 	/**
@@ -361,7 +381,7 @@ export function WatchlistView(props: {
 		void googleQueue.queue("sync").then((result) => {
 			if (disposed) return;
 			if (result.kind === "failed") {
-				setNotice(`The Google Calendar sync was not queued: ${result.error.message}`);
+				say(m().googleSyncNotQueued(result.error.message));
 				return;
 			}
 			if (result.kind === "queued") {
@@ -383,9 +403,7 @@ export function WatchlistView(props: {
 		if (current === null) return false;
 		followUpArmed = false;
 		if (!hasNeverRefreshedStock(current)) return false;
-		await queueRefresh(
-			"A stock was added while the refresh ran, so one follow-up refresh was queued.",
-		);
+		await queueRefresh({ text: m().followUpQueued, clearsWhenRunEnds: false });
 		return true;
 	};
 
@@ -407,9 +425,9 @@ export function WatchlistView(props: {
 		else maybeAutoGoogleSync();
 	};
 
-	const queueRefresh = async (announce?: string): Promise<void> => {
+	const queueRefresh = async (announce?: PageNotice): Promise<void> => {
 		if (refreshQueue.busy() || busy()) {
-			setNotice("An earnings-date refresh is already being queued.");
+			say(m().alreadyQueuing);
 			return;
 		}
 		setBusy(true);
@@ -418,20 +436,20 @@ export function WatchlistView(props: {
 		if (disposed) return;
 		setBusy(false);
 		if (result.kind === "busy") {
-			setNotice("An earnings-date refresh is already being queued.");
+			say(m().alreadyQueuing);
 			return;
 		}
 		if (result.kind === "failed") {
-			setFailure({ title: "The earnings-date refresh was not queued.", error: result.error });
+			setFailure({ title: m().refreshNotQueued, error: result.error });
 			return;
 		}
-		setNotice(announce ?? "Earnings-date refresh queued for the local runner.");
+		setNotice(announce ?? { text: m().refreshQueued, clearsWhenRunEnds: true });
 		poller.start();
 		void loadWatchlist();
 	};
 
 	const addStock = async (): Promise<void> => {
-		const problems = validateNewStock(market(), symbol());
+		const problems = validateNewStock(market(), symbol(), model());
 		if (problems.length > 0 || busy()) return;
 		setBusy(true);
 		setFailure(null);
@@ -440,7 +458,7 @@ export function WatchlistView(props: {
 		if (disposed) return;
 		setBusy(false);
 		if (!result.ok) {
-			setFailure({ title: "The stock was not added.", error: result.error });
+			setFailure({ title: m().notAdded, error: result.error });
 			return;
 		}
 		const added = symbol().trim().toUpperCase();
@@ -451,10 +469,10 @@ export function WatchlistView(props: {
 			// A run is already underway: remember that a follow-up may be
 			// needed, and say the dates are being fetched.
 			followUpArmed = true;
-			setNotice(`Added ${added}. Its earnings dates are being fetched by the local runner.`);
+			setNotice({ text: m().added(added), clearsWhenRunEnds: true });
 			return;
 		}
-		await queueRefresh(`Added ${added}. Its earnings dates are being fetched by the local runner.`);
+		await queueRefresh({ text: m().added(added), clearsWhenRunEnds: true });
 	};
 
 	const confirmRemove = async (): Promise<void> => {
@@ -467,14 +485,14 @@ export function WatchlistView(props: {
 		setBusy(false);
 		setRemoving(null);
 		if (!result.ok) {
-			setFailure({ title: "The stock was not removed.", error: result.error });
+			setFailure({ title: m().notRemoved, error: result.error });
 			return;
 		}
-		setNotice(`Removed ${target.symbol}.`);
+		say(m().removed(target.symbol));
 		await reloadAfterWrite();
 	};
 
-	const problems = () => validateNewStock(market(), symbol());
+	const problems = () => validateNewStock(market(), symbol(), model());
 	const problemsId = "watchlist-add-problems";
 	const stocks = () => data()?.stocks ?? [];
 	const openRemove = (stock: WatchlistStock, opener: HTMLElement) => {
@@ -501,27 +519,20 @@ export function WatchlistView(props: {
 					/>
 				)}
 			</Show>
-			<Show when={notice()}>{(text) => <Notice tone="info">{text()}</Notice>}</Show>
+			<Show when={notice()}>{(current) => <Notice tone="info">{current().text}</Notice>}</Show>
 
-			<Section title="Add a stock" label="Add a stock">
-				<p class="text-xs text-slate-700">
-					Register a US listing or a Japanese listing. Its earnings announcement dates appear below
-					after the next refresh.
-				</p>
+			<Section title={m().addStockTitle} label={m().addStockTitle}>
+				<p class="text-xs text-slate-700">{m().addStockHint}</p>
 				<Show when={problems().length > 0}>
 					<div class="mt-2 rounded border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-800">
-						<p class="font-medium">To add this stock:</p>
-						<ul
-							aria-label="Before you can add this stock"
-							id={problemsId}
-							class="list-disc space-y-0.5 pl-5"
-						>
+						<p class="font-medium">{m().toAddThisStock}</p>
+						<ul aria-label={m().beforeYouCanAdd} id={problemsId} class="list-disc space-y-0.5 pl-5">
 							<For each={problems()}>{(problem) => <li>{problem}</li>}</For>
 						</ul>
 					</div>
 				</Show>
 				<form
-					aria-label="Add a stock"
+					aria-label={m().addStockTitle}
 					class="mt-2 flex flex-wrap items-end gap-2"
 					onSubmit={(event) => {
 						event.preventDefault();
@@ -530,7 +541,7 @@ export function WatchlistView(props: {
 				>
 					<div class="w-40">
 						<label for="watchlist-market" class="block text-xs font-medium text-slate-700">
-							Market
+							{m().market}
 						</label>
 						<Select
 							id="watchlist-market"
@@ -542,7 +553,7 @@ export function WatchlistView(props: {
 							<For each={WATCH_MARKETS}>
 								{(entry) => (
 									<option value={entry} selected={market() === entry}>
-										{entry === "US" ? "US" : "Japan"}
+										{model().marketName(entry)}
 									</option>
 								)}
 							</For>
@@ -550,12 +561,13 @@ export function WatchlistView(props: {
 					</div>
 					<div class="min-w-40 flex-1">
 						<label for="watchlist-symbol" class="block text-xs font-medium text-slate-700">
-							Symbol
+							{m().symbol}
 						</label>
 						<input
 							id="watchlist-symbol"
 							type="text"
 							class={`${INPUT} font-mono`}
+							// i18n-exempt: example tickers, the same in every language
 							placeholder={market() === "US" ? "AAPL" : "7203"}
 							maxLength={16}
 							autocomplete="off"
@@ -571,13 +583,13 @@ export function WatchlistView(props: {
 						disabled={busy() || problems().length > 0}
 						aria-describedby={problems().length > 0 ? problemsId : undefined}
 					>
-						Add stock
+						{m().addStock}
 					</button>
 				</form>
 			</Section>
 
 			<Section
-				title="Registered stocks"
+				title={m().registeredStocks}
 				actions={
 					<button
 						type="button"
@@ -585,53 +597,43 @@ export function WatchlistView(props: {
 						disabled={busy() || isWatchlistRefreshActive(data())}
 						onClick={() => void queueRefresh()}
 					>
-						Refresh earnings dates
+						{m().refreshEarningsDates}
 					</button>
 				}
 			>
 				<Show when={data()}>
 					{(current) => (
 						<output class="mt-1 block text-xs text-slate-700" data-field="watchlist-status">
-							{watchlistStatusText(current())}
+							{watchlistStatusText(current(), model())}
 						</output>
 					)}
 				</Show>
 				<Show when={loading()} fallback={null}>
-					<Loading label="watchlist" />
+					<Loading label={m().watchlistThing} />
 				</Show>
 				<Show when={!loading() && data() !== null}>
-					<Show
-						when={stocks().length > 0}
-						fallback={
-							<Empty>
-								No stocks registered yet. Add a US or Japanese stock above to track its earnings
-								dates.
-							</Empty>
-						}
-					>
+					<Show when={stocks().length > 0} fallback={<Empty>{m().noStocks}</Empty>}>
 						<div class="overflow-x-auto">
 							<table class="mt-1 w-full border-collapse text-left text-xs">
-								<caption class="caption-top text-left text-slate-600">
-									Stocks you follow, with their next earnings announcement date
-								</caption>
+								<caption class="caption-top text-left text-slate-600">{m().stocksCaption}</caption>
 								<thead>
 									<tr class="border-b border-slate-300">
 										<th scope="col" class="pr-2">
-											Symbol
+											{m().symbol}
 										</th>
 										<th scope="col" class="pr-2">
-											Market
+											{m().market}
 										</th>
 										<th scope="col" class="pr-2">
-											Next announcement
+											{m().nextAnnouncementColumn}
 										</th>
 										<th scope="col" class="pr-2">
-											Retrieved
+											{m().retrievedColumn}
 										</th>
 										<th scope="col" class="pr-2">
-											Source
+											{m().sourceColumn}
 										</th>
-										<th scope="col">Actions</th>
+										<th scope="col">{m().actionsColumn}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -648,16 +650,15 @@ export function WatchlistView(props: {
 			<Show when={removing()}>
 				{(stock) => (
 					<ConfirmDialog
-						title={`Remove ${stock().symbol}?`}
+						title={m().removeTitle(stock().symbol)}
 						opener={opener()}
-						confirmLabel="Remove stock"
+						confirmLabel={m().removeStock}
 						pending={busy()}
 						failure={null}
 						onConfirm={() => void confirmRemove()}
 						onCancel={closeDialogs}
 					>
-						{stock().symbol} and its earnings dates are removed from the watchlist. This cannot be
-						undone.
+						{m().removeBody(stock().symbol)}
 					</ConfirmDialog>
 				)}
 			</Show>

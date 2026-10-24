@@ -1,4 +1,5 @@
 import type { DayWindow } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import {
 	CHART_INK,
 	type DetailChartModel,
@@ -7,8 +8,9 @@ import {
 	isValueLabelHidden,
 } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import { chartReadoutMessages } from "./chartViewer.messages.tsx";
 import { createFrameScheduler, wheelDeltaPx, wheelZoomFactor } from "./frame.ts";
-import { buildReadoutText, READOUT_HINT } from "./readout.ts";
+import { buildReadoutText } from "./readout.ts";
 
 /**
  * The main chart of the viewer (ADR-0025 interaction): a time-proportional
@@ -44,6 +46,7 @@ export function DetailChart(props: {
 	readonly label: string;
 	readonly mode: DetailValueMode;
 }): JSX.Element {
+	const readoutText = useMessages(chartReadoutMessages);
 	const instructionsId = createUniqueId();
 	// createUniqueId may emit characters (`:`) that break `url(#id)`
 	// references, so the clip id is sanitised to URL-safe characters.
@@ -87,7 +90,7 @@ export function DetailChart(props: {
 	};
 
 	const announce = (index: number): void => {
-		setAnnounced(buildReadoutText(props.model, index, props.units));
+		setAnnounced(buildReadoutText(props.model, index, props.units, readoutText()));
 	};
 
 	const moveCrosshair = (delta: number): void => {
@@ -320,7 +323,7 @@ export function DetailChart(props: {
 		// the SVG fills exactly).
 		<div class="flex min-h-0 flex-1 flex-col">
 			<p data-chart-part="readout" class="min-h-6 text-xs text-slate-700">
-				{props.readout === "" ? READOUT_HINT : props.readout}
+				{props.readout === "" ? readoutText().hint : props.readout}
 			</p>
 			<div
 				ref={(element) => {
@@ -335,7 +338,7 @@ export function DetailChart(props: {
 					}}
 					role="group"
 					tabindex={0}
-					aria-roledescription="interactive chart"
+					aria-roledescription={readoutText().roleDescription}
 					aria-describedby={instructionsId}
 					aria-label={props.label}
 					viewBox={`0 0 ${props.size.width} ${props.size.height}`}
@@ -487,9 +490,7 @@ export function DetailChart(props: {
 				</svg>
 			</div>
 			<p id={instructionsId} class="sr-only">
-				Interactive chart. Left and right arrows move the readout one bar; holding Shift with the
-				arrows pans the window; plus and minus zoom; Home and End jump to the first and last bar;
-				zero resets the window.
+				{readoutText().instructions}
 			</p>
 			<p class="sr-only" aria-live="polite">
 				{announced()}

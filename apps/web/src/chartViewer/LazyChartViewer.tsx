@@ -1,3 +1,4 @@
+import { useMessages } from "@research/i18n/solid";
 import {
 	createResource,
 	ErrorBoundary,
@@ -9,7 +10,9 @@ import {
 } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import { IconButton, Loading } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import type { ChartViewer, ChartViewerProps } from "./ChartViewer.tsx";
+import { chartViewerMessages } from "./chartViewer.messages.tsx";
 import { captureFocusReturn, focusReturnTarget } from "./openChart.ts";
 
 /**
@@ -72,6 +75,8 @@ function ViewerFailure(props: {
 	readonly onRetry: () => void;
 	readonly onClose: () => void;
 }): JSX.Element {
+	const m = useMessages(chartViewerMessages);
+	const common = useMessages(commonMessages);
 	let retry: HTMLButtonElement | undefined;
 	onMount(() => {
 		// The portal attaches its content in its own effect: focus once the
@@ -86,16 +91,16 @@ function ViewerFailure(props: {
 			data-chart-viewer-failure=""
 			class={`${NOTICE_PLACE} flex flex-wrap items-center gap-1 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900`}
 		>
-			<p class="mr-auto">The chart viewer could not be loaded.</p>
+			<p class="mr-auto">{m().loadFailed}</p>
 			<IconButton
-				label="Try again"
+				label={common().tryAgain}
 				icon="arrow-clockwise"
 				ref={(element) => {
 					retry = element;
 				}}
 				onClick={() => props.onRetry()}
 			/>
-			<IconButton label="Close" icon="x-lg" onClick={() => props.onClose()} />
+			<IconButton label={common().close} icon="x-lg" onClick={() => props.onClose()} />
 		</div>
 	);
 }
@@ -113,6 +118,7 @@ function ViewerFailure(props: {
  * still returns focus to the widget.
  */
 export function LazyChartViewer(props: ChartViewerProps): JSX.Element {
+	const m = useMessages(chartViewerMessages);
 	const [viewer, { refetch }] = createResource(loadChartViewer);
 	const focusReturn = props.focusReturn ?? captureFocusReturn(props.opener ?? null);
 	const token = { supersede: () => props.onClose() };
@@ -144,7 +150,7 @@ export function LazyChartViewer(props: ChartViewerProps): JSX.Element {
 				fallback={
 					<Portal>
 						<div class={`${NOTICE_PLACE} rounded border border-slate-200 bg-white px-3 py-2`}>
-							<Loading label="chart" />
+							<Loading label={m().chartThing} />
 						</div>
 					</Portal>
 				}

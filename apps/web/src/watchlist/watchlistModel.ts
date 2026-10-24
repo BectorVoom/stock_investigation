@@ -11,22 +11,24 @@ import {
 	googleCalendarFailureCodeSchema,
 	parseStockId,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
 import { formatInstant } from "../lib/format.ts";
+import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /**
  * Pure view-model for the Watchlist page and the Home earnings-calendar
  * widget (FR-018). No DOM, no fetch, no clock: every function is a pure
  * derivation over contract types, unit-tested in
- * `apps/web/test/watchlistModel.test.ts` with hand-worked values.
+ * `apps/web/test/watchlistModel.test.ts` with hand-worked values. The
+ * sentences come from `watchlistModelMessages` (ADR-0031), passed in by the
+ * view as `text` in the current language.
  */
 
-export const WATCH_MARKETS: readonly WatchMarket[] = ["US", "JP"];
+/** The words the model's sentences are built from, in one language. */
+export type WatchlistModelText = MessagesOf<typeof watchlistModelMessages>;
 
-export const MARKET_LABELS: { readonly [M in WatchMarket]: string } = {
-	US: "US",
-	JP: "Japan",
-};
+export const WATCH_MARKETS: readonly WatchMarket[] = ["US", "JP"];
 
 /**
  * Problems with a candidate `{ market, symbol }`, listed the guideline way
@@ -36,23 +38,24 @@ export const MARKET_LABELS: { readonly [M in WatchMarket]: string } = {
  * domain/contract parser alone (`parseStockId`), the one source of truth for
  * the market shapes, never a re-declared pattern.
  */
-export function validateNewStock(market: string, symbol: string): readonly string[] {
+export function validateNewStock(
+	market: string,
+	symbol: string,
+	text: WatchlistModelText,
+): readonly string[] {
 	const found: string[] = [];
 	if (market !== "US" && market !== "JP") {
-		found.push("Choose a market.");
+		found.push(text.chooseMarket);
 		return found;
 	}
 	const cleaned = symbol.trim().toUpperCase();
 	if (cleaned === "") {
-		found.push("Enter a symbol.");
+		found.push(text.enterSymbol);
 		return found;
 	}
-	const hint =
-		market === "US"
-			? "A US symbol starts with a letter, e.g. AAPL."
-			: "A Japanese code has four characters, e.g. 7203.";
+	const hint = market === "US" ? text.usSymbolHint : text.jpCodeHint;
 	if (parseStockId(`${market.toLowerCase()}:${cleaned}`) === null) {
-		found.push(`"${symbol.trim()}" is not a valid symbol. ${hint}`);
+		found.push(text.invalidSymbol(symbol.trim(), hint));
 	}
 	return found;
 }
@@ -62,15 +65,9 @@ export function normaliseSymbol(symbol: string): string {
 	return symbol.trim().toUpperCase();
 }
 
-const TIMING_TEXT: { readonly [T in Exclude<EarningsTiming, "unknown">]: string } = {
-	"before-open": "before market open",
-	"after-close": "after market close",
-	"during-session": "during the trading session",
-};
-
 /** Human timing ("after market close"), or null when the source states none. */
-export function timingText(timing: EarningsTiming): string | null {
-	return timing === "unknown" ? null : TIMING_TEXT[timing];
+export function timingText(timing: EarningsTiming, text: WatchlistModelText): string | null {
+	return timing === "unknown" ? null : text.timing(timing);
 }
 
 /**
@@ -98,10 +95,6 @@ export function storedDatesPassed(stock: WatchlistStock, today: string): boolean
 	return dated;
 }
 
-/** Stated as text when every stored date has passed (never a past date shown as next). */
-export const STORED_DATES_PASSED_NOTICE =
-	"unavailable (the stored dates have passed; refresh to update)";
-
 /** True when the stock lists at least one announcement with the date undecided. */
 export function hasUndecidedEvent(stock: WatchlistStock): boolean {
 	return stock.events.some((event) => event.announcementDate === null);
@@ -116,16 +109,17 @@ export function withoutUpcomingReason(
 	stock: WatchlistStock,
 	daysAhead: number,
 	today: string,
+	text: WatchlistModelText,
 ): string {
 	// Stale stored dates say so first: the display would otherwise show a
 	// past date (or a failure reason beside dates that no longer hold).
-	if (storedDatesPassed(stock, today)) return STORED_DATES_PASSED_NOTICE;
+	// `storedDatesPassed` is the sentence shown whenever every stored date has
+	// passed (never a past date shown as next).
+	if (storedDatesPassed(stock, today)) return text.storedDatesPassed;
 	if (stock.unavailable !== null) return stock.unavailable.reason;
-	if (stock.events.length === 0)
-		return "No earnings dates have been refreshed yet; queue a refresh.";
-	if (nextDatedEvent(stock, today) === null)
-		return "The source lists the announcement with the date undecided.";
-	return `The source lists no announcement in the next ${daysAhead} days.`;
+	if (stock.events.length === 0) return text.noRefreshYet;
+	if (nextDatedEvent(stock, today) === null) return text.onlyUndecided;
+	return text.noneInWindow(daysAhead);
 }
 
 /** Today's UTC date (`YYYY-MM-DD`) from a millisecond clock reading. */
@@ -174,22 +168,25 @@ export function isGoogleCalendarRunActive(current: WatchlistResponse | null | un
  * active run id + state while refreshing, the last failure code beside the
  * last success, and the waits-for-the-local-runner note).
  */
-export function watchlistStatusText(current: WatchlistResponse): string {
+export function watchlistStatusText(current: WatchlistResponse, text: WatchlistModelText): string {
 	if (current.refresh.activeRunId !== null) {
 		const state = current.refresh.activeRunState ?? "queued";
-		return `Refreshing earnings dates… (${state}, run ${current.refresh.activeRunId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`;
+		return text.statusRefreshing(state, current.refresh.activeRunId);
 	}
 	const parts: string[] = [];
 	if (current.refresh.lastSucceededAt !== null) {
-		parts.push(`Last successful refresh: ${formatInstant(current.refresh.lastSucceededAt)}.`);
+		parts.push(text.lastSuccess(formatInstant(current.refresh.lastSucceededAt)));
 	}
 	if (current.refresh.lastFailure !== null) {
 		parts.push(
-			`Last refresh failed (${current.refresh.lastFailure.code}) at ${formatInstant(current.refresh.lastFailure.at)}.`,
+			text.lastFailure(
+				current.refresh.lastFailure.code,
+				formatInstant(current.refresh.lastFailure.at),
+			),
 		);
 	}
 	if (parts.length > 0) return parts.join(" ");
-	return "No earnings-date refresh has completed yet.";
+	return text.noRefreshCompleted;
 }
 
 /** True when the failure means the request never reached the server (safe to retry with the key). */
@@ -238,25 +235,31 @@ export function googleAutoSyncWanted(
 	return true;
 }
 
-/** The Google part of the Home widget's single status line (FR-019 section 2.7). */
-export function googleWidgetStatus(state: GoogleCalendarState): string {
+/**
+ * The Google part of the Home widget's single status line (FR-019 section 2.7).
+ * `text` defaults to English only so Home's existing call keeps compiling
+ * while it is translated; every caller should pass the current language's
+ * table.
+ */
+export function googleWidgetStatus(
+	state: GoogleCalendarState,
+	text: WatchlistModelText = watchlistModelMessages.en,
+): string {
 	switch (state.status) {
 		case "connected":
 			if (state.activeRunId !== null) {
-				return state.activeAction === "disconnect"
-					? "Google Calendar: disconnecting…"
-					: "Google Calendar: syncing…";
+				return state.activeAction === "disconnect" ? text.googleDisconnecting : text.googleSyncing;
 			}
 			if (state.lastSyncedAt !== null) {
-				return `Google Calendar: synced ${formatInstant(state.lastSyncedAt)}.`;
+				return text.googleSynced(formatInstant(state.lastSyncedAt));
 			}
-			return "Google Calendar: connected, not synced yet.";
+			return text.googleConnectedNotSynced;
 		case "connecting":
-			return "Google Calendar: connecting…";
+			return text.googleConnecting;
 		case "needs-reconnect":
-			return "Google Calendar: reconnect needed.";
+			return text.googleReconnectNeeded;
 		default:
-			return "Google Calendar: not connected.";
+			return text.googleNotConnected;
 	}
 }
 
@@ -269,12 +272,17 @@ export const EARNINGS_AUTO_REFRESH_STALE_MS = 24 * 3_600_000;
 
 export type EarningsAutoRefreshReason = "never-refreshed" | "stale";
 
-/** The announce text per reason, shared by the Watchlist page and Home. */
+/**
+ * The English announce text per reason. Kept only for Home's existing call
+ * while it is translated (technical debt: delete once Home passes
+ * `text.autoRefreshNotice(reason)` from `watchlistModelMessages`, as the
+ * Watchlist page does).
+ */
 export const EARNINGS_AUTO_REFRESH_NOTICE: {
 	readonly [R in EarningsAutoRefreshReason]: string;
 } = {
-	"never-refreshed": "Earnings dates had not been fetched yet, so one refresh was queued.",
-	stale: "Earnings dates were more than a day old, so one refresh was queued.",
+	"never-refreshed": watchlistModelMessages.en.autoRefreshNotice("never-refreshed"),
+	stale: watchlistModelMessages.en.autoRefreshNotice("stale"),
 };
 
 /** True when at least one stock was never refreshed (`lastRefreshedAt === null`). */
