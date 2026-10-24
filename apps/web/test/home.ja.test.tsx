@@ -111,7 +111,7 @@ describe("Home market widgets in Japanese", () => {
 		// Up, said in words beside the ▲ mark; the numbers keep their notation.
 		expect(opener.textContent).toContain("▲ +0.33 (+2.19%) (上昇)");
 		expect(opener.textContent).toContain("取得できません（履歴が不足）");
-		expect(screen.getByText(/^取得 /)).toBeTruthy();
+		expect(screen.getByText(/^取得日時 /)).toBeTruthy();
 	});
 
 	it("words a stock table's headers and a missing series' reason by its code", () => {

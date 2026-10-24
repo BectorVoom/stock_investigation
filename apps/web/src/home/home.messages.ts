@@ -1,4 +1,5 @@
 import { defineMessages } from "@research/i18n";
+import { runStateMessages } from "../i18n/runState.messages.ts";
 
 /** The Home page (`HomeView.tsx`): notices, the status line, toolbar and states. */
 export const homeMessages = defineMessages({
@@ -65,7 +66,7 @@ export const homeMessages = defineMessages({
 		resetDone: "ダッシュボードを既定の配置に戻しました。",
 		notReset: (reason) => `ダッシュボードを既定の配置に戻せませんでした：${reason}`,
 		refreshing: (state, runId) =>
-			`市場データを更新中…（${state}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの場合は、再接続するまで登録済みのまま待機します。`,
+			`市場データを更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの場合は、再接続するまで登録済みのまま待機します。`,
 		lastSucceeded: (when) => `前回の更新成功：${when}。`,
 		lastFailed: (code, when) => `前回の更新は ${when} に失敗しました（${code}）。`,
 		noRefreshYet: "市場データの更新はまだ完了していません。",

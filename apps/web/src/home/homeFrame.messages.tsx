@@ -19,7 +19,7 @@ export const homeFrameMessages = defineMessages({
 	ja: {
 		asOf: (date) => <>{date} 時点</>,
 		asOfNotStated: "時点の記載なし",
-		retrieved: (when) => <>取得 {when}</>,
+		retrieved: (when) => <>取得日時 {when}</>,
 		notStated: "記載なし",
 		tableFooter: "出典と時点は各行にあります。",
 		twelveDataSession: "Twelve Data の日足：最新の日足は取引中の未確定のものである場合があります。",

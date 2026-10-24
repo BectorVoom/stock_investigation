@@ -12,7 +12,6 @@ type RunState = ResearchRun["state"];
  */
 export const runMessages = defineMessages({
 	en: {
-		state: (state: RunState): string => state,
 		/** The concise spoken form of a run's state for the conversation status region. */
 		announcement: (state: RunState, failureCode: string | null): string => {
 			switch (state) {
@@ -69,21 +68,6 @@ export const runMessages = defineMessages({
 		retryRun: "Retry run",
 	},
 	ja: {
-		state: (state) =>
-			({
-				pending: "待機中",
-				claimed: "受付済み",
-				planning: "計画中",
-				collecting: "収集中",
-				analyzing: "分析中",
-				verifying: "検証中",
-				publishing: "公開中",
-				completed: "完了",
-				failed: "失敗",
-				cancelled: "キャンセル済み",
-				partial: "一部完了",
-				waiting_approval: "承認待ち",
-			})[state],
 		announcement: (state, failureCode) => {
 			switch (state) {
 				case "pending":

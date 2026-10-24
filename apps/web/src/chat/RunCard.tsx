@@ -11,6 +11,7 @@ import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { SpendField } from "../components/SpendField.tsx";
 import { BUTTON, BUTTON_DANGER, BUTTON_PRIMARY, ErrorNotice } from "../components/ui.tsx";
+import { runStateMessages } from "../i18n/runState.messages.ts";
 import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
 import {
 	type CostModelView,
@@ -157,6 +158,7 @@ export function RunCard(props: {
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
 }): JSX.Element {
 	const m = useMessages(runMessages);
+	const runState = useMessages(runStateMessages);
 	const [busy, setBusy] = createSignal(false);
 	const costModel = createMemo((): CostModelView => {
 		const agentId = props.run.request?.agentId;
@@ -203,7 +205,7 @@ export function RunCard(props: {
 						data-field="state"
 						class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
 					>
-						{m().state(props.run.state)}
+						{runState().name(props.run.state)}
 					</span>
 				</Show>
 				<Show when={latestProgress()}>

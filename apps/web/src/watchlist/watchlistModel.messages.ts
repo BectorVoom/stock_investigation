@@ -5,6 +5,7 @@ import {
 	type WatchMarket,
 } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
+import { runStateMessages } from "../i18n/runState.messages.ts";
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
 
@@ -91,7 +92,7 @@ export const watchlistModelMessages = defineMessages({
 		onlyUndecided: "出典では発表日が未定です。",
 		noneInWindow: (days) => `出典には今後 ${days} 日以内の発表がありません。`,
 		statusRefreshing: (state, runId) =>
-			`決算発表日を更新中…（${state}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。`,
+			`決算発表日を更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。`,
 		lastSuccess: (when) => `最後に成功した更新: ${when}。`,
 		lastFailure: (code, when) => `${when} の更新に失敗しました（${code}）。`,
 		noRefreshCompleted: "決算発表日の更新はまだ完了していません。",

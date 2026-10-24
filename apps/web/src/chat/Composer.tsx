@@ -25,6 +25,7 @@ import {
 	Notice,
 	Select,
 } from "../components/ui.tsx";
+import { runStateMessages } from "../i18n/runState.messages.ts";
 import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
@@ -37,7 +38,6 @@ import {
 	defaultComposerDraft,
 	evaluateComposer,
 } from "./composerModel.ts";
-import { runMessages } from "./run.messages.ts";
 
 const HORIZONS = [3, 4, 5] as const;
 
@@ -103,7 +103,7 @@ export function Composer(props: {
 }): JSX.Element {
 	const m = useMessages(composerMessages);
 	const agentText = useMessages(agentSettingsModelMessages);
-	const runText = useMessages(runMessages);
+	const runState = useMessages(runStateMessages);
 	const [draft, setDraft] = createSignal<ComposerDraft>(defaultComposerDraft());
 	const [submitting, setSubmitting] = createSignal(false);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
@@ -232,7 +232,7 @@ export function Composer(props: {
 				setQueuedRunId(result.value.runId);
 				setQueuedNote(m().questionQueued);
 			} else {
-				setQueuedNote(m().questionSubmitted(runText().state(result.value.state)));
+				setQueuedNote(m().questionSubmitted(runState().name(result.value.state)));
 			}
 			// A successful send resets the "the owner has started typing"
 			// state, so the cleared form is quiet again until the owner types
@@ -302,7 +302,7 @@ export function Composer(props: {
 				setQueuedRunId(result.value.run.runId);
 				setQueuedNote(m().instructionQueued);
 			} else {
-				setQueuedNote(m().instructionSubmitted(runText().state(result.value.run.state)));
+				setQueuedNote(m().instructionSubmitted(runState().name(result.value.run.state)));
 			}
 			setTyped(false);
 			setTried(false);

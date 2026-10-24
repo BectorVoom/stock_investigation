@@ -1,6 +1,7 @@
 import type { NewsSource } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 import type { JSX } from "solid-js";
+import { runStateMessages } from "../i18n/runState.messages.ts";
 
 type LicensePolicy = NewsSource["licensePolicy"];
 type TrustClassification = NewsSource["trustClassification"];
@@ -192,7 +193,7 @@ export const sourcesMessages = defineMessages({
 		refreshNewsNow: "今すぐニュースを更新",
 		refreshQueued: (runId, state) => (
 			<>
-				ニュースの更新を実行 {runId} として予約しました（状態: {state}
+				ニュースの更新を実行 {runId} として予約しました（状態: {runStateMessages.ja.name(state)}
 				）。ローカルのランナーが取得します。ランナーがオフラインの間は、再接続するまで予約されたままです。
 			</>
 		),
