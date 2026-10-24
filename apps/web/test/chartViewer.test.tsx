@@ -352,6 +352,46 @@ describe("chart viewer", () => {
 		expect(liveRegion()).toBe(readout());
 	});
 
+	it("colours each change by direction: green up, red down, neutral unchanged", () => {
+		const series = trendSeries("fred:MIX", "Mixed series", "Index", "daily", [
+			["2026-10-05", 10],
+			["2026-10-06", 12],
+			["2026-10-07", 11],
+			["2026-10-08", 11],
+		]);
+		renderViewer([series]);
+		const svg = chartSvg();
+		svg.focus();
+		const toneOfReadoutChange = (): string | undefined =>
+			document.querySelector('[data-chart-part="readout"] span')?.className;
+		fireEvent.keyDown(svg, { key: "Home" });
+		// The first bar has no previous value, so no change and nothing coloured.
+		expect(toneOfReadoutChange()).toBeUndefined();
+		fireEvent.keyDown(svg, { key: "ArrowRight" });
+		expect(readout()).toContain("▲ up +2");
+		expect(toneOfReadoutChange()).toBe("text-emerald-700");
+		fireEvent.keyDown(svg, { key: "ArrowRight" });
+		expect(readout()).toContain("▼ down -1");
+		expect(toneOfReadoutChange()).toBe("text-red-700");
+		fireEvent.keyDown(svg, { key: "ArrowRight" });
+		expect(readout()).toContain("▬ unchanged");
+		expect(toneOfReadoutChange()).toBe("text-slate-700");
+		// The coloured line still reads exactly as announced.
+		expect(liveRegion()).toBe(readout());
+
+		// Over the whole window 10 → 11 is a rise: the change and percent
+		// cells of the statistics table are green.
+		const stats = document.querySelector('section[aria-label="Statistics for the visible window"]');
+		if (!(stats instanceof HTMLElement)) throw new Error("no statistics section");
+		const cells = within(within(stats).getByRole("row", { name: /Mixed series/ })).getAllByRole(
+			"cell",
+		);
+		const change = cells.find((cell) => cell.textContent === "+1");
+		const percent = cells.find((cell) => cell.textContent === "+10.00%");
+		expect(change?.className).toContain("text-emerald-700");
+		expect(percent?.className).toContain("text-emerald-700");
+	});
+
 	it("wheel zoom narrows the window", async () => {
 		renderViewer([longSeries()]);
 		expect(fromInput().value).toBe("2025-09-04");

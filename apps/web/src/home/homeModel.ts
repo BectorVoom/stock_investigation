@@ -91,7 +91,7 @@ export function changeDirection(absoluteChange: number): ChangeDirection {
 	return "unchanged";
 }
 
-const DIRECTION_MARK: { readonly [D in ChangeDirection]: string } = {
+export const DIRECTION_MARK: { readonly [D in ChangeDirection]: string } = {
 	up: "▲",
 	down: "▼",
 	unchanged: "▬",

@@ -392,6 +392,19 @@ export const NOTICE_TONES = {
 
 export type NoticeTone = keyof typeof NOTICE_TONES;
 
+/**
+ * Text colour of a change by its direction: emerald rising, red falling,
+ * neutral slate unchanged (the Apple Stocks convention). Colour is never the
+ * only cue: every change keeps its ▲/▼/▬ mark and word. The 700 steps hold
+ * WCAG AA on every widget surface (emerald-700 5.4 / 5.1 / 4.9 and red-700
+ * 6.4 / 6.1 / 5.9 on white / slate-50 / slate-100).
+ */
+export const CHANGE_TONES = {
+	up: "text-emerald-700",
+	down: "text-red-700",
+	unchanged: "text-slate-700",
+} as const;
+
 type NoticeDomProps = Omit<
 	JSX.OutputHTMLAttributes<HTMLOutputElement>,
 	"children" | "class" | "classList" | "style"

@@ -45,10 +45,18 @@ import {
 	type JSX,
 	Show,
 } from "solid-js";
-import { BUTTON, BUTTON_PRIMARY, DisclosureSummary, INPUT, LABEL } from "../components/ui.tsx";
+import {
+	BUTTON,
+	BUTTON_PRIMARY,
+	CHANGE_TONES,
+	DisclosureSummary,
+	INPUT,
+	LABEL,
+} from "../components/ui.tsx";
 import { SingleSeriesFooter } from "../home/HomeFrame.tsx";
 import { homeModelMessages } from "../home/homeModel.messages.ts";
 import {
+	changeDirection,
 	formatChange,
 	formatPctValue,
 	formatSignedDelta,
@@ -63,7 +71,7 @@ import { chartReadoutMessages, chartViewerMessages } from "./chartViewer.message
 import { DetailChart } from "./DetailChart.tsx";
 import { Navigator } from "./Navigator.tsx";
 import { captureFocusReturn, type FocusReturn, focusReturnTarget } from "./openChart.ts";
-import { buildReadoutText } from "./readout.ts";
+import { buildReadoutParts, type ReadoutParts } from "./readout.ts";
 
 /**
  * The detailed chart viewer (ADR-0025): a large modal sheet over the current
@@ -224,6 +232,20 @@ function describeChange(
 	};
 	const formatted = formatChange(change, unit, text);
 	return `${formatted.text} ${formatted.word}`;
+}
+
+/** Stats-table percent cell: coloured by direction when it holds a value. */
+function PercentCell(props: {
+	readonly cell: { readonly text: string; readonly isValue: boolean };
+	readonly change: number;
+}): JSX.Element {
+	return (
+		<td
+			class={`py-1 pr-3 text-right tabular-nums${props.cell.isValue ? ` ${CHANGE_TONES[changeDirection(props.change)]}` : ""}`}
+		>
+			{props.cell.text}
+		</td>
+	);
 }
 
 interface SeriesStats {
@@ -550,11 +572,11 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		setCrosshairDay(day);
 	};
 
-	const readout = createMemo(() => {
+	const readout = createMemo((): ReadoutParts | null => {
 		const ready = view();
 		const index = crosshair();
-		if (ready === null || index === null) return "";
-		return buildReadoutText(ready.model, index, units(), readoutText());
+		if (ready === null || index === null) return null;
+		return buildReadoutParts(ready.model, index, units(), readoutText());
 	});
 
 	const stats = createMemo<readonly SeriesStats[]>(() =>
@@ -779,11 +801,18 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 		return `${formatValue(cell.raw)}${suffix} (${formatSignedDelta(cell.display, cell.display)}%)`;
 	};
 
-	const percentCell = (percentChange: number | null, unit: string, open: number): string => {
+	/** The percent cell's text, and whether it is a value (coloured) or a reason (neutral). */
+	const percentCell = (
+		percentChange: number | null,
+		unit: string,
+		open: number,
+	): { readonly text: string; readonly isValue: boolean } => {
 		const text = formatPctValue(percentChange, unit);
-		if (text !== null) return text;
-		if (percentChange === null && open === 0) return common().unavailable(m().zeroBase);
-		return common().unavailable(m().percentOfPercent);
+		if (text !== null) return { text, isValue: true };
+		if (percentChange === null && open === 0) {
+			return { text: common().unavailable(m().zeroBase), isValue: false };
+		}
+		return { text: common().unavailable(m().percentOfPercent), isValue: false };
 	};
 
 	const modelFallback = (): string => {
@@ -823,7 +852,13 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 													</span>
 												</>
 											)}{" "}
-											<span class="tabular-nums">
+											<span
+												class={
+													row.computed === null
+														? "tabular-nums"
+														: `tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`
+												}
+											>
 												{describeChange(
 													row.computed,
 													row.entry.unit,
@@ -1100,16 +1135,19 @@ export function ChartViewer(props: ChartViewerProps): JSX.Element {
 																	<td class="py-1 pr-3 text-right tabular-nums">
 																		{formatValue(row.computed.close)}
 																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
+																	<td
+																		class={`py-1 pr-3 text-right tabular-nums ${CHANGE_TONES[changeDirection(row.computed.change)]}`}
+																	>
 																		{formatSignedDelta(row.computed.change, row.computed.close)}
 																	</td>
-																	<td class="py-1 pr-3 text-right tabular-nums">
-																		{percentCell(
+																	<PercentCell
+																		cell={percentCell(
 																			row.computed.percentChange,
 																			row.entry.unit,
 																			row.computed.open,
 																		)}
-																	</td>
+																		change={row.computed.change}
+																	/>
 																	<td class="py-1 pr-3 text-right tabular-nums">
 																		{formatValue(row.computed.high.value)}{" "}
 																		<time dateTime={row.computed.high.observedOn}>

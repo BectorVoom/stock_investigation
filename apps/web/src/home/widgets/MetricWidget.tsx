@@ -5,6 +5,7 @@ import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
+import { CHANGE_TONES } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
@@ -173,9 +174,9 @@ function ChangeLine(props: {
 			{m().changeLabel(props.label)}
 			<Show when={formatted()} fallback={<span class="italic">{errorText()}</span>}>
 				{(line) => (
-					<>
+					<span class={CHANGE_TONES[line().direction]}>
 						{line().text} <span class="sr-only">({line().word})</span>
-					</>
+					</span>
 				)}
 			</Show>
 		</span>

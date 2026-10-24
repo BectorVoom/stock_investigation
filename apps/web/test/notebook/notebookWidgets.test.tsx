@@ -42,6 +42,26 @@ describe("notebook widget bodies", () => {
 		unmount();
 	});
 
+	it("colours the metric change by direction, keeping the arrow and word", () => {
+		const fixtures = notebookFixtures();
+		const cases = [
+			{ change: 1.25, mark: "▲", tone: "text-emerald-700" },
+			{ change: -0.5, mark: "▼", tone: "text-red-700" },
+			{ change: 0, mark: "▬", tone: "text-slate-700" },
+		] as const;
+		for (const { change, mark, tone } of cases) {
+			const widget = { ...fixtures.metric, change };
+			const { unmount } = render(() => (
+				<WidgetBody widget={widget} view={null} registry={registry} {...BODY_DEFAULTS} />
+			));
+			const line = [...document.querySelectorAll("[data-widget-body='metric'] p")].find((p) =>
+				p.textContent?.includes(mark),
+			);
+			expect(line?.className).toContain(tone);
+			unmount();
+		}
+	});
+
 	it("renders unavailable when the metric value is null", () => {
 		const fixtures = notebookFixtures();
 		const empty = { ...fixtures.metric, value: null };

@@ -41,6 +41,7 @@ What the test cannot check is listed in section 11 and remains a review item.
 | Error and destructive | red | Errors, failure codes, verification issues, destructive buttons |
 | Warning, unverified, stale | amber | Offline/queued notices, unverified listings and notes, missing as-of dates, withheld series |
 | Success, verified, supported | emerald | Saved confirmations, verified listings, supported claims, successful imports |
+| Change direction | emerald / red / slate | A market change's text: rising `text-emerald-700`, falling `text-red-700`, unchanged `text-slate-700` (the Apple Stocks convention). One map, `CHANGE_TONES` in `components/ui.tsx`, used by every change line, change cell, the chart viewer's summary, statistics and crosshair readout. The ▲/▼/▬ mark and word (or the sign in table cells) stay: colour is never the only cue |
 | Surface | white | Panel and card backgrounds (`bg-white`); app background is `bg-slate-100`, tinted notice backgrounds are the 50 step |
 | Surface fills (Chat) | slate-100/200/300, blue-100, red-100/200 | Borderless Chat fills: grey run/result cards (`bg-slate-100`) and menus/dialog/composer on white; default buttons (`bg-slate-200`, `hover:bg-slate-300`) on white and on grey cards; blue source cards and citation chips (`bg-blue-100`, chip `hover:bg-blue-200`); destructive buttons (`bg-red-100`, `hover:bg-red-200`); approval form (grey `bg-slate-200`) on its grey run card |
 
@@ -71,6 +72,8 @@ allowed foreground/background pairs all pass with margin:
 | red-900 on red-100 (destructive buttons) | 8.2 |
 | blue-800 on blue-100 (source card link) | 7.1 |
 | slate-600 on slate-100 (result type labels) | 6.9 |
+| emerald-700 on white / slate-50 / slate-100 (rising change) | 5.4 / 5.1 / 4.9 |
+| red-700 on white / slate-50 / slate-100 (falling change) | 6.4 / 6.1 / 5.9 |
 
 For comparison, `text-slate-400` on white is 2.6:1 and `text-slate-300` is
 1.5:1, which is why section 4 of the test forbids them. Any pair not in this

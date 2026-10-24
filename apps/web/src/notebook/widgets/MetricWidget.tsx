@@ -2,20 +2,12 @@ import type { WidgetCore } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { createMemo, Show } from "solid-js";
+import { CHANGE_TONES } from "../../components/ui.tsx";
+import { type ChangeDirection, changeDirection, DIRECTION_MARK } from "../../home/homeModel.ts";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import { notebookWidgetMessages } from "./notebookWidgets.messages.tsx";
 
 type Metric = Extract<WidgetCore, { readonly type: "metric" }>;
-
-const DIRECTION_MARK = { up: "▲", down: "▼", unchanged: "▬" } as const;
-
-type Direction = keyof typeof DIRECTION_MARK;
-
-function directionOf(change: number): Direction {
-	if (change > 0) return "up";
-	if (change < 0) return "down";
-	return "unchanged";
-}
 
 const numberFormat = new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 });
 const signedFormat = new Intl.NumberFormat("en-US", {
@@ -32,9 +24,9 @@ export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
 		return current === null ? null : { display: current };
 	});
 	const change = createMemo(
-		(): { readonly display: number; readonly direction: Direction } | null => {
+		(): { readonly display: number; readonly direction: ChangeDirection } | null => {
 			const current = props.widget.change;
-			return current === null ? null : { display: current, direction: directionOf(current) };
+			return current === null ? null : { display: current, direction: changeDirection(current) };
 		},
 	);
 	const unit = () => props.widget.unit;
@@ -64,7 +56,7 @@ export function MetricWidget(props: { readonly widget: Metric }): JSX.Element {
 			</Show>
 			<Show when={change()}>
 				{(entry) => (
-					<p class="text-xs text-slate-700">
+					<p class={`text-xs ${CHANGE_TONES[entry().direction]}`}>
 						<span aria-hidden="true">{DIRECTION_MARK[entry().direction]}</span>{" "}
 						<span class="tabular-nums">{signedFormat.format(entry().display)}</span>
 						<Show when={unit().trim().length > 0}>

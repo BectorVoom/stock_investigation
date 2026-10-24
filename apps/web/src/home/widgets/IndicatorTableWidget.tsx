@@ -2,6 +2,7 @@ import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
+import { CHANGE_TONES } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import { WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
@@ -199,9 +200,9 @@ function FullChangeCell(props: {
 			fallback={<span class="italic">{common().unavailable(problem())}</span>}
 		>
 			{(line) => (
-				<>
+				<span class={CHANGE_TONES[line().direction]}>
 					{line().text} <span class="sr-only">({line().word})</span>
-				</>
+				</span>
 			)}
 		</Show>
 	);

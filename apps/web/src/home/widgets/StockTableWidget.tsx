@@ -13,10 +13,13 @@ import {
 } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
+import { CHANGE_TONES } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
 import { homeModelMessages } from "../homeModel.messages.ts";
 import {
+	type ChangeDirection,
+	changeDirection,
 	changeErrorText,
 	formatAbsDelta,
 	formatPctValue,
@@ -253,19 +256,26 @@ export function ChangeCell(props: {
 		}
 		if (!change.ok)
 			return { kind: "unavailable", reason: changeErrorText(change.error, modelText()) };
+		// The signed text ("+0.52 USD") is the non-colour cue; the tone adds colour.
+		const direction = changeDirection(change.value.absoluteChange);
 		if (props.kind === "abs") {
 			// The delta follows the series' latest value magnitude (the one rule in homeModel.ts).
 			return {
 				kind: "value",
 				text: formatAbsDelta(change.value.absoluteChange, props.unit, change.value.latest.value),
+				direction,
 			};
 		}
 		const pct = formatPctValue(change.value.percentChange, props.unit);
-		return pct === null ? { kind: "not-applicable" } : { kind: "value", text: pct };
+		return pct === null ? { kind: "not-applicable" } : { kind: "value", text: pct, direction };
 	});
 	const valueText = () => {
 		const current = display();
 		return current.kind === "value" ? current.text : null;
+	};
+	const valueTone = () => {
+		const current = display();
+		return current.kind === "value" ? CHANGE_TONES[current.direction] : undefined;
 	};
 	const hasValue = () => display().kind === "value";
 	const notApplicable = () => display().kind === "not-applicable";
@@ -279,7 +289,9 @@ export function ChangeCell(props: {
 		// Branches on the display kind, never on the text: a value like "0"
 		// must render (D1 audit).
 		<Switch fallback={<span class="italic">{common().unavailable(unavailableReason())}</span>}>
-			<Match when={hasValue()}>{valueText()}</Match>
+			<Match when={hasValue()}>
+				<span class={valueTone()}>{valueText()}</span>
+			</Match>
 			<Match when={notApplicable()}>
 				<span class="italic">{m().notApplicable}</span>
 			</Match>
@@ -288,6 +300,6 @@ export function ChangeCell(props: {
 }
 
 type ChangeCellDisplay =
-	| { readonly kind: "value"; readonly text: string }
+	| { readonly kind: "value"; readonly text: string; readonly direction: ChangeDirection }
 	| { readonly kind: "not-applicable" }
 	| { readonly kind: "unavailable"; readonly reason: string };

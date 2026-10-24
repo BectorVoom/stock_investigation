@@ -239,6 +239,11 @@ describe("home view", () => {
 		expect(vix.textContent).toContain("2026-10-08");
 		expect(vix.textContent).toContain("Federal Reserve Bank of St. Louis (FRED)");
 		expect(vix.textContent).toContain("▲ +0.33 (+2.19%)");
+		// A rise is green as well as marked ▲ (colour is never the only cue).
+		const vixChange = [...vix.querySelectorAll("span")].find((span) =>
+			span.textContent?.startsWith("▲ +0.33"),
+		);
+		expect(vixChange?.className).toBe("text-emerald-700");
 		expect(vix.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
 
 		const gold = widgetById("w-gold");
@@ -253,6 +258,15 @@ describe("home view", () => {
 		expect(within(table).getByRole("row", { name: /AAPL/ }).textContent).toContain("336.64");
 		expect(within(table).getByRole("columnheader", { name: "Change %" })).toBeDefined();
 		expect(table.querySelector("th[scope='row']")).not.toBeNull();
+		// AAPL fell (340.42 → 336.64): its signed change and percent are red.
+		const aaplFall = within(within(table).getByRole("row", { name: /AAPL/ }))
+			.getAllByRole("cell")
+			.flatMap((cell) => [...cell.querySelectorAll("span")])
+			.filter((span) => span.textContent?.startsWith("-"));
+		expect(aaplFall.map((span) => [span.textContent, span.className])).toEqual([
+			["-3.78 USD", "text-red-700"],
+			["-1.11%", "text-red-700"],
+		]);
 
 		const economy = widgetById("w-us-economy");
 		expect(within(economy).getByRole("table", { name: /US economy/ }).textContent).toContain(

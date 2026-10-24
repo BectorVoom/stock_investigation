@@ -8,9 +8,15 @@ import {
 	isValueLabelHidden,
 } from "@research/ui-registry";
 import { createSignal, createUniqueId, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import { CHANGE_TONES } from "../components/ui.tsx";
 import { chartReadoutMessages } from "./chartViewer.messages.tsx";
 import { createFrameScheduler, wheelDeltaPx, wheelZoomFactor } from "./frame.ts";
-import { buildReadoutText } from "./readout.ts";
+import {
+	buildReadoutText,
+	READOUT_DATE_SEPARATOR,
+	READOUT_SERIES_SEPARATOR,
+	type ReadoutParts,
+} from "./readout.ts";
 
 /**
  * The main chart of the viewer (ADR-0025 interaction): a time-proportional
@@ -41,7 +47,8 @@ export function DetailChart(props: {
 	/** Measured CSS pixel size of the chart box (the single source of truth:
 	 * the viewBox and the render model are both built from it). */
 	readonly size: { readonly width: number; readonly height: number };
-	readonly readout: string;
+	/** The crosshair readout, or null before the pointer or keyboard sets one. */
+	readonly readout: ReadoutParts | null;
 	readonly units: readonly string[];
 	readonly label: string;
 	readonly mode: DetailValueMode;
@@ -323,7 +330,28 @@ export function DetailChart(props: {
 		// the SVG fills exactly).
 		<div class="flex min-h-0 flex-1 flex-col">
 			<p data-chart-part="readout" class="min-h-6 text-xs text-slate-700">
-				{props.readout === "" ? readoutText().hint : props.readout}
+				<Show when={props.readout} fallback={readoutText().hint}>
+					{(parts) => (
+						<>
+							{parts().date}
+							{READOUT_DATE_SEPARATOR}
+							<For each={parts().series}>
+								{(part, slot) => (
+									<>
+										{slot() > 0 ? READOUT_SERIES_SEPARATOR : ""}
+										{part.lead}
+										<Show when={part.change}>
+											{(change) => (
+												<span class={CHANGE_TONES[change().direction]}>{change().text}</span>
+											)}
+										</Show>
+										{part.trail}
+									</>
+								)}
+							</For>
+						</>
+					)}
+				</Show>
 			</p>
 			<div
 				ref={(element) => {
