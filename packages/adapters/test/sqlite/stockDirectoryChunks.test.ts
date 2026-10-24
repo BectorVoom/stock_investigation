@@ -1,7 +1,10 @@
 import { stockDirectoryRows } from "@research/application";
 import { STOCK_DIRECTORY_LIMITS, type StockDirectoryEntry } from "@research/contracts";
 import { describe, expect, it } from "vitest";
-import { chunkStockDirectoryRows, STOCK_DIRECTORY_CHUNK_BYTES } from "../../src/sql/unitOfWork.ts";
+import {
+	chunkStockDirectoryRows,
+	STOCK_DIRECTORY_CHUNK_BYTES,
+} from "../../src/sql/stockDirectoryChunks.ts";
 
 const encoder = new TextEncoder();
 const bytes = (text: string) => encoder.encode(text).length;

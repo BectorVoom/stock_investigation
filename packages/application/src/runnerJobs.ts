@@ -35,6 +35,7 @@ import {
 	ok,
 	type ResourceUsage,
 	type Result,
+	STOCK_SEARCH_FOLD_VERSION,
 	transitionJob,
 } from "@research/domain";
 import { fail, type UseCaseResult } from "./errors.ts";
@@ -1157,6 +1158,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							market: request.market,
 							asOf: request.asOf,
 							retrievedAt: request.fetchedAt,
+							foldVersion: STOCK_SEARCH_FOLD_VERSION,
 							rows: stockDirectoryRows(request.market, request.entries),
 						},
 					};

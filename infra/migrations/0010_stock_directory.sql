@@ -16,8 +16,11 @@
 --
 -- `stock_directory_meta` holds one row per owner and market: how many rows
 -- are stored, the date the source says its list is effective (JPX; NULL for
--- SEC), and when the stored list was downloaded. A market without a meta row
--- was never downloaded.
+-- SEC), when the stored list was downloaded, and `fold_version` — the
+-- `STOCK_SEARCH_FOLD_VERSION` the market's keys were computed with. A search
+-- that finds a different version re-keys that market's rows in TypeScript
+-- before answering, so a changed fold never leaves stale keys behind. A
+-- market without a meta row was never downloaded.
 --
 -- WITHOUT ROWID: the primary key (owner, market, symbol) IS the table, so a
 -- search reads the owner's rows as one contiguous range of the B-tree
@@ -54,5 +57,6 @@ CREATE TABLE IF NOT EXISTS stock_directory_meta (
 	entry_count INTEGER NOT NULL,
 	as_of TEXT,
 	retrieved_at TEXT NOT NULL,
+	fold_version INTEGER NOT NULL,
 	PRIMARY KEY (owner_id, market)
 ) WITHOUT ROWID;

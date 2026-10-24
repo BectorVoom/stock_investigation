@@ -44,6 +44,9 @@ export function inMemoryStockDirectory(
 		getEntry: async (_ownerId, market, symbol) =>
 			rows.find((row) => row.market === market && row.symbol === symbol) ?? null,
 		listMeta: async () => [...metas].sort((a, b) => (a.market < b.market ? -1 : 1)),
+		listEntries: async (_ownerId, market) => rows.filter((row) => row.market === market),
+		// Keys are not stored here: the reference ranking folds on every search.
+		storeKeys: async () => {},
 	};
 }
 

@@ -385,6 +385,18 @@ export interface JobRepository {
 		readonly failureCode: string | null;
 		readonly at: string;
 	} | null>;
+	/**
+	 * Newest job of a kind in state `failed` (cancelled runs excluded: an
+	 * owner's cancel is neither a failure nor hides one), with its stable
+	 * code and the API's own completion time. ADR-0033 status.
+	 */
+	findLatestFailedByKind(
+		ownerId: string,
+		kind: JobKind,
+		scope?: JobKindScope,
+	): Promise<{ readonly failureCode: string | null; readonly at: string } | null>;
+	/** How many of the owner's jobs are not in a terminal state (admission pre-check). */
+	countUnfinished(ownerId: string): Promise<number>;
 }
 
 export interface AppliedCommand {
@@ -835,6 +847,8 @@ export interface StockDirectoryCompletion {
 	readonly market: WatchMarket;
 	readonly asOf: string | null;
 	readonly retrievedAt: string;
+	/** The `STOCK_SEARCH_FOLD_VERSION` the rows' keys were computed with. */
+	readonly foldVersion: number;
 	/** Distinct symbols of `market`, at most `STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket`. */
 	readonly rows: readonly StockDirectoryRow[];
 }
@@ -845,6 +859,18 @@ export interface StockDirectoryMeta {
 	readonly entryCount: number;
 	readonly asOf: string | null;
 	readonly retrievedAt: string;
+	/** The `STOCK_SEARCH_FOLD_VERSION` the stored keys were computed with. */
+	readonly foldVersion: number;
+}
+
+/** New keys for one market's stored rows, computed with the current fold. */
+export interface StockDirectoryRekey {
+	readonly market: WatchMarket;
+	/** Every stored row of the market, with its keys recomputed. */
+	readonly rows: readonly StockDirectoryRow[];
+	/** The version the meta row must still hold for the version stamp to move. */
+	readonly fromVersion: number;
+	readonly toVersion: number;
 }
 
 export interface StockDirectoryRepository {
@@ -865,6 +891,16 @@ export interface StockDirectoryRepository {
 	): Promise<StoredStockDirectoryEntry | null>;
 	/** The meta row of every market that has a stored list. */
 	listMeta(ownerId: string): Promise<readonly StockDirectoryMeta[]>;
+	/** Every stored row of one market (for re-keying after a fold change). */
+	listEntries(ownerId: string, market: WatchMarket): Promise<readonly StoredStockDirectoryEntry[]>;
+	/**
+	 * Writes recomputed keys in one atomic batch. A key is written only to a
+	 * row whose symbol, name and local name still equal the ones it was
+	 * computed from, so a list replaced concurrently never receives keys of
+	 * the old names; the meta version moves from `fromVersion` to
+	 * `toVersion` by compare-and-set.
+	 */
+	storeKeys(ownerId: string, rekey: StockDirectoryRekey): Promise<void>;
 }
 
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */

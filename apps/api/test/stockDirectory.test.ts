@@ -14,7 +14,7 @@ import {
 	type WatchMarket,
 	watchlistResponseSchema,
 } from "@research/contracts";
-import { rankStockSearch } from "@research/domain";
+import { rankStockSearch, STOCK_SEARCH_FOLD_VERSION } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
 	advanceToPublishing,
@@ -361,6 +361,94 @@ describe("stock directory status and refresh queue (ADR-0033)", () => {
 			STOCK_DIRECTORY_LIMITS.minEntriesPerMarket + 1,
 		);
 	});
+
+	it("clears a failure on a later success by the API's own times; cancels never count", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const fetchedBeforeFailure = harness.time.clock.nowIso();
+		const failRun = async (code: string) => {
+			const lease = await claimDirectory(harness, token, "US");
+			harness.time.advance(60_000);
+			const failed = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
+				outcome: "failed",
+				leaseGeneration: lease.leaseGeneration,
+				usage: USAGE,
+				failureCode: code,
+				retryable: false,
+			});
+			expect(failed.status).toBe(200);
+			return harness.time.clock.nowIso();
+		};
+		const cancelRun = async () => {
+			const queued = await queueDirectory(harness, { markets: ["US"] });
+			const runId = (await body(queued, stockDirectoryRefreshResponseSchema)).runs[0]?.runId;
+			harness.time.advance(60_000);
+			const cancelled = await harness.call(
+				"POST",
+				`/research-runs/${runId}/cancel`,
+				undefined,
+				idempotencyKey(),
+			);
+			expect(cancelled.status).toBe(200);
+		};
+		const usFailure = async () => (await status(harness)).markets[0]?.lastFailure ?? null;
+
+		await failRun("DIRECTORY_SOURCE_FAILED");
+		expect(await usFailure()).toMatchObject({ code: "DIRECTORY_SOURCE_FAILED" });
+		// The runner says it fetched BEFORE the failure; the API completed the
+		// run after it, and only the API's time counts.
+		harness.time.advance(60_000);
+		const lease = await claimDirectory(harness, token, "US");
+		const stored = await harness.runner(
+			token,
+			`/jobs/${lease.runId}/complete`,
+			directoryCompletion(lease, "US", usList(), null, fetchedBeforeFailure),
+		);
+		expect(stored.status).toBe(200);
+		expect(await usFailure()).toBeNull();
+		await cancelRun();
+		expect(await usFailure()).toBeNull();
+
+		// Success, then a failure: the failure is current, and a later cancel
+		// neither replaces nor hides it.
+		const failedAt = await failRun("DIRECTORY_RATE_LIMITED");
+		await cancelRun();
+		expect(await usFailure()).toEqual({
+			state: "failed",
+			code: "DIRECTORY_RATE_LIMITED",
+			at: failedAt,
+		});
+	});
+
+	it("refuses a reused key for another market set while the first run is active", async () => {
+		const harness = createHarness();
+		const key = idempotencyKey();
+		const first = await queueDirectory(harness, { markets: ["US"] }, key);
+		expect(first.status).toBe(202);
+		for (const markets of [["US", "JP"], ["JP"]]) {
+			const reused = await queueDirectory(harness, { markets }, key);
+			expect(reused.status, markets.join(",")).toBe(409);
+			expect(await errorCode(reused)).toBe("IDEMPOTENCY_KEY_REUSED");
+		}
+		expect((await status(harness)).markets[1]?.activeRunId).toBeNull();
+	});
+
+	it("queues no market when admission refuses one of them (all or nothing)", async () => {
+		const harness = createHarness();
+		// Spend 29 of the 30 hourly job allowances, cancelling each run so the
+		// unfinished-run cap is not what refuses.
+		for (let index = 0; index < 29; index += 1) {
+			const queued = await queueDirectory(harness, { markets: ["US"] });
+			expect(queued.status).toBe(202);
+			const runId = (await body(queued, stockDirectoryRefreshResponseSchema)).runs[0]?.runId;
+			await harness.call("POST", `/research-runs/${runId}/cancel`, undefined, idempotencyKey());
+		}
+		const both = await queueDirectory(harness, { markets: ["US", "JP"] });
+		expect(both.status).toBe(429);
+		expect(await errorCode(both)).toBe("RATE_LIMITED");
+		const current = await status(harness);
+		expect(current.markets.map((market) => market.activeRunId)).toEqual([null, null]);
+	});
 });
 
 /* ---------- completion commit ---------- */
@@ -505,6 +593,7 @@ describe("stock directory completion (ADR-0033)", () => {
 					market: "US",
 					asOf: "2026-01-01",
 					retrievedAt: "2026-01-01T00:00:00.000Z",
+					foldVersion: STOCK_SEARCH_FOLD_VERSION,
 					rows: stockDirectoryRows("US", [
 						{ symbol: "NEW", name: "Never Stored", listing: "nyse" },
 					]),
@@ -587,6 +676,94 @@ describe("stock directory completion (ADR-0033)", () => {
 /* ---------- search and adding a stock ---------- */
 
 describe("stock directory search (ADR-0033)", () => {
+	it("re-keys a market stored under another fold version before answering", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await storeDirectory(harness, token, "US", usList());
+		await storeDirectory(harness, token, "JP", jpList());
+		const versions = async () =>
+			(
+				await env.DB.prepare(
+					"SELECT market, fold_version FROM stock_directory_meta WHERE owner_id = ? ORDER BY market",
+				)
+					.bind(harness.ownerId)
+					.all<{ market: string; fold_version: number }>()
+			).results;
+		expect(await versions()).toEqual([
+			{ market: "JP", fold_version: STOCK_SEARCH_FOLD_VERSION },
+			{ market: "US", fold_version: STOCK_SEARCH_FOLD_VERSION },
+		]);
+		// Simulate lists stored by an older fold: keys that no query matches.
+		await env.DB.batch(
+			(["US", "JP"] as const).flatMap((market) => [
+				env.DB.prepare(
+					`UPDATE stock_directory SET symbol_key = '-', name_key = '-', local_name_key = '-',
+						search_key = '-' WHERE owner_id = ? AND market = ?`,
+				).bind(harness.ownerId, market),
+				env.DB.prepare(
+					"UPDATE stock_directory_meta SET fold_version = ? WHERE owner_id = ? AND market = ?",
+				).bind(STOCK_SEARCH_FOLD_VERSION - 1, harness.ownerId, market),
+			]),
+		);
+		// Searching JP re-keys JP only, and the very first answer is right.
+		expect((await search(harness, "q=%E3%81%A8%E3%82%88%E3%81%9F&market=JP")).map(hitKey)).toEqual([
+			"JP:7203",
+		]);
+		expect(await versions()).toEqual([
+			{ market: "JP", fold_version: STOCK_SEARCH_FOLD_VERSION },
+			{ market: "US", fold_version: STOCK_SEARCH_FOLD_VERSION - 1 },
+		]);
+		const toyota = await env.DB.prepare(
+			"SELECT search_key FROM stock_directory WHERE owner_id = ? AND market = 'JP' AND symbol = '7203'",
+		)
+			.bind(harness.ownerId)
+			.first<{ search_key: string }>();
+		expect(toyota?.search_key).toBe("7203\ntoyota motor corporation\nトヨタ自動車");
+		const stale = await env.DB.prepare(
+			"SELECT COUNT(*) AS n FROM stock_directory WHERE owner_id = ? AND search_key = '-'",
+		)
+			.bind(harness.ownerId)
+			.first<{ n: number }>();
+		expect(stale?.n).toBe(STOCK_DIRECTORY_LIMITS.minEntriesPerMarket + 1);
+		// A search over both markets re-keys US too.
+		expect((await search(harness, "q=aapl")).map(hitKey)).toEqual(["US:AAPL"]);
+		expect((await versions()).map((row) => row.fold_version)).toEqual([
+			STOCK_SEARCH_FOLD_VERSION,
+			STOCK_SEARCH_FOLD_VERSION,
+		]);
+	});
+
+	it("writes re-computed keys only onto rows whose names they were computed from", async () => {
+		const ownerId = `owner-rekey-${crypto.randomUUID()}`;
+		await seedDirectly(ownerId, [
+			{ market: "JP", symbol: "7203", name: "TOYOTA MOTOR CORPORATION", localName: "トヨタ自動車" },
+		]);
+		await env.DB.prepare(
+			"INSERT INTO stock_directory_meta (owner_id, market, entry_count, as_of, retrieved_at, fold_version) VALUES (?, 'JP', 1, NULL, '2026-10-01T00:00:00.000Z', 1)",
+		)
+			.bind(ownerId)
+			.run();
+		const persistence = createD1Adapters(env.DB);
+		// Keys computed from a name the row no longer has (a list replaced
+		// between the read and the write) must not land on it.
+		await persistence.stockDirectory.storeKeys(ownerId, {
+			market: "JP",
+			rows: stockDirectoryRows("JP", [
+				{ symbol: "7203", name: "Old Name", localName: "旧名", listing: "tse-prime" },
+			]),
+			fromVersion: 1,
+			toVersion: STOCK_SEARCH_FOLD_VERSION,
+		});
+		const row = await env.DB.prepare(
+			"SELECT name_key FROM stock_directory WHERE owner_id = ? AND symbol = '7203'",
+		)
+			.bind(ownerId)
+			.first<{ name_key: string }>();
+		expect(row?.name_key).toBe("toyota motor corporation");
+		const meta = await persistence.stockDirectory.listMeta(ownerId);
+		expect(meta[0]?.foldVersion).toBe(STOCK_SEARCH_FOLD_VERSION);
+	});
+
 	it("finds by name, symbol, kana and full-width text and marks watched stocks", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
@@ -607,6 +784,10 @@ describe("stock directory search (ADR-0033)", () => {
 			const hits = await search(harness, `q=${encodeURIComponent(query)}&market=JP`);
 			expect(hits.map(hitKey), query).toEqual(["JP:7203"]);
 		}
+		// A form-encoded space ("+", what URLSearchParams writes) separates terms.
+		const params = new URLSearchParams({ q: "toyota motor", market: "JP" });
+		expect(params.toString()).toContain("+");
+		expect((await search(harness, params.toString())).map(hitKey)).toEqual(["JP:7203"]);
 		const added = await harness.call("POST", "/watchlist/stocks", { market: "JP", symbol: "7203" });
 		expect(added.status).toBe(200);
 		const [toyota] = await search(harness, "q=7203&market=JP&limit=1");

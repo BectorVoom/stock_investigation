@@ -91,6 +91,7 @@ import {
 	toWorkspaceRecord,
 	toWorkspaceSummary,
 } from "./rows.ts";
+import { chunkStockDirectoryRows } from "./stockDirectoryChunks.ts";
 
 /** Quoted, comma-separated SQL literals for a fixed list of state names. */
 const sqlList = (values: readonly string[]) => values.map((value) => `'${value}'`).join(", ");
@@ -710,6 +711,32 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			if (row === null) return null;
 			const value = (row as Record<string, unknown>).updated_at;
 			return typeof value === "string" ? value : null;
+		},
+		async findLatestFailedByKind(ownerId, kind, scope) {
+			const row = await db
+				.prepare(
+					`SELECT failure_code, updated_at FROM research_jobs
+					WHERE owner_id = ?1 AND kind = ?2 AND state = 'failed' AND ${marketScopeSql(3)}
+					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
+				)
+				.bind(ownerId, kind, scope?.market ?? null)
+				.first();
+			if (row === null) return null;
+			const failed = decode(
+				"research_jobs",
+				z.object({ failure_code: z.string().nullable(), updated_at: z.string() }),
+				row,
+			);
+			return { failureCode: failed.failure_code, at: failed.updated_at };
+		},
+		async countUnfinished(ownerId) {
+			const row = await db
+				.prepare(
+					`SELECT COUNT(*) AS n FROM research_jobs WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})`,
+				)
+				.bind(ownerId)
+				.first();
+			return row === null ? 0 : numberColumn("research_jobs", "n", row);
 		},
 		async findLatestFailureByKind(ownerId, kind, scope) {
 			// S2: the newest terminal run that did not succeed (completed runs
@@ -1697,12 +1724,54 @@ export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryR
 		async listMeta(ownerId) {
 			const { results } = await db
 				.prepare(
-					`SELECT market, entry_count, as_of, retrieved_at FROM stock_directory_meta
+					`SELECT market, entry_count, as_of, retrieved_at, fold_version FROM stock_directory_meta
 					WHERE owner_id = ? ORDER BY market`,
 				)
 				.bind(ownerId)
 				.all();
 			return results.map(toStockDirectoryMeta);
+		},
+		async listEntries(ownerId, market) {
+			const { results } = await db
+				.prepare(
+					`SELECT market, symbol, name, local_name, listing FROM stock_directory
+					WHERE owner_id = ? AND market = ?`,
+				)
+				.bind(ownerId, market)
+				.all();
+			return results.map(toStoredStockDirectoryEntry);
+		},
+		async storeKeys(ownerId, rekey) {
+			// Same byte-bounded chunks as the completion's inserts (S5). The
+			// name match makes each UPDATE safe against a list replaced since
+			// the rows were read: keys land only on the rows they were
+			// computed from (a replacement already carries current keys).
+			const statements: SqlStatement[] = chunkStockDirectoryRows(rekey.rows).map((chunk) =>
+				db
+					.prepare(
+						`UPDATE stock_directory SET
+							symbol_key = payload.symbol_key, name_key = payload.name_key,
+							local_name_key = payload.local_name_key, search_key = payload.search_key
+						FROM (SELECT json_extract(value, '$[0]') AS symbol, json_extract(value, '$[1]') AS name,
+								json_extract(value, '$[2]') AS local_name, json_extract(value, '$[4]') AS symbol_key,
+								json_extract(value, '$[5]') AS name_key, json_extract(value, '$[6]') AS local_name_key,
+								json_extract(value, '$[7]') AS search_key
+							FROM json_each(?)) AS payload
+						WHERE stock_directory.owner_id = ? AND stock_directory.market = ?
+							AND stock_directory.symbol = payload.symbol AND stock_directory.name = payload.name
+							AND stock_directory.local_name IS payload.local_name`,
+					)
+					.bind(chunk, ownerId, rekey.market),
+			);
+			statements.push(
+				db
+					.prepare(
+						`UPDATE stock_directory_meta SET fold_version = ?
+						WHERE owner_id = ? AND market = ? AND fold_version = ?`,
+					)
+					.bind(rekey.toVersion, ownerId, rekey.market, rekey.fromVersion),
+			);
+			await db.batch(statements);
 		},
 	};
 }

@@ -351,8 +351,11 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			// ADR-0033: a stock the directory lists is stored with the
 			// directory's (English / SEC / JPX) name, so the table names the
 			// company at once. The Japanese local name never goes here, and a
-			// stock outside the directory keeps a null name for the earnings
-			// refresh to fill (its COALESCE never overwrites a stored name).
+			// stock outside the directory starts with a null name. Either way
+			// the earnings refresh may replace the name later: a refresh that
+			// returns a company name stores it (`COALESCE(new, stored)` in the
+			// completion commit), and one that returns none keeps the stored
+			// name.
 			const listed = await deps.stockDirectory.getEntry(ownerId, market, parsed.data.symbol);
 			// The cap is enforced by the INSERT itself (see the port): the
 			// outcome tells an idempotent re-add apart from a full list, and

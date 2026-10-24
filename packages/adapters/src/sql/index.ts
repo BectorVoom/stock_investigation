@@ -55,7 +55,7 @@ import { createResearchUnitOfWork } from "./unitOfWork.ts";
 
 export type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 export { StoredDataError } from "./rows.ts";
-export { chunkStockDirectoryRows, STOCK_DIRECTORY_CHUNK_BYTES } from "./unitOfWork.ts";
+export { chunkStockDirectoryRows, STOCK_DIRECTORY_CHUNK_BYTES } from "./stockDirectoryChunks.ts";
 
 /** Every SQL-backed port, built from one database. */
 export function createSqlPersistence(db: SqlDatabase): Persistence {

@@ -213,6 +213,8 @@ function fakes(canvas: WorkspaceState = emptyWorkspaceState(WORKSPACE)): Fakes {
 		findActiveNotebookAssist: async () => null,
 		findLatestSuccessAtByKind: async () => null,
 		findLatestFailureByKind: async () => null,
+		findLatestFailedByKind: async () => null,
+		countUnfinished: async () => 0,
 	};
 	const chatMessages: ChatMessage[] = [];
 	const chat: ChatRepository = {

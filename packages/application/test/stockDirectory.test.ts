@@ -1,5 +1,5 @@
 import type { WatchMarket } from "@research/contracts";
-import { foldStockSearchText } from "@research/domain";
+import { foldStockSearchText, STOCK_SEARCH_FOLD_VERSION } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import type {
 	AuditEntry,
@@ -7,6 +7,7 @@ import type {
 	JobKindScope,
 	JobRecord,
 	JobRepository,
+	StockDirectoryRekey,
 	StoredStockDirectoryEntry,
 	StoredWatchlistStock,
 } from "../src/ports.ts";
@@ -14,6 +15,7 @@ import { createStockDirectoryService, stockDirectoryRows } from "../src/stockDir
 import { fixedClock, inMemoryStockDirectory } from "./support.ts";
 
 const OWNER = "owner_1";
+const UNFINISHED: readonly string[] = ["pending", "claimed", "publishing"];
 
 const ROWS: readonly StoredStockDirectoryEntry[] = [
 	{ market: "US", symbol: "AAPL", name: "Apple Inc.", localName: null, listing: "nasdaq" },
@@ -77,34 +79,49 @@ function inMemoryJobs() {
 			const active = stored
 				.map((entry) => entry.job)
 				.filter(
-					(job) =>
-						job.kind === kind &&
-						["pending", "claimed", "publishing"].includes(job.state) &&
-						inScope(job, scope),
+					(job) => job.kind === kind && UNFINISHED.includes(job.state) && inScope(job, scope),
 				);
 			return active[active.length - 1] ?? null;
 		},
 		findActiveNotebookAssist: unused,
-		findLatestSuccessAtByKind: unused,
-		async findLatestFailureByKind(_ownerId, kind, scope) {
-			const failed = stored
-				.map((entry) => entry.job)
-				.filter((job) => job.kind === kind && job.state === "failed" && inScope(job, scope));
-			const last = failed[failed.length - 1];
-			return last === undefined
-				? null
-				: { state: last.state, failureCode: last.failureCode, at: last.updatedAt };
+		findLatestFailureByKind: unused,
+		async findLatestSuccessAtByKind(_ownerId, kind, scope) {
+			return newest(kind, "completed", scope)?.updatedAt ?? null;
+		},
+		async findLatestFailedByKind(_ownerId, kind, scope) {
+			const last = newest(kind, "failed", scope);
+			return last === undefined ? null : { failureCode: last.failureCode, at: last.updatedAt };
+		},
+		async countUnfinished() {
+			return stored.filter((entry) => UNFINISHED.includes(entry.job.state)).length + others;
 		},
 	};
+	function newest(kind: string, state: string, scope: JobKindScope | undefined) {
+		return stored
+			.map((entry) => entry.job)
+			.filter((job) => job.kind === kind && job.state === state && inScope(job, scope))
+			.sort((a, b) => (a.updatedAt < b.updatedAt ? -1 : 1))
+			.at(-1);
+	}
+	/** Unfinished jobs of other kinds, for the capacity check. */
+	let others = 0;
 	return {
 		jobs,
 		stored,
-		/** Ends a stored run, as a completion would. */
-		finish(runId: string, state: "completed" | "failed", failureCode: string | null) {
+		/** Ends a stored run at the API time `at`, as a completion would. */
+		finish(
+			runId: string,
+			state: "completed" | "failed" | "cancelled",
+			failureCode: string | null,
+			at = "2026-10-11T00:00:00.000Z",
+		) {
 			const index = stored.findIndex((entry) => entry.job.runId === runId);
 			const entry = stored[index];
 			if (entry === undefined) throw new Error("no such run");
-			stored[index] = { ...entry, job: { ...entry.job, state, failureCode } };
+			stored[index] = { ...entry, job: { ...entry.job, state, failureCode, updatedAt: at } };
+		},
+		setOtherUnfinished(count: number) {
+			others = count;
 		},
 	};
 }
@@ -113,20 +130,29 @@ function serviceWith(
 	options: {
 		readonly watched?: readonly StoredWatchlistStock[];
 		readonly allowed?: () => boolean;
+		readonly jpFoldVersion?: number;
 	} = {},
 ) {
 	const jobs = inMemoryJobs();
 	const audits: AuditEntry[] = [];
+	const rekeys: StockDirectoryRekey[] = [];
 	let counter = 0;
+	const directory = inMemoryStockDirectory(ROWS, [
+		{
+			market: "JP",
+			entryCount: 3707,
+			asOf: "2026-09-30",
+			retrievedAt: "2026-10-01T00:00:00.000Z",
+			foldVersion: options.jpFoldVersion ?? STOCK_SEARCH_FOLD_VERSION,
+		},
+	]);
 	const service = createStockDirectoryService({
-		stockDirectory: inMemoryStockDirectory(ROWS, [
-			{
-				market: "JP",
-				entryCount: 3707,
-				asOf: "2026-09-30",
-				retrievedAt: "2026-10-01T00:00:00.000Z",
+		stockDirectory: {
+			...directory,
+			storeKeys: async (_ownerId, rekey) => {
+				rekeys.push(rekey);
 			},
-		]),
+		},
 		watchlist: { listStocks: async () => options.watched ?? [] },
 		jobs: jobs.jobs,
 		clock: fixedClock().clock,
@@ -143,7 +169,7 @@ function serviceWith(
 			},
 		},
 	});
-	return { service, jobs, audits };
+	return { service, jobs, audits, rekeys };
 }
 
 function watched(market: WatchMarket, symbol: string): StoredWatchlistStock {
@@ -279,7 +305,19 @@ describe("stock directory service (ADR-0033)", () => {
 		expect(status.ok && status.value.markets[1]?.lastFailure).toBeNull();
 	});
 
-	it("stops at the hourly allowance and keeps the markets already queued", async () => {
+	it("refuses the same key for another market set even while its run is active", async () => {
+		const { service, jobs } = serviceWith();
+		const first = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000001");
+		expect(first.ok).toBe(true);
+		const reused = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
+		expect(!reused.ok && reused.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
+		// A key stored for a market the new request does not name counts too.
+		const narrowed = await service.queueRefresh(OWNER, { markets: ["JP"] }, "key-00000001");
+		expect(!narrowed.ok && narrowed.error.code).toBe("IDEMPOTENCY_KEY_REUSED");
+		expect(jobs.stored).toHaveLength(1);
+	});
+
+	it("queues nothing when the hourly allowance refuses any market (all or nothing)", async () => {
 		let left = 1;
 		const { service, jobs } = serviceWith({
 			allowed: () => {
@@ -289,6 +327,84 @@ describe("stock directory service (ADR-0033)", () => {
 		});
 		const result = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
 		expect(!result.ok && result.error.code).toBe("RATE_LIMITED");
-		expect(jobs.stored.map((entry) => entry.key)).toEqual(["key-00000001:US"]);
+		expect(jobs.stored).toEqual([]);
+	});
+
+	it("queues nothing when the new runs would pass the unfinished-run cap", async () => {
+		const { service, jobs } = serviceWith();
+		jobs.setOtherUnfinished(4);
+		const both = await service.queueRefresh(OWNER, { markets: ["US", "JP"] }, "key-00000001");
+		expect(!both.ok && both.error.code).toBe("RATE_LIMITED");
+		expect(jobs.stored).toEqual([]);
+		// One new run still fits.
+		const one = await service.queueRefresh(OWNER, { markets: ["US"] }, "key-00000002");
+		expect(one.ok && one.value.runs.map((run) => run.market)).toEqual(["US"]);
+	});
+
+	it("reports a failure only while no later run of the market succeeded; cancels never count", async () => {
+		const { service, jobs } = serviceWith();
+		const usFailure = async () => {
+			const status = await service.getStatus(OWNER);
+			if (!status.ok) throw new Error("status failed");
+			return status.value.markets[0]?.lastFailure ?? null;
+		};
+		const queue = async (key: string) => {
+			const queued = await service.queueRefresh(OWNER, { markets: ["US"] }, key);
+			if (!queued.ok) throw new Error("queue failed");
+			return queued.value.runs[0]?.runId ?? "";
+		};
+		// Failure, then a later success: the stored list is good again.
+		jobs.finish(
+			await queue("key-00000001"),
+			"failed",
+			"DIRECTORY_SOURCE_FAILED",
+			"2026-10-11T01:00:00.000Z",
+		);
+		expect(await usFailure()).toEqual({
+			state: "failed",
+			code: "DIRECTORY_SOURCE_FAILED",
+			at: "2026-10-11T01:00:00.000Z",
+		});
+		jobs.finish(await queue("key-00000002"), "completed", null, "2026-10-11T02:00:00.000Z");
+		expect(await usFailure()).toBeNull();
+		// Success, then a failure: the failure is current.
+		jobs.finish(
+			await queue("key-00000003"),
+			"failed",
+			"DIRECTORY_RATE_LIMITED",
+			"2026-10-11T03:00:00.000Z",
+		);
+		expect(await usFailure()).toMatchObject({ code: "DIRECTORY_RATE_LIMITED" });
+		// A later cancel neither counts nor hides that failure.
+		jobs.finish(await queue("key-00000004"), "cancelled", null, "2026-10-11T04:00:00.000Z");
+		expect(await usFailure()).toMatchObject({
+			code: "DIRECTORY_RATE_LIMITED",
+			at: "2026-10-11T03:00:00.000Z",
+		});
+	});
+
+	it("re-keys a searched market stored under another fold version, before searching", async () => {
+		const stale = serviceWith({ jpFoldVersion: STOCK_SEARCH_FOLD_VERSION - 1 });
+		await stale.service.search(OWNER, { q: "toyota", market: "US", limit: 10 });
+		expect(stale.rekeys).toEqual([]);
+		await stale.service.search(OWNER, { q: "toyota", limit: 10 });
+		expect(stale.rekeys).toHaveLength(1);
+		expect(stale.rekeys[0]).toMatchObject({
+			market: "JP",
+			fromVersion: STOCK_SEARCH_FOLD_VERSION - 1,
+			toVersion: STOCK_SEARCH_FOLD_VERSION,
+		});
+		expect(stale.rekeys[0]?.rows).toEqual([
+			{
+				...ROWS[3],
+				symbolKey: "7203",
+				nameKey: "toyota motor corporation",
+				localNameKey: "トヨタ自動車",
+				searchKey: "7203\ntoyota motor corporation\nトヨタ自動車",
+			},
+		]);
+		const current = serviceWith();
+		await current.service.search(OWNER, { q: "toyota", limit: 10 });
+		expect(current.rekeys).toEqual([]);
 	});
 });

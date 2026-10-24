@@ -409,19 +409,37 @@ the job's stored request names the market) and its
 `stock-directory-refreshed` completion replaces that market's rows of
 `stock_directory` all or nothing, together with the market's
 `stock_directory_meta` row (row count, the source's effective date, download
-time), in the job's guarded completion batch (migration 0010). Each row is
-stored with folded search keys computed in TypeScript by the domain's
-`stockSearchKeys` / `stockSearchHaystack`, so the SQL ranking returns exactly
-what the reference `rankStockSearch` returns (tested on the same rows, on D1
-and on `node:sqlite`). `GET …/directory` reports each market, US then JP:
-publisher and source page, stored row count, effective date, download time,
-the active run and the last failed run of that market. `GET …/directory/search`
-answers the ranked hits (at most 20; optional `market` filter), each marked
-`registered` when it is already on the watchlist. `POST …/directory/refresh`
-(`Idempotency-Key` required; body `{ "markets": [...] }`, empty for both)
-queues one run per market, answering a market's already-active run instead
-of a second one (202). A stock added while the directory lists it is stored
-with the directory's English name.
+time, fold version), in the job's guarded completion batch (migration 0010).
+Each row is stored with folded search keys computed in TypeScript by the
+domain's `stockSearchKeys` / `stockSearchHaystack`, so the SQL ranking returns
+exactly what the reference `rankStockSearch` returns (tested on the same rows,
+on D1 and on `node:sqlite`). The meta row records the
+`STOCK_SEARCH_FOLD_VERSION` the keys were computed with; a search that finds
+a searched market under another version first re-keys that market in
+TypeScript (chunked UPDATEs that only touch rows whose names the keys were
+computed from) and stamps the current version, so a changed fold never
+searches stale keys.
+
+`GET …/directory` reports each market, US then JP: publisher and source page,
+stored row count, effective date, download time, the active run, and the
+current failure. The server decides which failure is current from its own job
+times (the terminal write of each run, never the runner's `fetchedAt`): the
+newest failed run of the market is reported only while no run of that market
+has completed after it, and a cancelled run is neither reported as a failure
+nor hides an older one. `GET …/directory/search` answers the ranked hits (at
+most 20; optional `market` filter), each marked `registered` when it is
+already on the watchlist. `POST …/directory/refresh` (`Idempotency-Key`
+required; body `{ "markets": [...] }`, empty for both) queues one run per
+market, answering a market's already-active run instead of a second one
+(202). It is all or nothing: the key is checked for every market first (the
+same key with another market set is `IDEMPOTENCY_KEY_REUSED`, even while a
+run is active), and the unfinished-run cap and hourly allowance are checked
+for every new run before any is written, so a refused request queues no
+market (only a concurrent request filling the cap between that check and the
+write can leave an earlier market queued; resending the key replays it). A
+stock added while the directory lists it is stored with the directory's
+English name; a later earnings refresh that returns a company name replaces
+it.
 
 Home dashboards and notebooks hold widgets of one specification (ADR-0024,
 `packages/contracts/src/widgets.ts`): the same types, fields, title rule and

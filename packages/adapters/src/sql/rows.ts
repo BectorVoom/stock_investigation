@@ -520,6 +520,7 @@ const stockDirectoryMetaRowSchema = z.object({
 	entry_count: z.number().int().nonnegative(),
 	as_of: z.string().nullable(),
 	retrieved_at: z.string(),
+	fold_version: z.number().int(),
 });
 
 export function toStockDirectoryMeta(row: unknown): StockDirectoryMeta {
@@ -529,6 +530,7 @@ export function toStockDirectoryMeta(row: unknown): StockDirectoryMeta {
 		entryCount: r.entry_count,
 		asOf: r.as_of,
 		retrievedAt: r.retrieved_at,
+		foldVersion: r.fold_version,
 	};
 }
 

@@ -18,6 +18,16 @@ export const STOCK_SEARCH_LIMITS = {
 	defaultResults: 10,
 } as const;
 
+/**
+ * Version of `foldStockSearchText`. The API stores every directory row's
+ * folded keys and this version beside them; a stored list whose version
+ * differs is re-keyed before it is searched. BUMP THIS WITH ANY CHANGE TO
+ * THE FOLD (or to `stockSearchKeys` / `stockSearchHaystack`), or stored keys
+ * silently stop matching what queries fold to. 1: first fold; 2: voiced
+ * kana compose after the hiragana shift.
+ */
+export const STOCK_SEARCH_FOLD_VERSION = 2;
+
 const WHITESPACE = /\s/u;
 /** Kana voicing marks: after the hiragana shift they may compose with the katakana before them. */
 const KANA_VOICING_MARKS = /[\u3099\u309a]/u;
