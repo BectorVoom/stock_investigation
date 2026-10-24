@@ -15,6 +15,12 @@ export type MessageTable = { readonly [key: string]: Message };
 export type Translations<T extends MessageTable> = { readonly [L in Locale]: T };
 
 /**
+ * The table type of a catalog, for a pure function that takes the words it
+ * needs as a parameter: `describe(input, text: MessagesOf<typeof myMessages>)`.
+ */
+export type MessagesOf<C extends Translations<MessageTable>> = C["en"];
+
+/**
  * Declares a catalog. The English table fixes the keys and every function's
  * parameters; each other language must supply the same keys with the same
  * types, so a missing or misspelled translation is a compile error.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogProblems, defineMessages } from "../src/index.ts";
+import { catalogProblems, defineMessages, type MessagesOf } from "../src/index.ts";
 
 describe("defineMessages", () => {
 	it("keeps the tables as given", () => {
@@ -11,6 +11,8 @@ describe("defineMessages", () => {
 		expect(catalog.en.count(2)).toBe("2 items");
 		expect(catalog.ja.count(2)).toBe("2 件");
 		expect(catalogProblems(catalog)).toEqual([]);
+		const describe = (n: number, text: MessagesOf<typeof catalog>) => text.count(n);
+		expect(describe(4, catalog.ja)).toBe("4 件");
 	});
 
 	it("rejects a missing translation at compile time", () => {
