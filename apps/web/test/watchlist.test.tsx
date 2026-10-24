@@ -20,6 +20,8 @@ import {
 	createWatchlistBackend,
 	DISCONNECTED_GOOGLE,
 	FRESH_STAMP,
+	freshDirectory,
+	installDirectoryRoutes,
 	makeStock,
 	NOW_MS,
 	UPCOMING_DATE,
@@ -271,6 +273,7 @@ describe("Watchlist view", () => {
 				},
 			}),
 		);
+		installDirectoryRoutes(appBackend, freshDirectory, () => []);
 		window.location.hash = "#/watchlist";
 		try {
 			mountApp(appBackend);

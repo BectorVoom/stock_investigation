@@ -119,10 +119,21 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **User actions**
 
-- Add a stock (a US listing or a Japanese listing). The add queues an
-  earnings-date refresh itself, so the dates arrive without a further click;
-  when a refresh is already running, one follow-up is queued when it ends with
-  a stock still never refreshed.
+- Search every exchange-listed US and Japanese stock (ADR-0033) by company
+  name, Japanese name or symbol — "Apple", "トヨタ", "とよた", "toyota", "7203"
+  — in the add-a-stock search box, and pick a hit (click, or ↓/↑ then Enter;
+  Escape closes the list, then clears the text). Picking fills the market and
+  symbol and shows "Selected: …"; it adds nothing by itself.
+- Add a stock with "Add stock": the picked hit, or a symbol typed by hand
+  under "Enter a symbol instead" (market + symbol, the way to add before any
+  stock list is downloaded). The add queues an earnings-date refresh itself,
+  so the dates arrive without a further click; when a refresh is already
+  running, one follow-up is queued when it ends with a stock still never
+  refreshed.
+- Queue a download of both stock lists for the local runner ("Update stock
+  list"). Opening the page queues one download, at most once per visit, for
+  each market whose list is missing or more than 7 days old — never after the
+  US list failed for a missing `SEC_USER_AGENT`.
 - Remove a stock, with confirmation.
 - Queue an earnings-date refresh for the local runner (manual button; opening
   the page with dates never fetched or more than a day old queues one refresh,
@@ -131,6 +142,19 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **Shows**
 
+- The search results (at most 10, ranked: exact symbol, symbol prefix, name
+  prefix, other match): symbol, the company name in the UI language (the
+  Japanese name first in Japanese, the English one first in English, the
+  other beside it), market and listing (Nasdaq, NYSE, Cboe, Texas SE; Prime,
+  Standard, Growth); a stock already on the watchlist says "Added" and cannot
+  be picked. A live line under the box says "Searching…", the number of
+  results, that no stock matches, that no list is downloaded yet, or that the
+  search failed.
+- One line per stock list with its source link: "US list: 7,691 stocks,
+  retrieved …", "Japan list: 3,707 stocks, as of 2026-09-30", "not downloaded
+  yet", "Updating (state)…" while a download runs, and the last failure as a
+  fixed sentence per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT`
+  in `apps/runner/.env`).
 - The registered stocks: symbol, company name (or "unavailable (not retrieved yet)"),
   market, the next announcement date with fiscal period and timing, further dates in a
   disclosure, "date undecided" stated as text, the retrieved date, the source link, a
@@ -387,7 +411,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 6. Manipulate research UI | Chat (result previews in the thread: select items; the Notebook holds what the owner keeps) |
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
-| 9. Track earnings announcement dates | Watchlist (register stocks — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
+| 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 
 ## How the split was checked
 
@@ -401,6 +425,7 @@ notebook session backing the open conversation, Chat/Notebook tabs below `lg`),
 that Home has no composer, message list, run status or canvas region,
 the old `#/canvas/<workspaceId>`, `#/canvas`, `#/workspace/<workspaceId>`
 and `#/workspace` URLs open the Chat page, that the Watchlist page adds a
-stock and shows its refresh status, and
+stock (by symbol and from a search hit) and shows its refresh and stock-list
+status, and
 `tests/architecture/pagesDoc.test.ts` fails if this document drifts from
 `apps/web/src/pages.ts` (titles, routes, purpose sentences).

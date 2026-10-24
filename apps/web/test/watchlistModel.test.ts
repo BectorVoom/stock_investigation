@@ -57,7 +57,9 @@ describe("validateNewStock", () => {
 
 	it("lists every problem the guideline way", () => {
 		expect(validateNewStock("EU", "AAPL", EN)).toEqual(["Choose a market."]);
-		expect(validateNewStock("US", "   ", EN)).toEqual(["Enter a symbol."]);
+		expect(validateNewStock("US", "   ", EN)).toEqual([
+			"Search for a stock and pick it, or enter its symbol.",
+		]);
 		expect(validateNewStock("US", "aapl!", EN)).toEqual([
 			'"aapl!" is not a valid symbol. A US symbol starts with a letter, e.g. AAPL.',
 		]);

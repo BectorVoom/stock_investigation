@@ -895,3 +895,120 @@ describe("google calendar sync", () => {
 		expect(backend.requests).toHaveLength(0);
 	});
 });
+
+describe("stock directory (ADR-0033)", () => {
+	const US_STATUS = {
+		market: "US",
+		sourceId: "sec",
+		publisher: "U.S. Securities and Exchange Commission (SEC)",
+		sourceUrl: "https://www.sec.gov/files/company_tickers_exchange.json",
+		entryCount: 7691,
+		asOf: null,
+		retrievedAt: "2026-10-24T09:30:00Z",
+		activeRunId: null,
+		activeRunState: null,
+		lastFailure: null,
+	};
+	const JP_STATUS = {
+		...US_STATUS,
+		market: "JP",
+		sourceId: "jpx",
+		publisher: "Japan Exchange Group (JPX)",
+		sourceUrl: "https://www.jpx.co.jp/markets/statistics-equities/misc/01.html",
+		entryCount: 3707,
+		asOf: "2026-09-30",
+	};
+
+	it("reads the status and refuses one whose markets are out of order", async () => {
+		const { backend, api } = setup();
+		backend.on("GET", /watchlist\/directory$/, () =>
+			jsonResponse({ markets: [US_STATUS, JP_STATUS] }),
+		);
+		const read = await api.getStockDirectory();
+		expect(read.ok).toBe(true);
+		if (!read.ok) return;
+		expect(read.value.markets.map((entry) => entry.entryCount)).toEqual([7691, 3707]);
+
+		backend.on("GET", /watchlist\/directory$/, () =>
+			jsonResponse({ markets: [JP_STATUS, US_STATUS] }),
+		);
+		const swapped = await api.getStockDirectory();
+		expect(swapped.ok).toBe(false);
+		if (swapped.ok) return;
+		expect(swapped.error.code).toBe("INVALID_RESPONSE");
+	});
+
+	it("searches with the query in the URL and checks it first", async () => {
+		const { backend, api } = setup();
+		backend.on("GET", /watchlist\/directory\/search\?/, () =>
+			jsonResponse({
+				hits: [
+					{
+						stockId: "jp:7203",
+						market: "JP",
+						symbol: "7203",
+						name: "TOYOTA MOTOR CORPORATION",
+						localName: "トヨタ自動車",
+						listing: "tse-prime",
+						registered: false,
+					},
+				],
+			}),
+		);
+		const found = await api.searchStockDirectory({ q: " とよた ", market: "JP" });
+		expect(found.ok).toBe(true);
+		if (!found.ok) return;
+		expect(found.value.hits.map((hit) => hit.stockId)).toEqual(["jp:7203"]);
+		const url = new URL(backend.requests[0]?.path ?? "", "http://x");
+		expect(url.pathname).toBe("/api/v1/watchlist/directory/search");
+		// Trimmed like the contract; the default limit is sent explicitly.
+		expect(Object.fromEntries(url.searchParams)).toEqual({
+			q: "とよた",
+			market: "JP",
+			limit: "10",
+		});
+
+		const blank = await api.searchStockDirectory({ q: "   " });
+		expect(blank.ok).toBe(false);
+		if (blank.ok) return;
+		expect(blank.error.code).toBe("INVALID_REQUEST");
+		const tooMany = await api.searchStockDirectory({ q: "sony", limit: 21 });
+		expect(tooMany.ok).toBe(false);
+		expect(backend.requests).toHaveLength(1);
+	});
+
+	it("passes the caller's abort to fetch and ends as a network failure", async () => {
+		let seen: AbortSignal | null = null;
+		const fetch: FetchLike = (_input, init) => {
+			seen = init.signal ?? null;
+			return new Promise((_resolve, reject) => {
+				init.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+			});
+		};
+		const api = createApiClient({ fetch });
+		const controller = new AbortController();
+		const pending = api.searchStockDirectory({ q: "toyota" }, controller.signal);
+		controller.abort();
+		const result = await pending;
+		expect(seen).not.toBe(null);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.error.kind).toBe("network");
+	});
+
+	it("queues a refresh with the idempotency key and parses the runs", async () => {
+		const { backend, api } = setup();
+		backend.on("POST", /watchlist\/directory\/refresh$/, () =>
+			jsonResponse({ runs: [{ market: "JP", runId: "run_jp_1" }] }, { status: 202 }),
+		);
+		const queued = await api.refreshStockDirectory(["JP"], "idem-1234567890");
+		expect(queued).toEqual({ ok: true, value: { runs: [{ market: "JP", runId: "run_jp_1" }] } });
+		expect(backend.requests[0]?.body).toEqual({ markets: ["JP"] });
+		expect(backend.requests[0]?.headers["idempotency-key"]).toBe("idem-1234567890");
+		expect(backend.requests[0]?.headers[CSRF]).toBe(CSRF_HEADER_VALUE);
+
+		const twice = await api.refreshStockDirectory(["US", "US"], "idem-1234567890");
+		expect(twice.ok).toBe(false);
+		expect(backend.requests).toHaveLength(1);
+	});
+});

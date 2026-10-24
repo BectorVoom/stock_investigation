@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { DIRECTORY_FIXTURE_AS_OF, directoryFixtureRow } from "./directoryFixtures.ts";
 import { E2E_ORIGIN } from "./fixtures.ts";
 import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
 
@@ -14,7 +15,9 @@ import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
  * automatic sync → disconnect, plus the not-configured failure sentence),
  * the .ics download, and the secret-token subscription feed (fetch without
  * cookies, rotation, revocation). The Watchlist page itself has no calendar.
- * CSP stays clean.
+ * The stock lists (ADR-0033) download through the same runner from the
+ * fixture lists (`tests/e2e/directoryFixtures.ts`), and the add-a-stock
+ * search finds, picks and adds a stock from them. CSP stays clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -74,12 +77,21 @@ async function setSlValue(selector: string, value: string | readonly string[]): 
 	);
 }
 
-/** Registers the stock unless its row is already there (shared database). */
+/** Opens the add form's "Enter a symbol instead" disclosure unless it is open. */
+async function openManualEntry(): Promise<void> {
+	const symbol = page.getByLabel("Symbol");
+	if (await symbol.isVisible()) return;
+	await page.getByText("Enter a symbol instead", { exact: true }).click();
+	await expect(symbol).toBeVisible();
+}
+
+/** Registers the stock by its symbol unless its row is already there (shared database). */
 async function ensureStock(market: "US" | "JP", symbol: string, stockId: string): Promise<void> {
 	await page.goto("/#/watchlist");
 	await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible();
 	const row = page.locator(`tr[data-stock-id="${stockId}"]`);
 	if ((await row.count()) > 0) return;
+	await openManualEntry();
 	await page.getByLabel("Market").selectOption(market);
 	await page.getByLabel("Symbol").fill(symbol);
 	await page.getByRole("button", { name: "Add stock" }).click();
@@ -94,6 +106,66 @@ test("Watchlist is its own page behind its own navigation item", async () => {
 		"aria-current",
 		"page",
 	);
+});
+
+test("the stock lists download on the first visit and the search adds a stock", async () => {
+	test.setTimeout(180_000);
+	await page.goto("/#/watchlist");
+	await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible();
+	// Opening the page queued the missing lists itself; the runner stores the fixture lists.
+	const lists = page.locator('[data-field="directory-status"]');
+	await expect(lists.locator('p[data-market="US"]')).toContainText(
+		/^US list: [\d,]+ stocks, retrieved /,
+		{
+			timeout: 120_000,
+		},
+	);
+	await expect(lists.locator('p[data-market="JP"]')).toContainText(
+		`stocks, as of ${DIRECTORY_FIXTURE_AS_OF.JP ?? ""}.`,
+		{ timeout: 120_000 },
+	);
+
+	const toyota = directoryFixtureRow("JP", "7203");
+	const box = page.getByRole("combobox", { name: "Search stocks" });
+	const listbox = page.getByRole("listbox", { name: "Matching stocks" });
+	const selected = page.locator('[data-field="selected-stock"]');
+	const row = page.locator('tr[data-stock-id="jp:7203"]');
+	// The database is shared between runs: add 7203 only when it is not there yet.
+	if ((await row.count()) === 0) {
+		await box.fill("toyota");
+		const option = listbox.locator('[data-stock-id="jp:7203"]');
+		await expect(option).toBeVisible({ timeout: 30_000 });
+		await expect(option).toContainText(toyota.name);
+		await expect(option).toContainText("Japan · Prime");
+		await expect(listbox.locator('[data-stock-id="us:TM"]')).toBeVisible();
+		await option.click();
+		await expect(listbox).toBeHidden();
+		await expect(selected).toHaveText(`Selected: 7203 ${toyota.name} (Japan)`);
+		await page.getByRole("button", { name: "Add stock" }).click();
+		await expect(row).toBeVisible({ timeout: 30_000 });
+		await expect(box).toHaveValue("");
+		await expect(selected).toHaveText("");
+	}
+
+	// Hiragana finds the Japanese name; a registered stock says so and cannot be picked.
+	await box.fill("とよた");
+	const again = listbox.locator('[data-stock-id="jp:7203"]');
+	await expect(again).toBeVisible({ timeout: 30_000 });
+	await expect(again).toContainText(toyota.localName ?? "");
+	await expect(again).toContainText("Added");
+	await expect(again).toHaveAttribute("aria-disabled", "true");
+	await again.click();
+	await expect(selected).toHaveText("");
+	// Keyboard: ↓ makes the hit active, Escape closes the list, then clears the text.
+	await box.press("ArrowDown");
+	await expect(box).toHaveAttribute(
+		"aria-activedescendant",
+		(await again.getAttribute("id")) ?? "",
+	);
+	await box.press("Escape");
+	await expect(listbox).toBeHidden();
+	await box.press("Escape");
+	await expect(box).toHaveValue("");
 });
 
 test("adding a US and a JP stock fetches the fixture earnings dates with no manual refresh", async () => {

@@ -1,5 +1,6 @@
 import type {
 	EarningsEvent,
+	StockDirectoryHit,
 	WatchlistResponse,
 	WatchlistStock,
 	WatchMarket,
@@ -34,14 +35,22 @@ import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
+import { StockSearchBox } from "./StockSearchBox.tsx";
+import { createStockDirectoryState } from "./stockDirectory.ts";
+import { createStockSearch } from "./stockSearch.ts";
 import { watchlistMessages } from "./watchlist.messages.ts";
 import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 import {
+	directoryStatusLine,
 	earningsAutoRefreshReason,
 	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
+	hasStoredDirectoryList,
 	isWatchlistRefreshActive,
 	nextDatedEvent,
+	pickedStockFor,
+	type StockSearchState,
+	selectedStockText,
 	storedDatesPassed,
 	timingText,
 	utcTodayIso,
@@ -270,6 +279,9 @@ export function WatchlistView(props: {
 	const [busy, setBusy] = createSignal(false);
 	const [market, setMarket] = createSignal<WatchMarket>("US");
 	const [symbol, setSymbol] = createSignal("");
+	const [query, setQuery] = createSignal("");
+	const [searchState, setSearchState] = createSignal<StockSearchState>({ kind: "idle" });
+	const [picked, setPicked] = createSignal<StockDirectoryHit | null>(null);
 	const [removing, setRemoving] = createSignal<WatchlistStock | null>(null);
 	const [opener, setOpener] = createSignal<HTMLElement | null>(null);
 	let disposed = false;
@@ -279,9 +291,21 @@ export function WatchlistView(props: {
 	let followUpArmed = false;
 	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
 	let googleSyncAttemptedEtag: string | null = null;
+	const search = createStockSearch({
+		search: (text, signal) => props.api.searchStockDirectory({ q: text }, signal),
+		onState: setSearchState,
+	});
+	const directory = createStockDirectoryState({
+		api: props.api,
+		visibility: props.visibility,
+		// A list that just arrived may answer the query the owner is looking at.
+		onListsChanged: () => search.refresh(),
+	});
 	onCleanup(() => {
 		disposed = true;
 		poller.stop();
+		search.dispose();
+		directory.dispose();
 	});
 
 	/**
@@ -410,6 +434,7 @@ export function WatchlistView(props: {
 	};
 
 	onMount(() => {
+		directory.start();
 		void loadWatchlist().then(() => {
 			if (disposed) return;
 			if (isPollActive()) poller.start();
@@ -465,6 +490,9 @@ export function WatchlistView(props: {
 		}
 		const added = symbol().trim().toUpperCase();
 		setSymbol("");
+		setPicked(null);
+		setQuery("");
+		search.input("");
 		await reloadAfterWrite();
 		if (disposed) return;
 		if (isPollActive()) {
@@ -495,6 +523,34 @@ export function WatchlistView(props: {
 	};
 
 	const problems = () => validateNewStock(market(), symbol(), model());
+	/** The picked search hit while the form still holds it ("Selected: …"). */
+	const selected = () => pickedStockFor(picked(), market(), symbol());
+	const selectedText = (): string => {
+		const hit = selected();
+		return hit === null ? "" : selectedStockText(hit, locale(), model());
+	};
+	/**
+	 * Editing the search text ends a pick: the symbol it filled is cleared,
+	 * so "Add stock" never adds a stock the search box no longer shows. A
+	 * symbol typed by hand is kept.
+	 */
+	const dropPick = (): void => {
+		if (selected() !== null) setSymbol("");
+		setPicked(null);
+	};
+	const onQueryInput = (text: string): void => {
+		setQuery(text);
+		dropPick();
+		search.input(text);
+	};
+	const pickStock = (hit: StockDirectoryHit): void => {
+		setMarket(hit.market);
+		setSymbol(hit.symbol);
+		setPicked(hit);
+	};
+	const clearSearch = (): void => onQueryInput("");
+	const allDirectoryRunsActive = () =>
+		directory.status()?.markets.every((entry) => entry.activeRunId !== null) ?? false;
 	const problemsId = "watchlist-add-problems";
 	const stocks = () => data()?.stocks ?? [];
 	const openRemove = (stock: WatchlistStock, opener: HTMLElement) => {
@@ -535,50 +591,70 @@ export function WatchlistView(props: {
 				</Show>
 				<form
 					aria-label={m().addStockTitle}
-					class="mt-2 flex flex-wrap items-end gap-2"
+					class="mt-2 max-w-xl space-y-2"
 					onSubmit={(event) => {
 						event.preventDefault();
 						void addStock();
 					}}
 				>
-					<div class="w-40">
-						<label for="watchlist-market" class="block text-xs font-medium text-slate-700">
-							{m().market}
-						</label>
-						<Select
-							id="watchlist-market"
-							onChange={(event) => {
-								const next = event.currentTarget.value;
-								if (next === "US" || next === "JP") setMarket(next);
-							}}
-						>
-							<For each={WATCH_MARKETS}>
-								{(entry) => (
-									<option value={entry} selected={market() === entry}>
-										{model().marketName(entry)}
-									</option>
-								)}
-							</For>
-						</Select>
-					</div>
-					<div class="min-w-40 flex-1">
-						<label for="watchlist-symbol" class="block text-xs font-medium text-slate-700">
-							{m().symbol}
-						</label>
-						<input
-							id="watchlist-symbol"
-							type="text"
-							class={`${INPUT} font-mono`}
-							// i18n-exempt: example tickers, the same in every language
-							placeholder={market() === "US" ? "AAPL" : "7203"}
-							maxLength={16}
-							autocomplete="off"
-							spellcheck={false}
-							value={symbol()}
-							aria-describedby={problems().length > 0 ? problemsId : undefined}
-							onInput={(event) => setSymbol(event.currentTarget.value)}
-						/>
-					</div>
+					<StockSearchBox
+						id="watchlist-search"
+						query={query()}
+						state={searchState()}
+						listsStored={hasStoredDirectoryList(directory.status())}
+						onQueryInput={onQueryInput}
+						onPick={pickStock}
+						onClear={clearSearch}
+					/>
+					<output
+						data-field="selected-stock"
+						class="block min-h-5 text-sm font-medium text-slate-900"
+					>
+						{selectedText()}
+					</output>
+					<details class="group text-xs">
+						<DisclosureSummary class="text-slate-700">{m().enterSymbolInstead}</DisclosureSummary>
+						<div class="mt-1 flex flex-wrap items-end gap-2">
+							<div class="w-40">
+								<label for="watchlist-market" class="block text-xs font-medium text-slate-700">
+									{m().market}
+								</label>
+								<Select
+									id="watchlist-market"
+									onChange={(event) => {
+										const next = event.currentTarget.value;
+										if (next === "US" || next === "JP") setMarket(next);
+									}}
+								>
+									<For each={WATCH_MARKETS}>
+										{(entry) => (
+											<option value={entry} selected={market() === entry}>
+												{model().marketName(entry)}
+											</option>
+										)}
+									</For>
+								</Select>
+							</div>
+							<div class="min-w-40 flex-1">
+								<label for="watchlist-symbol" class="block text-xs font-medium text-slate-700">
+									{m().symbol}
+								</label>
+								<input
+									id="watchlist-symbol"
+									type="text"
+									class={`${INPUT} font-mono`}
+									// i18n-exempt: example tickers, the same in every language
+									placeholder={market() === "US" ? "AAPL" : "7203"}
+									maxLength={16}
+									autocomplete="off"
+									spellcheck={false}
+									value={symbol()}
+									aria-describedby={problems().length > 0 ? problemsId : undefined}
+									onInput={(event) => setSymbol(event.currentTarget.value)}
+								/>
+							</div>
+						</div>
+					</details>
 					<button
 						type="submit"
 						class={BUTTON_PRIMARY}
@@ -588,6 +664,53 @@ export function WatchlistView(props: {
 						{m().addStock}
 					</button>
 				</form>
+				<div
+					data-field="stock-lists"
+					class="mt-3 flex flex-wrap items-start justify-between gap-2 border-t border-slate-200 pt-2"
+				>
+					<div
+						class="min-w-0 flex-1 space-y-0.5 text-xs text-slate-700"
+						data-field="directory-status"
+					>
+						<Show when={directory.status()}>
+							{(current) => (
+								<For each={current().markets}>
+									{(entry) => (
+										<p data-market={entry.market}>
+											{directoryStatusLine(entry, model())}{" "}
+											<span>
+												{m().sourceColumn}:{" "}
+												<SafeLink url={entry.sourceUrl}>{entry.publisher}</SafeLink>
+											</span>
+										</p>
+									)}
+								</For>
+							)}
+						</Show>
+						<output class="block">{directory.queuedByOwner() ? m().directoryQueued : ""}</output>
+					</div>
+					<button
+						type="button"
+						class={BUTTON}
+						disabled={directory.queuing() || allDirectoryRunsActive()}
+						onClick={() => directory.update()}
+					>
+						{m().updateStockList}
+					</button>
+				</div>
+				<Show when={directory.failure()}>
+					{(current) => (
+						<div class="mt-2">
+							<ErrorNotice
+								failure={current().error}
+								title={
+									current().action === "load" ? m().directoryLoadFailed : m().directoryNotQueued
+								}
+								onRetry={current().action === "load" ? () => directory.start() : undefined}
+							/>
+						</div>
+					)}
+				</Show>
 			</Section>
 
 			<Section

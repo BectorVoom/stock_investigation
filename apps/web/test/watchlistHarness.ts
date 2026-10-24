@@ -1,4 +1,11 @@
-import type { WatchlistStock } from "@research/contracts";
+import {
+	STOCK_DIRECTORY_SOURCES,
+	type StockDirectoryMarketStatus,
+	type StockListing,
+	type WatchlistStock,
+	type WatchMarket,
+} from "@research/contracts";
+import { rankStockSearch } from "@research/domain";
 import { createFakeBackend, errorResponse, type FakeBackend, jsonResponse } from "./fakeBackend.ts";
 import { makeRun } from "./fixtures.ts";
 
@@ -38,8 +45,153 @@ export function makeStock(overrides: Partial<WatchlistStock> = {}): WatchlistSto
 	};
 }
 
+/** One stored directory row, as the fake API keeps it. */
+export interface DirectoryRow {
+	readonly market: WatchMarket;
+	readonly symbol: string;
+	readonly name: string;
+	readonly localName: string | null;
+	readonly listing: StockListing;
+}
+
+/** The rows the web tests search: the names Worker A's E2E fixtures use too. */
+export const DIRECTORY_ROWS: readonly DirectoryRow[] = [
+	{ market: "US", symbol: "AAPL", name: "Apple Inc.", localName: null, listing: "nasdaq" },
+	{ market: "US", symbol: "TM", name: "TOYOTA MOTOR CORP/", localName: null, listing: "nyse" },
+	{ market: "US", symbol: "MSFT", name: "MICROSOFT CORP", localName: null, listing: "nasdaq" },
+	{
+		market: "JP",
+		symbol: "7203",
+		name: "TOYOTA MOTOR CORPORATION",
+		localName: "トヨタ自動車",
+		listing: "tse-prime",
+	},
+	{
+		market: "JP",
+		symbol: "7205",
+		name: "HINO MOTORS,LTD.",
+		localName: "日野自動車",
+		listing: "tse-prime",
+	},
+	{
+		market: "JP",
+		symbol: "6758",
+		name: "Sony Group Corporation",
+		localName: "ソニーグループ",
+		listing: "tse-prime",
+	},
+];
+
+/** What one market's directory status says; tests mutate it to stage states. */
+export interface DirectoryMarketServer {
+	entryCount: number;
+	asOf: string | null;
+	retrievedAt: string | null;
+	activeRunId: string | null;
+	activeRunState: string | null;
+	lastFailure: { state: string; code: string; at: string } | null;
+}
+
+export interface DirectoryServer {
+	rows: DirectoryRow[];
+	US: DirectoryMarketServer;
+	JP: DirectoryMarketServer;
+}
+
+/** Both lists downloaded an hour ago: no automatic download is queued on load. */
+export function freshDirectory(): DirectoryServer {
+	return {
+		rows: [...DIRECTORY_ROWS],
+		US: {
+			entryCount: 7691,
+			asOf: null,
+			retrievedAt: FRESH_STAMP,
+			activeRunId: null,
+			activeRunState: null,
+			lastFailure: null,
+		},
+		JP: {
+			entryCount: 3707,
+			asOf: "2026-09-30",
+			retrievedAt: FRESH_STAMP,
+			activeRunId: null,
+			activeRunState: null,
+			lastFailure: null,
+		},
+	};
+}
+
+/** Nothing downloaded yet. */
+export function emptyDirectoryMarket(): DirectoryMarketServer {
+	return {
+		entryCount: 0,
+		asOf: null,
+		retrievedAt: null,
+		activeRunId: null,
+		activeRunState: null,
+		lastFailure: null,
+	};
+}
+
+function directoryMarketStatus(
+	market: WatchMarket,
+	state: DirectoryMarketServer,
+): StockDirectoryMarketStatus {
+	return { market, ...STOCK_DIRECTORY_SOURCES[market], ...state };
+}
+
+/**
+ * The stock-directory routes (ADR-0033) over `directory`: status, search
+ * ranked by the domain's reference `rankStockSearch` with `registered`
+ * read from `registeredIds()`, and a refresh that marks each market's run
+ * pending (reusing an active one, like the API). Later registrations win, so
+ * a test overrides a route by registering its own after this.
+ */
+export function installDirectoryRoutes(
+	backend: FakeBackend,
+	directory: () => DirectoryServer,
+	registeredIds: () => readonly string[],
+): void {
+	backend.on("GET", /^\/api\/v1\/watchlist\/directory$/, () =>
+		jsonResponse({
+			markets: [
+				directoryMarketStatus("US", directory().US),
+				directoryMarketStatus("JP", directory().JP),
+			],
+		}),
+	);
+	backend.on("GET", /^\/api\/v1\/watchlist\/directory\/search\?(.*)$/, (_request, match) => {
+		const params = new URLSearchParams(match[1] ?? "");
+		const query = params.get("q") ?? "";
+		const limit = Number(params.get("limit") ?? "10");
+		const market = params.get("market");
+		const rows = directory().rows.filter((row) => market === null || row.market === market);
+		const registered = new Set(registeredIds());
+		const hits = rankStockSearch(rows, query, limit).map((row) => {
+			const stockId = `${row.market.toLowerCase()}:${row.symbol}`;
+			return { stockId, ...row, registered: registered.has(stockId) };
+		});
+		return jsonResponse({ hits });
+	});
+	backend.on("POST", /^\/api\/v1\/watchlist\/directory\/refresh$/, (request) => {
+		const body = request.body;
+		const markets: WatchMarket[] =
+			typeof body === "object" && body !== null && "markets" in body && Array.isArray(body.markets)
+				? body.markets.filter((entry): entry is WatchMarket => entry === "US" || entry === "JP")
+				: ["US", "JP"];
+		const runs = markets.map((market) => {
+			const state = directory()[market];
+			state.activeRunId ??= `run_directory_${market.toLowerCase()}`;
+			state.activeRunState ??= "pending";
+			return { market, runId: state.activeRunId };
+		});
+		return jsonResponse({ runs }, { status: 202 });
+	});
+}
+
 export interface WatchServer {
 	stocks: WatchlistStock[];
+	directory: DirectoryServer;
 	activeRunId: string | null;
 	runState: string;
 	lastSucceededAt: string | null;
@@ -90,7 +242,13 @@ export function createWatchlistBackend(): {
 		lastSucceededAt: FRESH_STAMP,
 		feedCreatedAt: null,
 		google: DISCONNECTED_GOOGLE(),
+		directory: freshDirectory(),
 	};
+	installDirectoryRoutes(
+		backend,
+		() => server.directory,
+		() => server.stocks.map((stock) => stock.stockId),
+	);
 	const responseBody = () => ({
 		stocks: server.stocks,
 		refresh: {

@@ -22,7 +22,13 @@ import {
  * `FINNHUB_API_KEY` is passed through and the US leg is asserted live too.
  *
  * From a pristine copy the test starts the real `bun run dev` on test ports
- * with throwaway directories, adds JP `7203` and US `AAPL` on `/#/watchlist`
+ * with throwaway directories. Opening `/#/watchlist` queues the stock lists
+ * (ADR-0033): the runner really downloads JPX's TSE-listed issues
+ * workbooks, and the US list states the fixed `SEC_USER_AGENT` sentence
+ * (the env file sets none) unless a user agent reaches the runner. The
+ * test then finds JP `7203` with the search ("トヨタ") over the stored JPX
+ * list and adds it from the hit, adds US `AAPL` by its symbol under "Enter a
+ * symbol instead"
  * (each add queues its own earnings-date refresh — no manual click, the
  * first fetch is the automatic one) and waits for the run to complete over the
  * real network (minutes: the runner really downloads the JPX index page and
@@ -39,8 +45,9 @@ import {
  * land under `test-results-real/`, and no file under the launcher's log
  * directory may contain the feed token.
  *
- * JPX asks for low-frequency access: this spec performs exactly one refresh,
- * and must not be re-run casually.
+ * JPX asks for low-frequency access: this spec performs exactly one
+ * earnings refresh and one stock-list download, and must not be re-run
+ * casually.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -131,7 +138,7 @@ async function api<T>(method: string, path: string, body?: unknown, key?: string
 	return (text === "" ? null : JSON.parse(text)) as T;
 }
 
-/** Registers the stock through the Watchlist form unless its row is already there. */
+/** Registers the stock by its symbol ("Enter a symbol instead") unless its row is already there. */
 async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Promise<void> {
 	await page.goto(`${VITE_ORIGIN}/#/watchlist`);
 	await expect(page.getByRole("heading", { level: 2, name: "Watchlist" })).toBeVisible({
@@ -139,6 +146,10 @@ async function ensureStock(page: Page, market: "US" | "JP", symbol: string): Pro
 	});
 	const row = page.locator(`tr[data-stock-id="${market.toLowerCase()}:${symbol}"]`);
 	if ((await row.count()) > 0) return;
+	const symbolField = page.getByLabel("Symbol");
+	if (!(await symbolField.isVisible())) {
+		await page.getByText("Enter a symbol instead", { exact: true }).click();
+	}
 	await page.getByLabel("Market").selectOption(market);
 	await page.getByLabel("Symbol").fill(symbol);
 	await page.getByRole("button", { name: "Add stock" }).click();
@@ -183,7 +194,33 @@ test("a real earnings-date refresh shows the JPX date and the Finnhub key notice
 		const session = await api<{ environment: string }>("GET", "/api/v1/session");
 		expect(session.environment).toBe("development");
 
-		await ensureStock(page, "JP", "7203");
+		// The stock lists: opening the page queued them. JPX's list is
+		// downloaded for real; the US one needs SEC_USER_AGENT, which the
+		// suite's env file does not set, so it states the fixed sentence
+		// (or, when a user agent reaches the runner anyway, its count).
+		await page.goto(`${VITE_ORIGIN}/#/watchlist`);
+		const lists = page.locator('[data-field="directory-status"]');
+		await expect(lists.locator('p[data-market="JP"]')).toContainText(
+			/^Japan list: [\d,]+ stocks, (as of \d{4}-\d{2}-\d{2}|retrieved )/,
+			{ timeout: 600_000 },
+		);
+		await expect(lists.locator('p[data-market="US"]')).toContainText(
+			/SEC_USER_AGENT|stocks, retrieved/,
+			{ timeout: 600_000 },
+		);
+		// 7203 from the search over the stored JPX list, added from the hit.
+		const box = page.getByRole("combobox", { name: "Search stocks" });
+		await box.fill("トヨタ");
+		const toyotaHit = page
+			.getByRole("listbox", { name: "Matching stocks" })
+			.locator('[data-stock-id="jp:7203"]');
+		await expect(toyotaHit).toBeVisible({ timeout: 30_000 });
+		await expect(toyotaHit).toContainText("トヨタ自動車");
+		await expect(toyotaHit).toContainText("Japan · Prime");
+		await toyotaHit.click();
+		await expect(page.locator('[data-field="selected-stock"]')).toContainText("Selected: 7203 ");
+		await page.getByRole("button", { name: "Add stock" }).click();
+		await expect(page.locator('tr[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 60_000 });
 		await ensureStock(page, "US", "AAPL");
 
 		await page.goto(`${VITE_ORIGIN}/#/watchlist`);

@@ -9,10 +9,15 @@ import {
 	type GoogleCalendarState,
 	googleCalendarFailureCodeSchema,
 	parseStockId,
+	STOCK_DIRECTORY_LIMITS,
+	type StockDirectoryHit,
+	type StockDirectoryMarketStatus,
+	type StockDirectoryStatusResponse,
+	stockDirectoryFailureCodeSchema,
 } from "@research/contracts";
-import type { MessagesOf } from "@research/i18n";
+import type { Locale, MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
-import { formatInstant } from "../lib/format.ts";
+import { formatInstant, formatInteger } from "../lib/format.ts";
 import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /**
@@ -298,4 +303,253 @@ export function earningsAutoRefreshReason(
 	}
 	if (newest === Number.NEGATIVE_INFINITY) return "never-refreshed";
 	return nowMs - newest > EARNINGS_AUTO_REFRESH_STALE_MS ? "stale" : null;
+}
+
+/* ----- stock directory search (ADR-0033) ----- */
+
+const DAY_MS = 86_400_000;
+
+/** A stored list older than this is refreshed once when the Watchlist opens. */
+export const STOCK_DIRECTORY_STALE_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * DAY_MS;
+
+type DirectoryFailure = NonNullable<StockDirectoryMarketStatus["lastFailure"]>;
+
+/**
+ * The market's failure that still stands, or null. A failure at or before
+ * the stored list's download was followed by a success, so it no longer
+ * describes the list (the API may keep it beside the last success, like the
+ * earnings refresh does).
+ */
+export function currentDirectoryFailure(
+	market: StockDirectoryMarketStatus,
+): DirectoryFailure | null {
+	const failure = market.lastFailure;
+	if (failure === null) return null;
+	if (market.retrievedAt === null) return failure;
+	const failedMs = Date.parse(failure.at);
+	const retrievedMs = Date.parse(market.retrievedAt);
+	if (Number.isFinite(failedMs) && Number.isFinite(retrievedMs) && retrievedMs >= failedMs) {
+		return null;
+	}
+	return failure;
+}
+
+/** True when the market has no stored list, or its list is older than `STOCK_DIRECTORY_STALE_MS`. */
+export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: number): boolean {
+	if (market.entryCount === 0 || market.retrievedAt === null) return true;
+	const retrievedMs = Date.parse(market.retrievedAt);
+	if (!Number.isFinite(retrievedMs)) return true;
+	return nowMs - retrievedMs > STOCK_DIRECTORY_STALE_MS;
+}
+
+/**
+ * The markets the Watchlist queues a list download for when it opens
+ * (ADR-0033 decision 4), evaluated once per visit by the view: a market
+ * whose list is missing or stale, with no run of its own active, and whose
+ * standing failure is not `DIRECTORY_NOT_CONFIGURED` — a configuration
+ * error fails the same way until the owner edits `apps/runner/.env`, so it
+ * is never queued automatically (the "Update stock list" button still
+ * can). Pure: `nowMs` is passed in.
+ */
+export function directoryAutoRefreshMarkets(
+	status: StockDirectoryStatusResponse,
+	nowMs: number,
+): readonly WatchMarket[] {
+	const markets: WatchMarket[] = [];
+	for (const market of status.markets) {
+		if (market.activeRunId !== null) continue;
+		if (currentDirectoryFailure(market)?.code === "DIRECTORY_NOT_CONFIGURED") continue;
+		if (isDirectoryListStale(market, nowMs)) markets.push(market.market);
+	}
+	return markets;
+}
+
+/** True only when a status is LOADED and some market has a list download active. */
+export function isStockDirectoryRunActive(
+	status: StockDirectoryStatusResponse | null | undefined,
+): boolean {
+	return status?.markets.some((market) => market.activeRunId !== null) ?? false;
+}
+
+/**
+ * The poll signal of a directory status: fast while a download is leased,
+ * slow while every active one still waits for a runner, idle otherwise.
+ */
+export function stockDirectoryPollSignal(
+	status: StockDirectoryStatusResponse,
+): "active" | "queued" | "unchanged" {
+	const active = status.markets.filter((market) => market.activeRunId !== null);
+	if (active.length === 0) return "unchanged";
+	return active.every((market) => market.activeRunState === "pending") ? "queued" : "active";
+}
+
+/**
+ * True when some market has a stored list, false when none has, null before
+ * the status is known. Lets the search say "no list yet" instead of "no
+ * match" when an empty answer only means nothing is downloaded.
+ */
+export function hasStoredDirectoryList(
+	status: StockDirectoryStatusResponse | null,
+): boolean | null {
+	if (status === null) return null;
+	return status.markets.some((market) => market.entryCount > 0);
+}
+
+/** The fixed sentence for a stock-list failure: one per contract code, a generic one otherwise. */
+export function directoryFailureReason(
+	failure: DirectoryFailure,
+	text: WatchlistModelText,
+): string {
+	const known = stockDirectoryFailureCodeSchema.safeParse(failure.code);
+	return known.success
+		? text.directoryFailure(known.data)
+		: text.directoryFailedWithCode(failure.code);
+}
+
+/**
+ * One market's status line: "US list: 7,691 stocks, retrieved …", with the
+ * source's own as-of date when it states one (JPX), then the active
+ * download and the failure that still stands.
+ */
+export function directoryStatusLine(
+	market: StockDirectoryMarketStatus,
+	text: WatchlistModelText,
+): string {
+	const parts: string[] = [];
+	if (market.entryCount > 0 && market.retrievedAt !== null) {
+		// "7,691": the same digits and separators in both UI languages.
+		const count = formatInteger(market.entryCount);
+		parts.push(
+			market.asOf === null
+				? text.directoryCountRetrieved(count, formatInstant(market.retrievedAt))
+				: text.directoryCountAsOf(count, market.asOf),
+		);
+	} else {
+		parts.push(text.directoryNotDownloaded);
+	}
+	if (market.activeRunId !== null) {
+		parts.push(text.directoryUpdating(market.activeRunState ?? "pending"));
+	}
+	const failure = currentDirectoryFailure(market);
+	if (failure !== null) {
+		parts.push(
+			failure.state === "cancelled"
+				? text.directoryCancelled
+				: text.directoryLastFailed(directoryFailureReason(failure, text)),
+		);
+	}
+	return `${text.directoryListName(market.market)}: ${text.joinSentences(parts)}`;
+}
+
+/**
+ * The query a search box text asks, or null when there is nothing to search:
+ * trimmed and cut to the contract's `maxQueryChars`, so the request always
+ * passes `stockDirectorySearchQuerySchema`.
+ */
+export function stockSearchQuery(text: string): string | null {
+	const query = text.trim().slice(0, STOCK_DIRECTORY_LIMITS.maxQueryChars).trim();
+	return query === "" ? null : query;
+}
+
+/** What the search box shows: nothing yet, a request on its way, its hits, or its failure. */
+export type StockSearchState =
+	| { readonly kind: "idle" }
+	| { readonly kind: "searching"; readonly query: string }
+	| {
+			readonly kind: "results";
+			readonly query: string;
+			readonly hits: readonly StockDirectoryHit[];
+	  }
+	| { readonly kind: "failed"; readonly query: string; readonly error: ApiFailure };
+
+/** The hits a state holds (empty unless it holds results). */
+export function stockSearchHits(state: StockSearchState): readonly StockDirectoryHit[] {
+	return state.kind === "results" ? state.hits : [];
+}
+
+/**
+ * The search box's live status line. `listsStored` is false when no market
+ * has a list, so an empty answer is explained as "nothing downloaded" rather
+ * than "no match"; `reason` words an API failure in the UI language.
+ */
+export function stockSearchStatusText(
+	state: StockSearchState,
+	listsStored: boolean | null,
+	text: WatchlistModelText,
+	reason: (error: ApiFailure) => string,
+): string {
+	switch (state.kind) {
+		case "idle":
+			return "";
+		case "searching":
+			return text.searching;
+		case "failed":
+			return text.searchFailed(reason(state.error));
+		case "results":
+			if (state.hits.length > 0) return text.searchResults(state.hits.length);
+			return listsStored === false ? text.noListDownloaded : text.noStockMatches(state.query);
+	}
+}
+
+/** A hit's names in the UI language: the Japanese name leads in Japanese, the English one in English. */
+export interface StockHitNames {
+	readonly primary: string;
+	/** The other language's name, or null when the row has only one (US rows). */
+	readonly secondary: string | null;
+}
+
+export function stockHitNames(hit: StockDirectoryHit, locale: Locale): StockHitNames {
+	if (hit.localName === null || hit.localName === hit.name) {
+		return { primary: hit.name, secondary: null };
+	}
+	return locale === "ja"
+		? { primary: hit.localName, secondary: hit.name }
+		: { primary: hit.name, secondary: hit.localName };
+}
+
+/** "Japan · Prime": the market and the listing, in the UI language. */
+export function stockHitPlace(hit: StockDirectoryHit, text: WatchlistModelText): string {
+	return text.marketAndListing(text.marketName(hit.market), text.listingName(hit.listing));
+}
+
+/** "Selected: 7203 Toyota Motor Corp. (Japan)". */
+export function selectedStockText(
+	hit: StockDirectoryHit,
+	locale: Locale,
+	text: WatchlistModelText,
+): string {
+	return text.selectedStock(
+		hit.symbol,
+		stockHitNames(hit, locale).primary,
+		text.marketName(hit.market),
+	);
+}
+
+/**
+ * The picked hit while the form still holds its market and symbol, else
+ * null: editing the symbol or the market by hand ends the pick, so
+ * "Selected: …" never names a stock other than the one "Add stock" adds.
+ */
+export function pickedStockFor(
+	picked: StockDirectoryHit | null,
+	market: string,
+	symbol: string,
+): StockDirectoryHit | null {
+	if (picked === null) return null;
+	return picked.market === market && picked.symbol === normaliseSymbol(symbol) ? picked : null;
+}
+
+/**
+ * The option ↓/↑ moves to in a list of `count` (WAI-ARIA combobox: from no
+ * option, ↓ goes to the first and ↑ to the last; both wrap). -1 when the
+ * list is empty.
+ */
+export function moveActiveOption(
+	active: number,
+	count: number,
+	direction: "next" | "previous",
+): number {
+	if (count <= 0) return -1;
+	if (direction === "next") return active < 0 || active >= count - 1 ? 0 : active + 1;
+	return active <= 0 || active > count - 1 ? count - 1 : active - 1;
 }

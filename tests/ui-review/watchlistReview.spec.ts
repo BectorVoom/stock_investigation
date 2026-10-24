@@ -7,8 +7,8 @@ import { countByRule, formatSummaryTable, type ReviewFinding } from "./reviewMat
 /**
  * Scripted UI review of the Watchlist page (`bun run review:ui`, with
  * `chatReview.spec.ts` and `homeReview.spec.ts`). REVIEW, not a gate: drives
- * Watchlist through loading, populated, add-form, remove-dialog, feed and
- * small-viewport states at 1440/820/390 px, records PNGs plus APPENDED
+ * Watchlist through loading, populated, add-form, stock-search, remove-dialog,
+ * feed and small-viewport states at 1440/820/390 px, records PNGs plus APPENDED
  * findings in `test-results/ui-review/<engine>/findings.json`, and prints a
  * summary table. Runs after `homeReview.spec.ts` (alphabetical, one worker)
  * against the same server stack; earnings dates come from the fixture
@@ -187,11 +187,30 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await audit(page, "W desktop populated");
 
 	/* ---------- W2. Add form with problems ---------- */
+	await page.getByText("Enter a symbol instead", { exact: true }).click();
 	await page.getByLabel("Symbol").fill("bad!");
 	await page.waitForTimeout(300);
 	await shot(page, "W2-add-problems");
 	await audit(page, "W add problems");
 	await page.getByLabel("Symbol").fill("");
+
+	/* ---------- W2b. Stock search with its list open (ADR-0033) ---------- */
+	// The fixture stock lists were queued when the page first opened.
+	await expect(page.locator('[data-field="directory-status"] p[data-market="JP"]')).toContainText(
+		"stocks, as of",
+		{ timeout: 120_000 },
+	);
+	const search = page.getByRole("combobox", { name: "Search stocks" });
+	await search.fill("toyota");
+	const listbox = page.getByRole("listbox", { name: "Matching stocks" });
+	await expect(listbox.locator('[data-stock-id="jp:7203"]')).toBeVisible({ timeout: 30_000 });
+	await search.press("ArrowDown");
+	await page.waitForTimeout(300);
+	await shot(page, "W2b-search-open");
+	await audit(page, "W search open");
+	await search.press("Escape");
+	await search.press("Escape");
+	await expect(search).toHaveValue("");
 
 	/* ---------- W3. Remove confirmation ---------- */
 	await page.locator('tr[data-stock-id="us:AAPL"] button', { hasText: "Remove" }).click();

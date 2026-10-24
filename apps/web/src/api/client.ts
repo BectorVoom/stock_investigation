@@ -56,15 +56,24 @@ import {
 	runnerCredentialListResponseSchema,
 	runRecordsResponseSchema,
 	type SourcePreview,
+	type StockDirectoryRefreshResponse,
+	type StockDirectorySearchResponse,
+	type StockDirectoryStatusResponse,
 	sessionResponseSchema,
 	sourceListResponseSchema,
 	sourcePreviewSchema,
+	stockDirectoryRefreshRequestSchema,
+	stockDirectoryRefreshResponseSchema,
+	stockDirectorySearchQuerySchema,
+	stockDirectorySearchResponseSchema,
+	stockDirectoryStatusResponseSchema,
 	submitCommandResponseSchema,
 	type UpdateSourceRequest,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
 	updateSourceRequestSchema,
 	type WatchlistResponse,
+	type WatchMarket,
 	type WorkspaceSummary,
 	type WorkspaceView,
 	watchlistResponseSchema,
@@ -95,6 +104,17 @@ export type HomeDashboardResponse = Parsed<typeof homeDashboardResponseSchema>;
 export type HomeDataResponse = Parsed<typeof homeDataResponseSchema>;
 export type WatchlistData = Parsed<typeof watchlistResponseSchema>;
 export type { AddWatchlistStockRequest, CalendarFeedIssued, WatchlistResponse };
+export type {
+	StockDirectoryRefreshResponse,
+	StockDirectorySearchResponse,
+	StockDirectoryStatusResponse,
+};
+/** One stock-directory search as the Watchlist's search box asks it (ADR-0033). */
+export interface StockDirectorySearch {
+	readonly q: string;
+	readonly market?: WatchMarket;
+	readonly limit?: number;
+}
 export type UiCommand = Parsed<typeof uiCommandSchema>;
 export type SubmitCommandResponse = Parsed<typeof submitCommandResponseSchema>;
 export type WorkspaceEvents = Parsed<typeof workspaceEventsResponseSchema>;
@@ -610,6 +630,58 @@ export function createApiClient(options: ApiClientOptions = {}) {
 				researchRunResponseSchema,
 			);
 			return result.ok ? ok(result.value.run) : result;
+		},
+		/* ----- stock directory: every US and JP listed stock (ADR-0033) ----- */
+		/** Each market's stored list: size, dates, active run and last failure (US, then JP). */
+		getStockDirectory: (): Promise<ApiResult<StockDirectoryStatusResponse>> =>
+			requestJson(
+				{ method: "GET", path: `${API_PREFIX}/watchlist/directory` },
+				stockDirectoryStatusResponseSchema,
+			),
+		/**
+		 * Searches the stored lists. `signal` lets a newer keystroke cancel
+		 * this request; the query is checked against the contract first, so an
+		 * empty or over-long query never leaves the browser.
+		 */
+		searchStockDirectory: (
+			search: StockDirectorySearch,
+			signal?: AbortSignal,
+		): Promise<ApiResult<StockDirectorySearchResponse>> => {
+			const query = validate(stockDirectorySearchQuerySchema, search, {
+				kind: "invalid-request",
+				status: null,
+			});
+			if (!query.ok) return Promise.resolve(query);
+			return requestJson(
+				{
+					method: "GET",
+					path: withQuery(`${API_PREFIX}/watchlist/directory/search`, {
+						q: query.value.q,
+						market: query.value.market,
+						limit: String(query.value.limit),
+					}),
+					...(signal === undefined ? {} : { signal }),
+				},
+				stockDirectorySearchResponseSchema,
+			);
+		},
+		/** Queues one stock-list download per market for the local runner (an active one is reused). */
+		refreshStockDirectory: async (
+			markets: readonly WatchMarket[],
+			idempotencyKey: string,
+		): Promise<ApiResult<StockDirectoryRefreshResponse>> => {
+			const key = checkedIdempotencyKey(idempotencyKey);
+			if (!key.ok) return key;
+			return write(
+				{
+					method: "POST",
+					path: `${API_PREFIX}/watchlist/directory/refresh`,
+					idempotencyKey: key.value,
+				},
+				stockDirectoryRefreshRequestSchema,
+				{ markets },
+				stockDirectoryRefreshResponseSchema,
+			);
 		},
 		/** The owner's calendar document as .ics text (the caller offers it as a download). */
 		downloadWatchlistIcs: (): Promise<ApiResult<string>> =>

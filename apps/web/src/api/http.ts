@@ -134,6 +134,12 @@ export interface RequestSpec {
 	/** Sent as If-None-Match; a 304 is then returned to the caller as a success. */
 	readonly ifNoneMatch?: string | null;
 	readonly accept?: string;
+	/**
+	 * The caller's cancellation (a search a newer keystroke replaced). An
+	 * abort ends the exchange like a dropped connection: a `network` failure
+	 * the caller, which knows it aborted, ignores.
+	 */
+	readonly signal?: AbortSignal;
 }
 
 async function readErrorBody(response: Response): Promise<ApiFailure> {
@@ -192,6 +198,12 @@ export async function request<T>(
 	if (conditional) headers["If-None-Match"] = spec.ifNoneMatch ?? "";
 
 	const controller = new AbortController();
+	const callerSignal = spec.signal;
+	const forwardAbort = (): void => controller.abort();
+	if (callerSignal !== undefined) {
+		if (callerSignal.aborted) controller.abort();
+		else callerSignal.addEventListener("abort", forwardAbort, { once: true });
+	}
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<ApiResult<T>>((resolve) => {
 		timer = setTimeout(() => {
@@ -244,6 +256,7 @@ export async function request<T>(
 		return await Promise.race([exchange(), timeout]);
 	} finally {
 		clearTimeout(timer);
+		callerSignal?.removeEventListener("abort", forwardAbort);
 	}
 }
 
