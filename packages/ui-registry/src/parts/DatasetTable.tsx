@@ -1,13 +1,16 @@
 import type { DatasetCell } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
+import { citationMessages } from "../citations.messages.ts";
 import {
-	CELL_BASIS_MARKER,
+	type CellBasis,
 	cellBasis,
 	cellDisplay,
 	type DatasetColumn,
 	type GuardedDataset,
 } from "../datasetGuard.ts";
 import { ComponentCitation, citationGroupFocusOut, useCitationScope } from "./citations.tsx";
+import { datasetTableMessages } from "./parts.messages.tsx";
 import { DateText, SafeLink, type SourceMap, SourceUnavailable } from "./SourceLinks.tsx";
 import { EmptyState, Unavailable } from "./states.tsx";
 
@@ -19,6 +22,13 @@ export interface RowSelection {
 export function rowItemKey(rowIndex: number): string {
 	return `row-${rowIndex}`;
 }
+
+/** The catalog word for each marked basis (a sourced number carries its source instead). */
+const BASIS_MARKER_KEY = {
+	assumption: "basisAssumption",
+	derived: "basisDerived",
+	unstated: "basisUnstated",
+} as const satisfies { readonly [B in Exclude<CellBasis, "sourced">]: string };
 
 function columnHeading(column: DatasetColumn): string {
 	return column.unit === undefined ? column.label : `${column.label} (${column.unit})`;
@@ -56,6 +66,8 @@ function CellProvenance(props: {
 	readonly sources: SourceMap;
 	readonly chipKey: string;
 }): JSX.Element {
+	const m = useMessages(datasetTableMessages);
+	const citation = useMessages(citationMessages);
 	const scope = useCitationScope();
 	const source = createMemo(() =>
 		props.cell.sourceId === undefined ? undefined : props.sources.get(props.cell.sourceId),
@@ -84,22 +96,19 @@ function CellProvenance(props: {
 								"border-amber-700 text-amber-900": basis() === "unstated",
 							}}
 						>
-							{CELL_BASIS_MARKER[basis()]}
+							{m()[BASIS_MARKER_KEY[basis()]]}
 						</span>
 					)}
 				</Show>
 				<Show when={props.cell.asOf}>
 					{(asOf) => (
-						<span>
-							{" "}
-							as of <DateText iso={asOf()} missing="date not stated" />
-						</span>
+						<span> {m().asOf(<DateText iso={asOf()} missing={citation().dateNotStated} />)}</span>
 					)}
 				</Show>
 				<Show when={asOfMissing()}>
 					<span data-as-of-missing="true" class="italic text-amber-900">
 						{" "}
-						as-of date not stated
+						{m().asOfMissing}
 					</span>
 				</Show>
 				<Show when={props.cell.sourceId}>
@@ -111,8 +120,11 @@ function CellProvenance(props: {
 								fallback={
 									<Show when={source()} fallback={<SourceUnavailable sourceId={sourceId()} />}>
 										{(evidence) => (
-											<SafeLink url={evidence().sourceUrl} label={`Source: ${evidence().title}`}>
-												source
+											<SafeLink
+												url={evidence().sourceUrl}
+												label={citation().sourceLinkLabel(evidence().title)}
+											>
+												{citation().sourceLinkText}
 											</SafeLink>
 										)}
 									</Show>
@@ -179,6 +191,7 @@ export function DatasetTable(props: {
 	 */
 	readonly citationGroupKey: string;
 }): JSX.Element {
+	const m = useMessages(datasetTableMessages);
 	const dataset = () => props.data.dataset;
 	const scope = useCitationScope();
 	const hoverEnd = () => scope?.hoverEnd();
@@ -211,7 +224,7 @@ export function DatasetTable(props: {
 						<tr class="border-b border-slate-300 text-xs text-slate-700">
 							<Show when={props.selection}>
 								<th scope="col" class="py-1 pr-2 font-semibold">
-									Select
+									{m().select}
 								</th>
 							</Show>
 							<For each={columns()}>
@@ -243,11 +256,11 @@ export function DatasetTable(props: {
 													<button
 														type="button"
 														aria-pressed={isSelected()}
-														aria-label={`Select row ${rowIndex() + 1}`}
+														aria-label={m().selectRow(rowIndex() + 1)}
 														class="min-h-6 rounded bg-slate-200 px-1.5 text-xs text-slate-900 hover:bg-slate-300"
 														onClick={() => selection().onSelect(isSelected() ? null : itemKey())}
 													>
-														{isSelected() ? "Selected" : "Select"}
+														{isSelected() ? m().selected : m().select}
 													</button>
 												</td>
 											)}
@@ -288,7 +301,7 @@ export function DatasetTable(props: {
 					</tbody>
 				</table>
 				<Show when={dataset().rows.length === 0}>
-					<EmptyState>No rows — this dataset is empty.</EmptyState>
+					<EmptyState>{m().noRows}</EmptyState>
 				</Show>
 			</div>
 		</figure>

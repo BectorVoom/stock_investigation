@@ -1,4 +1,5 @@
 import { DATASET_LIMITS, type DatasetCell, type WidgetCore } from "@research/contracts";
+import { cellReasonMessages } from "../cellReasons.messages.ts";
 import { type GuardedDataset, guardDataset, type PresentedLabels } from "../datasetGuard.ts";
 import type { SourceMap } from "../parts/SourceLinks.tsx";
 
@@ -175,7 +176,9 @@ export function chartWidgetToGuardedDataset(widget: ChartWidget): GuardedDataset
 		for (const [seriesIndex, byKey] of bySeries.entries()) {
 			const point = byKey.get(text);
 			row[`s${seriesIndex}`] =
-				point === undefined ? { v: null, reason: "no value for this label" } : cellOf(point);
+				point === undefined
+					? { v: null, reason: cellReasonMessages.en.noValueForLabel }
+					: cellOf(point);
 		}
 		return row;
 	});

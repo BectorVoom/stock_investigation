@@ -1,5 +1,8 @@
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
-import { countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
+import { cellReasonMessages } from "../cellReasons.messages.ts";
+import { cellReasonText, countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
 import { formatAxisTick } from "../format.ts";
 import { CitationScope, SourceList } from "../parts/citations.tsx";
 import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
@@ -17,6 +20,7 @@ import {
 	type WithheldSeries,
 	type XTick,
 } from "./chartMath.ts";
+import { chartMessages } from "./charts.messages.ts";
 
 /**
  * SVG chrome shared by every chart: surface, hairline grid, one y axis, axis
@@ -151,17 +155,24 @@ export function ChartFrame(props: {
 	);
 }
 
+type ChartText = MessagesOf<typeof chartMessages>;
+
 /**
  * "<y title> by <x title>. " for a chart's accessible name, leaving out what
  * is missing (a Notebook chart may have no axis titles; a registry chart
- * always has both).
+ * always has both). `text` is the current language's chart words (English
+ * when omitted).
  */
-export function axesPhrase(yAxisTitle: string, xAxisTitle: string): string {
+export function axesPhrase(
+	yAxisTitle: string,
+	xAxisTitle: string,
+	text: ChartText = chartMessages.en,
+): string {
 	const y = yAxisTitle.trim();
 	const x = xAxisTitle.trim();
-	if (y.length > 0 && x.length > 0) return `${y} by ${x}. `;
-	if (y.length > 0) return `${y}. `;
-	if (x.length > 0) return `By ${x}. `;
+	if (y.length > 0 && x.length > 0) return text.axesBoth(y, x);
+	if (y.length > 0) return text.axesYOnly(y);
+	if (x.length > 0) return text.axesXOnly(x);
 	return "";
 }
 
@@ -175,8 +186,9 @@ export function ChartLegend(props: {
 	readonly items: readonly LegendItem[];
 	readonly mark: "line" | "block";
 }): JSX.Element {
+	const m = useMessages(chartMessages);
 	return (
-		<ul aria-label="Legend" class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-800">
+		<ul aria-label={m().legend} class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-800">
 			<For each={props.items}>
 				{(item) => (
 					<li class="flex items-center gap-1.5">
@@ -204,25 +216,23 @@ export function ChartLegend(props: {
 	);
 }
 
-function plural(count: number, singular: string, pluralForm: string): string {
-	return `${count} ${count === 1 ? singular : pluralForm}`;
-}
-
 /**
  * Marks look alike whatever a number is based on, so a chart says in words how
  * many of its values are not sourced measurements (hard gate 6). Null when all are sourced.
  */
-function basisNote(data: GuardedDataset, valueColumnKeys: readonly string[]): string | null {
+function basisNote(
+	data: GuardedDataset,
+	valueColumnKeys: readonly string[],
+	text: ChartText,
+): string | null {
 	const counts = countUnsourcedNumbers(data, valueColumnKeys);
 	const parts = [
-		counts.assumption > 0 ? plural(counts.assumption, "assumption", "assumptions") : null,
-		counts.derived > 0 ? plural(counts.derived, "derived value", "derived values") : null,
-		counts.unstated > 0
-			? plural(counts.unstated, "value with no stated basis", "values with no stated basis")
-			: null,
+		counts.assumption > 0 ? text.assumptions(counts.assumption) : null,
+		counts.derived > 0 ? text.derivedValues(counts.derived) : null,
+		counts.unstated > 0 ? text.unstatedValues(counts.unstated) : null,
 	].filter((part): part is string => part !== null);
 	if (parts.length === 0) return null;
-	return `Not sourced measurements: ${parts.join(", ")}. Each is marked in the data table.`;
+	return text.basisNote(parts);
 }
 
 /**
@@ -242,18 +252,20 @@ export function ChartNotices(props: {
 	readonly emptyMessage: string;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(chartMessages);
+	const reasons = useMessages(cellReasonMessages);
 	return (
 		<>
 			<For each={props.withheldSeries}>
 				{(series) => (
 					<p data-withheld-series={series.label} class="text-xs text-amber-900">
-						Series "{series.label}" — {series.reason}.
+						{m().withheldSeries(series.label, cellReasonText(series.reason, reasons()))}
 					</p>
 				)}
 			</For>
 			<Show when={props.missingColumns.length > 0}>
 				<output data-state="missing-columns" class="block text-xs text-amber-900">
-					Not in the dataset, so not plotted: {props.missingColumns.join(", ")}.
+					{m().missingColumns(props.missingColumns)}
 				</output>
 			</Show>
 			<Show when={props.plottedCount > 0} fallback={<EmptyState>{props.emptyMessage}</EmptyState>}>
@@ -261,8 +273,7 @@ export function ChartNotices(props: {
 			</Show>
 			<Show when={props.unavailableCount > 0}>
 				<p data-unavailable-count={props.unavailableCount} class="mt-1 text-xs text-amber-900">
-					{props.unavailableCount} {props.unavailableCount === 1 ? "point" : "points"} unavailable —
-					not plotted (never drawn as 0). See the data table for the reasons.
+					{m().unavailablePoints(props.unavailableCount)}
 				</p>
 			</Show>
 		</>
@@ -305,6 +316,7 @@ export function ChartShell(props: {
 	readonly headingHidden?: boolean;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(chartMessages);
 	// The data-table twin's cells cite too, so their ids number before the
 	// component's own sources.
 	const sourceIdsInOrder = createMemo(() => [
@@ -325,22 +337,17 @@ export function ChartShell(props: {
 								missingColumns={props.missingColumns}
 								plottedCount={props.plottedCount}
 								unavailableCount={props.unavailableCount}
-								emptyMessage={
-									data().dataset.rows.length === 0
-										? "No data — this dataset has no rows."
-										: "No plottable data — every requested value is unavailable."
-								}
+								emptyMessage={data().dataset.rows.length === 0 ? m().noRows : m().noPlottableValues}
 							>
 								{props.children}
 								<Show when={props.legend !== undefined}>{props.legend}</Show>
 								<Show when={props.readout !== undefined}>
 									<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-										{props.readout ??
-											"Point at the chart to read values; the data table below lists every value."}
+										{props.readout ?? m().readoutHint}
 									</p>
 								</Show>
 							</ChartNotices>
-							<Show when={basisNote(data(), props.valueColumnKeys)}>
+							<Show when={basisNote(data(), props.valueColumnKeys, m())}>
 								{(note) => (
 									<p data-chart-basis-note="true" class="mt-1 text-xs text-slate-800">
 										{note()}
@@ -349,11 +356,11 @@ export function ChartShell(props: {
 							</Show>
 							<details class="mt-1 text-xs">
 								<summary class="cursor-pointer py-1 text-slate-700">
-									Data table: {props.title}
+									{m().dataTableSummary(props.title)}
 								</summary>
 								<DatasetTable
 									data={data()}
-									caption={`Values plotted in "${props.title}"`}
+									caption={m().dataTableCaption(props.title)}
 									sources={props.sources}
 									columnKeys={props.tableColumnKeys}
 									citationGroupKey={`${props.citationScopeKey}::table`}

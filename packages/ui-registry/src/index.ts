@@ -1,4 +1,6 @@
 export { BASELINE_REGISTRY_ENTRIES, createBaselineUiRegistry } from "./baseline.ts";
+/** The registry's catalogs that hosts reuse for the same words (ADR-0031). */
+export { cellReasonMessages } from "./cellReasons.messages.ts";
 export { BarPlot } from "./charts/BarPlot.tsx";
 export {
 	type Bar,
@@ -101,6 +103,7 @@ export {
 	sourceHost,
 	titleOrHost,
 } from "./citationModel.ts";
+export { citationMessages } from "./citations.messages.ts";
 export {
 	type CellBasis,
 	type CellDisplay,
@@ -136,6 +139,7 @@ export {
 	SourceUnavailable,
 } from "./parts/SourceLinks.tsx";
 export { CannotRender, DataUnavailable, EmptyState, Unavailable } from "./parts/states.tsx";
+export { positionLabelMessages } from "./positionLabels.messages.ts";
 export { type PositionLabels, type PositionMetric, positionLabels } from "./positionLabels.ts";
 export {
 	type ComponentRegistryEntry,

@@ -1,4 +1,5 @@
 import { type PositionFigures, type PositionLabels, positionLabels } from "@research/domain";
+import { cellReasonMessages } from "./cellReasons.messages.ts";
 
 /**
  * Jurisdiction-specific headings and caveats for position statistics (FR-007 /
@@ -13,8 +14,8 @@ const MARGIN_MARKER =
 	/margin[\s_-]*(buy|buying|purchase|sell|selling|sale|balance|long|short)|信用/i;
 const SHORT_INTEREST_MARKER = /short[\s_-]*interest|days[\s_-]*to[\s_-]*cover/i;
 
-export const US_MARGIN_BUY_WITHHELD_REASON =
-	"not shown: no security-level US margin-buy balance exists";
+/** Stored in English in the withheld cells; the view words it (`cellReasonText`). */
+export const US_MARGIN_BUY_WITHHELD_REASON = cellReasonMessages.en.usMarginBuyWithheld;
 
 /**
  * Defence in depth for FR-007: a column that labels itself as a US margin-buy

@@ -1,5 +1,7 @@
 import type { ResearchReportProps } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
+import { citationMessages } from "../citations.messages.ts";
 import { ClaimStatusBadge, ClaimTypeBadge } from "../parts/Badges.tsx";
 import {
 	CitationScope,
@@ -10,6 +12,7 @@ import {
 import { DateText } from "../parts/SourceLinks.tsx";
 import { EmptyState } from "../parts/states.tsx";
 import type { RendererProps } from "../registry.tsx";
+import { rendererMessages } from "./renderers.messages.tsx";
 
 type Statement = ResearchReportProps["sections"][number]["statements"][number];
 
@@ -37,6 +40,7 @@ function StatementItem(props: {
 	readonly groupKey: string;
 	readonly sources: RendererProps<ResearchReportProps>["context"]["sources"];
 }): JSX.Element {
+	const m = useMessages(rendererMessages);
 	const claim = createMemo(() => verifiedClaim(props.statement));
 	const status = () => claim()?.status ?? null;
 	const scope = useCitationScope();
@@ -65,7 +69,7 @@ function StatementItem(props: {
 						data-unverified-note="true"
 						class="mt-0.5 inline-block rounded border border-dashed border-slate-500 px-1.5 py-px text-2xs font-medium leading-4 text-slate-800"
 					>
-						Unverified note — not checked against stored evidence
+						{m().unverifiedNote}
 					</p>
 				}
 			>
@@ -80,7 +84,7 @@ function StatementItem(props: {
 				when={uniqueSourceIds().length > 0}
 				fallback={
 					<p data-no-sources="true" class="mt-0.5 text-xs italic text-amber-900">
-						No sources cited for this statement.
+						{m().noStatementSources}
 					</p>
 				}
 			>
@@ -101,6 +105,8 @@ function StatementItem(props: {
 }
 
 export function ResearchReport(props: RendererProps<ResearchReportProps>): JSX.Element {
+	const m = useMessages(rendererMessages);
+	const citation = useMessages(citationMessages);
 	// The component's distinct source ids in order of first appearance: the
 	// same source keeps one number in every statement of the report.
 	const sourceIdsInOrder = createMemo(() =>
@@ -113,11 +119,14 @@ export function ResearchReport(props: RendererProps<ResearchReportProps>): JSX.E
 			<div>
 				<h3 class="text-sm font-semibold text-slate-900">{props.props.title}</h3>
 				<p class="text-xs text-slate-700">
-					Generated <DateText iso={props.props.generatedAt} missing="date not stated" />
+					{m().generated(
+						<DateText iso={props.props.generatedAt} missing={citation().dateNotStated} />,
+					)}
 					{" · "}
 					<span data-field="data-cutoff">
-						Data cut-off: <DateText iso={props.props.dataCutoffAt} missing="date not stated" /> —
-						nothing retrieved after this date informed the report.
+						{m().dataCutoff(
+							<DateText iso={props.props.dataCutoffAt} missing={citation().dateNotStated} />,
+						)}
 					</span>
 				</p>
 				<For each={props.props.sections}>
@@ -126,7 +135,7 @@ export function ResearchReport(props: RendererProps<ResearchReportProps>): JSX.E
 							<h4 class="text-sm font-semibold text-slate-800">{section.heading}</h4>
 							<Show
 								when={section.statements.length > 0}
-								fallback={<EmptyState>No statements in this section.</EmptyState>}
+								fallback={<EmptyState>{m().noStatements}</EmptyState>}
 							>
 								<ul class="mt-1 space-y-2">
 									<For each={section.statements}>

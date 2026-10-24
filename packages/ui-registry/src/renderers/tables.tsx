@@ -1,11 +1,14 @@
 import type { DataTableProps, FinancialTableProps } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { resolveDataset } from "../datasetGuard.ts";
 import { CitationScope, SourceList } from "../parts/citations.tsx";
 import { cellSourceIdsInOrder, DatasetTable, type RowSelection } from "../parts/DatasetTable.tsx";
 import { DataUnavailable } from "../parts/states.tsx";
-import { positionLabels, positionMetricsMentioned } from "../positionLabels.ts";
+import { positionLabelMessages } from "../positionLabels.messages.ts";
+import { positionMetricsMentioned } from "../positionLabels.ts";
 import type { RenderContext, RendererProps } from "../registry.tsx";
+import { rendererMessages } from "./renderers.messages.tsx";
 
 function rowSelection(componentId: string, context: RenderContext): RowSelection {
 	return {
@@ -46,6 +49,8 @@ export function DataTable(props: RendererProps<DataTableProps>): JSX.Element {
 }
 
 export function FinancialTable(props: RendererProps<FinancialTableProps>): JSX.Element {
+	const m = useMessages(rendererMessages);
+	const position = useMessages(positionLabelMessages);
 	const data = createMemo(() => resolveDataset(props.context, props.props.datasetRef));
 	const positionMetrics = createMemo(() =>
 		positionMetricsMentioned((data()?.dataset.columns ?? []).map((column) => column.label)),
@@ -70,14 +75,14 @@ export function FinancialTable(props: RendererProps<FinancialTableProps>): JSX.E
 					)}
 				</Show>
 				<p data-methodology-note="true" class="mt-2 text-xs text-slate-700">
-					<span class="font-semibold">Methodology: </span>
+					<span class="font-semibold">{m().methodology}</span>
 					{props.props.methodologyNote}
 				</p>
 				<For each={positionMetrics()}>
 					{(metric) => (
 						<p data-position-caveat={metric} class="mt-1 text-xs text-slate-700">
-							<span class="font-semibold">{positionLabels(metric).heading}: </span>
-							{positionLabels(metric).caveat}
+							<span class="font-semibold">{position().headingLabel(metric)}</span>
+							{position().caveat(metric)}
 						</p>
 					)}
 				</For>

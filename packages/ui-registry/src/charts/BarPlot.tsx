@@ -1,7 +1,9 @@
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { formatNumber } from "../format.ts";
 import type { BarModel } from "./barModel.ts";
 import { axesPhrase, ChartFrame, ChartLegend } from "./ChartFrame.tsx";
+import { chartMessages } from "./charts.messages.ts";
 
 /**
  * The shared bar plot: ChartFrame + marks + legend + hover readout.
@@ -17,6 +19,7 @@ export function BarPlot(props: {
 	readonly yUnit: string;
 	readonly title: string;
 }): JSX.Element {
+	const m = useMessages(chartMessages);
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
 	const yAxisTitle = () => {
 		const yLabel = props.yLabel.trim();
@@ -31,17 +34,19 @@ export function BarPlot(props: {
 		const values = current.valuesByRow.get(rowIndex) ?? [];
 		const parts = current.legend.map((series, seriesIndex) => {
 			const value = values[seriesIndex];
-			return `${series.label}: ${value === null || value === undefined ? "unavailable" : `${formatNumber(value)} ${props.yUnit}`}`;
+			return `${series.label}: ${value === null || value === undefined ? m().unavailable : `${formatNumber(value)} ${props.yUnit}`}`;
 		});
-		return `${[props.xLabel, current.rowLabels[rowIndex] ?? "unavailable"].filter((part) => part.length > 0).join(" ")} — ${parts.join(" · ")}`;
+		return `${[props.xLabel, current.rowLabels[rowIndex] ?? m().unavailable].filter((part) => part.length > 0).join(" ")} — ${parts.join(" · ")}`;
 	});
 
 	return (
 		<>
 			<ChartFrame
-				ariaLabel={`Bar chart: ${props.title}. ${axesPhrase(yAxisTitle(), props.xLabel)}Series: ${props.model.legend
-					.map((series) => series.label)
-					.join(", ")}.`}
+				ariaLabel={m().barChartLabel(
+					props.title,
+					axesPhrase(yAxisTitle(), props.xLabel, m()),
+					props.model.legend.map((series) => series.label),
+				)}
 				plot={props.model.plot}
 				xAxisTitle={props.xLabel}
 				yAxisTitle={yAxisTitle()}
@@ -69,7 +74,7 @@ export function BarPlot(props: {
 				<ChartLegend mark="block" items={props.model.legend} />
 			</Show>
 			<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-				{readout() ?? "Point at the chart to read values; the data table below lists every value."}
+				{readout() ?? m().readoutHint}
 			</p>
 		</>
 	);

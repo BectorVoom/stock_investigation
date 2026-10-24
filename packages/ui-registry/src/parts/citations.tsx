@@ -1,4 +1,5 @@
 import type { Claim, Evidence } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import {
 	createContext,
 	createMemo,
@@ -17,18 +18,13 @@ import {
 	sourceHost,
 	titleOrHost,
 } from "../citationModel.ts";
+import { citationMessages } from "../citations.messages.ts";
 import { formatIsoDate, safeHttpsUrl } from "../format.ts";
 import { SafeLink, type SourceMap, SourceUnavailable } from "./SourceLinks.tsx";
 import { EmptyState } from "./states.tsx";
 
 /** A claim link's relation to its evidence; null on the canvas, which has no claim link. */
 export type CitationRelation = Claim["links"][number]["relation"];
-
-const RELATION_TEXT: { readonly [R in CitationRelation]: string } = {
-	supports: "Supports",
-	contradicts: "Contradicts",
-	context: "Context",
-};
 
 const CHIP =
 	"min-h-6 min-w-6 rounded-full bg-blue-100 px-1.5 text-2xs font-semibold text-blue-900 tabular-nums hover:bg-blue-200";
@@ -184,6 +180,7 @@ export function SourceCard(props: {
 	readonly relation?: CitationRelation | null;
 	readonly onEscape: (from: HTMLElement) => void;
 }): JSX.Element {
+	const m = useMessages(citationMessages);
 	const source = () => props.evidence;
 	const host = createMemo(() =>
 		source() === undefined ? null : sourceHost(source()?.sourceUrl ?? ""),
@@ -241,7 +238,7 @@ export function SourceCard(props: {
 						when={source()}
 						fallback={
 							<span class="font-semibold italic text-amber-900">
-								Source unavailable (id {props.evidenceId})
+								{m().sourceUnavailable(props.evidenceId)}
 							</span>
 						}
 					>
@@ -257,21 +254,30 @@ export function SourceCard(props: {
 							</p>
 							<p class="mt-0.5 text-2xs text-slate-600">
 								<span>
-									published{" "}
-									<Show when={published()} fallback={<span class="italic">date not stated</span>}>
+									{m().published}{" "}
+									<Show
+										when={published()}
+										fallback={<span class="italic">{m().dateNotStated}</span>}
+									>
 										{(date) => <time datetime={item().publishedAt ?? undefined}>{date()}</time>}
 									</Show>
 								</span>
 								<span>
-									{" · retrieved "}
-									<Show when={retrieved()} fallback={<span class="italic">date not stated</span>}>
+									{` · ${m().retrieved} `}
+									<Show
+										when={retrieved()}
+										fallback={<span class="italic">{m().dateNotStated}</span>}
+									>
 										{(date) => <time datetime={item().retrievedAt}>{date()}</time>}
 									</Show>
 								</span>
 								<Show when={item().effectiveAt !== null}>
 									<span>
-										{" · data as of "}
-										<Show when={effective()} fallback={<span class="italic">date not stated</span>}>
+										{` · ${m().dataAsOf} `}
+										<Show
+											when={effective()}
+											fallback={<span class="italic">{m().dateNotStated}</span>}
+										>
 											{(date) => <time datetime={item().effectiveAt ?? undefined}>{date()}</time>}
 										</Show>
 									</span>
@@ -282,15 +288,11 @@ export function SourceCard(props: {
 				</Show>
 				{/* Colour is never the only signal: a non-support relation is a word. */}
 				<Show when={relation() !== null && relation() !== "supports" ? relation() : null}>
-					{(rel) => (
-						<p class="mt-0.5 text-2xs font-semibold text-slate-800">{RELATION_TEXT[rel()]}</p>
-					)}
+					{(rel) => <p class="mt-0.5 text-2xs font-semibold text-slate-800">{m()[rel()]}</p>}
 				</Show>
 				<Show
 					when={passage()}
-					fallback={
-						<p class="mt-0.5 text-2xs italic text-slate-600">No excerpt stored for this source.</p>
-					}
+					fallback={<p class="mt-0.5 text-2xs italic text-slate-600">{m().noExcerpt}</p>}
 				>
 					{(passageText) => (
 						<p class="mt-0.5 line-clamp-4 text-xs text-slate-800">{passageText()}</p>
@@ -301,7 +303,7 @@ export function SourceCard(props: {
 						when={href()}
 						fallback={
 							<span class="italic text-slate-600">
-								Open source <span>(link unavailable)</span>
+								{m().openSource} <span>{m().linkUnavailable}</span>
 							</span>
 						}
 					>
@@ -317,7 +319,7 @@ export function SourceCard(props: {
 									props.onEscape(event.currentTarget);
 								}}
 							>
-								Open source
+								{m().openSource}
 							</a>
 						)}
 					</Show>
@@ -375,6 +377,7 @@ export function ComponentCitation(props: {
 	readonly chipKey: string;
 	readonly sources: SourceMap;
 }): JSX.Element {
+	const m = useMessages(citationMessages);
 	const scope = useCitationScope();
 	return (
 		<Show when={scope} fallback={null}>
@@ -384,8 +387,8 @@ export function ComponentCitation(props: {
 						const evidence = () => props.sources.get(props.sourceId);
 						const label = () =>
 							evidence() === undefined
-								? `Source ${number()}: unavailable`
-								: chipLabel(number(), evidence()?.title ?? "", evidence()?.sourceUrl ?? "");
+								? m().chipUnavailable(number())
+								: chipLabel(number(), evidence()?.title ?? "", evidence()?.sourceUrl ?? "", m());
 						const open = () => interaction().openKey() === props.chipKey;
 						return (
 							<>
@@ -425,6 +428,7 @@ export function SourceList(props: {
 	readonly sources: SourceMap;
 	readonly heading?: string;
 }): JSX.Element {
+	const m = useMessages(citationMessages);
 	const scope = useCitationScope();
 	// Numbering is computed once per component in a memo, not per row.
 	const ownNumbering = createMemo(() =>
@@ -435,12 +439,9 @@ export function SourceList(props: {
 	const orderedIds = () => scope?.numbering.evidenceIdsInOrder ?? ownNumbering().evidenceIdsInOrder;
 	const count = () => orderedIds().length;
 	return (
-		<section aria-label={props.heading ?? "Sources"} class="mt-2 text-xs">
-			<h4 class="font-semibold text-slate-700">{props.heading ?? "Sources"}</h4>
-			<Show
-				when={count() > 0}
-				fallback={<EmptyState>No sources cited for this component.</EmptyState>}
-			>
+		<section aria-label={props.heading ?? m().sources} class="mt-2 text-xs">
+			<h4 class="font-semibold text-slate-700">{props.heading ?? m().sources}</h4>
+			<Show when={count() > 0} fallback={<EmptyState>{m().noSourcesForComponent}</EmptyState>}>
 				<details class="group mt-1 text-xs">
 					<summary class="flex min-h-6 cursor-pointer items-center gap-1 text-slate-700">
 						<svg
@@ -459,11 +460,9 @@ export function SourceList(props: {
 								stroke-linejoin="round"
 							/>
 						</svg>
-						<span class="min-w-0 flex-1">
-							{count()} {count() === 1 ? "source" : "sources"}
-						</span>
+						<span class="min-w-0 flex-1">{m().sourceCount(count())}</span>
 					</summary>
-					<ol aria-label="Sources" class="mt-1 space-y-0.5">
+					<ol aria-label={m().sources} class="mt-1 space-y-0.5">
 						<For each={orderedIds()}>
 							{(evidenceId, index) => {
 								const item = () => props.sources.get(evidenceId);
@@ -476,7 +475,7 @@ export function SourceList(props: {
 											{(source) => (
 												<>
 													<SafeLink url={source().sourceUrl}>
-														{titleOrHost(source().title, source().sourceUrl)}
+														{titleOrHost(source().title, source().sourceUrl, m())}
 													</SafeLink>
 													<Show when={host()}>
 														{(name) => <span class="text-slate-600"> · {name()}</span>}

@@ -1,7 +1,9 @@
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, ErrorBoundary, type JSX, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { CannotRender } from "./parts/states.tsx";
 import type { RenderContext, UiRegistry, WorkspaceComponent } from "./registry.tsx";
+import { rendererMessages } from "./renderers/renderers.messages.tsx";
 
 /**
  * Renders one workspace component through the registry. This view knows no
@@ -14,6 +16,7 @@ export function WorkspaceComponentView(props: {
 	readonly context: RenderContext;
 	readonly registry: UiRegistry;
 }): JSX.Element {
+	const m = useMessages(rendererMessages);
 	const resolved = createMemo(() => props.registry.resolve(props.component));
 	const renderable = createMemo(() => {
 		const current = resolved();
@@ -26,7 +29,7 @@ export function WorkspaceComponentView(props: {
 
 	return (
 		<article
-			aria-label={`Component ${props.component.componentId}`}
+			aria-label={m().componentLabel(props.component.componentId)}
 			data-component-id={props.component.componentId}
 			data-component-type={props.component.componentType}
 			class="min-w-0"

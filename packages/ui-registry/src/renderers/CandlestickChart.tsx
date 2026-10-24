@@ -1,4 +1,5 @@
 import type { CandlestickChartProps } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { ChartFrame, ChartLegend, ChartShell } from "../charts/ChartFrame.tsx";
 import {
@@ -16,6 +17,7 @@ import {
 	valueExtent,
 	type XTick,
 } from "../charts/chartMath.ts";
+import { chartMessages } from "../charts/charts.messages.ts";
 import { type GuardedDataset, resolveDataset } from "../datasetGuard.ts";
 import { formatIsoDate, formatNumber } from "../format.ts";
 import type { RendererProps } from "../registry.tsx";
@@ -116,15 +118,22 @@ export function CandlestickChart(props: RendererProps<CandlestickChartProps>): J
 		const current = data();
 		return current === undefined ? null : buildCandleModel(current, props.props);
 	});
+	const m = useMessages(chartMessages);
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
 	const describe = (candle: Candle): string =>
-		`open ${formatNumber(candle.open)}, high ${formatNumber(candle.high)}, low ${formatNumber(candle.low)}, close ${formatNumber(candle.close)} ${props.props.priceUnit}`;
+		m().candlePrices(
+			formatNumber(candle.open),
+			formatNumber(candle.high),
+			formatNumber(candle.low),
+			formatNumber(candle.close),
+			props.props.priceUnit,
+		);
 	const readout = createMemo((): string | null => {
 		const current = model();
 		const rowIndex = hoveredRow();
 		if (current === null || rowIndex === null) return null;
 		const candle = current.candleByRow.get(rowIndex);
-		return `${current.rowLabels[rowIndex] ?? "date unavailable"} — ${candle === undefined ? "prices unavailable" : describe(candle)}`;
+		return `${current.rowLabels[rowIndex] ?? m().dateUnavailable} — ${candle === undefined ? m().pricesUnavailable : describe(candle)}`;
 	});
 
 	return (
@@ -157,8 +166,8 @@ export function CandlestickChart(props: RendererProps<CandlestickChartProps>): J
 				<ChartLegend
 					mark="block"
 					items={[
-						{ label: "Close at or above open", color: UP_COLOR },
-						{ label: "Close below open", color: DOWN_COLOR },
+						{ label: m().candleUp, color: UP_COLOR },
+						{ label: m().candleDown, color: DOWN_COLOR },
 					]}
 				/>
 			}
@@ -166,10 +175,10 @@ export function CandlestickChart(props: RendererProps<CandlestickChartProps>): J
 			<Show when={model()}>
 				{(current) => (
 					<ChartFrame
-						ariaLabel={`Candlestick chart: ${props.props.title}. Open, high, low and close price (${props.props.priceUnit}) by date.`}
+						ariaLabel={m().candlestickLabel(props.props.title, props.props.priceUnit)}
 						plot={current().plot}
-						xAxisTitle="Date"
-						yAxisTitle={`Price (${props.props.priceUnit})`}
+						xAxisTitle={m().dateAxis}
+						yAxisTitle={m().priceAxis(props.props.priceUnit)}
 						yTicks={current().yTicks}
 						yScale={current().yScale}
 						xTicks={current().xTicks}

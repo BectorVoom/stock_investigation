@@ -1,4 +1,5 @@
 import type { CompanyProfileProps, NewsCardProps, SourceListProps } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { resolveDataset } from "../datasetGuard.ts";
 import {
@@ -11,8 +12,10 @@ import {
 import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
 import { DataUnavailable, EmptyState, Unavailable } from "../parts/states.tsx";
 import type { RendererProps } from "../registry.tsx";
+import { rendererMessages } from "./renderers.messages.tsx";
 
 function NewsCardBody(props: RendererProps<NewsCardProps>): JSX.Element {
+	const m = useMessages(rendererMessages);
 	const groupKey = `${props.componentId}::source`;
 	const scope = useCitationScope();
 	const hoverEnd = () => scope?.hoverEnd();
@@ -22,7 +25,7 @@ function NewsCardBody(props: RendererProps<NewsCardProps>): JSX.Element {
 			<p class="mt-1 text-sm text-slate-800">
 				<Show
 					when={props.props.summary !== null && props.props.summary !== ""}
-					fallback={<Unavailable reason="no summary stored for this article" />}
+					fallback={<Unavailable reason={m().noSummary} />}
 				>
 					{props.props.summary}
 				</Show>
@@ -34,7 +37,7 @@ function NewsCardBody(props: RendererProps<NewsCardProps>): JSX.Element {
 				onMouseLeave={hoverEnd}
 				onFocusOut={(event) => citationGroupFocusOut(event, hoverEnd)}
 			>
-				<span class="font-semibold text-slate-700">Source: </span>
+				<span class="font-semibold text-slate-700">{m().newsSource}</span>
 				<ComponentCitation
 					sourceId={props.props.sourceId}
 					chipKey={`${groupKey}::${props.props.sourceId}`}
@@ -64,9 +67,11 @@ export function SourceListComponent(props: RendererProps<SourceListProps>): JSX.
 	);
 }
 
-const COUNTRY_NAMES = { JP: "Japan", US: "United States" } as const;
+/** The catalog word for each listing country code. */
+const COUNTRY_KEY = { JP: "countryJP", US: "countryUS" } as const;
 
 export function CompanyProfile(props: RendererProps<CompanyProfileProps>): JSX.Element {
+	const m = useMessages(rendererMessages);
 	const data = createMemo(() =>
 		props.props.datasetRef === undefined
 			? undefined
@@ -82,28 +87,28 @@ export function CompanyProfile(props: RendererProps<CompanyProfileProps>): JSX.E
 			<div>
 				<h3 class="text-sm font-semibold text-slate-900">{props.props.companyName}</h3>
 				<dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
-					<dt class="text-slate-600">Ticker</dt>
+					<dt class="text-slate-600">{m().ticker}</dt>
 					<dd data-field="ticker">{props.props.ticker}</dd>
-					<dt class="text-slate-600">Exchange</dt>
+					<dt class="text-slate-600">{m().exchange}</dt>
 					<dd data-field="exchange">{props.props.exchange}</dd>
-					<dt class="text-slate-600">Market</dt>
-					<dd data-field="country">{COUNTRY_NAMES[props.props.country]}</dd>
+					<dt class="text-slate-600">{m().market}</dt>
+					<dd data-field="country">{m()[COUNTRY_KEY[props.props.country]]}</dd>
 				</dl>
-				<h4 class="mt-2 text-xs font-semibold text-slate-700">Relevant products and services</h4>
+				<h4 class="mt-2 text-xs font-semibold text-slate-700">{m().productsHeading}</h4>
 				<Show
 					when={props.props.productsOrServices.length > 0}
-					fallback={<EmptyState>No products or services recorded.</EmptyState>}
+					fallback={<EmptyState>{m().noProducts}</EmptyState>}
 				>
 					<ul class="list-disc pl-5 text-sm">
 						<For each={props.props.productsOrServices}>{(item) => <li>{item}</li>}</For>
 					</ul>
 				</Show>
-				<h4 class="mt-2 text-xs font-semibold text-slate-700">Business exposure</h4>
+				<h4 class="mt-2 text-xs font-semibold text-slate-700">{m().businessExposure}</h4>
 				<p class="text-sm text-slate-800">{props.props.businessExposure}</p>
 				<Show when={props.props.datasetRef}>
 					{(datasetRef) => (
 						<div class="mt-2">
-							<h4 class="text-xs font-semibold text-slate-700">Metrics</h4>
+							<h4 class="text-xs font-semibold text-slate-700">{m().metrics}</h4>
 							<Show when={data()} fallback={<DataUnavailable datasetRef={datasetRef()} />}>
 								{(current) => (
 									<DatasetTable

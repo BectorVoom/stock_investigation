@@ -1,4 +1,6 @@
 import type { Dataset, DatasetCell } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
+import { cellReasonMessages } from "./cellReasons.messages.ts";
 import { formatNumber } from "./format.ts";
 import { isUsMarginBuyLabel, US_MARGIN_BUY_WITHHELD_REASON } from "./positionLabels.ts";
 import type { RenderContext } from "./registry.tsx";
@@ -79,16 +81,17 @@ export type CellDisplay =
  * unavailable with a reason: never blank, never 0, never a guess (DATA-011).
  */
 export function cellDisplay(cell: DatasetCell | undefined, column: DatasetColumn): CellDisplay {
-	if (cell === undefined) return { available: false, reason: "value not provided" };
-	if (cell.v === null) return { available: false, reason: cell.reason ?? "reason not stated" };
+	const reasons = cellReasonMessages.en;
+	if (cell === undefined) return { available: false, reason: reasons.valueNotProvided };
+	if (cell.v === null) return { available: false, reason: cell.reason ?? reasons.reasonNotStated };
 	if (typeof cell.v === "number") {
 		return Number.isFinite(cell.v)
 			? { available: true, text: formatNumber(cell.v) }
-			: { available: false, reason: "value is not a finite number" };
+			: { available: false, reason: reasons.valueNotFinite };
 	}
 	// Text in a number column can only be stale stored data (the contract now forbids it);
 	// it is not shown as if it were a sourced figure.
-	if (column.kind === "number") return { available: false, reason: "value is not numeric" };
+	if (column.kind === "number") return { available: false, reason: reasons.valueNotNumeric };
 	return { available: true, text: cell.v };
 }
 
@@ -107,12 +110,6 @@ export function cellBasis(cell: DatasetCell | undefined): CellBasis | null {
 	return cell.sourceId === undefined ? "unstated" : "sourced";
 }
 
-export const CELL_BASIS_MARKER: { readonly [B in Exclude<CellBasis, "sourced">]: string } = {
-	assumption: "assumption",
-	derived: "derived",
-	unstated: "unsourced — basis not stated",
-};
-
 export type BasisCounts = { readonly [B in Exclude<CellBasis, "sourced">]: number };
 
 /** How many numbers in the given columns are not sourced measurements, by kind. */
@@ -128,4 +125,29 @@ export function countUnsourcedNumbers(
 		}
 	}
 	return counts;
+}
+
+type CellReasonText = MessagesOf<typeof cellReasonMessages>;
+type CellReasonKey = keyof CellReasonText;
+
+function isCellReasonKey(key: string): key is CellReasonKey {
+	return key in cellReasonMessages.en;
+}
+
+/** The registry's own reasons by their stored (English) text, for `cellReasonText`. */
+const CELL_REASON_KEY_BY_TEXT: ReadonlyMap<string, CellReasonKey> = new Map(
+	Object.keys(cellReasonMessages.en)
+		.filter(isCellReasonKey)
+		.map((key) => [cellReasonMessages.en[key], key] as const),
+);
+
+/**
+ * The words for a reason a value is not shown. A reason the registry itself
+ * gave (stored in English, like a dataset's own reason) is worded in the
+ * language of `text`; a reason from the data is research content and is
+ * returned as written.
+ */
+export function cellReasonText(reason: string, text: CellReasonText): string {
+	const key = CELL_REASON_KEY_BY_TEXT.get(reason);
+	return key === undefined ? reason : text[key];
 }

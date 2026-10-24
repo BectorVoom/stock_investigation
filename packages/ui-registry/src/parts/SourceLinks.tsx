@@ -1,5 +1,7 @@
 import type { Evidence } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, type JSX, Show } from "solid-js";
+import { citationMessages } from "../citations.messages.ts";
 import { formatIsoDate, safeHttpsUrl } from "../format.ts";
 
 export type SourceMap = ReadonlyMap<string, Evidence>;
@@ -13,13 +15,14 @@ export function SafeLink(props: {
 	readonly label?: string;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(citationMessages);
 	const href = createMemo(() => safeHttpsUrl(props.url));
 	return (
 		<Show
 			when={href()}
 			fallback={
 				<span data-link-unavailable="true">
-					{props.children} <span class="italic text-slate-600">(link unavailable)</span>
+					{props.children} <span class="italic text-slate-600">{m().linkUnavailable}</span>
 				</span>
 			}
 		>
@@ -51,9 +54,10 @@ export function DateText(props: {
 }
 
 export function SourceUnavailable(props: { readonly sourceId: string }): JSX.Element {
+	const m = useMessages(citationMessages);
 	return (
 		<span data-source-unavailable={props.sourceId} class="italic text-amber-900">
-			Source unavailable (id {props.sourceId})
+			{m().sourceUnavailable(props.sourceId)}
 		</span>
 	);
 }
@@ -67,6 +71,7 @@ export function SourceCitation(props: {
 	readonly sourceId: string;
 	readonly sources: SourceMap;
 }): JSX.Element {
+	const m = useMessages(citationMessages);
 	const source = createMemo(() => props.sources.get(props.sourceId));
 	return (
 		<Show when={source()} fallback={<SourceUnavailable sourceId={props.sourceId} />}>
@@ -75,13 +80,16 @@ export function SourceCitation(props: {
 					<SafeLink url={evidence().sourceUrl}>{evidence().title}</SafeLink>
 					<span class="text-slate-700">
 						{" — "}
-						{evidence().publisher}; published{" "}
-						<DateText iso={evidence().publishedAt} missing="date not stated" />; retrieved{" "}
-						<DateText iso={evidence().retrievedAt} missing="date not stated" />
+						{evidence().publisher}
+						{`${m().citationSeparator}${m().published} `}
+						<DateText iso={evidence().publishedAt} missing={m().dateNotStated} />
+						{`${m().citationSeparator}${m().retrieved} `}
+						<DateText iso={evidence().retrievedAt} missing={m().dateNotStated} />
 						<Show when={evidence().effectiveAt}>
 							{(effectiveAt) => (
 								<>
-									; data as of <DateText iso={effectiveAt()} missing="date not stated" />
+									{`${m().citationSeparator}${m().dataAsOf} `}
+									<DateText iso={effectiveAt()} missing={m().dateNotStated} />
 								</>
 							)}
 						</Show>

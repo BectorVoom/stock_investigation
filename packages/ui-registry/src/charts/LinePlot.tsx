@@ -1,7 +1,9 @@
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { formatNumber, truncateLabel } from "../format.ts";
 import { axesPhrase, ChartFrame, ChartLegend } from "./ChartFrame.tsx";
 import { CHART_INK } from "./chartMath.ts";
+import { chartMessages } from "./charts.messages.ts";
 import type { LineModel } from "./lineModel.ts";
 
 /**
@@ -18,6 +20,7 @@ export function LinePlot(props: {
 	readonly yUnit: string;
 	readonly title: string;
 }): JSX.Element {
+	const m = useMessages(chartMessages);
 	const [hoveredRow, setHoveredRow] = createSignal<number | null>(null);
 	const yAxisTitle = () => {
 		const yLabel = props.yLabel.trim();
@@ -31,17 +34,19 @@ export function LinePlot(props: {
 		if (rowIndex === null) return null;
 		const values = current.series.map((series) => {
 			const value = series.valueByRow.get(rowIndex);
-			return `${series.label}: ${value === undefined ? "unavailable" : `${formatNumber(value)} ${props.yUnit}`}`;
+			return `${series.label}: ${value === undefined ? m().unavailable : `${formatNumber(value)} ${props.yUnit}`}`;
 		});
-		return `${[props.xLabel, current.rowLabels[rowIndex] ?? "unavailable"].filter((part) => part.length > 0).join(" ")} — ${values.join(" · ")}`;
+		return `${[props.xLabel, current.rowLabels[rowIndex] ?? m().unavailable].filter((part) => part.length > 0).join(" ")} — ${values.join(" · ")}`;
 	});
 
 	return (
 		<>
 			<ChartFrame
-				ariaLabel={`Line chart: ${props.title}. ${axesPhrase(yAxisTitle(), props.xLabel)}Series: ${props.model.series
-					.map((series) => series.label)
-					.join(", ")}.`}
+				ariaLabel={m().lineChartLabel(
+					props.title,
+					axesPhrase(yAxisTitle(), props.xLabel, m()),
+					props.model.series.map((series) => series.label),
+				)}
 				plot={props.model.plot}
 				xAxisTitle={props.xLabel}
 				yAxisTitle={yAxisTitle()}
@@ -107,7 +112,7 @@ export function LinePlot(props: {
 				/>
 			</Show>
 			<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-				{readout() ?? "Point at the chart to read values; the data table below lists every value."}
+				{readout() ?? m().readoutHint}
 			</p>
 		</>
 	);
