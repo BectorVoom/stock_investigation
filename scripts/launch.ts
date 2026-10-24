@@ -28,7 +28,7 @@
  * read from that env file when it exists.
  */
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
 import { join } from "node:path";
 import {
@@ -44,6 +44,7 @@ import { z } from "zod";
 import {
 	type LaunchMode,
 	type LaunchPlan,
+	newMigrationFiles,
 	type PlannedProcess,
 	planLaunch,
 	readLaunchInputs,
@@ -121,6 +122,8 @@ let guardianFile = "";
 const guardianGroups: number[] = [];
 /** Stops the development runner-log watcher; null outside development. */
 let stopRunnerLogWatch: (() => void) | null = null;
+/** Stops the development migrations watcher; null outside development. */
+let stopMigrationWatch: (() => void) | null = null;
 /**
  * The generation this production instance serves (finding 3). Written once
  * the generation is pinned, removed on every exit path below; a crash leaves
@@ -199,6 +202,11 @@ function stopAll(): Promise<void> {
 		if (stopRunnerLogWatch !== null) {
 			const stopWatch = stopRunnerLogWatch;
 			stopRunnerLogWatch = null;
+			stopWatch();
+		}
+		if (stopMigrationWatch !== null) {
+			const stopWatch = stopMigrationWatch;
+			stopMigrationWatch = null;
 			stopWatch();
 		}
 		await stopGuardian();
@@ -321,6 +329,93 @@ function watchRunnerLog(logFile: string): () => void {
 			}
 		}
 	}, 1000);
+	timer.unref();
+	return () => clearInterval(timer);
+}
+
+/** How often development looks for migrations that arrived while it runs. */
+const MIGRATION_POLL_MS = 2_000;
+
+/** The Wrangler arguments that apply every pending migration to this plan's database. */
+function migrationApplyArgs(plan: LaunchPlan): readonly string[] {
+	return [
+		"d1",
+		"migrations",
+		"apply",
+		DATABASE_NAME,
+		"--local",
+		"--config",
+		plan.migrations.config,
+		"--persist-to",
+		plan.migrations.stateDir,
+	];
+}
+
+function listDirectory(dir: string): readonly string[] {
+	try {
+		return readdirSync(dir);
+	} catch {
+		return [];
+	}
+}
+
+/** Applies pending migrations without blocking the launcher; resolves whether Wrangler succeeded. */
+function applyMigrationsInBackground(plan: LaunchPlan): Promise<boolean> {
+	const args = migrationApplyArgs(plan);
+	const record = (output: string): void => {
+		writeFileSync(plan.buildLog, `$ ${WRANGLER} ${args.join(" ")}\n${output}\n`, { flag: "a" });
+	};
+	return new Promise((resolveApplied) => {
+		let output = "";
+		// stdin is closed so that Wrangler treats the step as non-interactive and never prompts.
+		const child = spawn(WRANGLER, args, { stdio: ["ignore", "pipe", "pipe"], env: wranglerEnv });
+		child.stdout.on("data", (chunk: Buffer) => {
+			output += chunk.toString("utf8");
+		});
+		child.stderr.on("data", (chunk: Buffer) => {
+			output += chunk.toString("utf8");
+		});
+		child.on("error", (error) => {
+			record(`${output}${error.name}: ${error.message}`);
+			resolveApplied(false);
+		});
+		child.on("close", (code) => {
+			record(output);
+			resolveApplied(code === 0);
+		});
+	});
+}
+
+/**
+ * Development only: applies migrations that appear while the instance runs.
+ * The API reloads its code on change but the database keeps its schema, so a
+ * migration arriving with a merge or pull left the new routes answering 500
+ * ("INTERNAL") until `bun run dev` was restarted. One apply runs at a time;
+ * a failed apply is reported once for those files and not retried (a restart
+ * retries it through the start-up step).
+ */
+function watchMigrations(plan: LaunchPlan, dir: string): () => void {
+	const known = new Set(listDirectory(dir));
+	let applying = false;
+	const timer = setInterval(() => {
+		if (applying || shutdown.signal.aborted) return;
+		const fresh = newMigrationFiles(known, listDirectory(dir));
+		if (fresh.length === 0) return;
+		for (const name of fresh) known.add(name);
+		applying = true;
+		void applyMigrationsInBackground(plan).then((applied) => {
+			applying = false;
+			if (shutdown.signal.aborted) return;
+			const names = fresh.join(", ");
+			if (applied) {
+				console.log(`launch: applied new migrations to the running database: ${names}`);
+			} else {
+				console.error(
+					`launch: new migrations ${names} could not be applied; see ${plan.buildLog}, then restart.`,
+				);
+			}
+		});
+	}, MIGRATION_POLL_MS);
 	timer.unref();
 	return () => clearInterval(timer);
 }
@@ -728,17 +823,12 @@ async function main(plan: LaunchPlan): Promise<void> {
 		}
 	}
 
-	await runStep(plan.buildLog, `preparing the local database (${plan.stateDir})`, WRANGLER, [
-		"d1",
-		"migrations",
-		"apply",
-		DATABASE_NAME,
-		"--local",
-		"--config",
-		plan.migrations.config,
-		"--persist-to",
-		plan.migrations.stateDir,
-	]);
+	await runStep(
+		plan.buildLog,
+		`preparing the local database (${plan.stateDir})`,
+		WRANGLER,
+		migrationApplyArgs(plan),
+	);
 	requireMigrationCompatibility(plan);
 
 	for (const spec of plan.processes) {
@@ -765,6 +855,9 @@ async function main(plan: LaunchPlan): Promise<void> {
 		// (finding 7); production runners exit, which the exit handler above
 		// reports.
 		stopRunnerLogWatch = watchRunnerLog(plan.runnerLog);
+	}
+	if (plan.migrations.watchDir !== null) {
+		stopMigrationWatch = watchMigrations(plan, plan.migrations.watchDir);
 	}
 	const agents = await waitForRunner(plan, runnerStartedAtMs);
 

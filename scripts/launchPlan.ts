@@ -296,8 +296,18 @@ export interface LaunchPlan {
 	readonly buildLog: string;
 	/** Every port this mode listens on, refused when busy before anything starts. */
 	readonly listenPorts: readonly ListenPort[];
-	/** Migrations run against this configuration and state directory at start. */
-	readonly migrations: { readonly config: string; readonly stateDir: string };
+	/**
+	 * Migrations run against this configuration and state directory at start.
+	 * `watchDir` (development only) is polled while the instance runs, so a
+	 * migration that arrives with a merge or pull is applied to the running
+	 * database instead of leaving the hot-reloaded API answering 500 until a
+	 * restart. Production serves a pinned generation and never applies late.
+	 */
+	readonly migrations: {
+		readonly config: string;
+		readonly stateDir: string;
+		readonly watchDir: string | null;
+	};
 	/** For production: the release that is served. Absent in development. */
 	readonly release: {
 		readonly dir: string;
@@ -521,6 +531,7 @@ function planProduction(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 		migrations: {
 			config: joinPath(releaseDir, "wrangler.jsonc"),
 			stateDir,
+			watchDir: null,
 		},
 		release: {
 			dir: releaseDir,
@@ -704,6 +715,7 @@ function planDevelopment(inputs: LaunchInputs, dataDir: string): LaunchPlan {
 		migrations: {
 			config: wranglerFile,
 			stateDir,
+			watchDir: resolve(inputs.repoRoot, MIGRATIONS_DIR),
 		},
 		release: null,
 		devRunner:
@@ -748,4 +760,19 @@ export function planLaunch(inputs: LaunchInputs): PlanResult<LaunchPlan> {
 			? planProduction(inputs, dataDir)
 			: planDevelopment(inputs, dataDir),
 	);
+}
+
+/** A migration file name as Wrangler applies them: `NNNN_name.sql`. */
+const MIGRATION_FILE = /^\d{4}_[A-Za-z0-9_-]+\.sql$/;
+
+/**
+ * The migration files in `listed` that are not in `known`, sorted the way
+ * Wrangler applies them. Anything that is not a migration file name is
+ * ignored (editor swap files, `.DS_Store`).
+ */
+export function newMigrationFiles(
+	known: ReadonlySet<string>,
+	listed: readonly string[],
+): readonly string[] {
+	return listed.filter((name) => MIGRATION_FILE.test(name) && !known.has(name)).sort();
 }

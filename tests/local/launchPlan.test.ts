@@ -11,6 +11,8 @@ import {
 	DEFAULT_RUNNER_KIND,
 	describeOverlap,
 	type LaunchInputs,
+	MIGRATIONS_DIR,
+	newMigrationFiles,
 	parseRunnerKind,
 	planLaunch,
 	RUNNER_ENV_FILE,
@@ -209,6 +211,8 @@ describe("planLaunch: production", () => {
 		expect(planned.value.origin).toBe("http://localhost:9001");
 		expect(planned.value.release?.wranglerConfig).toBe("custom-release/wrangler.jsonc");
 		expect(planned.value.migrations.config).toBe("custom-release/wrangler.jsonc");
+		// Production serves a pinned generation: it never applies a migration late.
+		expect(planned.value.migrations.watchDir).toBeNull();
 	});
 });
 
@@ -250,6 +254,8 @@ describe("planLaunch: development", () => {
 		// The dev server and migrations run against a generated configuration
 		// that never reads dist/: the SPA comes from Vite.
 		expect(plan.migrations.config).toBe(`${DEFAULT_DEV_DATA_DIR}/dev.wrangler.jsonc`);
+		// A migration arriving while development runs is applied to the running database.
+		expect(plan.migrations.watchDir).toBe(`${REPO_ROOT}/${MIGRATIONS_DIR}`);
 		expect(plan.devWrangler?.file).toBe(`${DEFAULT_DEV_DATA_DIR}/dev.wrangler.jsonc`);
 		expect(plan.devWrangler?.webDir).toBe(`${DEFAULT_DEV_DATA_DIR}/web`);
 		const devConfig: unknown = JSON.parse(plan.devWrangler?.content ?? "{}");
@@ -466,5 +472,29 @@ describe("planLaunch: development with the Rust runner", () => {
 		const prepare = plan.devRunner?.kind === "rust" ? plan.devRunner.prepare : null;
 		expect(prepare?.command).toBe(BUN);
 		expect(prepare?.args).toEqual([...(runner?.args ?? []), "--once"]);
+	});
+});
+
+describe("newMigrationFiles", () => {
+	it("lists migration files not seen yet, in the order Wrangler applies them", () => {
+		const known = new Set(["0009_notebooks.sql", "0010_scheduled_tasks.sql"]);
+		expect(
+			newMigrationFiles(known, [
+				"0012_later.sql",
+				"0009_notebooks.sql",
+				"0011_stock_directory.sql",
+				"0010_scheduled_tasks.sql",
+			]),
+		).toEqual(["0011_stock_directory.sql", "0012_later.sql"]);
+	});
+
+	it("ignores files that are not migrations", () => {
+		expect(
+			newMigrationFiles(new Set(), [".DS_Store", "0011_x.sql.swp", "README.md", "11_short.sql"]),
+		).toEqual([]);
+	});
+
+	it("is empty when nothing new arrived", () => {
+		expect(newMigrationFiles(new Set(["0001_initial.sql"]), ["0001_initial.sql"])).toEqual([]);
 	});
 });

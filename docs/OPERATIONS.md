@@ -526,6 +526,15 @@ override with `RESEARCH_ALLOW_NEWER_DB=1` only after checking. For later
 migrations, write the inverse statements in the migration's header comment
 and rehearse them on a copy of `data/` first (API-009).
 
+Development (`bun run dev`) applies the working tree's migrations at start
+and keeps watching `infra/migrations` while it runs: a migration that arrives
+with a merge or pull is applied to `data-dev/` within a few seconds, and the
+launcher prints `launch: applied new migrations to the running database: …`.
+Before this, the API reloaded the new code but not the schema, so new routes
+answered 500 (`INTERNAL`) until a restart. If the apply fails, the launcher
+prints the failure with the build log path; fix it and restart. Production
+never applies a migration late: it serves a pinned generation.
+
 Migration `0005_remove_approved_images.sql` (owner's decision of 2026-10-13)
 is destructive and one-way: it drops the `approved_assets` table, deleting the
 owner's stored image approvals for good — back up `data/` first. Rolling back
