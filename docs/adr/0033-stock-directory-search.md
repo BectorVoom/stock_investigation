@@ -16,7 +16,7 @@ Two free, official lists cover the need (measured 2026-10-24):
 | Market | Source | Rows kept | Names |
 | --- | --- | --- | --- |
 | US | SEC `https://www.sec.gov/files/company_tickers_exchange.json` (already read by the runner's SEC tool) | 7,691 on Nasdaq, NYSE, Cboe, Texas SE; OTC (2,574) and rows without an exchange are dropped | English |
-| JP | JPX "List of TSE-listed Issues", monthly: `data_j.xlsx` (Japanese) and `data_e.xlsx` (English), linked from `https://www.jpx.co.jp/markets/statistics-equities/misc/01.html` and its `/english/` twin | 3,707 Prime, Standard and Growth issues (domestic and foreign); ETFs/ETNs, REITs and funds, PRO Market and equity contribution securities are dropped | Japanese and English, joined on the local code |
+| JP | JPX "List of TSE-listed Issues", monthly: `data_j.xlsx` (Japanese) and `data_e.xlsx` (English), linked from `https://www.jpx.co.jp/markets/statistics-equities/misc/01.html` and its `/english/` twin | 3,700 Prime, Standard and Growth issues (domestic and foreign); ETFs/ETNs, REITs and funds, PRO Market and equity contribution securities are dropped, and so are seven five-digit preferred-share codes (e.g. `25935`), which no watchlist stock id can hold | Japanese and English, joined on the local code |
 
 ## Decision
 
@@ -26,8 +26,8 @@ Two free, official lists cover the need (measured 2026-10-24):
 2. **One job per market.** Job kind `stock-directory-refresh` carries a
    `market`; its completion `stock-directory-refreshed` replaces that market's
    rows all or nothing. One job per market keeps each completion under the
-   1,000,000-byte body cap (ADR-0010): US measured about 590 KB and JP about
-   430 KB as `{symbol, name, localName?, listing}` objects. A failing market
+   1,000,000-byte body cap (ADR-0010): US measured about 530 KB and JP about
+   350 KB as `{symbol, name, localName?, listing}` objects. A failing market
    leaves its stored list untouched.
 3. **A floor against a broken parse.** A completion with fewer than
    `STOCK_DIRECTORY_LIMITS.minEntriesPerMarket` rows is refused by contract,

@@ -16,7 +16,7 @@ import {
  * Watchlist's add-a-stock form.
  */
 export const STOCK_DIRECTORY_LIMITS = {
-	/** Measured 2026-10-24: US 7,691, JP 3,707. */
+	/** Measured 2026-10-24: US 7,691, JP 3,700. */
 	maxEntriesPerMarket: 10_000,
 	/**
 	 * A completion with fewer rows is refused, so a changed source layout that
