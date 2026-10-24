@@ -154,7 +154,9 @@ test("the stock lists download on the first visit and the search adds a stock", 
 	await expect(again).toContainText(toyota.localName ?? "");
 	await expect(again).toContainText("Added");
 	await expect(again).toHaveAttribute("aria-disabled", "true");
-	await again.click();
+	// Playwright never clicks an aria-disabled element on its own; force the
+	// click to prove that picking a registered stock selects nothing.
+	await again.click({ force: true });
 	await expect(selected).toHaveText("");
 	// Keyboard: ↓ makes the hit active, Escape closes the list, then clears the text.
 	await box.press("ArrowDown");
