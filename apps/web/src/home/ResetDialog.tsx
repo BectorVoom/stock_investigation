@@ -1,5 +1,8 @@
+import { useMessages } from "@research/i18n/solid";
 import { type JSX, onMount, Show } from "solid-js";
 import { IconButton } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { resetDialogMessages } from "./home.messages.ts";
 import "./shoelace.ts";
 
 /**
@@ -27,6 +30,8 @@ function ResetDialogBody(props: {
 	readonly onConfirm: () => void;
 	readonly onClose: () => void;
 }): JSX.Element {
+	const m = useMessages(resetDialogMessages);
+	const common = useMessages(commonMessages);
 	const closeAndReturnFocus = (event?: Event) => {
 		// H1: only the dialog's own hide event closes it, never a bubbled one.
 		if (event !== undefined && event.target !== event.currentTarget) return;
@@ -41,15 +46,12 @@ function ResetDialogBody(props: {
 		});
 	});
 	return (
-		<sl-dialog label="Reset to the default arrangement" open on:sl-after-hide={closeAndReturnFocus}>
-			<p class="text-sm text-slate-800">
-				This replaces every widget with the default arrangement. Undo restores the widgets you had
-				until you leave this page.
-			</p>
+		<sl-dialog attr:label={m().title} open on:sl-after-hide={closeAndReturnFocus}>
+			<p class="text-sm text-slate-800">{m().body}</p>
 			<div slot="footer" class="flex justify-end gap-1">
-				<IconButton label="Cancel" icon="x-lg" onClick={() => closeAndReturnFocus()} />
+				<IconButton label={common().cancel} icon="x-lg" onClick={() => closeAndReturnFocus()} />
 				<IconButton
-					label="Reset widgets"
+					label={m().confirm}
 					icon="arrow-counterclockwise"
 					variant="danger"
 					onClick={() => props.onConfirm()}

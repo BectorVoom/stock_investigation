@@ -22,6 +22,12 @@ export interface SlSkeletonProps extends SlCommon {
 
 export interface SlSelectProps extends SlCommon {
 	readonly label?: string;
+	/**
+	 * A translated label is dynamic, and Solid sets a dynamic prop of a custom
+	 * element as a property, which Shoelace does not reflect: `attr:label`
+	 * keeps the real `label` attribute that tests and E2E specs select by.
+	 */
+	readonly "attr:label"?: string;
 	readonly value?: string | readonly string[];
 	readonly size?: "small" | "medium" | "large";
 	readonly placeholder?: string;
@@ -53,6 +59,8 @@ export interface SlOptionElement extends HTMLElement {
 
 export interface SlInputProps extends SlCommon {
 	readonly label?: string;
+	/** See `SlSelectProps["attr:label"]`. */
+	readonly "attr:label"?: string;
 	readonly value?: string;
 	readonly size?: "small" | "medium" | "large";
 	readonly placeholder?: string;
@@ -69,7 +77,10 @@ export interface SlInputProps extends SlCommon {
 }
 
 export interface SlDialogProps extends SlCommon {
-	readonly label: string;
+	/** One of the two is required: `label` for fixed text, `attr:label` for translated text. */
+	readonly label?: string;
+	/** See `SlSelectProps["attr:label"]`. */
+	readonly "attr:label"?: string;
 	readonly open?: boolean;
 	readonly "on:sl-show"?: (event: Event) => void;
 	readonly "on:sl-after-show"?: (event: Event) => void;

@@ -1,15 +1,20 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
+import { commonMessages } from "../../i18n/common.messages.ts";
 import { WidgetProvenance } from "../HomeFrame.tsx";
+import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	changeErrorText,
 	formatChange,
 	formatValue,
+	seriesMissingReason,
 	staleFailureReason,
 	summarizeSeries,
 	unavailableText,
 } from "../homeModel.ts";
+import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 
 /**
  * One row per series (economic indicators): Indicator · Latest · Unit ·
@@ -23,38 +28,39 @@ export function IndicatorTableWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "indicator-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
 	return (
 		<>
 			<div class="overflow-x-auto">
 				<table class="w-full border-collapse text-left text-sm">
 					<caption class="caption-top pb-1 text-left text-xs text-slate-600">
-						{props.widget.title}: latest per indicator
+						{m().indicatorCaption(props.widget.title)}
 					</caption>
 					<thead>
 						<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								Indicator
+								{m().indicator}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Latest
+								{m().latest}
 							</th>
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								Unit
+								{m().unit}
 							</th>
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								As of
+								{m().asOf}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Previous
+								{m().previous}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Change
+								{m().change}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								1-year change
+								{m().yearChange}
 							</th>
 							<th scope="col" class="py-1 font-semibold">
-								Source
+								{m().source}
 							</th>
 						</tr>
 					</thead>
@@ -71,6 +77,9 @@ export function IndicatorTableWidget(props: {
 }
 
 function IndicatorRow(props: { readonly series: MarketSeries | null }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const ready = createMemo(() => {
 		const entry = props.series;
 		if (entry === null) return null;
@@ -78,15 +87,16 @@ function IndicatorRow(props: { readonly series: MarketSeries | null }): JSX.Elem
 		if (summary.latest === null || entry.observations.length === 0) return null;
 		return { entry, summary, latest: summary.latest };
 	});
-	const missingReason = () => props.series?.unavailable?.reason ?? unavailableText("NO_DATA");
-	const stale = () => (props.series === null ? null : staleFailureReason(props.series));
+	const missingReason = () => seriesMissingReason(props.series, modelText());
+	const stale = () =>
+		props.series === null ? null : staleFailureReason(props.series, modelText());
 	return (
 		<Show
 			when={props.series}
 			fallback={
 				<tr class="border-b border-slate-200">
 					<td colspan="8" class="py-1 text-sm text-amber-900">
-						unavailable ({unavailableText("NO_DATA")})
+						{common().unavailable(unavailableText("NO_DATA", modelText()))}
 					</td>
 				</tr>
 			}
@@ -104,7 +114,7 @@ function IndicatorRow(props: { readonly series: MarketSeries | null }): JSX.Elem
 							when={ready()}
 							fallback={
 								<td colspan="6" class="py-1 pr-3 text-sm text-amber-900">
-									unavailable ({missingReason()})
+									{common().unavailable(missingReason())}
 								</td>
 							}
 						>
@@ -137,7 +147,7 @@ function IndicatorRow(props: { readonly series: MarketSeries | null }): JSX.Elem
 						{(reason) => (
 							<tr class="border-b border-slate-200">
 								<td colspan="8" class="py-1 text-xs text-amber-900">
-									last refresh failed ({reason()})
+									{m().lastRefreshFailed(reason())}
 								</td>
 							</tr>
 						)}
@@ -157,13 +167,15 @@ function PreviousCell(props: {
 }): JSX.Element {
 	// D1: branch on the Result's ok flag, never on the number — a previous
 	// value of 0 is a real value, not an absence.
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const isOk = () => props.change.ok;
 	const text = createMemo(() =>
 		props.change.ok ? formatValue(props.change.value.previous.value) : null,
 	);
-	const problem = () => (props.change.ok ? null : changeErrorText(props.change.error));
+	const problem = () => (props.change.ok ? "" : changeErrorText(props.change.error, modelText()));
 	return (
-		<Show when={isOk()} fallback={<span class="italic">unavailable ({problem()})</span>}>
+		<Show when={isOk()} fallback={<span class="italic">{common().unavailable(problem())}</span>}>
 			{text()}
 		</Show>
 	);
@@ -175,12 +187,17 @@ function FullChangeCell(props: {
 		| ReturnType<typeof summarizeSeries>["yearChange"];
 	readonly unit: string;
 }): JSX.Element {
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const formatted = createMemo(() =>
-		props.change.ok ? formatChange(props.change.value, props.unit) : null,
+		props.change.ok ? formatChange(props.change.value, props.unit, modelText()) : null,
 	);
-	const problem = () => (props.change.ok ? null : changeErrorText(props.change.error));
+	const problem = () => (props.change.ok ? "" : changeErrorText(props.change.error, modelText()));
 	return (
-		<Show when={formatted()} fallback={<span class="italic">unavailable ({problem()})</span>}>
+		<Show
+			when={formatted()}
+			fallback={<span class="italic">{common().unavailable(problem())}</span>}
+		>
 			{(line) => (
 				<>
 					{line().text} <span class="sr-only">({line().word})</span>

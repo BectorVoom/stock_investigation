@@ -1,20 +1,25 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import { seriesColor } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
+import { commonMessages } from "../../i18n/common.messages.ts";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
+import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	changeErrorText,
 	formatChange,
 	formatValue,
+	seriesMissingReason,
 	sparklinePath,
 	staleFailureReason,
 	summarizeSeries,
 	toPoints,
 	unavailableText,
 } from "../homeModel.ts";
+import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 
 /**
  * One series: latest value with its unit, change vs the previous observation,
@@ -36,6 +41,8 @@ export function MetricWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "market-metric" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const series = () => props.seriesById().get(props.widget.seriesId) ?? null;
 	// One object per press, keyed below: a press while the download failure
 	// shows mounts a fresh viewer, which imports again.
@@ -57,7 +64,11 @@ export function MetricWidget(props: {
 			</p>
 			<Show
 				when={series()}
-				fallback={<p class="text-sm text-amber-900">unavailable ({unavailableText("NO_DATA")})</p>}
+				fallback={
+					<p class="text-sm text-amber-900">
+						{common().unavailable(unavailableText("NO_DATA", modelText()))}
+					</p>
+				}
 			>
 				{(entry) => (
 					<MetricBody series={entry()} onOpen={(button) => setViewerRequest({ opener: button })} />
@@ -85,23 +96,26 @@ function MetricBody(props: {
 	readonly series: MarketSeries;
 	readonly onOpen: (button: HTMLButtonElement) => void;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const summary = createMemo(() => summarizeSeries(props.series));
 	const sparkPoints = createMemo(() => selectRange(toPoints(props.series.observations), "3m"));
 	const spark = createMemo(() => sparklinePath(sparkPoints(), 96, 28));
 	const latest = () => summary().latest;
-	const stale = () => staleFailureReason(props.series);
-	const missingReason = () => props.series.unavailable?.reason ?? unavailableText("NO_DATA");
+	const stale = () => staleFailureReason(props.series, modelText());
+	const missingReason = () => seriesMissingReason(props.series, modelText());
 	return (
 		<>
 			<Show
 				when={latest()}
-				fallback={<p class="text-sm text-amber-900">unavailable ({missingReason()})</p>}
+				fallback={<p class="text-sm text-amber-900">{common().unavailable(missingReason())}</p>}
 			>
 				{(point) => (
 					// Phrasing content only inside the button: block spans, not
 					// div/p, and the visible values form its accessible name.
 					<ChartOpener
-						srPrefix={`Open chart: ${props.series.title}, `}
+						srPrefix={m().openChartOf(props.series.title)}
 						openerKey={props.series.seriesId}
 						onOpen={props.onOpen}
 					>
@@ -110,9 +124,9 @@ function MetricBody(props: {
 								{formatValue(point().value)}{" "}
 								<span class="text-xs font-normal text-slate-600">{props.series.unit}</span>
 							</span>
-							<ChangeLine label="Change" change={summary().change} unit={props.series.unit} />
+							<ChangeLine label={m().change} change={summary().change} unit={props.series.unit} />
 							<ChangeLine
-								label="1-year change"
+								label={m().yearChange}
 								change={summary().yearChange}
 								unit={props.series.unit}
 							/>
@@ -133,7 +147,7 @@ function MetricBody(props: {
 				)}
 			</Show>
 			<Show when={stale()}>
-				{(reason) => <p class="mt-1 text-xs text-amber-900">last refresh failed ({reason()})</p>}
+				{(reason) => <p class="mt-1 text-xs text-amber-900">{m().lastRefreshFailed(reason())}</p>}
 			</Show>
 		</>
 	);
@@ -146,14 +160,17 @@ function ChangeLine(props: {
 		| ReturnType<typeof summarizeSeries>["yearChange"];
 	readonly unit: string;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const formatted = createMemo(() =>
-		props.change.ok ? formatChange(props.change.value, props.unit) : null,
+		props.change.ok ? formatChange(props.change.value, props.unit, modelText()) : null,
 	);
 	const errorText = () =>
-		props.change.ok ? null : `unavailable (${changeErrorText(props.change.error)})`;
+		props.change.ok ? null : common().unavailable(changeErrorText(props.change.error, modelText()));
 	return (
 		<span class="block text-xs tabular-nums text-slate-700">
-			{props.label}:{" "}
+			{m().changeLabel(props.label)}
 			<Show when={formatted()} fallback={<span class="italic">{errorText()}</span>}>
 				{(line) => (
 					<>

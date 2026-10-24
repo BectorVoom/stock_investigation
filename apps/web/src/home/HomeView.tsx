@@ -10,6 +10,7 @@ import {
 	type WidgetCore,
 	widgetSeriesIds,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import {
 	createEffect,
 	createMemo,
@@ -30,8 +31,8 @@ import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
 import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
+import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import {
-	EARNINGS_AUTO_REFRESH_NOTICE,
 	earningsAutoRefreshReason,
 	googleAutoSyncWanted,
 	isGoogleCalendarRunActive,
@@ -41,6 +42,7 @@ import type { WidgetMarketContext } from "../widgets/marketContext.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard, type WidgetBoardSession } from "../widgets/widgetBoard.tsx";
 import { HOME_CLIPBOARD_SCOPE, widgetClipboard } from "../widgets/widgetClipboard.ts";
+import { homeMessages } from "./home.messages.ts";
 import { hasFredSeries, needsAutoRefresh, seriesById } from "./homeModel.ts";
 import { createEtagLoader, createMarketRefreshQueue, type MarketPollSignal } from "./marketData.ts";
 import "./shoelace.ts";
@@ -56,6 +58,14 @@ interface HomeNotice {
 
 /** What one data poll observed; queued/active keep polling, the rest settle. */
 type HomePollSignal = MarketPollSignal;
+
+/**
+ * FRED's terms of use require this attribution in this exact wording, so it
+ * is shown as it is in every UI language.
+ */
+const FRED_NOTICE =
+	// i18n-exempt: the attribution FRED's terms of use require, in their exact wording
+	"This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.";
 
 /** Undo depth of Home's in-session history (the Notebook keeps as many on the server). */
 const HOME_UNDO_DEPTH = 20;
@@ -73,6 +83,8 @@ export function HomeView(props: {
 	readonly visibility: VisibilitySource;
 }): JSX.Element {
 	ensureHomeIconLibraries();
+	const m = useMessages(homeMessages);
+	const watchlistText = useMessages(watchlistModelMessages);
 	const dashboard = createRemote(() => props.api.getHomeDashboard());
 	/**
 	 * Market data and the watchlist through the shared ETag loader
@@ -138,7 +150,7 @@ export function HomeView(props: {
 		const outcome = await dataLoader.load();
 		if (disposed) return "unchanged";
 		if (outcome.signal === "failed" && outcome.stale) {
-			setNotice({ tone: "warning", text: "Market data did not refresh." });
+			setNotice({ tone: "warning", text: m().dataNotRefreshed });
 		}
 		return outcome.signal;
 	};
@@ -155,9 +167,7 @@ export function HomeView(props: {
 			.filter((id) => byId.get(id)?.lastRefreshedAt == null);
 		if (unrefreshed.length === 0) return;
 		followUpTried = true;
-		await queueRefresh(
-			"A series was added while the refresh ran, so one follow-up refresh was queued.",
-		);
+		await queueRefresh(m().followUpQueued);
 	};
 
 	const poller = createPoller({
@@ -254,13 +264,13 @@ export function HomeView(props: {
 		const reason = earningsAutoRefreshReason(current, Date.now());
 		if (reason === null) return;
 		earningsAutoTried = true;
-		void queueEarningsRefresh(EARNINGS_AUTO_REFRESH_NOTICE[reason]);
+		void queueEarningsRefresh(watchlistText().autoRefreshNotice(reason));
 	};
 
 	/** Queues one earnings-date refresh through the shared queue (manual button or auto). */
 	const queueEarningsRefresh = async (announce: string): Promise<void> => {
 		if (earningsQueue.busy() || earningsQueueBusy()) {
-			setNotice({ tone: "info", text: "An earnings-date refresh is already being queued." });
+			setNotice({ tone: "info", text: m().earningsAlreadyQueuing });
 			return;
 		}
 		setEarningsQueueBusy(true);
@@ -268,13 +278,13 @@ export function HomeView(props: {
 		if (disposed) return;
 		setEarningsQueueBusy(false);
 		if (result.kind === "busy") {
-			setNotice({ tone: "info", text: "An earnings-date refresh is already being queued." });
+			setNotice({ tone: "info", text: m().earningsAlreadyQueuing });
 			return;
 		}
 		if (result.kind === "failed") {
 			setNotice({
 				tone: "error",
-				text: `The earnings-date refresh was not queued: ${result.error.message}`,
+				text: m().earningsNotQueued(result.error.message),
 			});
 			return;
 		}
@@ -285,7 +295,7 @@ export function HomeView(props: {
 
 	/** The calendar widget's refresh button: one manual queue, announced. */
 	const refreshEarnings = (): void => {
-		void queueEarningsRefresh("Earnings-date refresh queued for the local runner.");
+		void queueEarningsRefresh(m().earningsQueued);
 	};
 	/** True while an earnings queue request is in flight (the widget button reads this). */
 	const earningsRefreshBusy = (): boolean => earningsQueueBusy() || earningsQueue.busy();
@@ -310,7 +320,7 @@ export function HomeView(props: {
 			if (result.kind === "failed") {
 				setNotice({
 					tone: "error",
-					text: `The Google Calendar sync was not queued: ${result.error.message}`,
+					text: m().googleNotQueued(result.error.message),
 				});
 				return;
 			}
@@ -343,7 +353,7 @@ export function HomeView(props: {
 			widgetSeriesIds(widget).map((id) => byId.get(id)?.lastRefreshedAt ?? null),
 		);
 		if (needsAutoRefresh(stamps, Date.now())) {
-			void queueRefresh("Market data is stale, so one refresh was queued.");
+			void queueRefresh(m().staleQueued);
 		}
 	};
 	createEffect(() => {
@@ -355,7 +365,7 @@ export function HomeView(props: {
 	const queueRefresh = async (announce?: string): Promise<void> => {
 		// V8: a skipped action says why instead of silently doing nothing.
 		if (busy()) {
-			setNotice({ tone: "info", text: "A market-data refresh is already being queued." });
+			setNotice({ tone: "info", text: m().marketAlreadyQueuing });
 			return;
 		}
 		setBusy(true);
@@ -363,19 +373,19 @@ export function HomeView(props: {
 		if (disposed) return;
 		setBusy(false);
 		if (result.kind === "busy") {
-			setNotice({ tone: "info", text: "A market-data refresh is already being queued." });
+			setNotice({ tone: "info", text: m().marketAlreadyQueuing });
 			return;
 		}
 		if (result.kind === "failed") {
 			setNotice({
 				tone: "error",
-				text: `The market-data refresh was not queued: ${result.error.message}`,
+				text: m().marketNotQueued(result.error.message),
 			});
 			return;
 		}
 		setNotice({
 			tone: "info",
-			text: announce ?? "Market-data refresh queued for the local runner.",
+			text: announce ?? m().marketQueued,
 		});
 		poller.start();
 		void loadData();
@@ -470,7 +480,7 @@ export function HomeView(props: {
 		if (busy()) {
 			setNotice({
 				tone: "warning",
-				text: "The dashboard is being saved; please try your change again in a moment.",
+				text: m().saveInFlight,
 			});
 			return false;
 		}
@@ -484,7 +494,7 @@ export function HomeView(props: {
 			const issue = parsed.error.issues[0];
 			setNotice({
 				tone: "error",
-				text: `The change was rejected: ${issue === undefined ? "the dashboard is invalid" : issue.message}.`,
+				text: m().changeRejected(issue === undefined ? m().dashboardInvalid : issue.message),
 			});
 			return false;
 		}
@@ -503,10 +513,10 @@ export function HomeView(props: {
 				if (disposed) return false;
 				setNotice({
 					tone: "warning",
-					text: "The dashboard changed elsewhere; it was reloaded. Please try your change again.",
+					text: m().changedElsewhere,
 				});
 			} else {
-				setNotice({ tone: "error", text: `The dashboard was not saved: ${saved.error.message}` });
+				setNotice({ tone: "error", text: m().notSaved(saved.error.message) });
 			}
 			return false;
 		}
@@ -550,7 +560,7 @@ export function HomeView(props: {
 			}),
 		);
 		if (needsData && data()?.refresh.activeRunId === null) {
-			void queueRefresh("New series have no data yet, so one refresh was queued.");
+			void queueRefresh(m().newSeriesQueued);
 		}
 	};
 
@@ -626,7 +636,7 @@ export function HomeView(props: {
 		if (disposed) return;
 		setResetOpen(false);
 		if (saved) {
-			setNotice({ tone: "success", text: "The dashboard was reset to the default arrangement." });
+			setNotice({ tone: "success", text: m().resetDone });
 		}
 	};
 
@@ -645,14 +655,14 @@ export function HomeView(props: {
 		if (!result.ok) {
 			setNotice({
 				tone: "error",
-				text: `The dashboard was not reset: ${result.error.message}`,
+				text: m().notReset(result.error.message),
 			});
 			return;
 		}
 		dashboard.set(result.value);
 		setHistory([]);
 		setResetOpen(false);
-		setNotice({ tone: "success", text: "The dashboard was reset to the default arrangement." });
+		setNotice({ tone: "success", text: m().resetDone });
 		// V4: a reset changes the series set, so data is reloaded.
 		await reloadDataAfterSave();
 	};
@@ -662,21 +672,24 @@ export function HomeView(props: {
 		if (current === null) return null;
 		if (current.refresh.activeRunId !== null) {
 			const state = current.refresh.activeRunState ?? "queued";
-			return `Refreshing market data… (${state}, run ${current.refresh.activeRunId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`;
+			return m().refreshing(state, current.refresh.activeRunId);
 		}
 		// S2: the last SUCCESSFUL completion and the last failure are told
 		// apart — a failed refresh never poses as "Last refresh: <time>".
 		const parts: string[] = [];
 		if (current.refresh.lastSucceededAt !== null) {
-			parts.push(`Last successful refresh: ${formatInstant(current.refresh.lastSucceededAt)}.`);
+			parts.push(m().lastSucceeded(formatInstant(current.refresh.lastSucceededAt)));
 		}
 		if (current.refresh.lastFailure !== null) {
 			parts.push(
-				`Last refresh failed (${current.refresh.lastFailure.code}) at ${formatInstant(current.refresh.lastFailure.at)}.`,
+				m().lastFailed(
+					current.refresh.lastFailure.code,
+					formatInstant(current.refresh.lastFailure.at),
+				),
 			);
 		}
 		if (parts.length > 0) return parts.join(" ");
-		return "No market-data refresh has completed yet.";
+		return m().noRefreshYet;
 	});
 
 	const fredShown = createMemo(() =>
@@ -695,10 +708,10 @@ export function HomeView(props: {
 	const DataPending = (): JSX.Element => (
 		<Show
 			when={dataError() === null}
-			fallback={<span class="sr-only">Market data failed to load.</span>}
+			fallback={<span class="sr-only">{m().dataFailedToLoad}</span>}
 		>
-			<section class="space-y-2" aria-label="Loading market data">
-				<output class="block text-sm text-slate-600">Loading market data…</output>
+			<section class="space-y-2" aria-label={m().loadingDataLabel}>
+				<output class="block text-sm text-slate-600">{m().loadingData}</output>
 				<div class={WIDGET_GRID_CLASS}>
 					<For each={[0, 1, 2, 3]}>{() => <sl-skeleton effect="sheen" class="block h-full" />}</For>
 				</div>
@@ -708,7 +721,7 @@ export function HomeView(props: {
 
 	return (
 		<section
-			aria-label="Home widgets"
+			aria-label={m().widgetsLabel}
 			class="space-y-3"
 			ref={(element) => board.attach(element)}
 			onKeyDown={(event) => board.onSectionKeyDown(event)}
@@ -720,7 +733,7 @@ export function HomeView(props: {
 					{(error) => (
 						<ErrorNotice
 							failure={error()}
-							title="Could not load market data."
+							title={m().dataLoadFailed}
 							iconRetry={true}
 							onRetry={() => {
 								dataLoader.beginReload();
@@ -732,7 +745,7 @@ export function HomeView(props: {
 			</Show>
 			<Show when={notice()}>{(item) => <Notice tone={item().tone}>{item().text}</Notice>}</Show>
 
-			<section aria-label="Market widgets toolbar" class="flex flex-wrap items-center gap-2">
+			<section aria-label={m().toolbarLabel} class="flex flex-wrap items-center gap-2">
 				<Show when={statusLine()}>
 					{(line) => (
 						<output
@@ -748,13 +761,13 @@ export function HomeView(props: {
 						<board.HeaderButtons />
 					</Show>
 					<IconButton
-						label="Refresh market data"
+						label={m().refreshData}
 						icon="arrow-clockwise"
 						disabled={busy() || data()?.refresh.activeRunId !== null}
 						onClick={() => void queueRefresh()}
 					/>
 					<IconButton
-						label="Reset to default arrangement"
+						label={m().resetArrangement}
 						icon="arrow-repeat"
 						disabled={busy() || dashboard.value() === null}
 						onClick={(event) => {
@@ -773,8 +786,8 @@ export function HomeView(props: {
 			    no longer parses, Reset replaces it (no expectedVersion needed). */}
 			<Switch>
 				<Match when={dashboard.value() === null && dashboardError() === null}>
-					<section class="space-y-2" aria-label="Loading home">
-						<output class="block text-sm text-slate-600">Loading market widgets…</output>
+					<section class="space-y-2" aria-label={m().loadingHomeLabel}>
+						<output class="block text-sm text-slate-600">{m().loadingWidgets}</output>
 						<div class={WIDGET_GRID_CLASS}>
 							<For each={[0, 1, 2, 3]}>
 								{() => <sl-skeleton effect="sheen" class="block h-full" />}
@@ -783,12 +796,12 @@ export function HomeView(props: {
 					</section>
 				</Match>
 				<Match when={dashboard.value() === null && dashboardError() !== null}>
-					<section class="space-y-2" aria-label="Dashboard error">
+					<section class="space-y-2" aria-label={m().dashboardErrorLabel}>
 						<Show when={dashboardError()}>
 							{(error) => (
 								<ErrorNotice
 									failure={error()}
-									title="Could not load the dashboard."
+									title={m().dashboardLoadFailed}
 									iconRetry={true}
 									onRetry={() => {
 										void dashboard.reload();
@@ -798,7 +811,7 @@ export function HomeView(props: {
 						</Show>
 						<div>
 							<IconButton
-								label="Reset to default arrangement"
+								label={m().resetArrangement}
 								icon="arrow-repeat"
 								disabled={busy()}
 								onClick={() => void resetToDefaults()}
@@ -810,7 +823,7 @@ export function HomeView(props: {
 					<Show when={data() !== null && !dataLoading()} fallback={<DataPending />}>
 						<Show
 							when={(dashboard.value()?.dashboard.widgets.length ?? 0) > 0}
-							fallback={<Empty>No widgets yet. Use the + button to add one.</Empty>}
+							fallback={<Empty>{m().empty}</Empty>}
 						>
 							<WidgetGrid
 								widgets={board.entries()}
@@ -849,15 +862,9 @@ export function HomeView(props: {
 			</Switch>
 
 			<Show when={fredShown()}>
-				<p class="text-2xs text-slate-600">
-					This product uses the FRED® API but is not endorsed or certified by the Federal Reserve
-					Bank of St. Louis.
-				</p>
+				<p class="text-2xs text-slate-600">{FRED_NOTICE}</p>
 			</Show>
-			<p class="text-2xs text-slate-600">
-				Change compares the latest observation with the one before it; 1-year change compares with
-				the observation nearest to one year earlier.
-			</p>
+			<p class="text-2xs text-slate-600">{m().changeExplainer}</p>
 
 			<board.Dialogs />
 			<ResetDialog

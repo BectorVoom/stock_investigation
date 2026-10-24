@@ -1,4 +1,5 @@
 import type { MarketSeries, MarketWidgetCore } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import {
 	type Accessor,
@@ -12,16 +13,20 @@ import {
 } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
+import { commonMessages } from "../../i18n/common.messages.ts";
 import { TwelveDataSessionNote, WidgetProvenance } from "../HomeFrame.tsx";
+import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	changeErrorText,
 	formatAbsDelta,
 	formatPctValue,
 	formatValue,
+	seriesMissingReason,
 	staleFailureReason,
 	summarizeSeries,
 	unavailableText,
 } from "../homeModel.ts";
+import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 
 /**
  * One row per series (price table): Series · Last close · Change ·
@@ -42,6 +47,7 @@ export function StockTableWidget(props: {
 	readonly widget: Extract<MarketWidgetCore, { readonly type: "stock-table" }>;
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
 	// One object per press, keyed below: a press while the download failure
 	// shows mounts a fresh viewer, which imports again.
 	const [viewerRequest, setViewerRequest] = createSignal<{
@@ -60,27 +66,27 @@ export function StockTableWidget(props: {
 			<div class="overflow-x-auto">
 				<table class="w-full border-collapse text-left text-sm">
 					<caption class="caption-top pb-1 text-left text-xs text-slate-600">
-						{props.widget.title}: last close per series
+						{m().stockCaption(props.widget.title)}
 					</caption>
 					<thead>
 						<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								Series
+								{m().series}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Last close
+								{m().lastClose}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Change
+								{m().change}
 							</th>
 							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								Change %
+								{m().changePercent}
 							</th>
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								As of
+								{m().asOf}
 							</th>
 							<th scope="col" class="py-1 font-semibold">
-								Source
+								{m().source}
 							</th>
 						</tr>
 					</thead>
@@ -118,6 +124,9 @@ function StockRow(props: {
 	readonly series: MarketSeries | null;
 	readonly onOpen: (button: HTMLButtonElement) => void;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	const summary = createMemo(() => (props.series === null ? null : summarizeSeries(props.series)));
 	const ready = createMemo(() => {
 		const entry = props.series;
@@ -129,8 +138,9 @@ function StockRow(props: {
 			? { entry, summary: current, latest: current.latest }
 			: null;
 	});
-	const missingReason = () => props.series?.unavailable?.reason ?? unavailableText("NO_DATA");
-	const stale = () => (props.series === null ? null : staleFailureReason(props.series));
+	const missingReason = () => seriesMissingReason(props.series, modelText());
+	const stale = () =>
+		props.series === null ? null : staleFailureReason(props.series, modelText());
 	// The viewer opens only for a series with observations (ADR-0025).
 	const openable = () => (props.series?.observations.length ?? 0) > 0;
 	return (
@@ -139,7 +149,7 @@ function StockRow(props: {
 			fallback={
 				<tr class="border-b border-slate-200">
 					<td colspan="6" class="py-1 text-sm text-amber-900">
-						unavailable ({unavailableText("NO_DATA")})
+						{common().unavailable(unavailableText("NO_DATA", modelText()))}
 					</td>
 				</tr>
 			}
@@ -160,7 +170,7 @@ function StockRow(props: {
 								}
 							>
 								<ChartOpener
-									srPrefix="Open chart: "
+									srPrefix={m().openChart}
 									openerKey={entry().seriesId}
 									onOpen={props.onOpen}
 								>
@@ -175,7 +185,7 @@ function StockRow(props: {
 							when={ready()}
 							fallback={
 								<td colspan="4" class="py-1 pr-3 text-sm text-amber-900">
-									unavailable ({missingReason()})
+									{common().unavailable(missingReason())}
 								</td>
 							}
 						>
@@ -213,7 +223,7 @@ function StockRow(props: {
 						{(reason) => (
 							<tr class="border-b border-slate-200">
 								<td colspan="6" class="py-1 text-xs text-amber-900">
-									last refresh failed ({reason()})
+									{m().lastRefreshFailed(reason())}
 								</td>
 							</tr>
 						)}
@@ -229,14 +239,20 @@ export function ChangeCell(props: {
 	readonly unit: string;
 	readonly kind: "abs" | "pct";
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const common = useMessages(commonMessages);
 	/**
 	 * One memo over the live props: a value to show, "not applicable" (a
 	 * percent of a percent), or the reason the cell is unavailable.
 	 */
 	const display = createMemo((): ChangeCellDisplay => {
 		const change = props.change;
-		if (change === null) return { kind: "unavailable", reason: unavailableText("NO_DATA") };
-		if (!change.ok) return { kind: "unavailable", reason: changeErrorText(change.error) };
+		if (change === null) {
+			return { kind: "unavailable", reason: unavailableText("NO_DATA", modelText()) };
+		}
+		if (!change.ok)
+			return { kind: "unavailable", reason: changeErrorText(change.error, modelText()) };
 		if (props.kind === "abs") {
 			// The delta follows the series' latest value magnitude (the one rule in homeModel.ts).
 			return {
@@ -255,15 +271,17 @@ export function ChangeCell(props: {
 	const notApplicable = () => display().kind === "not-applicable";
 	const unavailableReason = () => {
 		const current = display();
-		return current.kind === "unavailable" ? current.reason : unavailableText("NO_DATA");
+		return current.kind === "unavailable"
+			? current.reason
+			: unavailableText("NO_DATA", modelText());
 	};
 	return (
 		// Branches on the display kind, never on the text: a value like "0"
 		// must render (D1 audit).
-		<Switch fallback={<span class="italic">unavailable ({unavailableReason()})</span>}>
+		<Switch fallback={<span class="italic">{common().unavailable(unavailableReason())}</span>}>
 			<Match when={hasValue()}>{valueText()}</Match>
 			<Match when={notApplicable()}>
-				<span class="italic">not applicable</span>
+				<span class="italic">{m().notApplicable}</span>
 			</Match>
 		</Switch>
 	);

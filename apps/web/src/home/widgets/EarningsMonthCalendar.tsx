@@ -4,35 +4,15 @@ import {
 	groupEventsByDate,
 	shiftMonth,
 } from "@research/domain";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { IconButton } from "../../components/ui.tsx";
 import { utcTodayIso } from "../../watchlist/watchlistModel.ts";
+import { earningsCalendarMessages } from "./earnings.messages.tsx";
 
-const MONTH_NAMES = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-] as const;
-
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-const WEEKDAY_LONG = [
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-] as const;
+/** The weekday columns, 0 = Sunday (the grid starts its weeks on Sunday). */
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 /**
  * Today's day number: an outlined pill in bold — a shape, not a colour
@@ -59,12 +39,13 @@ export interface CalendarDayEvent {
 	readonly retrievedAt: string | null;
 }
 
-/** "5 November 2026" for the accessible day names (no leading zero). */
-export function formatLongDayDate(isoDate: string): string {
+/** "5 November 2026" (in English) for the accessible day names (no leading zero). */
+export function formatLongDayDate(
+	isoDate: string,
+	text: MessagesOf<typeof earningsCalendarMessages>,
+): string {
 	const [yearText, monthText, dayText] = isoDate.split("-");
-	const month = Number(monthText);
-	const name = MONTH_NAMES[(month >= 1 && month <= 12 ? month : 1) - 1] ?? "January";
-	return `${Number(dayText)} ${name} ${yearText}`;
+	return text.longDate(yearText ?? "", Number(monthText), Number(dayText));
 }
 
 /** "2026-11" → { year: 2026, month: 11 }; null when unparsable. */
@@ -101,6 +82,7 @@ export function EarningsMonthCalendar(props: {
 	/** Caption prefix, e.g. the widget title. The caption always names the month. */
 	readonly captionPrefix?: string;
 }): JSX.Element {
+	const m = useMessages(earningsCalendarMessages);
 	const today = () => props.today ?? utcTodayIso(Date.now());
 	const upcomingMonths = createMemo(() => {
 		const months = new Set<string>();
@@ -135,12 +117,12 @@ export function EarningsMonthCalendar(props: {
 	const monthLabel = createMemo(() => {
 		const current = parsed();
 		if (current === null) return month();
-		return `${MONTH_NAMES[current.month - 1]} ${current.year}`;
+		return m().monthTitle(current.year, current.month);
 	});
 	const caption = () =>
 		props.captionPrefix === undefined
-			? `${monthLabel()}: earnings announcements`
-			: `${props.captionPrefix}: ${monthLabel()}, earnings announcements`;
+			? m().caption(monthLabel())
+			: m().captionWithPrefix(props.captionPrefix, monthLabel());
 
 	const move = (delta: number): void => {
 		const current = parsed();
@@ -151,7 +133,7 @@ export function EarningsMonthCalendar(props: {
 
 	const dayAccessibleName = (date: string, dayEvents: readonly CalendarDayEvent[]): string => {
 		const symbols = dayEvents.map((event) => event.symbol).join(", ");
-		return `${formatLongDayDate(date)}: ${dayEvents.length} announcement${dayEvents.length === 1 ? "" : "s"}, ${symbols}`;
+		return m().dayName(formatLongDayDate(date, m()), dayEvents.length, symbols);
 	};
 
 	return (
@@ -159,8 +141,8 @@ export function EarningsMonthCalendar(props: {
 			<div class="flex flex-wrap items-center gap-1">
 				{/* Icon-only like every Home button (guideline section 13): the words
 				    are the accessible name and the tooltip. */}
-				<IconButton label="Previous month" icon="arrow-left" onClick={() => move(-1)} />
-				<IconButton label="Next month" icon="arrow-right" onClick={() => move(1)} />
+				<IconButton label={m().previousMonth} icon="arrow-left" onClick={() => move(-1)} />
+				<IconButton label={m().nextMonth} icon="arrow-right" onClick={() => move(1)} />
 				<p aria-live="off" class="text-sm font-medium text-slate-900">
 					{monthLabel()}
 				</p>
@@ -170,11 +152,11 @@ export function EarningsMonthCalendar(props: {
 					<caption class="caption-top pb-1 text-left text-xs text-slate-600">{caption()}</caption>
 					<thead>
 						<tr class="border-b border-slate-300 text-xs text-slate-700">
-							<For each={WEEKDAY_SHORT}>
-								{(day, index) => (
+							<For each={WEEKDAYS}>
+								{(day) => (
 									<th scope="col" class="min-w-9 px-0.5 py-1 text-center font-semibold">
-										<abbr title={WEEKDAY_LONG[index()]} class="no-underline">
-											{day}
+										<abbr title={m().weekdayLong(day)} class="no-underline">
+											{m().weekdayShort(day)}
 										</abbr>
 									</th>
 								)}

@@ -1,9 +1,8 @@
-import {
-	type MarketProviderId,
-	type MarketRange,
-	type MarketSeries,
-	type MarketUnavailableCode,
-	marketUnavailableReason,
+import type {
+	MarketProviderId,
+	MarketRange,
+	MarketSeries,
+	MarketUnavailableCode,
 } from "@research/contracts";
 import {
 	type ChangeError,
@@ -13,6 +12,7 @@ import {
 	type MarketPoint,
 	type YearChangeError,
 } from "@research/domain";
+import type { MessagesOf } from "@research/i18n";
 import {
 	buildHomeLineModel,
 	type HomeLineModel,
@@ -20,6 +20,10 @@ import {
 	type HomeLineSeriesInput,
 	sparklinePath,
 } from "@research/ui-registry";
+import type { homeModelMessages } from "./homeModel.messages.ts";
+
+/** The words this view-model writes, in the current language (the caller passes `m()`). */
+export type HomeModelText = MessagesOf<typeof homeModelMessages>;
 
 /**
  * Pure view-model for the Home page (FR-017). No DOM, no fetch, no clock:
@@ -53,16 +57,8 @@ const signedPercentFormat = new Intl.NumberFormat("en-US", {
 /** Thirty minutes: a dashboard whose newest refresh is older queues one auto-refresh per visit. */
 export const HOME_AUTO_REFRESH_STALE_MS = 30 * 60 * 1_000;
 
+/** The line chart's ranges; their names are `homeRangeMessages` (`homeModel.messages.ts`). */
 export const HOME_RANGES: readonly MarketRange[] = ["1m", "3m", "6m", "1y", "3y", "max"];
-
-export const HOME_RANGE_LABELS: { readonly [R in MarketRange]: string } = {
-	"1m": "Past month",
-	"3m": "Past 3 months",
-	"6m": "Past 6 months",
-	"1y": "Past year",
-	"3y": "Past 3 years",
-	max: "All data",
-};
 
 export function seriesById(series: readonly MarketSeries[]): ReadonlyMap<string, MarketSeries> {
 	return new Map(series.map((entry) => [entry.seriesId, entry]));
@@ -101,12 +97,6 @@ const DIRECTION_MARK: { readonly [D in ChangeDirection]: string } = {
 	unchanged: "▬",
 };
 
-const DIRECTION_WORD: { readonly [D in ChangeDirection]: string } = {
-	up: "up",
-	down: "down",
-	unchanged: "unchanged",
-};
-
 export interface FormattedChange {
 	/** E.g. "▲ +0.52 (+0.23%)", "▲ +0.50 pp", "▬ +0.00". Never colour alone: mark plus word. */
 	readonly text: string;
@@ -123,10 +113,14 @@ export interface FormattedChange {
  * (undefined, never 0 or infinity). E.g. "▲ +0.52 (+0.23%)", "▲ +0.50 pp",
  * "▬ 0.00". Never colour alone: mark plus word.
  */
-export function formatChange(change: MarketChange, unit: string): FormattedChange {
+export function formatChange(
+	change: MarketChange,
+	unit: string,
+	text: HomeModelText,
+): FormattedChange {
 	const direction = changeDirection(change.absoluteChange);
 	const mark = DIRECTION_MARK[direction];
-	const word = DIRECTION_WORD[direction];
+	const word = text[direction];
 	// The delta follows the VALUE's displayed digits (change.latest.value), not its own.
 	const reference = change.latest.value;
 	if (isPercentUnit(unit)) {
@@ -230,26 +224,47 @@ export function summarizeSeries(series: MarketSeries): SeriesSummary {
  * never hidden behind "unavailable". Only a series with no observations at
  * all is "unavailable (reason)".
  */
-export function staleFailureReason(series: MarketSeries): string | null {
+export function staleFailureReason(series: MarketSeries, text: HomeModelText): string | null {
 	if (series.unavailable === null || series.observations.length === 0) return null;
-	return series.unavailable.reason;
+	return storedReason(series, series.unavailable, text);
 }
 
-export function changeErrorText(error: ChangeError | YearChangeError): string {
+/**
+ * The reason a series (or a missing one) has no values: its stored
+ * unavailable reason, else the fixed "no data" wording.
+ */
+export function seriesMissingReason(series: MarketSeries | null, text: HomeModelText): string {
+	if (series === null || series.unavailable === null) return unavailableText("NO_DATA", text);
+	return storedReason(series, series.unavailable, text);
+}
+
+function storedReason(
+	series: MarketSeries,
+	unavailable: NonNullable<MarketSeries["unavailable"]>,
+	text: HomeModelText,
+): string {
+	return text.storedUnavailableReason(unavailable.reason, unavailable.code, series.provider);
+}
+
+export function changeErrorText(error: ChangeError | YearChangeError, text: HomeModelText): string {
 	switch (error) {
 		case "NOT_ENOUGH_OBSERVATIONS":
 		case "NO_BASE_OBSERVATION":
-			return "needs more history";
+			return text.needsMoreHistory;
 		case "BASE_TOO_OLD":
-			return "no observation near the year-ago mark";
+			return text.noYearAgoObservation;
 		case "NON_FINITE":
-			return "value is not a number";
+			return text.notANumber;
 	}
 }
 
 /** Fixed unavailable wording per code (provider text is never shown); exported for tests. */
-export function unavailableText(code: MarketUnavailableCode, provider?: MarketProviderId): string {
-	return marketUnavailableReason(code, provider);
+export function unavailableText(
+	code: MarketUnavailableCode,
+	text: HomeModelText,
+	provider?: MarketProviderId,
+): string {
+	return text.unavailableReason(code, provider);
 }
 
 /**

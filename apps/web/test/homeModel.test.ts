@@ -1,5 +1,6 @@
 import { widgetSeriesIds } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { homeModelMessages } from "../src/home/homeModel.messages.ts";
 import {
 	buildHomeLineModel,
 	changeDirection,
@@ -17,6 +18,8 @@ import {
 	toPoints,
 	unavailableText,
 } from "../src/home/homeModel.ts";
+
+const en = homeModelMessages.en;
 
 describe("home view-model", () => {
 	it("formats values with the magnitude rule: 2 digits at |value| >= 10, 4 below", () => {
@@ -49,6 +52,7 @@ describe("home view-model", () => {
 				percentChange: 0.102,
 			},
 			"USD per XAU (troy ounce of gold)",
+			en,
 		);
 		expect(gold.text).toBe("▲ +4.25 (+0.10%)");
 		// Hand-worked: CPI at 334.13 moved +1.318 (+0.40%).
@@ -61,6 +65,7 @@ describe("home view-model", () => {
 				percentChange: 0.396,
 			},
 			"Index 1982-1984=100, seasonally adjusted",
+			en,
 		);
 		expect(cpi.text).toBe("▲ +1.32 (+0.40%)");
 		// Hand-worked: a 0.44 spread moved −0.03. |0.44| < 10 keeps the
@@ -73,6 +78,7 @@ describe("home view-model", () => {
 				percentChange: -6.383,
 			},
 			"Percent",
+			en,
 		);
 		expect(spread.text).toBe("▼ -0.03 pp");
 		// A tiny delta on a large whole value shows no decimals (F5: the latest
@@ -104,6 +110,7 @@ describe("home view-model", () => {
 				percentChange: 10,
 			},
 			"Index",
+			en,
 		);
 		expect(formatted.text).toBe("▲ +10 (+10.00%)");
 		expect(formatted.direction).toBe("up");
@@ -122,6 +129,7 @@ describe("home view-model", () => {
 				percentChange: 0,
 			},
 			"Index",
+			en,
 		);
 		expect(flat.text).toBe("▬ 0 (0.00%)");
 		expect(flat.word).toBe("unchanged");
@@ -138,6 +146,7 @@ describe("home view-model", () => {
 				percentChange: 10,
 			},
 			"Percent",
+			en,
 		);
 		expect(formatted.text).toBe("▲ +0.5 pp");
 		expect(formatAbsDelta(0.5, "Percent")).toBe("+0.5 pp");
@@ -155,6 +164,7 @@ describe("home view-model", () => {
 				percentChange: null,
 			},
 			"USD",
+			en,
 		);
 		expect(formatted.text).toBe("▲ +3");
 	});
@@ -172,6 +182,7 @@ describe("home view-model", () => {
 				percentChange: (29 / 159015) * 100,
 			},
 			"Thousands of Persons",
+			en,
 		);
 		expect(change.text).toBe("▲ +29 (+0.02%)");
 		expect(change.direction).toBe("up");
@@ -183,6 +194,7 @@ describe("home view-model", () => {
 				percentChange: (496 / 158548) * 100,
 			},
 			"Thousands of Persons",
+			en,
 		);
 		expect(yearChange.text).toBe("▲ +496 (+0.31%)");
 		// And a two-decimal series keeps its decimals: latest 334.13,
@@ -195,6 +207,7 @@ describe("home view-model", () => {
 				percentChange: ((334.13 - 332.81) / 332.81) * 100,
 			},
 			"Index",
+			en,
 		);
 		expect(twoDecimal.text).toBe("▲ +1.32 (+0.40%)");
 	});
@@ -217,10 +230,10 @@ describe("home view-model", () => {
 				["2026-10-08", 15.41],
 			] as [string, number][],
 		} as const;
-		expect(staleFailureReason({ ...failed })).toBe("The data source request failed.");
-		expect(staleFailureReason({ ...failed, unavailable: null })).toBeNull();
+		expect(staleFailureReason({ ...failed }, en)).toBe("The data source request failed.");
+		expect(staleFailureReason({ ...failed, unavailable: null }, en)).toBeNull();
 		expect(
-			staleFailureReason({ ...failed, observations: [] as unknown as [string, number][] }),
+			staleFailureReason({ ...failed, observations: [] as unknown as [string, number][] }, en),
 		).toBeNull();
 	});
 
@@ -291,9 +304,9 @@ describe("home view-model", () => {
 	});
 
 	it("uses the fixed unavailable wording, naming the key to set", () => {
-		expect(unavailableText("NEVER_REFRESHED")).toContain("refresh");
-		expect(unavailableText("SOURCE_NOT_CONFIGURED", "fred")).toContain("FRED_API_KEY");
-		expect(unavailableText("SOURCE_NOT_CONFIGURED", "twelve-data")).toContain(
+		expect(unavailableText("NEVER_REFRESHED", en)).toContain("refresh");
+		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "fred")).toContain("FRED_API_KEY");
+		expect(unavailableText("SOURCE_NOT_CONFIGURED", en, "twelve-data")).toContain(
 			"TWELVE_DATA_API_KEY",
 		);
 	});

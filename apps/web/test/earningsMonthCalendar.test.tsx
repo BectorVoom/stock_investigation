@@ -6,6 +6,7 @@ import {
 	EarningsMonthCalendar,
 	formatLongDayDate,
 } from "../src/home/widgets/EarningsMonthCalendar.tsx";
+import { earningsCalendarMessages } from "../src/home/widgets/earnings.messages.tsx";
 
 /**
  * Hand-worked month: `today` is Monday 2026-11-02, so November 2026 opens
@@ -64,8 +65,8 @@ afterEach(cleanup);
 
 describe("formatLongDayDate", () => {
 	it("reads without a leading zero", () => {
-		expect(formatLongDayDate("2026-11-05")).toBe("5 November 2026");
-		expect(formatLongDayDate("2026-01-01")).toBe("1 January 2026");
+		expect(formatLongDayDate("2026-11-05", earningsCalendarMessages.en)).toBe("5 November 2026");
+		expect(formatLongDayDate("2026-01-01", earningsCalendarMessages.en)).toBe("1 January 2026");
 	});
 });
 

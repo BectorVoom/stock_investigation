@@ -1,7 +1,9 @@
 import { type MarketSeries, type MarketWidgetCore, widgetSeriesIds } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, For, type JSX, Match, Show, Switch } from "solid-js";
 import { formatInstant } from "../lib/format.ts";
+import { homeFrameMessages } from "./homeFrame.messages.tsx";
 
 /*
  * Provenance parts of the market widgets (the frame and its menu are the
@@ -10,11 +12,8 @@ import { formatInstant } from "../lib/format.ts";
 
 /** "As of <date>" for one observation date. */
 export function AsOf(props: { readonly date: string }): JSX.Element {
-	return (
-		<span>
-			as of <time dateTime={props.date}>{props.date}</time>
-		</span>
-	);
+	const m = useMessages(homeFrameMessages);
+	return <span>{m().asOf(<time dateTime={props.date}>{props.date}</time>)}</span>;
 }
 
 /**
@@ -27,18 +26,20 @@ export function SingleSeriesFooter(props: {
 	readonly series: MarketSeries;
 	readonly asOf: string | null;
 }): JSX.Element {
+	const m = useMessages(homeFrameMessages);
 	return (
 		<span class="flex flex-wrap gap-x-2">
 			<SafeLink url={props.series.sourceUrl}>{props.series.publisher}</SafeLink>
-			<Show when={props.asOf} fallback={<span class="italic">as-of date not stated</span>}>
+			<Show when={props.asOf} fallback={<span class="italic">{m().asOfNotStated}</span>}>
 				{(date) => <AsOf date={date()} />}
 			</Show>
 			<span>
-				retrieved{" "}
-				{props.series.retrievedAt === null ? (
-					<span class="italic">not stated</span>
-				) : (
-					formatInstant(props.series.retrievedAt)
+				{m().retrieved(
+					props.series.retrievedAt === null ? (
+						<span class="italic">{m().notStated}</span>
+					) : (
+						formatInstant(props.series.retrievedAt)
+					),
 				)}
 			</span>
 		</span>
@@ -47,7 +48,8 @@ export function SingleSeriesFooter(props: {
 
 /** Tables carry per-row provenance; their footer says so. */
 export function TableFooter(): JSX.Element {
-	return <span>Sources and as-of dates are in each row.</span>;
+	const m = useMessages(homeFrameMessages);
+	return <span>{m().tableFooter}</span>;
 }
 
 /**
@@ -59,12 +61,11 @@ export function TwelveDataSessionNote(props: {
 	readonly seriesIds: readonly string[];
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const m = useMessages(homeFrameMessages);
 	const show = () => props.seriesIds.some((id) => props.byId().get(id)?.provider === "twelve-data");
 	return (
 		<Show when={show()}>
-			<p class="mt-1 text-2xs text-slate-600">
-				Twelve Data daily bars: the newest daily bar can be an unfinished session.
-			</p>
+			<p class="mt-1 text-2xs text-slate-600">{m().twelveDataSession}</p>
 		</Show>
 	);
 }
@@ -101,6 +102,7 @@ function WidgetProvenanceLines(props: {
 	readonly widget: MarketWidgetCore;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const m = useMessages(homeFrameMessages);
 	const metricSeries = () =>
 		props.widget.type === "market-metric"
 			? (props.byId().get(props.widget.seriesId) ?? null)
@@ -110,7 +112,7 @@ function WidgetProvenanceLines(props: {
 	return (
 		<Switch fallback={<TableFooter />}>
 			<Match when={props.widget.type === "market-metric"}>
-				<Show when={metricSeries()} fallback={<span class="italic">source not stated</span>}>
+				<Show when={metricSeries()} fallback={<span class="italic">{m().sourceNotStated}</span>}>
 					{(series) => (
 						<SingleSeriesFooter
 							series={series()}
@@ -132,12 +134,13 @@ function ChartSeriesLine(props: {
 	readonly seriesId: string;
 	readonly byId: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
+	const m = useMessages(homeFrameMessages);
 	const series = () => props.byId().get(props.seriesId) ?? null;
 	return (
 		<Show when={series()} fallback={null}>
 			{(entry) => (
 				<li>
-					{entry().title}:{" "}
+					{m().seriesLabel(entry().title)}
 					<SingleSeriesFooter series={entry()} asOf={entry().observations.at(-1)?.[0] ?? null} />
 				</li>
 			)}

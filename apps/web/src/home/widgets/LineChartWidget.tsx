@@ -1,16 +1,19 @@
 import type { MarketRange, MarketSeries, MarketWidgetCore } from "@research/contracts";
 import { selectRange } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import { ChartFrame, ChartLegend, SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import { ChartOpener } from "../../chartViewer/ChartOpener.tsx";
 import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
 import { initialPresetForRange } from "../../chartViewer/openChart.ts";
 import { DisclosureSummary } from "../../components/ui.tsx";
+import { commonMessages } from "../../i18n/common.messages.ts";
+import { homeModelMessages, homeRangeMessages } from "../homeModel.messages.ts";
 import {
 	buildHomeLineModel,
 	formatValue,
-	HOME_RANGE_LABELS,
 	HOME_RANGES,
+	seriesMissingReason,
 	staleFailureReason,
 	toPoints,
 	unavailableText,
@@ -18,6 +21,7 @@ import {
 import type { SlSelectElement } from "../sl-elements.d.ts";
 import "../shoelace.ts";
 import { WidgetProvenance } from "../HomeFrame.tsx";
+import { marketWidgetMessages } from "./marketWidgets.messages.ts";
 
 /**
  * One to four series that share one unit, over a range, with a legend and a
@@ -45,6 +49,10 @@ export function LineChartWidget(props: {
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 	readonly onSaveRange: (widget: MarketWidgetCore) => void;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const modelText = useMessages(homeModelMessages);
+	const rangeNames = useMessages(homeRangeMessages);
+	const common = useMessages(commonMessages);
 	const resolved = createMemo(() =>
 		props.widget.seriesIds.map((id) => props.seriesById().get(id) ?? null),
 	);
@@ -60,7 +68,9 @@ export function LineChartWidget(props: {
 			return series === null || series.observations.length === 0 ? [id] : [];
 		}),
 	);
-	const stale = createMemo(() => usable().filter((series) => staleFailureReason(series) !== null));
+	const stale = createMemo(() =>
+		usable().filter((series) => staleFailureReason(series, modelText()) !== null),
+	);
 	const units = createMemo(() => [...new Set(usable().map((series) => series.unit))]);
 	const unit = () => units()[0] ?? "";
 	const mixedUnits = () => units().length > 1;
@@ -87,9 +97,12 @@ export function LineChartWidget(props: {
 		if (current === null || rowIndex === null) return null;
 		const values = current.series.map((entry) => {
 			const value = entry.values.get(rowIndex);
-			return `${entry.label}: ${value === undefined ? "unavailable" : `${formatValue(value)} ${unit()}`}`;
+			return m().readoutEntry(
+				entry.label,
+				value === undefined ? m().readoutUnavailable : `${formatValue(value)} ${unit()}`,
+			);
 		});
-		return `${current.rowLabels[rowIndex] ?? "unavailable"} — ${values.join(" · ")}`;
+		return `${current.rowLabels[rowIndex] ?? m().readoutUnavailable} — ${values.join(" · ")}`;
 	});
 
 	const onRangeChange = (event: Event & { readonly currentTarget: SlSelectElement }) => {
@@ -106,14 +119,14 @@ export function LineChartWidget(props: {
 		<div class="space-y-1">
 			<div class="flex flex-wrap items-center gap-2">
 				<sl-select
-					label="Range"
+					attr:label={m().range}
 					value={props.widget.range}
 					size="small"
 					hoist
 					on:sl-change={onRangeChange}
 				>
 					<For each={HOME_RANGES}>
-						{(range) => <sl-option value={range}>{HOME_RANGE_LABELS[range]}</sl-option>}
+						{(range) => <sl-option value={range}>{rangeNames()[range]}</sl-option>}
 					</For>
 				</sl-select>
 			</div>
@@ -122,25 +135,25 @@ export function LineChartWidget(props: {
 					when={model()}
 					fallback={
 						<p class="text-sm text-amber-900">
-							unavailable (
-							{missing().length === props.widget.seriesIds.length
-								? unavailableText("NO_DATA")
-								: "no plottable points in this range"}
-							)
+							{common().unavailable(
+								missing().length === props.widget.seriesIds.length
+									? unavailableText("NO_DATA", modelText())
+									: m().noPlottablePoints,
+							)}
 						</p>
 					}
 				>
 					{(current) => (
 						<>
 							<ChartOpener
-								srPrefix="Open chart: "
+								srPrefix={m().openChart}
 								openerKey="plot"
 								onOpen={(button) => setViewerRequest({ opener: button })}
 							>
 								<ChartFrame
-									ariaLabel={`Line chart: ${props.widget.title}. ${unit()} by date.`}
+									ariaLabel={m().chartImage(props.widget.title, unit())}
 									plot={current().plot}
-									xAxisTitle="Date"
+									xAxisTitle={m().date}
 									yAxisTitle={unit()}
 									yTicks={current().yTicks}
 									yScale={current().yScale}
@@ -184,8 +197,7 @@ export function LineChartWidget(props: {
 								}))}
 							/>
 							<p data-chart-part="readout" class="mt-1 min-h-4 text-xs text-slate-700">
-								{readout() ??
-									"Point at the chart to read values; the data table below lists every value."}
+								{readout() ?? m().pointHint}
 							</p>
 							<DataTwin
 								title={props.widget.title}
@@ -199,24 +211,25 @@ export function LineChartWidget(props: {
 				</Show>
 			</Show>
 			<Show when={stale().length > 0}>
-				<ul aria-label="Stale series" class="space-y-0.5 text-xs text-amber-900">
+				<ul aria-label={m().staleSeries} class="space-y-0.5 text-xs text-amber-900">
 					<For each={stale()}>
 						{(entry) => (
 							<li>
-								{entry.title}: last refresh failed (
-								{entry.unavailable?.reason ?? unavailableText("NO_DATA")})
+								{m().seriesLastRefreshFailed(entry.title, seriesMissingReason(entry, modelText()))}
 							</li>
 						)}
 					</For>
 				</ul>
 			</Show>
 			<Show when={missing().length > 0}>
-				<ul aria-label="Unavailable series" class="space-y-0.5 text-xs text-amber-900">
+				<ul aria-label={m().unavailableSeries} class="space-y-0.5 text-xs text-amber-900">
 					<For each={missing()}>
 						{(id) => (
 							<li>
-								{props.seriesById().get(id)?.title ?? id}: unavailable (
-								{props.seriesById().get(id)?.unavailable?.reason ?? unavailableText("NO_DATA")})
+								{m().seriesUnavailable(
+									props.seriesById().get(id)?.title ?? id,
+									seriesMissingReason(props.seriesById().get(id) ?? null, modelText()),
+								)}
 							</li>
 						)}
 					</For>
@@ -244,10 +257,10 @@ export function LineChartWidget(props: {
 }
 
 function MixedUnits(props: { readonly units: readonly string[] }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
 	return (
 		<p role="alert" class="text-sm text-red-900">
-			This chart cannot be drawn: its series do not share one unit ({props.units.join(", ")}). Edit
-			the widget so every series uses the same unit.
+			{m().mixedUnits(props.units.join(", "))}
 		</p>
 	);
 }
@@ -266,6 +279,8 @@ function DataTwin(props: {
 	readonly unit: string;
 	readonly range: MarketRange;
 }): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const common = useMessages(commonMessages);
 	const valuesBySeries = createMemo(() => {
 		const ranged = new Map<string, ReadonlyMap<string, number>>();
 		for (const entry of props.series) {
@@ -283,16 +298,16 @@ function DataTwin(props: {
 	});
 	return (
 		<details class="group mt-1 text-xs">
-			<DisclosureSummary>Data table: {props.title}</DisclosureSummary>
+			<DisclosureSummary>{m().dataTable(props.title)}</DisclosureSummary>
 			<div class="overflow-x-auto">
 				<table class="w-full border-collapse text-left text-xs">
 					<caption class="caption-top pb-1 text-left text-slate-600">
-						Values plotted in "{props.title}" ({props.unit})
+						{m().valuesPlotted(props.title, props.unit)}
 					</caption>
 					<thead>
 						<tr class="border-b border-slate-200">
 							<th scope="col" class="py-1 pr-3 font-semibold">
-								Date
+								{m().date}
 							</th>
 							<For each={props.model.series}>
 								{(entry) => (
@@ -309,7 +324,7 @@ function DataTwin(props: {
 								<tr class="border-b border-slate-200">
 									<th scope="row" class="py-1 pr-3 font-medium">
 										{date === null ? (
-											<span class="italic">date not stated</span>
+											<span class="italic">{m().dateNotStated}</span>
 										) : (
 											// D3: date only under the "Date" header, not "as of <date>".
 											<time dateTime={date}>{date}</time>
@@ -322,7 +337,9 @@ function DataTwin(props: {
 													const value =
 														date === null ? undefined : valuesBySeries().get(entry.key)?.get(date);
 													return value === undefined ? (
-														<span class="italic text-amber-900">unavailable (no value)</span>
+														<span class="italic text-amber-900">
+															{common().unavailable(m().noValue)}
+														</span>
 													) : (
 														formatValue(value)
 													);
@@ -337,7 +354,7 @@ function DataTwin(props: {
 				</table>
 			</div>
 			<p class="mt-1 text-2xs text-slate-600">
-				Sources:{" "}
+				{m().sources}
 				<For each={props.series}>
 					{(entry, index) => (
 						<span>

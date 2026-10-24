@@ -1,6 +1,7 @@
 import type { MarketWidgetCore, WatchlistResponse, WatchlistStock } from "@research/contracts";
 import { DISCONNECTED_GOOGLE_CALENDAR_STATE } from "@research/contracts";
 import { selectUpcomingEarnings } from "@research/domain";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { type Accessor, createMemo, For, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../../api/client.ts";
@@ -8,12 +9,26 @@ import type { ApiFailure } from "../../api/http.ts";
 import { Empty, ErrorNotice, IconButton } from "../../components/ui.tsx";
 import { formatInstant } from "../../lib/format.ts";
 import { SETTINGS_CALENDAR_HASH } from "../../router.ts";
+import { watchlistModelMessages } from "../../watchlist/watchlistModel.messages.ts";
 import {
 	googleWidgetStatus,
 	hasNeverRefreshedStock,
 	utcTodayIso,
 } from "../../watchlist/watchlistModel.ts";
 import { type CalendarDayEvent, EarningsMonthCalendar } from "./EarningsMonthCalendar.tsx";
+import { earningsCalendarMessages } from "./earnings.messages.tsx";
+
+const LINK_CLASS =
+	"text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800";
+
+/** A link inside one of the widget's sentences. */
+function sentenceLink(href: string): (label: string) => JSX.Element {
+	return (label) => (
+		<a href={href} class={LINK_CLASS}>
+			{label}
+		</a>
+	);
+}
 
 /** One watchlist event with its stock's context, for the window selection. */
 type UpcomingRow = CalendarDayEvent;
@@ -60,6 +75,8 @@ export function EarningsCalendarWidget(props: {
 	readonly earningsRefreshBusy: Accessor<boolean>;
 	readonly api: ApiClient;
 }): JSX.Element {
+	const m = useMessages(earningsCalendarMessages);
+	const watchlistText = useMessages(watchlistModelMessages);
 	const today = () => utcTodayIso(Date.now());
 	const daysAhead = () => props.widget.daysAhead;
 	/** The active earnings run, if any: the status line below names it. */
@@ -116,18 +133,20 @@ export function EarningsCalendarWidget(props: {
 	const earningsStatus = createMemo((): string => {
 		const current = props.watchlist();
 		const active = activeRefresh();
-		if (active !== null) return `Fetching earnings dates… (${active.state}).`;
-		if (current === null) return "Loading earnings dates…";
-		if (neverFetched()) return "Earnings dates have not been fetched yet.";
+		if (active !== null) return m().fetching(active.state);
+		if (current === null) return m().loading;
+		if (neverFetched()) return m().notFetched;
 		if (current.refresh.lastSucceededAt !== null) {
-			return `Earnings dates last refreshed ${formatInstant(current.refresh.lastSucceededAt)}.`;
+			return m().lastRefreshed(formatInstant(current.refresh.lastSucceededAt));
 		}
-		return "No earnings-date refresh has completed yet.";
+		return m().noRefreshYet;
 	});
 	const googleStatus = createMemo((): string => {
 		const current = props.watchlist();
-		if (current === null) return googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE);
-		return googleWidgetStatus(current.googleCalendar);
+		if (current === null) {
+			return googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE, watchlistText());
+		}
+		return googleWidgetStatus(current.googleCalendar, watchlistText());
 	});
 	const googleDisconnected = () => props.watchlist()?.googleCalendar.status === "disconnected";
 
@@ -139,7 +158,7 @@ export function EarningsCalendarWidget(props: {
 					{(error) => (
 						<ErrorNotice
 							failure={error()}
-							title="Could not load earnings dates."
+							title={m().loadFailed}
 							onRetry={() => props.onRetryWatchlist()}
 						/>
 					)}
@@ -148,22 +167,11 @@ export function EarningsCalendarWidget(props: {
 		>
 			<Show
 				when={props.watchlist() !== null}
-				fallback={<output class="block text-sm text-slate-600">Loading earnings dates…</output>}
+				fallback={<output class="block text-sm text-slate-600">{m().loading}</output>}
 			>
 				<Show
 					when={(props.watchlist()?.stocks.length ?? 0) > 0}
-					fallback={
-						<Empty>
-							No stocks on the watchlist yet.{" "}
-							<a
-								href="#/watchlist"
-								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-							>
-								Add one on the Watchlist page
-							</a>
-							.
-						</Empty>
-					}
+					fallback={<Empty>{m().noStocks(sentenceLink("#/watchlist"))}</Empty>}
 				>
 					<EarningsMonthCalendar events={datedRows() ?? []} />
 					<Show
@@ -171,19 +179,13 @@ export function EarningsCalendarWidget(props: {
 						fallback={
 							<Show
 								when={!neverFetched()}
-								fallback={
-									<p class="mt-2 text-sm text-slate-700">
-										Earnings dates have not been fetched yet.
-									</p>
-								}
+								fallback={<p class="mt-2 text-sm text-slate-700">{m().notFetched}</p>}
 							>
-								<p class="mt-2 text-sm text-slate-700">
-									No announcement in the next {daysAhead()} days.
-								</p>
+								<p class="mt-2 text-sm text-slate-700">{m().noAnnouncement(daysAhead())}</p>
 							</Show>
 						}
 					>
-						<h4 class="mt-2 text-xs font-semibold text-slate-900">Next</h4>
+						<h4 class="mt-2 text-xs font-semibold text-slate-900">{m().next}</h4>
 						<ul class="mt-0.5 space-y-1">
 							<For each={nextThree() ?? []}>
 								{(row) => (
@@ -201,35 +203,20 @@ export function EarningsCalendarWidget(props: {
 					</Show>
 					<Show when={withoutUpcoming().length > 0}>
 						<p class="mt-2 text-xs text-slate-700">
-							{withoutUpcoming().length === 1
-								? "1 stock has no upcoming date."
-								: `${withoutUpcoming().length} stocks have no upcoming date.`}{" "}
-							<a
-								href="#/watchlist"
-								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-							>
-								See them on the Watchlist page
-							</a>
-							.
+							{m().withoutUpcoming(withoutUpcoming().length, sentenceLink("#/watchlist"))}
 						</p>
 					</Show>
 					<output class="mt-2 block text-xs text-slate-700">
 						{earningsStatus()} {googleStatus()}{" "}
 						<Show when={googleDisconnected()}>
-							<a
-								href={SETTINGS_CALENDAR_HASH}
-								class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-							>
-								Connect it in Settings
-							</a>
-							.
+							{m().connectInSettings(sentenceLink(SETTINGS_CALENDAR_HASH))}
 						</Show>
 					</output>
 					<div class="mt-2 flex flex-wrap items-center gap-2">
 						{/* Icon-only like every Home button (guideline section 13): the
 						    former text is the accessible name and the tooltip. */}
 						<IconButton
-							label="Refresh earnings dates"
+							label={m().refresh}
 							icon="arrow-clockwise"
 							disabled={props.earningsRefreshBusy() || activeRefresh() !== null}
 							onClick={() => props.onRefreshEarnings()}
@@ -238,24 +225,26 @@ export function EarningsCalendarWidget(props: {
 							href="#/watchlist"
 							class="pointer-coarse:min-h-11 inline-flex min-h-6 items-center text-xs text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 						>
-							Open Watchlist
+							{m().openWatchlist}
 						</a>
 					</div>
 					<Show when={provenance().length > 0}>
 						<p class="mt-2 border-t border-slate-200 pt-1 text-2xs text-slate-600">
-							Sources:{" "}
+							{m().sources}
 							<For each={provenance()}>
 								{(entry, index) => (
 									<span>
 										<Show when={index() > 0}>; </Show>
 										<SafeLink url={entry.sourceUrl}>{entry.publisher}</SafeLink>
 										{entry.retrievedAt === null ? (
-											<span> (not retrieved yet)</span>
+											<span>{m().notRetrievedYet}</span>
 										) : (
 											<span>
-												{" "}
-												(retrieved{" "}
-												<time dateTime={entry.retrievedAt}>{entry.retrievedAt.slice(0, 10)}</time>)
+												{m().retrievedOn(
+													<time dateTime={entry.retrievedAt}>
+														{entry.retrievedAt.slice(0, 10)}
+													</time>,
+												)}
 											</span>
 										)}
 									</span>
