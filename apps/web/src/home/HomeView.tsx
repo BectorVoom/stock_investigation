@@ -850,6 +850,8 @@ export function HomeView(props: {
 										<WidgetBody
 											widget={entry.widget}
 											view={null}
+											api={props.api}
+											visibility={props.visibility}
 											market={marketContext}
 											editingDisabled={busy()}
 											onSaveText={board.saveText}

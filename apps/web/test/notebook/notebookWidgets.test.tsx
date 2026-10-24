@@ -1,12 +1,17 @@
 import { createBaselineUiRegistry } from "@research/ui-registry";
 import { cleanup, render, screen, within } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
+import { createApiClient } from "../../src/api/client.ts";
 import { WidgetBody } from "../../src/widgets/WidgetBody.tsx";
+import { ALWAYS_VISIBLE, createFakeBackend } from "../fakeBackend.ts";
 import { WORKSPACE_VIEW } from "../fixtures.ts";
 import { notebookFixtures } from "./notebookHarness.ts";
 
 const registry = createBaselineUiRegistry();
 const BODY_DEFAULTS = {
+	// No widget here loads tasks; the client only satisfies the body's props.
+	api: createApiClient({ fetch: createFakeBackend().fetch }),
+	visibility: ALWAYS_VISIBLE,
 	market: null,
 	editingDisabled: false,
 	onSaveText: () => Promise.resolve(true),

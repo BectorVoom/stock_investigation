@@ -27,6 +27,7 @@ import { PAGES } from "./pages.ts";
 import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
 import { SourcesView } from "./sources/SourcesView.tsx";
+import { TasksView } from "./tasks/TasksView.tsx";
 import { WatchlistView } from "./watchlist/WatchlistView.tsx";
 
 /** Home is loaded lazily so the other pages never pay for Shoelace. */
@@ -160,6 +161,9 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 								<HomeView api={props.api} visibility={props.visibility} />
 							</Suspense>
 						</ErrorBoundary>
+					</Match>
+					<Match when={view() === "tasks"}>
+						<TasksView api={props.api} visibility={props.visibility} />
 					</Match>
 					<Match when={view() === "chat"}>
 						<ChatView

@@ -16,6 +16,10 @@ const JAPANESE: { readonly [V in ViewName]: { readonly title: string; readonly p
 			title: "ウォッチリスト",
 			purpose: "注目している銘柄を登録し、決算発表日を確認します。",
 		},
+		tasks: {
+			title: "タスク",
+			purpose: "リサーチの質問を予定どおりに自動で実行し、次の実行日時と前回の結果を確認します。",
+		},
 		chat: {
 			title: "チャット",
 			purpose: "リサーチの質問をして、出典と実行の進み具合とともに回答を読みます。",

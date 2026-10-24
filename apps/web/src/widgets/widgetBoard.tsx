@@ -39,6 +39,7 @@ import {
 	moveWidget,
 	reorderWidgets,
 	resizeWidget,
+	scheduledTasksWidget,
 	starterWidget,
 } from "./widgetModel.ts";
 import { widgetTypeMessages } from "./widgetTypes.messages.ts";
@@ -229,7 +230,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/** Edit…: the market dialog for a live market widget, the content editor for the rest. */
 	const openEditor = (widgetId: string, opener: HTMLElement | null = activeOpener()): void => {
 		const widget = widgets().find((entry) => entry.widgetId === widgetId);
-		if (widget === undefined) return;
+		if (widget === undefined || !hasEditableContent(widget.type)) return;
 		if (isMarketWidget(widget)) {
 			setMarketOpener(opener);
 			setMarketDialog({ mode: "edit", widget: marketCoreOf(widget) });
@@ -247,7 +248,8 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 
 	/**
 	 * The add menu: a content type is added as a starter and opened in its
-	 * editor; a market type needs a series first, so its dialog opens.
+	 * editor; a market type needs a series first, so its dialog opens; the
+	 * scheduled-tasks widget has no fields, so it is placed at once.
 	 */
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
@@ -261,6 +263,14 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 			return;
 		}
 		if (type === "research") return;
+		if (type === "scheduled-tasks") {
+			const core = scheduledTasksWidget(typeWords().typeLabel(type));
+			void insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
+				if (ids === null || disposed) return;
+				options.onAdded?.([core]);
+			});
+			return;
+		}
 		setMarketOpener(opener);
 		setMarketDialog({ mode: "add", type });
 		ensureCatalog();
@@ -512,14 +522,19 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const menuItems = (widget: W, index: number): readonly ActionMenuItem[] => {
 		const busy = pending();
 		const sizes = WIDGET_TYPE_META[widget.type].sizes;
+		const edit: readonly ActionMenuItem[] = hasEditableContent(widget.type)
+			? [
+					{
+						value: "edit",
+						label: m().edit,
+						icon: "pencil",
+						disabled: busy,
+						onSelect: () => openEditor(widget.widgetId),
+					},
+				]
+			: [];
 		return [
-			{
-				value: "edit",
-				label: m().edit,
-				icon: "pencil",
-				disabled: busy,
-				onSelect: () => openEditor(widget.widgetId),
-			},
+			...edit,
 			...sizes.map(
 				(size): ActionMenuItem => ({
 					value: `size-${size}`,
@@ -748,6 +763,15 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 }
 
 export type WidgetBoard<W extends WidgetCore> = ReturnType<typeof createWidgetBoard<W>>;
+
+/**
+ * Whether the type has fields an editor changes (its menu offers Edit…).
+ * The scheduled-tasks widget has none: its size is in the menu, its tasks
+ * on the Tasks page (ADR-0033 §9).
+ */
+function hasEditableContent(type: WidgetType): boolean {
+	return type !== "scheduled-tasks";
+}
 
 function isOrigin(value: unknown): value is NotebookWidgetOrigin {
 	return (

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatHash, parseHash, type Route, SETTINGS_CALENDAR_HASH } from "../src/router.ts";
+import {
+	chatHash,
+	formatHash,
+	parseHash,
+	type Route,
+	SETTINGS_AGENT_HASH,
+	SETTINGS_CALENDAR_HASH,
+	TASKS_HASH,
+} from "../src/router.ts";
 
 function route(overrides: Partial<Route>): Route {
 	return {
@@ -17,7 +25,16 @@ describe("router", () => {
 		expect(parseHash("#/chat/ws_1")).toEqual(route({ view: "chat", workspaceId: "ws_1" }));
 		expect(parseHash("#/sources")).toEqual(route({ view: "sources" }));
 		expect(parseHash("#/watchlist")).toEqual(route({ view: "watchlist" }));
+		expect(parseHash("#/tasks")).toEqual(route({ view: "tasks" }));
 		expect(parseHash("#/settings")).toEqual(route({ view: "settings" }));
+	});
+
+	it("links the Tasks page, a task's chat and the AI agent settings (ADR-0033)", () => {
+		expect(parseHash(TASKS_HASH)).toEqual(route({ view: "tasks" }));
+		expect(parseHash(chatHash("ws_task"))).toEqual(route({ view: "chat", workspaceId: "ws_task" }));
+		expect(parseHash(SETTINGS_AGENT_HASH)).toEqual(route({ view: "settings", section: "agent" }));
+		// The Tasks page has no sub-routes: anything after it opens the list.
+		expect(parseHash("#/tasks/task_1")).toEqual(route({ view: "tasks" }));
 	});
 
 	it("parses the settings agent and calendar markers so other pages can link to them", () => {

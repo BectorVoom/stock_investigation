@@ -257,6 +257,9 @@ function stubMarket(
 }
 
 const BODY_DEFAULTS = {
+	// No widget here loads tasks; the client only satisfies the body's props.
+	api: createApiClient({ fetch: createFakeBackend().fetch }),
+	visibility: ALWAYS_VISIBLE,
 	editingDisabled: false,
 	onSaveText: () => Promise.resolve(true),
 	onSaveMarketWidget: () => {},

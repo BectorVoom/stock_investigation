@@ -34,6 +34,7 @@ import {
 import { makeRun } from "./fixtures.ts";
 import { lastOpenMenu } from "./openMenu.ts";
 import { assertOnlyIconFetches, resetGlobalFetchCalls } from "./setup.ts";
+import { makeTask } from "./tasks/tasksHarness.ts";
 
 let backend: FakeBackend;
 let server: ServerState;
@@ -1672,6 +1673,36 @@ describe("Home follows the one widget specification (ADR-0024)", () => {
 		await waitFor(() => expect(widgets()).toHaveLength(8));
 		await waitFor(() => expect(document.querySelector("dialog[open]")).not.toBeNull());
 		expect(document.querySelector("dialog[open]")?.textContent).toContain("Edit text widget");
+	});
+
+	it("places a Scheduled tasks widget at once (no fields, no dialog) whose menu has no Edit…", async () => {
+		backend.on("GET", /^\/api\/v1\/scheduled-tasks$/, () =>
+			jsonResponse({
+				tasks: [makeTask()],
+				limits: { maxActive: 10, maxTasks: 30 },
+			}),
+		);
+		mountApp(backend);
+		await waitFor(() => expect(widgets()).toHaveLength(7), { timeout: 10_000 });
+		chooseAddType("Scheduled tasks");
+		await waitFor(() => expect(homePuts()).toHaveLength(1));
+		const added = lastPut()?.dashboard.widgets.at(-1);
+		expect(added).toMatchObject({
+			type: "scheduled-tasks",
+			title: "Scheduled tasks",
+			size: "medium",
+		});
+		await waitFor(() => expect(widgets()).toHaveLength(8));
+		expect(document.querySelector("dialog[open]")).toBeNull();
+		const frame = widgets().at(-1);
+		if (frame === undefined) throw new Error("expected the new widget");
+		await waitFor(() => expect(frame.textContent).toContain("Morning storage brief"));
+		fireEvent.click(widgetActionsButton(frame));
+		const names = within(lastOpenMenu())
+			.getAllByRole("menuitem")
+			.map((item) => item.textContent?.trim());
+		expect(names).not.toContain("Edit…");
+		expect(names).toContain("Size: Large");
 	});
 
 	it("has the Notebook's menu: Edit…, Size, Cut, Copy, Paste after, Duplicate, Move, Remove", async () => {

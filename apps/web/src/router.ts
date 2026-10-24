@@ -22,7 +22,7 @@ const SETTINGS_SECTIONS = new Set(["agent", "calendar"]);
 
 /**
  * Parses `#/home`, `#/chat`, `#/chat/<id>`, `#/sources`, `#/watchlist`,
- * `#/settings`, `#/settings/agent` and `#/settings/calendar`; the legacy
+ * `#/tasks`, `#/settings`, `#/settings/agent` and `#/settings/calendar`; the legacy
  * `#/canvas`, `#/canvas/<id>`, `#/workspace/<id>` and `#/workspace` aliases
  * parse as the chat view (bookmarks from before the Canvas panel moved into
  * the thread), and the legacy `#/watchlist/calendar[/YYYY-MM-DD]` links as
@@ -66,6 +66,21 @@ export function formatHash(route: Route): string {
 		return `#/${route.view}/${route.section}`;
 	}
 	return `#/${route.view}`;
+}
+
+/** The Tasks page (ADR-0033): the widget's "Open Tasks" link. */
+export const TASKS_HASH = formatHash({ view: "tasks", workspaceId: null, section: null });
+
+/** The AI agent section of Settings: where a skipped task's fix lives. */
+export const SETTINGS_AGENT_HASH = formatHash({
+	view: "settings",
+	workspaceId: null,
+	section: "agent",
+});
+
+/** A conversation on the Chat page (a task's answers land in its own). */
+export function chatHash(workspaceId: string): string {
+	return formatHash({ view: "chat", workspaceId, section: null });
 }
 
 /** The Calendar section of Settings (Google Calendar, `.ics` download, subscription link). */
