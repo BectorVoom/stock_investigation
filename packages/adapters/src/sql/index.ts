@@ -24,6 +24,7 @@ import type {
 	RunnerStatusRepository,
 	SettingsRepository,
 	SourceRepository,
+	StockDirectoryRepository,
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
@@ -46,6 +47,7 @@ import {
 	createRunnerStatusRepository,
 	createSettingsRepository,
 	createSourceRepository,
+	createStockDirectoryRepository,
 	createWatchlistRepository,
 	createWorkspaceRepository,
 } from "./repositories.ts";
@@ -53,6 +55,7 @@ import { createResearchUnitOfWork } from "./unitOfWork.ts";
 
 export type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 export { StoredDataError } from "./rows.ts";
+export { chunkStockDirectoryRows, STOCK_DIRECTORY_CHUNK_BYTES } from "./unitOfWork.ts";
 
 /** Every SQL-backed port, built from one database. */
 export function createSqlPersistence(db: SqlDatabase): Persistence {
@@ -73,6 +76,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const earnings: EarningsRepository = createEarningsRepository(db);
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
 	const googleCalendar: GoogleCalendarRepository = createGoogleCalendarRepository(db);
+	const stockDirectory: StockDirectoryRepository = createStockDirectoryRepository(db);
 	const rateLimiter: RateLimiter = createRateLimiter(db);
 	const audit: AuditLog = createAuditLog(db);
 	const unitOfWork: ResearchUnitOfWork = createResearchUnitOfWork(db);
@@ -94,6 +98,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		earnings,
 		calendarFeed,
 		googleCalendar,
+		stockDirectory,
 		rateLimiter,
 		audit,
 		unitOfWork,

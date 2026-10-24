@@ -35,6 +35,11 @@ import {
 	registerSourceRequestSchema,
 	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
+	stockDirectoryRefreshRequestSchema,
+	stockDirectoryRefreshResponseSchema,
+	stockDirectorySearchQuerySchema,
+	stockDirectorySearchResponseSchema,
+	stockDirectoryStatusResponseSchema,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
 	updateSourceRequestSchema,
@@ -57,6 +62,8 @@ import {
 	idempotencyKey,
 	pathId,
 	readJson,
+	readOptionalJson,
+	readQuery,
 	reject,
 	respond,
 	STATUS,
@@ -1095,6 +1102,55 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.watchlist.queueRefresh(owner(c), key),
 				);
 				return c.json({ run: created.run }, 202);
+			}),
+		),
+	);
+
+	/* Stock directory (ADR-0033): every listed US and Japanese stock, stored
+	 * by the runner one market per job and searched from the add-a-stock
+	 * form. Owner-authenticated like the other watchlist routes. No route
+	 * logs the search text: the API writes no per-request lines, and a
+	 * failure logs only the use-case name and error class (SEC-010) — the
+	 * query is the owner's own typing, and even its length says nothing an
+	 * operator needs.
+	 */
+	api.get("/watchlist/directory", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const status = yield* useCase("watchlist.directory_status", () =>
+					c.var.services.stockDirectory.getStatus(owner(c)),
+				);
+				return c.json(stockDirectoryStatusResponseSchema.parse(status));
+			}),
+		),
+	);
+	api.get("/watchlist/directory/search", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const query = yield* readQuery(c, stockDirectorySearchQuerySchema);
+				const found = yield* useCase("watchlist.directory_search", () =>
+					c.var.services.stockDirectory.search(owner(c), query),
+				);
+				return c.json(stockDirectorySearchResponseSchema.parse(found));
+			}),
+		),
+	);
+	api.post("/watchlist/directory/refresh", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const key = yield* idempotencyKey(c);
+				// The body is optional: none (or `{}`) refreshes both markets.
+				const request = yield* readOptionalJson(c, stockDirectoryRefreshRequestSchema);
+				const queued = yield* useCase("runs.create_stock_directory_refresh", () =>
+					c.var.services.stockDirectory.queueRefresh(owner(c), request, key),
+				);
+				return c.json(stockDirectoryRefreshResponseSchema.parse(queued), 202);
 			}),
 		),
 	);

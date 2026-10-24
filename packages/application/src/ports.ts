@@ -29,6 +29,7 @@ import type {
 	RunRecords,
 	StockDirectoryEntry,
 	StockDirectoryFailureCode,
+	StockListing,
 	UpdateSourceRequest,
 	WatchMarket,
 	WorkspaceSummary,
@@ -38,6 +39,8 @@ import {
 	type RawFeed,
 	type ResourceUsage,
 	type Result,
+	type StockSearchKeys,
+	type StockSearchRow,
 	type UiCommand,
 	type WorkspaceState,
 } from "@research/domain";
@@ -201,11 +204,17 @@ export interface JobRecord {
 	/**
 	 * The stored request: a research request for research jobs, `{ action }`
 	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
-	 * request for `notebook-assist` jobs (ADR-0020), null for the refresh
+	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
+	 * `stock-directory-refresh` jobs (ADR-0033), null for the other refresh
 	 * kinds. Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
-	readonly request: ResearchRequest | GoogleCalendarRequest | NotebookAssistJobRequest | null;
+	readonly request:
+		| ResearchRequest
+		| GoogleCalendarRequest
+		| NotebookAssistJobRequest
+		| StockDirectoryJobRequest
+		| null;
 	readonly workspaceId: string | null;
 	readonly usage: ResourceUsage;
 	readonly attempt: number;
@@ -239,6 +248,23 @@ export interface JobRecord {
 	readonly version: number;
 	readonly createdAt: string;
 	readonly updatedAt: string;
+}
+
+/**
+ * The stored request of a `stock-directory-refresh` job (ADR-0033): the one
+ * market it downloads. Kept in the job's request column so the claim can
+ * name the market and by-kind lookups can be narrowed to it.
+ */
+export interface StockDirectoryJobRequest {
+	readonly market: WatchMarket;
+}
+
+/**
+ * Narrows a by-kind job lookup to one market's `stock-directory-refresh`
+ * jobs (ADR-0033: one active run per market, status per market).
+ */
+export interface JobKindScope {
+	readonly market: WatchMarket;
 }
 
 /** Mutable job columns. Identity, kind, creation time and the retry link never change. */
@@ -325,8 +351,12 @@ export interface JobRepository {
 		events: readonly RunnerEvent[],
 	): Promise<boolean>;
 	listProgress(ownerId: string, runId: string, limit: number): Promise<readonly ProgressEntry[]>;
-	/** Newest non-terminal job of a kind, if any (market-refresh de-duplication). */
-	findActiveByKind(ownerId: string, kind: JobKind): Promise<JobRecord | null>;
+	/**
+	 * Newest non-terminal job of a kind, if any (market-refresh
+	 * de-duplication). With a scope, only jobs whose stored request names
+	 * that market (`stock-directory-refresh`).
+	 */
+	findActiveByKind(ownerId: string, kind: JobKind, scope?: JobKindScope): Promise<JobRecord | null>;
 	/**
 	 * Newest non-terminal `notebook-assist` job of a conversation, if any
 	 * (ADR-0020: one active assistant turn per conversation — a second
@@ -337,7 +367,11 @@ export interface JobRepository {
 	 * Completion time of the newest COMPLETED job of a kind, if any (S2: a
 	 * failed or cancelled refresh is never presented as a success).
 	 */
-	findLatestSuccessAtByKind(ownerId: string, kind: JobKind): Promise<string | null>;
+	findLatestSuccessAtByKind(
+		ownerId: string,
+		kind: JobKind,
+		scope?: JobKindScope,
+	): Promise<string | null>;
 	/**
 	 * Newest terminal job of a kind that did not succeed, if any (S2: state +
 	 * stable failure code + time for the "last refresh failed" line).
@@ -345,6 +379,7 @@ export interface JobRepository {
 	findLatestFailureByKind(
 		ownerId: string,
 		kind: JobKind,
+		scope?: JobKindScope,
 	): Promise<{
 		readonly state: string;
 		readonly failureCode: string | null;
@@ -519,6 +554,12 @@ export interface CompletionEffects {
 	} | null;
 	/** The recorded assistant turn of a `notebook-assisted` completion, if any. */
 	readonly notebookTurn: { readonly workspaceId: string; readonly turn: NotebookTurn } | null;
+	/**
+	 * One market's full stock list of a `stock-directory-refreshed`
+	 * completion (ADR-0033), replacing that market's stored rows all or
+	 * nothing; null for every other outcome.
+	 */
+	readonly stockDirectory: StockDirectoryCompletion | null;
 }
 
 export type CompletionCommitResult =
@@ -772,6 +813,60 @@ export interface NotebookRepository {
 	listMarketSeriesIds(ownerId: string): Promise<readonly string[]>;
 }
 
+/* ---------- Stock directory storage and search (ADR-0033) ---------- */
+
+/** One stored listed stock, as searched and shown. */
+export interface StoredStockDirectoryEntry extends StockSearchRow {
+	readonly listing: StockListing;
+}
+
+/**
+ * One row as a completion writes it: the entry plus its folded search keys,
+ * computed in TypeScript (`stockSearchKeys`, `stockSearchHaystack`) so the
+ * SQL ranking reads exactly the keys the domain reference computes.
+ */
+export interface StockDirectoryRow extends StoredStockDirectoryEntry, StockSearchKeys {
+	/** `stockSearchHaystack` of the keys: every query term must be a substring of it. */
+	readonly searchKey: string;
+}
+
+/** What a `stock-directory-refreshed` completion stores; committed with its job. */
+export interface StockDirectoryCompletion {
+	readonly market: WatchMarket;
+	readonly asOf: string | null;
+	readonly retrievedAt: string;
+	/** Distinct symbols of `market`, at most `STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket`. */
+	readonly rows: readonly StockDirectoryRow[];
+}
+
+/** One market's stored list header; absent before the first successful refresh. */
+export interface StockDirectoryMeta {
+	readonly market: WatchMarket;
+	readonly entryCount: number;
+	readonly asOf: string | null;
+	readonly retrievedAt: string;
+}
+
+export interface StockDirectoryRepository {
+	/**
+	 * The owner's stored rows matching `query`, ranked: exactly
+	 * `rankStockSearch(rows, query, limit)` over the stored rows of `market`
+	 * (both markets when null). Empty for a blank query or no stored list.
+	 */
+	search(
+		ownerId: string,
+		query: { readonly text: string; readonly market: WatchMarket | null; readonly limit: number },
+	): Promise<readonly StoredStockDirectoryEntry[]>;
+	/** One stored row, null when the market's list does not hold the symbol. */
+	getEntry(
+		ownerId: string,
+		market: WatchMarket,
+		symbol: string,
+	): Promise<StoredStockDirectoryEntry | null>;
+	/** The meta row of every market that has a stored list. */
+	listMeta(ownerId: string): Promise<readonly StockDirectoryMeta[]>;
+}
+
 /* ---------- Watchlist and earnings calendar (FR-018; section 4) ---------- */
 
 export interface StoredWatchlistStock {
@@ -818,6 +913,11 @@ export interface WatchlistRepository {
 			readonly stockId: string;
 			readonly market: WatchMarket;
 			readonly symbol: string;
+			/**
+			 * The stock directory's company name when the directory holds the
+			 * stock (ADR-0033), else null; never overwrites an existing row.
+			 */
+			readonly name: string | null;
 			readonly addedAt: string;
 		},
 		maxStocks: number,
@@ -1159,6 +1259,7 @@ export interface Persistence {
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
+	readonly stockDirectory: StockDirectoryRepository;
 	readonly rateLimiter: RateLimiter;
 	readonly audit: AuditLog;
 	readonly unitOfWork: ResearchUnitOfWork;

@@ -71,12 +71,14 @@ import type {
 	ResearchUnitOfWork,
 	RunnerStatusRepository,
 	SourceRepository,
+	StockDirectoryJobRequest,
 	TransitionAudit,
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
 import { checkBundleIntegrity } from "./recordIntegrity.ts";
 import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
+import { stockDirectoryRows } from "./stockDirectory.ts";
 import {
 	applyRunOperations,
 	commandContext,
@@ -178,6 +180,11 @@ type GoogleClaimPayload = Pick<
 	Extract<ClaimedJob, { kind: "google-calendar" }>,
 	"action" | "calendarId" | "desiredDigest" | "events"
 >;
+
+/** The market a `stock-directory-refresh` job downloads (ADR-0033), from its stored request. */
+function directoryMarket(job: JobRecord): StockDirectoryJobRequest["market"] | null {
+	return job.request !== null && "market" in job.request ? job.request.market : null;
+}
 
 /** Deterministic id, so re-submitting the same article is a no-op rather than a second row. */
 function toArticle(article: IngestedArticle): Article {
@@ -314,6 +321,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			google: null,
 			notebook: null,
 			notebookTurn: null,
+			stockDirectory: null,
 		});
 	}
 
@@ -348,6 +356,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			google: null,
 			notebook: null,
 			notebookTurn: null,
+			stockDirectory: null,
 		});
 	}
 
@@ -381,6 +390,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				google: null,
 				notebook: null,
 				notebookTurn: null,
+				stockDirectory: null,
 			});
 
 		const external = await deps.records.resolve(
@@ -412,6 +422,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			google: null,
 			notebook: null,
 			notebookTurn: null,
+			stockDirectory: null,
 			workspace:
 				applied.commands.length === 0
 					? null
@@ -612,6 +623,24 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					if (!available.has(notebookClaim.agent.agentId)) continue;
 				}
 
+				// ADR-0033: a directory job names its market in its stored
+				// request; one that does not cannot run, and is refused
+				// before the lease is granted (like the refusals above).
+				const claimedDirectoryMarket =
+					job.kind === "stock-directory-refresh" ? directoryMarket(job) : null;
+				if (job.kind === "stock-directory-refresh" && claimedDirectoryMarket === null) {
+					await write(
+						{
+							state: "failed",
+							failureCode: "INTERNAL",
+							failureDetail: null,
+							leaseExpiresAt: null,
+						},
+						[auditFor(runner, job.state, "failed", "stock directory job names no market")],
+					);
+					continue;
+				}
+
 				const audits =
 					decision.reason === "lease-expired"
 						? [
@@ -683,6 +712,21 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
 					};
 					return ok({ job: claimedEarnings, pollAfterMs: POLL_AFTER_CLAIM_MS });
+				}
+				if (claimedDirectoryMarket !== null) {
+					// The runner needs nothing but the market: the whole list
+					// comes from SEC (US) or JPX (JP).
+					const claimedDirectory: ClaimedJob = {
+						kind: "stock-directory-refresh",
+						runId: job.runId,
+						leaseGeneration: decision.nextLeaseGeneration,
+						leaseExpiresAt,
+						attempt: decision.nextAttempt,
+						heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+						sources: [],
+						market: claimedDirectoryMarket,
+					};
+					return ok({ job: claimedDirectory, pollAfterMs: POLL_AFTER_CLAIM_MS });
 				}
 				if (notebookClaim !== null) {
 					const notebookWorkspaceId = job.workspaceId;
@@ -932,17 +976,24 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				const isResearch = job.kind === "research";
 				const isGoogle = job.kind === "google-calendar";
 				const isNotebook = job.kind === "notebook-assist";
+				const isDirectory = job.kind === "stock-directory-refresh";
 				const researchOnly = request.outcome === "completed" || request.outcome === "partial";
 				const marketOnly = request.outcome === "market-refreshed";
 				const earningsOnly = request.outcome === "earnings-refreshed";
 				const notebookOnly = request.outcome === "notebook-assisted";
+				const directoryOnly = request.outcome === "stock-directory-refreshed";
 				const googleOnly =
 					request.outcome === "google-calendar-connected" ||
 					request.outcome === "google-calendar-synced" ||
 					request.outcome === "google-calendar-disconnected";
 				if (
 					(isIngest &&
-						(researchOnly || marketOnly || earningsOnly || googleOnly || notebookOnly)) ||
+						(researchOnly ||
+							marketOnly ||
+							earningsOnly ||
+							googleOnly ||
+							notebookOnly ||
+							directoryOnly)) ||
 					(isMarket &&
 						!marketOnly &&
 						request.outcome !== "failed" &&
@@ -956,7 +1007,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							marketOnly ||
 							earningsOnly ||
 							googleOnly ||
-							notebookOnly)) ||
+							notebookOnly ||
+							directoryOnly)) ||
 					(isGoogle &&
 						!googleOnly &&
 						request.outcome !== "failed" &&
@@ -965,7 +1017,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						!notebookOnly &&
 						request.outcome !== "failed" &&
 						request.outcome !== "cancelled") ||
-					(notebookOnly && !isNotebook)
+					(isDirectory &&
+						!directoryOnly &&
+						request.outcome !== "failed" &&
+						request.outcome !== "cancelled") ||
+					(notebookOnly && !isNotebook) ||
+					(directoryOnly && !isDirectory)
 				) {
 					return fail("VALIDATION_FAILED", "This outcome does not apply to this kind of job.");
 				}
@@ -1005,6 +1062,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					google: null,
 					notebook: null,
 					notebookTurn: null,
+					stockDirectory: null,
 				};
 				const patch: { -readonly [K in keyof JobPatch]: JobPatch[K] } = {
 					usage: cumulativeUsage(job.usage, request.usage),
@@ -1079,6 +1137,29 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					const kept = built.value.earnings.filter((entry) => current.has(entry.stockId));
 					droppedEarningsStocks = built.value.earnings.length - kept.length;
 					effects = { ...built.value, earnings: kept };
+				} else if (request.outcome === "stock-directory-refreshed") {
+					// ADR-0033: the completion must be the list of the market
+					// this job was queued for — a JP list answering a US job
+					// would replace the wrong market's rows.
+					if (request.market !== directoryMarket(job)) {
+						return fail(
+							"VALIDATION_FAILED",
+							"The stock list is not for the market this run downloads.",
+						);
+					}
+					target = "completed";
+					patch.failureCode = null;
+					patch.failureDetail = null;
+					patch.approvalRequest = null;
+					effects = {
+						...effects,
+						stockDirectory: {
+							market: request.market,
+							asOf: request.asOf,
+							retrievedAt: request.fetchedAt,
+							rows: stockDirectoryRows(request.market, request.entries),
+						},
+					};
 				} else if (request.outcome === "notebook-assisted") {
 					target = "completed";
 					patch.failureCode = null;
@@ -1107,6 +1188,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						notebook: built.value.notebook,
 						notebookTurn: built.value.notebookTurn,
 						assistantMessage: built.value.assistantMessage,
+						stockDirectory: null,
 					};
 				} else if (request.outcome === "completed" || request.outcome === "partial") {
 					target = request.outcome;
@@ -1174,6 +1256,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					isGoogle && outcome !== "cancelled" && request.outcome === "google-calendar-synced"
 						? `completion: ${outcome}, inserted=${request.inserted} updated=${request.updated} deleted=${request.deleted} unchanged=${request.unchanged}`
 						: null;
+				// ADR-0033: the stored list's market and size travel in the
+				// transition detail (counts only).
+				const directoryDetail =
+					effects.stockDirectory === null
+						? null
+						: `completion: ${outcome}, market=${effects.stockDirectory.market} entries=${effects.stockDirectory.rows.length}`;
 				const committed = await deps.unitOfWork.commitCompletion(
 					runner.ownerId,
 					{
@@ -1186,6 +1274,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								job.state,
 								target,
 								googleDetail ??
+									directoryDetail ??
 									// S4a / FR-018: dropped off-dashboard/off-watchlist
 									// counts travel in the audit detail.
 									(droppedMarketSeries > 0 || droppedEarningsStocks > 0

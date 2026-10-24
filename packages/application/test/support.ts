@@ -13,14 +13,39 @@ import type {
 	ResearchRequest,
 	SubscribedSourceRef,
 } from "@research/contracts";
-import { type JobState, ok, type ResourceUsage } from "@research/domain";
+import { type JobState, ok, type ResourceUsage, rankStockSearch } from "@research/domain";
 import { z } from "zod";
 import type {
 	Clock,
 	NotebookAssistTurnInput,
 	PipelineReporter,
 	ResearchRecordRepository,
+	StockDirectoryMeta,
+	StockDirectoryRepository,
+	StoredStockDirectoryEntry,
 } from "../src/index.ts";
+
+/**
+ * In-memory stock directory (ADR-0033). Search IS the domain reference
+ * `rankStockSearch`, which the SQL repository is tested to equal, so a
+ * service test over this fake sees exactly what the real store returns.
+ */
+export function inMemoryStockDirectory(
+	rows: readonly StoredStockDirectoryEntry[],
+	metas: readonly StockDirectoryMeta[] = [],
+): StockDirectoryRepository {
+	return {
+		search: async (_ownerId, query) =>
+			rankStockSearch(
+				query.market === null ? rows : rows.filter((row) => row.market === query.market),
+				query.text,
+				query.limit,
+			),
+		getEntry: async (_ownerId, market, symbol) =>
+			rows.find((row) => row.market === market && row.symbol === symbol) ?? null,
+		listMeta: async () => [...metas].sort((a, b) => (a.market < b.market ? -1 : 1)),
+	};
+}
 
 export const RUN_ID = "run_test";
 

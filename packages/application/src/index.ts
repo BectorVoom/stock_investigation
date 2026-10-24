@@ -22,6 +22,7 @@ export * from "./researchRuns.ts";
 export * from "./runnerJobs.ts";
 export * from "./runView.ts";
 export * from "./sources.ts";
+export * from "./stockDirectory.ts";
 export * from "./watchlist.ts";
 export * from "./workspaceCommands.ts";
 export * from "./workspaces.ts";

@@ -36,11 +36,12 @@ import type {
 	JobRepository,
 	RateLimiter,
 	SecretGenerator,
+	StockDirectoryRepository,
 	StoredEarningsEvent,
 	StoredWatchlistStock,
 	WatchlistRepository,
 } from "./ports.ts";
-import { type CreatedRun, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
+import { type CreatedRun, JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 import { toRunView } from "./runView.ts";
 
 export interface WatchlistServiceDeps {
@@ -48,6 +49,8 @@ export interface WatchlistServiceDeps {
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
+	/** Names a stock added from the stock directory (ADR-0033). */
+	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
 	readonly jobs: JobRepository;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
@@ -146,10 +149,9 @@ export function calendarFeedPath(token: string): string {
 
 const FEED_TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,200}$/;
 
-/** Admission control shared with run creation: one hourly job allowance per owner. */
-const JOBS_PER_HOUR = 30;
-const HOUR_MS = 3_600_000;
-const MAX_UNFINISHED_JOBS = 5;
+const JOBS_PER_HOUR = JOB_ADMISSION.jobsPerHour;
+const HOUR_MS = JOB_ADMISSION.windowMs;
+const MAX_UNFINISHED_JOBS = JOB_ADMISSION.maxUnfinishedJobs;
 const EARNINGS_REFRESH_FINGERPRINT = "earnings-refresh";
 
 export function createWatchlistService(deps: WatchlistServiceDeps) {
@@ -346,13 +348,25 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			const market: WatchMarket = parsed.data.market;
 			const stockId = formatStockId(market, parsed.data.symbol);
 			const now = deps.clock.nowIso();
+			// ADR-0033: a stock the directory lists is stored with the
+			// directory's (English / SEC / JPX) name, so the table names the
+			// company at once. The Japanese local name never goes here, and a
+			// stock outside the directory keeps a null name for the earnings
+			// refresh to fill (its COALESCE never overwrites a stored name).
+			const listed = await deps.stockDirectory.getEntry(ownerId, market, parsed.data.symbol);
 			// The cap is enforced by the INSERT itself (see the port): the
 			// outcome tells an idempotent re-add apart from a full list, and
 			// only a written row is audited — a lost race writes no second
 			// audit row.
 			const outcome = await deps.watchlist.insertStock(
 				ownerId,
-				{ stockId, market, symbol: parsed.data.symbol, addedAt: now },
+				{
+					stockId,
+					market,
+					symbol: parsed.data.symbol,
+					name: listed?.name ?? null,
+					addedAt: now,
+				},
 				EARNINGS_LIMITS.maxStocks,
 			);
 			if (outcome === "already-present")

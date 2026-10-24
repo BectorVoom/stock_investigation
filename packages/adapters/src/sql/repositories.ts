@@ -12,6 +12,7 @@ import type {
 	GoogleCalendarLinkPatch,
 	GoogleCalendarRepository,
 	HomeDashboardRepository,
+	JobKindScope,
 	JobRecord,
 	JobRepository,
 	JobWrite,
@@ -24,6 +25,7 @@ import type {
 	RunnerStatusRepository,
 	SettingsRepository,
 	SourceRepository,
+	StockDirectoryRepository,
 	StoredEarningsEvent,
 	StoredMarketObservation,
 	StoredWatchlistStock,
@@ -51,7 +53,13 @@ import {
 	supplierLinkSchema,
 	type UpdateSourceRequest,
 } from "@research/contracts";
-import { LEASED_JOB_STATES, parseJsonOrNull, TERMINAL_JOB_STATES } from "@research/domain";
+import {
+	LEASED_JOB_STATES,
+	parseJsonOrNull,
+	STOCK_SEARCH_LIMITS,
+	stockSearchTerms,
+	TERMINAL_JOB_STATES,
+} from "@research/domain";
 import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 import {
@@ -74,9 +82,11 @@ import {
 	toNotebookRevision,
 	toNotebookTurn,
 	toRunnerCredential,
+	toStockDirectoryMeta,
 	toStoredAgentSettings,
 	toStoredEarningsEvent,
 	toStoredMarketSeries,
+	toStoredStockDirectoryEntry,
 	toStoredWatchlistStock,
 	toWorkspaceRecord,
 	toWorkspaceSummary,
@@ -242,6 +252,9 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * enforced the same way, scoped to the workspace instead of the owner — the
  * INSERT is a no-op while an unfinished `notebook-assist` job of the same
  * workspace exists.
+ *
+ * ADR-0033: "at most one active stock-directory-refresh job per market" is
+ * enforced the same way, scoped to the market the stored request names.
  */
 export function insertJobStatement(
 	db: SqlDatabase,
@@ -266,6 +279,10 @@ export function insertJobStatement(
 					WHERE owner_id = ? AND kind = ? AND state NOT IN (${TERMINAL_SQL})))
 				AND NOT (? = 'notebook-assist' AND ? IS NOT NULL AND EXISTS (SELECT 1 FROM research_jobs
 					WHERE owner_id = ? AND workspace_id = ? AND kind = 'notebook-assist' AND state NOT IN (${TERMINAL_SQL})))
+				AND NOT (? = 'stock-directory-refresh' AND EXISTS (SELECT 1 FROM research_jobs
+					WHERE owner_id = ? AND kind = 'stock-directory-refresh'
+						AND json_extract(request_json, '$.market') = json_extract(?, '$.market')
+						AND state NOT IN (${TERMINAL_SQL})))
 			ON CONFLICT (owner_id, idempotency_key) DO NOTHING`,
 		)
 		.bind(
@@ -311,18 +328,38 @@ export function insertJobStatement(
 			job.workspaceId,
 			job.ownerId,
 			job.workspaceId,
+			job.kind,
+			job.ownerId,
+			job.request === null ? null : JSON.stringify(job.request),
 		);
 }
 
-/** Newest non-terminal job of a kind, if any (shared by the repository and the enqueue path). */
-async function findActiveJobByKind(db: SqlDatabase, ownerId: string, kind: string) {
+/**
+ * `AND`-clause narrowing a by-kind job query to one market's
+ * `stock-directory-refresh` jobs (ADR-0033); the market sits in the stored
+ * request. `?N` is the parameter number the market is bound to (NULL = any).
+ */
+function marketScopeSql(parameter: number): string {
+	return `(?${parameter} IS NULL OR json_extract(request_json, '$.market') = ?${parameter})`;
+}
+
+/**
+ * Newest non-terminal job of a kind, if any (shared by the repository and the
+ * enqueue path); with a scope, only that market's jobs.
+ */
+async function findActiveJobByKind(
+	db: SqlDatabase,
+	ownerId: string,
+	kind: string,
+	scope: JobKindScope | undefined,
+) {
 	const { results } = await db
 		.prepare(
 			`SELECT * FROM research_jobs
-			WHERE owner_id = ?1 AND kind = ?2 AND state NOT IN (${TERMINAL_SQL})
+			WHERE owner_id = ?1 AND kind = ?2 AND state NOT IN (${TERMINAL_SQL}) AND ${marketScopeSql(3)}
 			ORDER BY created_at DESC, run_id DESC LIMIT 1`,
 		)
-		.bind(ownerId, kind)
+		.bind(ownerId, kind, scope?.market ?? null)
 		.all();
 	const row = results[0];
 	return row === undefined ? null : toJobRecord(row);
@@ -356,7 +393,17 @@ export async function enqueueOutcome(
 		job.kind === "earnings-refresh" ||
 		job.kind === "google-calendar"
 	) {
-		const active = await findActiveJobByKind(db, job.ownerId, job.kind);
+		const active = await findActiveJobByKind(db, job.ownerId, job.kind, undefined);
+		if (active !== null) {
+			const { requestFingerprint: _fingerprint, ...record } = active;
+			return { kind: "kind-active", job: record };
+		}
+	}
+	if (job.kind === "stock-directory-refresh" && job.request !== null && "market" in job.request) {
+		// ADR-0033: the INSERT refused a second active run of this market.
+		const active = await findActiveJobByKind(db, job.ownerId, job.kind, {
+			market: job.request.market,
+		});
 		if (active !== null) {
 			const { requestFingerprint: _fingerprint, ...record } = active;
 			return { kind: "kind-active", job: record };
@@ -628,8 +675,8 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			});
 			return results.map((row) => entrySchema.parse(row)).reverse();
 		},
-		async findActiveByKind(ownerId, kind) {
-			const active = await findActiveJobByKind(db, ownerId, kind);
+		async findActiveByKind(ownerId, kind, scope) {
+			const active = await findActiveJobByKind(db, ownerId, kind, scope);
 			if (active === null) return null;
 			const { requestFingerprint: _fingerprint, ...record } = active;
 			return record;
@@ -649,31 +696,32 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			const { requestFingerprint: _fingerprint, ...record } = toJobRecord(row);
 			return record;
 		},
-		async findLatestSuccessAtByKind(ownerId, kind) {
+		async findLatestSuccessAtByKind(ownerId, kind, scope) {
 			// S2: only a COMPLETED run counts as a success — failed/cancelled
 			// runs have their own line and never pose as one.
 			const row = await db
 				.prepare(
 					`SELECT updated_at FROM research_jobs
-					WHERE owner_id = ?1 AND kind = ?2 AND state = 'completed'
+					WHERE owner_id = ?1 AND kind = ?2 AND state = 'completed' AND ${marketScopeSql(3)}
 					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
 				)
-				.bind(ownerId, kind)
+				.bind(ownerId, kind, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
 			const value = (row as Record<string, unknown>).updated_at;
 			return typeof value === "string" ? value : null;
 		},
-		async findLatestFailureByKind(ownerId, kind) {
+		async findLatestFailureByKind(ownerId, kind, scope) {
 			// S2: the newest terminal run that did not succeed (completed runs
 			// are excluded here; they feed lastSucceededAt instead).
 			const row = await db
 				.prepare(
 					`SELECT state, failure_code, updated_at FROM research_jobs
 					WHERE owner_id = ?1 AND kind = ?2 AND state IN (${TERMINAL_SQL}) AND state <> 'completed'
+						AND ${marketScopeSql(3)}
 					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
 				)
-				.bind(ownerId, kind)
+				.bind(ownerId, kind, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
 			const record = row as Record<string, unknown>;
@@ -1542,11 +1590,20 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 				.prepare(
 					`INSERT INTO watchlist_stocks
 						(owner_id, stock_id, market, symbol, name, added_at, last_refreshed_at, retrieved_at, unavailable_code)
-					SELECT ?, ?, ?, ?, NULL, ?, NULL, NULL, NULL
+					SELECT ?, ?, ?, ?, ?, ?, NULL, NULL, NULL
 					WHERE (SELECT COUNT(*) FROM watchlist_stocks WHERE owner_id = ?) < ?
 					ON CONFLICT (owner_id, stock_id) DO NOTHING`,
 				)
-				.bind(ownerId, stock.stockId, stock.market, stock.symbol, stock.addedAt, ownerId, maxStocks)
+				.bind(
+					ownerId,
+					stock.stockId,
+					stock.market,
+					stock.symbol,
+					stock.name,
+					stock.addedAt,
+					ownerId,
+					maxStocks,
+				)
 				.run();
 			if (result.meta.changes === 1) return "added";
 			const present = await db
@@ -1567,6 +1624,85 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 					.bind(ownerId, stockId),
 			]);
 			return (results[1]?.meta.changes ?? 0) === 1;
+		},
+	};
+}
+
+/* ---------- Stock directory (ADR-0033) ---------- */
+
+/**
+ * One `instr` test per possible query term (`?2` .. `?{1 + maxTerms}`); an
+ * absent term is bound as NULL and passes. Built from `maxTerms` so the SQL
+ * can never silently ignore a term the domain keeps.
+ */
+const TERM_PARAMETERS = Array.from(
+	{ length: STOCK_SEARCH_LIMITS.maxTerms },
+	(_, index) => index + 2,
+);
+const TERM_COUNT_PARAMETER = STOCK_SEARCH_LIMITS.maxTerms + 2;
+const MARKET_PARAMETER = TERM_COUNT_PARAMETER + 1;
+const LIMIT_PARAMETER = MARKET_PARAMETER + 1;
+
+/**
+ * The SQL form of `rankStockSearch` (packages/domain, ADR-0033 section 6),
+ * over the keys the completion stored with each row:
+ * - match: every term is a substring of `search_key` (the haystack; terms
+ *   hold no newline, so a term never spans two keys);
+ * - tier: 0 when the one term equals the symbol key, 1 symbol-key prefix,
+ *   2 name- or local-name-key prefix (first term only), else 3 —
+ *   `instr(key, t) = 1` is "starts with" for a non-empty term, and `instr`
+ *   compares the stored text exactly (no collation, no LIKE wildcards);
+ * - order: tier, shorter symbol, symbol, market. Symbols and markets are
+ *   ASCII, so `length` and BINARY order equal the reference's UTF-16 ones.
+ * `apps/api/test/stockDirectory.test.ts` runs both on the same rows.
+ */
+const STOCK_SEARCH_SQL = `SELECT market, symbol, name, local_name, listing,
+		CASE
+			WHEN ?${TERM_COUNT_PARAMETER} = 1 AND symbol_key = ?2 THEN 0
+			WHEN instr(symbol_key, ?2) = 1 THEN 1
+			WHEN instr(name_key, ?2) = 1 OR instr(local_name_key, ?2) = 1 THEN 2
+			ELSE 3
+		END AS tier
+	FROM stock_directory
+	WHERE owner_id = ?1
+		AND (?${MARKET_PARAMETER} IS NULL OR market = ?${MARKET_PARAMETER})
+		AND ${TERM_PARAMETERS.map((parameter) => `(?${parameter} IS NULL OR instr(search_key, ?${parameter}) > 0)`).join("\n\t\tAND ")}
+	ORDER BY tier, length(symbol), symbol, market
+	LIMIT ?${LIMIT_PARAMETER}`;
+
+export function createStockDirectoryRepository(db: SqlDatabase): StockDirectoryRepository {
+	return {
+		async search(ownerId, query) {
+			const terms = stockSearchTerms(query.text);
+			if (terms.length === 0) return [];
+			// The same clamp as `rankStockSearch`.
+			const limit = Math.min(Math.max(Math.trunc(query.limit), 1), STOCK_SEARCH_LIMITS.maxResults);
+			const termValues = TERM_PARAMETERS.map((_, index) => terms[index] ?? null);
+			const { results } = await db
+				.prepare(STOCK_SEARCH_SQL)
+				.bind(ownerId, ...termValues, terms.length, query.market, limit)
+				.all();
+			return results.map(toStoredStockDirectoryEntry);
+		},
+		async getEntry(ownerId, market, symbol) {
+			const row = await db
+				.prepare(
+					`SELECT market, symbol, name, local_name, listing FROM stock_directory
+					WHERE owner_id = ? AND market = ? AND symbol = ?`,
+				)
+				.bind(ownerId, market, symbol)
+				.first();
+			return row === null ? null : toStoredStockDirectoryEntry(row);
+		},
+		async listMeta(ownerId) {
+			const { results } = await db
+				.prepare(
+					`SELECT market, entry_count, as_of, retrieved_at FROM stock_directory_meta
+					WHERE owner_id = ? ORDER BY market`,
+				)
+				.bind(ownerId)
+				.all();
+			return results.map(toStockDirectoryMeta);
 		},
 	};
 }

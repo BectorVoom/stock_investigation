@@ -356,6 +356,9 @@ GET    /api/v1/watchlist
 POST   /api/v1/watchlist/stocks
 DELETE /api/v1/watchlist/stocks/:stockId
 POST   /api/v1/watchlist/refresh
+GET    /api/v1/watchlist/directory
+GET    /api/v1/watchlist/directory/search?q=...&market=...&limit=...
+POST   /api/v1/watchlist/directory/refresh
 GET    /api/v1/watchlist/calendar.ics
 POST   /api/v1/watchlist/feed
 DELETE /api/v1/watchlist/feed
@@ -398,6 +401,27 @@ Home dashboard's series (first) and every notebook's series, at most 60, and
 a Home save keeps stored series a notebook still names. Deleting a
 conversation deletes its notebook, revisions and turns
 with everything else it solely owns.
+
+The Watchlist's add-a-stock form searches a local stock directory of every
+exchange-listed US and Japanese stock (ADR-0033). The runner downloads one
+market's full list per `stock-directory-refresh` job (SEC for US, JPX for JP;
+the job's stored request names the market) and its
+`stock-directory-refreshed` completion replaces that market's rows of
+`stock_directory` all or nothing, together with the market's
+`stock_directory_meta` row (row count, the source's effective date, download
+time), in the job's guarded completion batch (migration 0010). Each row is
+stored with folded search keys computed in TypeScript by the domain's
+`stockSearchKeys` / `stockSearchHaystack`, so the SQL ranking returns exactly
+what the reference `rankStockSearch` returns (tested on the same rows, on D1
+and on `node:sqlite`). `GET …/directory` reports each market, US then JP:
+publisher and source page, stored row count, effective date, download time,
+the active run and the last failed run of that market. `GET …/directory/search`
+answers the ranked hits (at most 20; optional `market` filter), each marked
+`registered` when it is already on the watchlist. `POST …/directory/refresh`
+(`Idempotency-Key` required; body `{ "markets": [...] }`, empty for both)
+queues one run per market, answering a market's already-active run instead
+of a second one (202). A stock added while the directory lists it is stored
+with the directory's English name.
 
 Home dashboards and notebooks hold widgets of one specification (ADR-0024,
 `packages/contracts/src/widgets.ts`): the same types, fields, title rule and

@@ -216,6 +216,7 @@ describe("google calendar link repository (FR-019)", () => {
 					marketSeries: [],
 					notebook: null,
 					notebookTurn: null,
+					stockDirectory: null,
 					google: {
 						status: "connected",
 						connectFrom: null,

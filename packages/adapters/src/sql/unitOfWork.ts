@@ -6,6 +6,8 @@ import type {
 	JobWrite,
 	MarketCompletionSeries,
 	ResearchUnitOfWork,
+	StockDirectoryCompletion,
+	StockDirectoryRow,
 	WorkspaceWrite,
 } from "@research/application";
 import { deriveConversationTitle } from "@research/application";
@@ -69,6 +71,150 @@ export function chunkObservationPoints(
 		chunks.push(points.slice(start, start + MARKET_OBSERVATION_CHUNK_POINTS));
 	}
 	return chunks;
+}
+
+/**
+ * S5 for the stock directory (ADR-0033): a completion carries up to
+ * `STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket` rows, each bound with its
+ * name, local name and four folded keys — about 1.5 MB of JSON for the US
+ * list, 3 bytes a character for Japanese names. The insert is split into
+ * `json_each` chunks of at most this many UTF-8 bytes of bound JSON, well
+ * under 1 MB (and D1's ~2 MB string limit). Chunking by measured bytes
+ * rather than a row count keeps the bound fixed whatever the name lengths
+ * or NFKC expansions of a particular list.
+ */
+export const STOCK_DIRECTORY_CHUNK_BYTES = 512 * 1024;
+
+/** UTF-8 length of a string, without allocating an encoded copy. */
+function utf8ByteLength(text: string): number {
+	let bytes = 0;
+	for (let index = 0; index < text.length; index += 1) {
+		const code = text.charCodeAt(index);
+		if (code < 0x80) bytes += 1;
+		else if (code < 0x800) bytes += 2;
+		else if (code >= 0xd800 && code <= 0xdbff && index + 1 < text.length) {
+			const next = text.charCodeAt(index + 1);
+			if (next >= 0xdc00 && next <= 0xdfff) {
+				// A surrogate pair is one 4-byte character.
+				bytes += 4;
+				index += 1;
+			} else {
+				bytes += 3;
+			}
+		} else bytes += 3;
+	}
+	return bytes;
+}
+
+/** The bound form of one row: a positional array, about half the bytes of an object. */
+type StockDirectoryTuple = readonly [
+	symbol: string,
+	name: string,
+	localName: string | null,
+	listing: string,
+	symbolKey: string,
+	nameKey: string,
+	localNameKey: string,
+	searchKey: string,
+];
+
+function stockDirectoryTuple(row: StockDirectoryRow): StockDirectoryTuple {
+	return [
+		row.symbol,
+		row.name,
+		row.localName,
+		row.listing,
+		row.symbolKey,
+		row.nameKey,
+		row.localNameKey,
+		row.searchKey,
+	];
+}
+
+/**
+ * Packs rows into insert chunks whose serialized JSON array stays within
+ * `budgetBytes` UTF-8 bytes (a single row larger than the budget still gets
+ * a chunk of its own; contract limits keep a row to a few kilobytes).
+ * Returns each chunk already serialized, ready to bind.
+ */
+export function chunkStockDirectoryRows(
+	rows: readonly StockDirectoryRow[],
+	budgetBytes: number = STOCK_DIRECTORY_CHUNK_BYTES,
+): string[] {
+	const chunks: string[] = [];
+	let current: string[] = [];
+	// "[" + "]" around the comma-joined rows.
+	let currentBytes = 2;
+	for (const row of rows) {
+		const json = JSON.stringify(stockDirectoryTuple(row));
+		const bytes = utf8ByteLength(json);
+		const added = current.length === 0 ? bytes : bytes + 1;
+		if (current.length > 0 && currentBytes + added > budgetBytes) {
+			chunks.push(`[${current.join(",")}]`);
+			current = [];
+			currentBytes = 2;
+		}
+		currentBytes += current.length === 0 ? bytes : bytes + 1;
+		current.push(json);
+	}
+	if (current.length > 0) chunks.push(`[${current.join(",")}]`);
+	return chunks;
+}
+
+/**
+ * Statements replacing one market's stored list with a
+ * `stock-directory-refreshed` completion (ADR-0033): delete the owner's rows
+ * of that market, insert the new rows in byte-bounded `json_each` chunks,
+ * and upsert the market's meta row. Every statement is guarded on the job
+ * compare-and-set, so a stale lease (or any lost race) changes nothing and a
+ * failed statement rolls the whole batch back — the stored list is replaced
+ * all or nothing. A US completion of 7,691 rows costs 1 + 4 + 1 statements
+ * here (plus the caller's job write and audit).
+ */
+function stockDirectoryStatements(
+	db: SqlDatabase,
+	ownerId: string,
+	completion: StockDirectoryCompletion,
+	guard: Guard,
+): SqlStatement[] {
+	const statements: SqlStatement[] = [
+		db
+			.prepare(`DELETE FROM stock_directory WHERE owner_id = ? AND market = ? AND ${guard.sql}`)
+			.bind(ownerId, completion.market, ...guard.values),
+	];
+	for (const chunk of chunkStockDirectoryRows(completion.rows)) {
+		statements.push(
+			db
+				.prepare(
+					`INSERT INTO stock_directory (owner_id, market, symbol, name, local_name, listing,
+						symbol_key, name_key, local_name_key, search_key)
+					SELECT ?, ?, json_extract(value, '$[0]'), json_extract(value, '$[1]'),
+						json_extract(value, '$[2]'), json_extract(value, '$[3]'), json_extract(value, '$[4]'),
+						json_extract(value, '$[5]'), json_extract(value, '$[6]'), json_extract(value, '$[7]')
+					FROM json_each(?) WHERE ${guard.sql}`,
+				)
+				.bind(ownerId, completion.market, chunk, ...guard.values),
+		);
+	}
+	statements.push(
+		db
+			.prepare(
+				`INSERT INTO stock_directory_meta (owner_id, market, entry_count, as_of, retrieved_at)
+				SELECT ?, ?, ?, ?, ? WHERE ${guard.sql}
+				ON CONFLICT (owner_id, market) DO UPDATE SET
+					entry_count = excluded.entry_count, as_of = excluded.as_of,
+					retrieved_at = excluded.retrieved_at`,
+			)
+			.bind(
+				ownerId,
+				completion.market,
+				completion.rows.length,
+				completion.asOf,
+				completion.retrievedAt,
+				...guard.values,
+			),
+	);
+	return statements;
 }
 
 function recordRows(records: RunRecords) {
@@ -893,6 +1039,9 @@ export function createResearchUnitOfWork(db: SqlDatabase): ResearchUnitOfWork {
 				statements.push(
 					notebookTurnStatement(db, ownerId, jobWrite.runId, effects.notebookTurn, guard),
 				);
+			}
+			if (effects.stockDirectory !== null) {
+				statements.push(...stockDirectoryStatements(db, ownerId, effects.stockDirectory, guard));
 			}
 
 			const results = await db.batch(statements);

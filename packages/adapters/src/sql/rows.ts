@@ -3,6 +3,8 @@ import type {
 	GoogleCalendarLink,
 	GoogleCalendarLinkStatus,
 	JobRecord,
+	StockDirectoryMeta,
+	StoredStockDirectoryEntry,
 	WorkspaceRecord,
 } from "@research/application";
 import {
@@ -22,6 +24,7 @@ import {
 	failureCodeTakesDetail,
 	googleCalendarRequestSchema,
 	type HomeDashboard,
+	jobKindSchema,
 	type NewsSource,
 	type Notebook,
 	type NotebookTurn,
@@ -34,6 +37,7 @@ import {
 	resourceUsageSchema,
 	runnerCredentialSchema,
 	STABLE_FAILURE_CODE_PATTERN,
+	stockListingSchema,
 	storedHomeDashboardSchema,
 	uiCommandSchema,
 	type WatchMarket,
@@ -142,14 +146,8 @@ export function toArticle(row: unknown): Article {
 const jobRowSchema = z.object({
 	owner_id: z.string(),
 	run_id: z.string(),
-	kind: z.enum([
-		"research",
-		"news-ingest",
-		"market-refresh",
-		"earnings-refresh",
-		"google-calendar",
-		"notebook-assist",
-	]),
+	// The shared contract's list, so a new job kind decodes without a second edit here.
+	kind: jobKindSchema,
 	state: z.string(),
 	request_json: nullableText,
 	workspace_id: nullableText,
@@ -181,11 +179,16 @@ const jobRowSchema = z.object({
 
 const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.string() });
 
-/** A stored job request: research predates FR-019; `{ action }` is google-calendar; the notebook shape is a notebook-assist job. */
+/**
+ * A stored job request: research predates FR-019; `{ action }` is
+ * google-calendar; the notebook shape is a notebook-assist job; `{ market }`
+ * is a stock-directory-refresh job (ADR-0033).
+ */
 const jobRequestSchema = z.union([
 	researchRequestSchema,
 	googleCalendarRequestSchema,
 	notebookAssistJobRequestSchema,
+	z.strictObject({ market: watchMarketSchema }),
 ]);
 
 export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerprint: string } {
@@ -489,6 +492,43 @@ export function toStoredWatchlistStock(row: unknown): {
 			r.unavailable_code === null
 				? null
 				: decode("watchlist_stocks", earningsUnavailableCodeSchema, r.unavailable_code),
+	};
+}
+
+const stockDirectoryRowSchema = z.object({
+	market: watchMarketSchema,
+	symbol: z.string(),
+	name: z.string(),
+	local_name: z.string().nullable(),
+	listing: stockListingSchema,
+});
+
+/** One stored stock directory row (ADR-0033), as searched and shown. */
+export function toStoredStockDirectoryEntry(row: unknown): StoredStockDirectoryEntry {
+	const r = decode("stock_directory", stockDirectoryRowSchema, row);
+	return {
+		market: r.market,
+		symbol: r.symbol,
+		name: r.name,
+		localName: r.local_name,
+		listing: r.listing,
+	};
+}
+
+const stockDirectoryMetaRowSchema = z.object({
+	market: watchMarketSchema,
+	entry_count: z.number().int().nonnegative(),
+	as_of: z.string().nullable(),
+	retrieved_at: z.string(),
+});
+
+export function toStockDirectoryMeta(row: unknown): StockDirectoryMeta {
+	const r = decode("stock_directory_meta", stockDirectoryMetaRowSchema, row);
+	return {
+		market: r.market,
+		entryCount: r.entry_count,
+		asOf: r.as_of,
+		retrievedAt: r.retrieved_at,
 	};
 }
 

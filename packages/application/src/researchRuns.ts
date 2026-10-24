@@ -43,6 +43,15 @@ export const MAX_JOB_ATTEMPTS = 3;
 const MAX_UNFINISHED_JOBS = 5;
 const JOBS_PER_HOUR = 30;
 const HOUR_MS = 3_600_000;
+/**
+ * Admission control every job-creating use case shares: one hourly
+ * allowance per owner (`job-create` bucket) and one cap on unfinished jobs.
+ */
+export const JOB_ADMISSION = {
+	maxUnfinishedJobs: MAX_UNFINISHED_JOBS,
+	jobsPerHour: JOBS_PER_HOUR,
+	windowMs: HOUR_MS,
+} as const;
 const PROGRESS_LIMIT = 100;
 const CAS_RETRIES = 4;
 

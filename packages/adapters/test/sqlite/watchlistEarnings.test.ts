@@ -35,6 +35,7 @@ describe("watchlist repository (FR-018)", () => {
 					stockId: "jp:7203",
 					market: "JP",
 					symbol: "7203",
+					name: null,
 					addedAt: "2026-10-13T00:00:01.000Z",
 				},
 				50,
@@ -45,6 +46,7 @@ describe("watchlist repository (FR-018)", () => {
 					stockId: "us:AAPL",
 					market: "US",
 					symbol: "AAPL",
+					name: null,
 					addedAt: "2026-10-13T00:00:00.000Z",
 				},
 				50,
@@ -71,6 +73,7 @@ describe("watchlist repository (FR-018)", () => {
 						stockId: "us:AAPL",
 						market: "US",
 						symbol: "AAPL",
+						name: null,
 						addedAt: "2026-10-13T00:00:00.000Z",
 					},
 					50,
@@ -90,6 +93,7 @@ describe("watchlist repository (FR-018)", () => {
 				stockId: "us:AAPL",
 				market: "US",
 				symbol: "AAPL",
+				name: null,
 				addedAt: "2026-10-13T00:00:00.000Z",
 			} as const;
 			expect(await repository.insertStock("owner_1", stock, 50)).toBe("added");
@@ -111,6 +115,7 @@ describe("watchlist repository (FR-018)", () => {
 						stockId: `us:T${index}`,
 						market: "US",
 						symbol: `T${index}`,
+						name: null,
 						addedAt: "2026-10-13T00:00:00.000Z",
 					},
 					50,
@@ -127,6 +132,7 @@ describe("watchlist repository (FR-018)", () => {
 						stockId: "us:EXTRA",
 						market: "US",
 						symbol: "EXTRA",
+						name: null,
 						addedAt: "2026-10-13T00:00:00.000Z",
 					},
 					50,
@@ -141,6 +147,7 @@ describe("watchlist repository (FR-018)", () => {
 						stockId: "us:T0",
 						market: "US",
 						symbol: "T0",
+						name: null,
 						addedAt: "2026-10-13T00:00:00.000Z",
 					},
 					50,
@@ -155,6 +162,7 @@ describe("watchlist repository (FR-018)", () => {
 						stockId: "us:EXTRA",
 						market: "US",
 						symbol: "EXTRA",
+						name: null,
 						addedAt: "2026-10-13T00:00:00.000Z",
 					},
 					50,
@@ -176,6 +184,7 @@ describe("watchlist repository (FR-018)", () => {
 					stockId: "us:AAPL",
 					market: "US",
 					symbol: "AAPL",
+					name: null,
 					addedAt: "2026-10-13T00:00:00.000Z",
 				},
 				50,
@@ -245,6 +254,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					stockId: "us:AAPL",
 					market: "US",
 					symbol: "AAPL",
+					name: null,
 					addedAt: "2026-10-13T00:00:00.000Z",
 				},
 				50,
@@ -255,6 +265,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					stockId: "jp:7203",
 					market: "JP",
 					symbol: "7203",
+					name: null,
 					addedAt: "2026-10-13T00:00:00.000Z",
 				},
 				50,
@@ -321,6 +332,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					google: null,
 					notebook: null,
 					notebookTurn: null,
+					stockDirectory: null,
 					earnings: [
 						{
 							stockId: "us:AAPL",
@@ -416,7 +428,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 			] as const) {
 				await watchlist.insertStock(
 					"owner_1",
-					{ ...stock, addedAt: "2026-10-13T00:00:00.000Z" },
+					{ ...stock, name: null, addedAt: "2026-10-13T00:00:00.000Z" },
 					50,
 				);
 				await db
@@ -489,6 +501,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 					google: null,
 					notebook: null,
 					notebookTurn: null,
+					stockDirectory: null,
 					earnings: [
 						{
 							stockId: "us:AAPL",

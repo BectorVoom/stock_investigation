@@ -6,6 +6,7 @@ import {
 	idempotencyKeySchema,
 	idSchema,
 } from "@research/contracts";
+import { parseJson } from "@research/domain";
 import { attemptResult, type EventLogger, logIsolated, UnexpectedError } from "@research/effects";
 import { Data, Effect } from "effect";
 import type { Context } from "hono";
@@ -77,6 +78,66 @@ export function reject(c: AppContext, code: ApiErrorCode, message: string): Resp
 	return failure(c, { code, message });
 }
 
+/** The VALIDATION_FAILED answer for a payload that failed its schema: field names only. */
+function invalidPayload(error: z.ZodError, what: string, root: string): HttpFailure {
+	const fields = [...new Set(error.issues.map((issue) => issue.path.join(".") || root))];
+	return new HttpFailure({
+		error: {
+			code: "VALIDATION_FAILED",
+			message: `${what} failed validation.`,
+			detail: fields.slice(0, 8).join(", "),
+		},
+	});
+}
+
+/**
+ * As `readJson`, for a body whose every field has a default: an empty body
+ * validates as `{}`; a non-empty one must be JSON.
+ */
+export function readOptionalJson<T>(
+	c: AppContext,
+	schema: z.ZodType<T>,
+): Effect.Effect<T, HttpFailure> {
+	return Effect.flatMap(
+		Effect.tryPromise({
+			try: (): Promise<string> => c.req.text(),
+			catch: () =>
+				new HttpFailure({
+					error: { code: "VALIDATION_FAILED", message: "Request body could not be read." },
+				}),
+		}),
+		(text) => {
+			let payload: unknown = {};
+			if (text.trim() !== "") {
+				const contentType = c.req.header("Content-Type") ?? "";
+				if (!contentType.toLowerCase().startsWith("application/json")) {
+					return Effect.fail(
+						new HttpFailure({
+							error: {
+								code: "VALIDATION_FAILED",
+								message: "Content-Type must be application/json.",
+							},
+						}),
+					);
+				}
+				const parsedJson = parseJson(text);
+				if (!parsedJson.ok) {
+					return Effect.fail(
+						new HttpFailure({
+							error: { code: "VALIDATION_FAILED", message: "Request body is not valid JSON." },
+						}),
+					);
+				}
+				payload = parsedJson.value;
+			}
+			const parsed = schema.safeParse(payload);
+			return parsed.success
+				? Effect.succeed(parsed.data)
+				: Effect.fail(invalidPayload(parsed.error, "Request body", "(body)"));
+		},
+	);
+}
+
 /** Parses and validates a JSON body. Error details name fields only, never echo values. */
 export function readJson<T>(c: AppContext, schema: z.ZodType<T>): Effect.Effect<T, HttpFailure> {
 	const contentType = c.req.header("Content-Type") ?? "";
@@ -97,23 +158,23 @@ export function readJson<T>(c: AppContext, schema: z.ZodType<T>): Effect.Effect<
 		}),
 		(payload) => {
 			const parsed = schema.safeParse(payload);
-			if (!parsed.success) {
-				const fields = [
-					...new Set(parsed.error.issues.map((issue) => issue.path.join(".") || "(body)")),
-				];
-				return Effect.fail(
-					new HttpFailure({
-						error: {
-							code: "VALIDATION_FAILED",
-							message: "Request body failed validation.",
-							detail: fields.slice(0, 8).join(", "),
-						},
-					}),
-				);
-			}
-			return Effect.succeed(parsed.data);
+			return parsed.success
+				? Effect.succeed(parsed.data)
+				: Effect.fail(invalidPayload(parsed.error, "Request body", "(body)"));
 		},
 	);
+}
+
+/**
+ * Parses and validates the query string (every parameter, so an unknown one
+ * is refused by a strict schema). Error details name fields only, never echo
+ * values — a search query is the owner's own typing.
+ */
+export function readQuery<T>(c: AppContext, schema: z.ZodType<T>): Effect.Effect<T, HttpFailure> {
+	const parsed = schema.safeParse(c.req.query());
+	return parsed.success
+		? Effect.succeed(parsed.data)
+		: Effect.fail(invalidPayload(parsed.error, "Query string", "(query)"));
 }
 
 export function pathId(c: AppContext, name: string): Effect.Effect<string, HttpFailure> {
