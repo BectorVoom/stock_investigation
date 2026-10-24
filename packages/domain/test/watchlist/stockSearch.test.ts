@@ -48,6 +48,14 @@ describe("foldStockSearchText", () => {
 		expect(foldStockSearchText("ﾄﾖﾀ")).toBe("トヨタ");
 	});
 
+	it("composes a voiced katakana that only exists after the hiragana shift, so folding is idempotent", () => {
+		expect(foldStockSearchText("わ\u3099")).toBe("ヷ");
+		for (const text of ["わ\u3099", "を\u3099ん", "ゐ\u3099 x", "トヨタ", "  ＡＢ　c "]) {
+			const once = foldStockSearchText(text);
+			expect(foldStockSearchText(once)).toBe(once);
+		}
+	});
+
 	it("leaves kanji and non-ASCII letters as they are", () => {
 		expect(foldStockSearchText("自動車")).toBe("自動車");
 		expect(foldStockSearchText("É")).toBe("É");

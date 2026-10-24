@@ -19,6 +19,8 @@ export const STOCK_SEARCH_LIMITS = {
 } as const;
 
 const WHITESPACE = /\s/u;
+/** Kana voicing marks: after the hiragana shift they may compose with the katakana before them. */
+const KANA_VOICING_MARKS = /[\u3099\u309a]/u;
 const HIRAGANA_FIRST = 0x3041;
 const HIRAGANA_LAST = 0x3096;
 const HIRAGANA_TO_KATAKANA = 0x60;
@@ -29,6 +31,11 @@ const HIRAGANA_TO_KATAKANA = 0x60;
  * lower-casing, hiragana to katakana (so "とよた" finds "トヨタ"), and
  * whitespace runs to one space, trimmed. ASCII-only lower-casing keeps the
  * fold exactly modelled in Lean; company names are ASCII or Japanese.
+ *
+ * Hiragana わゐゑを have no precomposed voiced form but their katakana do
+ * (ヷヸヹヺ), so "わ" + U+3099 only composes after the shift: the result is
+ * composed again (NFC) when it holds a voicing mark, which keeps the fold
+ * idempotent and lets such input find a stored "ヷ".
  */
 export function foldStockSearchText(text: string): string {
 	const normalized = text.normalize("NFKC");
@@ -52,7 +59,7 @@ export function foldStockSearchText(text: string): string {
 			folded += char;
 		}
 	}
-	return folded;
+	return KANA_VOICING_MARKS.test(folded) ? folded.normalize("NFC") : folded;
 }
 
 /** The folded query split into terms; empty for a blank query. */

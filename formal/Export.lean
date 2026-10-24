@@ -730,6 +730,111 @@ def spacingVectors : List String := Id.run do
         out := spacingVec [a, b, c] :: out
   return out.reverse
 
+/-! ## Stock directory search (ADR-0033) -/
+
+/-- Code points of a Lean string (the model's `Text`). -/
+def ssText (s : String) : StockSearch.Text := s.toList.map Char.toNat
+
+def ssHex4 (n : Nat) : String :=
+  let digits := Nat.toDigits 16 n
+  String.ofList (List.replicate (4 - digits.length) '0' ++ digits)
+
+/-- A JSON string literal for model text. Unlike `jsonStr` it escapes: the
+    vectors carry tabs, newlines and other whitespace code points. -/
+def ssJson (t : StockSearch.Text) : String :=
+  "\"" ++ String.join (t.map fun c =>
+    if c = 34 then "\\\""
+    else if c = 92 then "\\\\"
+    else if c < 0x20 ∨ c = 0x7F ∨ c = 0x1680 ∨ c = 0x2028 ∨ c = 0x2029 ∨ c = 0xFEFF then
+      "\\u" ++ ssHex4 c
+    else String.singleton (Char.ofNat c)) ++ "\""
+
+/-- The directory the rank vectors search: US and JP listings with ASCII,
+    katakana, kanji and hiragana names, a tab and trailing spaces in one
+    name, a symbol listed in both markets and one exact duplicate key (rows 0
+    and 11) so stability shows. -/
+def ssRows : List StockSearch.Row :=
+  let row (market symbol name : String) (localName : Option String) : StockSearch.Row :=
+    ⟨ssText market, ssText symbol, ssText name, localName.map ssText⟩
+  [row "US" "AAPL" "Apple Inc." none,
+   row "US" "AA" "Alcoa Corporation" none,
+   row "US" "A" "Agilent Technologies, Inc." none,
+   row "US" "APP" "AppLovin Corporation" none,
+   row "US" "TM" "Toyota Motor Corporation" none,
+   row "JP" "7203" "TOYOTA MOTOR CORPORATION" (some "トヨタ自動車"),
+   row "JP" "7201" "NISSAN MOTOR CO.,LTD." (some "日産自動車"),
+   row "JP" "2914" "JAPAN TOBACCO INC." (some "日本たばこ産業"),
+   row "JP" "9984" "SoftBank Group Corp." (some "ソフトバンクグループ"),
+   row "JP" "130A" "Veritas In Silico Inc." (some "ベリタス・イン・シリコ"),
+   row "JP" "AAPL" "Apple Japan" (some "アップル ジャパン"),
+   row "US" "AAPL" "Apple Inc. (second record)" none,
+   row "JP" "8306" "Mitsubishi UFJ Financial Group, Inc." (some "三菱UFJフィナンシャル・グループ"),
+   row "US" "T" "AT&T Inc." none,
+   row "US" "BRK.B" "Berkshire Hathaway Inc. Class B" none,
+   row "JP" "7974" "Nintendo Co., Ltd." (some "任天堂"),
+   row "JP" "6758" "Sony Group Corporation" (some "ソニーグループ"),
+   row "US" "MSFT" "Microsoft\tCorporation  " none]
+
+/-- Queries: blank, case, prefixes of every tier, kana in both scripts,
+    multi-term in both orders, a fifth term past `maxTerms`, a miss in the
+    first term, a term past `maxQueryChars`, and a term that would only match
+    across two fields. -/
+def ssQueries : List String :=
+  ["", "   ", "\t\n", "apple", "Apple", "APPLE", "aapl", "AAPL", "aa", "a", "app", "ap",
+   "t", "tm", "7203", "720", "72", "7", "とよた", "トヨタ", "toyota", "toyota motor",
+   "motor toyota", "motor", "自動車", "たばこ", "タバコ", "  Apple   inc ", "\tapple\n", "z",
+   "inc. apple", "corp", "co inc a t zzz", "zzz a b c d",
+   "toyota toyota toyota toyota toyota toyota toyota toyota toyota zzz",
+   "aaplapple", "aapl apple", "ソフトバンク", "そふとばんく", "130a", "130A", "brk.b",
+   "グループ", "ぐるーぷ", "三菱", "ufj", "&", "microsoft corporation", "t inc", "co", "ple"]
+
+/-- Limits around the clamp (1..20), including a non-positive and an
+    over-large one. -/
+def ssLimits : List Int := [-1, 0, 1, 2, 3, 10, 20, 25]
+
+/-- Extra fold inputs: whitespace of every kind the model knows, the A–Z and
+    hiragana range edges, katakana and kanji. -/
+def ssFoldInputs : List String :=
+  ["", " ", "\t\n\r\x0b\x0c", "Apple", "  Apple  Inc. ", "APPLE\tINC", "a b",
+   "a b c", "﻿x﻿", "とよた", "トヨタ", "ぁゖ", "ゔゕゖ", "ゝゞ", "ァヶ",
+   "@AZ[`az{", "\x0b\x0cx\x0b", "a \t\n\r b", "漢字 かな カナ ABC", "日本たばこ産業",
+   "Microsoft\tCorporation  ", "ベリタス・イン・シリコ", "AT&T \"Inc.\" \\ slash"]
+
+def ssTextList (ts : List StockSearch.Text) : String := jsonArr (ts.map ssJson)
+
+def ssRowJson (r : StockSearch.Row) : String :=
+  jsonObj [("market", ssJson r.market), ("symbol", ssJson r.symbol), ("name", ssJson r.name),
+    ("localName", match r.localName with | none => "null" | some n => ssJson n)]
+
+def ssFoldVectors : List String :=
+  (ssFoldInputs ++ ssQueries).map fun s =>
+    let t := ssText s
+    jsonObj [("input", ssJson t), ("folded", ssJson (StockSearch.fold t))]
+
+/-- Each query's terms and every row's tier (`null` when it does not match). -/
+def ssTierVectors : List String :=
+  ssQueries.map fun q =>
+    let ts := StockSearch.terms (ssText q)
+    jsonObj [("query", ssJson (ssText q)), ("terms", ssTextList ts),
+      ("tiers", jsonArr (ssRows.map fun r => jsonOptNat (StockSearch.tier (StockSearch.keys r) ts)))]
+
+/-- Ranked rows as indices into `rows`, for the table in order and reversed. -/
+def ssRankVectors : List String := Id.run do
+  let mut out := []
+  for (orderName, rows) in [("forward", ssRows), ("reversed", ssRows.reverse)] do
+    for q in ssQueries do
+      for limit in ssLimits do
+        let ranked := StockSearch.rank rows (ssText q) limit
+        out := jsonObj [("order", jsonStr orderName), ("query", ssJson (ssText q)),
+          ("limit", jsonInt limit), ("ranked", jsonNatList (ranked.map ssRows.idxOf))] :: out
+  return out.reverse
+
+def ssVectorsJson : String :=
+  "{\"rows\": [\n" ++ ",\n".intercalate (ssRows.map ssRowJson) ++
+  "\n], \"fold\": [\n" ++ ",\n".intercalate ssFoldVectors ++
+  "\n], \"tier\": [\n" ++ ",\n".intercalate ssTierVectors ++
+  "\n], \"rank\": [\n" ++ ",\n".intercalate ssRankVectors ++ "\n]}"
+
 def main : IO Unit := do
   IO.println "{"
   IO.println ("\"leanVersion\": " ++ jsonStr Lean.versionString ++ ",")
@@ -766,5 +871,6 @@ def main : IO Unit := do
   IO.println ("\"chartSlice\": [\n" ++ ",\n".intercalate chartSliceVectors ++ "\n],")
   IO.println ("\"chartMa\": [\n" ++ ",\n".intercalate chartMaVectors ++ "\n],")
   IO.println ("\"dragTarget\": [\n" ++ ",\n".intercalate dragTargetVectors ++ "\n],")
-  IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n]")
+  IO.println ("\"spacing\": [\n" ++ ",\n".intercalate spacingVectors ++ "\n],")
+  IO.println ("\"stockSearch\": " ++ ssVectorsJson)
   IO.println "}"
