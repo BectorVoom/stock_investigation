@@ -1,6 +1,7 @@
 import { For, type JSX } from "solid-js";
-import { WIDGET_SIZE_SHAPES, WIDGET_SIZES } from "../core/sizes.ts";
+import { WIDGET_SIZES } from "../core/sizes.ts";
 import type { WidgetSize } from "../core/types.ts";
+import { useWidgetGridStrings } from "./strings.tsx";
 
 export interface WidgetSizePickerProps {
 	readonly value: WidgetSize;
@@ -12,8 +13,6 @@ export interface WidgetSizePickerProps {
 	readonly disabled?: boolean;
 }
 
-const SHORT: { readonly [S in WidgetSize]: string } = { small: "S", medium: "M", large: "L" };
-
 /**
  * The standard S / M / L size control: one compact segmented group, the same
  * for every widget type, so resizing looks and works alike everywhere. A
@@ -21,6 +20,7 @@ const SHORT: { readonly [S in WidgetSize]: string } = { small: "S", medium: "M",
  * order), Arrow keys, Home and End; disabled sizes are skipped.
  */
 export function WidgetSizePicker(props: WidgetSizePickerProps): JSX.Element {
+	const strings = useWidgetGridStrings();
 	const allowed = () => props.sizes ?? WIDGET_SIZES;
 	const isDisabled = (size: WidgetSize): boolean =>
 		props.disabled === true || !allowed().includes(size);
@@ -77,8 +77,8 @@ export function WidgetSizePicker(props: WidgetSizePickerProps): JSX.Element {
 						type="button"
 						role="radio"
 						aria-checked={props.value === size}
-						aria-label={`${size} (${WIDGET_SIZE_SHAPES[size]})`}
-						title={`${size} (${WIDGET_SIZE_SHAPES[size]})`}
+						aria-label={strings().sizeOptionName(size)}
+						title={strings().sizeOptionName(size)}
 						tabindex={props.value === size ? 0 : -1}
 						disabled={isDisabled(size)}
 						data-widget-size-option={size}
@@ -90,7 +90,7 @@ export function WidgetSizePicker(props: WidgetSizePickerProps): JSX.Element {
 							if (!isDisabled(size) && props.value !== size) props.onChange(size);
 						}}
 					>
-						{SHORT[size]}
+						{strings().sizeOptionShort(size)}
 					</button>
 				)}
 			</For>

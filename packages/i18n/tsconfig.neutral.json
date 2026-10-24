@@ -1,0 +1,10 @@
+{
+	// The core (locales, catalogs) runs in every runtime, so it is also checked
+	// WITHOUT the DOM lib; only the Solid binding may touch the DOM.
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022"],
+		"types": []
+	},
+	"include": ["src/index.ts", "src/locales.ts", "src/messages.ts"]
+}

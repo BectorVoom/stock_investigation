@@ -19,6 +19,7 @@ export default defineConfig({
 					include: [
 						"packages/{domain,contracts,agent-core,application,effects}/test/**/*.test.ts",
 						"packages/widget-grid/test/{core,agent}/**/*.test.ts",
+						"packages/i18n/test/**/*.test.ts",
 						"packages/adapters/test/{feed,node,providers,finance,tools,sqlite,google}/**/*.test.ts",
 						"apps/runner/test/**/*.test.ts",
 						"apps/mcp/test/**/*.test.ts",
@@ -41,6 +42,7 @@ export default defineConfig({
 						"apps/web/test/**/*.test.{ts,tsx}",
 						"packages/ui-registry/test/**/*.test.{ts,tsx}",
 						"packages/widget-grid/test/solid/**/*.test.{ts,tsx}",
+						"packages/i18n/test/**/*.test.tsx",
 					],
 				},
 			},

@@ -1,0 +1,71 @@
+import { defineMessages } from "@research/i18n";
+
+/**
+ * Words many pages share. A page's own sentences live in its own
+ * `*.messages.ts` beside it; only words that mean the same everywhere belong
+ * here (the glossary is in ADR-0031).
+ */
+export const commonMessages = defineMessages({
+	en: {
+		add: "Add",
+		back: "Back",
+		cancel: "Cancel",
+		close: "Close",
+		copy: "Copy",
+		cut: "Cut",
+		delete: "Delete",
+		duplicate: "Duplicate",
+		edit: "Edit",
+		loading: "Loading…",
+		/** "Loading <thing>…" for a named part of the page. */
+		loadingThing: (thing: string) => `Loading ${thing}…`,
+		more: "More",
+		next: "Next",
+		no: "No",
+		notAvailable: "N/A",
+		paste: "Paste",
+		previous: "Previous",
+		refresh: "Refresh",
+		remove: "Remove",
+		rename: "Rename",
+		retry: "Retry",
+		save: "Save",
+		saving: "Saving…",
+		tryAgain: "Try again",
+		undo: "Undo",
+		/** A value the app could not obtain, with the reason it gives instead. */
+		unavailable: (reason: string) => `unavailable (${reason})`,
+		unknownError: "Unknown error.",
+		yes: "Yes",
+	},
+	ja: {
+		add: "追加",
+		back: "戻る",
+		cancel: "キャンセル",
+		close: "閉じる",
+		copy: "コピー",
+		cut: "切り取り",
+		delete: "削除",
+		duplicate: "複製",
+		edit: "編集",
+		loading: "読み込み中…",
+		loadingThing: (thing) => `${thing}を読み込み中…`,
+		more: "その他",
+		next: "次へ",
+		no: "いいえ",
+		notAvailable: "該当なし",
+		paste: "貼り付け",
+		previous: "前へ",
+		refresh: "更新",
+		remove: "削除",
+		rename: "名前を変更",
+		retry: "再試行",
+		save: "保存",
+		saving: "保存中…",
+		tryAgain: "再試行",
+		undo: "取り消す",
+		unavailable: (reason) => `取得できません（${reason}）`,
+		unknownError: "不明なエラーです。",
+		yes: "はい",
+	},
+});

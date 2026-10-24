@@ -9,6 +9,7 @@
 	"dependencies": {
 		"@research/contracts": "workspace:*",
 		"@research/domain": "workspace:*",
+		"@research/i18n": "workspace:*",
 		"solid-js": "^1.9.12",
 		"zod": "^4.6.5"
 	}

@@ -1,5 +1,6 @@
 import { createUniqueId, type JSX, Show } from "solid-js";
 import type { WidgetBase } from "../core/types.ts";
+import { useWidgetGridStrings } from "./strings.tsx";
 
 export interface WidgetFrameProps<W extends WidgetBase = WidgetBase> {
 	readonly widget: W;
@@ -40,7 +41,8 @@ const SELECT_GUARD_SELECTOR =
  */
 export function WidgetFrame<W extends WidgetBase>(props: WidgetFrameProps<W>): JSX.Element {
 	const titleId = createUniqueId();
-	const selectName = () => `Select “${props.widget.title}”`;
+	const strings = useWidgetGridStrings();
+	const selectName = () => strings().selectWidget(props.widget.title);
 
 	const onHeaderClick = (event: MouseEvent): void => {
 		const select = props.onSelectChange;

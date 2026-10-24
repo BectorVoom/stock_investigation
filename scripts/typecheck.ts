@@ -12,6 +12,8 @@ const PROJECTS = [
 	"packages/agent-core",
 	"packages/application",
 	"packages/effects",
+	"packages/i18n",
+	"packages/i18n/tsconfig.neutral.json",
 	"packages/ui-registry",
 	"packages/widget-grid",
 	"packages/widget-grid/tsconfig.neutral.json",

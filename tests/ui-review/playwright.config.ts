@@ -27,5 +27,14 @@ export default defineConfig({
 	// Per-engine: Playwright wipes its output directory at the start of a
 	// run, so sharing one directory would delete the other engines' output.
 	outputDir: `../../test-results/ui-review/${browser}/playwright-output`,
-	use: { baseURL: E2E_ORIGIN, headless: true, trace: "retain-on-failure", ...browserUse(browser) },
+	use: {
+		baseURL: E2E_ORIGIN,
+		headless: true,
+		trace: "retain-on-failure",
+		// The specs read the English UI. Pinned so a machine whose system
+		// language is another one (ADR-0031: the UI follows the browser) still
+		// runs them in English; a spec that checks another language sets its own.
+		locale: "en-US",
+		...browserUse(browser),
+	},
 });

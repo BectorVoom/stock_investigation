@@ -2,6 +2,7 @@ import { type ResearchExport, researchExportSchema } from "@research/contracts";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
+import { createLocaleState } from "../src/i18n/localeState.ts";
 import { SettingsView } from "../src/settings/SettingsView.tsx";
 import { initialWatchlistServerState, installWatchlistRoutes } from "./appHarness.tsx";
 import {
@@ -83,6 +84,7 @@ afterEach(() => {
 function mount() {
 	render(() => (
 		<SettingsView
+			localeState={createLocaleState({ window, storage: null })}
 			api={createApiClient({ fetch: backend.fetch })}
 			session={{
 				status: "ready",
@@ -104,12 +106,12 @@ function chooseFile(content: string, name = "export.json") {
 }
 
 describe("Settings: session", () => {
-	it("shows the AI agent section first, then Calendar, then the session owner id, sign-in method and environment", () => {
+	it("shows the AI agent section first, then Calendar, Language, then the session owner id, sign-in method and environment", () => {
 		mount();
 		const sections = [...document.querySelectorAll("section[aria-label]")].map((section) =>
 			section.getAttribute("aria-label"),
 		);
-		expect(sections.slice(0, 3)).toEqual(["AI agent", "Calendar", "Session"]);
+		expect(sections.slice(0, 4)).toEqual(["AI agent", "Calendar", "Language", "Session"]);
 		const session = screen.getByRole("region", { name: "Session" });
 		expect(session.querySelector('[data-field="owner-id"]')?.textContent).toBe("owner-1");
 		expect(session.querySelector('[data-field="auth-mode"]')?.textContent).toBe(

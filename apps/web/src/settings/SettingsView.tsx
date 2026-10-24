@@ -17,12 +17,14 @@ import {
 	Section,
 	Select,
 } from "../components/ui.tsx";
+import type { LocaleState } from "../i18n/localeState.ts";
 import { downloadTextFile, fileSlug } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote, type Remote } from "../lib/remote.ts";
 import { AgentSettingsSection } from "./AgentSettingsSection.tsx";
 import { CalendarSettingsSection } from "./CalendarSettingsSection.tsx";
+import { LanguageSettingsSection } from "./LanguageSettingsSection.tsx";
 
 interface ActionFailure {
 	readonly title: string;
@@ -439,7 +441,7 @@ function ExportImport(props: {
 	);
 }
 
-/** Settings: AI agent, calendar, session, runner credentials, export/import. */
+/** Settings: AI agent, calendar, language, session, runner credentials, export/import. */
 export function SettingsView(props: {
 	readonly api: ApiClient;
 	readonly session: Remote<Session>;
@@ -449,6 +451,8 @@ export function SettingsView(props: {
 	 */
 	readonly section: string | null;
 	readonly visibility: VisibilitySource;
+	/** The UI language and its stored choice (ADR-0031). */
+	readonly localeState: LocaleState;
 	readonly onReloadSession: () => void;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
 }): JSX.Element {
@@ -464,6 +468,7 @@ export function SettingsView(props: {
 				visibility={props.visibility}
 				section={props.section}
 			/>
+			<LanguageSettingsSection localeState={props.localeState} />
 			<Section title="Session">
 				<RemoteView remote={props.session} label="session" onRetry={props.onReloadSession}>
 					{(session) => (

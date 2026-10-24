@@ -1,4 +1,6 @@
+import { LocaleProvider, useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
+import { WidgetGridStringsProvider } from "@research/widget-grid";
 import {
 	createEffect,
 	ErrorBoundary,
@@ -11,10 +13,16 @@ import {
 	Switch,
 } from "solid-js";
 import type { ApiClient } from "./api/client.ts";
+import { appMessages } from "./app.messages.ts";
 import { ChatView } from "./chat/ChatView.tsx";
 import { BUTTON, Loading, PageHeader } from "./components/ui.tsx";
+import { commonMessages } from "./i18n/common.messages.ts";
+import { createLocaleState, type LocaleState } from "./i18n/localeState.ts";
+import { widgetGridMessages } from "./i18n/widgetGrid.messages.ts";
+import { browserLocalStorage } from "./lib/browserStorage.ts";
 import type { VisibilitySource } from "./lib/polling.ts";
 import { createRemote } from "./lib/remote.ts";
+import { pageMessages } from "./pages.messages.ts";
 import { PAGES } from "./pages.ts";
 import { createHashRouter, formatHash } from "./router.ts";
 import { SettingsView } from "./settings/SettingsView.tsx";
@@ -36,14 +44,30 @@ export interface AppProps {
 }
 
 export function App(props: AppProps): JSX.Element {
+	const localeState = createLocaleState({
+		window: props.window,
+		storage: browserLocalStorage(),
+	});
+	return (
+		<LocaleProvider locale={localeState.locale}>
+			<WidgetGridStringsProvider strings={widgetGridMessages[localeState.locale()]}>
+				<AppShell {...props} localeState={localeState} />
+			</WidgetGridStringsProvider>
+		</LocaleProvider>
+	);
+}
+
+function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.Element {
+	const m = useMessages(appMessages);
+	const common = useMessages(commonMessages);
+	const pages = useMessages(pageMessages);
 	const router = createHashRouter(props.window);
 	const session = createRemote(() => props.api.getSession());
 	const view = () => router.route().view;
 
 	// The tab title is external to Solid's tree, hence an effect.
 	createEffect(() => {
-		const page = PAGES.find((entry) => entry.view === view());
-		props.window.document.title = `${page?.title ?? "Home"} · Research workspace`;
+		props.window.document.title = m().tabTitle(pages().title(view()));
 	});
 
 	return (
@@ -56,7 +80,7 @@ export function App(props: AppProps): JSX.Element {
 		>
 			<header class="border-b border-slate-300 bg-white">
 				<div class="mx-auto flex max-w-[110rem] flex-wrap items-center gap-4 px-4 py-2">
-					<h1 class="text-base font-semibold">Research workspace</h1>
+					<h1 class="text-base font-semibold">{m().appName}</h1>
 					{/* ADR-0011: visible "Development" badge in development only. Colour is
 					    never the only signal: the badge carries the word itself. An unknown
 					    or missing environment is treated as production (no badge). */}
@@ -65,10 +89,10 @@ export function App(props: AppProps): JSX.Element {
 							data-field="environment-badge"
 							class="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-900"
 						>
-							Development
+							{m().developmentBadge}
 						</span>
 					</Show>
-					<nav aria-label="Views">
+					<nav aria-label={m().viewsNavigation}>
 						<ul class="flex gap-1">
 							<For each={PAGES}>
 								{(page) => (
@@ -86,7 +110,7 @@ export function App(props: AppProps): JSX.Element {
 												"text-slate-800 hover:bg-slate-200": view() !== page.view,
 											}}
 										>
-											{page.title}
+											{pages().title(page.view)}
 										</a>
 									</li>
 								)}
@@ -94,10 +118,10 @@ export function App(props: AppProps): JSX.Element {
 						</ul>
 					</nav>
 					<p class="ml-auto text-xs text-slate-700" data-field="session-summary">
-						<Show when={session.value()} fallback="Checking session…">
+						<Show when={session.value()} fallback={m().checkingSession}>
 							{(current) => (
 								<>
-									Signed in as <span class="font-mono">{current().ownerId}</span>
+									{m().signedInAs} <span class="font-mono">{current().ownerId}</span>
 								</>
 							)}
 						</Show>
@@ -123,16 +147,16 @@ export function App(props: AppProps): JSX.Element {
 									class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
 								>
 									<p>
-										<span class="font-semibold">Home could not be loaded. </span>
-										{error instanceof Error ? error.message : "Unknown error."}
+										<span class="font-semibold">{m().homeLoadFailed} </span>
+										{error instanceof Error ? error.message : common().unknownError}
 									</p>
 									<button type="button" class={`${BUTTON} mt-1`} onClick={reset}>
-										Try again
+										{common().tryAgain}
 									</button>
 								</div>
 							)}
 						>
-							<Suspense fallback={<Loading label="Home" />}>
+							<Suspense fallback={<Loading label={pages().title("home")} />}>
 								<HomeView api={props.api} visibility={props.visibility} />
 							</Suspense>
 						</ErrorBoundary>
@@ -160,6 +184,7 @@ export function App(props: AppProps): JSX.Element {
 							session={session.state()}
 							section={router.route().section}
 							visibility={props.visibility}
+							localeState={props.localeState}
 							onReloadSession={() => void session.reload()}
 							onOpenWorkspace={(workspaceId) =>
 								router.navigate({ view: "chat", workspaceId, section: null })

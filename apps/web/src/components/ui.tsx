@@ -1,3 +1,4 @@
+import { useMessages } from "@research/i18n/solid";
 import {
 	type Accessor,
 	createEffect,
@@ -15,7 +16,8 @@ import {
 import { Portal } from "solid-js/web";
 import type { ApiFailure } from "../api/http.ts";
 import type { Remote } from "../lib/remote.ts";
-import { PAGES, type ViewName } from "../pages.ts";
+import { pageMessages } from "../pages.messages.ts";
+import type { ViewName } from "../pages.ts";
 
 export const BUTTON =
 	"min-h-6 rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
@@ -543,17 +545,18 @@ export function Empty(props: { readonly children: JSX.Element }): JSX.Element {
 
 /**
  * The one page header every page starts with: the title as the page's `<h2>`
- * and the purpose sentence from `PAGES` beneath it (ARCH-010: no copies).
+ * and the purpose sentence from `PAGES` beneath it (ARCH-010: no copies),
+ * in the UI language (`pages.messages.ts`).
  * The Chat page shows the title only (owner's decision of 2026-10-12): its
  * three panels say what the page is for, and the line cost thread height.
  */
 export function PageHeader(props: { readonly view: ViewName }): JSX.Element {
-	const page = () => PAGES.find((entry) => entry.view === props.view) ?? PAGES[0];
+	const pages = useMessages(pageMessages);
 	return (
 		<div class="mb-3">
-			<h2 class="text-lg font-semibold text-slate-900">{page()?.title}</h2>
+			<h2 class="text-lg font-semibold text-slate-900">{pages().title(props.view)}</h2>
 			<Show when={props.view !== "chat"}>
-				<p class="text-sm text-slate-600">{page()?.purpose}</p>
+				<p class="text-sm text-slate-600">{pages().purpose(props.view)}</p>
 			</Show>
 		</div>
 	);

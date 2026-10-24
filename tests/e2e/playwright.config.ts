@@ -38,7 +38,16 @@ export default defineConfig({
 	// so sharing one directory would delete the previous engine's traces (and
 	// anything else under `test-results/`, such as the UI-review output).
 	outputDir: `../../test-results/e2e-${browser}`,
-	use: { baseURL: E2E_ORIGIN, headless: true, trace: "retain-on-failure", ...browserUse(browser) },
+	use: {
+		baseURL: E2E_ORIGIN,
+		headless: true,
+		trace: "retain-on-failure",
+		// The specs read the English UI. Pinned so a machine whose system
+		// language is another one (ADR-0031: the UI follows the browser) still
+		// runs them in English; a spec that checks another language sets its own.
+		locale: "en-US",
+		...browserUse(browser),
+	},
 	globalSetup: "./globalSetup.ts",
 	webServer: {
 		command: "sh tests/e2e/start-worker.sh",

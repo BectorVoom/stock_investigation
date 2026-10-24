@@ -7,6 +7,7 @@
 	"dependencies": {
 		"@research/contracts": "workspace:*",
 		"@research/domain": "workspace:*",
+		"@research/i18n": "workspace:*",
 		"@research/ui-registry": "workspace:*",
 		"@research/widget-grid": "workspace:*",
 		"@shoelace-style/shoelace": "2.20.1",
