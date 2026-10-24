@@ -1,4 +1,5 @@
 import {
+	type ApiErrorCode,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryMarketStatus,
 	type StockListing,
@@ -96,12 +97,22 @@ export interface DirectoryServer {
 	rows: DirectoryRow[];
 	US: DirectoryMarketServer;
 	JP: DirectoryMarketServer;
+	/**
+	 * When set, the refresh route queues these markets and then answers
+	 * this error anyway — a partly applied request the client must notice.
+	 */
+	refreshFailure: {
+		readonly status: number;
+		readonly code: ApiErrorCode;
+		readonly queued: readonly WatchMarket[];
+	} | null;
 }
 
 /** Both lists downloaded an hour ago: no automatic download is queued on load. */
 export function freshDirectory(): DirectoryServer {
 	return {
 		rows: [...DIRECTORY_ROWS],
+		refreshFailure: null,
 		US: {
 			entryCount: 7691,
 			asOf: null,
@@ -133,11 +144,29 @@ export function emptyDirectoryMarket(): DirectoryMarketServer {
 	};
 }
 
+/**
+ * Like the API: a failure is reported only while no later download
+ * succeeded, and a cancelled run is not a failure.
+ */
+function standingFailure(state: DirectoryMarketServer): DirectoryMarketServer["lastFailure"] {
+	const failure = state.lastFailure;
+	if (failure === null || failure.state === "cancelled") return null;
+	if (state.retrievedAt !== null && Date.parse(state.retrievedAt) >= Date.parse(failure.at)) {
+		return null;
+	}
+	return failure;
+}
+
 function directoryMarketStatus(
 	market: WatchMarket,
 	state: DirectoryMarketServer,
 ): StockDirectoryMarketStatus {
-	return { market, ...STOCK_DIRECTORY_SOURCES[market], ...state };
+	return {
+		market,
+		...STOCK_DIRECTORY_SOURCES[market],
+		...state,
+		lastFailure: standingFailure(state),
+	};
 }
 
 /**
@@ -179,12 +208,18 @@ export function installDirectoryRoutes(
 			typeof body === "object" && body !== null && "markets" in body && Array.isArray(body.markets)
 				? body.markets.filter((entry): entry is WatchMarket => entry === "US" || entry === "JP")
 				: ["US", "JP"];
-		const runs = markets.map((market) => {
+		const queue = (market: WatchMarket): string => {
 			const state = directory()[market];
 			state.activeRunId ??= `run_directory_${market.toLowerCase()}`;
 			state.activeRunState ??= "pending";
-			return { market, runId: state.activeRunId };
-		});
+			return state.activeRunId;
+		};
+		const failure = directory().refreshFailure;
+		if (failure !== null) {
+			for (const market of failure.queued) queue(market);
+			return errorResponse(failure.status, failure.code, "The refresh was not queued.");
+		}
+		const runs = markets.map((market) => ({ market, runId: queue(market) }));
 		return jsonResponse({ runs }, { status: 202 });
 	});
 }

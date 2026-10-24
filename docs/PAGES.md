@@ -122,11 +122,15 @@ Register the stocks you follow and see their earnings announcement dates.
 - Search every exchange-listed US and Japanese stock (ADR-0033) by company
   name, Japanese name or symbol — "Apple", "トヨタ", "とよた", "toyota", "7203"
   — in the add-a-stock search box, and pick a hit (click, or ↓/↑ then Enter;
-  Escape closes the list, then clears the text). Picking fills the market and
-  symbol and shows "Selected: …"; it adds nothing by itself.
+  Escape closes the list, then clears the text; keys an IME is composing
+  with are left to the IME). Picking fills the market and symbol and shows
+  "Selected: …"; it adds nothing by itself. Changing the search text clears
+  the pick and any symbol typed by hand, and Enter in the search box submits
+  only a picked stock.
 - Add a stock with "Add stock": the picked hit, or a symbol typed by hand
   under "Enter a symbol instead" (market + symbol, the way to add before any
-  stock list is downloaded). The add queues an earnings-date refresh itself,
+  stock list is downloaded). Beside the button, "To add: MSFT (US)" names
+  what it will add whenever a symbol is set. The add queues an earnings-date refresh itself,
   so the dates arrive without a further click; when a refresh is already
   running, one follow-up is queued when it ends with a stock still never
   refreshed.
@@ -147,14 +151,17 @@ Register the stocks you follow and see their earnings announcement dates.
   Japanese name first in Japanese, the English one first in English, the
   other beside it), market and listing (Nasdaq, NYSE, Cboe, Texas SE; Prime,
   Standard, Growth); a stock already on the watchlist says "Added" and cannot
-  be picked. A live line under the box says "Searching…", the number of
-  results, that no stock matches, that no list is downloaded yet, or that the
-  search failed.
+  be picked. While the next search runs the previous hits stay listed. A live
+  line under the box says "Searching…", the number of results, that no stock
+  matches, that no list is downloaded yet, that only one market was searched
+  because the other list is not downloaded yet, or that the search failed
+  (typing the same text again retries it).
 - One line per stock list with its source link: "US list: 7,691 stocks,
   retrieved …", "Japan list: 3,707 stocks, as of 2026-09-30", "not downloaded
   yet", "Updating (state)…" while a download runs, and the last failure as a
   fixed sentence per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT`
-  in `apps/runner/.env`).
+  in `apps/runner/.env`). A refresh request that fails is followed by one
+  status reload, so a market it queued anyway is shown and polled.
 - The registered stocks: symbol, company name (or "unavailable (not retrieved yet)"),
   market, the next announcement date with fiscal period and timing, further dates in a
   disclosure, "date undecided" stated as text, the retrieved date, the source link, a

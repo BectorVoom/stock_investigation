@@ -31,6 +31,14 @@ const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } 
 	GOOGLE_NOT_CONNECTED: "Google Calendar が接続されていません。同期する前に接続してください。",
 };
 
+/** "No US stock …" / "The Japanese stock list …": the market as an adjective. */
+const EN_MARKET_ADJECTIVES: { readonly [M in WatchMarket]: string } = {
+	US: "US",
+	JP: "Japanese",
+};
+
+const JA_MARKET_NAMES: { readonly [M in WatchMarket]: string } = { US: "米国", JP: "日本" };
+
 /** Where a listing trades, as the search results name it (ADR-0033). */
 const EN_LISTINGS: { readonly [L in StockListing]: string } = {
 	nasdaq: "Nasdaq",
@@ -123,9 +131,18 @@ export const watchlistModelMessages = defineMessages({
 		marketAndListing: (market: string, listing: string) => `${market} · ${listing}`,
 		selectedStock: (symbol: string, name: string, market: string) =>
 			`Selected: ${symbol} ${name} (${market})`,
+		/** Beside "Add stock": the market and symbol it will add, whichever way they were set. */
+		addTarget: (symbol: string, market: string) => `To add: ${symbol} (${market})`,
 		searching: "Searching…",
 		searchResults: (count: number) => `${count} result${count === 1 ? "" : "s"}`,
 		noStockMatches: (query: string) => `No stock matches "${query}".`,
+		/** Only one market's list is stored, so only that market was searched. */
+		searchResultsIn: (count: number, market: WatchMarket) =>
+			`${count} ${EN_MARKET_ADJECTIVES[market]} result${count === 1 ? "" : "s"}.`,
+		noStockMatchesIn: (query: string, market: WatchMarket) =>
+			`No ${EN_MARKET_ADJECTIVES[market]} stock matches "${query}".`,
+		listNotDownloaded: (market: WatchMarket) =>
+			`The ${EN_MARKET_ADJECTIVES[market]} stock list is not downloaded yet.`,
 		noListDownloaded:
 			"No stock list is downloaded yet. Enter the symbol under “Enter a symbol instead”.",
 		searchFailed: (reason: string) => `The search failed: ${reason}`,
@@ -136,7 +153,6 @@ export const watchlistModelMessages = defineMessages({
 		directoryNotDownloaded: "not downloaded yet.",
 		directoryUpdating: (state: string) => `Updating (${state})…`,
 		directoryLastFailed: (reason: string) => `The last update failed: ${reason}`,
-		directoryCancelled: "The last update was cancelled.",
 		directoryFailure: (code: StockDirectoryFailureCode): string => EN_DIRECTORY_FAILURES[code],
 		directoryFailedWithCode: (code: string) => `The update failed (${code}).`,
 		/** Sentences of one line: English puts a space between them, Japanese none. */
@@ -144,7 +160,7 @@ export const watchlistModelMessages = defineMessages({
 	},
 	ja: {
 		googleFailure: (code) => JA_GOOGLE_FAILURES[code],
-		marketName: (market) => ({ US: "米国", JP: "日本" })[market],
+		marketName: (market) => JA_MARKET_NAMES[market],
 		chooseMarket: "市場を選んでください。",
 		enterSymbol: "銘柄を検索して選ぶか、銘柄コードを入力してください。",
 		usSymbolHint: "米国のティッカーは英字で始まります（例: AAPL）。",
@@ -181,9 +197,14 @@ export const watchlistModelMessages = defineMessages({
 		listingName: (listing) => JA_LISTINGS[listing],
 		marketAndListing: (market, listing) => `${market}・${listing}`,
 		selectedStock: (symbol, name, market) => `選択中: ${symbol} ${name}（${market}）`,
+		addTarget: (symbol, market) => `追加する銘柄: ${symbol}（${market}）`,
 		searching: "検索中…",
 		searchResults: (count) => `${count} 件`,
 		noStockMatches: (query) => `「${query}」に一致する銘柄はありません。`,
+		searchResultsIn: (count, market) => `${JA_MARKET_NAMES[market]}の銘柄 ${count} 件。`,
+		noStockMatchesIn: (query, market) =>
+			`「${query}」に一致する${JA_MARKET_NAMES[market]}の銘柄はありません。`,
+		listNotDownloaded: (market) => `${JA_MARKET_NAMES[market]}の銘柄一覧はまだ取得されていません。`,
 		noListDownloaded:
 			"銘柄一覧はまだ取得されていません。「銘柄コードを直接入力」で銘柄コードを入力してください。",
 		searchFailed: (reason) => `検索に失敗しました: ${reason}`,
@@ -193,7 +214,6 @@ export const watchlistModelMessages = defineMessages({
 		directoryNotDownloaded: "まだ取得していません。",
 		directoryUpdating: (state) => `更新中（${runStateMessages.ja.name(state)}）…`,
 		directoryLastFailed: (reason) => `前回の更新に失敗しました: ${reason}`,
-		directoryCancelled: "前回の更新はキャンセルされました。",
 		directoryFailure: (code) => JA_DIRECTORY_FAILURES[code],
 		directoryFailedWithCode: (code) => `更新に失敗しました（${code}）。`,
 		joinSentences: (sentences) => sentences.join(""),

@@ -65,7 +65,9 @@ function listsChanged(
  * per mount, after the first successful load; a failed queue is reported and
  * never retried automatically. The idempotency key is kept only after a
  * network failure (unknown outcome) and only for the same markets, so a
- * resend of that same write is safe; any server answer retires it.
+ * resend of that same write is safe; any server answer retires it. A
+ * failed queue request reloads the status once, so a market queued anyway
+ * is shown and polled.
  */
 export function createStockDirectoryState(options: {
 	readonly api: StockDirectoryApi;
@@ -132,6 +134,11 @@ export function createStockDirectoryState(options: {
 		if (!result.ok) {
 			if (result.error.kind !== "network") pendingKey = null;
 			setFailure({ action: "queue", error: result.error });
+			// A failed answer does not prove nothing was queued: one market may
+			// have been queued before the other failed (or the answer was lost).
+			// One reload shows such a run and polls it to its end.
+			await load();
+			if (!disposed && isStockDirectoryRunActive(status())) poller.start();
 			return;
 		}
 		pendingKey = null;

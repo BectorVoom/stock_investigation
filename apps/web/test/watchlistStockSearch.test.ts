@@ -80,7 +80,7 @@ describe("createStockSearch", () => {
 		expect(calls).toHaveLength(0);
 		await vi.advanceTimersByTimeAsync(1);
 		expect(calls.map((call) => call.query)).toEqual(["toy"]);
-		expect(states).toEqual([{ kind: "searching", query: "toy" }]);
+		expect(states).toEqual([{ kind: "searching", query: "toy", hits: [] }]);
 		calls[0]?.answer(ok({ hits: [TOYOTA] }));
 		await vi.advanceTimersByTimeAsync(0);
 		expect(states.at(-1)).toEqual({ kind: "results", query: "toy", hits: [TOYOTA] });
@@ -120,6 +120,45 @@ describe("createStockSearch", () => {
 		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
 		expect(calls.map((call) => call.query)).toEqual(["sony"]);
 		expect(calls[0]?.signal.aborted).toBe(false);
+	});
+
+	it("keeps the previous hits while the next search (or a refresh) runs", async () => {
+		const { calls, states, search } = harness();
+		search.input("toy");
+		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
+		calls[0]?.answer(ok({ hits: [TOYOTA] }));
+		await vi.advanceTimersByTimeAsync(0);
+		search.input("toyo");
+		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
+		expect(states.at(-1)).toEqual({ kind: "searching", query: "toyo", hits: [TOYOTA] });
+		calls[1]?.answer(ok({ hits: [] }));
+		await vi.advanceTimersByTimeAsync(0);
+		search.refresh();
+		await vi.advanceTimersByTimeAsync(0);
+		// The latest answer (empty) is what stays on screen now.
+		expect(states.at(-1)).toEqual({ kind: "searching", query: "toyo", hits: [] });
+		search.input("");
+		expect(states.at(-1)).toEqual({ kind: "idle" });
+	});
+
+	it("retries the same query after a failure when the owner types it again", async () => {
+		const { calls, states, search } = harness();
+		search.input("sony");
+		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
+		calls[0]?.answer({ ok: false, error: SERVER_FAILURE });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(states.at(-1)?.kind).toBe("failed");
+		// "sony " asks the same question; after a failure it is sent again.
+		search.input("sony ");
+		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
+		expect(calls.map((call) => call.query)).toEqual(["sony", "sony"]);
+		calls[1]?.answer(ok({ hits: [TOYOTA] }));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(states.at(-1)).toEqual({ kind: "results", query: "sony", hits: [TOYOTA] });
+		// After a success the repeat is ignored again.
+		search.input("sony");
+		await vi.advanceTimersByTimeAsync(STOCK_SEARCH_DEBOUNCE_MS);
+		expect(calls).toHaveLength(2);
 	});
 
 	it("reports a failed search, re-sends on refresh, and goes quiet once disposed", async () => {
@@ -299,6 +338,47 @@ describe("createStockDirectoryState", () => {
 			"idem-key-1",
 			"idem-key-2",
 		]);
+		state.dispose();
+	});
+
+	it("after a failed queue request, reloads once and polls a market queued anyway", async () => {
+		const fake = fakeApi({ markets: [market("US"), market("JP")] });
+		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
+		state.start();
+		await vi.advanceTimersByTimeAsync(0);
+		const loadsBefore = fake.loads.length;
+		// US was queued, then JP failed: the API answers an error.
+		fake.answerQueueWith(() => {
+			fake.set({
+				markets: [market("US", { activeRunId: "run_US", activeRunState: "pending" }), market("JP")],
+			});
+			return { ok: false, error: SERVER_FAILURE };
+		});
+		state.update();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(state.failure()).toEqual({ action: "queue", error: SERVER_FAILURE });
+		expect(state.status()?.markets[0]?.activeRunId).toBe("run_US");
+		expect(fake.loads.length).toBeGreaterThan(loadsBefore);
+		// The US run is polled to its end.
+		fake.set({ markets: [market("US", { entryCount: 7691 }), market("JP")] });
+		await vi.advanceTimersByTimeAsync(20_000);
+		expect(state.status()?.markets[0]?.entryCount).toBe(7691);
+		const loadsAfterEnd = fake.loads.length;
+		await vi.advanceTimersByTimeAsync(120_000);
+		expect(fake.loads).toHaveLength(loadsAfterEnd);
+		state.dispose();
+	});
+
+	it("after a failed queue request with nothing queued, reloads once and does not poll", async () => {
+		const fake = fakeApi({ markets: [market("US"), market("JP")] });
+		const state = createStockDirectoryState({ api: fake.api, visibility: ALWAYS_VISIBLE });
+		state.start();
+		await vi.advanceTimersByTimeAsync(0);
+		fake.answerQueueWith(() => ({ ok: false, error: SERVER_FAILURE }));
+		const loadsBefore = fake.loads.length;
+		state.update();
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(fake.loads).toHaveLength(loadsBefore + 1);
 		state.dispose();
 	});
 

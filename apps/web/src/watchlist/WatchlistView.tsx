@@ -41,17 +41,18 @@ import { createStockSearch } from "./stockSearch.ts";
 import { watchlistMessages } from "./watchlist.messages.ts";
 import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 import {
+	addTargetText,
 	directoryStatusLine,
 	earningsAutoRefreshReason,
 	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
-	hasStoredDirectoryList,
 	isWatchlistRefreshActive,
 	nextDatedEvent,
 	pickedStockFor,
 	type StockSearchState,
 	selectedStockText,
 	storedDatesPassed,
+	storedDirectoryMarkets,
 	timingText,
 	utcTodayIso,
 	validateNewStock,
@@ -530,12 +531,14 @@ export function WatchlistView(props: {
 		return hit === null ? "" : selectedStockText(hit, locale(), model());
 	};
 	/**
-	 * Editing the search text ends a pick: the symbol it filled is cleared,
-	 * so "Add stock" never adds a stock the search box no longer shows. A
-	 * symbol typed by hand is kept.
+	 * Editing the search text starts a new choice: the pick and any symbol
+	 * (picked, or typed by hand under a possibly collapsed "Enter a symbol
+	 * instead") are cleared, so "Add stock" never adds a stock other than
+	 * the one the form shows. A symbol typed after a search stays, and the
+	 * line beside the button names it.
 	 */
 	const dropPick = (): void => {
-		if (selected() !== null) setSymbol("");
+		setSymbol("");
 		setPicked(null);
 	};
 	const onQueryInput = (text: string): void => {
@@ -552,6 +555,7 @@ export function WatchlistView(props: {
 	const allDirectoryRunsActive = () =>
 		directory.status()?.markets.every((entry) => entry.activeRunId !== null) ?? false;
 	const problemsId = "watchlist-add-problems";
+	const addTargetId = "watchlist-add-target";
 	const stocks = () => data()?.stocks ?? [];
 	const openRemove = (stock: WatchlistStock, opener: HTMLElement) => {
 		setOpener(opener);
@@ -601,7 +605,8 @@ export function WatchlistView(props: {
 						id="watchlist-search"
 						query={query()}
 						state={searchState()}
-						listsStored={hasStoredDirectoryList(directory.status())}
+						storedMarkets={storedDirectoryMarkets(directory.status())}
+						canSubmit={selected() !== null}
 						onQueryInput={onQueryInput}
 						onPick={pickStock}
 						onClear={clearSearch}
@@ -655,14 +660,21 @@ export function WatchlistView(props: {
 							</div>
 						</div>
 					</details>
-					<button
-						type="submit"
-						class={BUTTON_PRIMARY}
-						disabled={busy() || problems().length > 0}
-						aria-describedby={problems().length > 0 ? problemsId : undefined}
-					>
-						{m().addStock}
-					</button>
+					<div class="flex flex-wrap items-center gap-2">
+						<button
+							type="submit"
+							class={BUTTON_PRIMARY}
+							disabled={busy() || problems().length > 0}
+							aria-describedby={
+								problems().length > 0 ? `${problemsId} ${addTargetId}` : addTargetId
+							}
+						>
+							{m().addStock}
+						</button>
+						<output id={addTargetId} data-field="add-target" class="text-sm text-slate-700">
+							{addTargetText(market(), symbol(), model())}
+						</output>
+					</div>
 				</form>
 				<div
 					data-field="stock-lists"

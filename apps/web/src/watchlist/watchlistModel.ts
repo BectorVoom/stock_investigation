@@ -314,26 +314,6 @@ export const STOCK_DIRECTORY_STALE_MS = STOCK_DIRECTORY_LIMITS.staleAfterDays * 
 
 type DirectoryFailure = NonNullable<StockDirectoryMarketStatus["lastFailure"]>;
 
-/**
- * The market's failure that still stands, or null. A failure at or before
- * the stored list's download was followed by a success, so it no longer
- * describes the list (the API may keep it beside the last success, like the
- * earnings refresh does).
- */
-export function currentDirectoryFailure(
-	market: StockDirectoryMarketStatus,
-): DirectoryFailure | null {
-	const failure = market.lastFailure;
-	if (failure === null) return null;
-	if (market.retrievedAt === null) return failure;
-	const failedMs = Date.parse(failure.at);
-	const retrievedMs = Date.parse(market.retrievedAt);
-	if (Number.isFinite(failedMs) && Number.isFinite(retrievedMs) && retrievedMs >= failedMs) {
-		return null;
-	}
-	return failure;
-}
-
 /** True when the market has no stored list, or its list is older than `STOCK_DIRECTORY_STALE_MS`. */
 export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: number): boolean {
 	if (market.entryCount === 0 || market.retrievedAt === null) return true;
@@ -346,7 +326,8 @@ export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: 
  * The markets the Watchlist queues a list download for when it opens
  * (ADR-0033 decision 4), evaluated once per visit by the view: a market
  * whose list is missing or stale, with no run of its own active, and whose
- * standing failure is not `DIRECTORY_NOT_CONFIGURED` — a configuration
+ * last failure is not `DIRECTORY_NOT_CONFIGURED` (the API reports a
+ * failure only while no later download succeeded) — a configuration
  * error fails the same way until the owner edits `apps/runner/.env`, so it
  * is never queued automatically (the "Update stock list" button still
  * can). Pure: `nowMs` is passed in.
@@ -358,7 +339,7 @@ export function directoryAutoRefreshMarkets(
 	const markets: WatchMarket[] = [];
 	for (const market of status.markets) {
 		if (market.activeRunId !== null) continue;
-		if (currentDirectoryFailure(market)?.code === "DIRECTORY_NOT_CONFIGURED") continue;
+		if (market.lastFailure?.code === "DIRECTORY_NOT_CONFIGURED") continue;
 		if (isDirectoryListStale(market, nowMs)) markets.push(market.market);
 	}
 	return markets;
@@ -384,15 +365,16 @@ export function stockDirectoryPollSignal(
 }
 
 /**
- * True when some market has a stored list, false when none has, null before
- * the status is known. Lets the search say "no list yet" instead of "no
- * match" when an empty answer only means nothing is downloaded.
+ * The markets whose list is stored (US first), or null before the status is
+ * known. Lets the search say what an answer covers: "no list yet" instead
+ * of "no match" when nothing is stored, and which market alone was searched
+ * when only one list is.
  */
-export function hasStoredDirectoryList(
+export function storedDirectoryMarkets(
 	status: StockDirectoryStatusResponse | null,
-): boolean | null {
+): readonly WatchMarket[] | null {
 	if (status === null) return null;
-	return status.markets.some((market) => market.entryCount > 0);
+	return status.markets.filter((market) => market.entryCount > 0).map((market) => market.market);
 }
 
 /** The fixed sentence for a stock-list failure: one per contract code, a generic one otherwise. */
@@ -409,7 +391,7 @@ export function directoryFailureReason(
 /**
  * One market's status line: "US list: 7,691 stocks, retrieved …", with the
  * source's own as-of date when it states one (JPX), then the active
- * download and the failure that still stands.
+ * download and the last failure the API reports.
  */
 export function directoryStatusLine(
 	market: StockDirectoryMarketStatus,
@@ -430,13 +412,10 @@ export function directoryStatusLine(
 	if (market.activeRunId !== null) {
 		parts.push(text.directoryUpdating(market.activeRunState ?? "pending"));
 	}
-	const failure = currentDirectoryFailure(market);
-	if (failure !== null) {
-		parts.push(
-			failure.state === "cancelled"
-				? text.directoryCancelled
-				: text.directoryLastFailed(directoryFailureReason(failure, text)),
-		);
+	// The API decides which failure still stands (none once a later
+	// download succeeded; cancelled runs are not failures), so it is shown as is.
+	if (market.lastFailure !== null) {
+		parts.push(text.directoryLastFailed(directoryFailureReason(market.lastFailure, text)));
 	}
 	return `${text.directoryListName(market.market)}: ${text.joinSentences(parts)}`;
 }
@@ -454,7 +433,12 @@ export function stockSearchQuery(text: string): string | null {
 /** What the search box shows: nothing yet, a request on its way, its hits, or its failure. */
 export type StockSearchState =
 	| { readonly kind: "idle" }
-	| { readonly kind: "searching"; readonly query: string }
+	| {
+			readonly kind: "searching";
+			readonly query: string;
+			/** The previous answer's hits, kept on screen until the new answer arrives. */
+			readonly hits: readonly StockDirectoryHit[];
+	  }
 	| {
 			readonly kind: "results";
 			readonly query: string;
@@ -462,19 +446,21 @@ export type StockSearchState =
 	  }
 	| { readonly kind: "failed"; readonly query: string; readonly error: ApiFailure };
 
-/** The hits a state holds (empty unless it holds results). */
+/** The hits a state shows: an answer's, or the previous answer's while the next one runs. */
 export function stockSearchHits(state: StockSearchState): readonly StockDirectoryHit[] {
-	return state.kind === "results" ? state.hits : [];
+	return state.kind === "results" || state.kind === "searching" ? state.hits : [];
 }
 
 /**
- * The search box's live status line. `listsStored` is false when no market
- * has a list, so an empty answer is explained as "nothing downloaded" rather
- * than "no match"; `reason` words an API failure in the UI language.
+ * The search box's live status line. `storedMarkets` names the markets
+ * whose list is stored (null before the status is known): with none, an
+ * empty answer is explained as "nothing downloaded" rather than "no match";
+ * with one, the line says the search covered only that market and which
+ * list is missing. `reason` words an API failure in the UI language.
  */
 export function stockSearchStatusText(
 	state: StockSearchState,
-	listsStored: boolean | null,
+	storedMarkets: readonly WatchMarket[] | null,
 	text: WatchlistModelText,
 	reason: (error: ApiFailure) => string,
 ): string {
@@ -485,9 +471,26 @@ export function stockSearchStatusText(
 			return text.searching;
 		case "failed":
 			return text.searchFailed(reason(state.error));
-		case "results":
-			if (state.hits.length > 0) return text.searchResults(state.hits.length);
-			return listsStored === false ? text.noListDownloaded : text.noStockMatches(state.query);
+		case "results": {
+			if (storedMarkets !== null && storedMarkets.length === 0) {
+				return state.hits.length > 0
+					? text.searchResults(state.hits.length)
+					: text.noListDownloaded;
+			}
+			const only = storedMarkets?.length === 1 ? storedMarkets[0] : undefined;
+			if (only === undefined) {
+				return state.hits.length > 0
+					? text.searchResults(state.hits.length)
+					: text.noStockMatches(state.query);
+			}
+			const missing: WatchMarket = only === "US" ? "JP" : "US";
+			return text.joinSentences([
+				state.hits.length > 0
+					? text.searchResultsIn(state.hits.length, only)
+					: text.noStockMatchesIn(state.query, only),
+				text.listNotDownloaded(missing),
+			]);
+		}
 	}
 }
 
@@ -523,6 +526,21 @@ export function selectedStockText(
 		stockHitNames(hit, locale).primary,
 		text.marketName(hit.market),
 	);
+}
+
+/**
+ * What "Add stock" will add, shown beside the button whenever a symbol is
+ * set (picked or typed by hand, even under a collapsed "Enter a symbol
+ * instead"), so the request always matches what the owner sees. Empty when
+ * no symbol is set.
+ */
+export function addTargetText(
+	market: WatchMarket,
+	symbol: string,
+	text: WatchlistModelText,
+): string {
+	const cleaned = normaliseSymbol(symbol);
+	return cleaned === "" ? "" : text.addTarget(cleaned, text.marketName(market));
 }
 
 /**

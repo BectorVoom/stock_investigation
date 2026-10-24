@@ -1,4 +1,8 @@
-import { STOCK_DIRECTORY_LIMITS, type StockDirectoryHit } from "@research/contracts";
+import {
+	STOCK_DIRECTORY_LIMITS,
+	type StockDirectoryHit,
+	type WatchMarket,
+} from "@research/contracts";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { createSignal, For, type JSX, Show } from "solid-js";
 import { failureMessageIn } from "../api/errorText.ts";
@@ -18,19 +22,27 @@ import {
  * The add-a-stock search (ADR-0033): a WAI-ARIA 1.2 combobox with a listbox
  * popup and list autocompletion. Focus stays in the input; the active option
  * is announced through `aria-activedescendant`. ↓/↑ open the list and move
- * (wrapping), Enter picks the active option (and otherwise submits the form),
- * Escape closes the list and, pressed again, clears the text. Hits already on
+ * (wrapping), Enter picks the active option, Escape closes the list and,
+ * pressed again, clears the text. Enter with no active option submits the
+ * form only while a hit is picked (`canSubmit`), so Enter in the search box
+ * never adds a stock the box does not show. Keys pressed while an IME
+ * composes (Japanese input) belong to the IME: Enter then confirms the
+ * conversion and neither picks nor submits. Hits already on
  * the watchlist say "Added" and cannot be picked (`aria-disabled`). A live
  * status line under the input tells "Searching…", the result count, or why
- * nothing matched. The request discipline (debounce, abort, stale answers)
+ * nothing matched. While the next search runs, the previous hits stay listed
+ * and the active option stays active when the new answer still holds it.
+ * The request discipline (debounce, abort, stale answers)
  * lives in `createStockSearch`; this part only shows its state.
  */
 export function StockSearchBox(props: {
 	readonly id: string;
 	readonly query: string;
 	readonly state: StockSearchState;
-	/** False when no market has a list downloaded (the empty answer is explained). */
-	readonly listsStored: boolean | null;
+	/** The markets whose list is stored, or null before the status is known (the answer is explained). */
+	readonly storedMarkets: readonly WatchMarket[] | null;
+	/** A hit is picked: Enter with no active option may submit the form. */
+	readonly canSubmit: boolean;
 	readonly onQueryInput: (text: string) => void;
 	readonly onPick: (hit: StockDirectoryHit) => void;
 	readonly onClear: () => void;
@@ -42,22 +54,23 @@ export function StockSearchBox(props: {
 	const statusId = `${props.id}-status`;
 	const optionId = (index: number): string => `${props.id}-option-${index}`;
 	const [open, setOpen] = createSignal(false);
-	// The active option belongs to the hits it was chosen in: a new answer
-	// starts with no active option, with no effect to reset it.
-	const [activeIn, setActiveIn] = createSignal<{
-		readonly hits: readonly StockDirectoryHit[];
-		readonly index: number;
-	}>({ hits: [], index: -1 });
+	// The active option is remembered by its stock, so it stays active when
+	// a new answer still lists it and is gone when it does not — with no
+	// effect to reset it.
+	const [activeId, setActiveId] = createSignal<string | null>(null);
 	const hits = () => stockSearchHits(props.state);
-	const active = () => (activeIn().hits === hits() ? activeIn().index : -1);
+	const active = () => {
+		const id = activeId();
+		return id === null ? -1 : hits().findIndex((hit) => hit.stockId === id);
+	};
 	const expanded = () => open() && hits().length > 0;
 	const statusText = () =>
-		stockSearchStatusText(props.state, props.listsStored, model(), (error) =>
+		stockSearchStatusText(props.state, props.storedMarkets, model(), (error) =>
 			failureMessageIn(error, locale()),
 		);
 
 	const setActive = (index: number): void => {
-		setActiveIn({ hits: hits(), index });
+		setActiveId(hits()[index]?.stockId ?? null);
 	};
 
 	const close = (): void => {
@@ -82,6 +95,8 @@ export function StockSearchBox(props: {
 	};
 
 	const onKeyDown = (event: KeyboardEvent): void => {
+		// keyCode 229 is how WebKit reports keys an IME consumes (like the composer).
+		if (event.isComposing || event.keyCode === 229) return;
 		switch (event.key) {
 			case "ArrowDown":
 				if (hits().length === 0) return;
@@ -94,10 +109,13 @@ export function StockSearchBox(props: {
 				move("previous");
 				return;
 			case "Enter":
-				// With no active option Enter submits the form ("Add stock").
-				if (!expanded() || active() < 0) return;
-				event.preventDefault();
-				pick(active());
+				if (expanded() && active() >= 0) {
+					event.preventDefault();
+					pick(active());
+					return;
+				}
+				// With no active option Enter submits ("Add stock") only for a pick.
+				if (!props.canSubmit) event.preventDefault();
 				return;
 			case "Escape":
 				if (expanded()) {

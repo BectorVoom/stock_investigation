@@ -3,7 +3,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { formatInstant } from "../src/lib/format.ts";
 import { WatchlistView } from "../src/watchlist/WatchlistView.tsx";
-import { ALWAYS_VISIBLE, errorResponse, type FakeBackend } from "./fakeBackend.ts";
+import {
+	ALWAYS_VISIBLE,
+	deferred,
+	errorResponse,
+	type FakeBackend,
+	jsonResponse,
+} from "./fakeBackend.ts";
 import {
 	createWatchlistBackend,
 	emptyDirectoryMarket,
@@ -215,6 +221,126 @@ describe("Watchlist stock search", () => {
 	});
 });
 
+describe("Watchlist stock search: what the owner sees is what is added", () => {
+	function addTarget(): string {
+		return document.querySelector('[data-field="add-target"]')?.textContent ?? "";
+	}
+
+	it("ignores Enter while an IME composes: it neither picks nor submits", async () => {
+		const box = await mount();
+		type(box, "とよた");
+		await options();
+		fireEvent.keyDown(box, { key: "ArrowDown" });
+		// Enter confirming the kana-to-kanji conversion (isComposing, keyCode 229).
+		fireEvent.keyDown(box, { key: "Enter", isComposing: true, keyCode: 229 });
+		fireEvent.keyDown(box, { key: "Enter", keyCode: 229 });
+		expect(selectedLine()).toBe("");
+		expect(screen.getByRole("listbox", { name: "Matching stocks" })).toBeTruthy();
+		// The same Enter after the composition ends picks the active option.
+		fireEvent.keyDown(box, { key: "Enter" });
+		expect(selectedLine()).toBe("Selected: 7203 TOYOTA MOTOR CORPORATION (Japan)");
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
+	});
+
+	it("drops a hand-typed symbol hidden under a collapsed disclosure when the search changes", async () => {
+		const box = await mount();
+		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "MSFT" } });
+		expect(addTarget()).toBe("To add: MSFT (US)");
+		const details = document.querySelector("details");
+		if (details === null) throw new Error("no disclosure");
+		details.open = false;
+		type(box, "toyota");
+		await options();
+		// Nothing the box does not show is left to add.
+		expect(screen.getByLabelText<HTMLInputElement>("Symbol").value).toBe("");
+		expect(addTarget()).toBe("");
+		expect(selectedLine()).toBe("");
+		const enter = fireEvent.keyDown(box, { key: "Enter" });
+		// Enter with no pick does not submit (the default action is prevented)…
+		expect(enter).toBe(false);
+		// …and even a forced submit has nothing valid to send.
+		const form = box.form;
+		if (form === null) throw new Error("the search box is outside the form");
+		fireEvent.submit(form);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/stocks$/)).toHaveLength(0);
+	});
+
+	it("names the stock Add stock will add beside the button, picked or typed after a search", async () => {
+		const box = await mount();
+		expect(addTarget()).toBe("");
+		type(box, "sony");
+		const [sony] = await options();
+		if (sony === undefined) throw new Error("no 6758 option");
+		fireEvent.click(sony);
+		expect(addTarget()).toBe("To add: 6758 (Japan)");
+		// Enter with a pick submits the form.
+		expect(fireEvent.keyDown(box, { key: "Enter" })).toBe(true);
+		// A symbol typed by hand after the search replaces the pick, and says so.
+		fireEvent.change(screen.getByLabelText("Market"), { target: { value: "US" } });
+		fireEvent.input(screen.getByLabelText("Symbol"), { target: { value: "msft" } });
+		expect(selectedLine()).toBe("");
+		expect(addTarget()).toBe("To add: MSFT (US)");
+		const add = screen.getByRole("button", { name: "Add stock" });
+		expect(add.getAttribute("aria-describedby")).toBe("watchlist-add-target");
+	});
+
+	it("keeps the list and the active option open while the next search runs", async () => {
+		const box = await mount();
+		type(box, "toyota");
+		await options();
+		fireEvent.keyDown(box, { key: "ArrowDown" });
+		fireEvent.keyDown(box, { key: "ArrowDown" });
+		const activeStock = () =>
+			document
+				.getElementById(box.getAttribute("aria-activedescendant") ?? "")
+				?.getAttribute("data-stock-id");
+		expect(activeStock()).toBe("jp:7203");
+		// The next answer is held back: the previous hits stay listed meanwhile.
+		const held = deferred<Response>();
+		backend.on("GET", SEARCH, () => held.promise);
+		type(box, "toyota motor corporation");
+		await screen.findByText("Searching…");
+		expect(await options()).toHaveLength(2);
+		expect(box.getAttribute("aria-expanded")).toBe("true");
+		expect(activeStock()).toBe("jp:7203");
+		held.resolve(
+			jsonResponse({
+				hits: [
+					{
+						stockId: "jp:7203",
+						market: "JP",
+						symbol: "7203",
+						name: "TOYOTA MOTOR CORPORATION",
+						localName: "トヨタ自動車",
+						listing: "tse-prime",
+						registered: false,
+					},
+				],
+			}),
+		);
+		await screen.findByText("1 result");
+		// 7203 is still in the new answer, so it stays the active option.
+		expect(await options()).toHaveLength(1);
+		expect(activeStock()).toBe("jp:7203");
+	});
+
+	it("says the search covered one market when the other list is missing", async () => {
+		server.directory.JP = emptyDirectoryMarket();
+		server.directory.rows = server.directory.rows.filter((row) => row.market === "US");
+		const box = await mount();
+		await waitFor(() => {
+			expect(document.querySelectorAll('[data-field="directory-status"] p')).toHaveLength(2);
+		});
+		type(box, "とよた");
+		expect(
+			await screen.findByText(
+				'No US stock matches "とよた". The Japanese stock list is not downloaded yet.',
+			),
+		).toBeTruthy();
+	});
+});
+
 describe("Watchlist stock lists", () => {
 	function lines(): string[] {
 		return [...document.querySelectorAll('[data-field="directory-status"] p')].map(
@@ -296,6 +422,36 @@ describe("Watchlist stock lists", () => {
 			).toBe(true);
 		});
 	});
+
+	it("shows and polls a market queued by a refresh request that still failed", async () => {
+		server.directory.US = emptyDirectoryMarket();
+		server.directory.JP = emptyDirectoryMarket();
+		// US is queued, then the request fails (e.g. JP hit the run limit).
+		server.directory.refreshFailure = { status: 429, code: "RATE_LIMITED", queued: ["US"] };
+		await mount();
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("The stock list update was not queued.");
+		expect(alert.textContent).toContain("RATE_LIMITED");
+		await waitFor(() => {
+			expect(lines()[0]).toBe(
+				"US list: not downloaded yet. Updating (pending)… Source: U.S. Securities and Exchange Commission (SEC)",
+			);
+		});
+		// The poller follows the US run to its end.
+		server.directory.US = {
+			...emptyDirectoryMarket(),
+			entryCount: 7691,
+			retrievedAt: FRESH_STAMP,
+		};
+		await waitFor(
+			() => {
+				expect(lines()[0]).toBe(
+					`US list: 7,691 stocks, retrieved ${formatInstant(FRESH_STAMP)}. Source: U.S. Securities and Exchange Commission (SEC)`,
+				);
+			},
+			{ timeout: 30_000 },
+		);
+	}, 60_000);
 
 	it("reports a queue the API refused", async () => {
 		backend.on("POST", DIRECTORY_REFRESH, () => errorResponse(500, "INTERNAL", "boom"));

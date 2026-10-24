@@ -9,10 +9,9 @@ import { describe, expect, it } from "vitest";
 import type { ApiFailure } from "../src/api/http.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
-	currentDirectoryFailure,
+	addTargetText,
 	directoryAutoRefreshMarkets,
 	directoryStatusLine,
-	hasStoredDirectoryList,
 	isDirectoryListStale,
 	isStockDirectoryRunActive,
 	moveActiveOption,
@@ -25,6 +24,7 @@ import {
 	stockSearchHits,
 	stockSearchQuery,
 	stockSearchStatusText,
+	storedDirectoryMarkets,
 } from "../src/watchlist/watchlistModel.ts";
 
 const EN = watchlistModelMessages.en;
@@ -103,34 +103,6 @@ describe("the stock-list staleness rule", () => {
 	});
 });
 
-describe("currentDirectoryFailure", () => {
-	const failure = {
-		state: "failed",
-		code: "DIRECTORY_SOURCE_FAILED",
-		at: "2026-10-24T10:00:00.000Z",
-	};
-
-	it("keeps a failure after the stored list's download", () => {
-		expect(currentDirectoryFailure(market("US", { lastFailure: failure }))).toEqual(failure);
-		expect(currentDirectoryFailure(market("US", { ...MISSING, lastFailure: failure }))).toEqual(
-			failure,
-		);
-	});
-
-	it("drops a failure a later (or same-instant) download superseded", () => {
-		expect(
-			currentDirectoryFailure(
-				market("US", { retrievedAt: "2026-10-24T10:00:00.000Z", lastFailure: failure }),
-			),
-		).toBe(null);
-		expect(
-			currentDirectoryFailure(
-				market("US", { retrievedAt: "2026-10-24T11:00:00.000Z", lastFailure: failure }),
-			),
-		).toBe(null);
-	});
-});
-
 describe("directoryAutoRefreshMarkets", () => {
 	it("queues nothing while both lists are fresh", () => {
 		expect(directoryAutoRefreshMarkets(status(), NOW)).toEqual([]);
@@ -170,22 +142,19 @@ describe("directoryAutoRefreshMarkets", () => {
 		).toEqual(["US"]);
 	});
 
-	it("queues again once a later success superseded the configuration failure", () => {
-		// Failed 2026-10-01, then downloaded 2026-10-02 (now 22 days old): stale, and the
-		// configuration error no longer stands.
+	it("trusts the API's lastFailure: a failure beside a stored list still blocks the retry", () => {
+		// The API clears lastFailure once a later download succeeds, so a failure it
+		// reports stands even beside an older stored list (here 22 days old).
+		const stale = { retrievedAt: "2026-10-02T00:00:00.000Z" };
+		const notConfigured = {
+			state: "failed",
+			code: "DIRECTORY_NOT_CONFIGURED",
+			at: "2026-10-01T00:00:00.000Z",
+		};
+		expect(directoryAutoRefreshMarkets(status(stale), NOW)).toEqual(["US"]);
 		expect(
-			directoryAutoRefreshMarkets(
-				status({
-					retrievedAt: "2026-10-02T00:00:00.000Z",
-					lastFailure: {
-						state: "failed",
-						code: "DIRECTORY_NOT_CONFIGURED",
-						at: "2026-10-01T00:00:00.000Z",
-					},
-				}),
-				NOW,
-			),
-		).toEqual(["US"]);
+			directoryAutoRefreshMarkets(status({ ...stale, lastFailure: notConfigured }), NOW),
+		).toEqual([]);
 	});
 });
 
@@ -213,9 +182,10 @@ describe("directory run state", () => {
 	});
 
 	it("knows whether any list is stored", () => {
-		expect(hasStoredDirectoryList(null)).toBe(null);
-		expect(hasStoredDirectoryList(status(MISSING, MISSING))).toBe(false);
-		expect(hasStoredDirectoryList(status(MISSING))).toBe(true);
+		expect(storedDirectoryMarkets(null)).toBe(null);
+		expect(storedDirectoryMarkets(status(MISSING, MISSING))).toEqual([]);
+		expect(storedDirectoryMarkets(status(MISSING))).toEqual(["JP"]);
+		expect(storedDirectoryMarkets(status())).toEqual(["US", "JP"]);
 	});
 });
 
@@ -268,7 +238,7 @@ describe("directoryStatusLine", () => {
 		);
 	});
 
-	it("words an unknown code and a cancelled run without provider text", () => {
+	it("words an unknown code without provider text, and shows the API's failure as is", () => {
 		const at = "2026-10-24T11:00:00.000Z";
 		expect(
 			directoryStatusLine(
@@ -278,12 +248,18 @@ describe("directoryStatusLine", () => {
 		).toBe(
 			"US list: 7,691 stocks, retrieved 2026-10-24 09:30 UTC. The last update failed: The update failed (RUNNER_LOST).",
 		);
+		// No client-side comparison with retrievedAt: a failure the API reports is shown.
 		expect(
 			directoryStatusLine(
-				market("US", { lastFailure: { state: "cancelled", code: "CANCELLED", at } }),
+				market("US", {
+					retrievedAt: "2026-10-24T11:30:00.000Z",
+					lastFailure: { state: "failed", code: "DIRECTORY_RATE_LIMITED", at },
+				}),
 				EN,
 			),
-		).toBe("US list: 7,691 stocks, retrieved 2026-10-24 09:30 UTC. The last update was cancelled.");
+		).toBe(
+			"US list: 7,691 stocks, retrieved 2026-10-24 11:30 UTC. The last update failed: The source limited requests; try again later.",
+		);
 	});
 
 	it("reads in Japanese with no space between sentences", () => {
@@ -316,27 +292,62 @@ describe("search text", () => {
 			issues: [],
 		};
 		const reason = (error: ApiFailure) => error.message;
+		const both = ["US", "JP"] as const;
 		const results = (hits: readonly StockDirectoryHit[]) =>
 			({ kind: "results", query: "zzz", hits }) as const;
-		expect(stockSearchStatusText({ kind: "idle" }, true, EN, reason)).toBe("");
-		expect(stockSearchStatusText({ kind: "searching", query: "t" }, true, EN, reason)).toBe(
-			"Searching…",
-		);
-		expect(stockSearchStatusText(results([TOYOTA]), true, EN, reason)).toBe("1 result");
-		expect(stockSearchStatusText(results([TOYOTA, TOYOTA_US]), true, EN, reason)).toBe("2 results");
-		expect(stockSearchStatusText(results([]), true, EN, reason)).toBe('No stock matches "zzz".');
+		expect(stockSearchStatusText({ kind: "idle" }, both, EN, reason)).toBe("");
+		expect(
+			stockSearchStatusText({ kind: "searching", query: "t", hits: [] }, both, EN, reason),
+		).toBe("Searching…");
+		expect(stockSearchStatusText(results([TOYOTA]), both, EN, reason)).toBe("1 result");
+		expect(stockSearchStatusText(results([TOYOTA, TOYOTA_US]), both, EN, reason)).toBe("2 results");
+		expect(stockSearchStatusText(results([]), both, EN, reason)).toBe('No stock matches "zzz".');
 		expect(stockSearchStatusText(results([]), null, EN, reason)).toBe('No stock matches "zzz".');
-		expect(stockSearchStatusText(results([]), false, EN, reason)).toBe(
+		expect(stockSearchStatusText(results([]), [], EN, reason)).toBe(
 			"No stock list is downloaded yet. Enter the symbol under “Enter a symbol instead”.",
 		);
 		expect(
-			stockSearchStatusText({ kind: "failed", query: "t", error: failure }, true, EN, reason),
+			stockSearchStatusText({ kind: "failed", query: "t", error: failure }, both, EN, reason),
 		).toBe("The search failed: boom");
-		expect(stockSearchStatusText(results([]), true, JA, reason)).toBe(
+		expect(stockSearchStatusText(results([]), both, JA, reason)).toBe(
 			"「zzz」に一致する銘柄はありません。",
 		);
-		expect(stockSearchHits(results([TOYOTA]))).toEqual([TOYOTA]);
-		expect(stockSearchHits({ kind: "searching", query: "t" })).toEqual([]);
+	});
+
+	it("says the search covered one market when only its list is stored", () => {
+		const reason = (error: ApiFailure) => error.message;
+		const results = (hits: readonly StockDirectoryHit[]) =>
+			({ kind: "results", query: "zzz", hits }) as const;
+		expect(stockSearchStatusText(results([]), ["US"], EN, reason)).toBe(
+			'No US stock matches "zzz". The Japanese stock list is not downloaded yet.',
+		);
+		expect(stockSearchStatusText(results([TOYOTA]), ["JP"], EN, reason)).toBe(
+			"1 Japanese result. The US stock list is not downloaded yet.",
+		);
+		expect(stockSearchStatusText(results([TOYOTA, TOYOTA]), ["JP"], EN, reason)).toBe(
+			"2 Japanese results. The US stock list is not downloaded yet.",
+		);
+		expect(stockSearchStatusText(results([]), ["US"], JA, reason)).toBe(
+			"「zzz」に一致する米国の銘柄はありません。日本の銘柄一覧はまだ取得されていません。",
+		);
+		expect(stockSearchStatusText(results([TOYOTA]), ["JP"], JA, reason)).toBe(
+			"日本の銘柄 1 件。米国の銘柄一覧はまだ取得されていません。",
+		);
+	});
+
+	it("keeps the previous hits on screen while the next search runs", () => {
+		expect(stockSearchHits({ kind: "results", query: "t", hits: [TOYOTA] })).toEqual([TOYOTA]);
+		expect(stockSearchHits({ kind: "searching", query: "to", hits: [TOYOTA] })).toEqual([TOYOTA]);
+		expect(stockSearchHits({ kind: "idle" })).toEqual([]);
+	});
+});
+
+describe("addTargetText", () => {
+	it("names the market and symbol Add stock will add, however they were set", () => {
+		expect(addTargetText("US", " msft ", EN)).toBe("To add: MSFT (US)");
+		expect(addTargetText("JP", "7203", EN)).toBe("To add: 7203 (Japan)");
+		expect(addTargetText("JP", "7203", JA)).toBe("追加する銘柄: 7203（日本）");
+		expect(addTargetText("US", "   ", EN)).toBe("");
 	});
 });
 
