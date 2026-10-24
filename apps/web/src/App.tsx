@@ -94,7 +94,7 @@ function AppShell(props: AppProps & { readonly localeState: LocaleState }): JSX.
 						</span>
 					</Show>
 					<nav aria-label={m().viewsNavigation}>
-						<ul class="flex gap-1">
+						<ul class="flex flex-wrap gap-1">
 							<For each={PAGES}>
 								{(page) => (
 									<li>

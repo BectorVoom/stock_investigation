@@ -1,6 +1,8 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { type ChildProcess, spawn } from "node:child_process";
+import { type BrowserContext, expect, type Locator, type Page, test } from "@playwright/test";
 import { scheduledTaskListResponseSchema } from "../../packages/contracts/src/scheduledTasks.ts";
-import { E2E_ORIGIN } from "./fixtures.ts";
+import { baseChildEnv, suiteRunnerSettings } from "../../scripts/testEnv.ts";
+import { E2E_ORIGIN, E2E_PORT, FEED_URL } from "./fixtures.ts";
 
 /**
  * Scheduled tasks end to end (FR-021, ADR-0033): a task created on the Tasks
@@ -9,39 +11,75 @@ import { E2E_ORIGIN } from "./fixtures.ts";
  * and resume from the widget), a one-off task that fires by itself when the
  * runner next claims work after its time, and delete keeping the chat. The
  * page runs under its Content-Security-Policy without errors.
+ *
+ * Runs as an isolated owner (`X-E2E-Owner`) with its own runner harness, so
+ * its backend choice, source, tasks and run allowance never touch the other
+ * specs, whatever the file order.
  */
 test.describe.configure({ mode: "serial" });
 
+let context: BrowserContext;
 let page: Page;
+let runner: ChildProcess | null = null;
+const owner = `e2e-tasks-${Date.now()}@example.test`;
 const consoleErrors: string[] = [];
 const DAILY_TITLE = "Morning storage brief";
 const ONCE_TITLE = "One-off storage check";
 const QUESTION = "Which storage products will see demand growth?";
 
 test.beforeAll(async ({ browser }) => {
-	page = await browser.newPage();
+	context = await browser.newContext({ extraHTTPHeaders: { "X-E2E-Owner": owner } });
+	page = await context.newPage();
 	page.on("console", (message) => {
 		if (message.type() === "error") consoleErrors.push(message.text());
 	});
 	page.on("pageerror", (error) => consoleErrors.push(error.message));
+	await page.setViewportSize({ width: 1440, height: 900 });
+	runner = spawn("node", ["tests/e2e/runnerHarness.ts"], {
+		cwd: new URL("../..", import.meta.url).pathname,
+		env: {
+			...baseChildEnv(),
+			...suiteRunnerSettings(),
+			E2E_PORT: String(E2E_PORT),
+			E2E_RUNNER_OWNER: owner,
+		},
+		stdio: ["ignore", "inherit", "inherit"],
+	});
 });
 
 test.afterAll(async () => {
-	await page.close();
+	if (runner !== null && runner.exitCode === null) {
+		const exited = new Promise<void>((resolve) => runner?.once("exit", () => resolve()));
+		runner.kill("SIGTERM");
+		await exited;
+	}
+	runner = null;
+	await context.close();
 });
 
-/** Saves the scripted backend in Settings → AI agent (an earlier spec may already have). */
-async function saveScriptedBackend(): Promise<void> {
+/** Saves the scripted backend and subscribes the fixture feed, as this owner. */
+async function setUpOwner(): Promise<void> {
 	await page.goto("/#/settings/agent");
 	const agentSection = page.getByRole("region", { name: "AI agent" });
 	const backend = agentSection.getByLabel("Default backend");
+	// Cold start: this file's harness may still be starting.
 	await expect(backend.locator("option", { hasText: "Scripted example agent" })).toHaveCount(1, {
-		timeout: 30_000,
+		timeout: 75_000,
 	});
 	await backend.selectOption({ label: "Scripted example agent — available" });
-	const save = agentSection.getByRole("button", { name: "Save" });
-	if (await save.isEnabled()) await save.click();
+	await agentSection.getByRole("button", { name: "Save" }).click();
 	await expect(agentSection).toContainText(/Saved /);
+
+	await page.getByRole("link", { name: "Sources", exact: true }).click();
+	await page.getByLabel("Feed or site URL").fill(FEED_URL);
+	await page.getByRole("button", { name: "Preview source" }).click();
+	const preview = page.getByRole("region", { name: "Source preview" });
+	await expect(preview).toContainText("Example Energy News (synthetic)");
+	await preview.getByLabel("License policy").selectOption("short-excerpt-permitted");
+	await preview.getByRole("button", { name: "Subscribe to this source" }).click();
+	await expect(page.getByRole("region", { name: "Subscribed sources" })).toContainText(
+		"Example Energy News (synthetic)",
+	);
 }
 
 async function openTasksPage(): Promise<Locator> {
@@ -71,7 +109,8 @@ function utcAhead(minutes: number): { readonly date: string; readonly time: stri
 }
 
 test("a task is created on the Tasks page with its own chat (FR-021)", async () => {
-	await saveScriptedBackend();
+	test.setTimeout(150_000);
+	await setUpOwner();
 	const list = await openTasksPage();
 	await list.getByRole("button", { name: "New task" }).click();
 	const dialog = page.getByRole("dialog", { name: "New task" });
@@ -86,7 +125,8 @@ test("a task is created on the Tasks page with its own chat (FR-021)", async () 
 
 	const row = taskRow(DAILY_TITLE);
 	await expect(row).toBeVisible();
-	await expect(row).toContainText("Daily");
+	await expect(row).toContainText("Every day at");
+	await expect(row).toContainText("Not run yet");
 	const [task] = (await listTasks()).filter((entry) => entry.title === DAILY_TITLE);
 	expect(task?.status).toBe("active");
 	expect(task?.nextRunAt).not.toBeNull();
@@ -178,7 +218,9 @@ test("a one-off task fires by itself when the runner claims work after its time"
 test("deleting a task asks first and keeps its chat", async () => {
 	await openTasksPage();
 	const workspaceId = (await listTasks()).find((entry) => entry.title === ONCE_TITLE)?.workspaceId;
-	await taskRow(ONCE_TITLE).getByRole("button", { name: `Delete ${ONCE_TITLE}` }).click();
+	await taskRow(ONCE_TITLE)
+		.getByRole("button", { name: `Delete ${ONCE_TITLE}` })
+		.click();
 	const confirm = page.getByRole("dialog", { name: `Delete ${ONCE_TITLE}?` });
 	await confirm.getByRole("button", { name: "Delete task" }).click();
 	await expect(taskRow(ONCE_TITLE)).toHaveCount(0);

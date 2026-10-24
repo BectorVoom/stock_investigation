@@ -247,6 +247,20 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 
 If the runner stops mid-job nothing is completed; the lease expires after 90 s and the job is handed out again (at most three attempts). The exception is a Google Calendar sign-in, which is failed rather than handed out again (see below).
 
+### Scheduled tasks (FR-021, ADR-0033)
+
+A task runs only while a runner polls: the claim that finds it due queues
+its run, so with the PC asleep nothing runs, and on wake-up every missed
+time collapses into one run. While the runner is busy with another job, a
+due task starts when that job ends. Each run uses the backend saved in
+Settings → AI agent at that moment; with nothing saved, or a metered backend
+without the task's own consent, the occurrence is skipped and the Tasks page
+says why. Scheduled runs share the owner's hourly allowance (30 runs) and the
+five-unfinished-runs cap; an occurrence refused by either is skipped, never
+retried in a loop. A failure of the due scan is logged as
+`scheduled_tasks_materialize_failed` (error class only) and never stops the
+claim.
+
 ### Google Calendar sync (FR-019, ADR-0018)
 
 Owner setup, once:
@@ -557,6 +571,16 @@ are not part of workspace export/import yet (ADR-0020); a directory copy of
 of widget content (under 1 MB with metadata, within D1's 2 MB row limit), so
 one conversation's notebook rows stay under about 21 MB (the body plus 20
 revisions); ordinary notebooks are a few KB per version.
+
+Migration `0010_scheduled_tasks.sql` (ADR-0033) adds `scheduled_tasks`
+(one row per task: question, schedule JSON, time zone, status, next run,
+last run and last skip, compare-and-set `version`) and the index
+`scheduled_tasks_due` for the due scan every runner claim runs. Its header
+comment is the rollback: remove any `scheduled-tasks` widgets from Home and
+the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
+`DROP INDEX` and `DROP TABLE`. The conversations the tasks created stay.
+An already-running `bun run dev` answers 500 on the task routes until it is
+restarted (or the migration is applied to `data-dev/d1`).
 
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,
