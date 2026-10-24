@@ -46,6 +46,11 @@ import {
 	securitySchema,
 	supplierLinkSchema,
 } from "./records.ts";
+import {
+	STOCK_DIRECTORY_LIMITS,
+	stockDirectoryEntriesProblem,
+	stockDirectoryEntrySchema,
+} from "./stockDirectory.ts";
 import { uiOperationSchema } from "./ui.ts";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
@@ -53,6 +58,7 @@ import {
 	earningsEventSchema,
 	earningsUnavailableCodeSchema,
 	watchlistStockIdSchema,
+	watchMarketSchema,
 } from "./watchlist.ts";
 
 // The legal transition matrix is shared by Worker, runner and SPA through this package.
@@ -77,6 +83,7 @@ export const jobKindSchema = z.enum([
 	"earnings-refresh",
 	"google-calendar",
 	"notebook-assist",
+	"stock-directory-refresh",
 ]);
 export type JobKind = z.infer<typeof jobKindSchema>;
 
@@ -242,7 +249,7 @@ export const researchRunSchema = z
 		kind: jobKindSchema,
 		workspaceId: idSchema.nullable(),
 		state: jobStateSchema,
-		/** null for news-ingest, market-refresh and earnings-refresh jobs. */
+		/** null for news-ingest, market-refresh, earnings-refresh and stock-directory-refresh jobs. */
 		request: researchRequestSchema.nullable(),
 		usage: resourceUsageSchema,
 		cost: costSummarySchema,
@@ -574,6 +581,16 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 				}
 			}
 		}),
+	/**
+	 * Download one market's full list of listed stocks (ADR-0033): SEC for
+	 * US, JPX for JP. The runner needs nothing else; the API replaces the
+	 * market's stored rows with the completion.
+	 */
+	z.strictObject({
+		kind: z.literal("stock-directory-refresh"),
+		...leaseShape,
+		market: watchMarketSchema,
+	}),
 ]);
 export type ClaimedJob = z.infer<typeof claimedJobSchema>;
 
@@ -794,6 +811,28 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 	googleCalendarConnectedSchema,
 	googleCalendarSyncedSchema,
 	googleCalendarDisconnectedSchema,
+	/**
+	 * One market's full list (ADR-0033), replacing the stored rows of that
+	 * market all or nothing. `asOf` is the date the source says the list is
+	 * effective (JPX), null when it states none (SEC). Failures use the
+	 * `failed` outcome with a `STOCK_DIRECTORY_FAILURE_CODES` code.
+	 */
+	z
+		.strictObject({
+			outcome: z.literal("stock-directory-refreshed"),
+			...completionBase,
+			market: watchMarketSchema,
+			asOf: isoDateSchema.nullable(),
+			fetchedAt: isoDateTimeSchema,
+			entries: z
+				.array(stockDirectoryEntrySchema)
+				.min(STOCK_DIRECTORY_LIMITS.minEntriesPerMarket)
+				.max(STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket),
+		})
+		.superRefine((completion, ctx) => {
+			const problem = stockDirectoryEntriesProblem(completion.market, completion.entries);
+			if (problem !== null) ctx.addIssue({ code: "custom", path: ["entries"], message: problem });
+		}),
 ]);
 export type CompleteJobRequest = z.infer<typeof completeJobRequestSchema>;
 

@@ -10,6 +10,7 @@ export * from "./notebook.ts";
 export * from "./primitives.ts";
 export * from "./records.ts";
 export * from "./settings.ts";
+export * from "./stockDirectory.ts";
 export * from "./ui.ts";
 export * from "./watchlist.ts";
 export * from "./widgets.ts";

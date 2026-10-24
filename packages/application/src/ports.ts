@@ -27,11 +27,20 @@ import type {
 	RunnerCredential,
 	RunnerEvent,
 	RunRecords,
+	StockDirectoryEntry,
+	StockDirectoryFailureCode,
 	UpdateSourceRequest,
 	WatchMarket,
 	WorkspaceSummary,
 } from "@research/contracts";
-import type { RawFeed, ResourceUsage, Result, UiCommand, WorkspaceState } from "@research/domain";
+import {
+	err,
+	type RawFeed,
+	type ResourceUsage,
+	type Result,
+	type UiCommand,
+	type WorkspaceState,
+} from "@research/domain";
 
 /* ---------- Environment ports (ARCH-002: time and randomness are injected) ---------- */
 
@@ -1048,6 +1057,49 @@ export function unconfiguredEarningsCalendarSource(
 					}),
 				),
 			),
+	};
+}
+
+/* ---------- Stock directory (ADR-0033: every listed US / JP stock) ---------- */
+
+export interface StockDirectoryQuery {
+	readonly signal: AbortSignal;
+	/**
+	 * Admits one HTTP request start, exactly like `EarningsCalendarQuery`:
+	 * called immediately before every request; nothing is sent when it
+	 * resolves false. Built by the runner from the shared pacer (SEC and JPX
+	 * share their windows with the other jobs that reach those hosts).
+	 */
+	readonly beforeRequest: () => Promise<boolean>;
+}
+
+export interface StockDirectoryData {
+	/** The date the source says the list is effective (JPX); null when it states none (SEC). */
+	readonly asOf: string | null;
+	/** Every kept row, distinct symbols, already filtered to the market's listings. */
+	readonly entries: readonly StockDirectoryEntry[];
+}
+
+/** Downloads one market's full list; adapters implement it per market (SEC, JPX). */
+export interface StockDirectorySource {
+	readonly market: WatchMarket;
+	fetchDirectory(
+		query: StockDirectoryQuery,
+	): Promise<Result<StockDirectoryData, StockDirectoryFailureCode>>;
+}
+
+/** Registry keyed by market; the runner looks the leased market up here. */
+export type StockDirectorySourceRegistry = ReadonlyMap<WatchMarket, StockDirectorySource>;
+
+/**
+ * A source that always reports `DIRECTORY_NOT_CONFIGURED` (US without
+ * `SEC_USER_AGENT`), so the job fails with a stable code instead of sending
+ * an undeclared User-Agent to SEC.
+ */
+export function unconfiguredStockDirectorySource(market: WatchMarket): StockDirectorySource {
+	return {
+		market,
+		fetchDirectory: () => Promise.resolve(err("DIRECTORY_NOT_CONFIGURED")),
 	};
 }
 

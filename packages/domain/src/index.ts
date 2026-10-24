@@ -34,5 +34,6 @@ export * from "./time.ts";
 export * from "./url.ts";
 export * from "./watchlist/limits.ts";
 export * from "./watchlist/stockId.ts";
+export * from "./watchlist/stockSearch.ts";
 export * from "./workspace/reducer.ts";
 export * from "./workspace/types.ts";
