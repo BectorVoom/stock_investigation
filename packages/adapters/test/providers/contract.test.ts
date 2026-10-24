@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import {
 	createAgentRuntimes,
 	createBaselineAgentRuntimes,
+	createClaudeApiRuntime,
 	createClaudeCodeRuntime,
 	createCodexRuntime,
 	createOpenCodeRuntime,
@@ -45,6 +46,11 @@ const OPENROUTER_FREE_ENV = {
 	OPENROUTER_FREE_MODEL: "example/model:free",
 };
 
+const CLAUDE_API_ENV = {
+	...BASE_ENV,
+	ANTHROPIC_API_KEY: "sk-ant-api03-TEST-KEY-0123456789abcdef",
+};
+
 interface Scenario {
 	readonly name: string;
 	readonly runtime: AgentRuntime;
@@ -63,6 +69,17 @@ function cliScenario(
 ): Scenario {
 	const runtime = create(
 		makeEnvironment({ processRunner: createFakeProcessRunner(script).runner }),
+	);
+	return { name, runtime, ...extra };
+}
+
+function claudeApiScenario(
+	name: string,
+	respond: () => Response,
+	extra: Partial<Scenario> = {},
+): Scenario {
+	const runtime = createClaudeApiRuntime(
+		makeEnvironment({ env: CLAUDE_API_ENV, fetch: () => Promise.resolve(respond()) }),
 	);
 	return { name, runtime, ...extra };
 }
@@ -195,7 +212,31 @@ const SCENARIOS: readonly Scenario[] = [
 		name: "openrouter-free not configured",
 		runtime: createOpenRouterFreeRuntime(makeEnvironment({ env: BASE_ENV })),
 	},
+	claudeApiScenario("claude-api ok", () => sse(fixtureText("claude-api/ok.sse"))),
+	claudeApiScenario("claude-api refusal", () => sse(fixtureText("claude-api/refusal.sse"))),
+	claudeApiScenario("claude-api mid-stream error", () =>
+		sse(fixtureText("claude-api/midstream-error.sse")),
+	),
+	claudeApiScenario("claude-api tool use", () => sse(fixtureText("claude-api/tool-use.sse"))),
+	claudeApiScenario(
+		"claude-api 529",
+		() => new Response("{}", { status: 529, headers: { "Retry-After": "3600" } }),
+	),
+	claudeApiScenario("claude-api garbage", () =>
+		sse(GARBAGE.map((line) => `data: ${line}\n\n`).join("")),
+	),
+	claudeApiScenario("claude-api unpriced model", () => sse(""), { model: "claude-unknown-9" }),
+	{
+		name: "claude-api not configured",
+		runtime: createClaudeApiRuntime(makeEnvironment({ env: BASE_ENV })),
+	},
 ];
+
+const HTTP_AGENT_IDS: ReadonlySet<string> = new Set([
+	"openrouter",
+	"openrouter-free",
+	"claude-api",
+]);
 
 async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
 	const controller = new AbortController();
@@ -214,10 +255,7 @@ async function runScenario(scenario: Scenario): Promise<AgentEvent[]> {
 		signal: controller.signal,
 		// CLI backends need a model for OpenCode; a pure HTTPS backend gets no scratch directory.
 		model: scenario.model !== undefined ? scenario.model : defaultModel,
-		scratchDirectory:
-			scenario.runtime.agentId === "openrouter" || scenario.runtime.agentId === "openrouter-free"
-				? null
-				: "/scratch/job_1",
+		scratchDirectory: HTTP_AGENT_IDS.has(scenario.runtime.agentId) ? null : "/scratch/job_1",
 	});
 	const pending = collect(scenario.runtime.run(request, context));
 	if (scenario.aborted === true) controller.abort();
@@ -321,7 +359,7 @@ describe("baseline registry", () => {
 		]);
 	});
 
-	it("provides the baseline four followed by openrouter-free through createAgentRuntimes", () => {
+	it("provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes", () => {
 		const all = createAgentRuntimes(
 			makeEnvironment({
 				processRunner: createFakeProcessRunner({ spawnErrorCode: "ENOENT" }).runner,
@@ -330,6 +368,7 @@ describe("baseline registry", () => {
 		expect(all.map((runtime) => runtime.agentId)).toEqual([
 			...BASELINE_AGENT_IDS,
 			"openrouter-free",
+			"claude-api",
 		]);
 	});
 });

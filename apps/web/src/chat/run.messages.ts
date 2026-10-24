@@ -53,6 +53,8 @@ export const runMessages = defineMessages({
 			"The model's provider is overloaded or could not be reached. Retry in a few minutes, or choose another model in Settings.",
 		providerRateLimited:
 			"The model's provider is limiting requests (free models have per-minute and daily limits). Retry later, or choose another model in Settings.",
+		providerRefused:
+			"The model declined to answer this question. Rephrase it, or choose another model in Settings.",
 		approveRun: (runId: string) => `Approve run ${runId}`,
 		approvalRequested: "Approval requested: ",
 		reasonNotStated: "reason not stated",
@@ -108,6 +110,8 @@ export const runMessages = defineMessages({
 			"モデルのプロバイダーが混雑しているか、接続できませんでした。数分後に再試行するか、設定で別のモデルを選んでください。",
 		providerRateLimited:
 			"モデルのプロバイダーがリクエストを制限しています（無料モデルには 1 分あたりと 1 日あたりの上限があります）。時間をおいて再試行するか、設定で別のモデルを選んでください。",
+		providerRefused:
+			"モデルがこの質問への回答を断りました。質問を言い換えるか、設定で別のモデルを選んでください。",
 		approveRun: (runId) => `実行 ${runId} を承認`,
 		approvalRequested: "承認が必要です: ",
 		reasonNotStated: "理由の記載なし",

@@ -1,10 +1,9 @@
-//! OpenRouter SSE, bounded rejection retries, idle watch and free-cost enforcement.
+//! OpenRouter SSE and free-cost enforcement; retries and the idle watch live in http_turn.
 use crate::{
-	cli_probe::unavailable, environment::*, http::*, lines::*, openrouter_models::*, schema::*,
+	cli_probe::unavailable, environment::*, http::*, http_turn::*, openrouter_models::*, schema::*,
 	turn::*,
 };
 use async_trait::async_trait;
-use futures_util::StreamExt;
 use research_agent_core::runtime::*;
 use research_contracts::agent::*;
 use research_js::{
@@ -12,10 +11,7 @@ use research_js::{
 	utf16::utf16_len,
 	whitespace::trim,
 };
-use std::{collections::BTreeMap, time::Duration};
-
-/// No headers/body progress for two minutes ends the turn.
-pub const IDLE_TIMEOUT_MS: u64 = 120000;
+use std::collections::BTreeMap;
 /// Classification of one SSE line; missing cost differs from explicit null.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
@@ -126,61 +122,6 @@ pub fn interpret_sse_line(line: &str) -> SseVerdict {
 		.and_then(|v| interpret_payload(&v))
 		.unwrap_or(SseVerdict::Malformed)
 }
-/// Rejected HTTP status mapping, distinct from SSE error status mapping.
-pub fn failure_for_http_status(status: u16) -> ProviderFailure {
-	if status == 408 {
-		ProviderFailure::new("PROVIDER_TIMEOUT")
-	} else {
-		hint_from_http_status(f64::from(status)).map_or_else(
-			|| ProviderFailure::new("PROVIDER_REQUEST_REJECTED"),
-			failure_for_hint,
-		)
-	}
-}
-/// Only a rejection before any SSE chunk may be retried.
-pub fn is_transient_rejection(failure: &ProviderFailure) -> bool {
-	matches!(
-		failure.code.as_str(),
-		"PROVIDER_UNAVAILABLE" | "PROVIDER_RATE_LIMITED"
-	)
-}
-/// Three exponential waits, bounded by header delay and deadline reserve.
-pub fn rejection_retry_delay_ms(
-	index: u32,
-	retry_after: Option<f64>,
-	remaining: f64,
-) -> Option<f64> {
-	if index >= 3 {
-		return None;
-	}
-	let delay = retry_after.unwrap_or(2000.0 * 2.0_f64.powf(f64::from(index)));
-	if delay > 30000.0 || remaining - delay < 30000.0 {
-		None
-	} else {
-		Some(delay)
-	}
-}
-/// Huge digit strings remain infinite/huge and therefore suppress retry.
-pub fn parse_retry_after_ms(value: Option<&str>, now: f64) -> Option<f64> {
-	let value = trim(value?);
-	if !value.is_empty() && value.bytes().all(|b| b.is_ascii_digit()) {
-		return Some(value.parse::<f64>().unwrap_or(f64::INFINITY) * 1000.0);
-	}
-	let bytes = value.as_bytes();
-	if !bytes
-		.get(..3)
-		.is_some_and(|b| b.iter().all(u8::is_ascii_alphabetic))
-		|| bytes.get(3..5) != Some(b", ")
-	{
-		return None;
-	}
-	let at = research_js::date::parse(value);
-	if at.is_finite() {
-		Some((at - now).max(0.0))
-	} else {
-		None
-	}
-}
 fn object_fields(fields: Vec<(&str, Value)>) -> Value {
 	Value::Object(Object::from_members(
 		fields.into_iter().map(|(k, v)| (k.to_owned(), v)).collect(),
@@ -207,12 +148,7 @@ pub fn build_request_body(model: &str, prompt: &str, effort: Effort) -> String {
 	]))
 }
 fn read_key(env: &Environment) -> Option<String> {
-	let key = trim(env.get("OPENROUTER_API_KEY")?);
-	if (8..=512).contains(&key.len()) && key.bytes().all(|b| (0x21..=0x7e).contains(&b)) {
-		Some(key.to_owned())
-	} else {
-		None
-	}
+	read_api_key(env.get("OPENROUTER_API_KEY"))
 }
 #[derive(Default)]
 struct AttemptState {
@@ -225,9 +161,12 @@ struct AttemptState {
 	failure: Option<ProviderFailure>,
 	rejected: Option<ProviderFailure>,
 	charged: bool,
+	free: bool,
 }
-impl AttemptState {
-	async fn line(&mut self, line: &str, free: bool, sender: &TurnSender) -> bool {
+#[async_trait]
+impl SseHandler for AttemptState {
+	async fn line(&mut self, line: &str, sender: &TurnSender) -> bool {
+		let free = self.free;
 		match interpret_sse_line(line) {
 			SseVerdict::Ignored => {}
 			SseVerdict::Malformed => {
@@ -280,166 +219,83 @@ impl AttemptState {
 		true
 	}
 }
-struct Rejected {
-	failure: ProviderFailure,
-	retry_after: Option<f64>,
-	usage: bool,
-}
-async fn send_end(sender: &TurnSender, cost: Option<f64>, failure: Option<ProviderFailure>) {
-	sender
-		.send_closing(AgentEvent::Usage {
-			known_cost_usd: cost,
-		})
-		.await;
-	sender
-		.send_closing(failure.map_or(AgentEvent::Completed, ProviderFailure::event))
-		.await;
-}
-async fn attempt(
-	environment: &ProviderEnvironment,
-	key: &str,
-	body: &str,
-	guard: &TurnGuard,
+/// One request with its fixed key and body.
+struct OpenRouterAttempt {
+	environment: ProviderEnvironment,
+	key: String,
+	body: String,
 	free: bool,
-	sender: &TurnSender,
-) -> Option<Rejected> {
-	let idle = tokio::time::sleep(Duration::from_millis(IDLE_TIMEOUT_MS));
-	tokio::pin!(idle);
-	let request = HttpRequest {
-		method: "POST".to_owned(),
-		url: CHAT_URL.to_owned(),
-		headers: BTreeMap::from([
-			("authorization".to_owned(), format!("Bearer {key}")),
-			("content-type".to_owned(), "application/json".to_owned()),
-			("accept".to_owned(), "text/event-stream".to_owned()),
-		]),
-		body: body.to_owned(),
-	};
-	let response = tokio::select! { biased;
-		_=guard.cancel.cancelled()=>None,
-		_=&mut idle=>{ guard.stop(StopReason::Idle);None },
-		result=environment.http.send(request,guard.cancel.clone())=>Some(result),
-	};
-	let response = match response {
-		None => {
+}
+#[async_trait]
+impl HttpAttempt for OpenRouterAttempt {
+	async fn attempt(&self, guard: &TurnGuard, sender: &TurnSender) -> Option<Rejected> {
+		let request = HttpRequest {
+			method: "POST".to_owned(),
+			url: CHAT_URL.to_owned(),
+			headers: BTreeMap::from([
+				("authorization".to_owned(), format!("Bearer {}", self.key)),
+				("content-type".to_owned(), "application/json".to_owned()),
+				("accept".to_owned(), "text/event-stream".to_owned()),
+			]),
+			body: self.body.clone(),
+		};
+		let mut state = AttemptState {
+			free: self.free,
+			..AttemptState::default()
+		};
+		let end = match stream_request(
+			&self.environment,
+			request,
+			failure_for_http_status,
+			guard,
+			&mut state,
+			sender,
+		)
+		.await
+		{
+			Streamed::Ended(rejected) => return rejected,
+			Streamed::Read(end) => end,
+		};
+		if state.charged {
 			send_end(
 				sender,
-				None,
-				Some(failure_for_stop(
-					guard.reason().unwrap_or(StopReason::Aborted),
-				)),
+				state.cost,
+				Some(ProviderFailure::new("PROVIDER_FREE_MODEL_CHARGED")),
 			)
 			.await;
 			return None;
 		}
-		Some(Err(_)) => {
-			return Some(Rejected {
-				failure: ProviderFailure::new("PROVIDER_UNAVAILABLE"),
-				retry_after: None,
-				usage: false,
+		if guard.reason().is_none() {
+			if let Some(failure) = state.rejected {
+				return Some(Rejected {
+					failure,
+					retry_after: None,
+					usage: true,
+				});
+			}
+		}
+		let failure = guard
+			.reason()
+			.map(failure_for_stop)
+			.or(state.failure)
+			.or_else(|| {
+				if end.too_large {
+					Some(ProviderFailure::new("PROVIDER_OUTPUT_TOO_LARGE"))
+				} else if end.read_failed {
+					Some(ProviderFailure::new("PROVIDER_UNAVAILABLE"))
+				} else if !state.saw_end {
+					Some(ProviderFailure::new("PROVIDER_OUTPUT_INVALID"))
+				} else if state.truncated {
+					Some(ProviderFailure::new("PROVIDER_OUTPUT_TRUNCATED"))
+				} else if state.emitted == 0 {
+					Some(ProviderFailure::new("PROVIDER_OUTPUT_EMPTY"))
+				} else {
+					None
+				}
 			});
-		}
-		Some(Ok(response)) => response,
-	};
-	if !(200..300).contains(&response.status) {
-		return Some(Rejected {
-			failure: failure_for_http_status(response.status),
-			retry_after: parse_retry_after_ms(
-				response.headers.get("retry-after").map(String::as_str),
-				now_ms(),
-			),
-			usage: false,
-		});
+		send_end(sender, if self.free { None } else { state.cost }, failure).await;
+		None
 	}
-	let Some(mut body) = response.body else {
-		send_end(
-			sender,
-			None,
-			Some(ProviderFailure::new("PROVIDER_OUTPUT_INVALID")),
-		)
-		.await;
-		return None;
-	};
-	let mut state = AttemptState::default();
-	let mut splitter = LineSplitter::new(MAX_LINE_CHARS);
-	let mut received = 0usize;
-	let mut too_large = false;
-	let mut read_failed = false;
-	'read: loop {
-		let chunk = tokio::select! { biased;
-			_=guard.cancel.cancelled()=>break,
-			_=&mut idle=>{ guard.stop(StopReason::Idle);break; },
-			chunk=body.next()=>chunk,
-		};
-		match chunk {
-			None => {
-				for line in splitter.finish() {
-					if !state.line(&line, free, sender).await {
-						break;
-					}
-				}
-				break;
-			}
-			Some(Err(_)) => {
-				read_failed = true;
-				break;
-			}
-			Some(Ok(bytes)) => {
-				idle.as_mut()
-					.reset(tokio::time::Instant::now() + Duration::from_millis(IDLE_TIMEOUT_MS));
-				received += bytes.len();
-				if received > MAX_RAW_STREAM_CHARS {
-					too_large = true;
-					break;
-				}
-				for line in splitter.push(&bytes) {
-					if !state.line(&line, free, sender).await {
-						break 'read;
-					}
-				}
-			}
-		}
-	}
-	drop(body);
-	if state.charged {
-		send_end(
-			sender,
-			state.cost,
-			Some(ProviderFailure::new("PROVIDER_FREE_MODEL_CHARGED")),
-		)
-		.await;
-		return None;
-	}
-	if guard.reason().is_none() {
-		if let Some(failure) = state.rejected {
-			return Some(Rejected {
-				failure,
-				retry_after: None,
-				usage: true,
-			});
-		}
-	}
-	let failure = guard
-		.reason()
-		.map(failure_for_stop)
-		.or(state.failure)
-		.or_else(|| {
-			if too_large {
-				Some(ProviderFailure::new("PROVIDER_OUTPUT_TOO_LARGE"))
-			} else if read_failed {
-				Some(ProviderFailure::new("PROVIDER_UNAVAILABLE"))
-			} else if !state.saw_end {
-				Some(ProviderFailure::new("PROVIDER_OUTPUT_INVALID"))
-			} else if state.truncated {
-				Some(ProviderFailure::new("PROVIDER_OUTPUT_TRUNCATED"))
-			} else if state.emitted == 0 {
-				Some(ProviderFailure::new("PROVIDER_OUTPUT_EMPTY"))
-			} else {
-				None
-			}
-		});
-	send_end(sender, if free { None } else { state.cost }, failure).await;
-	None
 }
 /// Shared metered and free-model backend, differing only in config and charge enforcement.
 #[derive(Clone)]
@@ -571,49 +427,15 @@ impl AgentRuntime for OpenRouterRuntime {
 			return AgentTurn::from_events(vec![ProviderFailure::new(code).event()]);
 		}
 		let body = build_request_body(model, &request.prompt, context.effort);
-		let runtime = self.clone();
-		AgentTurn::spawn(&context.cancel, move |sender| async move {
-			let guard = TurnGuard::new(sender.cancel_token().clone(), deadline, now_ms());
-			for index in 0..=3 {
-				let Some(rejected) = attempt(
-					&runtime.environment,
-					&key,
-					&body,
-					&guard,
-					runtime.free,
-					&sender,
-				)
-				.await
-				else {
-					break;
-				};
-				let delay = if is_transient_rejection(&rejected.failure) {
-					rejection_retry_delay_ms(index, rejected.retry_after, deadline - now_ms())
-				} else {
-					None
-				};
-				let Some(delay) = delay else {
-					if rejected.usage {
-						sender
-							.send_closing(AgentEvent::Usage {
-								known_cost_usd: None,
-							})
-							.await;
-					}
-					sender.send_closing(rejected.failure.event()).await;
-					break;
-				};
-				let stopped = tokio::select! { biased;_=guard.cancel.cancelled()=>true,_=tokio::time::sleep(Duration::from_secs_f64(delay.max(0.0)/1000.0))=>false };
-				if stopped {
-					sender
-						.send_closing(
-							failure_for_stop(guard.reason().unwrap_or(StopReason::Aborted)).event(),
-						)
-						.await;
-					break;
-				}
-			}
-			guard.stop(StopReason::Finished);
-		})
+		run_http_turn(
+			&context.cancel,
+			deadline,
+			OpenRouterAttempt {
+				environment: self.environment.clone(),
+				key,
+				body,
+				free: self.free,
+			},
+		)
 	}
 }

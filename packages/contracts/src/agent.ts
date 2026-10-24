@@ -23,6 +23,13 @@ export const BASELINE_AGENT_IDS = ["opencode", "codex", "claude-code", "openrout
 /** Agent id of the OpenRouter free-models backend: plan-limited, free ids only. */
 export const OPENROUTER_FREE_AGENT_ID = "openrouter-free" as const;
 
+/**
+ * Agent id of the Claude API backend: Anthropic's Messages API over HTTPS,
+ * metered and billed to the owner's Anthropic account (ANTHROPIC_API_KEY).
+ * Distinct from "claude-code", which runs the `claude` CLI on a subscription.
+ */
+export const CLAUDE_API_AGENT_ID = "claude-api" as const;
+
 /** Router id that selects a free model on the owner's behalf. */
 export const OPENROUTER_FREE_ROUTER_MODEL_ID = "openrouter/free" as const;
 

@@ -49,6 +49,12 @@ export const PROVIDER_FAILURES = {
 	PROVIDER_OUTPUT_TOO_LARGE: { code: "PROVIDER_OUTPUT_TOO_LARGE", retryable: false },
 	/** The provider cut the answer off at the output-token cap; retrying would cut it off again. */
 	PROVIDER_OUTPUT_TRUNCATED: { code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false },
+	/**
+	 * The model declined to answer (the Claude API's `refusal` stop reason).
+	 * Not retryable: the same prompt would be declined again, and no fallback
+	 * model is tried without the owner choosing one (AGT-012).
+	 */
+	PROVIDER_REFUSED: { code: "PROVIDER_REFUSED", retryable: false },
 	/** The backend exposed or used a tool of its own although the adapter forbids all of them. */
 	PROVIDER_TOOL_ISOLATION_VIOLATED: { code: "PROVIDER_TOOL_ISOLATION_VIOLATED", retryable: false },
 	/**

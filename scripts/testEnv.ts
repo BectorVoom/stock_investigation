@@ -51,7 +51,7 @@ import {
  * is set explicitly per suite; what remains is process plumbing (PATH so
  * `bun`/`node`/`wrangler` resolve, HOME for tool caches, locale/timezone).
  * In particular no `RESEARCH_*`, `RUNNER_*`, `SEC_*`, `OPENCODE_*`,
- * `OPENROUTER_*`, `FRED_*`, `TWELVE_DATA_*`, `CF_ACCESS_*`, `E2E_*`,
+ * `OPENROUTER_*`, `ANTHROPIC_*`, `FRED_*`, `TWELVE_DATA_*`, `CF_ACCESS_*`, `E2E_*`,
  * `REVIEW_*` or `BUN_*`/`NODE_*` variable is ever inherited. Windows needs its system variables to spawn
  * anything, so they are included there only.
  */
@@ -114,6 +114,7 @@ export const RUNNER_BEHAVIOR_SETTINGS = [
 	"OPENROUTER_API_KEY",
 	"OPENROUTER_MODEL",
 	"OPENROUTER_FREE_MODEL",
+	"ANTHROPIC_API_KEY",
 	"FRED_API_KEY",
 	"TWELVE_DATA_API_KEY",
 	"TWELVE_DATA_REQUESTS_PER_MINUTE",

@@ -4,21 +4,25 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createOpenRouterRuntime } from "../../src/providers/index.ts";
 import {
 	parseRetryAfterMs,
 	REJECTION_RETRY,
 	rejectionRetryDelayMs,
-} from "../../src/providers/openRouter.ts";
+} from "../../src/providers/httpTurn.ts";
+import { createOpenRouterRuntime } from "../../src/providers/index.ts";
 import {
 	BASE_ENV,
 	collect,
+	type FakeFetch,
 	fixtureText,
 	forbiddenFetch,
 	itemAt,
 	makeContext,
 	makeEnvironment,
 	makeRequest,
+	recordingFetch,
+	sseData,
+	sseResponse,
 	terminalEvents,
 	textOf,
 	usageEvents,
@@ -32,65 +36,8 @@ const CONFIGURED_ENV = {
 };
 const encoder = new TextEncoder();
 
-interface FetchCall {
-	readonly url: string;
-	readonly init: RequestInit;
-}
-
-interface FakeFetch {
-	readonly fetch: typeof fetch;
-	readonly calls: FetchCall[];
-}
-
-function recordingFetch(respond: (call: FetchCall) => Response | Promise<Response>): FakeFetch {
-	const calls: FetchCall[] = [];
-	const fake: typeof fetch = async (input, init) => {
-		const call = { url: typeof input === "string" ? input : input.toString(), init: init ?? {} };
-		calls.push(call);
-		return respond(call);
-	};
-	return { fetch: fake, calls };
-}
-
-function streamOf(
-	chunks: readonly Uint8Array[],
-	options: { keepOpen?: boolean } = {},
-): ReadableStream<Uint8Array> {
-	let index = 0;
-	return new ReadableStream<Uint8Array>({
-		pull(controller) {
-			const chunk = chunks[index];
-			if (chunk !== undefined) {
-				index += 1;
-				controller.enqueue(chunk);
-			} else if (options.keepOpen !== true) {
-				controller.close();
-			} else {
-				// Stays open: the adapter must stop waiting by itself (abort, deadline, idle).
-				return new Promise<void>(() => undefined);
-			}
-			return undefined;
-		},
-	});
-}
-
-function sseResponse(
-	body: string | readonly Uint8Array[],
-	options: { keepOpen?: boolean } = {},
-): Response {
-	const chunks = typeof body === "string" ? [encoder.encode(body)] : body;
-	return new Response(streamOf(chunks, options), {
-		status: 200,
-		headers: { "Content-Type": "text/event-stream" },
-	});
-}
-
-function data(value: unknown): string {
-	return `data: ${JSON.stringify(value)}\n\n`;
-}
-
 function contentChunk(content: string, finishReason: string | null = null): string {
-	return data({ choices: [{ index: 0, delta: { content }, finish_reason: finishReason }] });
+	return sseData({ choices: [{ index: 0, delta: { content }, finish_reason: finishReason }] });
 }
 
 const DONE = "data: [DONE]\n\n";
@@ -248,7 +195,7 @@ describe("openrouter SSE parsing", () => {
 	});
 
 	it("ignores keep-alive comments, event/id fields and unknown JSON fields", async () => {
-		const body = `: OPENROUTER PROCESSING\n\nevent: message\nid: 7\nretry: 100\n${data({
+		const body = `: OPENROUTER PROCESSING\n\nevent: message\nid: 7\nretry: 100\n${sseData({
 			id: "gen-1",
 			provider: "example",
 			future_field: { nested: [1, 2] },
@@ -306,7 +253,7 @@ describe("openrouter SSE parsing", () => {
 	it("fails with PROVIDER_OUTPUT_TRUNCATED when the provider stops at the output-token cap", async () => {
 		const fake = recordingFetch(() =>
 			sseResponse(
-				`${contentChunk("cut off mid-sen")}${data({
+				`${contentChunk("cut off mid-sen")}${sseData({
 					choices: [{ delta: { content: "" }, finish_reason: "length" }],
 					usage: { cost: 0.02 },
 				})}${DONE}`,
@@ -366,7 +313,7 @@ describe("openrouter cost", () => {
 	it("reports a cost of 0 only when the provider explicitly says 0 (a free model)", async () => {
 		const fake = recordingFetch(() =>
 			sseResponse(
-				`${contentChunk("OK")}${data({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost: 0 } })}${DONE}`,
+				`${contentChunk("OK")}${sseData({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost: 0 } })}${DONE}`,
 			),
 		);
 
@@ -378,7 +325,7 @@ describe("openrouter cost", () => {
 	it.each([-1, null])("treats the invalid cost %j as unknown", async (cost) => {
 		const fake = recordingFetch(() =>
 			sseResponse(
-				`${contentChunk("OK")}${data({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost } })}${DONE}`,
+				`${contentChunk("OK")}${sseData({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost } })}${DONE}`,
 			),
 		);
 
@@ -411,7 +358,7 @@ describe("openrouter failures", () => {
 	])("maps a mid-stream error with code %j to %s", async (code, expectedCode, retryable) => {
 		const fake = recordingFetch(() =>
 			sseResponse(
-				data({
+				sseData({
 					error: { code, message: "x" },
 					choices: [{ delta: { content: "" }, finish_reason: "error" }],
 				}),
@@ -856,7 +803,7 @@ describe("openrouter secret handling", () => {
 		],
 		[
 			"a mid-stream error echoing the key",
-			() => sseResponse(data({ error: { code: 500, message: API_KEY }, choices: [] })),
+			() => sseResponse(sseData({ error: { code: 500, message: API_KEY }, choices: [] })),
 		],
 		["a stream that echoes the key as garbage", () => sseResponse(`data: ${API_KEY}\n\n`)],
 	];

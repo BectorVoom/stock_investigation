@@ -1,10 +1,12 @@
 import type { AgentRuntime } from "@research/agent-core";
+import { createClaudeApiRuntime } from "./claudeApi.ts";
 import { createClaudeCodeRuntime } from "./claudeCode.ts";
 import { createCodexRuntime } from "./codex.ts";
 import type { ProviderEnvironment } from "./environment.ts";
 import { createOpenCodeRuntime } from "./openCode.ts";
 import { createOpenRouterFreeRuntime, createOpenRouterRuntime } from "./openRouter.ts";
 
+export { CLAUDE_API_MODELS, createClaudeApiRuntime } from "./claudeApi.ts";
 export { createClaudeCodeRuntime } from "./claudeCode.ts";
 export { createCodexRuntime } from "./codex.ts";
 export type { ProviderEnvironment } from "./environment.ts";
@@ -43,7 +45,11 @@ export function createBaselineAgentRuntimes(
 	];
 }
 
-/** Baseline backends plus the OpenRouter free-models backend. */
+/** Baseline backends plus the OpenRouter free-models and Claude API backends. */
 export function createAgentRuntimes(environment: ProviderEnvironment): readonly AgentRuntime[] {
-	return [...createBaselineAgentRuntimes(environment), createOpenRouterFreeRuntime(environment)];
+	return [
+		...createBaselineAgentRuntimes(environment),
+		createOpenRouterFreeRuntime(environment),
+		createClaudeApiRuntime(environment),
+	];
 }

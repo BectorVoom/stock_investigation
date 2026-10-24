@@ -17,6 +17,7 @@
  *   opencode/models.txt                                            LIVE, `opencode models` (one provider/model id per line)
  *   openrouter/*.sse                                              DOC-DERIVED from openrouter.ai/docs (no API key was available)
  *   openrouter/models.json                                         LIVE, public GET /api/v1/models, 2026-10-12, trimmed to nine entries
+ *   claude-api/*.sse                                              DOC-DERIVED from Anthropic's Messages API streaming reference, 2026-10-24 (no API key was available)
  */
 import { readFileSync } from "node:fs";
 import type { AgentRunContext } from "@research/agent-core";
@@ -106,6 +107,72 @@ export function createFakeProcessRunner(
 		},
 	};
 	return { runner, spawns };
+}
+
+/* ---------- Fake HTTP for the HTTPS backends ---------- */
+
+export interface FetchCall {
+	readonly url: string;
+	readonly init: RequestInit;
+}
+
+export interface FakeFetch {
+	readonly fetch: typeof fetch;
+	readonly calls: FetchCall[];
+}
+
+/** A fetch that records every call and answers with `respond`. */
+export function recordingFetch(
+	respond: (call: FetchCall) => Response | Promise<Response>,
+): FakeFetch {
+	const calls: FetchCall[] = [];
+	const fake: typeof fetch = async (input, init) => {
+		const call = { url: typeof input === "string" ? input : input.toString(), init: init ?? {} };
+		calls.push(call);
+		return respond(call);
+	};
+	return { fetch: fake, calls };
+}
+
+const encoder = new TextEncoder();
+
+function streamOf(
+	chunks: readonly Uint8Array[],
+	options: { keepOpen?: boolean } = {},
+): ReadableStream<Uint8Array> {
+	let index = 0;
+	return new ReadableStream<Uint8Array>({
+		pull(controller) {
+			const chunk = chunks[index];
+			if (chunk !== undefined) {
+				index += 1;
+				controller.enqueue(chunk);
+			} else if (options.keepOpen !== true) {
+				controller.close();
+			} else {
+				// Stays open: the adapter must stop waiting by itself (abort, deadline, idle).
+				return new Promise<void>(() => undefined);
+			}
+			return undefined;
+		},
+	});
+}
+
+/** A 200 event-stream response delivering `body` (as one chunk, or the given chunks). */
+export function sseResponse(
+	body: string | readonly Uint8Array[],
+	options: { keepOpen?: boolean } = {},
+): Response {
+	const chunks = typeof body === "string" ? [encoder.encode(body)] : body;
+	return new Response(streamOf(chunks, options), {
+		status: 200,
+		headers: { "Content-Type": "text/event-stream" },
+	});
+}
+
+/** One SSE `data:` event carrying `value` as JSON. */
+export function sseData(value: unknown): string {
+	return `data: ${JSON.stringify(value)}\n\n`;
 }
 
 /** A fetch that fails the test if an adapter that must stay offline calls it. */

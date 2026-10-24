@@ -56,6 +56,8 @@ export function providerFailureHint(run: ResearchRun, text: RunText): string | n
 			return text.providerUnavailable;
 		case "PROVIDER_RATE_LIMITED":
 			return text.providerRateLimited;
+		case "PROVIDER_REFUSED":
+			return text.providerRefused;
 		default:
 			return null;
 	}

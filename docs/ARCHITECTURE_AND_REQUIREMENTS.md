@@ -101,7 +101,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-009 | Analyze firms with successful pricing changes | Must | Price realization distinguished from margins, mix, volume, FX and input costs |
 | FR-010 | Conversational, persistent research and source hyperlinks | Must | Linked claims and stored chat survive reload |
 | FR-011 | Agent-driven tables/charts (approved images withdrawn by the owner's decision of 2026-10-13, ADR-0013 — not silently rewritten: the image half of this requirement is struck, the rest stands) | Must | Only validated registry commands render; no executable generated code |
-| FR-012 | Choose OpenCode, Codex, Claude Code or OpenRouter | Must | Adapter capability negotiation; unavailable backend surfaced honestly |
+| FR-012 | Choose OpenCode, Codex, Claude Code or OpenRouter (plus OpenRouter free models and the Claude API, ADR-0031) | Must | Adapter capability negotiation; unavailable backend surfaced honestly |
 | FR-013 | Add components/tools/providers later | Must | Example extension passes contract tests without changing orchestrator core |
 | FR-014 | Cancel, retry and resume research jobs | Must | State machine and lease recovery tested |
 | FR-015 | Export/import a portable research record | Should | Versioned JSON/Markdown including citations; invalid files rejected |

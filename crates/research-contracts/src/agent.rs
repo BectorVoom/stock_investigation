@@ -30,6 +30,10 @@ pub const BASELINE_AGENT_IDS: [&str; 4] = ["opencode", "codex", "claude-code", "
 /// Agent id of the OpenRouter free-models backend.
 pub const OPENROUTER_FREE_AGENT_ID: &str = "openrouter-free";
 
+/// Agent id of the Claude API backend (`CLAUDE_API_AGENT_ID`): Anthropic's
+/// Messages API over HTTPS, metered; distinct from the `claude-code` CLI.
+pub const CLAUDE_API_AGENT_ID: &str = "claude-api";
+
 /// Router id that selects a free model on the owner's behalf.
 pub const OPENROUTER_FREE_ROUTER_MODEL_ID: &str = "openrouter/free";
 

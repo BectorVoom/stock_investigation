@@ -9,8 +9,8 @@
 mod support;
 use research_agent_core::runtime::*;
 use research_providers::{
-	claude_code::*, cli_turn::*, codex::*, environment::*, lines::*, opencode::*, openrouter::*,
-	openrouter_models::*, process::*, turn::*,
+	claude_api, claude_code::*, cli_turn::*, codex::*, environment::*, http_turn::*, lines::*,
+	opencode::*, openrouter::*, openrouter_models::*, process::*, turn::*,
 };
 use serde_json::{Value, json};
 use std::collections::HashSet;
@@ -325,6 +325,120 @@ async fn whole_http_request_and_bytewise_sse_transcripts() {
 					.collect();
 			}
 		}
+		assert_eq!(
+			norm(json!({"calls":calls,"events":canonical(&events)})),
+			norm(case["output"].clone()),
+			"{}",
+			input
+		);
+	}
+}
+fn claude_usage(value: &Value) -> claude_api::ClaudeUsage {
+	let field = |key: &str| value.get(key).and_then(Value::as_f64);
+	claude_api::ClaudeUsage {
+		input_tokens: field("inputTokens"),
+		cache_creation_input_tokens: field("cacheCreationInputTokens"),
+		cache_read_input_tokens: field("cacheReadInputTokens"),
+		output_tokens: field("outputTokens"),
+	}
+}
+#[test]
+fn claude_api_pure_parity() {
+	let file = vectors("claude-api");
+	let pure = &file["pure"];
+	assert_eq!(
+		json!(
+			claude_api::CLAUDE_API_MODELS
+				.iter()
+				.map(|m| m.id)
+				.collect::<Vec<_>>()
+		),
+		pure["models"]
+	);
+	for case in pure["costs"].as_array().unwrap() {
+		let model = claude_api::claude_model(case["input"]["model"].as_str().unwrap()).unwrap();
+		let cost = claude_api::claude_cost_usd(model, &claude_usage(&case["input"]["usage"]));
+		assert_eq!(
+			json!(cost.map(|v| format!("{:016x}", v.to_bits()))),
+			case["output"],
+			"{}",
+			case["input"]
+		);
+	}
+	for case in pure["bodies"].as_array().unwrap() {
+		let input = &case["input"];
+		assert_eq!(
+			claude_api::build_request_body(
+				input["model"].as_str().unwrap(),
+				input["prompt"].as_str().unwrap(),
+				effort(input["effort"].as_str().unwrap())
+			),
+			case["output"].as_str().unwrap()
+		);
+	}
+	for case in pure["statuses"].as_array().unwrap() {
+		let status = u16::try_from(case["input"].as_u64().unwrap()).unwrap();
+		assert_eq!(
+			json!(claude_api::failure_for_claude_http_status(status)),
+			case["output"]
+		);
+	}
+	for case in pure["errorTypes"].as_array().unwrap() {
+		assert_eq!(
+			json!(claude_api::failure_for_claude_error_type(
+				case["input"].as_str()
+			)),
+			case["output"],
+			"{}",
+			case["input"]
+		);
+	}
+	for case in pure["stopReasons"].as_array().unwrap() {
+		assert_eq!(
+			json!(claude_api::failure_for_stop_reason(
+				case["input"].as_str().unwrap()
+			)),
+			case["output"],
+			"{}",
+			case["input"]
+		);
+	}
+	for case in pure["lines"].as_array().unwrap() {
+		assert_eq!(
+			norm(canonical(&claude_api::interpret_claude_sse_line(
+				case["input"].as_str().unwrap()
+			))),
+			norm(case["output"].clone()),
+			"{}",
+			case["input"]
+		);
+	}
+}
+#[tokio::test]
+async fn claude_api_whole_turn_transcripts() {
+	for case in vectors("claude-api")["turns"].as_array().unwrap() {
+		let input = &case["input"];
+		let http = ScriptedHttp::repeat(json!({"body":input["body"],"width":1}));
+		let mut env = env();
+		env.insert(
+			"ANTHROPIC_API_KEY".to_owned(),
+			"sk-ant-api03-test-key".to_owned(),
+		);
+		let runtime = claude_api::ClaudeApiRuntime::new(environment(
+			ScriptedRunner::repeat(json!({})),
+			http.clone(),
+			env,
+		));
+		let mut request = request();
+		request.deadline = chrono::Utc::now()
+			.checked_add_signed(chrono::Duration::seconds(20))
+			.unwrap()
+			.to_rfc3339();
+		let mut context = ctx();
+		context.effort = effort(input["effort"].as_str().unwrap());
+		context.model = input["model"].as_str().map(str::to_owned);
+		let events = collect(runtime.run(request, context)).await;
+		let calls = http.calls.lock().unwrap().clone();
 		assert_eq!(
 			norm(json!({"calls":calls,"events":canonical(&events)})),
 			norm(case["output"].clone()),

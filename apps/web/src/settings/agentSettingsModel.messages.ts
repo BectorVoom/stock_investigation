@@ -53,6 +53,8 @@ export const agentSettingsModelMessages = defineMessages({
 			"OpenRouter (free models) needs a model — without one it cannot run. Choose one from the list the runner reported, or type one.",
 		openRouterFreeModelShape:
 			"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
+		claudeApiModelNotListed:
+			"The Claude API runs only the models the runner lists, because it prices each answer from them. Choose one from the list.",
 		modelTooLong: (max: number) => `The model must be at most ${max} characters.`,
 	},
 	ja: {
@@ -101,6 +103,8 @@ export const agentSettingsModelMessages = defineMessages({
 			"OpenRouter（無料モデル）にはモデルが必要で、モデルなしでは実行できません。ランナーが報告した一覧から選ぶか、入力してください。",
 		openRouterFreeModelShape:
 			"OpenRouter の無料モデルは :free で終わる（または openrouter/free である）必要があります。それ以外のモデルは課金されるため、このバックエンドでは拒否されます。",
+		claudeApiModelNotListed:
+			"Claude API はランナーが一覧にしたモデルだけを実行します。回答ごとの料金をその一覧から計算するためです。一覧から選んでください。",
 		modelTooLong: (max) => `モデルは ${max} 文字以内にしてください。`,
 	},
 });

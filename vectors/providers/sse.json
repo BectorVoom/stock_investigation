@@ -69,6 +69,18 @@
 		}
 	},
 	{
+		"input": "data:zod",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:../../src/providers/claudeApi.ts",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
 		"input": "data:../../src/providers/index.ts",
 		"output": {
 			"kind": "malformed"
@@ -76,6 +88,1242 @@
 	},
 	{
 		"input": "data:./helpers.ts",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:sk-ant-api03-TEST-KEY-0123456789abcdef",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:user",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:low",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:medium",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:high",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:message_start",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:content_block_start",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"text\",\"text\":\"\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:text",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:content_block_delta",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:text_delta",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:message_delta",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:end_turn",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"message_stop\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:message_stop",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api runtime metadata",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is a metered, tool-isolated backend distinct from the Claude Code CLI",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:Claude API",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:metered",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:enforced",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api probe",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is NOT_CONFIGURED without ANTHROPIC_API_KEY and never contacts the network",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":\"unavailable\",\"reasonCode\":\"NOT_CONFIGURED\",\"detail\":\"The Claude API needs ANTHROPIC_API_KEY in the runner environment\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:unavailable",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:NOT_CONFIGURED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:The Claude API needs ANTHROPIC_API_KEY in the runner environment",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:blank",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:   ",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:too short",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:sk-ant",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:containing a space",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:sk-ant api03 0123456789",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:treats a %s key as missing",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is available with a key and offers exactly the priced models, offline",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":\"available\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:available",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"supported\":[\"stream\",\"cancel\"],\"model\":\"claude-opus-5-5\",\"models\":[\"claude-fable-5-1\",\"claude-opus-5-5\",\"claude-sonnet-5-5\",\"claude-haiku-5-5\"]}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:stream",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:cancel",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-opus-5-5",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-fable-5-1",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-sonnet-5-5",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-haiku-5-5",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api request",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:posts one streaming Messages request with the prompt, the effort, and no tools",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/ok.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"prompt\":\"the research prompt\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:the research prompt",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"scratchDirectory\":null,\"effort\":\"high\",\"model\":\"claude-sonnet-5-5\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:https://api.anthropic.com/v1/messages",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:POST",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:x-api-key",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:anthropic-version",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:2026-10-21",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:authorization",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"role\":\"user\",\"content\":\"the research prompt\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"effort\":\"high\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:uses Claude Opus 5.5 when Settings leaves the model empty",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:OK",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":null}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:never sends ANTHROPIC_BASE_URL's host the key: the origin is fixed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:https://evil.example",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:an unpriced model",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"claude-unknown-9\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-unknown-9",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_MODEL_INVALID",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:a date-suffixed id",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"model\":\"claude-opus-5-5-20260401\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-opus-5-5-20260401",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:refuses %s before any network activity",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:failed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails NOT_CONFIGURED without a key, before any network activity",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"NOT_CONFIGURED\",\"retryable\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-api streaming",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:streams the text deltas, drops thinking, and reports the computed cost",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:text.delta",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"text.delta\",\"text\":\"Hello\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:Hello",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"text.delta\",\"text\":\", wor\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:, wor",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"text.delta\",\"text\":\"ld — 日本語\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:ld — 日本語",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":0.0118}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:usage",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"completed\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:completed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reassembles events split across arbitrary byte boundaries",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:Hello, world — 日本語",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails PROVIDER_REFUSED on a refusal, after the partial text, and still reports the cost",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/refusal.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:I can",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":0.00384}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_REFUSED\",\"retryable\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_REFUSED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:reports a turn stopped at max_tokens as truncated, billed, and not retried",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/max-tokens.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":0.3236}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_TRUNCATED\",\"retryable\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_OUTPUT_TRUNCATED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails closed on a tool block although no tools were offered",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/tool-use.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":null}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_VIOLATED\",\"retryable\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_TOOL_ISOLATION_VIOLATED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails PROVIDER_OUTPUT_EMPTY for a complete answer with no text",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_EMPTY\",\"retryable\":true}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_OUTPUT_EMPTY",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails PROVIDER_OUTPUT_INVALID when the stream closes before message_stop",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:partial",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_INVALID\",\"retryable\":false}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_OUTPUT_INVALID",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:fails PROVIDER_OUTPUT_INVALID after more than eight malformed lines",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"length\":9}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:late",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api failures and retries",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:does not retry an error after the message started, and reports the cost as unknown",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/midstream-error.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:Partial",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:PROVIDER_UNAVAILABLE",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:retries an overloaded error that arrives before the message starts",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api/overloaded-before-start.sse",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:retries HTTP 529 after the provider's Retry-After",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":529,\"headers\":{\"retry-after\":\"3\"}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"retry-after\":\"3\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:retry-after",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:3",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_REQUEST_REJECTED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_AUTH",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_MODEL_UNAVAILABLE",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:maps HTTP %i to %s without retrying and without usage",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:maps every documented error type",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:overloaded_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:api_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:rate_limit_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:authentication_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:permission_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:billing_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:timeout_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:not_found_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:invalid_request_error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:request_too_large",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_RATE_LIMITED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_PAYMENT_REQUIRED",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:PROVIDER_TIMEOUT",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:maps every stop reason",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:stop_sequence",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:max_tokens",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:model_context_window_exceeded",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:refusal",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:tool_use",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:pause_turn",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:something_new",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api SSE lines",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:skips event names, pings, unknown events and non-text deltas",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:event: message_start",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"kind\":\"ignored\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:ignored",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"type\":\"ping\"}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"type\":\"brand_new_event\"}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret\"}}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:treats invalid JSON and negative or fractional token counts as malformed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"kind\":\"malformed\"}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:malformed",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"no\":\"type\"}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"output_tokens\":-1}}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":1.5}}}",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api cost",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:lists only models with a price, most capable first",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:is unknown until both the input and the output counts are known",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"inputTokens\":10}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"outputTokens\":10}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"inputTokens\":0,\"outputTokens\":0}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:prices cache writes at the 1-hour rate and cache reads at the model's read price",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"inputTokens\":0,\"cacheCreationInputTokens\":1000000,\"cacheReadInputTokens\":1000000,\"outputTokens\":0}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:charges Claude Haiku 5.5's long-prompt price above 100K prompt tokens",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"inputTokens\":100000,\"outputTokens\":1000000}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:{\"inputTokens\":100001,\"outputTokens\":1000000}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-api secret handling",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:sends only its own key, only to Anthropic, and never places a secret in an event",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:ANTHROPIC_API_KEY",
 		"output": {
 			"kind": "malformed"
 		}
@@ -114,27 +1362,6 @@
 		}
 	},
 	{
-		"input": "data:content_block_delta",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:text_delta",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
 		"input": "data:result",
 		"output": {
 			"kind": "malformed"
@@ -142,12 +1369,6 @@
 	},
 	{
 		"input": "data:success",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:OK",
 		"output": {
 			"kind": "malformed"
 		}
@@ -186,12 +1407,6 @@
 		}
 	},
 	{
-		"input": "data:enforced",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:claude-code argv",
 		"output": {
 			"kind": "malformed"
@@ -205,21 +1420,6 @@
 	},
 	{
 		"input": "data:claude-code/ok.stream.jsonl",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"effort\":\"high\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:high",
 		"output": {
 			"kind": "malformed"
 		}
@@ -408,12 +1608,6 @@
 		}
 	},
 	{
-		"input": "data:text.delta",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:{\"type\":\"text.delta\",\"text\":\"N\"}",
 		"output": {
 			"kind": "chunk",
@@ -459,21 +1653,6 @@
 		}
 	},
 	{
-		"input": "data:{\"type\":\"completed\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:completed",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:reports the subscription run's notional total_cost_usd as an unknown cost, not as money spent",
 		"output": {
 			"kind": "malformed"
@@ -481,21 +1660,6 @@
 	},
 	{
 		"input": "data:\"total_cost_usd\":0.01264",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"usage\",\"knownCostUsd\":null}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:usage",
 		"output": {
 			"kind": "malformed"
 		}
@@ -645,49 +1809,7 @@
 		}
 	},
 	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_EMPTY\",\"retryable\":true}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:failed",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_OUTPUT_EMPTY",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:fails with PROVIDER_OUTPUT_INVALID when the stream ends without a result",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:partial",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_INVALID\",\"retryable\":false}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:PROVIDER_OUTPUT_INVALID",
 		"output": {
 			"kind": "malformed"
 		}
@@ -727,21 +1849,6 @@
 	},
 	{
 		"input": "data:should never be emitted",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_VIOLATED\",\"retryable\":false}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:PROVIDER_TOOL_ISOLATION_VIOLATED",
 		"output": {
 			"kind": "malformed"
 		}
@@ -861,24 +1968,12 @@
 		}
 	},
 	{
-		"input": "data:content_block_start",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:{\"type\":\"tool_use\",\"name\":\"Bash\"}",
 		"output": {
 			"kind": "chunk",
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:tool_use",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -1005,12 +2100,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:ANTHROPIC_API_KEY",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -1155,43 +2244,13 @@
 		}
 	},
 	{
-		"input": "data:PROVIDER_AUTH",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:rate_limit",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
-		"input": "data:PROVIDER_RATE_LIMITED",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:billing_error",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_PAYMENT_REQUIRED",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:server_error",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_UNAVAILABLE",
 		"output": {
 			"kind": "malformed"
 		}
@@ -1224,12 +2283,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:text",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -1416,12 +2469,6 @@
 		}
 	},
 	{
-		"input": "data:stream",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:fable",
 		"output": {
 			"kind": "malformed"
@@ -1435,21 +2482,6 @@
 	},
 	{
 		"input": "data:haiku",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"status\":\"available\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:available",
 		"output": {
 			"kind": "malformed"
 		}
@@ -1485,12 +2517,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:unavailable",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -1554,12 +2580,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:NOT_CONFIGURED",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -2289,12 +3309,6 @@
 		}
 	},
 	{
-		"input": "data:PROVIDER_MODEL_INVALID",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:reports NOT_INSTALLED from probe when the binary is missing",
 		"output": {
 			"kind": "malformed"
@@ -2438,12 +3452,6 @@
 	},
 	{
 		"input": "data:/scratch/job_7",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:low",
 		"output": {
 			"kind": "malformed"
 		}
@@ -2770,12 +3778,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:error",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -3729,13 +4731,70 @@
 		}
 	},
 	{
-		"input": "data:openrouter-free",
+		"input": "data:claude-api ok",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api refusal",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api mid-stream error",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api tool use",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api 529",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:{\"status\":529,\"headers\":{\"Retry-After\":\"3600\"}}",
+		"output": {
+			"kind": "chunk",
+			"text": "",
+			"finished": false,
+			"truncated": false
+		}
+	},
+	{
+		"input": "data:claude-api garbage",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api unpriced model",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:claude-api not configured",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
 		"input": "data:openrouter",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:openrouter-free",
 		"output": {
 			"kind": "malformed"
 		}
@@ -3807,7 +4866,7 @@
 		}
 	},
 	{
-		"input": "data:provides the baseline four followed by openrouter-free through createAgentRuntimes",
+		"input": "data:provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes",
 		"output": {
 			"kind": "malformed"
 		}
@@ -3849,12 +4908,6 @@
 		}
 	},
 	{
-		"input": "data:cancel",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:only backends that deliver incremental deltas claim stream",
 		"output": {
 			"kind": "malformed"
@@ -3862,12 +4915,6 @@
 	},
 	{
 		"input": "data:declares cost models and tool isolation exactly as verified",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:metered",
 		"output": {
 			"kind": "malformed"
 		}
@@ -4125,12 +5172,6 @@
 		}
 	},
 	{
-		"input": "data:zod",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:../../src/providers/openCode.ts",
 		"output": {
 			"kind": "malformed"
@@ -4308,15 +5349,6 @@
 		"input": "data:refuses to let the CLI pick its default (possibly metered) provider when no model is given",
 		"output": {
 			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"model\":null}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
 		}
 	},
 	{
@@ -4642,12 +5674,6 @@
 	},
 	{
 		"input": "data:opencode effort variant",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:medium",
 		"output": {
 			"kind": "malformed"
 		}
@@ -5316,12 +6342,6 @@
 		}
 	},
 	{
-		"input": "data:PROVIDER_MODEL_UNAVAILABLE",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:maps the recorded provider.auth refusal (credentials/plan rejected for this model) to PROVIDER_AUTH",
 		"output": {
 			"kind": "malformed"
@@ -5740,13 +6760,7 @@
 		}
 	},
 	{
-		"input": "data:../../src/providers/openRouter.ts",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:string",
+		"input": "data:../../src/providers/httpTurn.ts",
 		"output": {
 			"kind": "malformed"
 		}
@@ -5782,34 +6796,19 @@
 		}
 	},
 	{
-		"input": "data:{\"prompt\":\"the research prompt\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:the research prompt",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:https://openrouter.ai/api/v1/chat/completions",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
-		"input": "data:POST",
+		"input": "data:Authorization",
 		"output": {
 			"kind": "malformed"
 		}
 	},
 	{
-		"input": "data:Authorization",
+		"input": "data:string",
 		"output": {
 			"kind": "malformed"
 		}
@@ -5822,21 +6821,6 @@
 			"finished": false,
 			"truncated": false,
 			"knownCostUsd": null
-		}
-	},
-	{
-		"input": "data:{\"role\":\"user\",\"content\":\"the research prompt\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:user",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -5903,12 +6887,6 @@
 		}
 	},
 	{
-		"input": "data:max_tokens",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:prefers the model from the run context over OPENROUTER_MODEL",
 		"output": {
 			"kind": "malformed"
@@ -5936,58 +6914,7 @@
 		}
 	},
 	{
-		"input": "data:Hello, world — 日本語",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:streams the documented example: deltas concatenate, cost is reported, one terminal event",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"text.delta\",\"text\":\"Hello\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:Hello",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"text.delta\",\"text\":\", wor\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:, wor",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"text.delta\",\"text\":\"ld — 日本語\"}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:ld — 日本語",
 		"output": {
 			"kind": "malformed"
 		}
@@ -6054,12 +6981,6 @@
 	},
 	{
 		"input": "data:stops at [DONE] and ignores anything after it",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:ignored",
 		"output": {
 			"kind": "malformed"
 		}
@@ -6215,21 +7136,6 @@
 		}
 	},
 	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_TRUNCATED\",\"retryable\":false}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
-		"input": "data:PROVIDER_OUTPUT_TRUNCATED",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:reports a cap consumed entirely by reasoning as truncated, not as a retryable empty answer",
 		"output": {
 			"kind": "malformed"
@@ -6355,21 +7261,6 @@
 		}
 	},
 	{
-		"input": "data:Partial",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
-		}
-	},
-	{
 		"input": "data:maps a mid-stream error with code %j to %s",
 		"output": {
 			"kind": "malformed"
@@ -6382,18 +7273,6 @@
 			"text": "",
 			"finished": false,
 			"truncated": false
-		}
-	},
-	{
-		"input": "data:PROVIDER_TIMEOUT",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:PROVIDER_REQUEST_REJECTED",
-		"output": {
-			"kind": "malformed"
 		}
 	},
 	{
@@ -6628,12 +7507,6 @@
 		}
 	},
 	{
-		"input": "data:   ",
-		"output": {
-			"kind": "malformed"
-		}
-	},
-	{
 		"input": "data:an API key containing a line break",
 		"output": {
 			"kind": "malformed"
@@ -6655,15 +7528,6 @@
 		"input": "data:fails closed with NOT_CONFIGURED and makes no network call with %s",
 		"output": {
 			"kind": "malformed"
-		}
-	},
-	{
-		"input": "data:{\"type\":\"failed\",\"code\":\"NOT_CONFIGURED\",\"retryable\":false}",
-		"output": {
-			"kind": "chunk",
-			"text": "",
-			"finished": false,
-			"truncated": false
 		}
 	},
 	{
@@ -6846,6 +7710,12 @@
 	},
 	{
 		"input": "data:sends the key only in the Authorization header, never in the URL or the body",
+		"output": {
+			"kind": "malformed"
+		}
+	},
+	{
+		"input": "data:../../src/providers/openRouter.ts",
 		"output": {
 			"kind": "malformed"
 		}

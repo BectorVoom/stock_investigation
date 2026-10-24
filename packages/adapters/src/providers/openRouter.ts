@@ -72,12 +72,23 @@ import { parseJson } from "@research/domain";
 import { z } from "zod";
 import { AVAILABLE, unavailable } from "./cliProbe.ts";
 import type { ProviderEnvironment } from "./environment.ts";
+import {
+	type AttemptEnd,
+	FINISHED,
+	failureForHttpStatus,
+	type IdleWatch,
+	MAX_SSE_LINE_CHARS,
+	newBodyReadState,
+	openStream,
+	readApiKey,
+	readBody,
+	runHttpTurn,
+} from "./httpTurn.ts";
 import { splitLines } from "./lines.ts";
 import { createFreeModelCatalog, type FreeModelCatalog } from "./openRouterModels.ts";
 import {
 	asKnownCostUsd,
 	COMPLETED_EVENT,
-	createTurnGuard,
 	failedEvent,
 	failureForHint,
 	failureForStop,
@@ -85,13 +96,9 @@ import {
 	isValidModelId,
 	MAX_MALFORMED_LINES,
 	MAX_OUTPUT_TEXT_CHARS,
-	MAX_RAW_STREAM_CHARS,
 	PROVIDER_FAILURES,
 	type ProviderFailure,
 	preflightTurn,
-	type Raced,
-	raceStop,
-	settle,
 	type TurnGuard,
 	textDeltaEvent,
 	usageEvent,
@@ -106,14 +113,6 @@ export const OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/cha
  */
 export const MAX_COMPLETION_TOKENS = 8_192;
 
-/** Longest silence tolerated between two chunks (or before the response headers). */
-const IDLE_TIMEOUT_MS = 120_000;
-/** A provider may send a long answer as one chunk; see MAX_LINE_CHARS in processRunner.ts. */
-const MAX_SSE_LINE_CHARS = 16 * 1024 * 1024;
-
-/** Printable ASCII without spaces: anything else cannot be a valid header value. */
-const API_KEY_PATTERN = /^[\x21-\x7e]{8,512}$/;
-
 interface OpenRouterConfig {
 	readonly apiKey: string;
 	readonly model: string;
@@ -123,15 +122,14 @@ function readConfig(
 	env: Readonly<Record<string, string | undefined>>,
 	requestedModel: string | null,
 ): OpenRouterConfig | null {
-	const apiKey = env.OPENROUTER_API_KEY?.trim() ?? "";
+	const apiKey = readApiKey(env.OPENROUTER_API_KEY);
 	const model = requestedModel ?? env.OPENROUTER_MODEL?.trim() ?? "";
-	if (!API_KEY_PATTERN.test(apiKey) || !isValidModelId(model)) return null;
+	if (apiKey === null || !isValidModelId(model)) return null;
 	return { apiKey, model };
 }
 
 function readFreeApiKey(env: Readonly<Record<string, string | undefined>>): string | null {
-	const apiKey = env.OPENROUTER_API_KEY?.trim() ?? "";
-	return API_KEY_PATTERN.test(apiKey) ? apiKey : null;
+	return readApiKey(env.OPENROUTER_API_KEY);
 }
 
 function resolveFreeModel(
@@ -139,12 +137,6 @@ function resolveFreeModel(
 	requestedModel: string | null,
 ): string {
 	return requestedModel ?? env.OPENROUTER_FREE_MODEL?.trim() ?? "";
-}
-
-export function failureForHttpStatus(status: number): ProviderFailure {
-	if (status === 408) return PROVIDER_FAILURES.PROVIDER_TIMEOUT;
-	const hint = hintFromHttpStatus(status);
-	return hint === null ? PROVIDER_FAILURES.PROVIDER_REQUEST_REJECTED : failureForHint(hint);
 }
 
 const chunkSchema = z.looseObject({
@@ -211,139 +203,6 @@ export function interpretSseLine(line: string): SseVerdict {
 	};
 }
 
-/** Stops the turn with "idle" when the provider goes silent for too long. */
-function createIdleWatch(guard: TurnGuard): { touch(): void; clear(): void } {
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	const clear = (): void => {
-		if (timer !== undefined) clearTimeout(timer);
-	};
-	const touch = (): void => {
-		clear();
-		timer = setTimeout(() => guard.stop("idle"), IDLE_TIMEOUT_MS);
-	};
-	return { touch, clear };
-}
-
-interface BodyReadState {
-	receivedBytes: number;
-	tooLarge: boolean;
-	readFailed: boolean;
-}
-
-/** Yields the body's bytes until it ends, the turn is stopped, or the size cap is reached. */
-async function* readBody(
-	body: ReadableStream<Uint8Array>,
-	guard: TurnGuard,
-	onActivity: () => void,
-	state: BodyReadState,
-): AsyncGenerator<Uint8Array, void, undefined> {
-	const reader = body.getReader();
-	try {
-		while (true) {
-			const next = await raceStop(guard, settle(reader.read()));
-			if (next.kind === "stopped") return;
-			if (!next.value.ok) {
-				state.readFailed = true;
-				return;
-			}
-			const { done, value } = next.value.value;
-			if (done) return;
-			onActivity();
-			state.receivedBytes += value.byteLength;
-			if (state.receivedBytes > MAX_RAW_STREAM_CHARS) {
-				state.tooLarge = true;
-				return;
-			}
-			yield value;
-		}
-	} finally {
-		// Releases the connection; whether cancelling succeeds no longer changes the turn's outcome.
-		await settle(reader.cancel());
-	}
-}
-
-/**
- * Transient rejections retried inside one turn. Only a request the provider
- * turned away before it generated anything is sent again — the same request
- * to the same model — so a retry is never billed and never falls back to
- * another model (AGT-008, AGT-012). Free models in particular are often
- * "temporarily overloaded" upstream for a few seconds; without this, the
- * job's own retries are spent within a second of each other.
- */
-export const REJECTION_RETRY = {
-	maxRetries: 3,
-	baseDelayMs: 2_000,
-	/** A longer Retry-After (e.g. a spent daily free quota) is not waited out inside a turn. */
-	maxDelayMs: 30_000,
-	/** Time the turn must still have after a wait, or the retried request could not finish. */
-	minRemainingMs: 30_000,
-} as const;
-
-function isTransientRejection(failure: ProviderFailure): boolean {
-	return (
-		failure.code === PROVIDER_FAILURES.PROVIDER_UNAVAILABLE.code ||
-		failure.code === PROVIDER_FAILURES.PROVIDER_RATE_LIMITED.code
-	);
-}
-
-/**
- * The wait before retry number `retryIndex` (0-based): the provider's
- * Retry-After when given, otherwise exponential backoff. `null` means do not
- * retry — retries are used up, the provider asks for too long a wait, or the
- * turn's deadline leaves no room for another request.
- */
-export function rejectionRetryDelayMs(
-	retryIndex: number,
-	retryAfterMs: number | null,
-	remainingMs: number,
-): number | null {
-	if (retryIndex >= REJECTION_RETRY.maxRetries) return null;
-	const delayMs = retryAfterMs ?? REJECTION_RETRY.baseDelayMs * 2 ** retryIndex;
-	if (delayMs > REJECTION_RETRY.maxDelayMs) return null;
-	if (remainingMs - delayMs < REJECTION_RETRY.minRemainingMs) return null;
-	return delayMs;
-}
-
-/** Reads a Retry-After header: delay-seconds or an HTTP date. `null` when absent or unreadable. */
-export function parseRetryAfterMs(value: string | null, nowEpochMs: number): number | null {
-	if (value === null) return null;
-	const trimmed = value.trim();
-	if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1_000;
-	// An HTTP date always names its weekday; this keeps "-5" from parsing as a year.
-	if (!/^[A-Za-z]{3}, /.test(trimmed)) return null;
-	const at = Date.parse(trimmed);
-	return Number.isFinite(at) ? Math.max(0, at - nowEpochMs) : null;
-}
-
-/** Waits `ms`, returning early when the turn is stopped; the timer never outlives the wait. */
-async function waitOrStop(guard: TurnGuard, ms: number): Promise<Raced<void>> {
-	let timer: ReturnType<typeof setTimeout> | undefined;
-	const elapsed = new Promise<void>((resolve) => {
-		timer = setTimeout(resolve, ms);
-	});
-	try {
-		return await raceStop(guard, elapsed);
-	} finally {
-		clearTimeout(timer);
-	}
-}
-
-/**
- * How one request ended. `rejected`: the provider refused it before any
- * output, nothing was yielded yet, and `events` are what the turn reports if
- * it is not retried.
- */
-type AttemptEnd =
-	| { readonly kind: "finished" }
-	| {
-			readonly kind: "rejected";
-			readonly failure: ProviderFailure;
-			readonly retryAfterMs: number | null;
-			readonly events: readonly AgentEvent[];
-	  };
-
-const FINISHED: AttemptEnd = { kind: "finished" };
-
 /**
  * One streaming chat completion, shared by the metered and the free runtime.
  * When `freeCostEnforcement` is true any chunk reporting a cost above 0 fails
@@ -351,7 +210,7 @@ const FINISHED: AttemptEnd = { kind: "finished" };
  * always unknown (null); when false the provider's cost is reported as-is.
  * A transient rejection before any output is retried (REJECTION_RETRY).
  */
-async function* runChatCompletion(
+function runChatCompletion(
 	environment: ProviderEnvironment,
 	config: OpenRouterConfig,
 	request: AgentRequest,
@@ -359,41 +218,9 @@ async function* runChatCompletion(
 	deadlineEpochMs: number,
 	freeCostEnforcement: boolean,
 ): AsyncGenerator<AgentEvent> {
-	const guard = createTurnGuard(context.signal, deadlineEpochMs, Date.now());
-	const idle = createIdleWatch(guard);
-	try {
-		for (let retryIndex = 0; ; retryIndex += 1) {
-			const end = yield* attemptChatCompletion(
-				environment,
-				config,
-				request,
-				context,
-				guard,
-				idle,
-				freeCostEnforcement,
-			);
-			if (end.kind === "finished") return;
-			const delayMs = isTransientRejection(end.failure)
-				? rejectionRetryDelayMs(retryIndex, end.retryAfterMs, deadlineEpochMs - Date.now())
-				: null;
-			if (delayMs === null) {
-				yield* end.events;
-				return;
-			}
-			// The wait is ours, not the provider's silence: the idle watch restarts with the next request.
-			idle.clear();
-			const waited = await waitOrStop(guard, delayMs);
-			if (waited.kind === "stopped") {
-				// Nothing is in flight during the wait, so there is no usage to report.
-				yield failedEvent(failureForStop(waited.reason));
-				return;
-			}
-		}
-	} finally {
-		idle.clear();
-		// Also aborts the HTTP request when the consumer stops iterating early.
-		guard.stop("finished");
-	}
+	return runHttpTurn(context, deadlineEpochMs, (guard, idle) =>
+		attemptChatCompletion(environment, config, request, context, guard, idle, freeCostEnforcement),
+	);
 }
 
 async function* attemptChatCompletion(
@@ -402,63 +229,37 @@ async function* attemptChatCompletion(
 	request: AgentRequest,
 	context: AgentRunContext,
 	guard: TurnGuard,
-	idle: { touch(): void },
+	idle: IdleWatch,
 	freeCostEnforcement: boolean,
 ): AsyncGenerator<AgentEvent, AttemptEnd> {
-	idle.touch();
-	const responded = await raceStop(
-		guard,
-		settle(
-			// Called through the environment so the runner controls the transport.
-			environment.fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${config.apiKey}`,
-					"Content-Type": "application/json",
-					Accept: "text/event-stream",
-				},
-				body: JSON.stringify({
-					model: config.model,
-					messages: [{ role: "user", content: request.prompt }],
-					stream: true,
-					max_completion_tokens: MAX_COMPLETION_TOKENS,
-					usage: { include: true },
-					reasoning: { effort: context.effort },
-				}),
-				redirect: "error",
-				signal: guard.signal,
+	const opened = await openStream(
+		environment,
+		{
+			url: OPENROUTER_CHAT_COMPLETIONS_URL,
+			headers: {
+				Authorization: `Bearer ${config.apiKey}`,
+				"Content-Type": "application/json",
+				Accept: "text/event-stream",
+			},
+			body: JSON.stringify({
+				model: config.model,
+				messages: [{ role: "user", content: request.prompt }],
+				stream: true,
+				max_completion_tokens: MAX_COMPLETION_TOKENS,
+				usage: { include: true },
+				reasoning: { effort: context.effort },
 			}),
-		),
+			failureForStatus: failureForHttpStatus,
+		},
+		guard,
+		idle,
 	);
-	if (responded.kind === "stopped") {
-		// The request may have reached the provider, so the cost is unknown rather than absent.
-		yield usageEvent(null);
-		yield failedEvent(failureForStop(responded.reason));
-		return FINISHED;
-	}
-	if (!responded.value.ok) {
-		const failure = PROVIDER_FAILURES.PROVIDER_UNAVAILABLE;
-		return { kind: "rejected", failure, retryAfterMs: null, events: [failedEvent(failure)] };
-	}
-	const response = responded.value.value;
-	if (!response.ok) {
-		// Rejected before generation started: nothing was produced, so no usage is reported.
-		await settle(response.body?.cancel() ?? Promise.resolve());
-		const failure = failureForHttpStatus(response.status);
-		return {
-			kind: "rejected",
-			failure,
-			retryAfterMs: parseRetryAfterMs(response.headers.get("retry-after"), Date.now()),
-			events: [failedEvent(failure)],
-		};
-	}
-	if (response.body === null) {
-		yield usageEvent(null);
-		yield failedEvent(PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID);
-		return FINISHED;
+	if (opened.kind === "ended") {
+		yield* opened.events;
+		return opened.end;
 	}
 
-	const bodyState: BodyReadState = { receivedBytes: 0, tooLarge: false, readFailed: false };
+	const bodyState = newBodyReadState();
 	let knownCostUsd: number | null = null;
 	let freeChargedCost: number | null = null;
 	let emittedTextChars = 0;
@@ -470,7 +271,7 @@ async function* attemptChatCompletion(
 	/** An error chunk that arrived before any content: the provider refused the request. */
 	let rejectedBeforeOutput: ProviderFailure | null = null;
 	const sseLines = splitLines(
-		readBody(response.body, guard, idle.touch, bodyState),
+		readBody(opened.body, guard, idle.touch, bodyState),
 		MAX_SSE_LINE_CHARS,
 	);
 	for await (const line of sseLines) {

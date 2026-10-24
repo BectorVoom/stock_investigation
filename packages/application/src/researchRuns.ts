@@ -1,6 +1,7 @@
 import {
 	type AgentSettings,
 	BASELINE_AGENT_IDS,
+	CLAUDE_API_AGENT_ID,
 	type CostModel,
 	OPENROUTER_FREE_AGENT_ID,
 	type ResearchRequest,
@@ -76,6 +77,12 @@ interface CostModels {
 	readonly known: (agentId: string) => boolean;
 	readonly of: (agentId: string) => CostModel;
 }
+
+/**
+ * Backends that bill per use. Until a runner reports a backend's cost model,
+ * these are assumed metered so a spend ceiling is never dropped by mistake.
+ */
+const METERED_BY_DEFAULT_AGENT_IDS: readonly string[] = ["openrouter", CLAUDE_API_AGENT_ID];
 
 /** Backends that cannot run without a model chosen in Settings (same rule as the composer). */
 const MODEL_REQUIRED_AGENT_IDS: readonly string[] = ["opencode", OPENROUTER_FREE_AGENT_ID];
@@ -220,14 +227,15 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		return ok({ run: await view(job), replayed: false });
 	}
 
-	/** Cost model by agent id, as the runner last reported it (openrouter is metered by default). */
+	/** Cost model by agent id, as the runner last reported it (the API backends are metered by default). */
 	async function costModels(ownerId: string): Promise<CostModels> {
 		const status = await deps.runnerStatus.get(ownerId);
 		const reported = (agentId: string) => status?.agents.find((agent) => agent.agentId === agentId);
 		return {
 			known: (agentId) => reported(agentId) !== undefined || isBaselineAgent(agentId),
 			of: (agentId) =>
-				reported(agentId)?.costModel ?? (agentId === "openrouter" ? "metered" : "plan-limited"),
+				reported(agentId)?.costModel ??
+				(METERED_BY_DEFAULT_AGENT_IDS.includes(agentId) ? "metered" : "plan-limited"),
 		};
 	}
 

@@ -119,6 +119,38 @@ describe("creating research runs (FR-014, FR-016)", () => {
 		expect(withConsent.status).toBe(202);
 	});
 
+	it("accepts the Claude API backend once a runner reports it, and only with a spend ceiling", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const request = researchRequest(workspaceId, { agentId: "claude-api" });
+		const withSpend = { ...request, budget: { ...request.budget, maxSpendUsd: 2 } };
+		const beforeReport = await harness.call("POST", "/research-runs", withSpend, idempotencyKey());
+		expect(beforeReport.status).toBe(422);
+
+		const token = await issueRunnerToken(harness);
+		const reported = await harness.runner(token, "/jobs/claim", {
+			...CLAIM_BODY,
+			agents: [
+				...CLAIM_BODY.agents,
+				{
+					agentId: "claude-api",
+					displayName: "Claude API",
+					capabilities: { supported: ["stream", "cancel"], model: "claude-opus-5-5" },
+					costModel: "metered",
+					toolIsolation: "enforced",
+					availability: { status: "available" },
+				},
+			],
+		});
+		expect(reported.status).toBe(200);
+
+		const noConsent = await harness.call("POST", "/research-runs", request, idempotencyKey());
+		expect(noConsent.status).toBe(422);
+		expect(await errorCode(noConsent)).toBe("SPEND_CONSENT_REQUIRED");
+		const accepted = await harness.call("POST", "/research-runs", withSpend, idempotencyKey());
+		expect(accepted.status).toBe(202);
+	});
+
 	it("rejects an unregistered agent backend and an unknown workspace", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);
