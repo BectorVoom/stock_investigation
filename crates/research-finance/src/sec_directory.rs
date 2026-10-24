@@ -1,4 +1,4 @@
-//! The US stock directory (port of `secDirectory.ts`, ADR-0033): SEC's
+//! The US stock directory (port of `secDirectory.ts`, ADR-0034): SEC's
 //! `company_tickers_exchange.json`, the ticker directory the SEC financials
 //! tool reads, downloaded through the same fair-access client. Rows on
 //! Nasdaq, NYSE, Cboe and Texas SE are kept in file order (the first row of a

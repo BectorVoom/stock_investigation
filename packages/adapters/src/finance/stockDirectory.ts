@@ -1,5 +1,5 @@
 /**
- * Rules shared by the two stock-directory sources (ADR-0033): the SEC list
+ * Rules shared by the two stock-directory sources (ADR-0034): the SEC list
  * (`secDirectory.ts`) and the JPX list (`jpxDirectory.ts`). Both parse a
  * whole market's list into `StockDirectoryEntry` rows and must hand the
  * runner a list the completion contract accepts, or a stable failure code.

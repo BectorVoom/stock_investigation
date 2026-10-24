@@ -896,7 +896,7 @@ describe("google calendar sync", () => {
 	});
 });
 
-describe("stock directory (ADR-0033)", () => {
+describe("stock directory (ADR-0034)", () => {
 	const US_STATUS = {
 		market: "US",
 		sourceId: "sec",

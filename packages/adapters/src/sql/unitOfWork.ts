@@ -75,7 +75,7 @@ export function chunkObservationPoints(
 
 /**
  * Statements replacing one market's stored list with a
- * `stock-directory-refreshed` completion (ADR-0033): delete the owner's rows
+ * `stock-directory-refreshed` completion (ADR-0034): delete the owner's rows
  * of that market, insert the new rows in byte-bounded `json_each` chunks,
  * and upsert the market's meta row. Every statement is guarded on the job
  * compare-and-set, so a stale lease (or any lost race) changes nothing and a

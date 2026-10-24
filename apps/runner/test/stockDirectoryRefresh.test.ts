@@ -91,7 +91,7 @@ function failedOf(completion: CompleteJobRequest | undefined) {
 	return completion;
 }
 
-describe("stock-directory-refresh execution (ADR-0033)", () => {
+describe("stock-directory-refresh execution (ADR-0034)", () => {
 	it("completes with the market's list, its date and the fetch time", async () => {
 		const entries = jpEntries(FLOOR);
 		const { source, seen } = answering("JP", async () => ok({ asOf: "2026-09-30", entries }));

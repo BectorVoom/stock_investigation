@@ -1,7 +1,7 @@
 import type { WatchMarket } from "./stockId.ts";
 
 /**
- * Stock directory search (ADR-0033): text folding, query terms, matching and
+ * Stock directory search (ADR-0034): text folding, query terms, matching and
  * ranking. Pure and allocation-light. The API stores each row's folded keys
  * and ranks in SQL; this module is the reference the SQL is tested against,
  * and `formal/ResearchFormal/StockSearch.lean` models it from the folded

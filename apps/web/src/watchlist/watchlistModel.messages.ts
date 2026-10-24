@@ -39,7 +39,7 @@ const EN_MARKET_ADJECTIVES: { readonly [M in WatchMarket]: string } = {
 
 const JA_MARKET_NAMES: { readonly [M in WatchMarket]: string } = { US: "米国", JP: "日本" };
 
-/** Where a listing trades, as the search results name it (ADR-0033). */
+/** Where a listing trades, as the search results name it (ADR-0034). */
 const EN_LISTINGS: { readonly [L in StockListing]: string } = {
 	nasdaq: "Nasdaq",
 	nyse: "NYSE",
@@ -61,7 +61,7 @@ const JA_LISTINGS: { readonly [L in StockListing]: string } = {
 };
 
 /**
- * The fixed sentence per stock-list failure code (ADR-0033). Provider text
+ * The fixed sentence per stock-list failure code (ADR-0034). Provider text
  * never reaches the UI; a code the contract does not know gets the generic
  * sentence with the code itself (`directoryFailedWithCode`).
  */

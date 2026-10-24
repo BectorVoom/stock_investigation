@@ -806,7 +806,7 @@ pub struct GoogleCalendarJob {
 	pub events: Option<Vec<GoogleEventBody>>,
 }
 
-/// A `stock-directory-refresh` job (ADR-0033): download one market's full
+/// A `stock-directory-refresh` job (ADR-0034): download one market's full
 /// list of listed stocks (SEC for US, JPX for JP).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -845,7 +845,7 @@ pub enum ClaimedJob {
 	/// A Google Calendar step.
 	#[serde(rename = "google-calendar")]
 	GoogleCalendar(GoogleCalendarJob),
-	/// A stock-directory refresh (ADR-0033).
+	/// A stock-directory refresh (ADR-0034).
 	#[serde(rename = "stock-directory-refresh")]
 	StockDirectoryRefresh(StockDirectoryRefreshJob),
 }
@@ -1556,7 +1556,7 @@ pub enum CompleteJobRequest {
 		/// Whether the refresh token was revoked.
 		revoked: bool,
 	},
-	/// One market's full list (ADR-0033), replacing its stored rows all or nothing.
+	/// One market's full list (ADR-0034), replacing its stored rows all or nothing.
 	#[serde(rename = "stock-directory-refreshed", rename_all = "camelCase")]
 	StockDirectoryRefreshed {
 		/// Lease generation.

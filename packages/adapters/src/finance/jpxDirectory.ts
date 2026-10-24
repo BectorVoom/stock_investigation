@@ -1,5 +1,5 @@
 /**
- * The Japanese stock directory (ADR-0033): JPX's monthly "List of
+ * The Japanese stock directory (ADR-0034): JPX's monthly "List of
  * TSE-listed Issues", `data_j.xlsx` (Japanese) and `data_e.xlsx` (English),
  * each linked from its own page:
  *

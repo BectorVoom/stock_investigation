@@ -2,7 +2,7 @@
 //! real TypeScript adapters: `node scripts/vectors/index.ts finance`): the SEC
 //! and JPX list parsers, the JPX link scrape, the row-count floor (as recipes
 //! both sides rebuild) and source transcripts over the scripted fetcher,
-//! where every request, pacing grant and SEC wait must match (ADR-0033).
+//! where every request, pacing grant and SEC wait must match (ADR-0034).
 #![allow(
 	clippy::unwrap_used,
 	clippy::expect_used,

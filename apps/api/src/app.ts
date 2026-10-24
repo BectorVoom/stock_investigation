@@ -1106,7 +1106,7 @@ export function createApp(options: AppOptions = {}) {
 		),
 	);
 
-	/* Stock directory (ADR-0033): every listed US and Japanese stock, stored
+	/* Stock directory (ADR-0034): every listed US and Japanese stock, stored
 	 * by the runner one market per job and searched from the add-a-stock
 	 * form. Owner-authenticated like the other watchlist routes. No route
 	 * logs the search text: the API writes no per-request lines, and a

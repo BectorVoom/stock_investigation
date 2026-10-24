@@ -1,5 +1,5 @@
 /**
- * The US stock directory (ADR-0033) on SEC's ticker directory: a trimmed copy
+ * The US stock directory (ADR-0034) on SEC's ticker directory: a trimmed copy
  * of the real file (`fixtures/sec-company-tickers-exchange-trimmed.json`,
  * rows copied from the 2026-10-24 download) for the row rules, and lists
  * generated in-test for the contract floor and the fetch path.

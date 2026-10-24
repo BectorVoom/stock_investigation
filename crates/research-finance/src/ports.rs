@@ -209,7 +209,7 @@ impl Sleeper for TokioSleeper {
 	}
 }
 
-/* ---------- Stock directory (ADR-0033: every listed US / JP stock) ---------- */
+/* ---------- Stock directory (ADR-0034: every listed US / JP stock) ---------- */
 
 /// One stock-directory download.
 pub struct StockDirectoryQuery<'a> {

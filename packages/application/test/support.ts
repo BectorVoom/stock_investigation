@@ -26,7 +26,7 @@ import type {
 } from "../src/index.ts";
 
 /**
- * In-memory stock directory (ADR-0033). Search IS the domain reference
+ * In-memory stock directory (ADR-0034). Search IS the domain reference
  * `rankStockSearch`, which the SQL repository is tested to equal, so a
  * service test over this fake sees exactly what the real store returns.
  */

@@ -730,7 +730,7 @@ def spacingVectors : List String := Id.run do
         out := spacingVec [a, b, c] :: out
   return out.reverse
 
-/-! ## Stock directory search (ADR-0033) -/
+/-! ## Stock directory search (ADR-0034) -/
 
 /-- Code points of a Lean string (the model's `Text`). -/
 def ssText (s : String) : StockSearch.Text := s.toList.map Char.toNat

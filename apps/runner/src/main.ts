@@ -271,7 +271,7 @@ function runnerProgram(
 }
 
 /**
- * The stock-directory sources by market (ADR-0033). The US list comes from
+ * The stock-directory sources by market (ADR-0034). The US list comes from
  * SEC, which requires a declared User-Agent: without a usable
  * `SEC_USER_AGENT` the US source is "unconfigured" and its jobs fail with
  * `DIRECTORY_NOT_CONFIGURED` instead of sending an undeclared agent. The JP

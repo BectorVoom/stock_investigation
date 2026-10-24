@@ -127,7 +127,7 @@ const exit = await runRunnerLoop(
 		// Stocks without a recorded answer fail with the fixed unavailable
 		// wording, so the browser only ever shows fixture dates.
 		earningsSources: fixtureEarningsSources(),
-		// Stock lists (ADR-0033): canned US and JP lists from the shared
+		// Stock lists (ADR-0034): canned US and JP lists from the shared
 		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
 		// contract's floor — no SEC, no JPX, no network.
 		stockDirectorySources: fixtureStockDirectorySources(),

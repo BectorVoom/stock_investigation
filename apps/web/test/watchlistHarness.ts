@@ -170,7 +170,7 @@ function directoryMarketStatus(
 }
 
 /**
- * The stock-directory routes (ADR-0033) over `directory`: status, search
+ * The stock-directory routes (ADR-0034) over `directory`: status, search
  * ranked by the domain's reference `rankStockSearch` with `registered`
  * read from `registeredIds()`, and a refresh that marks each market's run
  * pending (reusing an active one, like the API). Later registrations win, so

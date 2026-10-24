@@ -205,7 +205,7 @@ async function bothRankings(
 
 /* ---------- refresh queue and status ---------- */
 
-describe("stock directory status and refresh queue (ADR-0033)", () => {
+describe("stock directory status and refresh queue (ADR-0034)", () => {
 	it("reports both markets, US then JP, with nothing stored yet", async () => {
 		const harness = createHarness();
 		const current = await status(harness);
@@ -453,7 +453,7 @@ describe("stock directory status and refresh queue (ADR-0033)", () => {
 
 /* ---------- completion commit ---------- */
 
-describe("stock directory completion (ADR-0033)", () => {
+describe("stock directory completion (ADR-0034)", () => {
 	it("stores a market's list, its meta row and search keys", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
@@ -675,7 +675,7 @@ describe("stock directory completion (ADR-0033)", () => {
 
 /* ---------- search and adding a stock ---------- */
 
-describe("stock directory search (ADR-0033)", () => {
+describe("stock directory search (ADR-0034)", () => {
 	it("re-keys a market stored under another fold version before answering", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
@@ -1013,7 +1013,7 @@ const CURATED_QUERIES: readonly string[] = [
 	"😀 corp",
 ];
 
-describe("stock directory ranking: SQL equals rankStockSearch (ADR-0033 section 6)", () => {
+describe("stock directory ranking: SQL equals rankStockSearch (ADR-0034 section 6)", () => {
 	it("matches the reference on curated rows and queries, for every market filter and limit", async () => {
 		const ownerId = `owner-ranking-${crypto.randomUUID()}`;
 		await seedDirectly(ownerId, CURATED);
@@ -1065,7 +1065,7 @@ describe("stock directory ranking: SQL equals rankStockSearch (ADR-0033 section 
 	}, async ({ annotate }) => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
-		// Measured 2026-10-24: US 7,691, JP 3,707 (ADR-0033).
+		// Measured 2026-10-24: US 7,691, JP 3,707 (ADR-0034).
 		const us = [APPLE, ...generateUsEntries(41, 7_690).filter((entry) => entry.symbol !== "AAPL")];
 		const jp = [TOYOTA, ...generateJpEntries(42, 3_706).filter((entry) => entry.symbol !== "7203")];
 		const storeStarted = Date.now();

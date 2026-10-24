@@ -3,7 +3,7 @@ import ResearchFormal.Basic
 /-!
 # Stock directory search
 
-Formal model of `packages/domain/src/watchlist/stockSearch.ts` (ADR-0033):
+Formal model of `packages/domain/src/watchlist/stockSearch.ts` (ADR-0034):
 `foldStockSearchText`, `stockSearchTerms`, `stockSearchKeys`,
 `stockSearchHaystack`, `stockSearchTier`, `compareStockSearchHits` and
 `rankStockSearch`.

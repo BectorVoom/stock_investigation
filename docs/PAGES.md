@@ -119,7 +119,7 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **User actions**
 
-- Search every exchange-listed US and Japanese stock (ADR-0033) by company
+- Search every exchange-listed US and Japanese stock (ADR-0034) by company
   name, Japanese name or symbol — "Apple", "トヨタ", "とよた", "toyota", "7203"
   — in the add-a-stock search box, and pick a hit (click, or ↓/↑ then Enter;
   Escape closes the list, then clears the text; keys an IME is composing

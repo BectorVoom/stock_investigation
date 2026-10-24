@@ -305,7 +305,7 @@ export function earningsAutoRefreshReason(
 	return nowMs - newest > EARNINGS_AUTO_REFRESH_STALE_MS ? "stale" : null;
 }
 
-/* ----- stock directory search (ADR-0033) ----- */
+/* ----- stock directory search (ADR-0034) ----- */
 
 const DAY_MS = 86_400_000;
 
@@ -324,7 +324,7 @@ export function isDirectoryListStale(market: StockDirectoryMarketStatus, nowMs: 
 
 /**
  * The markets the Watchlist queues a list download for when it opens
- * (ADR-0033 decision 4), evaluated once per visit by the view: a market
+ * (ADR-0034 decision 4), evaluated once per visit by the view: a market
  * whose list is missing or stale, with no run of its own active, and whose
  * last failure is not `DIRECTORY_NOT_CONFIGURED` (the API reports a
  * failure only while no later download succeeded) — a configuration

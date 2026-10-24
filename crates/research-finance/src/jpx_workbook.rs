@@ -600,7 +600,7 @@ pub struct WorkbookCell {
 }
 
 /// Every row of one sheet as resolved cells, for workbooks whose headers sit
-/// in a row of their own (the JPX listed-issues list, ADR-0033; port of
+/// in a row of their own (the JPX listed-issues list, ADR-0034; port of
 /// `readWorkbookRows`). The same bounded scanners and ceilings as
 /// [`parse_jpx_workbook`] apply: past a bound the workbook is rejected, never
 /// partially trusted. Rows without cells are skipped.

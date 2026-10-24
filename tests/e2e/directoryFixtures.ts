@@ -11,7 +11,7 @@ import { z } from "zod";
 import { STOCK_DIRECTORY_FIXTURE_DATA } from "./fixtures.ts";
 
 /**
- * Canned stock lists for the browser E2E run (ADR-0033): the stock-directory
+ * Canned stock lists for the browser E2E run (ADR-0034): the stock-directory
  * sources answer these lists instead of SEC and JPX — no keys, no network.
  * The data lives in `fixtures/e2e-fixtures.json` (`stockDirectory`), which
  * the Rust E2E runner (`research-runner-testkit`) reads too, so both

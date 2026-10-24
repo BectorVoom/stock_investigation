@@ -102,7 +102,7 @@ pub struct JobDeps {
 	pub market_sources: HashMap<String, Arc<dyn MarketSeriesSource>>,
 	/// Earnings sources keyed by id.
 	pub earnings_sources: HashMap<String, Arc<dyn EarningsCalendarSource>>,
-	/// Stock-directory sources by market (ADR-0033): SEC for US (unconfigured
+	/// Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	/// without `SEC_USER_AGENT`), JPX for JP.
 	pub stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>>,
 	/// Per-provider request pacing (API-007), shared across jobs.

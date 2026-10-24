@@ -523,7 +523,7 @@ const URL_EDGES: string[] = [
 
 const COMPOSITE: MutationOptions = { maxDepth: 3, maxCases: 1500 };
 
-/* ---------- Stock directory (ADR-0033) ---------- */
+/* ---------- Stock directory (ADR-0034) ---------- */
 
 const usDirectoryEntry = { symbol: "AAPL", name: "Apple Inc.", listing: "nasdaq" };
 const jpDirectoryEntry = {

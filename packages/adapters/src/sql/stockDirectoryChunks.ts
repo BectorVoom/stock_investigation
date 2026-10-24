@@ -1,7 +1,7 @@
 import type { StockDirectoryRow } from "@research/application";
 
 /**
- * S5 for the stock directory (ADR-0033), shared by the completion's inserts
+ * S5 for the stock directory (ADR-0034), shared by the completion's inserts
  * and the re-key UPDATEs after a fold change: a completion carries up to
  * `STOCK_DIRECTORY_LIMITS.maxEntriesPerMarket` rows, each bound with its
  * name, local name and four folded keys — about 1.5 MB of JSON for the US

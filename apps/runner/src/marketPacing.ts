@@ -42,7 +42,7 @@ export const FINNHUB_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 30, windowMs:
 /** JPX asks callers to avoid high-frequency access: one paced batch per 10 s (FR-018). */
 export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_000 };
 /**
- * SEC (the US stock directory, ADR-0033): the window form of the SEC
+ * SEC (the US stock directory, ADR-0034): the window form of the SEC
  * client's own 125 ms spacing, so a stopped job stops waiting here too.
  */
 export const SEC_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 8, windowMs: 1_000 };

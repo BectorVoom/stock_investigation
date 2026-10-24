@@ -194,7 +194,7 @@ test("UI review of the Watchlist page", async ({ browser }) => {
 	await audit(page, "W add problems");
 	await page.getByLabel("Symbol").fill("");
 
-	/* ---------- W2b. Stock search with its list open (ADR-0033) ---------- */
+	/* ---------- W2b. Stock search with its list open (ADR-0034) ---------- */
 	// The fixture stock lists were queued when the page first opened.
 	await expect(page.locator('[data-field="directory-status"] p[data-market="JP"]')).toContainText(
 		"stocks, as of",

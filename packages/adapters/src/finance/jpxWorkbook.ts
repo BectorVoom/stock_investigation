@@ -399,7 +399,7 @@ export interface WorkbookCell {
 
 /**
  * Every row of one sheet as resolved cells, for workbooks whose headers sit
- * in a row of their own (the JPX listed-issues list, ADR-0033). The same
+ * in a row of their own (the JPX listed-issues list, ADR-0034). The same
  * bounded scanners and ceilings as `parseJpxWorkbook` apply: past a bound the
  * workbook is rejected, never partially trusted. Rows without cells are
  * skipped; the caller locates its header row and columns by text.

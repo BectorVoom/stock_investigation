@@ -1,4 +1,4 @@
--- Stock directory (ADR-0033), version 10: every exchange-listed US and
+-- Stock directory (ADR-0034), version 10: every exchange-listed US and
 -- Japanese stock, downloaded by the runner one market per job and searched
 -- from the Watchlist's add-a-stock form.
 --

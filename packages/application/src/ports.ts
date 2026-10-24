@@ -205,7 +205,7 @@ export interface JobRecord {
 	 * The stored request: a research request for research jobs, `{ action }`
 	 * for `google-calendar` jobs (FR-019 section 2.4), a notebook-assist
 	 * request for `notebook-assist` jobs (ADR-0020), `{ market }` for
-	 * `stock-directory-refresh` jobs (ADR-0033), null for the other refresh
+	 * `stock-directory-refresh` jobs (ADR-0034), null for the other refresh
 	 * kinds. Only research requests carry an `agentId` — narrow with
 	 * `"agentId" in request` before touching agent fields.
 	 */
@@ -251,7 +251,7 @@ export interface JobRecord {
 }
 
 /**
- * The stored request of a `stock-directory-refresh` job (ADR-0033): the one
+ * The stored request of a `stock-directory-refresh` job (ADR-0034): the one
  * market it downloads. Kept in the job's request column so the claim can
  * name the market and by-kind lookups can be narrowed to it.
  */
@@ -261,7 +261,7 @@ export interface StockDirectoryJobRequest {
 
 /**
  * Narrows a by-kind job lookup to one market's `stock-directory-refresh`
- * jobs (ADR-0033: one active run per market, status per market).
+ * jobs (ADR-0034: one active run per market, status per market).
  */
 export interface JobKindScope {
 	readonly market: WatchMarket;
@@ -388,7 +388,7 @@ export interface JobRepository {
 	/**
 	 * Newest job of a kind in state `failed` (cancelled runs excluded: an
 	 * owner's cancel is neither a failure nor hides one), with its stable
-	 * code and the API's own completion time. ADR-0033 status.
+	 * code and the API's own completion time. ADR-0034 status.
 	 */
 	findLatestFailedByKind(
 		ownerId: string,
@@ -568,7 +568,7 @@ export interface CompletionEffects {
 	readonly notebookTurn: { readonly workspaceId: string; readonly turn: NotebookTurn } | null;
 	/**
 	 * One market's full stock list of a `stock-directory-refreshed`
-	 * completion (ADR-0033), replacing that market's stored rows all or
+	 * completion (ADR-0034), replacing that market's stored rows all or
 	 * nothing; null for every other outcome.
 	 */
 	readonly stockDirectory: StockDirectoryCompletion | null;
@@ -825,7 +825,7 @@ export interface NotebookRepository {
 	listMarketSeriesIds(ownerId: string): Promise<readonly string[]>;
 }
 
-/* ---------- Stock directory storage and search (ADR-0033) ---------- */
+/* ---------- Stock directory storage and search (ADR-0034) ---------- */
 
 /** One stored listed stock, as searched and shown. */
 export interface StoredStockDirectoryEntry extends StockSearchRow {
@@ -951,7 +951,7 @@ export interface WatchlistRepository {
 			readonly symbol: string;
 			/**
 			 * The stock directory's company name when the directory holds the
-			 * stock (ADR-0033), else null; never overwrites an existing row.
+			 * stock (ADR-0034), else null; never overwrites an existing row.
 			 */
 			readonly name: string | null;
 			readonly addedAt: string;
@@ -1196,7 +1196,7 @@ export function unconfiguredEarningsCalendarSource(
 	};
 }
 
-/* ---------- Stock directory (ADR-0033: every listed US / JP stock) ---------- */
+/* ---------- Stock directory (ADR-0034: every listed US / JP stock) ---------- */
 
 export interface StockDirectoryQuery {
 	readonly signal: AbortSignal;

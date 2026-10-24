@@ -820,7 +820,7 @@ const NOTEBOOK_BENCH_CHART = {
 	})),
 } satisfies Extract<WidgetCore, { readonly type: "chart" }>;
 
-/* Stock directory (ADR-0033): full-size lists shaped like the measured ones
+/* Stock directory (ADR-0034): full-size lists shaped like the measured ones
  * (US 7,691 rows, ~25-character names; JP 3,700 rows with Japanese names). */
 const usDirectory: StockDirectoryEntry[] = Array.from({ length: 7_691 }, (_, index) => ({
 	symbol: `S${index.toString(36).toUpperCase()}`,

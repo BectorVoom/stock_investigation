@@ -59,7 +59,7 @@ function listsChanged(
 }
 
 /**
- * The Watchlist's stock-list status and its refresh queue (ADR-0033). Polls
+ * The Watchlist's stock-list status and its refresh queue (ADR-0034). Polls
  * only while a list download is active. Opening the page queues one
  * download for the markets `directoryAutoRefreshMarkets` names, at most once
  * per mount, after the first successful load; a failed queue is reported and

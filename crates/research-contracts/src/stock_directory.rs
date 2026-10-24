@@ -1,4 +1,4 @@
-//! The stock directory (`packages/contracts/src/stockDirectory.ts`, ADR-0033):
+//! The stock directory (`packages/contracts/src/stockDirectory.ts`, ADR-0034):
 //! every exchange-listed US and Japanese stock, downloaded by the runner one
 //! market per job. Only the parts the runner reaches are ported: the limits,
 //! the listings, the failure codes, the entry schema and the refinement of

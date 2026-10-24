@@ -403,7 +403,7 @@ conversation deletes its notebook, revisions and turns
 with everything else it solely owns.
 
 The Watchlist's add-a-stock form searches a local stock directory of every
-exchange-listed US and Japanese stock (ADR-0033). The runner downloads one
+exchange-listed US and Japanese stock (ADR-0034). The runner downloads one
 market's full list per `stock-directory-refresh` job (SEC for US, JPX for JP;
 the job's stored request names the market) and its
 `stock-directory-refreshed` completion replaces that market's rows of

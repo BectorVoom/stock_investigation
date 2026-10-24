@@ -23,7 +23,7 @@ import {
  *
  * From a pristine copy the test starts the real `bun run dev` on test ports
  * with throwaway directories. Opening `/#/watchlist` queues the stock lists
- * (ADR-0033): the runner really downloads JPX's TSE-listed issues
+ * (ADR-0034): the runner really downloads JPX's TSE-listed issues
  * workbooks, and the US list states the fixed `SEC_USER_AGENT` sentence
  * (the env file sets none) unless a user agent reaches the runner. The
  * test then finds JP `7203` with the search ("トヨタ") over the stored JPX

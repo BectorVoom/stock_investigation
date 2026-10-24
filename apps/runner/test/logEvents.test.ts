@@ -38,7 +38,7 @@ function collectProductionEventNames(): string[] {
 	return [...names].sort();
 }
 
-describe("the stock-directory events (ADR-0033, docs/OPERATIONS.md)", () => {
+describe("the stock-directory events (ADR-0034, docs/OPERATIONS.md)", () => {
 	it("are logged by the TypeScript runner under the documented names", () => {
 		const names = collectProductionEventNames();
 		for (const event of [

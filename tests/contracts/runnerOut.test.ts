@@ -26,7 +26,7 @@ import type { ZodType } from "zod";
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const outDirectory = join(repoRoot, "vectors/runner/out");
 
-/** The runner events of a stock-directory refresh (ADR-0033), logged by both runners. */
+/** The runner events of a stock-directory refresh (ADR-0034), logged by both runners. */
 const STOCK_DIRECTORY_EVENTS = [
 	"stock_directory_fetched",
 	"stock_directory_rejected",
@@ -159,7 +159,7 @@ describe("log event names in the Rust crates", () => {
 		for (const reserved of ["invalid_configuration", "unsupported_runtime", "runner_crashed"]) {
 			expect(names.has(reserved), reserved).toBe(true);
 		}
-		// The stock-directory events (ADR-0033, docs/OPERATIONS.md) keep the
+		// The stock-directory events (ADR-0034, docs/OPERATIONS.md) keep the
 		// names the TypeScript runner logs.
 		for (const event of STOCK_DIRECTORY_EVENTS) expect(names.has(event), event).toBe(true);
 	});

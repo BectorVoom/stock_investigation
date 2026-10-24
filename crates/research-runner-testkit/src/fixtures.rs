@@ -145,7 +145,7 @@ impl DirectoryMarket {
 	}
 }
 
-/// The canned stock lists (ADR-0033).
+/// The canned stock lists (ADR-0034).
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DirectoryFixtures {

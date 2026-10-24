@@ -1,7 +1,7 @@
 import type { StockDirectoryEntry, StockListing, WatchMarket } from "@research/contracts";
 
 /**
- * Deterministic stock-directory fixtures (ADR-0033): seeded generators for
+ * Deterministic stock-directory fixtures (ADR-0034): seeded generators for
  * full-size lists and search queries, so the SQL-versus-reference tests and
  * the timing run on the same rows every time.
  */

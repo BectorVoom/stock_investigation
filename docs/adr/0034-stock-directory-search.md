@@ -1,4 +1,4 @@
-# ADR-0033: Search every US and Japanese listed stock from the Watchlist
+# ADR-0034: Search every US and Japanese listed stock from the Watchlist
 
 Status: accepted (2026-10-24)
 
@@ -65,7 +65,7 @@ Two free, official lists cover the need (measured 2026-10-24):
 
 ## Consequences
 
-- New table `stock_directory` and `stock_directory_meta` (migration 0010).
+- New table `stock_directory` and `stock_directory_meta` (migration 0011).
 - New routes: `GET /api/v1/watchlist/directory` (status per market),
   `GET /api/v1/watchlist/directory/search?q=&market=&limit=`,
   `POST /api/v1/watchlist/directory/refresh` (queues one job per market).

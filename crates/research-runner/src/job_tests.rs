@@ -2297,7 +2297,7 @@ async fn golden_outgoing_payloads_are_current() {
 		body: wire(&first_completion(&api)),
 	});
 
-	/* stock-directory refresh (ADR-0033): a JP list at the floor */
+	/* stock-directory refresh (ADR-0034): a JP list at the floor */
 	let api = FakeApi::new(ApiScript::default());
 	let directory = harness(
 		Arc::clone(&api),

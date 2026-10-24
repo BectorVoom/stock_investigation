@@ -185,7 +185,7 @@ function watched(market: WatchMarket, symbol: string): StoredWatchlistStock {
 	};
 }
 
-describe("stockDirectoryRows (ADR-0033)", () => {
+describe("stockDirectoryRows (ADR-0034)", () => {
 	it("stores the domain's folded keys and haystack with each row", () => {
 		const [us, jp] = [
 			...stockDirectoryRows("US", [
@@ -212,7 +212,7 @@ describe("stockDirectoryRows (ADR-0033)", () => {
 	});
 });
 
-describe("stock directory service (ADR-0033)", () => {
+describe("stock directory service (ADR-0034)", () => {
 	it("searches with the reference ranking and marks watched stocks", async () => {
 		const { service } = serviceWith({ watched: [watched("US", "AAPL")] });
 		const result = await service.search(OWNER, { q: "app", limit: 10 });

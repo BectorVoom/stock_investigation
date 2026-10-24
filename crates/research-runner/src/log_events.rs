@@ -33,7 +33,7 @@ const SHELL_EVENTS: [&str; 23] = [
 	"scratch_not_removed",
 	"sec_tools_disabled",
 	"shutdown_requested",
-	// The stock-directory sources' dropped-row count (ADR-0033), logged by
+	// The stock-directory sources' dropped-row count (ADR-0034), logged by
 	// the hook the composition root hands them.
 	"stock_directory_rows_dropped",
 	"unsupported_runtime",

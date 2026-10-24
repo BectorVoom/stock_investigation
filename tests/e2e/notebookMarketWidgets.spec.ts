@@ -199,7 +199,7 @@ test("an earnings calendar shows the fixture announcement", async () => {
 	// The calendar reads the Watchlist page's stocks: register one with a
 	// canned earnings date (the fixture answers 16 days out).
 	await page.goto("/#/watchlist");
-	// The symbol field sits under the search, in its own disclosure (ADR-0033).
+	// The symbol field sits under the search, in its own disclosure (ADR-0034).
 	await page.getByText("Enter a symbol instead", { exact: true }).click();
 	await page.getByLabel("Symbol").fill("AAPL");
 	await page.getByRole("button", { name: "Add stock" }).click();

@@ -15,7 +15,7 @@ import { googleUnconfiguredFlagFile } from "./googleFlag.ts";
  * automatic sync → disconnect, plus the not-configured failure sentence),
  * the .ics download, and the secret-token subscription feed (fetch without
  * cookies, rotation, revocation). The Watchlist page itself has no calendar.
- * The stock lists (ADR-0033) download through the same runner from the
+ * The stock lists (ADR-0034) download through the same runner from the
  * fixture lists (`tests/e2e/directoryFixtures.ts`), and the add-a-stock
  * search finds, picks and adds a stock from them. CSP stays clean.
  */

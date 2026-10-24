@@ -37,7 +37,7 @@ export const GOOGLE_SIGN_IN_URL: string = fixtureData.googleAuthUrl;
 /** Offsets and events of the canned earnings answers (`earningsFixtures.ts`). */
 export const EARNINGS_FIXTURES = fixtureData.earnings;
 
-/** Named rows and padding of the canned stock lists (`directoryFixtures.ts`, ADR-0033). */
+/** Named rows and padding of the canned stock lists (`directoryFixtures.ts`, ADR-0034). */
 export const STOCK_DIRECTORY_FIXTURE_DATA = fixtureData.stockDirectory;
 
 export const fixtureFetcher: SafeFetcher = {

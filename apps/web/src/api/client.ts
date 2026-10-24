@@ -109,7 +109,7 @@ export type {
 	StockDirectorySearchResponse,
 	StockDirectoryStatusResponse,
 };
-/** One stock-directory search as the Watchlist's search box asks it (ADR-0033). */
+/** One stock-directory search as the Watchlist's search box asks it (ADR-0034). */
 export interface StockDirectorySearch {
 	readonly q: string;
 	readonly market?: WatchMarket;
@@ -631,7 +631,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 			);
 			return result.ok ? ok(result.value.run) : result;
 		},
-		/* ----- stock directory: every US and JP listed stock (ADR-0033) ----- */
+		/* ----- stock directory: every US and JP listed stock (ADR-0034) ----- */
 		/** Each market's stored list: size, dates, active run and last failure (US, then JP). */
 		getStockDirectory: (): Promise<ApiResult<StockDirectoryStatusResponse>> =>
 			requestJson(

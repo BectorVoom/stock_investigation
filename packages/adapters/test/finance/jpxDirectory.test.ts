@@ -1,5 +1,5 @@
 /**
- * The Japanese stock directory (ADR-0033) on JPX's "List of TSE-listed
+ * The Japanese stock directory (ADR-0034) on JPX's "List of TSE-listed
  * Issues". The workbooks are SYNTHETIC `.xlsx` files built in-test in the
  * layout observed on 2026-10-24 (shared-string text cells, numeric
  * YYYYMMDD dates and numeric codes, headers in row 1); the trimmed rows below

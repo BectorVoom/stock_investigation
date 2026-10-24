@@ -1,4 +1,4 @@
-//! The Japanese stock directory (port of `jpxDirectory.ts`, ADR-0033): JPX's
+//! The Japanese stock directory (port of `jpxDirectory.ts`, ADR-0034): JPX's
 //! monthly "List of TSE-listed Issues", `data_j.xlsx` and `data_e.xlsx`, each
 //! linked from its own page (the `…-att` folder is read from the page, never
 //! hard-coded). The Japanese list decides which issues are kept (Prime,

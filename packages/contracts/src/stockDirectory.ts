@@ -11,7 +11,7 @@ import {
 } from "./watchlist.ts";
 
 /**
- * The stock directory (ADR-0033): every exchange-listed US and Japanese stock,
+ * The stock directory (ADR-0034): every exchange-listed US and Japanese stock,
  * downloaded by the runner one market per job and searched from the
  * Watchlist's add-a-stock form.
  */
@@ -191,7 +191,7 @@ export const stockDirectoryHitSchema = z
 	});
 export type StockDirectoryHit = z.infer<typeof stockDirectoryHitSchema>;
 
-/** Ranked as ADR-0033 section 6 says; empty when nothing matches or no list is stored. */
+/** Ranked as ADR-0034 section 6 says; empty when nothing matches or no list is stored. */
 export const stockDirectorySearchResponseSchema = z.strictObject({
 	hits: z.array(stockDirectoryHitSchema).max(STOCK_DIRECTORY_LIMITS.maxResults),
 });

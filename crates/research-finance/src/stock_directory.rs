@@ -1,5 +1,5 @@
 //! Rules shared by the two stock-directory sources (port of
-//! `stockDirectory.ts`, ADR-0033): both parse a whole market's list and must
+//! `stockDirectory.ts`, ADR-0034): both parse a whole market's list and must
 //! hand the runner a list the completion contract accepts, or a stable code.
 use crate::{market_fetch::http_status_of, ports::StockDirectoryData};
 use research_application::ports::SafeFetchError;

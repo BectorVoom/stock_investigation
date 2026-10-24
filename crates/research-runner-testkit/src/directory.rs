@@ -1,4 +1,4 @@
-//! Canned stock lists (port of `tests/e2e/directoryFixtures.ts`, ADR-0033):
+//! Canned stock lists (port of `tests/e2e/directoryFixtures.ts`, ADR-0034):
 //! the stock-directory sources answer the lists of the shared fixture file
 //! instead of SEC and JPX, padded to the contract's floor, so both E2E
 //! runners store the same rows.

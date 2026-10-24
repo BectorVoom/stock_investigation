@@ -194,7 +194,7 @@ pub async fn compose(
 			Arc::new(FixtureEarningsSource::jpx(fixtures.earnings.jpx.clone())),
 		),
 	]);
-	// Stock lists (ADR-0033): the canned US and JP lists of the shared
+	// Stock lists (ADR-0034): the canned US and JP lists of the shared
 	// fixture file, padded to the contract's floor: no SEC, no JPX.
 	let stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>> =
 		HashMap::from([

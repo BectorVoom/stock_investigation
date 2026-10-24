@@ -33,7 +33,7 @@ import type {
 } from "./ports.ts";
 import { JOB_ADMISSION, MAX_JOB_ATTEMPTS } from "./researchRuns.ts";
 
-/** The job kind that downloads one market's list (ADR-0033). */
+/** The job kind that downloads one market's list (ADR-0034). */
 const KIND = "stock-directory-refresh";
 
 /** Status is reported US first, then JP (`stockDirectoryStatusResponseSchema`). */
@@ -42,7 +42,7 @@ const MARKETS: readonly WatchMarket[] = ["US", "JP"];
 /**
  * One stored row with its folded search keys, computed here — in
  * TypeScript, with the domain's own fold — so the SQL ranking compares
- * exactly the keys `rankStockSearch` computes (ADR-0033 section 6).
+ * exactly the keys `rankStockSearch` computes (ADR-0034 section 6).
  */
 export function keyedStockDirectoryRow(entry: StoredStockDirectoryEntry): StockDirectoryRow {
 	const keys = stockSearchKeys(entry);
@@ -282,7 +282,7 @@ export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
 		},
 
 		/**
-		 * Ranked hits (ADR-0033 section 6) from the stored lists; each hit says
+		 * Ranked hits (ADR-0034 section 6) from the stored lists; each hit says
 		 * whether the stock is already on the owner's watchlist. A searched
 		 * market whose keys were stored under another fold version is
 		 * re-keyed first, so a changed fold never searches stale keys.

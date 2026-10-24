@@ -1,5 +1,5 @@
 /**
- * The stock-directory list parsers and sources (ADR-0033; crate
+ * The stock-directory list parsers and sources (ADR-0034; crate
  * `research-finance`): `secDirectory.ts`, `jpxDirectory.ts` and the generic
  * row reader of `jpxWorkbook.ts`.
  *

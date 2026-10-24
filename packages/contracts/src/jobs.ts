@@ -582,7 +582,7 @@ export const claimedJobSchema = z.discriminatedUnion("kind", [
 			}
 		}),
 	/**
-	 * Download one market's full list of listed stocks (ADR-0033): SEC for
+	 * Download one market's full list of listed stocks (ADR-0034): SEC for
 	 * US, JPX for JP. The runner needs nothing else; the API replaces the
 	 * market's stored rows with the completion.
 	 */
@@ -812,7 +812,7 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 	googleCalendarSyncedSchema,
 	googleCalendarDisconnectedSchema,
 	/**
-	 * One market's full list (ADR-0033), replacing the stored rows of that
+	 * One market's full list (ADR-0034), replacing the stored rows of that
 	 * market all or nothing. `asOf` is the date the source says the list is
 	 * effective (JPX), null when it states none (SEC). Failures use the
 	 * `failed` outcome with a `STOCK_DIRECTORY_FAILURE_CODES` code.

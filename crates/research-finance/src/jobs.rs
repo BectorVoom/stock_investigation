@@ -272,7 +272,7 @@ pub async fn execute_earnings_refresh(
 	}
 }
 
-/// What a stock-directory refresh needs (ADR-0033).
+/// What a stock-directory refresh needs (ADR-0034).
 pub struct DirectoryDeps<'a> {
 	/// Wall clock.
 	pub clock: &'a dyn Clock,

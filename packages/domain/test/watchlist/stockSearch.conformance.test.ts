@@ -11,7 +11,7 @@ import {
 
 /**
  * Conformance between the stock directory search and its Lean 4 model,
- * `formal/ResearchFormal/StockSearch.lean` (ADR-0033).
+ * `formal/ResearchFormal/StockSearch.lean` (ADR-0034).
  *
  * The theorems (soundness, completeness, order, fold idempotence, no
  * cross-field match, exact symbol first) are about the Lean definitions.

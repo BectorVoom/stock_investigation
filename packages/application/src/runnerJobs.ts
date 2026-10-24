@@ -182,7 +182,7 @@ type GoogleClaimPayload = Pick<
 	"action" | "calendarId" | "desiredDigest" | "events"
 >;
 
-/** The market a `stock-directory-refresh` job downloads (ADR-0033), from its stored request. */
+/** The market a `stock-directory-refresh` job downloads (ADR-0034), from its stored request. */
 function directoryMarket(job: JobRecord): StockDirectoryJobRequest["market"] | null {
 	return job.request !== null && "market" in job.request ? job.request.market : null;
 }
@@ -624,7 +624,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					if (!available.has(notebookClaim.agent.agentId)) continue;
 				}
 
-				// ADR-0033: a directory job names its market in its stored
+				// ADR-0034: a directory job names its market in its stored
 				// request; one that does not cannot run, and is refused
 				// before the lease is granted (like the refusals above).
 				const claimedDirectoryMarket =
@@ -1139,7 +1139,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					droppedEarningsStocks = built.value.earnings.length - kept.length;
 					effects = { ...built.value, earnings: kept };
 				} else if (request.outcome === "stock-directory-refreshed") {
-					// ADR-0033: the completion must be the list of the market
+					// ADR-0034: the completion must be the list of the market
 					// this job was queued for — a JP list answering a US job
 					// would replace the wrong market's rows.
 					if (request.market !== directoryMarket(job)) {
@@ -1258,7 +1258,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					isGoogle && outcome !== "cancelled" && request.outcome === "google-calendar-synced"
 						? `completion: ${outcome}, inserted=${request.inserted} updated=${request.updated} deleted=${request.deleted} unchanged=${request.unchanged}`
 						: null;
-				// ADR-0033: the stored list's market and size travel in the
+				// ADR-0034: the stored list's market and size travel in the
 				// transition detail (counts only).
 				const directoryDetail =
 					effects.stockDirectory === null

@@ -182,7 +182,7 @@ const approvalRequestSchema = z.object({ reasonCode: z.string(), detail: z.strin
 /**
  * A stored job request: research predates FR-019; `{ action }` is
  * google-calendar; the notebook shape is a notebook-assist job; `{ market }`
- * is a stock-directory-refresh job (ADR-0033).
+ * is a stock-directory-refresh job (ADR-0034).
  */
 const jobRequestSchema = z.union([
 	researchRequestSchema,
@@ -503,7 +503,7 @@ const stockDirectoryRowSchema = z.object({
 	listing: stockListingSchema,
 });
 
-/** One stored stock directory row (ADR-0033), as searched and shown. */
+/** One stored stock directory row (ADR-0034), as searched and shown. */
 export function toStoredStockDirectoryEntry(row: unknown): StoredStockDirectoryEntry {
 	const r = decode("stock_directory", stockDirectoryRowSchema, row);
 	return {

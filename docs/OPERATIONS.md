@@ -230,7 +230,7 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 
 | Variable | Purpose |
 |---|---|
-| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Watchlist search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0033); the Japanese list needs no setting. |
+| `SEC_USER_AGENT` | Contact string SEC EDGAR requires (e.g. `your-name you@example.com`). Without it SEC tools are disabled and the US stock list for the Watchlist search cannot be downloaded (`DIRECTORY_NOT_CONFIGURED`, ADR-0034); the Japanese list needs no setting. |
 | `OPENCODE_MODEL` | `provider/model` for OpenCode. Required so the CLI never chooses a (possibly metered) provider itself. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | Enable the metered OpenRouter backend. A run still needs an explicit max-spend. |
 | `OPENROUTER_API_KEY`, `OPENROUTER_FREE_MODEL` | The key alone enables the OpenRouter (free models) backend; a free account's key works and no spend is authorized. The model is chosen in Settings → AI agent from the free models the runner lists; `OPENROUTER_FREE_MODEL` (an id ending in `:free`, or `openrouter/free`) is only the runner-side fallback. With the key set, the runner reads OpenRouter's public model list (no key sent). |
@@ -496,7 +496,7 @@ fails the test — it is recorded as a finding in
 - **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. Home market data (FR-017, ADR-0014) runs on the vendors' free plans: no money, but provider quota.
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series (metadata + observations) and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests; a full 30-series refresh costs at most 60. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute, and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.
-- **What a stock-list refresh costs (ADR-0033):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The Watchlist queues them by itself only when a list is missing or more than 7 days old, at most once per visit; "Update stock list" queues them on demand. A failed market keeps its stored list.
+- **What a stock-list refresh costs (ADR-0034):** one `stock-directory-refresh` job per market. US: one SEC request for `company_tickers_exchange.json` (about 0.5 MB). JP: the JPX list page and its English twin, then `data_j.xlsx` and `data_e.xlsx` (about 0.3 MB each) — four requests within JPX's 6-per-minute pacing. The Watchlist queues them by itself only when a list is missing or more than 7 days old, at most once per visit; "Update stock list" queues them on demand. A failed market keeps its stored list.
 - **If deployed:** one Cloudflare Worker with static assets and one D1 database, both within the Free plans for single-owner use (about 5,800 runner polls a day, three D1 queries each). Workers Free allows ~50 D1 queries and 10 ms CPU per request; the largest handler is about a dozen queries, and `bun run bench` measures validation of the largest admissible bundle at ~3 ms on a laptop.
 
 ## Migrations and rollback
@@ -607,7 +607,7 @@ Persistence sits behind two seams, so the database can be switched without touch
   jobs only), usage counts, whether cost is known and its known portion
   (never $0 for unknown), failure code, verification status, and the number
   and kinds of progress entries.
-  A `stock-directory-refresh` job (ADR-0033) adds four events, logged the same
+  A `stock-directory-refresh` job (ADR-0034) adds four events, logged the same
   way by the Rust and the TypeScript runner, each with ids, codes and counts
   only (never a company name or provider text):
   `stock_directory_fetched` (info: `runId`, `market`, `entries` — the list

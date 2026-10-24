@@ -254,7 +254,7 @@ export function createArticleRepository(db: SqlDatabase): ArticleRepository {
  * INSERT is a no-op while an unfinished `notebook-assist` job of the same
  * workspace exists.
  *
- * ADR-0033: "at most one active stock-directory-refresh job per market" is
+ * ADR-0034: "at most one active stock-directory-refresh job per market" is
  * enforced the same way, scoped to the market the stored request names.
  */
 export function insertJobStatement(
@@ -337,7 +337,7 @@ export function insertJobStatement(
 
 /**
  * `AND`-clause narrowing a by-kind job query to one market's
- * `stock-directory-refresh` jobs (ADR-0033); the market sits in the stored
+ * `stock-directory-refresh` jobs (ADR-0034); the market sits in the stored
  * request. `?N` is the parameter number the market is bound to (NULL = any).
  */
 function marketScopeSql(parameter: number): string {
@@ -401,7 +401,7 @@ export async function enqueueOutcome(
 		}
 	}
 	if (job.kind === "stock-directory-refresh" && job.request !== null && "market" in job.request) {
-		// ADR-0033: the INSERT refused a second active run of this market.
+		// ADR-0034: the INSERT refused a second active run of this market.
 		const active = await findActiveJobByKind(db, job.ownerId, job.kind, {
 			market: job.request.market,
 		});
@@ -1655,7 +1655,7 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 	};
 }
 
-/* ---------- Stock directory (ADR-0033) ---------- */
+/* ---------- Stock directory (ADR-0034) ---------- */
 
 /**
  * One `instr` test per possible query term (`?2` .. `?{1 + maxTerms}`); an
@@ -1671,7 +1671,7 @@ const MARKET_PARAMETER = TERM_COUNT_PARAMETER + 1;
 const LIMIT_PARAMETER = MARKET_PARAMETER + 1;
 
 /**
- * The SQL form of `rankStockSearch` (packages/domain, ADR-0033 section 6),
+ * The SQL form of `rankStockSearch` (packages/domain, ADR-0034 section 6),
  * over the keys the completion stored with each row:
  * - match: every term is a substring of `search_key` (the haystack; terms
  *   hold no newline, so a term never spans two keys);

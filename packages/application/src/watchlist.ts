@@ -49,7 +49,7 @@ export interface WatchlistServiceDeps {
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
-	/** Names a stock added from the stock directory (ADR-0033). */
+	/** Names a stock added from the stock directory (ADR-0034). */
 	readonly stockDirectory: Pick<StockDirectoryRepository, "getEntry">;
 	readonly jobs: JobRepository;
 	readonly clock: Clock;
@@ -348,7 +348,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			const market: WatchMarket = parsed.data.market;
 			const stockId = formatStockId(market, parsed.data.symbol);
 			const now = deps.clock.nowIso();
-			// ADR-0033: a stock the directory lists is stored with the
+			// ADR-0034: a stock the directory lists is stored with the
 			// directory's (English / SEC / JPX) name, so the table names the
 			// company at once. The Japanese local name never goes here, and a
 			// stock outside the directory starts with a null name. Either way

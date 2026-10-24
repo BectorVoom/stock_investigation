@@ -19,7 +19,7 @@ import {
 } from "./watchlistModel.ts";
 
 /**
- * The add-a-stock search (ADR-0033): a WAI-ARIA 1.2 combobox with a listbox
+ * The add-a-stock search (ADR-0034): a WAI-ARIA 1.2 combobox with a listbox
  * popup and list autocompletion. Focus stays in the input; the active option
  * is announced through `aria-activedescendant`. ↓/↑ open the list and move
  * (wrapping), Enter picks the active option, Escape closes the list and,

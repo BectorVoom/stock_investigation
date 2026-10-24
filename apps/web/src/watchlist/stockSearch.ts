@@ -2,7 +2,7 @@ import type { StockDirectoryHit, StockDirectorySearchResponse } from "@research/
 import type { ApiResult } from "../api/http.ts";
 import { type StockSearchState, stockSearchQuery } from "./watchlistModel.ts";
 
-/** Typing pauses this long before a search is sent (ADR-0033: one request per pause, not per key). */
+/** Typing pauses this long before a search is sent (ADR-0034: one request per pause, not per key). */
 export const STOCK_SEARCH_DEBOUNCE_MS = 150;
 
 export interface StockSearchOptions {

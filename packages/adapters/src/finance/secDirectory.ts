@@ -1,5 +1,5 @@
 /**
- * The US stock directory (ADR-0033): SEC's `company_tickers_exchange.json`,
+ * The US stock directory (ADR-0034): SEC's `company_tickers_exchange.json`,
  * the same ticker directory the SEC financials tool reads, downloaded through
  * the same fair-access client (declared User-Agent, request spacing, no
  * automatic retries).

@@ -74,7 +74,7 @@ export interface JobExecutionDeps {
 	/** Earnings-date source registry (ARCH-006); JPX needs no key, Finnhub does. */
 	readonly earningsSources: EarningsSourceRegistry;
 	/**
-	 * Stock-directory sources by market (ADR-0033): SEC for US (unconfigured
+	 * Stock-directory sources by market (ADR-0034): SEC for US (unconfigured
 	 * without `SEC_USER_AGENT`), JPX for JP.
 	 */
 	readonly stockDirectorySources: StockDirectorySourceRegistry;
@@ -785,7 +785,7 @@ async function executeEarningsRefresh(
 }
 
 /**
- * Runs a claimed stock-directory-refresh job (ADR-0033): downloads the
+ * Runs a claimed stock-directory-refresh job (ADR-0034): downloads the
  * leased market's full list through its source and completes with
  * `stock-directory-refreshed`, or `failed` with a
  * `STOCK_DIRECTORY_FAILURE_CODES` code (never provider text). The source's

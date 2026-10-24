@@ -89,7 +89,7 @@ One logger, built on Effect (`@research/effects`). See
   and `crates/research-runner/src/log_events.rs` (the shell's exact
   catalogue). The stock-directory events (`stock_directory_fetched`,
   `stock_directory_rejected`, `stock_directory_source_failed`,
-  `stock_directory_rows_dropped`; ADR-0033, listed in
+  `stock_directory_rows_dropped`; ADR-0034, listed in
   [OPERATIONS](../OPERATIONS.md)) are pinned by the first two in both runners.
 - `apps/runner/test/config.test.ts` pins that every `invalid_configuration`
   problem message is a short single line that echoes no value, so the field

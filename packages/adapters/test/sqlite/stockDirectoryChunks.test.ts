@@ -18,7 +18,7 @@ function maximalJpEntries(): StockDirectoryEntry[] {
 	});
 }
 
-describe("stock directory insert chunking (S5, ADR-0033)", () => {
+describe("stock directory insert chunking (S5, ADR-0034)", () => {
 	it("keeps every chunk within the byte budget and every row in order", () => {
 		const rows = stockDirectoryRows("JP", maximalJpEntries());
 		const chunks = chunkStockDirectoryRows(rows);
