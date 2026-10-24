@@ -1,4 +1,5 @@
 import type { NotebookWidgetOrigin, WidgetCore, WorkspaceView } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { RenderContext, UiRegistry, WorkspaceComponent } from "@research/ui-registry";
 import { WorkspaceComponentView } from "@research/ui-registry";
 import { WidgetFrame } from "@research/widget-grid";
@@ -8,6 +9,7 @@ import "@research/widget-grid/styles.css";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { IconButton } from "../components/ui.tsx";
 import { widgetFromComponent } from "../notebook/notebookModel.ts";
+import { conversationMessages } from "./conversation.messages.ts";
 
 type ThreadComponent = WorkspaceComponent;
 
@@ -79,6 +81,7 @@ export function ComponentPreview(props: {
 	readonly saving: boolean;
 	readonly onAdd: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
 	// One conversion per component and view (it parses, guards and round-trips
 	// the dataset), not one per read of the action's `when`.
 	const core = createMemo(() => widgetFromComponent(props.component, props.view));
@@ -111,10 +114,10 @@ export function ComponentPreview(props: {
 					<Show when={core() !== null}>
 						<Show
 							when={!props.inNotebook}
-							fallback={<span class="px-1 text-xs text-slate-600">In notebook</span>}
+							fallback={<span class="px-1 text-xs text-slate-600">{m().inNotebook}</span>}
 						>
 							<IconButton
-								label="Add to Notebook"
+								label={m().addToNotebook}
 								icon="plus-lg"
 								disabled={props.saving}
 								onClick={add}
@@ -149,9 +152,10 @@ export function ThreadPreviewsForRun(props: {
 	readonly savingIds: readonly string[];
 	readonly onAdd: (core: WidgetCore, origin: NotebookWidgetOrigin) => void;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
 	return (
 		<Show when={props.components.length > 0}>
-			<ul aria-label="Results" data-preview-run={props.runId} class="mt-2 space-y-2">
+			<ul aria-label={m().results} data-preview-run={props.runId} class="mt-2 space-y-2">
 				<For each={props.components}>
 					{(component) => (
 						<ComponentPreview

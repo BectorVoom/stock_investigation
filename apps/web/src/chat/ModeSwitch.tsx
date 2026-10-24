@@ -1,5 +1,7 @@
+import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import type { WorkspaceMode } from "../notebook/types.ts";
+import { chatMessages } from "./chat.messages.ts";
 
 /**
  * The manual workspace control (ADR-0020): one icon button per state,
@@ -12,7 +14,12 @@ export function ModeSwitch(props: {
 	readonly mode: WorkspaceMode;
 	readonly onChange: (mode: WorkspaceMode) => void;
 }): JSX.Element {
-	const button = (label: string, target: WorkspaceMode, side: "left" | "right"): JSX.Element => {
+	const m = useMessages(chatMessages);
+	const button = (
+		label: () => string,
+		target: WorkspaceMode,
+		side: "left" | "right",
+	): JSX.Element => {
 		const pressed = () => props.mode === target;
 		return (
 			<button
@@ -23,8 +30,8 @@ export function ModeSwitch(props: {
 					"bg-slate-200 text-slate-900 hover:bg-slate-300": !pressed(),
 				}}
 				aria-pressed={pressed()}
-				aria-label={label}
-				title={label}
+				aria-label={label()}
+				title={label()}
 				onClick={() => props.onChange(target)}
 			>
 				<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -49,9 +56,9 @@ export function ModeSwitch(props: {
 	};
 	return (
 		<fieldset class="inline-flex items-center gap-1">
-			<legend class="sr-only">Workspace focus</legend>
-			{button("Focus Chat", "chat", "left")}
-			{button("Focus Notebook", "notebook", "right")}
+			<legend class="sr-only">{m().workspaceFocus}</legend>
+			{button(() => m().focusChat, "chat", "left")}
+			{button(() => m().focusNotebook, "notebook", "right")}
 		</fieldset>
 	);
 }

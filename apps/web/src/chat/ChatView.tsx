@@ -1,4 +1,5 @@
 import { DEFAULT_CONVERSATION_TITLE } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, type JSX, onCleanup, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -7,6 +8,7 @@ import { CHAT_PANEL, ErrorNotice, Loading } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createWorkspaceMode } from "../notebook/workspaceMode.ts";
 import { ChatsPanel, DeleteChatDialog, NewChatButton } from "./ChatsPanel.tsx";
+import { chatMessages } from "./chat.messages.ts";
 import { focusComposerBox } from "./composerFocus.ts";
 import { byNewestActivity, createConversationList } from "./conversationList.ts";
 import { OpenWorkspace } from "./OpenWorkspace.tsx";
@@ -28,6 +30,7 @@ export function ChatView(props: {
 	/** Null opens the page with no conversation selected (the welcome). */
 	readonly onSelectConversation: (workspaceId: string | null) => void;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
 	const conversations = createConversationList(props.api, props.visibility);
 	const ordered = createMemo(() => [...(conversations.value() ?? [])].sort(byNewestActivity));
 	const selectedSummary = createMemo(
@@ -223,15 +226,12 @@ export function ChatView(props: {
 
 	const welcome = () => (
 		<section
-			aria-label="Chat"
+			aria-label={m().chat}
 			data-panel="chat"
 			class={`${CHAT_PANEL} flex min-w-0 flex-1 flex-col items-center justify-center text-center`}
 		>
-			<h3 class="text-base font-semibold text-slate-900">Welcome to Chat</h3>
-			<p class="mt-1 max-w-md text-sm text-slate-600">
-				Start a new chat to ask a research question. Prior findings stay available here even when
-				the local runner is offline.
-			</p>
+			<h3 class="text-base font-semibold text-slate-900">{m().welcome}</h3>
+			<p class="mt-1 max-w-md text-sm text-slate-600">{m().welcomeHint}</p>
 			<div class="mt-2 w-full max-w-xs">
 				<NewChatButton
 					variant="pill"
@@ -240,12 +240,12 @@ export function ChatView(props: {
 				/>
 			</div>
 			<Show when={newChatPending()}>
-				<Loading label="new chat" />
+				<Loading label={m().newChatLoading} />
 			</Show>
 			<Show when={newChatError()}>
 				{(error) => (
 					<div class="mt-1">
-						<ErrorNotice failure={error()} title="The chat was not created." />
+						<ErrorNotice failure={error()} title={m().chatNotCreated} />
 					</div>
 				)}
 			</Show>
@@ -282,7 +282,7 @@ export function ChatView(props: {
 				renameError={renameError}
 			/>
 			<Show when={!wide() && props.workspaceId !== null && ordered().length > 0}>
-				<div role="tablist" aria-label="Chat or Notebook" onKeyDown={onMobileTabKeyDown}>
+				<div role="tablist" aria-label={m().chatOrNotebook} onKeyDown={onMobileTabKeyDown}>
 					<div class="flex gap-1 lg:hidden">
 						<button
 							id="chat-tab-mobile"
@@ -297,7 +297,7 @@ export function ChatView(props: {
 							}}
 							onClick={() => setMode("chat")}
 						>
-							Chat
+							{m().chat}
 						</button>
 						<button
 							id="notebook-tab-mobile"
@@ -312,7 +312,7 @@ export function ChatView(props: {
 							}}
 							onClick={() => setMode("notebook")}
 						>
-							Notebook
+							{m().notebook}
 						</button>
 					</div>
 				</div>
@@ -342,7 +342,7 @@ export function ChatView(props: {
 				)}
 			</Show>
 			<Show when={props.workspaceId === null && conversations.value() === null}>
-				<Loading label="conversation" />
+				<Loading label={m().conversation} />
 			</Show>
 
 			<Show when={deleteTarget()} keyed>

@@ -5,6 +5,7 @@ import type {
 	WidgetCore,
 } from "@research/contracts";
 import { isTerminalJobState } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { UiRegistry } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
@@ -26,8 +27,10 @@ import {
 } from "../notebook/workspaceMode.ts";
 import { Composer, type ComposerTarget } from "./Composer.tsx";
 import { Conversation, type Message } from "./Conversation.tsx";
+import { chatMessages } from "./chat.messages.ts";
 import { focusComposerBox } from "./composerFocus.ts";
 import { addressesNotebook } from "./composerTarget.ts";
+import { displayedChatTitle } from "./conversationList.ts";
 import { ModeSwitch } from "./ModeSwitch.tsx";
 import { RecordsDrawer } from "./RecordsDrawer.tsx";
 
@@ -56,6 +59,7 @@ export interface OpenWorkspaceProps {
  * workspace session, and never re-created by a layout change.
  */
 export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
+	const m = useMessages(chatMessages);
 	const session: WorkspaceSession = createWorkspaceSession(
 		props.api,
 		props.workspaceId,
@@ -81,9 +85,10 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		setRecordsOpener(() => null);
 	};
 	const recordsRun = createMemo(() => session.runs().find((run) => run.runId === recordsRunId()));
-	const title = createMemo(
-		() => props.listTitle ?? session.view()?.workspace.title ?? props.workspaceId,
-	);
+	const title = createMemo(() => {
+		const stored = props.listTitle ?? session.view()?.workspace.title ?? null;
+		return stored === null ? props.workspaceId : displayedChatTitle(stored, m().newChat);
+	});
 	// A suggestion chip fills the input without sending; the nonce retriggers the effect.
 	const [suggestion, setSuggestion] = createSignal<{
 		readonly text: string;
@@ -273,7 +278,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							</Show>
 						</div>
 						<button type="button" class={BUTTON} onClick={() => session.dismissNotice()}>
-							Dismiss
+							{m().dismiss}
 						</button>
 					</div>
 				)}
@@ -282,7 +287,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				{(failure) => (
 					<ErrorNotice
 						failure={failure()}
-						title="Could not load this conversation."
+						title={m().conversationFailed}
 						onRetry={() => void session.reload()}
 					/>
 				)}
@@ -291,7 +296,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				{(failure) => (
 					<ErrorNotice
 						failure={failure()}
-						title="Could not load the messages."
+						title={m().messagesFailed}
 						onRetry={() => void session.reload()}
 					/>
 				)}
@@ -310,7 +315,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							</Show>
 						</div>
 						<button type="button" class={BUTTON} onClick={() => notebookSession.dismissNotice()}>
-							Dismiss
+							{m().dismiss}
 						</button>
 					</div>
 				)}
@@ -319,7 +324,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				{(failure) => (
 					<ErrorNotice
 						failure={failure()}
-						title="Could not load the notebook."
+						title={m().notebookFailed}
 						onRetry={() => void notebookSession.reload()}
 					/>
 				)}
@@ -344,7 +349,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 		// while the composer rests at the bottom. At `lg` the composer is
 		// static inside the panel, so the full p-3 returns.
 		<section
-			aria-label="Chat"
+			aria-label={m().chat}
 			data-panel="chat"
 			class="min-h-0 min-w-0 flex-1 flex-col rounded bg-white px-3 pb-0 pt-3 lg:p-3"
 			classList={{
@@ -360,7 +365,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 				<ModeSwitch mode={props.mode} onChange={props.onModeChange} />
 				<Show when={props.mode === "notebook"}>
 					<PanelCollapseButton
-						label="Collapse Chat panel"
+						label={m().collapseChat}
 						expanded={true}
 						onToggle={props.onToggleSecondary}
 						side="left"
@@ -457,25 +462,25 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			{notebookStates()}
 			<Show when={showSuggest()}>
 				<p class="mb-1 text-xs text-slate-600">
-					Your notebook is taking shape —{" "}
+					{m().notebookTakingShape}{" "}
 					<button
 						type="button"
 						class="min-h-6 text-blue-800 underline"
 						onClick={() => props.onModeChange("notebook")}
 					>
-						Focus Notebook
+						{m().focusNotebook}
 					</button>{" "}
 					<button
 						type="button"
-						aria-label="Dismiss suggestion"
-						title="Dismiss suggestion"
+						aria-label={m().dismissSuggestion}
+						title={m().dismissSuggestion}
 						class="min-h-6 text-blue-800 underline"
 						onClick={() => {
 							dismissNotebookSuggest(props.workspaceId);
 							setSuggestDismissed(true);
 						}}
 					>
-						Dismiss
+						{m().dismiss}
 					</button>
 				</p>
 			</Show>
@@ -493,7 +498,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 							<ModeSwitch mode={props.mode} onChange={props.onModeChange} />
 							<Show when={props.mode === "chat"}>
 								<PanelCollapseButton
-									label="Collapse Notebook panel"
+									label={m().collapseNotebook}
 									expanded={true}
 									onToggle={props.onToggleSecondary}
 									side="right"
@@ -509,7 +514,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	const chatRail = () => (
 		<div class={`${CHAT_PANEL} hidden flex-col items-center gap-2 lg:flex`} data-panel="chat-rail">
 			<PanelCollapseButton
-				label="Expand Chat panel"
+				label={m().expandChat}
 				expanded={false}
 				onToggle={props.onToggleSecondary}
 				side="left"
@@ -523,7 +528,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 			data-panel="notebook-rail"
 		>
 			<PanelCollapseButton
-				label="Expand Notebook panel"
+				label={m().expandNotebook}
 				expanded={false}
 				onToggle={props.onToggleSecondary}
 				side="right"

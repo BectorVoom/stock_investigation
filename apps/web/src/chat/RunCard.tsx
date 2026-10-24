@@ -4,6 +4,8 @@ import {
 	isTerminalJobState,
 	type ResearchRun,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { createMemo, createSignal, For, type JSX, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
@@ -17,6 +19,9 @@ import {
 	type SpendDraft,
 	spendDraftFrom,
 } from "../settings/agentSettingsModel.ts";
+import { runMessages } from "./run.messages.ts";
+
+type RunText = MessagesOf<typeof runMessages>;
 
 /**
  * One-sentence hint for a run that collected nothing (ADR-0025). Only for
@@ -24,17 +29,15 @@ import {
  * appears only when the run's own request says web access was off — no new
  * API field is added for this.
  */
-export function noEvidenceHint(run: ResearchRun): string | null {
+export function noEvidenceHint(run: ResearchRun, text: RunText = runMessages.en): string | null {
 	if (run.failureCode !== "NO_EVIDENCE_COLLECTED") return null;
 	switch (run.failureDetail) {
 		case "NO_TOOL_REQUESTED":
-			return run.request?.webAccess === "off"
-				? "The assistant found no tool that fits this question. If web access is off in Settings, turn it on so it can search the web."
-				: "The assistant found no tool that fits this question. Try naming a company, ticker or topic.";
+			return run.request?.webAccess === "off" ? text.noToolWebOff : text.noTool;
 		case "TOOLS_RETURNED_NOTHING":
-			return "The tools ran but found nothing on this question. Try naming a company, ticker or topic.";
+			return text.toolsReturnedNothing;
 		case "PLAN_NOT_JSON":
-			return "The model's plan could not be read. Try again or choose another model in Settings.";
+			return text.planNotJson;
 		default:
 			return null;
 	}
@@ -45,12 +48,15 @@ export function noEvidenceHint(run: ResearchRun): string | null {
  * retried after a backoff, so "a few minutes" is the honest wait; another
  * model is the way out when one model's upstream stays overloaded.
  */
-export function providerFailureHint(run: ResearchRun): string | null {
+export function providerFailureHint(
+	run: ResearchRun,
+	text: RunText = runMessages.en,
+): string | null {
 	switch (run.failureCode) {
 		case "PROVIDER_UNAVAILABLE":
-			return "The model's provider is overloaded or could not be reached. Retry in a few minutes, or choose another model in Settings.";
+			return text.providerUnavailable;
 		case "PROVIDER_RATE_LIMITED":
-			return "The model's provider is limiting requests (free models have per-minute and daily limits). Retry later, or choose another model in Settings.";
+			return text.providerRateLimited;
 		default:
 			return null;
 	}
@@ -74,6 +80,7 @@ export function ApprovalForm(props: {
 	readonly costModel: CostModelView;
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
 }): JSX.Element {
+	const m = useMessages(runMessages);
 	const [draft, setDraft] = createSignal<SpendDraft>(
 		props.run.request === null ? defaultSpendDraft() : spendDraftFrom(props.run.request.budget),
 	);
@@ -94,15 +101,15 @@ export function ApprovalForm(props: {
 
 	return (
 		<form
-			aria-label={`Approve run ${props.run.runId}`}
+			aria-label={m().approveRun(props.run.runId)}
 			class="mt-2 space-y-2 rounded bg-slate-200 p-2"
 			noValidate
 			onSubmit={submit}
 		>
 			<p class="text-xs text-amber-950">
-				<span class="font-semibold">Approval requested: </span>
+				<span class="font-semibold">{m().approvalRequested}</span>
 				<span data-approval-reason="true" class="font-mono">
-					{props.run.approvalRequest?.reasonCode ?? "reason not stated"}
+					{props.run.approvalRequest?.reasonCode ?? m().reasonNotStated}
 				</span>
 				<Show when={props.run.approvalRequest?.detail}>
 					{(detail) => <span> — {detail()}</span>}
@@ -126,10 +133,10 @@ export function ApprovalForm(props: {
 				class={BUTTON_PRIMARY}
 				disabled={evaluation().budget === null || submitting()}
 			>
-				Approve and resume
+				{m().approveAndResume}
 			</button>
 			<Show when={failure()}>
-				{(error) => <ErrorNotice failure={error()} title="The run was not approved." />}
+				{(error) => <ErrorNotice failure={error()} title={m().notApproved} />}
 			</Show>
 		</form>
 	);
@@ -150,6 +157,7 @@ export function RunCard(props: {
 	readonly onRetry: (runId: string) => Promise<void>;
 	readonly onApprove: (runId: string, budget: ResearchBudget) => Promise<ApiResult<ResearchRun>>;
 }): JSX.Element {
+	const m = useMessages(runMessages);
 	const [busy, setBusy] = createSignal(false);
 	const costModel = createMemo((): CostModelView => {
 		const agentId = props.run.request?.agentId;
@@ -166,10 +174,10 @@ export function RunCard(props: {
 		props.run.progress.length === 0 ? null : props.run.progress[props.run.progress.length - 1];
 	const stateNote = () => {
 		if (props.run.cancelRequested && !isTerminalJobState(props.run.state)) {
-			return "Cancellation requested — waiting for the runner to stop.";
+			return m().cancelRequested;
 		}
-		if (props.run.state === "pending") return "Queued — waiting for a runner to claim it.";
-		if (isLeasedJobState(props.run.state)) return "A runner is working on this.";
+		if (props.run.state === "pending") return m().queued;
+		if (isLeasedJobState(props.run.state)) return m().runnerWorking;
 		return null;
 	};
 	// Only failed or partial runs get the alert line; retry is for retryable states.
@@ -182,11 +190,11 @@ export function RunCard(props: {
 	// line below, so the word would only repeat them. Every other state keeps
 	// its badge. The state stays on `data-run-state` and in the status region.
 	const showStateBadge = () => props.run.state !== "completed" && props.run.state !== "failed";
-	const failureHint = () => noEvidenceHint(props.run) ?? providerFailureHint(props.run);
+	const failureHint = () => noEvidenceHint(props.run, m()) ?? providerFailureHint(props.run, m());
 
 	return (
 		<article
-			aria-label={`Run ${props.run.runId}`}
+			aria-label={m().run(props.run.runId)}
 			data-run-state={props.run.state}
 			class="rounded bg-slate-100 p-2 wrap-anywhere"
 		>
@@ -196,7 +204,7 @@ export function RunCard(props: {
 						data-field="state"
 						class={`rounded border px-1.5 py-px font-semibold ${STATE_CLASSES[props.run.state] ?? "border-blue-700 bg-blue-50 text-blue-900"}`}
 					>
-						{props.run.state}
+						{m().state(props.run.state)}
 					</span>
 				</Show>
 				<Show when={latestProgress()}>
@@ -216,7 +224,7 @@ export function RunCard(props: {
 						disabled={busy() || props.run.cancelRequested}
 						onClick={() => void act(props.onCancel)}
 					>
-						Stop
+						{m().stop}
 					</button>
 				</Show>
 			</p>
@@ -226,9 +234,9 @@ export function RunCard(props: {
 			<Show when={showFailure()}>
 				<p role="alert" class="mt-1 text-xs text-red-900">
 					<span class="font-semibold">
-						{props.run.state === "partial" ? "Stopped early: " : "Failure code: "}
+						{props.run.state === "partial" ? m().stoppedEarly : m().failureCode}
 					</span>
-					<Show when={props.run.failureCode} fallback={<span>reason not stated</span>}>
+					<Show when={props.run.failureCode} fallback={<span>{m().reasonNotStated}</span>}>
 						{(code) => (
 							<span data-field="failure-code" class="font-mono">
 								{code()}
@@ -263,7 +271,7 @@ export function RunCard(props: {
 						disabled={busy()}
 						onClick={() => void act(props.onRetry)}
 					>
-						Retry run
+						{m().retryRun}
 					</button>
 				</div>
 			</Show>

@@ -9,12 +9,14 @@ import type {
 	Security,
 } from "@research/contracts";
 import { reportedPositionChangePhrase } from "@research/domain";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import {
 	ClaimStatusBadge,
 	ClaimTypeBadge,
 	DateText,
 	formatNumber,
-	positionLabels,
+	positionLabelMessages,
 	SafeLink,
 	SourceCitation,
 	Unavailable,
@@ -34,6 +36,9 @@ import type { ApiClient } from "../api/client.ts";
 import { BUTTON, Empty, RemoteView } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { createRemote } from "../lib/remote.ts";
+import { recordsMessages } from "./records.messages.tsx";
+
+type RecordsText = MessagesOf<typeof recordsMessages>;
 
 type EvidenceMap = ReadonlyMap<string, Evidence>;
 type SecurityMap = ReadonlyMap<string, Security>;
@@ -50,10 +55,11 @@ function Section(props: {
 	readonly note?: string;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	return (
 		<section aria-label={props.title} class="mt-4">
 			<h4 class="text-sm font-semibold text-slate-900">
-				{props.title} ({props.count})
+				{m().sectionTitle(props.title, props.count)}
 			</h4>
 			<Show when={props.note}>{(note) => <p class="text-xs text-slate-700">{note()}</p>}</Show>
 			<Show when={props.count > 0} fallback={<Empty>{props.emptyText}</Empty>}>
@@ -84,23 +90,18 @@ function EvidenceRefs(props: {
 	);
 }
 
-/** Whether the ticker and exchange were checked against an official directory or only proposed. */
-const LISTING_VERIFICATION_TEXT: { readonly [V in Security["listingVerification"]]: string } = {
-	"source-verified": "listing verified against an official directory",
-	unverified: "listing unverified — proposed by the model, format-checked only",
-};
-
 /** A retained source passage, or an explicit statement that none was kept. */
 function CitedPassage(props: {
 	readonly label: string;
 	readonly quote: string | null;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	return (
 		<p data-field="cited-passage" class="text-xs text-slate-800">
 			<span class="font-semibold">{props.label}: </span>
 			<Show
 				when={props.quote !== null && props.quote !== ""}
-				fallback={<Unavailable reason="no passage retained" />}
+				fallback={<Unavailable reason={m().noPassageRetained} />}
 			>
 				<q>{props.quote}</q>
 			</Show>
@@ -112,12 +113,13 @@ function SecurityName(props: {
 	readonly securityId: string;
 	readonly securities: SecurityMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const security = createMemo(() => props.securities.get(props.securityId));
 	return (
 		<Show
 			when={security()}
 			fallback={
-				<span class="italic text-amber-900">Security unavailable (id {props.securityId})</span>
+				<span class="italic text-amber-900">{m().securityUnavailable(props.securityId)}</span>
 			}
 		>
 			{(current) => (
@@ -139,7 +141,7 @@ function SecurityName(props: {
 								current().listingVerification === "unverified",
 						}}
 					>
-						{LISTING_VERIFICATION_TEXT[current().listingVerification]}
+						{m().listingVerification(current().listingVerification)}
 					</span>
 				</>
 			)}
@@ -149,40 +151,37 @@ function SecurityName(props: {
 
 /* ---------- Claims ---------- */
 
-const CLAIM_GROUPS = [
-	{ status: "supported", title: "Supported claims" },
-	{ status: "conflicting", title: "Conflicting claims" },
-	{ status: "unsupported", title: "Unsupported claims" },
-] as const;
+const CLAIM_GROUPS = ["supported", "conflicting", "unsupported"] as const;
 
 /**
  * Plain-language text for a verification issue. A code this view has no wording
  * for yet is shown as its stable machine code rather than hidden, so adding an
  * issue code to the contracts never breaks or silences this list.
  */
-function describeIssue(issue: Claim["issues"][number]): string {
+function describeIssue(issue: Claim["issues"][number], text: RecordsText): string {
 	const code: string = issue.code;
 	switch (issue.code) {
 		case "UNKNOWN_EVIDENCE":
-			return `cites evidence that is not stored (${issue.evidenceId})`;
+			return text.unknownEvidence(issue.evidenceId);
 		case "QUOTE_NOT_FOUND":
-			return `quoted passage not found in evidence ${issue.evidenceId}`;
+			return text.quoteNotFound(issue.evidenceId);
 		case "QUOTE_TOO_SHORT":
-			return `quoted passage from evidence ${issue.evidenceId} is too short to verify`;
+			return text.quoteTooShort(issue.evidenceId);
 		case "MISSING_QUOTE":
-			return `no quoted passage given for evidence ${issue.evidenceId}`;
+			return text.missingQuote(issue.evidenceId);
 		case "NUMBER_NOT_IN_EVIDENCE":
-			return `the number ${issue.numberText} does not appear in the cited evidence`;
+			return text.numberNotInEvidence(issue.numberText);
 		case "NO_SUPPORTING_EVIDENCE":
-			return "no supporting evidence";
+			return text.noSupportingEvidence;
 		case "NOT_INDEPENDENTLY_VERIFIED":
-			return "not independently verified — the quotes matched, but no independent check confirmed the claim";
+			return text.notIndependentlyVerified;
 		default:
 			return code;
 	}
 }
 
 function ClaimCard(props: { readonly claim: Claim; readonly evidence: EvidenceMap }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const linked = (relation: Claim["links"][number]["relation"]) =>
 		props.claim.links.filter((link) => link.relation === relation).map((link) => link.evidenceId);
 	return (
@@ -193,20 +192,20 @@ function ClaimCard(props: { readonly claim: Claim; readonly evidence: EvidenceMa
 				<ClaimStatusBadge status={props.claim.status} />
 			</p>
 			<EvidenceRefs
-				label="Supporting evidence"
+				label={m().supportingEvidence}
 				evidenceIds={linked("supports")}
 				evidence={props.evidence}
 			/>
 			<EvidenceRefs
-				label="Contradicting evidence"
+				label={m().contradictingEvidence}
 				evidenceIds={linked("contradicts")}
 				evidence={props.evidence}
 			/>
-			<EvidenceRefs label="Context" evidenceIds={linked("context")} evidence={props.evidence} />
+			<EvidenceRefs label={m().context} evidenceIds={linked("context")} evidence={props.evidence} />
 			<Show when={props.claim.issues.length > 0}>
-				<p class="mt-1 text-xs font-semibold text-red-900">Verification issues</p>
-				<ul aria-label="Verification issues" class="list-disc pl-5 text-xs text-red-900">
-					<For each={props.claim.issues}>{(issue) => <li>{describeIssue(issue)}</li>}</For>
+				<p class="mt-1 text-xs font-semibold text-red-900">{m().verificationIssues}</p>
+				<ul aria-label={m().verificationIssues} class="list-disc pl-5 text-xs text-red-900">
+					<For each={props.claim.issues}>{(issue) => <li>{describeIssue(issue, m())}</li>}</For>
 				</ul>
 			</Show>
 		</li>
@@ -225,6 +224,7 @@ function ScenarioCard(props: {
 	readonly scenario: DemandScenario;
 	readonly evidence: EvidenceMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const scenario = () => props.scenario;
 	const baselineEvidenceIds = () => {
 		const evidenceId = scenario().baselineEvidenceId;
@@ -234,11 +234,15 @@ function ScenarioCard(props: {
 		<li data-scenario-id={scenario().scenarioId} class="rounded border border-slate-200 p-2">
 			<p class="text-sm font-semibold text-slate-900">{scenario().productOrService}</p>
 			<p class="text-xs text-slate-800">
-				{scenario().quantityKind} in {scenario().unit}; base year {scenario().baseYear}, target year{" "}
-				{scenario().targetYear}. Baseline:{" "}
+				{m().scenarioSummary(
+					m().quantityKind(scenario().quantityKind),
+					scenario().unit,
+					scenario().baseYear,
+					scenario().targetYear,
+				)}
 				<Show
 					when={boxed(scenario().baselineValue)}
-					fallback={<Unavailable reason="no sourced baseline" />}
+					fallback={<Unavailable reason={m().noSourcedBaseline} />}
 				>
 					{(baseline) => (
 						<span data-field="baseline">
@@ -249,20 +253,20 @@ function ScenarioCard(props: {
 			</p>
 			<table class="mt-1 w-full border-collapse text-left text-xs">
 				<caption class="caption-top text-left text-slate-600">
-					Bear / base / bull targets for {scenario().targetYear} ({scenario().unit})
+					{m().scenarioCaption(scenario().targetYear, scenario().unit)}
 				</caption>
 				<thead>
 					<tr class="border-b border-slate-300">
 						<th scope="col" class="pr-2">
-							Case
+							{m().caseHeader}
 						</th>
 						<th scope="col" class="pr-2 text-right">
-							Target ({scenario().unit})
+							{m().targetHeader(scenario().unit)}
 						</th>
 						<th scope="col" class="pr-2 text-right">
-							Derived CAGR
+							{m().derivedCagr}
 						</th>
-						<th scope="col">Assumptions</th>
+						<th scope="col">{m().assumptions}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -270,7 +274,7 @@ function ScenarioCard(props: {
 						{(caseName) => (
 							<tr class="border-b border-slate-200 align-top" data-case={caseName}>
 								<th scope="row" class="pr-2 font-medium capitalize">
-									{caseName}
+									{m().scenarioCase(caseName)}
 								</th>
 								<td class="pr-2 text-right tabular-nums">
 									{formatNumber(scenario()[caseName].targetValue)}
@@ -279,41 +283,41 @@ function ScenarioCard(props: {
 									{(() => {
 										const cagr = scenario().derivedCagr[caseName];
 										return cagr === null
-											? "not derivable"
-											: `${percentFormat.format(cagr)} per year`;
+											? m().notDerivable
+											: m().perYear(percentFormat.format(cagr));
 									})()}
 								</td>
-								<td>{scenario()[caseName].assumptions.join("; ") || "none stated"}</td>
+								<td>{scenario()[caseName].assumptions.join("; ") || m().noneStated}</td>
 							</tr>
 						)}
 					</For>
 				</tbody>
 			</table>
 			<dl class="mt-1 text-xs">
-				<dt class="font-semibold text-slate-700">Drivers</dt>
-				<dd>{scenario().drivers.join("; ") || "none stated"}</dd>
-				<dt class="font-semibold text-slate-700">Barriers</dt>
-				<dd>{scenario().barriers.join("; ") || "none stated"}</dd>
-				<dt class="font-semibold text-slate-700">Falsifiers</dt>
-				<dd>{scenario().falsifiers.join("; ") || "none stated"}</dd>
-				<dt class="font-semibold text-slate-700">Methodology</dt>
+				<dt class="font-semibold text-slate-700">{m().drivers}</dt>
+				<dd>{scenario().drivers.join("; ") || m().noneStated}</dd>
+				<dt class="font-semibold text-slate-700">{m().barriers}</dt>
+				<dd>{scenario().barriers.join("; ") || m().noneStated}</dd>
+				<dt class="font-semibold text-slate-700">{m().falsifiers}</dt>
+				<dd>{scenario().falsifiers.join("; ") || m().noneStated}</dd>
+				<dt class="font-semibold text-slate-700">{m().methodology}</dt>
 				<dd>{scenario().methodology}</dd>
 			</dl>
 			<Show when={scenario().baselineValue !== null}>
-				<CitedPassage label="Passage stating the baseline" quote={scenario().baselineQuote} />
+				<CitedPassage label={m().baselinePassage} quote={scenario().baselineQuote} />
 			</Show>
 			<EvidenceRefs
-				label="Baseline evidence"
+				label={m().baselineEvidence}
 				evidenceIds={baselineEvidenceIds()}
 				evidence={props.evidence}
 			/>
 			<EvidenceRefs
-				label="Supporting evidence"
+				label={m().supportingEvidence}
 				evidenceIds={scenario().supportingEvidenceIds}
 				evidence={props.evidence}
 			/>
 			<EvidenceRefs
-				label="Contrary evidence"
+				label={m().contraryEvidence}
 				evidenceIds={scenario().contraryEvidenceIds}
 				evidence={props.evidence}
 			/>
@@ -323,19 +327,17 @@ function ScenarioCard(props: {
 
 /* ---------- Financial observations ---------- */
 
-function financialValue(observation: FinancialObservation): string | null {
+function financialValue(observation: FinancialObservation, text: RecordsText): string | null {
 	if (observation.value === null) return null;
 	const value = formatNumber(observation.value);
 	if (observation.unit === "ratio") return value;
-	const currency = observation.currency ?? "currency not stated";
-	return observation.unit === "currency"
-		? `${value} ${currency}`
-		: `${value} ${currency} per share`;
+	const currency = observation.currency ?? text.currencyNotStated;
+	return observation.unit === "currency" ? `${value} ${currency}` : text.perShare(value, currency);
 }
 
-function describePeriod(period: FinancialObservation["period"]): string {
-	if (period === null) return "period not stated";
-	return `FY${period.fiscalYear} ${period.fiscalPeriod} (${period.periodStart} to ${period.periodEnd})`;
+function describePeriod(period: FinancialObservation["period"], text: RecordsText): string {
+	if (period === null) return text.periodNotStated;
+	return text.period(period.fiscalYear, period.fiscalPeriod, period.periodStart, period.periodEnd);
 }
 
 function FinancialTable(props: {
@@ -343,33 +345,32 @@ function FinancialTable(props: {
 	readonly securities: SecurityMap;
 	readonly evidence: EvidenceMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	return (
 		<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-left text-xs">
-				<caption class="caption-top text-left text-slate-600">
-					Each value is one dated observation with its formula, period and source
-				</caption>
+				<caption class="caption-top text-left text-slate-600">{m().financialCaption}</caption>
 				<thead>
 					<tr class="border-b border-slate-300">
 						<th scope="col" class="pr-2">
-							Security
+							{m().security}
 						</th>
 						<th scope="col" class="pr-2">
-							Metric
+							{m().metric}
 						</th>
 						<th scope="col" class="pr-2 text-right">
-							Value
+							{m().value}
 						</th>
 						<th scope="col" class="pr-2">
-							Period and basis
+							{m().periodAndBasis}
 						</th>
 						<th scope="col" class="pr-2">
-							Market data as of
+							{m().marketDataAsOf}
 						</th>
 						<th scope="col" class="pr-2">
-							Formula
+							{m().formula}
 						</th>
-						<th scope="col">Source</th>
+						<th scope="col">{m().source}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -385,29 +386,27 @@ function FinancialTable(props: {
 								<td class="pr-2">{observation.metricCode}</td>
 								<td class="pr-2 text-right tabular-nums" data-field="value">
 									<Show
-										when={financialValue(observation)}
+										when={financialValue(observation, m())}
 										fallback={
-											<Unavailable reason={observation.unavailableReason ?? "reason not stated"} />
+											<Unavailable reason={observation.unavailableReason ?? m().reasonNotStated} />
 										}
 									>
 										{(value) => value()}
 									</Show>
 								</td>
 								<td class="pr-2">
-									{describePeriod(observation.period)}; {observation.actualOrEstimate};{" "}
-									{observation.accountingStandard ?? "accounting standard not stated"}
+									{describePeriod(observation.period, m())};{" "}
+									{m().actualOrEstimate(observation.actualOrEstimate)};{" "}
+									{observation.accountingStandard ?? m().accountingStandardNotStated}
 								</td>
 								<td class="pr-2">
-									<DateText
-										iso={observation.marketDataAsOf}
-										missing="not price-derived / not stated"
-									/>
+									<DateText iso={observation.marketDataAsOf} missing={m().notPriceDerived} />
 								</td>
-								<td class="pr-2">{observation.formula ?? "not stated"}</td>
+								<td class="pr-2">{observation.formula ?? m().notStated}</td>
 								<td>
 									<Show
 										when={observation.sourceEvidenceId}
-										fallback={<span class="italic">no source (value unavailable)</span>}
+										fallback={<span class="italic">{m().noSourceValue}</span>}
 									>
 										{(sourceId) => (
 											<SourceCitation sourceId={sourceId()} sources={props.evidence} />
@@ -430,6 +429,7 @@ function PositionCard(props: {
 	readonly securities: SecurityMap;
 	readonly evidence: EvidenceMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const figures = () => props.observation.figures;
 	const jp = () => {
 		const current = figures();
@@ -449,19 +449,19 @@ function PositionCard(props: {
 			</p>
 			<Show when={figures() === null}>
 				<p class="text-xs">
-					<Unavailable reason={props.observation.unavailableReason ?? "reason not stated"} />
+					<Unavailable reason={props.observation.unavailableReason ?? m().reasonNotStated} />
 				</p>
 			</Show>
 			<Show when={jp()}>
 				{(balance) => (
 					<dl class="grid grid-cols-[auto_1fr] gap-x-3 text-xs">
-						<dt>Margin buy balance</dt>
+						<dt>{m().marginBuy}</dt>
 						<dd data-field="jp-margin-buy">
-							{formatNumber(balance().marginBuyBalanceShares)} shares
+							{m().shares(formatNumber(balance().marginBuyBalanceShares))}
 						</dd>
-						<dt>Margin sell balance</dt>
+						<dt>{m().marginSell}</dt>
 						<dd data-field="jp-margin-sell">
-							{formatNumber(balance().marginSellBalanceShares)} shares
+							{m().shares(formatNumber(balance().marginSellBalanceShares))}
 						</dd>
 					</dl>
 				)}
@@ -469,31 +469,33 @@ function PositionCard(props: {
 			<Show when={us()}>
 				{(shortInterest) => (
 					<dl class="grid grid-cols-[auto_1fr] gap-x-3 text-xs">
-						<dt>Reported short interest</dt>
+						<dt>{m().reportedShortInterest}</dt>
 						<dd data-field="us-short-interest">
-							{formatNumber(shortInterest().reportedShortInterestShares)} shares
+							{m().shares(formatNumber(shortInterest().reportedShortInterestShares))}
 						</dd>
-						<dt>Average daily volume</dt>
+						<dt>{m().averageDailyVolume}</dt>
 						<dd>
 							<Show
 								when={boxed(shortInterest().averageDailyVolumeShares)}
-								fallback={<Unavailable reason="not reported" />}
+								fallback={<Unavailable reason={m().notReported} />}
 							>
-								{(volume) => <span>{formatNumber(volume().value)} shares</span>}
+								{(volume) => <span>{m().shares(formatNumber(volume().value))}</span>}
 							</Show>
 						</dd>
 					</dl>
 				)}
 			</Show>
 			<p class="mt-1 text-xs text-slate-700">
-				As of <DateText iso={props.observation.asOfDate} missing="date not stated" />; disseminated{" "}
-				<DateText iso={props.observation.disseminatedAt} missing="date not stated" />. Definition:{" "}
-				{props.observation.metricDefinition}
+				{m().positionDates(
+					<DateText iso={props.observation.asOfDate} missing={m().dateNotStated} />,
+					<DateText iso={props.observation.disseminatedAt} missing={m().dateNotStated} />,
+					props.observation.metricDefinition,
+				)}
 			</p>
 			<p class="text-xs">
 				<Show
 					when={props.observation.sourceEvidenceId}
-					fallback={<span class="italic">no source (figures unavailable)</span>}
+					fallback={<span class="italic">{m().noSourceFigures}</span>}
 				>
 					{(sourceId) => <SourceCitation sourceId={sourceId()} sources={props.evidence} />}
 				</Show>
@@ -508,15 +510,17 @@ function PositionSection(props: {
 	readonly securities: SecurityMap;
 	readonly evidence: EvidenceMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
+	const position = useMessages(positionLabelMessages);
 	const matching = createMemo(() =>
 		props.observations.filter((observation) => observation.metric === props.metric),
 	);
 	return (
 		<Section
-			title={positionLabels(props.metric).heading}
+			title={position().heading(props.metric)}
 			count={matching().length}
-			note={positionLabels(props.metric).caveat}
-			emptyText="No observations of this kind in this run."
+			note={position().caveat(props.metric)}
+			emptyText={m().noObservations}
 		>
 			<ul class="mt-1 space-y-2">
 				<For each={matching()}>
@@ -539,39 +543,41 @@ function FilingCard(props: {
 	readonly filing: InvestorFiling;
 	readonly evidence: EvidenceMap;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	return (
 		<li data-filing-id={props.filing.filingId} class="rounded border border-slate-200 p-2">
 			<p class="text-sm text-slate-900">
-				<span class="font-semibold">{props.filing.investorName}</span> — reported holdings as of
-				quarter end <DateText iso={props.filing.reportPeriodEnd} missing="date not stated" /> (
-				{props.filing.form} filed <DateText iso={props.filing.filedAt} missing="date not stated" />
-				). <SafeLink url={props.filing.filingUrl}>View filing</SafeLink>
+				{m().filingHeadline(
+					<span class="font-semibold">{props.filing.investorName}</span>,
+					<DateText iso={props.filing.reportPeriodEnd} missing={m().dateNotStated} />,
+					props.filing.form,
+					<DateText iso={props.filing.filedAt} missing={m().dateNotStated} />,
+					<SafeLink url={props.filing.filingUrl}>{m().viewFiling}</SafeLink>,
+				)}
 			</p>
 			<p class="text-xs text-slate-700">
-				Quarter-end holdings as reported by the filer (
-				{props.filing.reportingEntityIdentifier.scheme}{" "}
-				{props.filing.reportingEntityIdentifier.value}); these are not dated transactions.
+				{m().filerNote(
+					props.filing.reportingEntityIdentifier.scheme,
+					props.filing.reportingEntityIdentifier.value,
+				)}
 			</p>
-			<Show
-				when={props.filing.holdings.length > 0}
-				fallback={<Empty>No holdings listed in this filing.</Empty>}
-			>
+			<Show when={props.filing.holdings.length > 0} fallback={<Empty>{m().noHoldings}</Empty>}>
 				<table class="mt-1 w-full border-collapse text-left text-xs">
 					<caption class="caption-top text-left text-slate-600">
-						Reported holdings of {props.filing.investorName} as of {props.filing.reportPeriodEnd}
+						{m().holdingsCaption(props.filing.investorName, props.filing.reportPeriodEnd)}
 					</caption>
 					<thead>
 						<tr class="border-b border-slate-300">
 							<th scope="col" class="pr-2">
-								Issuer
+								{m().issuer}
 							</th>
 							<th scope="col" class="pr-2 text-right">
-								Reported shares
+								{m().reportedShares}
 							</th>
 							<th scope="col" class="pr-2 text-right">
-								Reported value (USD)
+								{m().reportedValue}
 							</th>
-							<th scope="col">Change versus prior filing</th>
+							<th scope="col">{m().changeVersusPrior}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -587,14 +593,14 @@ function FilingCard(props: {
 									<td class="pr-2 text-right tabular-nums">
 										<Show
 											when={boxed(holding.reportedValueUsd)}
-											fallback={<Unavailable reason="not reported" />}
+											fallback={<Unavailable reason={m().notReported} />}
 										>
 											{(reported) => formatNumber(reported().value)}
 										</Show>
 									</td>
 									<td data-field="reported-change">
 										{holding.changeFromPriorFiling === null
-											? "not compared with a prior filing"
+											? m().notCompared
 											: reportedPositionChangePhrase(holding.changeFromPriorFiling)}
 									</td>
 								</tr>
@@ -613,6 +619,7 @@ function FilingCard(props: {
 /* ---------- Drawer ---------- */
 
 function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const records = props.records;
 	const evidence = createMemo(
 		() => new Map(records().evidence.map((item) => [item.evidenceId, item] as const)),
@@ -625,13 +632,13 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			<For each={CLAIM_GROUPS}>
 				{(group) => {
 					const claims = createMemo(() =>
-						records().claims.filter((claim) => claim.status === group.status),
+						records().claims.filter((claim) => claim.status === group),
 					);
 					return (
 						<Section
-							title={group.title}
+							title={m().claimGroup(group)}
 							count={claims().length}
-							emptyText={`No ${group.status} claims in this run.`}
+							emptyText={m().noClaims(group)}
 						>
 							<ul class="mt-1 space-y-2">
 								<For each={claims()}>
@@ -644,9 +651,9 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			</For>
 
 			<Section
-				title="Demand scenarios"
+				title={m().demandScenarios}
 				count={records().scenarios.length}
-				emptyText="No demand scenarios in this run."
+				emptyText={m().noScenarios}
 			>
 				<ul class="mt-1 space-y-2">
 					<For each={records().scenarios}>
@@ -656,9 +663,9 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			</Section>
 
 			<Section
-				title="Supplier links"
+				title={m().supplierLinks}
 				count={records().supplierLinks.length}
-				emptyText="No supplier links in this run."
+				emptyText={m().noSupplierLinks}
 			>
 				<ul class="mt-1 space-y-2">
 					<For each={records().supplierLinks}>
@@ -670,14 +677,13 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 								<p class="text-sm font-medium text-slate-900">
 									<SecurityName securityId={link.securityId} securities={securities()} />
 								</p>
-								<p class="text-xs text-slate-800">Supplies: {link.productsOrServices.join("; ")}</p>
-								<p class="text-xs text-slate-800">Business exposure: {link.businessExposure}</p>
-								<CitedPassage
-									label="Cited passage naming the issuer"
-									quote={link.relationshipQuote}
-								/>
+								<p class="text-xs text-slate-800">
+									{m().supplies(link.productsOrServices.join("; "))}
+								</p>
+								<p class="text-xs text-slate-800">{m().businessExposure(link.businessExposure)}</p>
+								<CitedPassage label={m().issuerPassage} quote={link.relationshipQuote} />
 								<EvidenceRefs
-									label="Evidence for the supplier relationship"
+									label={m().supplierEvidence}
 									evidenceIds={link.evidenceIds}
 									evidence={evidence()}
 								/>
@@ -688,9 +694,9 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			</Section>
 
 			<Section
-				title="Financial observations"
+				title={m().financialObservations}
 				count={records().financialObservations.length}
-				emptyText="No financial observations in this run."
+				emptyText={m().noFinancial}
 			>
 				<FinancialTable
 					observations={records().financialObservations}
@@ -713,10 +719,10 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			/>
 
 			<Section
-				title="Investor filings — reported holdings"
+				title={m().investorFilings}
 				count={records().investorFilings.length}
-				note="Filings report holdings as of a quarter end. A change is a change in the reported position, not evidence of a trade on any particular date."
-				emptyText="No investor filings in this run."
+				note={m().filingsNote}
+				emptyText={m().noFilings}
 			>
 				<ul class="mt-1 space-y-2">
 					<For each={records().investorFilings}>
@@ -726,10 +732,10 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 			</Section>
 
 			<Section
-				title="Pricing power assessments"
+				title={m().pricingPower}
 				count={records().pricingPower.length}
-				note="Price realization is assessed separately from volume, mix, FX and input costs; margin improvement alone is not treated as proof."
-				emptyText="No pricing power assessments in this run."
+				note={m().pricingNote}
+				emptyText={m().noPricing}
 			>
 				<ul class="mt-1 space-y-2">
 					<For each={records().pricingPower}>
@@ -742,15 +748,17 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 									<SecurityName securityId={record.securityId} securities={securities()} />
 								</p>
 								<p class="text-xs text-slate-800">
-									{describePeriod(record.period)} — assessment:{" "}
-									<span class="font-semibold">{record.assessment.classification}</span>
+									{describePeriod(record.period, m())}
+									{m().assessment}{" "}
+									<span class="font-semibold">
+										{m().classification(record.assessment.classification)}
+									</span>
 									<Show when={record.assessment.missingInputs.length > 0}>
-										{" "}
-										(missing inputs: {record.assessment.missingInputs.join(", ")})
+										{m().missingInputs(record.assessment.missingInputs.join(", "))}
 									</Show>
 								</p>
 								<EvidenceRefs
-									label="Evidence"
+									label={m().evidence}
 									evidenceIds={record.evidenceIds}
 									evidence={evidence()}
 								/>
@@ -760,17 +768,13 @@ function RecordsBody(props: { readonly records: Accessor<RunRecords> }): JSX.Ele
 				</ul>
 			</Section>
 
-			<Section
-				title="All evidence"
-				count={records().evidence.length}
-				emptyText="No evidence stored for this run."
-			>
+			<Section title={m().allEvidence} count={records().evidence.length} emptyText={m().noEvidence}>
 				<ul class="mt-1 list-disc space-y-0.5 pl-5 text-xs">
 					<For each={records().evidence}>
 						{(item) => (
 							<li>
 								<SourceCitation sourceId={item.evidenceId} sources={evidence()} />
-								<span class="text-slate-600"> — {item.sourceClass}</span>
+								<span class="text-slate-600"> — {m().sourceClass(item.sourceClass)}</span>
 							</li>
 						)}
 					</For>
@@ -793,6 +797,7 @@ export function RecordsDrawer(props: {
 	readonly opener: HTMLElement | null;
 	readonly onClose: () => void;
 }): JSX.Element {
+	const m = useMessages(recordsMessages);
 	const records = createRemote(() => props.api.getRunRecords(props.runId));
 	// A modal dialog (guideline section 6): labelled by its heading, over a
 	// semi-transparent backdrop. Focus moves in on open, Tab cycles inside,
@@ -874,12 +879,12 @@ export function RecordsDrawer(props: {
 				<div class="flex items-start justify-between gap-2">
 					<div>
 						<h3 id={headingId} class="text-base font-semibold text-slate-900">
-							{"Evidence & records"}
+							{m().drawerTitle}
 						</h3>
 						<p class="text-xs text-slate-600">
-							Run <span class="font-mono">{props.runId}</span>
+							{m().run} <span class="font-mono">{props.runId}</span>
 							<Show when={props.startedAt}>
-								{(startedAt) => <span> · started {formatInstant(startedAt())}</span>}
+								{(startedAt) => <span>{m().startedAt(formatInstant(startedAt()))}</span>}
 							</Show>
 						</p>
 					</div>
@@ -891,12 +896,12 @@ export function RecordsDrawer(props: {
 						class={BUTTON}
 						onClick={() => props.onClose()}
 					>
-						Close records
+						{m().closeRecords}
 					</button>
 				</div>
 				<RemoteView
 					remote={records.state()}
-					label="run records"
+					label={m().runRecords}
 					onRetry={() => void records.reload()}
 				>
 					{(value) => <RecordsBody records={value} />}

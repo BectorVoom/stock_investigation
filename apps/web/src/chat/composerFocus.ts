@@ -29,10 +29,11 @@ export function mayFocusComposer(active: Element | null): boolean {
 
 /**
  * Focuses the question input unless the owner has taken focus elsewhere.
- * True when the composer holds focus afterwards (or already did).
+ * True when the composer holds focus afterwards (or already did). Found by
+ * `data-composer`, not by its accessible name, which follows the UI language.
  */
 export function focusComposerBox(): boolean {
-	const box = document.querySelector('form[aria-label="Research composer"] textarea');
+	const box = document.querySelector('form[data-composer="research"] textarea');
 	if (!(box instanceof HTMLElement)) return false;
 	if (document.activeElement === box) return true;
 	if (!mayFocusComposer(document.activeElement)) return false;

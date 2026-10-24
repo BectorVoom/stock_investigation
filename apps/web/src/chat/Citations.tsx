@@ -1,4 +1,5 @@
 import type { Claim, Evidence } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import {
 	CitationChip,
 	type CitationInteraction,
@@ -7,6 +8,7 @@ import {
 	ClaimTypeBadge,
 	chipLabel,
 	citationGroupFocusOut,
+	citationMessages,
 	createCitationInteraction,
 	numberEvidence,
 	numbersForClaim,
@@ -17,6 +19,7 @@ import {
 } from "@research/ui-registry";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { DisclosureSummary } from "../components/ui.tsx";
+import { citationsMessages } from "./conversation.messages.ts";
 
 /** Key of the card a chip opens: one chip per (claim, evidence) pair. */
 function cardKey(claimId: string, evidenceId: string): string {
@@ -30,6 +33,8 @@ function ClaimItem(props: {
 	readonly numbering: CitationNumbering;
 	readonly interaction: CitationInteraction;
 }): JSX.Element {
+	const m = useMessages(citationsMessages);
+	const cm = useMessages(citationMessages);
 	const claim = createMemo(() => props.claims.get(props.claimId));
 	const numbers = createMemo(() => {
 		const current = claim();
@@ -51,7 +56,7 @@ function ClaimItem(props: {
 		<li data-claim-id={props.claimId} class="border-l-2 border-slate-300 pl-2">
 			<Show
 				when={claim()}
-				fallback={<span class="italic text-amber-900">Claim unavailable (id {props.claimId})</span>}
+				fallback={<span class="italic text-amber-900">{m().claimUnavailable(props.claimId)}</span>}
 			>
 				{(current) => (
 					<fieldset
@@ -77,8 +82,13 @@ function ClaimItem(props: {
 												number={number() ?? 0}
 												label={
 													item() === undefined
-														? `Source ${number() ?? 0}: unavailable`
-														: chipLabel(number() ?? 0, item()?.title ?? "", item()?.sourceUrl ?? "")
+														? cm().chipUnavailable(number() ?? 0)
+														: chipLabel(
+																number() ?? 0,
+																item()?.title ?? "",
+																item()?.sourceUrl ?? "",
+																cm(),
+															)
 												}
 												relation={link.relation}
 												open={props.interaction.openKey() === key()}
@@ -91,9 +101,7 @@ function ClaimItem(props: {
 						</p>
 						<Show
 							when={current().links.length > 0}
-							fallback={
-								<p class="text-xs italic text-amber-900">No evidence linked to this claim.</p>
-							}
+							fallback={<p class="text-xs italic text-amber-900">{m().noEvidenceLinked}</p>}
 						>
 							<Show when={openCard()}>
 								{(open) => (
@@ -134,6 +142,8 @@ export function AnswerClaims(props: {
 	readonly claims: ReadonlyMap<string, Claim>;
 	readonly evidence: ReadonlyMap<string, Evidence>;
 }): JSX.Element {
+	const m = useMessages(citationsMessages);
+	const cm = useMessages(citationMessages);
 	const numbering = createMemo(() =>
 		numberEvidence(
 			props.claimIds.map((claimId) => ({
@@ -147,8 +157,8 @@ export function AnswerClaims(props: {
 	const sources = createMemo(() => numbering().evidenceIdsInOrder);
 	return (
 		<>
-			<h4 class="mt-2 text-xs font-semibold text-slate-700">Claims in this answer</h4>
-			<ul aria-label="Claims" class="mt-0.5 space-y-1.5">
+			<h4 class="mt-2 text-xs font-semibold text-slate-700">{m().claimsInAnswer}</h4>
+			<ul aria-label={m().claims} class="mt-0.5 space-y-1.5">
 				<For each={props.claimIds}>
 					{(claimId) => (
 						<ClaimItem
@@ -164,9 +174,9 @@ export function AnswerClaims(props: {
 			<Show when={sources().length > 0}>
 				<details class="group mt-2 text-xs">
 					<DisclosureSummary class="text-slate-700">
-						{sources().length} {sources().length === 1 ? "source" : "sources"}
+						{cm().sourceCount(sources().length)}
 					</DisclosureSummary>
-					<ol aria-label="Sources" class="mt-1 space-y-0.5">
+					<ol aria-label={cm().sources} class="mt-1 space-y-0.5">
 						<For each={sources()}>
 							{(evidenceId, index) => {
 								const item = createMemo(() => props.evidence.get(evidenceId));
@@ -183,7 +193,7 @@ export function AnswerClaims(props: {
 											when={item()}
 											fallback={
 												<span class="italic text-amber-900">
-													Source unavailable (id {evidenceId})
+													{cm().sourceUnavailable(evidenceId)}
 												</span>
 											}
 										>
@@ -193,8 +203,8 @@ export function AnswerClaims(props: {
 														when={href()}
 														fallback={
 															<span>
-																{titleOrHost(source().title, source().sourceUrl)}{" "}
-																<span class="italic text-slate-600">(link unavailable)</span>
+																{titleOrHost(source().title, source().sourceUrl, cm())}{" "}
+																<span class="italic text-slate-600">{cm().linkUnavailable}</span>
 															</span>
 														}
 													>
@@ -205,7 +215,7 @@ export function AnswerClaims(props: {
 																rel="noopener noreferrer"
 																class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
 															>
-																{titleOrHost(source().title, source().sourceUrl)}
+																{titleOrHost(source().title, source().sourceUrl, cm())}
 															</a>
 														)}
 													</Show>

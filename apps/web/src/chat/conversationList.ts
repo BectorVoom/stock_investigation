@@ -1,4 +1,4 @@
-import type { ConversationSummary } from "@research/contracts";
+import { type ConversationSummary, DEFAULT_CONVERSATION_TITLE } from "@research/contracts";
 import { createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
@@ -73,4 +73,15 @@ export function createConversationList(
 export function byNewestActivity(a: ConversationSummary, b: ConversationSummary): number {
 	const order = b.lastActivityAt.localeCompare(a.lastActivityAt);
 	return order !== 0 ? order : a.workspaceId.localeCompare(b.workspaceId);
+}
+
+/**
+ * A chat's title as the UI shows it. The server names a new chat
+ * `DEFAULT_CONVERSATION_TITLE` and replaces that exact title with the first
+ * question, so the stored value stays English; only its display follows the
+ * UI language (`newChatTitle`). Any other title was written by the owner or
+ * the agent and shows as written.
+ */
+export function displayedChatTitle(title: string, newChatTitle: string): string {
+	return title === DEFAULT_CONVERSATION_TITLE ? newChatTitle : title;
 }

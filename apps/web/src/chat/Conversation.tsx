@@ -10,6 +10,7 @@ import type {
 	WorkspaceView,
 } from "@research/contracts";
 import { isLeasedJobState, isTerminalJobState } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import type { RenderContext, UiRegistry, WorkspaceComponent } from "@research/ui-registry";
 import { createEffect, createMemo, createSignal, For, type JSX, onCleanup, Show } from "solid-js";
 import type { ResearchBudget } from "../api/client.ts";
@@ -17,9 +18,12 @@ import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { BUTTON, ErrorNotice, Loading } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
 import { AnswerClaims } from "./Citations.tsx";
+import { conversationMessages } from "./conversation.messages.ts";
 import { NotebookTurnCard } from "./NotebookTurnCard.tsx";
 import { RunCard } from "./RunCard.tsx";
-import { SUGGESTIONS } from "./suggestions.ts";
+import { runMessages } from "./run.messages.ts";
+import { suggestionsMessages } from "./suggestions.messages.ts";
+import { suggestions } from "./suggestions.ts";
 import { groupThreadComponents, ThreadPreviewsForRun } from "./ThreadPreviews.tsx";
 
 /**
@@ -63,13 +67,14 @@ function CopyButton(props: {
 	readonly text: string;
 	readonly clipboard?: ClipboardLike | null;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
 	const [status, setStatus] = createSignal<"idle" | "copied" | "failed">("idle");
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	onCleanup(() => {
 		if (timer !== undefined) clearTimeout(timer);
 	});
 	const label = () =>
-		status() === "copied" ? "Copied" : status() === "failed" ? "Copy failed" : "Copy answer";
+		status() === "copied" ? m().copied : status() === "failed" ? m().copyFailed : m().copyAnswer;
 	const copy = async () => {
 		const target = props.clipboard === undefined ? defaultClipboard() : props.clipboard;
 		if (target === null || target === undefined) {
@@ -135,6 +140,7 @@ function AssistantMessage(props: {
 	readonly addPending: boolean;
 	readonly inNotebook: boolean;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
 	return (
 		<div>
 			<p class="text-2xs text-slate-600">
@@ -162,7 +168,7 @@ function AssistantMessage(props: {
 							onClick={(event) => props.onOpenRecords(runId(), event.currentTarget)}
 							class="inline-flex min-h-6 items-center rounded px-1 py-0.5 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900"
 						>
-							Evidence
+							{m().evidence}
 						</button>
 					)}
 				</Show>
@@ -171,7 +177,7 @@ function AssistantMessage(props: {
 						when={!props.inNotebook}
 						fallback={
 							<span class="inline-flex min-h-6 items-center px-1 py-0.5 text-xs text-slate-600">
-								In notebook
+								{m().inNotebook}
 							</span>
 						}
 					>
@@ -189,7 +195,7 @@ function AssistantMessage(props: {
 									stroke-linecap="round"
 								/>
 							</svg>
-							<span>Add to Notebook</span>
+							<span>{m().addToNotebook}</span>
 						</button>
 					</Show>
 				</Show>
@@ -228,36 +234,6 @@ function keepPinnedWhileGrowing(element: HTMLOListElement, stickToBottom: () => 
 	});
 }
 
-/** Concise spoken form of a run's state for the conversation status region (finding 9). */
-function describeRunAnnouncement(run: ResearchRun): string {
-	switch (run.state) {
-		case "pending":
-			return "Question queued. Waiting for a runner to claim it.";
-		case "claimed":
-			return "A runner claimed the question.";
-		case "planning":
-			return "Planning the research…";
-		case "collecting":
-			return "Collecting evidence…";
-		case "analyzing":
-			return "Analyzing the evidence…";
-		case "verifying":
-			return "Verifying the findings…";
-		case "publishing":
-			return "Publishing the answer…";
-		case "completed":
-			return "Completed: answer added.";
-		case "failed":
-			return `Failed: ${run.failureCode ?? "reason not stated"}.`;
-		case "cancelled":
-			return "Cancelled.";
-		case "partial":
-			return "Stopped early with partial results.";
-		case "waiting_approval":
-			return "Waiting for approval.";
-	}
-}
-
 /**
  * Starter questions that fill the question input without sending. Rendered
  * twice on a truly empty conversation: once with the greeting (what narrow
@@ -275,14 +251,16 @@ function SuggestionList(props: {
 	readonly hiddenAtLarge?: () => boolean;
 	readonly onSelect?: (text: string) => void;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
+	const suggestionText = useMessages(suggestionsMessages);
 	return (
 		<ul
-			aria-label="Suggestions"
+			aria-label={m().suggestions}
 			data-suggestions={props.placement}
 			class={`mt-3 flex-wrap justify-center gap-2 ${props.displayClass ?? "flex"}`}
 			classList={{ "lg:hidden": props.hiddenAtLarge?.() === true }}
 		>
-			<For each={SUGGESTIONS}>
+			<For each={suggestions(suggestionText())}>
 				{(suggestion) => (
 					<li>
 						<button
@@ -354,6 +332,8 @@ export function Conversation(props: {
 	 */
 	readonly composer?: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(conversationMessages);
+	const runText = useMessages(runMessages);
 	const messages = createMemo(() =>
 		[...(props.conversation?.messages ?? [])].sort((a, b) => a.seq - b.seq),
 	);
@@ -507,13 +487,16 @@ export function Conversation(props: {
 	});
 	const [liveAnnouncement, setLiveAnnouncement] = createSignal("");
 	let lastAnnouncedKey: string | null = null;
+	// A language switch re-words the current announcement in place (equal
+	// key, new text); an equal poll in the same language changes neither.
 	createEffect(() => {
 		const run = newestActiveRun();
 		if (run === null) return;
 		const key = `${run.runId}:${run.state}:${run.failureCode ?? ""}`;
-		if (key !== lastAnnouncedKey) {
+		const announcement = runText().announcement(run.state, run.failureCode);
+		if (key !== lastAnnouncedKey || announcement !== liveAnnouncement()) {
 			lastAnnouncedKey = key;
-			setLiveAnnouncement(describeRunAnnouncement(run));
+			setLiveAnnouncement(announcement);
 		}
 	});
 
@@ -564,7 +547,7 @@ export function Conversation(props: {
 					// is still readable on `data-run-state`. A finished
 					// notebook-assist run mounts no card at all: its assistant
 					// reply and turn card below speak for it.
-					<li aria-label="Run status" hidden={!cardShown(current())}>
+					<li aria-label={m().runStatus} hidden={!cardShown(current())}>
 						<Show when={runCardMounted(current())} fallback={null}>
 							<RunCard
 								run={current()}
@@ -582,7 +565,7 @@ export function Conversation(props: {
 
 	return (
 		<section
-			aria-label="Conversation"
+			aria-label={m().conversation}
 			data-layout={isCenteredEmpty() ? "empty-centered" : "thread"}
 			class="flex flex-1 flex-col lg:min-h-0"
 			classList={{ "lg:justify-center": isCenteredEmpty() }}
@@ -600,16 +583,14 @@ export function Conversation(props: {
 								disabled={props.loadingEarlier === true}
 								onClick={() => props.onLoadEarlier?.()}
 							>
-								{props.loadingEarlier === true
-									? "Loading earlier messages…"
-									: "Load earlier messages"}
+								{props.loadingEarlier === true ? m().loadingEarlier : m().loadEarlier}
 							</button>
 							<Show when={props.earlierError}>
 								{(error) => (
 									<div class="mt-1">
 										<ErrorNotice
 											failure={error()}
-											title="Could not load earlier messages."
+											title={m().earlierFailed}
 											onRetry={() => props.onLoadEarlier?.()}
 										/>
 									</div>
@@ -618,8 +599,8 @@ export function Conversation(props: {
 						</div>
 					</Show>
 					<Show when={earlierRunIds().length > 0}>
-						<section aria-label="Earlier runs" class="mt-2">
-							<h4 class="text-xs font-semibold text-slate-700">Earlier runs</h4>
+						<section aria-label={m().earlierRuns} class="mt-2">
+							<h4 class="text-xs font-semibold text-slate-700">{m().earlierRuns}</h4>
 							<ul class="mt-1 space-y-2">
 								<For each={earlierRunIds()}>{(runId) => <RunListItem runId={runId} />}</For>
 							</ul>
@@ -627,7 +608,10 @@ export function Conversation(props: {
 					</Show>
 				</div>
 			</Show>
-			<Show when={props.conversation !== null} fallback={<Loading label="conversation" />}>
+			<Show
+				when={props.conversation !== null}
+				fallback={<Loading label={m().conversationLoading} />}
+			>
 				<Show
 					when={messages().length > 0}
 					fallback={
@@ -638,13 +622,8 @@ export function Conversation(props: {
 								"lg:mb-3 lg:flex-none lg:py-0": isCenteredEmpty(),
 							}}
 						>
-							<h3 class="text-base font-semibold text-slate-900">
-								What would you like to research?
-							</h3>
-							<p class="mt-1 text-sm text-slate-600">
-								Ask about demand growth, suppliers or pricing power — answers arrive with their
-								sources.
-							</p>
+							<h3 class="text-base font-semibold text-slate-900">{m().greeting}</h3>
+							<p class="mt-1 text-sm text-slate-600">{m().greetingHint}</p>
 							<Show when={props.showSuggestions !== false}>
 								<SuggestionList
 									placement="above-composer"
@@ -660,7 +639,7 @@ export function Conversation(props: {
 							list = element;
 							keepPinnedWhileGrowing(element, stickToBottom);
 						}}
-						aria-label="Messages"
+						aria-label={m().messages}
 						class="mx-auto w-full max-w-3xl space-y-4 wrap-anywhere px-1 py-2 pb-56 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-2"
 						onScroll={(event) => setStickToBottom(isAtBottom(event.currentTarget))}
 					>
@@ -703,7 +682,7 @@ export function Conversation(props: {
 												<li>
 													<article
 														aria-label={
-															current().role === "owner" ? "Your message" : "Assistant message"
+															current().role === "owner" ? m().yourMessage : m().assistantMessage
 														}
 														data-role={current().role}
 														data-message-id={current().messageId}
@@ -719,7 +698,7 @@ export function Conversation(props: {
 																	clipboard={props.clipboard}
 																	onOpenRecords={openRecords}
 																	assistantLabel={
-																		assistReply() ? "Notebook assistant" : "Assistant"
+																		assistReply() ? m().notebookAssistant : m().assistant
 																	}
 																	withCitations={!assistReply()}
 																	showEvidence={!assistReply()}

@@ -6,8 +6,12 @@ import {
 	type ResearchRequest,
 	runBudget,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import type { ResearchBudget } from "../api/client.ts";
 import { type AgentOption, agentOptions } from "../settings/agentSettingsModel.ts";
+import { composerMessages } from "./composer.messages.ts";
+
+export type ComposerText = MessagesOf<typeof composerMessages>;
 
 /**
  * Pure composer rules (FR-012 / FR-016 / AGT-012): the draft holds only what
@@ -45,6 +49,12 @@ export interface ComposerEvaluation {
 	readonly spendConsentRequired: boolean;
 	/** Why submit is disabled; empty when `request` is set. Each ends with where to fix it. */
 	readonly problems: readonly string[];
+	/**
+	 * The problems in `problems` that a missing or wrong setting causes (or
+	 * data still loading), as opposed to the question itself. They block
+	 * everything, so the form shows them before the owner types.
+	 */
+	readonly configurationProblems: readonly string[];
 	readonly request: ResearchRequest | null;
 }
 
@@ -53,6 +63,7 @@ export function evaluateComposer(
 	agents: AgentsResponse | null,
 	settings: AgentSettings | null,
 	workspaceId: string,
+	text: ComposerText = composerMessages.en,
 ): ComposerEvaluation {
 	const options = agentOptions(agents);
 	const selectedAgent =
@@ -63,39 +74,40 @@ export function evaluateComposer(
 	const model =
 		settings?.defaultAgentId == null ? null : (settings.models[settings.defaultAgentId] ?? null);
 	const problems: string[] = [];
+	const configurationProblems: string[] = [];
+	const configuration = (problem: string) => {
+		problems.push(problem);
+		configurationProblems.push(problem);
+	};
 
 	const question = draft.question.trim();
-	if (question.length < 3) problems.push("Enter a research question (at least 3 characters).");
-	if (question.length > 2000) problems.push("The question must be at most 2000 characters.");
+	if (question.length < 3) problems.push(text.questionTooShort);
+	if (question.length > 2000) problems.push(text.questionTooLong);
 	if (agents === null) {
-		problems.push("Agent backends are still loading.");
+		configuration(text.agentsLoading);
 	} else if (settings?.defaultAgentId == null || selectedAgent === null) {
-		problems.push("Choose a default agent backend in Settings → AI agent.");
+		configuration(text.chooseBackend);
 	} else if (!selectedAgent.selectable) {
-		problems.push(
-			`${selectedAgent.displayName} is ${selectedAgent.status} and cannot be used — choose another backend in Settings → AI agent.`,
-		);
+		configuration(text.backendUnusable(selectedAgent.displayName, selectedAgent.status));
 	}
 	if (
 		selectedAgent !== null &&
 		selectedAgent.agentId === "opencode" &&
 		(model === null || model.trim() === "")
 	) {
-		problems.push(
-			"OpenCode needs a model of the form provider/model — choose one in Settings → AI agent.",
-		);
+		configuration(text.openCodeNeedsModel);
 	}
 	if (
 		selectedAgent !== null &&
 		selectedAgent.agentId === OPENROUTER_FREE_AGENT_ID &&
 		(model === null || model.trim() === "")
 	) {
-		problems.push("OpenRouter (free models) needs a model — choose one in Settings → AI agent.");
+		configuration(text.openRouterNeedsModel);
 	}
 	const markets = (["JP", "US"] as const).filter((market) => draft.markets[market]);
-	if (markets.length === 0) problems.push("Choose at least one market (JP or US).");
+	if (markets.length === 0) problems.push(text.chooseMarket);
 	if (settings === null) {
-		problems.push("Agent settings are still loading.");
+		configuration(text.settingsLoading);
 	}
 
 	// The request carries the fixed limits (RUN_LIMITS, ADR-0029) and the saved
@@ -110,20 +122,16 @@ export function evaluateComposer(
 	if (settings !== null && selectedAgent !== null && costModel !== "plan-limited") {
 		if (spend === null || spend <= 0) {
 			if (costModel === "metered") {
-				problems.push(
-					"A metered backend needs a maximum spend greater than 0 USD — set it in Settings → AI agent.",
-				);
+				configuration(text.meteredNeedsSpend);
 			}
 		} else if (spend > BUDGET_LIMITS.maxSpendUsd.max) {
-			problems.push(
-				`Max spend must be greater than 0 and at most ${BUDGET_LIMITS.maxSpendUsd.max} USD — fix it in Settings → AI agent.`,
-			);
+			configuration(text.maxSpendRange(BUDGET_LIMITS.maxSpendUsd.max));
 		} else {
 			spendConsentRequired = true;
 		}
 	}
 	if (spendConsentRequired && !draft.spendConsent) {
-		problems.push("Confirm consent to metered spend on the form itself.");
+		problems.push(text.confirmConsent);
 	}
 
 	const request: ResearchRequest | null =
@@ -151,6 +159,7 @@ export function evaluateComposer(
 		budget,
 		spendConsentRequired,
 		problems,
+		configurationProblems,
 		request,
 	};
 }

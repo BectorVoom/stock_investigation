@@ -1,4 +1,5 @@
 import { type ConversationSummary, DEFAULT_CONVERSATION_TITLE } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { createSignal, For, type JSX, Show } from "solid-js";
 import type { ApiFailure } from "../api/http.ts";
 import {
@@ -16,8 +17,10 @@ import {
 	PanelHeader,
 	RemoteView,
 } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import type { Remote } from "../lib/remote.ts";
-import { byNewestActivity, type ConversationList } from "./conversationList.ts";
+import { chatMessages } from "./chat.messages.ts";
+import { byNewestActivity, type ConversationList, displayedChatTitle } from "./conversationList.ts";
 
 function PlusIcon(): JSX.Element {
 	return (
@@ -32,6 +35,7 @@ export function RenameInput(props: {
 	readonly onSave: (title: string) => void;
 	readonly onCancel: () => void;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
 	const [draft, setDraft] = createSignal(props.initial);
 	let input: HTMLInputElement | undefined;
 	let cancelled = false;
@@ -50,7 +54,7 @@ export function RenameInput(props: {
 				input = element;
 			}}
 			type="text"
-			aria-label="Chat title"
+			aria-label={m().chatTitle}
 			class={INPUT}
 			maxLength={300}
 			value={draft()}
@@ -82,14 +86,15 @@ export function NewChatButton(props: {
 	readonly disabled: boolean;
 	readonly onClick: () => void;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
 	if (props.variant === "icon") {
 		// 24 px square: the collapsed rail holds 24 px of content width.
 		return (
 			<button
 				type="button"
 				class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
-				aria-label="New chat"
-				title="New chat"
+				aria-label={m().newChat}
+				title={m().newChat}
 				disabled={props.disabled}
 				onClick={() => props.onClick()}
 			>
@@ -104,7 +109,7 @@ export function NewChatButton(props: {
 			disabled={props.disabled}
 			onClick={() => props.onClick()}
 		>
-			<PlusIcon /> New chat
+			<PlusIcon /> {m().newChat}
 		</button>
 	);
 }
@@ -135,16 +140,17 @@ export function ChatsPanel(props: {
 	) => void;
 	readonly renameError: () => ApiFailure | null;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
 	const historyOpen = () => (props.ordered().length === 0 || props.wide() ? true : undefined);
 
 	const listContent = () => (
 		<RemoteView
 			remote={props.conversations.state()}
-			label="conversations"
+			label={m().conversations}
 			onRetry={() => void props.conversations.reload()}
 		>
 			{(list) => (
-				<Show when={list().length > 0} fallback={<Empty>No chats yet. Start one above.</Empty>}>
+				<Show when={list().length > 0} fallback={<Empty>{m().noChats}</Empty>}>
 					<ul class="space-y-1">
 						<For each={[...list()].sort(byNewestActivity)}>
 							{(entry) => (
@@ -193,18 +199,18 @@ export function ChatsPanel(props: {
 					class="group min-w-0 self-start lg:hidden"
 				>
 					<DisclosureSummary class="text-sm font-medium text-slate-900">
-						Chats ({props.ordered().length})
+						{m().chatsCount(props.ordered().length)}
 					</DisclosureSummary>
-					<nav aria-label="Chats" class="mt-2 space-y-2">
+					<nav aria-label={m().chats} class="mt-2 space-y-2">
 						{newChatCompact()}
 						<Show when={props.newChatPending()}>
-							<Loading label="new chat" />
+							<Loading label={m().newChatLoading} />
 						</Show>
 						<Show when={props.newChatError()}>
-							{(error) => <ErrorNotice failure={error()} title="The chat was not created." />}
+							{(error) => <ErrorNotice failure={error()} title={m().chatNotCreated} />}
 						</Show>
 						<Show when={props.renameError()}>
-							{(error) => <ErrorNotice failure={error()} title="The chat was not renamed." />}
+							{(error) => <ErrorNotice failure={error()} title={m().chatNotRenamed} />}
 						</Show>
 						{listContent()}
 					</nav>
@@ -222,7 +228,7 @@ export function ChatsPanel(props: {
 							onClick={() => props.onNewChat()}
 						/>
 						<PanelCollapseButton
-							label="Expand Chats panel"
+							label={m().expandChats}
 							expanded={false}
 							onToggle={props.onToggleCollapsed}
 							side="left"
@@ -230,26 +236,26 @@ export function ChatsPanel(props: {
 					</div>
 				}
 			>
-				<section aria-label="Chats" class={`${CHAT_PANEL} hidden min-h-0 flex-col lg:flex`}>
+				<section aria-label={m().chats} class={`${CHAT_PANEL} hidden min-h-0 flex-col lg:flex`}>
 					<PanelHeader
-						title="Chats"
+						title={m().chats}
 						count={`(${props.ordered().length})`}
 						expanded={true}
-						collapseLabel="Collapse Chats panel"
-						expandLabel="Expand Chats panel"
+						collapseLabel={m().collapseChats}
+						expandLabel={m().expandChats}
 						onToggle={props.onToggleCollapsed}
 						side="left"
 					/>
-					<nav aria-label="Chats" class="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
+					<nav aria-label={m().chats} class="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto">
 						{newChatPill()}
 						<Show when={props.newChatPending()}>
-							<Loading label="new chat" />
+							<Loading label={m().newChatLoading} />
 						</Show>
 						<Show when={props.newChatError()}>
-							{(error) => <ErrorNotice failure={error()} title="The chat was not created." />}
+							{(error) => <ErrorNotice failure={error()} title={m().chatNotCreated} />}
 						</Show>
 						<Show when={props.renameError()}>
-							{(error) => <ErrorNotice failure={error()} title="The chat was not renamed." />}
+							{(error) => <ErrorNotice failure={error()} title={m().chatNotRenamed} />}
 						</Show>
 						{listContent()}
 					</nav>
@@ -272,6 +278,10 @@ function ChatRowWrapper(props: {
 		opener: HTMLElement | null,
 	) => void;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
+	const common = useMessages(commonMessages);
+	// Saving the shown default title unchanged keeps the stored one (no rename).
+	const title = () => displayedChatTitle(props.entry.title, m().newChat);
 	return (
 		<li data-conversation-id={props.entry.workspaceId} class="min-w-0">
 			<div
@@ -283,8 +293,10 @@ function ChatRowWrapper(props: {
 						when={!props.renaming}
 						fallback={
 							<RenameInput
-								initial={props.entry.title}
-								onSave={(next) => props.onRename(next)}
+								initial={title()}
+								onSave={(next) =>
+									props.onRename(next.trim() === title() ? props.entry.title : next)
+								}
 								onCancel={props.onCancelRename}
 							/>
 						}
@@ -295,33 +307,30 @@ function ChatRowWrapper(props: {
 							class="block rounded px-1 py-0.5"
 							classList={{ "hover:bg-slate-100": !props.selected }}
 						>
-							<span
-								class="block truncate text-sm font-semibold text-slate-900"
-								title={props.entry.title}
-							>
-								{props.entry.title}
+							<span class="block truncate text-sm font-semibold text-slate-900" title={title()}>
+								{title()}
 							</span>
 						</a>
 					</Show>
 				</div>
 				<Show when={!props.renaming}>
 					<ActionMenu
-						buttonLabel={`More actions for ${props.entry.title}`}
-						menuLabel={`Actions for ${props.entry.title}`}
+						buttonLabel={m().moreActionsFor(title())}
+						menuLabel={m().actionsFor(title())}
 						items={[
 							{
-								label: "Rename",
+								label: common().rename,
 								onSelect: () => props.onStartRename(),
 							},
 							{
-								label: "Delete",
+								label: common().delete,
 								onSelect: () => {
 									const active =
 										document.activeElement instanceof HTMLElement ? document.activeElement : null;
 									props.onRequestDelete(
 										{
 											workspaceId: props.entry.workspaceId,
-											title: props.entry.title,
+											title: title(),
 										},
 										active,
 									);
@@ -343,17 +352,19 @@ export function DeleteChatDialog(props: {
 	readonly onConfirm: () => void;
 	readonly onCancel: () => void;
 }): JSX.Element {
+	const m = useMessages(chatMessages);
+	const common = useMessages(commonMessages);
 	return (
 		<ConfirmDialog
-			title={`Delete “${props.target.title}”?`}
+			title={m().deleteChat(props.target.title)}
 			opener={props.opener()}
-			confirmLabel="Delete"
+			confirmLabel={common().delete}
 			pending={props.pending()}
 			failure={props.failure()}
 			onConfirm={props.onConfirm}
 			onCancel={props.onCancel}
 		>
-			<p>This removes its messages, notebook and research records. This cannot be undone.</p>
+			<p>{m().deleteChatBody}</p>
 		</ConfirmDialog>
 	);
 }

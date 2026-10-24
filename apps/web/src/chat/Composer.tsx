@@ -5,6 +5,7 @@ import type {
 	ResearchRequest,
 	ResearchRun,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import {
 	createEffect,
 	createMemo,
@@ -28,17 +29,19 @@ import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { runnerNotice } from "../settings/agentSettingsModel.ts";
 import { fitTextarea, supportsFieldSizing } from "./autogrow.ts";
-import { type ComposerDraft, defaultComposerDraft, evaluateComposer } from "./composerModel.ts";
+import { composerMessages } from "./composer.messages.ts";
+import {
+	type ComposerDraft,
+	type ComposerText,
+	defaultComposerDraft,
+	evaluateComposer,
+} from "./composerModel.ts";
+import { runMessages } from "./run.messages.ts";
 
 const HORIZONS = [3, 4, 5] as const;
 
 /** Where the composer's text goes: today's research run, or the notebook assistant. */
 export type ComposerTarget = "research" | "notebook";
-
-/** Configuration problems show immediately; question problems wait for input. WHY: the owner cannot fix what they have not typed yet, but a missing backend blocks everything. */
-function isConfigurationProblem(problem: string): boolean {
-	return problem.includes("Settings → AI agent") || problem.includes("still loading");
-}
 
 /**
  * Notebook-assistant failures in the owner's words. `AGENT_NOT_CONFIGURED`
@@ -46,11 +49,13 @@ function isConfigurationProblem(problem: string): boolean {
  * request runs at a time; anything else falls back to the generic notice.
  * (The codes arrive from the server, so they are read as plain strings.)
  */
-export function notebookFailureText(failure: { readonly code: string }): string | null {
+export function notebookFailureText(
+	failure: { readonly code: string },
+	text: ComposerText = composerMessages.en,
+): string | null {
 	const code: string = failure.code;
-	if (code === "AGENT_NOT_CONFIGURED") return "The notebook assistant needs an agent backend.";
-	if (code === "NOTEBOOK_ASSIST_ACTIVE")
-		return "One notebook request runs at a time. Wait for it to finish and try again.";
+	if (code === "AGENT_NOT_CONFIGURED") return text.notebookNeedsBackend;
+	if (code === "NOTEBOOK_ASSIST_ACTIVE") return text.notebookOneAtATime;
 	return null;
 }
 
@@ -95,6 +100,8 @@ export function Composer(props: {
 		idempotencyKey: string,
 	) => Promise<ApiResult<NotebookAssistResponse>>;
 }): JSX.Element {
+	const m = useMessages(composerMessages);
+	const runText = useMessages(runMessages);
 	const [draft, setDraft] = createSignal<ComposerDraft>(defaultComposerDraft());
 	const [submitting, setSubmitting] = createSignal(false);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
@@ -122,7 +129,7 @@ export function Composer(props: {
 		() => props.settings.status === "ready" && props.settings.value.origin === "carried-over",
 	);
 	const evaluation = createMemo(() =>
-		evaluateComposer(draft(), agents(), settings(), props.workspaceId),
+		evaluateComposer(draft(), agents(), settings(), props.workspaceId, m()),
 	);
 	const offlineNotice = createMemo(() => runnerNotice(agents()));
 	const patch = (change: Partial<ComposerDraft>) =>
@@ -191,6 +198,7 @@ export function Composer(props: {
 				agents(),
 				settings(),
 				props.workspaceId,
+				m(),
 			).request;
 			if (candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint) {
 				request = candidate;
@@ -219,9 +227,9 @@ export function Composer(props: {
 			pendingKey = null;
 			if (result.value.state === "pending") {
 				setQueuedRunId(result.value.runId);
-				setQueuedNote("Question queued. It starts when a runner claims it.");
+				setQueuedNote(m().questionQueued);
 			} else {
-				setQueuedNote(`Question submitted (run is ${result.value.state}).`);
+				setQueuedNote(m().questionSubmitted(runText().state(result.value.state)));
 			}
 			// A successful send resets the "the owner has started typing"
 			// state, so the cleared form is quiet again until the owner types
@@ -245,21 +253,18 @@ export function Composer(props: {
 
 	// Configuration problems block everything, so they are announced directly
 	// above the input with a way to fix them; per-question problems stay in
-	// the list under the input. Declared before the notebook helpers: the
+	// the list under the input and wait for input (the owner cannot fix what
+	// they have not typed yet). Declared before the notebook helpers: the
 	// notebook target reuses the same gate (a missing backend blocks it too).
-	const configProblems = createMemo(() =>
-		evaluation().problems.filter((problem) => isConfigurationProblem(problem)),
-	);
+	const configProblems = createMemo(() => evaluation().configurationProblems);
 
 	/** Instruction problems: configuration blocks everything, text problems wait for input. */
 	const notebookProblems = createMemo(() => {
 		const problems = [...configProblems()];
 		const instruction = draft().question.trim();
 		if (typed() || tried()) {
-			if (instruction.length === 0)
-				problems.push("Enter an instruction for the notebook assistant.");
-			else if (instruction.length > 2000)
-				problems.push("The instruction must be at most 2000 characters.");
+			if (instruction.length === 0) problems.push(m().instructionEmpty);
+			else if (instruction.length > 2000) problems.push(m().instructionTooLong);
 		}
 		return problems;
 	});
@@ -292,9 +297,9 @@ export function Composer(props: {
 			notebookKey = null;
 			if (result.value.run.state === "pending") {
 				setQueuedRunId(result.value.run.runId);
-				setQueuedNote("Instruction queued. The notebook assistant starts when a runner claims it.");
+				setQueuedNote(m().instructionQueued);
 			} else {
-				setQueuedNote(`Instruction submitted (run is ${result.value.run.state}).`);
+				setQueuedNote(m().instructionSubmitted(runText().state(result.value.run.state)));
 			}
 			setTyped(false);
 			setTried(false);
@@ -321,32 +326,34 @@ export function Composer(props: {
 		if (selected === null || stored === null) return null;
 		return {
 			backend: `${selected.displayName} (${selected.status})`,
-			model: evaluation().model ?? "backend default",
-			effort: stored.effort,
-			webAccess: stored.webAccess === "public-web" ? "on" : "off",
+			model: evaluation().model ?? m().backendDefault,
+			effort: m().effort(stored.effort),
+			webAccess: stored.webAccess === "public-web",
 		};
 	};
 	const summaryLine = () => {
 		const current = summary();
 		if (current === null) return null;
-		return `${current.backend} · ${current.model} · ${current.effort} · web access ${current.webAccess}`;
+		return m().summaryLine(current.backend, current.model, current.effort, current.webAccess);
 	};
 	const consentLabel = () => {
 		// Spend consent is required only when the settings carry a positive
 		// metered allowance, so the amount below is always set in practice;
 		// the fallback keeps the label honest if the budget is missing.
 		const max = evaluation().budget?.maxSpendUsd ?? null;
-		if (max === null) return "I consent to metered spend for this question";
-		return `I consent to metered spend up to ${formatUsd(max)} for this question`;
+		if (max === null) return m().consent;
+		return m().consentUpTo(formatUsd(max));
 	};
 	const optionsSummary = () => {
 		const markets = (["JP", "US"] as const).filter((market) => draft().markets[market]);
-		const marketText = markets.length === 0 ? "no markets" : markets.join(", ");
-		return `${draft().horizonYears} years · ${marketText}`;
+		const marketText = markets.length === 0 ? m().noMarkets : markets.join(", ");
+		return m().optionsSummary(draft().horizonYears, marketText);
 	};
 	const visibleProblems = createMemo(() => {
 		const interacted = typed() || tried();
-		return evaluation().problems.filter((problem) => isConfigurationProblem(problem) || interacted);
+		if (interacted) return evaluation().problems;
+		const configuration = new Set(configProblems());
+		return evaluation().problems.filter((problem) => configuration.has(problem));
 	});
 	// The queued note describes the run it belongs to (finding 12): as soon as
 	// that run leaves `pending` the note disappears — the run's current state
@@ -373,12 +380,13 @@ export function Composer(props: {
 			agents(),
 			settings(),
 			props.workspaceId,
+			m(),
 		).request;
 		return candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint;
 	};
 	const sendLabel = () => {
-		if (submitting()) return "Sending…";
-		return isNotebook() ? "Send instruction" : "Send question";
+		if (submitting()) return m().sending;
+		return isNotebook() ? m().sendInstruction : m().sendQuestion;
 	};
 
 	// The composer's mode menu (ADR-0023): choosing a mode closes the menu
@@ -398,7 +406,8 @@ export function Composer(props: {
 			ref={(element) => {
 				form = element;
 			}}
-			aria-label={isNotebook() ? "Notebook composer" : "Research composer"}
+			aria-label={isNotebook() ? m().notebookComposer : m().researchComposer}
+			data-composer={isNotebook() ? "notebook" : "research"}
 			class="space-y-1 bg-white"
 			noValidate
 			onSubmit={submit}
@@ -412,24 +421,24 @@ export function Composer(props: {
 						href="#/settings/agent"
 						class="inline-flex min-h-6 items-center text-blue-800 underline"
 					>
-						Open Settings → AI agent
+						{m().openAgentSettings}
 					</a>
 				</Notice>
 			</Show>
 			<Show when={isNotebook()}>
 				<Show
 					when={(props.selection ?? []).length > 0}
-					fallback={<p class="text-xs text-slate-600">About the whole notebook</p>}
+					fallback={<p class="text-xs text-slate-600">{m().wholeNotebook}</p>}
 				>
-					<ul aria-label="Selected widgets" class="flex flex-wrap gap-1">
+					<ul aria-label={m().selectedWidgets} class="flex flex-wrap gap-1">
 						<For each={props.selection ?? []}>
 							{(item) => (
 								<li class="inline-flex min-h-6 items-center gap-1 rounded bg-slate-200 py-0.5 pl-2 pr-1 text-xs text-slate-900">
 									<span>{item.title}</span>
 									<button
 										type="button"
-										aria-label={`Remove ${item.title} from selection`}
-										title={`Remove ${item.title} from selection`}
+										aria-label={m().removeFromSelection(item.title)}
+										title={m().removeFromSelection(item.title)}
 										onClick={() => props.onRemoveSelection?.(item.widgetId)}
 										class="flex min-h-6 min-w-6 items-center justify-center rounded-full hover:bg-slate-300"
 									>
@@ -443,19 +452,19 @@ export function Composer(props: {
 			</Show>
 			<div class="flex items-end gap-2 rounded-2xl bg-slate-100 p-2 focus-within:ring-2 focus-within:ring-blue-700">
 				<ActionMenu
-					buttonLabel="Choose mode"
-					menuLabel="Composer mode"
+					buttonLabel={m().chooseMode}
+					menuLabel={m().composerMode}
 					placement="above-start"
 					iconTrigger={{ icon: "plus-lg" }}
 					items={[
 						{
-							label: "Research",
+							label: m().research,
 							icon: "search",
 							checked: !isNotebook(),
 							onSelect: () => chooseTarget("research"),
 						},
 						{
-							label: "Notebook",
+							label: m().notebook,
 							icon: "journal-text",
 							checked: isNotebook(),
 							onSelect: () => chooseTarget("notebook"),
@@ -464,11 +473,11 @@ export function Composer(props: {
 				/>
 				<Show when={isNotebook()}>
 					<span class="inline-flex min-h-6 shrink-0 items-center gap-1 rounded bg-slate-200 py-0.5 pl-2 pr-1 text-xs text-slate-900">
-						<span>Notebook</span>
+						<span>{m().notebook}</span>
 						<button
 							type="button"
-							aria-label="Leave Notebook mode"
-							title="Leave Notebook mode"
+							aria-label={m().leaveNotebookMode}
+							title={m().leaveNotebookMode}
 							onClick={() => props.onTargetChange?.("research")}
 							class="flex min-h-6 min-w-6 items-center justify-center rounded-full hover:bg-slate-300"
 						>
@@ -477,7 +486,7 @@ export function Composer(props: {
 					</span>
 				</Show>
 				<label for={questionId} class="sr-only">
-					{isNotebook() ? "Instruction" : "Question"}
+					{isNotebook() ? m().instruction : m().question}
 				</label>
 				<textarea
 					ref={(element) => {
@@ -487,7 +496,7 @@ export function Composer(props: {
 					class="max-h-48 w-full resize-none border-0 bg-slate-100 px-1 py-1 text-sm text-slate-900 field-sizing-content focus:outline-none"
 					rows="1"
 					maxLength={2000}
-					placeholder={isNotebook() ? "Ask the notebook assistant…" : "Ask a research question…"}
+					placeholder={isNotebook() ? m().askNotebook : m().askResearch}
 					value={draft().question}
 					onInput={(event) => {
 						setTyped(true);
@@ -562,25 +571,25 @@ export function Composer(props: {
 				</Show>
 
 				<Show when={props.settings.status === "loading"}>
-					<Loading label="agent settings" />
+					<Loading label={m().agentSettings} />
 				</Show>
 				<Show when={props.settings.status === "error" ? props.settings.error : null}>
 					{(error) => (
 						<ErrorNotice
 							failure={error()}
-							title="Could not load agent settings."
+							title={m().agentSettingsFailed}
 							onRetry={props.onReloadSettings}
 						/>
 					)}
 				</Show>
 				<Show when={props.agents.status === "loading"}>
-					<Loading label="agent backends" />
+					<Loading label={m().agentBackends} />
 				</Show>
 				<Show when={props.agents.status === "error" ? props.agents.error : null}>
 					{(error) => (
 						<ErrorNotice
 							failure={error()}
-							title="Could not load agent backends."
+							title={m().agentBackendsFailed}
 							onRetry={props.onReloadAgents}
 						/>
 					)}
@@ -592,27 +601,27 @@ export function Composer(props: {
 							<p class="break-words text-xs text-slate-700">
 								{line()}{" "}
 								<a href="#/settings/agent" class="text-blue-800 underline">
-									Change in Settings → AI agent
+									{m().changeInSettings}
 								</a>
 							</p>
 						)}
 					</Show>
 					<Show when={carriedOver() && summaryLine() !== null}>
 						<p class="break-words text-xs text-slate-700">
-							Using the backend of your last question —{" "}
+							{m().carriedOver}{" "}
 							<a href="#/settings/agent" class="text-blue-800 underline">
-								review in Settings → AI agent
+								{m().reviewInSettings}
 							</a>
 						</p>
 					</Show>
 
 					<details class="group break-words text-xs text-slate-700">
-						<DisclosureSummary>Options: {optionsSummary()}</DisclosureSummary>
+						<DisclosureSummary>{m().options(optionsSummary())}</DisclosureSummary>
 						<div class="max-h-32 overflow-y-auto">
 							<div class="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
 								<div>
 									<label for={horizonId} class="block text-xs font-medium text-slate-700">
-										Horizon
+										{m().horizon}
 									</label>
 									<Select
 										id={horizonId}
@@ -626,7 +635,7 @@ export function Composer(props: {
 										<For each={HORIZONS}>
 											{(years) => (
 												<option value={String(years)} selected={draft().horizonYears === years}>
-													{years} years
+													{m().years(years)}
 												</option>
 											)}
 										</For>
@@ -634,7 +643,7 @@ export function Composer(props: {
 								</div>
 							</div>
 							<fieldset class="mt-1 flex flex-wrap gap-4 text-xs text-slate-900">
-								<legend class="block text-xs font-medium text-slate-700">Markets</legend>
+								<legend class="block text-xs font-medium text-slate-700">{m().markets}</legend>
 								<label class="flex items-center gap-1">
 									<input
 										type="checkbox"
@@ -643,7 +652,7 @@ export function Composer(props: {
 											patch({ markets: { ...draft().markets, JP: event.currentTarget.checked } })
 										}
 									/>
-									Japan (JP)
+									{m().japan}
 								</label>
 								<label class="flex items-center gap-1">
 									<input
@@ -653,7 +662,7 @@ export function Composer(props: {
 											patch({ markets: { ...draft().markets, US: event.currentTarget.checked } })
 										}
 									/>
-									United States (US)
+									{m().unitedStates}
 								</label>
 							</fieldset>
 						</div>
@@ -677,7 +686,7 @@ export function Composer(props: {
 					<Show when={visibleProblems().length > 0}>
 						<ul
 							id={problemsId}
-							aria-label="Before you can submit"
+							aria-label={m().beforeSubmit}
 							class="list-disc pl-5 text-xs text-slate-700"
 						>
 							<For each={visibleProblems()}>{(problem) => <li>{problem}</li>}</For>
@@ -688,7 +697,7 @@ export function Composer(props: {
 				<Show when={isNotebook() && notebookProblems().length > 0}>
 					<ul
 						id={problemsId}
-						aria-label="Before you can submit"
+						aria-label={m().beforeSubmit}
 						class="list-disc pl-5 text-xs text-slate-700"
 					>
 						<For each={notebookProblems()}>{(problem) => <li>{problem}</li>}</For>
@@ -699,13 +708,13 @@ export function Composer(props: {
 					{(note) => <output class="block text-xs text-emerald-900">{note()}</output>}
 				</Show>
 				<Show when={!isNotebook() && failure()}>
-					{(error) => <ErrorNotice failure={error()} title="The question was not submitted." />}
+					{(error) => <ErrorNotice failure={error()} title={m().questionNotSubmitted} />}
 				</Show>
 				<Show when={notebookFailure()}>
 					{(error) => (
 						<Show
-							when={notebookFailureText(error()) !== null}
-							fallback={<ErrorNotice failure={error()} title="The instruction was not sent." />}
+							when={notebookFailureText(error(), m())}
+							fallback={<ErrorNotice failure={error()} title={m().instructionNotSent} />}
 						>
 							{(text) => (
 								<Notice tone="warning">
@@ -715,7 +724,7 @@ export function Composer(props: {
 											href="#/settings/agent"
 											class="inline-flex min-h-6 items-center text-blue-800 underline"
 										>
-											Open Settings → AI agent
+											{m().openAgentSettings}
 										</a>
 									</Show>
 								</Notice>
