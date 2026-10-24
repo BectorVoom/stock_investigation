@@ -39,6 +39,14 @@ test.describe.configure({ mode: "serial" });
 const AGENT_ID = (process.env.RUN_LIVE_AGENT ?? "").trim();
 const LIVE = AGENT_ID !== "";
 const MODEL = (process.env.RUN_LIVE_MODEL ?? "").trim();
+/** Metered backends (ADR-0031) and the key each needs; the task must carry spend consent (ADR-0033 §4). */
+const METERED_KEYS: Readonly<Record<string, string>> = {
+	"claude-api": "ANTHROPIC_API_KEY",
+	openrouter: "OPENROUTER_API_KEY",
+};
+const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
+const METERED = METERED_KEY !== null;
+const MAX_SPEND_USD = Number((process.env.RUN_LIVE_MAX_SPEND ?? "0.5").trim());
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8917;
 const API_PORT = 8918;
@@ -145,10 +153,10 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		// Test-owned runner settings (finding 5). A backend whose tool
 		// isolation is "unverified" needs the documented runner opt-in, as in
 		// live.spec.ts; this is a throwaway copy.
-		const runnerEnvFile = writeTestRunnerEnvFile(
-			extraRoot,
-			AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" },
-		);
+		const runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
+			...(AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" }),
+			...(METERED_KEY === null ? {} : { [METERED_KEY]: (process.env[METERED_KEY] ?? "").trim() }),
+		});
 		if (pristine === null) throw new Error("the pristine copy was not created");
 		const launched = await startLauncher({
 			cwd: pristine.root,
@@ -212,6 +220,7 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 			await modelSelect.selectOption(MODEL);
 		}
 		await agentSection.getByLabel("Effort").selectOption("low");
+		if (METERED) await agentSection.getByLabel("Max spend (USD)").fill(String(MAX_SPEND_USD));
 		const save = agentSection.getByRole("button", { name: "Save" });
 		if (await save.isEnabled()) await save.click();
 		await expect(agentSection).toContainText(/Saved /);
@@ -246,6 +255,10 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		await dialog.getByLabel("Time", { exact: true }).fill(slot.time);
 		await expect(dialog.getByLabel("Time zone")).toHaveValue("UTC");
 		// A plan-limited backend needs no spend consent: no checkbox to tick.
+		if (METERED) {
+			// The task's own consent: a metered occurrence fires only with it.
+			await dialog.getByRole("checkbox", { name: /^Allow this task to spend up to / }).check();
+		}
 		await dialog.getByRole("button", { name: "Create task" }).click();
 		await expect(dialog).toBeHidden({ timeout: 30_000 });
 		const row = page

@@ -2,7 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { agentsResponseSchema } from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
@@ -65,6 +65,48 @@ const MODEL =
 		? (process.env.OPENCODE_MODEL ?? "").trim()
 		: (process.env.RUN_LIVE_MODEL ?? "").trim();
 const PAGE_URL = (process.env.RESEARCH_REAL_PAGE_URL ?? "https://example.com/").trim();
+/**
+ * Backends that bill per use (ADR-0031): Settings asks for a maximum spend,
+ * every question needs the composer's one-time consent, and the runner needs
+ * the provider key, passed explicitly into the throwaway runner env file.
+ */
+const METERED_KEYS: Readonly<Record<string, string>> = {
+	"claude-api": "ANTHROPIC_API_KEY",
+	openrouter: "OPENROUTER_API_KEY",
+};
+const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
+const METERED = METERED_KEY !== null;
+/** The spend ceiling per question on a metered backend, in USD (`RUN_LIVE_MAX_SPEND`, default 0.50). */
+const MAX_SPEND_USD = Number((process.env.RUN_LIVE_MAX_SPEND ?? "0.5").trim());
+
+/** Ticks the composer's one-time spend consent when the backend is metered. */
+async function consentIfMetered(composer: Locator): Promise<void> {
+	if (!METERED) return;
+	// The label names the ceiling ("… up to $0.50 for this question").
+	const consent = composer.getByRole("checkbox", { name: /^I consent to metered spend\b/ });
+	if (!(await consent.isChecked())) await consent.check();
+}
+
+/** Every run's reported cost: known, positive and within the ceiling on a metered backend. */
+async function expectCostsWithinCeiling(): Promise<void> {
+	if (!METERED) return;
+	const runs = (await apiJson("GET", "/api/v1/research-runs")) as { runs: unknown };
+	const list = Array.isArray(runs.runs) ? runs.runs : [];
+	const costs = list.map((entry: unknown) => {
+		const usage =
+			typeof entry === "object" && entry !== null ? (entry as Record<string, unknown>).usage : null;
+		const cost =
+			typeof usage === "object" && usage !== null
+				? (usage as Record<string, unknown>).knownCostUsd
+				: null;
+		return typeof cost === "number" ? cost : Number.NaN;
+	});
+	console.log(`metered run costs (USD): ${costs.map((cost) => cost.toFixed(4)).join(", ")}`);
+	for (const cost of costs) {
+		expect(cost).toBeGreaterThan(0);
+		expect(cost).toBeLessThanOrEqual(MAX_SPEND_USD);
+	}
+}
 const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const VITE_PORT = 8901;
 const API_PORT = 8902;
@@ -257,10 +299,17 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// A backend whose tool isolation is "unverified" (Codex) is refused
 		// by the pipeline unless the owner opts in on the runner; this is a
 		// throwaway copy, and the opt-in is the documented one.
-		runnerEnvFile = writeTestRunnerEnvFile(
-			extraRoot,
-			AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" },
-		);
+		const meteredKey = METERED_KEY === null ? "" : (process.env[METERED_KEY] ?? "").trim();
+		if (METERED_KEY !== null && meteredKey === "") {
+			throw new Error(`RUN_LIVE_AGENT=${AGENT_ID} needs ${METERED_KEY} in the environment`);
+		}
+		if (METERED && !(MAX_SPEND_USD > 0)) {
+			throw new Error("RUN_LIVE_MAX_SPEND must be a positive number of USD");
+		}
+		runnerEnvFile = writeTestRunnerEnvFile(extraRoot, {
+			...(AGENT_ID === "opencode" ? {} : { ALLOW_UNVERIFIED_TOOL_ISOLATION: "1" }),
+			...(METERED_KEY === null ? {} : { [METERED_KEY]: meteredKey }),
+		});
 		service = await startDev(dataDirA);
 		livePage = await browser.newPage();
 	});
@@ -323,6 +372,8 @@ test.describe("live positive path through the real backend (spends real quota)",
 			await modelSelect.selectOption(MODEL);
 		}
 		await agentSection.getByLabel("Effort").selectOption("low");
+		// A metered backend asks for the per-question spend ceiling here.
+		if (METERED) await agentSection.getByLabel("Max spend (USD)").fill(String(MAX_SPEND_USD));
 		// Public web access must be ON for the page question below: ensure
 		// the checkbox is checked (the defaults already allow it, so blindly
 		// clicking would turn it OFF).
@@ -351,6 +402,10 @@ test.describe("live positive path through the real backend (spends real quota)",
 			expect((settingsRecord.models as Record<string, unknown>)[AGENT_ID]).toBe(MODEL);
 		}
 		expect(settingsRecord.webAccess).toBe("public-web");
+		if (METERED) {
+			const budget = settingsRecord.budget as Record<string, unknown>;
+			expect(budget.maxSpendUsd).toBe(MAX_SPEND_USD);
+		}
 
 		// A real recommended source subscribed.
 		await page.getByRole("link", { name: "Sources", exact: true }).click();
@@ -365,6 +420,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// A question asked; the run completes with a claim and a source link.
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
 		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_1);
+		await consentIfMetered(composer);
 		await composer.getByRole("button", { name: "Send question" }).click();
 		const thread = page.getByRole("list", { name: "Messages" });
 		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
@@ -414,6 +470,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		try {
 			const composer = page.getByRole("form", { name: "Research composer" });
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_2);
+			await consentIfMetered(composer);
 			await composer.getByRole("button", { name: "Send question" }).click();
 			const thread = page.getByRole("list", { name: "Messages" });
 			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(2, {
@@ -470,6 +527,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 			// run on its own after the fresh-state test (`-g`).
 			const completedBefore = await thread.locator('[data-run-state="completed"]').count();
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_SEARCH);
+			await consentIfMetered(composer);
 			await composer.getByRole("button", { name: "Send question" }).click();
 			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
 				completedBefore + 1,
@@ -492,6 +550,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 		expect(searchRun, "the search question's run is not listed").toBeDefined();
 		const detail = await apiJson("GET", `/api/v1/research-runs/${stringField(searchRun, "runId")}`);
 		expect(JSON.stringify(detail)).toMatch(/web\.search: executed/);
+		await expectCostsWithinCeiling();
 	});
 
 	test("a past chat is renamed and then deleted with its runs", async () => {
@@ -553,7 +612,7 @@ test.describe("live positive path through the real backend (spends real quota)",
 				maxToolCalls: 20,
 				maxWallClockMs: 600_000,
 				maxInputBytes: 400_000,
-				maxSpendUsd: null,
+				maxSpendUsd: METERED ? MAX_SPEND_USD : null,
 			},
 			webAccess: "off",
 		});
@@ -578,6 +637,17 @@ test.describe("live positive path through the real backend (spends real quota)",
 		await expect(composer).not.toContainText("Choose a default agent backend");
 		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_3);
 		const send = composer.getByRole("button", { name: "Send question" });
+		if (METERED) {
+			// A carried-over spend amount is never consent (AGT-012,
+			// `carriedOverSettings`): on a metered backend the composer
+			// refuses to send and points at the control that fixes it.
+			await expect(composer).toContainText(
+				"A metered backend needs a maximum spend greater than 0 USD",
+			);
+			await expect(composer.getByRole("link", { name: "Open Settings → AI agent" })).toBeVisible();
+			await expect(send).toBeDisabled();
+			return;
+		}
 		await expect(send).toBeEnabled();
 		try {
 			await send.click();
