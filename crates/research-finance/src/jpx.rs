@@ -16,8 +16,10 @@ pub const JPX_INDEX_URL: &str =
 	"https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html";
 const SHEET: &str = "xl/worksheets/sheet1.xml";
 const STRINGS: &str = "xl/sharedStrings.xml";
-/// Extracts at most six distinct permitted workbook URLs in document order.
-pub fn extract_jpx_workbook_urls(html: &str) -> Vec<String> {
+/// The non-empty `href` values of a page's `<a>` tags, in document order
+/// (`anchorHrefs`): raw, unresolved and unchecked. Each JPX scraper resolves
+/// them against its own page and keeps only its own host and path shape.
+pub fn anchor_hrefs(html: &str) -> Vec<&str> {
 	let whitespace = r"[\t\n\x0b\x0c\r \u{a0}\u{feff}\u{1680}\u{2000}-\u{200a}\u{2028}\u{2029}\u{202f}\u{205f}\u{3000}]";
 	let pattern = format!(
 		r#"(?i-u:<a\b)[^>]*?(?-u:\bhref){whitespace}*={whitespace}*(?:"([^"]*)"|'([^']*)'|([^\t\n\x0b\x0c\r \u{{a0}}\u{{feff}}\u{{1680}}\u{{2000}}-\u{{200a}}\u{{2028}}\u{{2029}}\u{{202f}}\u{{205f}}\u{{3000}}>]+))"#
@@ -28,6 +30,20 @@ pub fn extract_jpx_workbook_urls(html: &str) -> Vec<String> {
 	else {
 		return Vec::new();
 	};
+	anchor
+		.captures_iter(html)
+		.filter_map(|captures| {
+			captures
+				.get(1)
+				.or_else(|| captures.get(2))
+				.or_else(|| captures.get(3))
+				.map(|m| m.as_str())
+				.filter(|s| !s.is_empty())
+		})
+		.collect()
+}
+/// Extracts at most six distinct permitted workbook URLs in document order.
+pub fn extract_jpx_workbook_urls(html: &str) -> Vec<String> {
 	let Ok(path) = regex::Regex::new(
 		r"^/listing/event-schedules/financial-announcement/[A-Za-z0-9_-]+/kessan[0-9]{2}_[0-9]{4}\.xlsx$",
 	) else {
@@ -37,16 +53,7 @@ pub fn extract_jpx_workbook_urls(html: &str) -> Vec<String> {
 		return Vec::new();
 	};
 	let mut urls = Vec::new();
-	for captures in anchor.captures_iter(html) {
-		let Some(raw) = captures
-			.get(1)
-			.or_else(|| captures.get(2))
-			.or_else(|| captures.get(3))
-			.map(|m| m.as_str())
-			.filter(|s| !s.is_empty())
-		else {
-			continue;
-		};
+	for raw in anchor_hrefs(html) {
 		let Ok(url) = base.join(raw) else {
 			continue;
 		};

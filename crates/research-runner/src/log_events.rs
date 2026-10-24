@@ -12,7 +12,7 @@ use research_effects::is_log_event_name;
 /// Every event the shell logs. The launcher greps `invalid_configuration`,
 /// `unsupported_runtime` and `runner_crashed` in `runner.log`
 /// (`scripts/supervision.ts`): they must not be printed in any other context.
-const SHELL_EVENTS: [&str; 22] = [
+const SHELL_EVENTS: [&str; 23] = [
 	"agent_probe",
 	"claim_failed",
 	"completion_rejected",
@@ -33,6 +33,9 @@ const SHELL_EVENTS: [&str; 22] = [
 	"scratch_not_removed",
 	"sec_tools_disabled",
 	"shutdown_requested",
+	// The stock-directory sources' dropped-row count (ADR-0033), logged by
+	// the hook the composition root hands them.
+	"stock_directory_rows_dropped",
 	"unsupported_runtime",
 	"web_pages_disabled",
 ];

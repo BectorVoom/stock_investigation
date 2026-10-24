@@ -14,17 +14,21 @@ use research_application::ports::{Clock, Hasher, PageArchive, SafeBinaryFetcher,
 use research_contracts::market::{
 	MarketProviderId, MarketUnavailableCode, market_unavailable_reason,
 };
-use research_contracts::watchlist::EarningsSourceId;
-use research_effects::EventLogger;
+use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
+use research_effects::{EventLogger, LogValue};
 use research_feed::FastXmlFeedParser;
 use research_finance::finnhub::FinnhubEarningsSource;
 use research_finance::fred::FredSeriesSource;
 use research_finance::jpx::JpxEarningsSource;
+use research_finance::jpx_directory::JpxDirectorySource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
-	EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper, TokioSleeper,
-	UnconfiguredEarningsCalendarSource, UnconfiguredMarketSeriesSource,
+	DroppedRowsHook, EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper,
+	StockDirectorySource, TokioSleeper, UnconfiguredEarningsCalendarSource,
+	UnconfiguredMarketSeriesSource, UnconfiguredStockDirectorySource,
 };
+use research_finance::sec_client::{PacedSecClient, is_usable_sec_user_agent};
+use research_finance::sec_directory::SecDirectorySource;
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_google::http::PinnedGoogleHttp;
 use research_google::oauth::OAuthClient;
@@ -165,6 +169,57 @@ fn earnings_sources(
 	])
 }
 
+/// The stock-directory sources by market (ADR-0033). The US list comes from
+/// SEC, which requires a declared User-Agent: without a usable
+/// `SEC_USER_AGENT` the US source is "unconfigured" and its jobs fail with
+/// `DIRECTORY_NOT_CONFIGURED` instead of sending an undeclared agent. The JP
+/// list (JPX) needs no key. Rows dropped for an over-long name are logged as
+/// a count only (SEC-010: never provider text).
+fn stock_directory_sources(
+	config: &RunnerConfig,
+	fetcher: &Arc<dyn SafeFetcher>,
+	binary_fetcher: &Arc<dyn SafeBinaryFetcher>,
+	clock: &Arc<dyn Clock>,
+	sleeper: &Arc<dyn Sleeper>,
+	logger: &Arc<dyn EventLogger>,
+) -> HashMap<WatchMarket, Arc<dyn StockDirectorySource>> {
+	let dropped = |market: WatchMarket| -> DroppedRowsHook {
+		let logger = Arc::clone(logger);
+		Arc::new(move |count: usize| {
+			logger.info(
+				"stock_directory_rows_dropped",
+				&[
+					("market", LogValue::from(market.as_str())),
+					(
+						"count",
+						LogValue::from(i64::try_from(count).unwrap_or(i64::MAX)),
+					),
+				],
+			);
+		})
+	};
+	let us: Arc<dyn StockDirectorySource> =
+		if is_usable_sec_user_agent(config.sec_user_agent.as_deref()) {
+			Arc::new(SecDirectorySource::new(
+				Arc::new(PacedSecClient::new(
+					Arc::clone(fetcher),
+					Arc::clone(clock),
+					Arc::clone(sleeper),
+					config.sec_user_agent.clone(),
+				)),
+				Some(dropped(WatchMarket::Us)),
+			))
+		} else {
+			Arc::new(UnconfiguredStockDirectorySource(WatchMarket::Us))
+		};
+	let jp: Arc<dyn StockDirectorySource> = Arc::new(JpxDirectorySource::new(
+		Arc::clone(fetcher),
+		Arc::clone(binary_fetcher),
+		Some(dropped(WatchMarket::Jp)),
+	));
+	HashMap::from([(WatchMarket::Us, us), (WatchMarket::Jp, jp)])
+}
+
 /// Both halves of the OAuth client, or none: without both, every
 /// google-calendar job fails honestly with GOOGLE_NOT_CONFIGURED.
 fn oauth_client(config: &RunnerConfig) -> Option<OAuthClient> {
@@ -257,6 +312,14 @@ pub fn compose(
 			},
 			market_sources: market_sources(config, &fetcher),
 			earnings_sources: earnings_sources(config, &fetcher, &binary_fetcher, &clock),
+			stock_directory_sources: stock_directory_sources(
+				config,
+				&fetcher,
+				&binary_fetcher,
+				&clock,
+				&sleeper,
+				logger,
+			),
 			clock,
 			logger: Arc::clone(logger),
 			scratch,

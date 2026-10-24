@@ -29,17 +29,23 @@ use research_application::research::prompts::PROMPT_VERSION;
 use research_application::research::{
 	PipelineOutcome, ResearchPipelineDeps, ResearchPipelineInput, run_research_pipeline,
 };
-use research_contracts::jobs::{ClaimedJob, EarningsRefreshJob, MarketRefreshJob};
+use research_contracts::jobs::{
+	ClaimedJob, EarningsRefreshJob, MarketRefreshJob, StockDirectoryRefreshJob,
+};
 use research_contracts::jobs::{
 	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, RunnerEvent, RunnerEventBody,
 	RunnerEventsRequest, ToolOutcome, bundle_limits,
 };
+use research_contracts::watchlist::WatchMarket;
 use research_contracts::{Tri, jobs::ResourceUsage};
 use research_domain::jobs::state_machine::JobState;
 use research_effects::{EventLogger, LogValue};
-use research_finance::jobs::{RefreshDeps, execute_earnings_refresh, execute_market_refresh};
+use research_finance::jobs::{
+	DirectoryDeps, RefreshDeps, execute_earnings_refresh, execute_market_refresh,
+	execute_stock_directory_refresh,
+};
 use research_finance::pacing::MarketPacer;
-use research_finance::ports::{EarningsCalendarSource, MarketSeriesSource};
+use research_finance::ports::{EarningsCalendarSource, MarketSeriesSource, StockDirectorySource};
 use research_google::jobs::GoogleAuthUrlSender;
 use research_js::utf16::cut_code_points;
 use tokio::sync::Mutex as AsyncMutex;
@@ -96,6 +102,9 @@ pub struct JobDeps {
 	pub market_sources: HashMap<String, Arc<dyn MarketSeriesSource>>,
 	/// Earnings sources keyed by id.
 	pub earnings_sources: HashMap<String, Arc<dyn EarningsCalendarSource>>,
+	/// Stock-directory sources by market (ADR-0033): SEC for US (unconfigured
+	/// without `SEC_USER_AGENT`), JPX for JP.
+	pub stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>>,
 	/// Per-provider request pacing (API-007), shared across jobs.
 	pub pacer: Arc<dyn MarketPacer>,
 	/// Google Calendar sync (FR-019).
@@ -500,7 +509,8 @@ fn completion_facts(completion: &CompleteJobRequest) -> (ResourceUsage, Option<&
 		| CompleteJobRequest::EarningsRefreshed { usage, .. }
 		| CompleteJobRequest::GoogleCalendarConnected { usage, .. }
 		| CompleteJobRequest::GoogleCalendarSynced { usage, .. }
-		| CompleteJobRequest::GoogleCalendarDisconnected { usage, .. } => (*usage, None),
+		| CompleteJobRequest::GoogleCalendarDisconnected { usage, .. }
+		| CompleteJobRequest::StockDirectoryRefreshed { usage, .. } => (*usage, None),
 		CompleteJobRequest::Partial {
 			usage,
 			failure_code,
@@ -949,6 +959,9 @@ async fn dispatch(
 		ClaimedJob::EarningsRefresh(job) => {
 			Ok(earnings_refresh(job, deps, &cancel, &**reporter).await)
 		}
+		ClaimedJob::StockDirectoryRefresh(job) => {
+			Ok(stock_directory_refresh(job, deps, &cancel, &**reporter).await)
+		}
 		ClaimedJob::NewsIngest(lease) => {
 			for state in [JobState::Planning, JobState::Collecting] {
 				reporter.state(state).await;
@@ -1128,6 +1141,21 @@ async fn earnings_refresh(
 	reporter: &dyn PipelineReporter,
 ) -> CompleteJobRequest {
 	execute_earnings_refresh(job, &refresh_deps(deps), cancel, reporter).await
+}
+
+async fn stock_directory_refresh(
+	job: &StockDirectoryRefreshJob,
+	deps: &JobDeps,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	let directory = DirectoryDeps {
+		clock: &*deps.clock,
+		logger: &*deps.logger,
+		pacer: &*deps.pacer,
+		sources: &deps.stock_directory_sources,
+	};
+	execute_stock_directory_refresh(job, &directory, cancel, reporter).await
 }
 
 /// A reporter on a fresh job core, for tests of the event queue.

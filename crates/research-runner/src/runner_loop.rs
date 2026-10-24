@@ -163,5 +163,6 @@ const fn job_kind(job: &research_contracts::jobs::ClaimedJob) -> &'static str {
 		ClaimedJob::MarketRefresh(_) => JobKind::MarketRefresh.as_str(),
 		ClaimedJob::EarningsRefresh(_) => JobKind::EarningsRefresh.as_str(),
 		ClaimedJob::GoogleCalendar(_) => JobKind::GoogleCalendar.as_str(),
+		ClaimedJob::StockDirectoryRefresh(_) => JobKind::StockDirectoryRefresh.as_str(),
 	}
 }

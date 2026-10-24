@@ -73,6 +73,19 @@ export interface JpxEarningsDeps {
 }
 
 /**
+ * The non-empty `href` values of a page's `<a>` tags, in document order —
+ * raw, unresolved and unchecked: each JPX scraper resolves them against its
+ * own page and keeps only its own host and path shape (fail closed).
+ */
+export function* anchorHrefs(html: string): Generator<string> {
+	const anchorPattern = /<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+	for (const match of html.matchAll(anchorPattern)) {
+		const raw = match[1] ?? match[2] ?? match[3] ?? "";
+		if (raw !== "") yield raw;
+	}
+}
+
+/**
  * Workbook hrefs of the index page, in document order, de-duplicated, at
  * most `MAX_JPX_WORKBOOKS`. Absolute and root-relative hrefs are accepted;
  * anything off-host or off-shape is ignored (fail closed, ARCH-017).
@@ -80,10 +93,8 @@ export interface JpxEarningsDeps {
 export function extractJpxWorkbookUrls(html: string): string[] {
 	const urls: string[] = [];
 	const seen = new Set<string>();
-	const anchorPattern = /<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
-	for (const match of html.matchAll(anchorPattern)) {
-		const raw = match[1] ?? match[2] ?? match[3] ?? "";
-		if (raw === "" || !URL.canParse(raw, JPX_INDEX_URL)) continue;
+	for (const raw of anchorHrefs(html)) {
+		if (!URL.canParse(raw, JPX_INDEX_URL)) continue;
 		const resolved = new URL(raw, JPX_INDEX_URL);
 		if (resolved.protocol !== "https:" || resolved.hostname.toLowerCase() !== JPX_HOST) continue;
 		if (!WORKBOOK_PATH_PATTERN.test(resolved.pathname)) continue;

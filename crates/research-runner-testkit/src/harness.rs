@@ -11,13 +11,13 @@ use research_agent_core::registry::{AgentRegistry, DuplicateAgentId};
 use research_application::ingest::IngestDeps;
 use research_application::ports::{Clock, Hasher, SafeFetcher};
 use research_contracts::market::MarketProviderId;
-use research_contracts::watchlist::EarningsSourceId;
+use research_contracts::watchlist::{EarningsSourceId, WatchMarket};
 use research_effects::{EventLogger, JsonEventLogger, LogValue, StderrSink};
 use research_feed::FastXmlFeedParser;
 use research_finance::fred::FredSeriesSource;
 use research_finance::pacing::{MarketPacer, WindowMarketPacer};
 use research_finance::ports::{
-	EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper, TokioSleeper,
+	EarningsCalendarSource, MarketSeriesSource, Secret, Sleeper, StockDirectorySource, TokioSleeper,
 };
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_providers::environment::ProviderEnvironment;
@@ -35,6 +35,7 @@ use research_tools::catalogue::{ResearchToolDeps, create_research_tools};
 use tokio_util::sync::CancellationToken;
 
 use crate::agents::{NoScratch, write_registration};
+use crate::directory::FixtureStockDirectorySource;
 use crate::earnings::FixtureEarningsSource;
 use crate::fetchers::{FIXTURE_API_KEY, FeedFixtureFetcher, MarketFixtureFetcher};
 use crate::fixtures::Fixtures;
@@ -193,6 +194,25 @@ pub async fn compose(
 			Arc::new(FixtureEarningsSource::jpx(fixtures.earnings.jpx.clone())),
 		),
 	]);
+	// Stock lists (ADR-0033): the canned US and JP lists of the shared
+	// fixture file, padded to the contract's floor: no SEC, no JPX.
+	let stock_directory_sources: HashMap<WatchMarket, Arc<dyn StockDirectorySource>> =
+		HashMap::from([
+			(
+				WatchMarket::Us,
+				Arc::new(FixtureStockDirectorySource::new(
+					WatchMarket::Us,
+					&fixtures.stock_directory.us,
+				)?) as Arc<dyn StockDirectorySource>,
+			),
+			(
+				WatchMarket::Jp,
+				Arc::new(FixtureStockDirectorySource::new(
+					WatchMarket::Jp,
+					&fixtures.stock_directory.jp,
+				)?),
+			),
+		]);
 	// No limits in E2E: the fixture loop never paces.
 	let pacer: Arc<dyn MarketPacer> = Arc::new(WindowMarketPacer::new(
 		Arc::clone(&clock),
@@ -239,6 +259,7 @@ pub async fn compose(
 			allow_unverified_tool_isolation: false,
 			market_sources,
 			earnings_sources,
+			stock_directory_sources,
 			pacer,
 			google,
 		}),

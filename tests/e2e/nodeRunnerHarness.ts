@@ -34,6 +34,7 @@ import {
 	createMarketPacer,
 	runRunnerLoop,
 } from "../../apps/runner/src/index.ts";
+import { fixtureStockDirectorySources } from "./directoryFixtures.ts";
 import { createE2eScriptedAgent } from "./e2eScriptedAgent.ts";
 import { fixtureEarningsSources } from "./earningsFixtures.ts";
 import { E2E_ORIGIN, fixtureFetcher, GOOGLE_SIGN_IN_URL } from "./fixtures.ts";
@@ -126,6 +127,10 @@ const exit = await runRunnerLoop(
 		// Stocks without a recorded answer fail with the fixed unavailable
 		// wording, so the browser only ever shows fixture dates.
 		earningsSources: fixtureEarningsSources(),
+		// Stock lists (ADR-0033): canned US and JP lists from the shared
+		// fixture file (tests/e2e/directoryFixtures.ts), padded to the
+		// contract's floor — no SEC, no JPX, no network.
+		stockDirectorySources: fixtureStockDirectorySources(),
 		// Google Calendar is out of scope for the browser suite: no
 		// credentials, so any google-calendar job fails honestly with
 		// GOOGLE_NOT_CONFIGURED (FR-019 section 2.6 wiring only).

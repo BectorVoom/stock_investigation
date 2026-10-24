@@ -27,5 +27,64 @@
 				"timing": "unknown"
 			}
 		]
+	},
+	"stockDirectory": {
+		"US": {
+			"asOf": null,
+			"entries": [
+				{
+					"symbol": "AAPL",
+					"name": "Apple Inc.",
+					"listing": "nasdaq"
+				},
+				{
+					"symbol": "TM",
+					"name": "TOYOTA MOTOR CORP/",
+					"listing": "nyse"
+				},
+				{
+					"symbol": "MSFT",
+					"name": "MICROSOFT CORP",
+					"listing": "nasdaq"
+				}
+			],
+			"padding": {
+				"symbolPrefix": "ZA",
+				"digits": 3,
+				"name": "Fixture Company {n}",
+				"localName": null,
+				"listing": "nyse"
+			}
+		},
+		"JP": {
+			"asOf": "2026-09-30",
+			"entries": [
+				{
+					"symbol": "7203",
+					"name": "TOYOTA MOTOR CORPORATION",
+					"localName": "トヨタ自動車",
+					"listing": "tse-prime"
+				},
+				{
+					"symbol": "7205",
+					"name": "HINO MOTORS,LTD.",
+					"localName": "日野自動車",
+					"listing": "tse-prime"
+				},
+				{
+					"symbol": "6758",
+					"name": "Sony Group Corporation",
+					"localName": "ソニーグループ",
+					"listing": "tse-prime"
+				}
+			],
+			"padding": {
+				"symbolPrefix": "9",
+				"digits": 3,
+				"name": "Fixture Company {n}",
+				"localName": "フィクスチャ {n}",
+				"listing": "tse-standard"
+			}
+		}
 	}
 }

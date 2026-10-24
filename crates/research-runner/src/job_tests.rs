@@ -483,6 +483,11 @@ struct Options {
 	market_source: Option<Arc<dyn MarketSeriesSource>>,
 	/// The Finnhub source.
 	earnings_source: Option<Arc<dyn research_finance::ports::EarningsCalendarSource>>,
+	/// Stock-directory sources by market (none: every market is unconfigured).
+	directory_sources: Vec<(
+		research_contracts::watchlist::WatchMarket,
+		Arc<dyn research_finance::ports::StockDirectorySource>,
+	)>,
 	/// The fence-token factory panics on this call (1-based).
 	fence_panics_on_call: Option<usize>,
 }
@@ -499,6 +504,7 @@ impl Default for Options {
 			market_delay: None,
 			market_source: None,
 			earnings_source: None,
+			directory_sources: Vec::new(),
 			fence_panics_on_call: None,
 		}
 	}
@@ -569,6 +575,7 @@ fn harness(api: Arc<FakeApi>, options: Options) -> Harness {
 		allow_unverified_tool_isolation: false,
 		market_sources,
 		earnings_sources,
+		stock_directory_sources: options.directory_sources.into_iter().collect(),
 		// No limits: tests never wait for the quota gate.
 		pacer: Arc::new(WindowMarketPacer::new(
 			clock,
@@ -2443,4 +2450,207 @@ async fn golden_outgoing_payloads_are_current() {
 			golden.name
 		);
 	}
+}
+
+/* ---------- stock-directory refresh (stockDirectoryRefresh.test.ts) ---------- */
+
+use research_contracts::stock_directory::{
+	StockDirectoryEntry, StockDirectoryFailureCode, StockListing,
+};
+use research_finance::ports::{StockDirectoryData, StockDirectoryQuery, StockDirectorySource};
+
+/// A source that answers once (or panics) and records its pacing grants.
+struct FakeDirectory {
+	answer: Option<Result<StockDirectoryData, StockDirectoryFailureCode>>,
+	grants: Mutex<Vec<bool>>,
+}
+
+impl FakeDirectory {
+	fn answering(answer: Result<StockDirectoryData, StockDirectoryFailureCode>) -> Self {
+		Self {
+			answer: Some(answer),
+			grants: Mutex::new(Vec::new()),
+		}
+	}
+	fn panicking() -> Self {
+		Self {
+			answer: None,
+			grants: Mutex::new(Vec::new()),
+		}
+	}
+}
+
+#[async_trait]
+impl StockDirectorySource for FakeDirectory {
+	fn market(&self) -> research_contracts::watchlist::WatchMarket {
+		research_contracts::watchlist::WatchMarket::Jp
+	}
+	async fn fetch_directory(
+		&self,
+		query: StockDirectoryQuery<'_>,
+	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+		let granted = query.before_request.before_request().await;
+		self.grants.lock().unwrap().push(granted);
+		let Some(answer) = &self.answer else {
+			panic!("the directory source exploded");
+		};
+		answer.clone()
+	}
+}
+
+fn jp_directory(count: usize) -> StockDirectoryData {
+	StockDirectoryData {
+		as_of: Some("2026-09-30".to_owned()),
+		entries: (0..count)
+			.map(|index| StockDirectoryEntry {
+				symbol: (1000 + index).to_string(),
+				name: format!("Issue {index}"),
+				local_name: Some(format!("銘柄{index}")),
+				listing: StockListing::TsePrime,
+			})
+			.collect(),
+	}
+}
+
+fn directory_job(market: &str) -> ClaimedJob {
+	parse(&format!(
+		r#"{{{},"market":"{market}"}}"#,
+		lease("stock-directory-refresh", "run_directory", 6, 20_000)
+	))
+	.unwrap()
+}
+
+fn directory_harness(api: &Arc<FakeApi>, source: FakeDirectory) -> (Harness, Arc<FakeDirectory>) {
+	let source = Arc::new(source);
+	let harness = harness(
+		Arc::clone(api),
+		Options {
+			directory_sources: vec![(
+				research_contracts::watchlist::WatchMarket::Jp,
+				Arc::clone(&source) as Arc<dyn StockDirectorySource>,
+			)],
+			..Options::default()
+		},
+	);
+	(harness, source)
+}
+
+fn failure_of(calls: &ApiCalls) -> (String, bool) {
+	match calls.completions.first() {
+		Some(CompleteJobRequest::Failed {
+			failure_code,
+			retryable,
+			failure_detail: Tri::Absent,
+			..
+		}) => (failure_code.clone(), *retryable),
+		other => panic!("expected a failed completion, got {other:?}"),
+	}
+}
+
+#[tokio::test]
+async fn a_directory_refresh_completes_with_the_markets_list() {
+	let api = FakeApi::new(ApiScript::default());
+	let (harness, source) =
+		directory_harness(&api, FakeDirectory::answering(Ok(jp_directory(1_000))));
+	run(directory_job("JP"), &harness).await;
+	let calls = api.calls();
+	assert_eq!(state_sequence(&calls), FULL_LIFECYCLE);
+	let Some(CompleteJobRequest::StockDirectoryRefreshed {
+		lease_generation,
+		market,
+		as_of,
+		entries,
+		..
+	}) = calls.completions.first()
+	else {
+		panic!("expected a stock-directory completion");
+	};
+	assert_eq!(*lease_generation, 6);
+	assert_eq!(*market, research_contracts::watchlist::WatchMarket::Jp);
+	assert_eq!(as_of.as_deref(), Some("2026-09-30"));
+	assert_eq!(entries.len(), 1_000);
+	assert_eq!(*source.grants.lock().unwrap(), [true]);
+	assert!(
+		harness
+			.log
+			.events()
+			.contains(&"stock_directory_fetched".to_owned())
+	);
+}
+
+#[tokio::test]
+async fn a_market_without_a_source_fails_as_not_configured() {
+	let api = FakeApi::new(ApiScript::default());
+	let harness = harness(Arc::clone(&api), Options::default());
+	run(directory_job("US"), &harness).await;
+	let calls = api.calls();
+	assert_eq!(state_sequence(&calls), FULL_LIFECYCLE);
+	assert_eq!(
+		failure_of(&calls),
+		("DIRECTORY_NOT_CONFIGURED".to_owned(), false)
+	);
+}
+
+#[tokio::test]
+async fn a_directory_failure_keeps_its_code_and_only_a_source_failure_is_retried() {
+	for (code, retryable) in [
+		(StockDirectoryFailureCode::SourceFailed, true),
+		(StockDirectoryFailureCode::RateLimited, false),
+		(StockDirectoryFailureCode::ParseFailed, false),
+		(StockDirectoryFailureCode::NotConfigured, false),
+	] {
+		let api = FakeApi::new(ApiScript::default());
+		let (harness, _) = directory_harness(&api, FakeDirectory::answering(Err(code)));
+		run(directory_job("JP"), &harness).await;
+		assert_eq!(
+			failure_of(&api.calls()),
+			(code.as_str().to_owned(), retryable)
+		);
+	}
+}
+
+#[tokio::test]
+async fn a_list_the_contract_would_refuse_fails_as_parse_failed() {
+	let mut duplicate = jp_directory(1_000);
+	duplicate.entries.push(duplicate.entries[0].clone());
+	let mut us_on_jp = jp_directory(1_000);
+	us_on_jp.entries[0].listing = StockListing::Nyse;
+	let mut blank = jp_directory(1_000);
+	blank.entries[0].name = "   ".to_owned();
+	let mut bad_date = jp_directory(1_000);
+	bad_date.as_of = Some("2026-02-30".to_owned());
+	for data in [jp_directory(999), duplicate, us_on_jp, blank, bad_date] {
+		let api = FakeApi::new(ApiScript::default());
+		let (harness, _) = directory_harness(&api, FakeDirectory::answering(Ok(data)));
+		run(directory_job("JP"), &harness).await;
+		assert_eq!(
+			failure_of(&api.calls()),
+			("DIRECTORY_PARSE_FAILED".to_owned(), false)
+		);
+		assert!(
+			harness
+				.log
+				.events()
+				.contains(&"stock_directory_rejected".to_owned())
+		);
+	}
+}
+
+#[tokio::test]
+async fn a_panicking_directory_source_fails_retryably_and_is_logged_by_class() {
+	let api = FakeApi::new(ApiScript::default());
+	let (harness, _) = directory_harness(&api, FakeDirectory::panicking());
+	run(directory_job("JP"), &harness).await;
+	assert_eq!(
+		failure_of(&api.calls()),
+		("DIRECTORY_SOURCE_FAILED".to_owned(), true)
+	);
+	let lines = harness.log.lines();
+	let failed: Vec<_> = lines
+		.iter()
+		.filter(|line| line.contains("stock_directory_source_failed"))
+		.collect();
+	assert_eq!(failed.len(), 1);
+	assert!(failed[0].contains(r#""market":"JP""#) && failed[0].contains(r#""error":"Error""#));
+	assert!(lines.iter().all(|line| !line.contains("exploded")));
 }

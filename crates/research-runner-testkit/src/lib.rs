@@ -5,11 +5,12 @@
 //! (`tests/e2e/runnerHarness.ts`): the scripted agent (through the FR-013
 //! external-process protocol), a fixture feed fetcher, fixture market
 //! sources feeding the real FRED / Twelve Data adapters, fixture earnings
-//! sources, a scripted Google executor, `X-E2E-Owner` injection and 500 ms
+//! sources, fixture stock lists, a scripted Google executor, `X-E2E-Owner` injection and 500 ms
 //! sleep caps. The production binary never depends on this crate; the
 //! architecture guards in `tests/architecture` pin that.
 
 pub mod agents;
+pub mod directory;
 pub mod earnings;
 pub mod fetchers;
 pub mod fixtures;

@@ -1,13 +1,16 @@
-//! Market-refresh and earnings-refresh job bodies; the shell owns leases and event delivery.
+//! Market-refresh, earnings-refresh and stock-directory-refresh job bodies;
+//! the shell owns leases and event delivery.
 use crate::{pacing::MarketPacer, ports::*};
 use async_trait::async_trait;
 use futures_util::FutureExt;
 use indexmap::IndexMap;
 use research_application::{ports::Clock, reporter::PipelineReporter};
 use research_contracts::{
+	Tri, check_outgoing,
 	jobs::*,
 	market::{MarketObservation, MarketUnavailableCode, parse_market_series_id},
-	watchlist::{EarningsUnavailableCode, earnings_source_by_market, parse_stock_id},
+	stock_directory::{StockDirectoryFailureCode, stock_directory_source_id},
+	watchlist::{EarningsUnavailableCode, WatchMarket, earnings_source_by_market, parse_stock_id},
 };
 use research_effects::{EventLogger, LogValue};
 use std::{collections::HashMap, panic::AssertUnwindSafe};
@@ -267,4 +270,112 @@ pub async fn execute_earnings_refresh(
 		usage: EMPTY_USAGE,
 		stocks,
 	}
+}
+
+/// What a stock-directory refresh needs (ADR-0033).
+pub struct DirectoryDeps<'a> {
+	/// Wall clock.
+	pub clock: &'a dyn Clock,
+	/// Logger.
+	pub logger: &'a dyn EventLogger,
+	/// Shared provider quota gate (`sec`, `jpx`).
+	pub pacer: &'a dyn MarketPacer,
+	/// Sources by market.
+	pub sources: &'a HashMap<WatchMarket, std::sync::Arc<dyn StockDirectorySource>>,
+}
+
+/// Runs a claimed stock-directory-refresh job (port of
+/// `executeStockDirectoryRefresh`): downloads the leased market's list and
+/// completes with `stock-directory-refreshed`, or `failed` with a stable
+/// code. The source's requests pace through the shared window of its host,
+/// so a directory refresh and an earnings refresh never exceed JPX's budget
+/// together. The completion is checked against its contract before it is
+/// sent: a list the API would refuse fails here as `DIRECTORY_PARSE_FAILED`,
+/// so a stored list is never replaced by a broken one. Only
+/// `DIRECTORY_SOURCE_FAILED` is retried by the API.
+pub async fn execute_stock_directory_refresh(
+	job: &StockDirectoryRefreshJob,
+	deps: &DirectoryDeps<'_>,
+	cancel: &CancellationToken,
+	reporter: &dyn PipelineReporter,
+) -> CompleteJobRequest {
+	reporter.state(JobState::Planning).await;
+	reporter.state(JobState::Collecting).await;
+	let fetched_at = deps.clock.now_iso();
+	let result = fetch_stock_directory(job.market, deps, cancel).await;
+	finish(reporter).await;
+	let lease_generation = job.lease.lease_generation;
+	let failed = |code: StockDirectoryFailureCode| CompleteJobRequest::Failed {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		failure_code: code.as_str().to_owned(),
+		failure_detail: Tri::Absent,
+		retryable: code == StockDirectoryFailureCode::SourceFailed,
+	};
+	let data = match result {
+		Ok(data) => data,
+		Err(code) => return failed(code),
+	};
+	let count = i64::try_from(data.entries.len()).unwrap_or(i64::MAX);
+	let completion = CompleteJobRequest::StockDirectoryRefreshed {
+		lease_generation,
+		usage: EMPTY_USAGE,
+		market: job.market,
+		as_of: data.as_of,
+		fetched_at,
+		entries: data.entries,
+	};
+	if check_outgoing(&completion).is_err() {
+		deps.logger.warn(
+			"stock_directory_rejected",
+			&[
+				("runId", LogValue::from(job.lease.run_id.as_str())),
+				("market", LogValue::from(job.market.as_str())),
+			],
+		);
+		return failed(StockDirectoryFailureCode::ParseFailed);
+	}
+	deps.logger.info(
+		"stock_directory_fetched",
+		&[
+			("runId", LogValue::from(job.lease.run_id.as_str())),
+			("market", LogValue::from(job.market.as_str())),
+			("entries", LogValue::from(count)),
+		],
+	);
+	completion
+}
+
+/// The market's source answer; an absent source is unconfigured, a panic a source failure.
+async fn fetch_stock_directory(
+	market: WatchMarket,
+	deps: &DirectoryDeps<'_>,
+	cancel: &CancellationToken,
+) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+	let Some(source) = deps.sources.get(&market) else {
+		return Err(StockDirectoryFailureCode::NotConfigured);
+	};
+	let gate = SourceGate {
+		pacer: deps.pacer,
+		id: stock_directory_source_id(market).as_str(),
+		cancel,
+	};
+	let fetched = AssertUnwindSafe(source.fetch_directory(StockDirectoryQuery {
+		cancel,
+		before_request: &gate,
+	}))
+	.catch_unwind()
+	.await;
+	fetched.unwrap_or_else(|_| {
+		// An adapter fault (the Rust form of a TypeScript throw) is logged by
+		// class, never by message or URL (SEC-010).
+		deps.logger.warn(
+			"stock_directory_source_failed",
+			&[
+				("market", LogValue::from(market.as_str())),
+				("error", LogValue::from(ADAPTER_FAULT_CLASS)),
+			],
+		);
+		Err(StockDirectoryFailureCode::SourceFailed)
+	})
 }

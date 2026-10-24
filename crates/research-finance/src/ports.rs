@@ -3,7 +3,10 @@ use async_trait::async_trait;
 use research_contracts::market::{
 	MarketProviderId, MarketSeriesMeta, MarketUnavailableCode, market_unavailable_reason,
 };
-use research_contracts::watchlist::{EarningsEvent, EarningsSourceId, EarningsUnavailableCode};
+use research_contracts::stock_directory::{StockDirectoryEntry, StockDirectoryFailureCode};
+use research_contracts::watchlist::{
+	EarningsEvent, EarningsSourceId, EarningsUnavailableCode, WatchMarket,
+};
 use serde::Serialize;
 use tokio_util::sync::CancellationToken;
 
@@ -205,3 +208,58 @@ impl Sleeper for TokioSleeper {
 		}
 	}
 }
+
+/* ---------- Stock directory (ADR-0033: every listed US / JP stock) ---------- */
+
+/// One stock-directory download.
+pub struct StockDirectoryQuery<'a> {
+	/// Run cancellation.
+	pub cancel: &'a CancellationToken,
+	/// Called immediately before every request; nothing is sent when it
+	/// answers false. Built by the runner from the shared pacer (SEC and JPX
+	/// share their windows with the other jobs that reach those hosts).
+	pub before_request: &'a dyn BeforeRequest,
+}
+
+/// One market's list as a source delivers it.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct StockDirectoryData {
+	/// The date the source says the list is effective (JPX); `None` for SEC.
+	pub as_of: Option<String>,
+	/// Every kept row, distinct symbols, already filtered to the market's listings.
+	pub entries: Vec<StockDirectoryEntry>,
+}
+
+/// Downloads one market's full list; adapters implement it per market (SEC, JPX).
+#[async_trait]
+pub trait StockDirectorySource: Send + Sync {
+	/// The market whose list this source downloads.
+	fn market(&self) -> WatchMarket;
+	/// The list, or a stable failure code (never provider text).
+	async fn fetch_directory(
+		&self,
+		query: StockDirectoryQuery<'_>,
+	) -> Result<StockDirectoryData, StockDirectoryFailureCode>;
+}
+
+/// A source that always reports `DIRECTORY_NOT_CONFIGURED` (US without
+/// `SEC_USER_AGENT`), so the job fails with a stable code instead of sending
+/// an undeclared User-Agent to SEC.
+pub struct UnconfiguredStockDirectorySource(pub WatchMarket);
+
+#[async_trait]
+impl StockDirectorySource for UnconfiguredStockDirectorySource {
+	fn market(&self) -> WatchMarket {
+		self.0
+	}
+	async fn fetch_directory(
+		&self,
+		_: StockDirectoryQuery<'_>,
+	) -> Result<StockDirectoryData, StockDirectoryFailureCode> {
+		Err(StockDirectoryFailureCode::NotConfigured)
+	}
+}
+
+/// Told how many rows a source dropped for an over-long name (a count, never the names).
+pub type DroppedRowsHook = std::sync::Arc<dyn Fn(usize) + Send + Sync>;

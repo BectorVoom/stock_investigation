@@ -253,6 +253,8 @@ const claimedJobs: Json[] = [
 		desiredDigest: "b".repeat(64),
 		events: [],
 	},
+	{ kind: "stock-directory-refresh", ...lease, market: "US" },
+	{ kind: "stock-directory-refresh", ...lease, market: "JP" },
 ];
 const marketMeta = {
 	title: "CBOE Volatility Index: VIX",
@@ -521,6 +523,87 @@ const URL_EDGES: string[] = [
 
 const COMPOSITE: MutationOptions = { maxDepth: 3, maxCases: 1500 };
 
+/* ---------- Stock directory (ADR-0033) ---------- */
+
+const usDirectoryEntry = { symbol: "AAPL", name: "Apple Inc.", listing: "nasdaq" };
+const jpDirectoryEntry = {
+	symbol: "130A",
+	name: "Veritas In Silico Inc.",
+	localName: "Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ",
+	listing: "tse-growth",
+};
+
+/** `count` minimal rows of a market (`A0`…, `1000`…): a completion needs at least the floor. */
+function directoryRows(market: "US" | "JP", count: number): Json[] {
+	return Array.from(
+		{ length: count },
+		(_, index): Json =>
+			market === "US"
+				? { symbol: `A${index}`, name: "N", listing: "nyse" }
+				: { symbol: String(1000 + index), name: "N", localName: "L", listing: "tse-prime" },
+	);
+}
+
+function directoryCompletion(market: "US" | "JP", entries: Json[], asOf: Json = null): string {
+	return JSON.stringify({
+		outcome: "stock-directory-refreshed",
+		leaseGeneration: 1,
+		usage,
+		market,
+		asOf,
+		fetchedAt: T1,
+		entries,
+	});
+}
+
+const FLOOR = contracts.STOCK_DIRECTORY_LIMITS.minEntriesPerMarket;
+
+/**
+ * Whole `stock-directory-refreshed` completions: too large for the mutation
+ * search (a thousand rows each), so the edges are written out: the floor,
+ * each refinement message, and a refinement skipped behind an entry issue.
+ */
+const DIRECTORY_COMPLETION_EDGES: string[] = [
+	directoryCompletion("US", directoryRows("US", FLOOR)),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), "2026-09-30"),
+	directoryCompletion("US", directoryRows("US", FLOOR - 1)),
+	directoryCompletion("JP", directoryRows("JP", FLOOR), "2026-02-30"),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR),
+		{ symbol: "A0", name: "N", listing: "nyse" },
+	]),
+	directoryCompletion("JP", directoryRows("US", FLOOR)),
+	directoryCompletion("US", directoryRows("JP", FLOOR)),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR - 1),
+		{ symbol: "LOCAL", name: "N", localName: "L", listing: "nasdaq" },
+	]),
+	directoryCompletion("JP", [
+		...directoryRows("JP", FLOOR - 1),
+		{ symbol: "7203", name: "N", localName: "L", listing: "nyse" },
+	]),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR),
+		{ symbol: "A1", name: " ".repeat(3), listing: "nyse" },
+	]),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR),
+		{ symbol: "A1", name: "N".repeat(201), listing: "nyse" },
+	]),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR - 1),
+		{ symbol: "", name: "N", listing: "nyse" },
+	]),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR - 1),
+		{ symbol: "ABCDEFGHIJKLMNOPQ", name: "N", listing: "nyse" },
+	]),
+	directoryCompletion("US", [
+		...directoryRows("US", FLOOR - 1),
+		{ symbol: "  AAPL ", name: "  Trimmed  ", listing: "nasdaq" },
+	]),
+];
+
 export const SCHEMAS: readonly SchemaEntry[] = [
 	{
 		name: "agentDescriptor",
@@ -767,6 +850,7 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		schema: contracts.completeJobRequestSchema,
 		baselines: completions,
 		options: { maxDepth: 3, maxCases: 900 },
+		extra: DIRECTORY_COMPLETION_EDGES,
 	},
 	{
 		name: "completeJobResponse",
@@ -821,5 +905,10 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 			{ error: { code: "STALE_LEASE", message: "The lease is stale." } },
 			{ error: { code: "UI_COMMAND_REJECTED", message: "x", detail: "UNKNOWN_COMPONENT" } },
 		],
+	},
+	{
+		name: "stockDirectoryEntry",
+		schema: contracts.stockDirectoryEntrySchema,
+		baselines: [usDirectoryEntry, jpDirectoryEntry],
 	},
 ];

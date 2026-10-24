@@ -23,10 +23,13 @@ use crate::records::{
 	Claim, Dataset, DemandScenario, Evidence, FinancialObservation, IngestedArticle,
 	InvestorFiling, LicensePolicy, PositionObservation, PricingPowerRecord, Security, SupplierLink,
 };
+use crate::stock_directory::{
+	StockDirectoryEntry, limits as directory_limits, stock_directory_entries_problem,
+};
 use crate::ui::UiOperation;
 use crate::watchlist::{
-	EARNINGS_COMPANY_NAME_MAX, EarningsEvent, EarningsUnavailableCode, limits as earnings_limits,
-	watchlist_stock_id,
+	EARNINGS_COMPANY_NAME_MAX, EarningsEvent, EarningsUnavailableCode, WatchMarket,
+	limits as earnings_limits, watchlist_stock_id,
 };
 use crate::zod::{
 	ArrCheck, Cx, Flow, IssueCode, NumCheck, StrCheck, Tri, array, boolean, decode_fields,
@@ -66,6 +69,7 @@ js_enum! {
 		EarningsRefresh = "earnings-refresh",
 		GoogleCalendar = "google-calendar",
 		NotebookAssist = "notebook-assist",
+		StockDirectoryRefresh = "stock-directory-refresh",
 	}
 }
 
@@ -802,6 +806,23 @@ pub struct GoogleCalendarJob {
 	pub events: Option<Vec<GoogleEventBody>>,
 }
 
+/// A `stock-directory-refresh` job (ADR-0033): download one market's full
+/// list of listed stocks (SEC for US, JPX for JP).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StockDirectoryRefreshJob {
+	/// Lease.
+	#[serde(flatten)]
+	pub lease: Lease,
+	/// The market whose list is downloaded.
+	pub market: WatchMarket,
+}
+
+/// `watchMarketSchema` decoder.
+fn watch_market(cx: &mut Cx, input: Option<&Value>) -> Option<WatchMarket> {
+	<WatchMarket as crate::Contract>::decode(cx, input)
+}
+
 /// `claimedJobSchema`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "kind")]
@@ -824,6 +845,9 @@ pub enum ClaimedJob {
 	/// A Google Calendar step.
 	#[serde(rename = "google-calendar")]
 	GoogleCalendar(GoogleCalendarJob),
+	/// A stock-directory refresh (ADR-0033).
+	#[serde(rename = "stock-directory-refresh")]
+	StockDirectoryRefresh(StockDirectoryRefreshJob),
 }
 
 const JOB_KINDS: &[&str] = &[
@@ -833,6 +857,7 @@ const JOB_KINDS: &[&str] = &[
 	"market-refresh",
 	"earnings-refresh",
 	"google-calendar",
+	"stock-directory-refresh",
 ];
 
 impl ClaimedJob {
@@ -846,6 +871,7 @@ impl ClaimedJob {
 			Self::MarketRefresh(job) => &job.lease,
 			Self::EarningsRefresh(job) => &job.lease,
 			Self::GoogleCalendar(job) => &job.lease,
+			Self::StockDirectoryRefresh(job) => &job.lease,
 		}
 	}
 
@@ -952,10 +978,18 @@ impl ClaimedJob {
 						stocks: rest.stocks,
 					}))
 				}
-				_ => {
+				5 => {
 					let job = decode_google_calendar_job(cx, object, lease);
 					refine(cx, mark, job.as_ref(), google_calendar_rules);
 					job.map(Self::GoogleCalendar)
+				}
+				_ => {
+					let market = cx.at_key("market", |cx| watch_market(cx, object.get("market")));
+					known_keys(cx, object, &["market"]);
+					Some(Self::StockDirectoryRefresh(StockDirectoryRefreshJob {
+						lease: lease?,
+						market: market?,
+					}))
 				}
 			}
 		})
@@ -1522,6 +1556,22 @@ pub enum CompleteJobRequest {
 		/// Whether the refresh token was revoked.
 		revoked: bool,
 	},
+	/// One market's full list (ADR-0033), replacing its stored rows all or nothing.
+	#[serde(rename = "stock-directory-refreshed", rename_all = "camelCase")]
+	StockDirectoryRefreshed {
+		/// Lease generation.
+		lease_generation: u64,
+		/// Usage.
+		usage: ResourceUsage,
+		/// The market of the list.
+		market: WatchMarket,
+		/// The date the source says the list is effective (JPX); null for SEC.
+		as_of: Option<String>,
+		/// When the list was downloaded.
+		fetched_at: String,
+		/// The rows (1,000..=10,000, distinct symbols of the market's listings).
+		entries: Vec<StockDirectoryEntry>,
+	},
 }
 
 const OUTCOMES: &[&str] = &[
@@ -1537,11 +1587,16 @@ const OUTCOMES: &[&str] = &[
 	"google-calendar-connected",
 	"google-calendar-synced",
 	"google-calendar-disconnected",
+	"stock-directory-refreshed",
 ];
 
 const ARTICLES: &[ArrCheck] = &[ArrCheck::Max(bundle_limits::ARTICLES)];
 const REPORTS: &[ArrCheck] = &[ArrCheck::Max(200)];
 const COMMANDS: &[ArrCheck] = &[ArrCheck::Max(notebook_limits::MAX_COMMANDS_PER_TURN)];
+const DIRECTORY_ENTRIES: &[ArrCheck] = &[
+	ArrCheck::Min(directory_limits::MIN_ENTRIES_PER_MARKET),
+	ArrCheck::Max(directory_limits::MAX_ENTRIES_PER_MARKET),
+];
 
 impl CompleteJobRequest {
 	/// zod decoder.
@@ -1618,10 +1673,18 @@ impl CompleteJobRequest {
 				deleted: "deleted" => uint(NON_NEGATIVE_INT),
 				unchanged: "unchanged" => uint(NON_NEGATIVE_INT),
 			}),
-			_ => decode_object!(cx, input, strict, ["outcome"], Self::GoogleCalendarDisconnected {
+			11 => decode_object!(cx, input, strict, ["outcome"], Self::GoogleCalendarDisconnected {
 				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
 				usage: "usage" => ResourceUsage::decode,
 				revoked: "revoked" => boolean,
+			}),
+			_ => decode_object!(cx, input, strict, ["outcome"], Self::StockDirectoryRefreshed {
+				lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
+				usage: "usage" => ResourceUsage::decode,
+				market: "market" => watch_market,
+				as_of: "asOf" => nullable(string(ISO_DATE)),
+				fetched_at: "fetchedAt" => string(ISO_DATE_TIME),
+				entries: "entries" => array(StockDirectoryEntry::decode, DIRECTORY_ENTRIES),
 			}),
 		});
 		refine(cx, mark, decoded.as_ref(), completion_rules);
@@ -1675,6 +1738,13 @@ fn completion_rules(cx: &mut Cx, completion: &CompleteJobRequest) {
 					Some("stocks"),
 					"period keys must be distinct within a stock",
 				);
+			}
+		}
+		CompleteJobRequest::StockDirectoryRefreshed {
+			market, entries, ..
+		} => {
+			if let Some(problem) = stock_directory_entries_problem(*market, entries) {
+				cx.refine_failed(Some("entries"), &problem);
 			}
 		}
 		_ => {}

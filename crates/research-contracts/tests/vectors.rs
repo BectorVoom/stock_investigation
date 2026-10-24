@@ -83,6 +83,7 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"marketSeriesMeta" => market::MarketSeriesMeta,
 		"marketObservation" => market::MarketObservation,
 		"earningsEvent" => watchlist::EarningsEvent,
+		"stockDirectoryEntry" => stock_directory::StockDirectoryEntry,
 		"googleEventBody" => google_calendar::GoogleEventBody,
 		"widgetCore" => widgets::WidgetCore,
 		"notebookWidget" => notebook::NotebookWidget,

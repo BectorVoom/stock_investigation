@@ -389,6 +389,45 @@ function parseDataRow(
 	};
 }
 
+/** One non-empty cell of a sheet row, with its shared string resolved. */
+export interface WorkbookCell {
+	/** Column letters, from the cell's `r` reference (or its position). */
+	readonly column: string;
+	/** The cell's text: shared string, inline string or literal value; "" when empty. */
+	readonly text: string;
+}
+
+/**
+ * Every row of one sheet as resolved cells, for workbooks whose headers sit
+ * in a row of their own (the JPX listed-issues list, ADR-0033). The same
+ * bounded scanners and ceilings as `parseJpxWorkbook` apply: past a bound the
+ * workbook is rejected, never partially trusted. Rows without cells are
+ * skipped; the caller locates its header row and columns by text.
+ */
+export function readWorkbookRows(
+	sheetXml: string,
+	sharedStringsXml: string,
+): Result<WorkbookCell[][], JpxWorkbookError> {
+	const shared = parseSharedStrings(sharedStringsXml);
+	if (!shared.ok) return err(shared.error);
+	const scanned = scanElements(sheetXml, "row", MAX_JPX_DATA_ROWS + 1_000);
+	if (!scanned.ok) return scanned;
+	const rows: WorkbookCell[][] = [];
+	let seenCells = 0;
+	for (const match of scanned.value) {
+		const inner = match.selfClosed ? "" : match.inner;
+		if (inner === "") continue;
+		const parsed = parseRowCells(inner, seenCells);
+		if (!parsed.ok) return err(parsed.error);
+		seenCells += parsed.value.length;
+		if (parsed.value.length === 0) continue;
+		rows.push(
+			parsed.value.map((cell) => ({ column: cell.column, text: cellText(cell, shared.value) })),
+		);
+	}
+	return ok(rows);
+}
+
 /**
  * Parses one workbook's sheet + shared strings into data rows. Rows that fail
  * per-row validation are skipped; structural failures (no headers, malformed

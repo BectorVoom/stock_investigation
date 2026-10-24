@@ -12,11 +12,14 @@ import {
 	PROMPT_VERSION,
 	runNotebookAssistTurn,
 	runResearchPipeline,
+	type StockDirectoryData,
+	type StockDirectorySourceRegistry,
 } from "@research/application";
 import {
 	BUNDLE_LIMITS,
 	type ClaimedJob,
 	type CompleteJobRequest,
+	completeJobRequestSchema,
 	EARNINGS_LIMITS,
 	type EarningsSourceId,
 	type HeartbeatResponse,
@@ -25,12 +28,17 @@ import {
 	MAX_RUNNER_EVENTS_PER_REQUEST,
 	parseStockId,
 	type RunnerEvent,
+	STOCK_DIRECTORY_SOURCES,
+	type StockDirectoryFailureCode,
+	type WatchMarket,
 } from "@research/contracts";
 import {
 	EARNINGS_SOURCE_BY_MARKET,
 	EMPTY_USAGE,
+	err,
 	parseMarketSeriesId,
 	type ResourceUsage,
+	type Result,
 	thrownName,
 } from "@research/domain";
 import { type EventLogger, type LogFields, logIsolated } from "@research/effects";
@@ -65,6 +73,11 @@ export interface JobExecutionDeps {
 	readonly marketSources: MarketSourceRegistry;
 	/** Earnings-date source registry (ARCH-006); JPX needs no key, Finnhub does. */
 	readonly earningsSources: EarningsSourceRegistry;
+	/**
+	 * Stock-directory sources by market (ADR-0033): SEC for US (unconfigured
+	 * without `SEC_USER_AGENT`), JPX for JP.
+	 */
+	readonly stockDirectorySources: StockDirectorySourceRegistry;
 	/** Per-provider request pacing (API-007), shared across jobs. */
 	readonly marketPacer: MarketPacer;
 	/** Google Calendar sync (FR-019): OAuth credentials, token file, narrow HTTP, sleep. */
@@ -294,6 +307,8 @@ export async function executeJob(
 			completion = await executeMarketRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "earnings-refresh") {
 			completion = await executeEarningsRefresh(job, deps, abort.signal, reporter);
+		} else if (job.kind === "stock-directory-refresh") {
+			completion = await executeStockDirectoryRefresh(job, deps, abort.signal, reporter);
 		} else if (job.kind === "news-ingest") {
 			for (const state of INGEST_STATES.slice(0, 2)) await reporter.state(state);
 			const ingested = await ingestSources(
@@ -767,6 +782,88 @@ async function executeEarningsRefresh(
 		usage: EMPTY_USAGE,
 		stocks,
 	};
+}
+
+/**
+ * Runs a claimed stock-directory-refresh job (ADR-0033): downloads the
+ * leased market's full list through its source and completes with
+ * `stock-directory-refreshed`, or `failed` with a
+ * `STOCK_DIRECTORY_FAILURE_CODES` code (never provider text). The source's
+ * requests pace through the shared window of its host (`sec`, `jpx`), so a
+ * directory refresh and an earnings refresh never exceed JPX's budget
+ * together.
+ *
+ * The completion is checked against its contract before it is sent (row
+ * floor and ceiling, symbol shapes, listings, names, distinct symbols): a
+ * list the API would refuse fails here as `DIRECTORY_PARSE_FAILED` instead,
+ * so a stored list is never replaced by a broken one.
+ *
+ * Only `DIRECTORY_SOURCE_FAILED` (a network or server failure) is retried
+ * by the API; a rate limit is not retried at once (it would spend the next
+ * request of the same window), and the other codes need the owner.
+ */
+async function executeStockDirectoryRefresh(
+	job: Extract<ClaimedJob, { kind: "stock-directory-refresh" }>,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+	reporter: PipelineReporter,
+): Promise<CompleteJobRequest> {
+	await reporter.state("planning");
+	await reporter.state("collecting");
+	const fetchedAt = deps.clock.nowIso();
+	const result = await fetchStockDirectory(job.market, deps, signal);
+	await reporter.state("analyzing");
+	await reporter.state("verifying");
+	await reporter.state("publishing");
+	const failed = (code: StockDirectoryFailureCode): CompleteJobRequest => ({
+		outcome: "failed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		failureCode: code,
+		retryable: code === "DIRECTORY_SOURCE_FAILED",
+	});
+	if (!result.ok) return failed(result.error);
+	const completion: CompleteJobRequest = {
+		outcome: "stock-directory-refreshed",
+		leaseGeneration: job.leaseGeneration,
+		usage: EMPTY_USAGE,
+		market: job.market,
+		asOf: result.value.asOf,
+		fetchedAt,
+		entries: result.value.entries.map((entry) => ({ ...entry })),
+	};
+	if (!completeJobRequestSchema.safeParse(completion).success) {
+		deps.logger.warn("stock_directory_rejected", { runId: job.runId, market: job.market });
+		return failed("DIRECTORY_PARSE_FAILED");
+	}
+	deps.logger.info("stock_directory_fetched", {
+		runId: job.runId,
+		market: job.market,
+		entries: completion.entries.length,
+	});
+	return completion;
+}
+
+/** The market's source answer; an absent source is unconfigured, a throw a source failure. */
+async function fetchStockDirectory(
+	market: WatchMarket,
+	deps: JobExecutionDeps,
+	signal: AbortSignal,
+): Promise<Result<StockDirectoryData, StockDirectoryFailureCode>> {
+	const source = deps.stockDirectorySources.get(market);
+	if (source === undefined) return err("DIRECTORY_NOT_CONFIGURED");
+	const pacerKey = STOCK_DIRECTORY_SOURCES[market].sourceId;
+	try {
+		return await source.fetchDirectory({
+			signal,
+			beforeRequest: () => deps.marketPacer.pace(pacerKey, signal),
+		});
+	} catch (error) {
+		// An adapter throws only for the unexpected: log its class name
+		// (never its message or URL, SEC-010) and fail with a stable code.
+		deps.logger.warn("stock_directory_source_failed", { market, error: thrownName(error) });
+		return err("DIRECTORY_SOURCE_FAILED");
+	}
 }
 
 export function toCompletion(

@@ -17,7 +17,11 @@
  * so back-to-back refreshes share one window per provider.
  */
 import type { Clock } from "@research/application";
-import type { EarningsSourceId, MarketProviderId } from "@research/contracts";
+import type {
+	EarningsSourceId,
+	MarketProviderId,
+	StockDirectorySourceId,
+} from "@research/contracts";
 import { rateWindowPermit } from "@research/domain";
 
 export interface MarketRateLimit {
@@ -37,6 +41,11 @@ export const FRED_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 100, windowMs: 6
 export const FINNHUB_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 30, windowMs: 60_000 };
 /** JPX asks callers to avoid high-frequency access: one paced batch per 10 s (FR-018). */
 export const JPX_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 6, windowMs: 60_000 };
+/**
+ * SEC (the US stock directory, ADR-0033): the window form of the SEC
+ * client's own 125 ms spacing, so a stopped job stops waiting here too.
+ */
+export const SEC_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 8, windowMs: 1_000 };
 /** Google Calendar: at most 5 requests per second, sequential (FR-019 section 2.2). */
 export const GOOGLE_RATE_LIMIT: MarketRateLimit = { maxPerWindow: 5, windowMs: 1_000 };
 
@@ -44,7 +53,8 @@ export function twelveDataRateLimit(requestsPerMinute: number): MarketRateLimit 
 	return { maxPerWindow: requestsPerMinute, windowMs: TWELVE_DATA_WINDOW_MS };
 }
 
-export type PacerKey = MarketProviderId | EarningsSourceId | "google";
+/** Stock-directory refreshes pace under their source id: JPX shares its window with earnings. */
+export type PacerKey = MarketProviderId | EarningsSourceId | StockDirectorySourceId | "google";
 
 export interface MarketPacerDeps {
 	readonly clock: Clock;

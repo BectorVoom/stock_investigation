@@ -4,6 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
+use research_contracts::stock_directory::{StockDirectoryEntry, StockListing};
 use research_contracts::watchlist::EarningsTiming;
 use serde::Deserialize;
 
@@ -19,6 +20,9 @@ pub enum FixtureError {
 	/// An earnings entry names an unknown timing.
 	#[error("fixture timing {0:?} is unknown")]
 	UnknownTiming(String),
+	/// A stock-directory entry names an unknown listing.
+	#[error("fixture listing {0:?} is unknown")]
+	UnknownListing(String),
 }
 
 /// One canned earnings announcement.
@@ -60,6 +64,99 @@ pub struct EarningsFixtures {
 	pub jpx: Vec<EarningsEntry>,
 }
 
+/// One named row of a canned stock list.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DirectoryRow {
+	/// Symbol or local code.
+	pub symbol: String,
+	/// English name.
+	pub name: String,
+	/// Japanese name (JP rows).
+	#[serde(default)]
+	pub local_name: Option<String>,
+	listing: String,
+}
+
+/// How a canned list is padded to the contract's floor.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DirectoryPadding {
+	/// Symbol prefix (`ZA`, `9`).
+	pub symbol_prefix: String,
+	/// Zero-padded digits after the prefix.
+	pub digits: usize,
+	/// Name template; `{n}` is the 1-based row number.
+	pub name: String,
+	/// Japanese-name template, when the market has one.
+	pub local_name: Option<String>,
+	listing: String,
+}
+
+/// One market's canned list.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DirectoryMarket {
+	/// The date the canned list states.
+	pub as_of: Option<String>,
+	/// The named rows the specs search for.
+	pub entries: Vec<DirectoryRow>,
+	/// Generated rows up to the floor.
+	pub padding: DirectoryPadding,
+}
+
+fn listing(text: &str) -> Result<StockListing, FixtureError> {
+	StockListing::from_str_value(text).ok_or_else(|| FixtureError::UnknownListing(text.to_owned()))
+}
+
+impl DirectoryMarket {
+	/// The full list (port of `fixtureDirectoryEntries`): the named rows, then
+	/// padding rows numbered from 1 up to exactly `floor` rows.
+	///
+	/// # Errors
+	/// An unknown listing word in the fixture file.
+	pub fn entries(&self, floor: usize) -> Result<Vec<StockDirectoryEntry>, FixtureError> {
+		let mut rows = Vec::with_capacity(floor.max(self.entries.len()));
+		for row in &self.entries {
+			rows.push(StockDirectoryEntry {
+				symbol: row.symbol.clone(),
+				name: row.name.clone(),
+				local_name: row.local_name.clone(),
+				listing: listing(&row.listing)?,
+			});
+		}
+		let padding = &self.padding;
+		let padded = listing(&padding.listing)?;
+		for n in 1..=floor.saturating_sub(self.entries.len()) {
+			let fill = |template: &str| template.replace("{n}", &n.to_string());
+			rows.push(StockDirectoryEntry {
+				symbol: format!(
+					"{}{:0width$}",
+					padding.symbol_prefix,
+					n - 1,
+					width = padding.digits
+				),
+				name: fill(&padding.name),
+				local_name: padding.local_name.as_deref().map(fill),
+				listing: padded,
+			});
+		}
+		Ok(rows)
+	}
+}
+
+/// The canned stock lists (ADR-0033).
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DirectoryFixtures {
+	/// The US list (SEC stand-in).
+	#[serde(rename = "US")]
+	pub us: DirectoryMarket,
+	/// The JP list (JPX stand-in).
+	#[serde(rename = "JP")]
+	pub jp: DirectoryMarket,
+}
+
 /// Everything the E2E seams serve.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -75,6 +172,8 @@ pub struct Fixtures {
 	pub google_auth_url: String,
 	/// Canned earnings dates.
 	pub earnings: EarningsFixtures,
+	/// Canned stock lists.
+	pub stock_directory: DirectoryFixtures,
 }
 
 /// Repository-relative location of the fixture file.
@@ -119,6 +218,31 @@ mod tests {
 			fixtures.earnings.jpx[0].timing().unwrap(),
 			EarningsTiming::Unknown
 		);
+	}
+
+	#[test]
+	fn the_canned_stock_lists_reach_the_floor_with_the_named_rows_first() {
+		use research_contracts::stock_directory::limits::MIN_ENTRIES_PER_MARKET;
+		let fixtures = Fixtures::load(&repo_root()).unwrap();
+		let us = fixtures
+			.stock_directory
+			.us
+			.entries(MIN_ENTRIES_PER_MARKET)
+			.unwrap();
+		assert_eq!(us.len(), MIN_ENTRIES_PER_MARKET);
+		assert_eq!(us[0].symbol, "AAPL");
+		assert_eq!(us[3].symbol, "ZA000");
+		assert_eq!(us[3].name, "Fixture Company 1");
+		assert!(us.iter().all(|entry| entry.local_name.is_none()));
+		let jp = fixtures
+			.stock_directory
+			.jp
+			.entries(MIN_ENTRIES_PER_MARKET)
+			.unwrap();
+		assert_eq!(jp[0].local_name.as_deref(), Some("トヨタ自動車"));
+		assert_eq!(jp[3].symbol, "9000");
+		assert_eq!(jp[3].local_name.as_deref(), Some("フィクスチャ 1"));
+		assert_eq!(jp.last().unwrap().symbol, "9996");
 	}
 
 	#[test]

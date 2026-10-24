@@ -1,9 +1,10 @@
 /**
- * Market data, earnings dates, SEC and the runner's refresh jobs (crate
+ * Market data, earnings dates, SEC, the stock directory and the runner's refresh jobs (crate
  * `research-finance`). The parts live in `scripts/vectors/finance/`; this
  * file only names the exporter and concatenates their files.
  */
 
+import { directoryFiles } from "./finance/directory.ts";
 import { jobsFiles } from "./finance/jobs.ts";
 import { jpxFiles } from "./finance/jpx.ts";
 import { marketFiles } from "./finance/market.ts";
@@ -20,6 +21,7 @@ export const financeExporter: VectorExporter = {
 			await secFiles(),
 			await jobsFiles(),
 			await toolsFiles(),
+			await directoryFiles(),
 		];
 		return parts.flat().map((file) => ({ path: file.path, content: file.content }));
 	},

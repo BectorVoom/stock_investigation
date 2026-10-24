@@ -77,7 +77,8 @@ const MIN_ANNUAL_DAYS = 350;
 const MAX_ANNUAL_DAYS = 380;
 const MS_PER_DAY = 86_400_000;
 
-const TICKER_DIRECTORY_MAX_BYTES = 8_000_000;
+/** Byte cap of the ticker directory download (~0.5 MB measured 2026-10-24). */
+export const TICKER_DIRECTORY_MAX_BYTES = 8_000_000;
 /** Company-facts documents of large filers run to tens of megabytes. */
 const COMPANY_FACTS_MAX_BYTES = 48_000_000;
 const TICKER_DIRECTORY_TTL_MS = 12 * 60 * 60 * 1000;

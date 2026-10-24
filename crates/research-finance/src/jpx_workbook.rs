@@ -590,6 +590,53 @@ fn parse_data_row(
 	})
 }
 
+/// One non-empty cell of a sheet row, with its shared string resolved.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkbookCell {
+	/// Column letters, from the cell's `r` reference (or its position).
+	pub column: String,
+	/// The cell's text: shared string, inline string or literal value; `""` when empty.
+	pub text: String,
+}
+
+/// Every row of one sheet as resolved cells, for workbooks whose headers sit
+/// in a row of their own (the JPX listed-issues list, ADR-0033; port of
+/// `readWorkbookRows`). The same bounded scanners and ceilings as
+/// [`parse_jpx_workbook`] apply: past a bound the workbook is rejected, never
+/// partially trusted. Rows without cells are skipped.
+///
+/// # Errors
+/// [`JpxWorkbookError`] for malformed XML or an exceeded bound.
+pub fn read_workbook_rows(
+	sheet: &str,
+	shared: &str,
+) -> Result<Vec<Vec<WorkbookCell>>, JpxWorkbookError> {
+	let strings = parse_shared_strings(shared)?;
+	let scanned = scan_elements(sheet, "row", MAX_JPX_DATA_ROWS + 1_000)?;
+	let mut rows = Vec::new();
+	let mut seen_cells = 0;
+	for element in scanned {
+		if element.inner.is_empty() {
+			continue;
+		}
+		let cells = parse_row_cells(element.inner, seen_cells)?;
+		seen_cells += cells.len();
+		if cells.is_empty() {
+			continue;
+		}
+		rows.push(
+			cells
+				.iter()
+				.map(|cell| WorkbookCell {
+					column: cell.column.clone(),
+					text: cell_text(cell, &strings).to_owned(),
+				})
+				.collect(),
+		);
+	}
+	Ok(rows)
+}
+
 /// Parses one workbook's sheet and shared strings into data rows. Rows that
 /// fail per-row validation are skipped; structural failures (no headers,
 /// malformed XML shape, bound overruns) fail the whole workbook.

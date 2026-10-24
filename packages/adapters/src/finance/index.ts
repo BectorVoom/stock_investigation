@@ -13,6 +13,22 @@ export {
 	fredSourceUrl,
 } from "./fredSeries.ts";
 export {
+	createJpxDirectorySource,
+	extractJpxListingUrl,
+	JPX_DIRECTORY_LISTINGS,
+	JPX_LISTING_PAGE_URLS,
+	type JpxDirectoryDeps,
+	type JpxListingLanguage,
+	type JpxListingRow,
+	jpxDirectoryEntries,
+	jpxListingRows,
+	listingDate,
+	parseJpxDirectory,
+	parseJpxListingSheet,
+	parseJpxListingWorkbook,
+} from "./jpxDirectory.ts";
+export {
+	anchorHrefs,
 	createJpxEarningsSource,
 	extractJpxWorkbookUrls,
 	JPX_HOST,
@@ -34,7 +50,9 @@ export {
 	MAX_JPX_DATA_ROWS,
 	MAX_JPX_SHARED_STRINGS,
 	parseJpxWorkbook,
+	readWorkbookRows,
 	slugFiscalKind,
+	type WorkbookCell,
 } from "./jpxWorkbook.ts";
 export {
 	type JpMarginBalanceReport,
@@ -86,6 +104,13 @@ export {
 	type SecErrorCode,
 } from "./secClient.ts";
 export {
+	createSecDirectorySource,
+	parseSecDirectory,
+	SEC_DIRECTORY_LISTINGS,
+	type SecDirectoryDeps,
+	secDirectoryEntries,
+} from "./secDirectory.ts";
+export {
 	createSecFinancialsSource,
 	DILUTED_EPS_CONCEPT,
 	type FigureResult,
@@ -97,8 +122,15 @@ export {
 	type SecFinancialsSource,
 	type SecIssuer,
 	secCompanyFactsUrl,
+	TICKER_DIRECTORY_MAX_BYTES,
 	type Unavailable,
 } from "./secFinancials.ts";
+export {
+	directoryFetchFailure,
+	finishDirectory,
+	fitsDirectoryName,
+	type ParsedStockDirectory,
+} from "./stockDirectory.ts";
 export {
 	createTwelveDataSeriesSource,
 	splitTwelveSymbol,

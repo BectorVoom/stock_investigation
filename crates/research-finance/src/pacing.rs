@@ -51,7 +51,7 @@ impl WindowMarketPacer {
 			grants: Mutex::new(HashMap::new()),
 		}
 	}
-	/// Standard FRED, Twelve Data, Finnhub, JPX and Google limits.
+	/// Standard FRED, Twelve Data, Finnhub, JPX, SEC and Google limits.
 	pub fn standard(
 		clock: Arc<dyn Clock>,
 		sleep: Arc<dyn Sleeper>,
@@ -62,6 +62,9 @@ impl WindowMarketPacer {
 			("twelve-data", twelve_requests_per_minute, 60_000),
 			("finnhub", 30, 60_000),
 			("jpx", 6, 60_000),
+			// SEC (the US stock directory): the window form of the SEC
+			// client's own 125 ms spacing, so a stopped job stops waiting here too.
+			("sec", 8, 1_000),
 			("google", 5, 1_000),
 		]
 		.into_iter()

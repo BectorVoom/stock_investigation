@@ -1,0 +1,2241 @@
+{
+	"schema": "stockDirectoryEntry",
+	"cases": [
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":null,\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":1,\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":[\"x\"],\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":{\"length\":1},\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"symbol"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"WRONG-VALUE\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"WRONG-VALUE\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"aapl\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"aapl\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\\u0000\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\\u0000\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\tAAPL\\t\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\tAAPL\\t\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\nAAPL\\n\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\nAAPL\\n\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\u000bAAPL\\u000b\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\u000bAAPL\\u000b\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\fAAPL\\f\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\fAAPL\\f\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\rAAPL\\r\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\rAAPL\\r\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" AAPL \",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"　AAPL　\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"　AAPL　\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"﻿AAPL﻿\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"﻿AAPL﻿\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"​AAPL​\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"​AAPL​\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"᠎AAPL᠎\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"᠎AAPL᠎\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPLaaaaaaaaaaaa\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPLaaaaaaaaaaaa\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPLaaaaaaaaaaaaa\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPLéééééééééééé\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPLéééééééééééé\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPLééééééééééééé\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"A\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"A\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":null,\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":1,\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":[\"x\"],\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":{\"length\":1},\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"name"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"WRONG-VALUE\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"WRONG-VALUE\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"APPLE INC.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"APPLE INC.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"apple inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"apple inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\\u0000\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\\u0000\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\\tApple Inc.\\t\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\\nApple Inc.\\n\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\\u000bApple Inc.\\u000b\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\\fApple Inc.\\f\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"\\rApple Inc.\\r\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\" Apple Inc. \",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"　Apple Inc.　\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"﻿Apple Inc.﻿\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"​Apple Inc.​\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"​Apple Inc.​\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"᠎Apple Inc.᠎\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"᠎Apple Inc.᠎\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"A\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"A\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"NASDAQ\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\\tnasdaq\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\\nnasdaq\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\\u000bnasdaq\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\\fnasdaq\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"\\rnasdaq\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\" nasdaq \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"　nasdaq　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"﻿nasdaq﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"​nasdaq​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"᠎nasdaq᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaqa\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaqé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasdaq😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nasda\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nyse\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"nyse\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"cboe\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"cboe\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"txse\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"txse\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-prime\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-prime\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-standard\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-standard\"}"
+		},
+		{
+			"input": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"AAPL\",\"name\":\"Apple Inc.\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":null,\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":1,\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":[\"x\"],\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":{\"length\":1},\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"symbol"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"symbol"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"WRONG-VALUE\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"WRONG-VALUE\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130a\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130a\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\\u0000\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\\u0000\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\t130A\\t\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\t130A\\t\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\n130A\\n\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\n130A\\n\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\u000b130A\\u000b\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\u000b130A\\u000b\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\f130A\\f\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\f130A\\f\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"\\r130A\\r\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"\\r130A\\r\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\" 130A \",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"　130A　\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"　130A　\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"﻿130A﻿\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"﻿130A﻿\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"​130A​\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"​130A​\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"᠎130A᠎\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"᠎130A᠎\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"０30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"０30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"٠30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"٠30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"०30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"०30A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130Aaaaaaaaaaaaa\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130Aaaaaaaaaaaaa\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130Aaaaaaaaaaaaaa\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130Aéééééééééééé\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130Aéééééééééééé\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130Aééééééééééééé\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"symbol"
+					],
+					"message": "Too big: expected string to have <=16 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"1\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"1\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":null,\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":1,\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":[\"x\"],\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":{\"length\":1},\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"name"
+					],
+					"message": "Invalid input: expected string, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"name"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"WRONG-VALUE\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"WRONG-VALUE\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"VERITAS IN SILICO INC.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"VERITAS IN SILICO INC.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"veritas in silico inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"veritas in silico inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\\u0000\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\\u0000\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\\tVeritas In Silico Inc.\\t\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\\nVeritas In Silico Inc.\\n\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\\u000bVeritas In Silico Inc.\\u000b\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\\fVeritas In Silico Inc.\\f\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"\\rVeritas In Silico Inc.\\r\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\" Veritas In Silico Inc. \",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"　Veritas In Silico Inc.　\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"﻿Veritas In Silico Inc.﻿\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"​Veritas In Silico Inc.​\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"​Veritas In Silico Inc.​\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"᠎Veritas In Silico Inc.᠎\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"᠎Veritas In Silico Inc.᠎\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"name"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"V\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"V\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":null,\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":1,\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":[\"x\"],\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":{\"length\":1},\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"localName"
+					],
+					"message": "Invalid input: expected string, received object"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"localName"
+					],
+					"message": "Too small: expected string to have >=1 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"WRONG-VALUE\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"WRONG-VALUE\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"ＶＥＲＩＴＡＳ　ＩＮ　ＳＩＬＩＣＯ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"ＶＥＲＩＴＡＳ　ＩＮ　ＳＩＬＩＣＯ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"ｖｅｒｉｔａｓ　ｉｎ　ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"ｖｅｒｉｔａｓ　ｉｎ　ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\u0000\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\u0000\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\\tＶｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\t\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\\nＶｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\n\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\\u000bＶｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\u000b\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\\fＶｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\f\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"\\rＶｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\\r\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\" Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ \",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"　Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ　\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"﻿Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ﻿\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"​Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ​\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"​Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ​\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"᠎Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ᠎\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"᠎Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ᠎\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏéééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"localName"
+					],
+					"message": "Too big: expected string to have <=200 characters"
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖ\",\"listing\":\"tse-growth\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖ\",\"listing\":\"tse-growth\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"TSE-GROWTH\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\\ttse-growth\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\\ntse-growth\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\\u000btse-growth\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\\ftse-growth\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"\\rtse-growth\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\" tse-growth \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"　tse-growth　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"﻿tse-growth﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"​tse-growth​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"᠎tse-growth᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growtha\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growthé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growth😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-growt\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"listing"
+					],
+					"message": "Invalid option: expected one of \"nasdaq\"|\"nyse\"|\"cboe\"|\"txse\"|\"tse-prime\"|\"tse-standard\"|\"tse-growth\""
+				}
+			]
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"nasdaq\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"nasdaq\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"nyse\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"nyse\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"cboe\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"cboe\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"txse\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"txse\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-prime\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-prime\"}"
+		},
+		{
+			"input": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-standard\"}",
+			"valid": true,
+			"output": "{\"symbol\":\"130A\",\"name\":\"Veritas In Silico Inc.\",\"localName\":\"Ｖｅｒｉｔａｓ　Ｉｎ　Ｓｉｌｉｃｏ\",\"listing\":\"tse-standard\"}"
+		}
+	]
+}

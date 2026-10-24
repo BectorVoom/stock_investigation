@@ -5,8 +5,12 @@ import { createFeedParser } from "@research/adapters/feed";
 import {
 	createFinnhubEarningsSource,
 	createFredSeriesSource,
+	createJpxDirectorySource,
 	createJpxEarningsSource,
+	createSecClient,
+	createSecDirectorySource,
 	createTwelveDataSeriesSource,
+	isUsableSecUserAgent,
 } from "@research/adapters/finance";
 import { createGoogleHttp } from "@research/adapters/google";
 import {
@@ -19,10 +23,14 @@ import { systemClock, webCryptoHasher } from "@research/adapters/runtime";
 import { createResearchTools } from "@research/adapters/tools";
 import { createAgentRegistry, createToolRegistry } from "@research/agent-core";
 import {
+	type SafeBinaryFetcher,
+	type SafeFetcher,
+	type StockDirectorySource,
 	unconfiguredEarningsCalendarSource,
 	unconfiguredMarketSeriesSource,
+	unconfiguredStockDirectorySource,
 } from "@research/application";
-import { marketUnavailableReason } from "@research/contracts";
+import { marketUnavailableReason, type WatchMarket } from "@research/contracts";
 import { thrownName } from "@research/domain";
 import { attempt, createEventLogger, type EventLogger, UnexpectedError } from "@research/effects";
 import { Effect } from "effect";
@@ -42,6 +50,7 @@ import {
 	FRED_RATE_LIMIT,
 	GOOGLE_RATE_LIMIT,
 	JPX_RATE_LIMIT,
+	SEC_RATE_LIMIT,
 	twelveDataRateLimit,
 } from "./marketPacing.ts";
 import { runRunnerLoop } from "./runner.ts";
@@ -110,6 +119,7 @@ function runnerProgram(
 		}
 		const { value } = config;
 		const fetcher = createNodeSafeFetcher();
+		const binaryFetcher = createNodeSafeBinaryFetcher();
 		const feedParser = createFeedParser();
 		const api = createHttpRunnerApi({
 			apiUrl: value.apiUrl,
@@ -210,6 +220,7 @@ function runnerProgram(
 							["twelve-data", twelveDataRateLimit(value.twelveDataRequestsPerMinute)],
 							["finnhub", FINNHUB_RATE_LIMIT],
 							["jpx", JPX_RATE_LIMIT],
+							["sec", SEC_RATE_LIMIT],
 							["google", GOOGLE_RATE_LIMIT],
 						]),
 					}),
@@ -223,15 +234,14 @@ function runnerProgram(
 								? unconfiguredEarningsCalendarSource("finnhub")
 								: createFinnhubEarningsSource({ apiKey: value.finnhubApiKey, fetcher }),
 						],
-						[
-							"jpx",
-							createJpxEarningsSource({
-								fetcher,
-								binaryFetcher: createNodeSafeBinaryFetcher(),
-								clock: systemClock,
-							}),
-						],
+						["jpx", createJpxEarningsSource({ fetcher, binaryFetcher, clock: systemClock })],
 					]),
+					stockDirectorySources: stockDirectorySources(
+						value.secUserAgent,
+						fetcher,
+						binaryFetcher,
+						logger,
+					),
 					scratch: createScratchDirectories(value.scratchRoot ?? join(tmpdir(), "research-runner")),
 					// Google Calendar sync (FR-019): Desktop-app OAuth over
 					// the narrow pinned port; the token file path comes from
@@ -258,6 +268,43 @@ function runnerProgram(
 		);
 		return exit === "shutdown" ? 0 : 1;
 	});
+}
+
+/**
+ * The stock-directory sources by market (ADR-0033). The US list comes from
+ * SEC, which requires a declared User-Agent: without a usable
+ * `SEC_USER_AGENT` the US source is "unconfigured" and its jobs fail with
+ * `DIRECTORY_NOT_CONFIGURED` instead of sending an undeclared agent. The JP
+ * list (JPX) needs no key. Rows dropped for an over-long name are logged as
+ * a count only (SEC-010: never provider text).
+ */
+function stockDirectorySources(
+	secUserAgent: string | null,
+	fetcher: SafeFetcher,
+	binaryFetcher: SafeBinaryFetcher,
+	logger: EventLogger,
+): ReadonlyMap<WatchMarket, StockDirectorySource> {
+	const dropped =
+		(market: WatchMarket) =>
+		(count: number): void =>
+			logger.info("stock_directory_rows_dropped", { market, count });
+	return new Map<WatchMarket, StockDirectorySource>([
+		[
+			"US",
+			isUsableSecUserAgent(secUserAgent)
+				? createSecDirectorySource({
+						client: createSecClient({
+							fetcher,
+							clock: systemClock,
+							userAgent: secUserAgent,
+							sleep,
+						}),
+						onDroppedRows: dropped("US"),
+					})
+				: unconfiguredStockDirectorySource("US"),
+		],
+		["JP", createJpxDirectorySource({ fetcher, binaryFetcher, onDroppedRows: dropped("JP") })],
+	]);
 }
 
 /** Maps one handled failure to its log lines and exit code. */

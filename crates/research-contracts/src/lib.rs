@@ -23,6 +23,7 @@ pub mod notebook;
 pub mod patterns;
 pub mod primitives;
 pub mod records;
+pub mod stock_directory;
 pub mod ui;
 pub mod watchlist;
 pub mod widget_rules;
@@ -152,6 +153,7 @@ contract!(
 	records::PricingPowerRecord,
 	records::Security,
 	records::SupplierLink,
+	stock_directory::StockDirectoryEntry,
 	ui::UiOperation,
 	watchlist::EarningsEvent,
 	widgets::WidgetCore,
