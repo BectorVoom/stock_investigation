@@ -6,12 +6,16 @@ import { OPENROUTER_MODELS_URL } from "../../src/providers/openRouterModels.ts";
 import {
 	BASE_ENV,
 	collect,
+	type FakeFetch,
 	fixtureText,
 	forbiddenFetch,
 	itemAt,
 	makeContext,
 	makeEnvironment,
 	makeRequest,
+	recordingFetch,
+	sseData,
+	sseResponse,
 	terminalEvents,
 	textOf,
 	usageEvents,
@@ -24,41 +28,8 @@ const CONFIGURED_ENV = {
 	OPENROUTER_API_KEY: API_KEY,
 	OPENROUTER_FREE_MODEL: FREE_MODEL,
 };
-const encoder = new TextEncoder();
-
-interface FetchCall {
-	readonly url: string;
-	readonly init: RequestInit;
-}
-
-interface FakeFetch {
-	readonly fetch: typeof fetch;
-	readonly calls: FetchCall[];
-}
-
-function recordingFetch(respond: (call: FetchCall) => Response | Promise<Response>): FakeFetch {
-	const calls: FetchCall[] = [];
-	const fake: typeof fetch = async (input, init) => {
-		const call = { url: typeof input === "string" ? input : input.toString(), init: init ?? {} };
-		calls.push(call);
-		return respond(call);
-	};
-	return { fetch: fake, calls };
-}
-
-function sseResponse(body: string): Response {
-	return new Response(encoder.encode(body), {
-		status: 200,
-		headers: { "Content-Type": "text/event-stream" },
-	});
-}
-
-function data(value: unknown): string {
-	return `data: ${JSON.stringify(value)}\n\n`;
-}
-
 function contentChunk(content: string, finishReason: string | null = null): string {
-	return data({ choices: [{ index: 0, delta: { content }, finish_reason: finishReason }] });
+	return sseData({ choices: [{ index: 0, delta: { content }, finish_reason: finishReason }] });
 }
 
 const DONE = "data: [DONE]\n\n";
@@ -253,7 +224,7 @@ describe("openrouter-free turn", () => {
 	it("reports null when the provider explicitly says the cost is 0", async () => {
 		const fake = recordingFetch(() =>
 			sseResponse(
-				`${contentChunk("OK")}${data({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost: 0 } })}${DONE}`,
+				`${contentChunk("OK")}${sseData({ choices: [{ delta: { content: "" }, finish_reason: "stop" }], usage: { cost: 0 } })}${DONE}`,
 			),
 		);
 

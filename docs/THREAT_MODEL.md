@@ -13,7 +13,7 @@ The default is local operation (ADR-0006): browser, API and runner all on the ow
 Browser SPA --(loopback host or Access JWT, + CSRF)--> Worker --(owner-scoped SQL)--> D1
                                        ^
                                        | bearer credential, lease generation
-                                Local runner --(allowlisted env, no tools)--> agent CLI / OpenRouter
+                                Local runner --(allowlisted env, no tools)--> agent CLI / OpenRouter / Claude API (api.anthropic.com)
                                        |
                                        +--(pinned, allowlisted HTTPS)--> subscribed sources, sec.gov
                                        +--(pinned HTTPS, one page per call)--> public web pages

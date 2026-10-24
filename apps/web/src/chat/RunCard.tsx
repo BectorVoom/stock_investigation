@@ -51,6 +51,8 @@ export function providerFailureHint(run: ResearchRun): string | null {
 			return "The model's provider is overloaded or could not be reached. Retry in a few minutes, or choose another model in Settings.";
 		case "PROVIDER_RATE_LIMITED":
 			return "The model's provider is limiting requests (free models have per-minute and daily limits). Retry later, or choose another model in Settings.";
+		case "PROVIDER_REFUSED":
+			return "The model declined to answer this question. Rephrase it, or choose another model in Settings.";
 		default:
 			return null;
 	}

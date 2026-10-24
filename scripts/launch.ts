@@ -24,7 +24,7 @@
  *     (the TypeScript runner, the rollback); a production generation without the binary still
  *     starts with node
  *   RESEARCH_CARGO_TARGET_DIR  shared Cargo build cache (default "target")
- * Optional runner settings (SEC_USER_AGENT, OPENCODE_MODEL, OPENROUTER_*, …) are
+ * Optional runner settings (SEC_USER_AGENT, OPENCODE_MODEL, OPENROUTER_*, ANTHROPIC_API_KEY, …) are
  * read from that env file when it exists.
  */
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";

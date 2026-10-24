@@ -2,6 +2,16 @@
 import { readdir, readFile } from "node:fs/promises";
 import type { Effort } from "@research/agent-core";
 import {
+	buildClaudeRequestBody,
+	CLAUDE_API_MODELS,
+	claudeCostUsd,
+	createClaudeApiRuntime,
+	failureForClaudeErrorType,
+	failureForClaudeHttpStatus,
+	failureForStopReason,
+	interpretClaudeSseLine,
+} from "../../packages/adapters/src/providers/claudeApi.ts";
+import {
 	buildClaudeArgs,
 	CLAUDE_MODEL_ALIASES,
 	createClaudeStreamInterpreter,
@@ -16,6 +26,11 @@ import {
 	buildChildEnv,
 	probeWorkingDirectory,
 } from "../../packages/adapters/src/providers/environment.ts";
+import {
+	failureForHttpStatus,
+	parseRetryAfterMs,
+	rejectionRetryDelayMs,
+} from "../../packages/adapters/src/providers/httpTurn.ts";
 import {
 	createClaudeCodeRuntime,
 	createCodexRuntime,
@@ -32,10 +47,7 @@ import {
 import {
 	createOpenRouterFreeRuntime,
 	createOpenRouterRuntime,
-	failureForHttpStatus,
 	interpretSseLine,
-	parseRetryAfterMs,
-	rejectionRetryDelayMs,
 } from "../../packages/adapters/src/providers/openRouter.ts";
 import { parseFreeModelIds } from "../../packages/adapters/src/providers/openRouterModels.ts";
 import {
@@ -343,6 +355,164 @@ async function httpTranscripts(): Promise<unknown[]> {
 	return cases;
 }
 
+/** Claude API: whole turns (bytewise SSE) across fixtures, models and efforts. */
+async function claudeApiTranscripts(): Promise<unknown[]> {
+	const bodies: string[] = [];
+	for (const file of (await readdir(new URL("claude-api/", fixtures))).sort())
+		if (file.endsWith(".sse"))
+			bodies.push(await readFile(new URL(`claude-api/${file}`, fixtures), "utf8"));
+	const start = '{"type":"message_start","message":{"usage":{"input_tokens":7}}}';
+	const text = '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK"}}';
+	const stop = '{"type":"message_stop"}';
+	const delta = (reason: string | null, usage: string): string =>
+		`{"type":"message_delta","delta":{"stop_reason":${JSON.stringify(reason)}},"usage":${usage}}`;
+	bodies.push(
+		`data:${start}\r\n\r\ndata:${text}\r\ndata:${delta("end_turn", '{"output_tokens":3}')}\r\ndata:${stop}\r\n`,
+		`data:${start}\ndata:${text}\ndata:${delta(null, '{"output_tokens":3}')}\ndata:${stop}\n`,
+		`data:${start}\ndata:${text}\ndata:${delta("end_turn", "null")}\ndata:${stop}\n`,
+		`data:${start}\ndata:${text}\ndata:${delta("end_turn", '{"input_tokens":200001,"cache_creation_input_tokens":5,"cache_read_input_tokens":9,"output_tokens":3}')}\ndata:${stop}\n`,
+		`data:${start}\ndata:${text}\ndata:${delta("stop_sequence", '{"output_tokens":3}')}\n`,
+		`data:${start}\ndata:${delta("end_turn", '{"output_tokens":3}')}\ndata:${stop}\n`,
+		'data:{"type":"error","error":{"type":"billing_error"}}\n',
+		"data:{}\n",
+		"",
+	);
+	const cases: unknown[] = [];
+	for (const model of [null, "claude-haiku-5-5", "claude-unknown-9"])
+		for (const effort of efforts)
+			for (const body of bodies) {
+				const calls: unknown[] = [];
+				const environment = makeEnvironment({
+					env: { ...BASE_ENV, ANTHROPIC_API_KEY: "sk-ant-api03-test-key" },
+					fetch: async (url, init) => {
+						calls.push({
+							url,
+							method: init?.method,
+							headers: init?.headers,
+							body: init?.body,
+							redirect: init?.redirect,
+						});
+						// One-byte chunks exercise UTF-8 decoding as well as SSE line splitting.
+						const bytes = new TextEncoder().encode(body);
+						return new Response(
+							new ReadableStream<Uint8Array>({
+								start(controller) {
+									for (const byte of bytes) controller.enqueue(Uint8Array.of(byte));
+									controller.close();
+								},
+							}),
+						);
+					},
+				});
+				// A short remaining deadline suppresses retries of the overload fixture.
+				const request = makeRequest({ deadline: new Date(Date.now() + 20_000).toISOString() });
+				const events = await collect(
+					createClaudeApiRuntime(environment).run(request, makeContext({ effort, model })),
+				);
+				cases.push({ input: { model, effort, body }, output: { calls, events } });
+			}
+	return cases;
+}
+
+function claudeApiPure(corpus: readonly string[]): unknown {
+	const usages = [
+		{},
+		{ inputTokens: 10 },
+		{ outputTokens: 10 },
+		{ inputTokens: 0, outputTokens: 0 },
+		{ inputTokens: 1_200, outputTokens: 350 },
+		{ inputTokens: 100_000, outputTokens: 1 },
+		{ inputTokens: 100_001, outputTokens: 1 },
+		{ inputTokens: 99_990, cacheReadInputTokens: 11, outputTokens: 7 },
+		{
+			inputTokens: 3,
+			cacheCreationInputTokens: 1_000_003,
+			cacheReadInputTokens: 77,
+			outputTokens: 9,
+		},
+		{ inputTokens: 9_007_199_254_740_991, outputTokens: 9_007_199_254_740_991 },
+	];
+	const lines = [
+		...corpus.map((line) => `data:${line}`),
+		"event: message_start",
+		"data: [DONE]",
+		'data: {"type":"ping"}',
+		'data: {"type":"future_event","x":1}',
+		'data: {"type":7}',
+		'data:{"type":"message_start","message":{}}',
+		'data:{"type":"message_start","message":{"usage":{"input_tokens":5,"output_tokens":null}}}',
+		'data:{"type":"message_start","message":{"usage":{"input_tokens":-1}}}',
+		'data:{"type":"message_start","message":{"usage":{"input_tokens":9007199254740992}}}',
+		'data:{"type":"message_start"}',
+		'data:{"type":"content_block_start","index":0,"content_block":{"type":"text","text":"Hi"}}',
+		'data:{"type":"content_block_start","index":0,"content_block":{"type":"redacted_thinking","data":"x"}}',
+		'data:{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"t","name":"n","input":{}}}',
+		'data:{"type":"content_block_start","index":0,"content_block":{}}',
+		'data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":""}}',
+		'data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta"}}',
+		'data:{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":3}}',
+		'data:{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{"}}',
+		'data:{"type":"content_block_delta","index":0,"delta":{"type":"citations_delta","citation":{}}}',
+		'data:{"type":"message_delta","delta":{}}',
+		'data:{"type":"message_delta","delta":{"stop_reason":null},"usage":null}',
+		'data:{"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":4}}',
+		'data:{"type":"message_delta","usage":{"output_tokens":4}}',
+		'data:{"type":"error","error":{}}',
+		'data:{"type":"error","error":{"type":"rate_limit_error"}}',
+		'data:{"type":"error"}',
+	];
+	return {
+		models: CLAUDE_API_MODELS.map((model) => model.id),
+		costs: CLAUDE_API_MODELS.flatMap((model) =>
+			usages.map((usage) => {
+				const cost = claudeCostUsd(model, usage);
+				return {
+					input: { model: model.id, usage },
+					output: cost === null ? null : doubleBits(cost),
+				};
+			}),
+		),
+		bodies: ["claude-opus-5-5", "claude-haiku-5-5"].flatMap((model) =>
+			efforts.flatMap((effort) =>
+				["prompt", 'quote " \\ \n\t 日本語 😀 \u2028'].map((prompt) => ({
+					input: { model, effort, prompt },
+					output: buildClaudeRequestBody(model, prompt, effort),
+				})),
+			),
+		),
+		statuses: [200, 400, 401, 402, 403, 404, 408, 413, 429, 500, 529, 999].map((input) => ({
+			input,
+			output: failureForClaudeHttpStatus(input),
+		})),
+		errorTypes: [
+			"overloaded_error",
+			"api_error",
+			"rate_limit_error",
+			"authentication_error",
+			"permission_error",
+			"billing_error",
+			"timeout_error",
+			"not_found_error",
+			"invalid_request_error",
+			"request_too_large",
+			"",
+			null,
+		].map((input) => ({ input, output: failureForClaudeErrorType(input ?? undefined) })),
+		stopReasons: [
+			"end_turn",
+			"stop_sequence",
+			"max_tokens",
+			"model_context_window_exceeded",
+			"refusal",
+			"tool_use",
+			"pause_turn",
+			"",
+			"unknown",
+		].map((input) => ({ input, output: failureForStopReason(input) })),
+		lines: lines.map((input) => ({ input, output: interpretClaudeSseLine(input) })),
+	};
+}
+
 export const providersExporter: VectorExporter = {
 	name: "providers",
 	async build() {
@@ -574,6 +744,13 @@ export const providersExporter: VectorExporter = {
 			{ path: "providers/lines.json", content: lineCases },
 			{ path: "providers/cli-turns.json", content: normalized(await cliTranscripts()) },
 			{ path: "providers/http-turns.json", content: normalized(await httpTranscripts()) },
+			{
+				path: "providers/claude-api.json",
+				content: normalized({
+					pure: claudeApiPure(corpus),
+					turns: await claudeApiTranscripts(),
+				}),
+			},
 		];
 	},
 };

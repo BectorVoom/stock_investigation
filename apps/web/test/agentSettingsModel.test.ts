@@ -45,6 +45,32 @@ const OPENCODE_AGENTS = agentsResponseSchema.parse({
 	],
 });
 
+const CLAUDE_API_MODEL_IDS = [
+	"claude-fable-5-1",
+	"claude-opus-5-5",
+	"claude-sonnet-5-5",
+	"claude-haiku-5-5",
+];
+
+const CLAUDE_API_AGENTS = agentsResponseSchema.parse({
+	...AGENTS,
+	agents: [
+		...AGENTS.agents,
+		{
+			agentId: "claude-api",
+			displayName: "Claude API",
+			capabilities: {
+				supported: ["stream", "cancel"],
+				model: "claude-opus-5-5",
+				models: CLAUDE_API_MODEL_IDS,
+			},
+			costModel: "metered",
+			toolIsolation: "enforced",
+			availability: { status: "available" },
+		},
+	],
+});
+
 function budget(overrides: Partial<SpendDraft> = {}): SpendDraft {
 	return { ...defaultSpendDraft(), ...overrides };
 }
@@ -440,12 +466,23 @@ describe("model selector options", () => {
 		expect(modelOptionLabel("opencode", "opus")).toBe("opus");
 	});
 
+	it("names the Claude API models and keeps their ids visible", () => {
+		expect(modelOptionLabel("claude-api", "claude-opus-5-5")).toBe(
+			"Claude Opus 5.5 (claude-opus-5-5)",
+		);
+		expect(modelOptionLabel("claude-api", "claude-haiku-5-5")).toBe(
+			"Claude Haiku 5.5 (claude-haiku-5-5)",
+		);
+		expect(modelOptionLabel("claude-api", "claude-new-6")).toBe("claude-new-6");
+	});
+
 	it("asks for the id shape each backend expects in the Other input", () => {
 		expect(customModelPlaceholder("opencode")).toBe("provider/model");
 		expect(customModelPlaceholder("openrouter")).toBe("provider/model");
 		expect(customModelPlaceholder(OPENROUTER_FREE_AGENT_ID)).toBe("provider/model:free");
 		expect(customModelPlaceholder("codex")).toBe("model id");
 		expect(customModelPlaceholder("claude-code")).toBe("model id");
+		expect(customModelPlaceholder("claude-api")).toBe("claude-…");
 	});
 
 	it("falls back to first plus Other when no models are reported", () => {
@@ -585,4 +622,56 @@ describe("openrouter free backend", () => {
 			"OpenRouter limits free models per minute and per day, and each agent step of a question uses one request. No spend is authorized for this backend.",
 		);
 	});
+});
+
+describe("Claude API settings", () => {
+	const draft = (model: string | undefined): AgentSettingsDraft => ({
+		...settingsDraftFrom(AGENT_SETTINGS),
+		defaultAgentId: "claude-api",
+		models: model === undefined ? {} : { "claude-api": model },
+		budget: budget({ maxSpendUsd: "2" }),
+	});
+
+	it("is metered: it needs a maximum spend and says it bills the provider account", () => {
+		const evaluation = evaluateAgentSettings(
+			{ ...draft(undefined), budget: budget() },
+			CLAUDE_API_AGENTS,
+		);
+		expect(evaluation.costModel).toBe("metered");
+		expect(evaluation.spendEditable).toBe(true);
+		expect(evaluation.problems).toContain(
+			"A metered backend needs a maximum spend greater than 0 USD.",
+		);
+	});
+
+	it("saves the backend default or a listed model", () => {
+		for (const model of [undefined, "claude-sonnet-5-5", " claude-haiku-5-5 "]) {
+			const evaluation = evaluateAgentSettings(draft(model), CLAUDE_API_AGENTS);
+			expect(evaluation.problems).toEqual([]);
+			expect(evaluation.settings?.defaultAgentId).toBe("claude-api");
+		}
+		expect(evaluation(draft(" claude-haiku-5-5 ")).settings?.models).toEqual({
+			"claude-api": "claude-haiku-5-5",
+		});
+		expect(backendRequiresModel("claude-api")).toBe(false);
+	});
+
+	it("refuses a model the runner did not list, since the runner could not price it", () => {
+		const evaluation = evaluateAgentSettings(draft("claude-opus-4-1"), CLAUDE_API_AGENTS);
+		expect(evaluation.settings).toBeNull();
+		expect(evaluation.problems).toEqual([
+			"The Claude API runs only the models the runner lists, because it prices each answer from them. Choose one from the list.",
+		]);
+	});
+
+	it("offers the reported models flat, in the runner's order", () => {
+		expect(reportedModels(CLAUDE_API_AGENTS, "claude-api")).toEqual(CLAUDE_API_MODEL_IDS);
+		expect(buildModelSelectOptions(CLAUDE_API_MODEL_IDS, "", false).groups).toEqual([
+			{ provider: null, models: CLAUDE_API_MODEL_IDS },
+		]);
+	});
+
+	function evaluation(value: AgentSettingsDraft) {
+		return evaluateAgentSettings(value, CLAUDE_API_AGENTS);
+	}
 });

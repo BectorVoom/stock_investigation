@@ -4,6 +4,7 @@ import {
 	type AgentsResponse,
 	BASELINE_AGENT_IDS,
 	BUDGET_LIMITS,
+	CLAUDE_API_AGENT_ID,
 	isFreeTierModelId,
 	isOpenRouterFreeModelId,
 	OPENROUTER_FREE_AGENT_ID,
@@ -240,9 +241,24 @@ const CLAUDE_ALIAS_LABELS: Readonly<Record<string, string>> = {
 	haiku: "Haiku (latest)",
 };
 
+/**
+ * Names of the Claude API model ids the runner reports. Only names: which ids
+ * are accepted, and their prices, live in the runner's adapter.
+ */
+const CLAUDE_API_MODEL_LABELS: Readonly<Record<string, string>> = {
+	"claude-fable-5-1": "Claude Fable 5.1",
+	"claude-opus-5-5": "Claude Opus 5.5",
+	"claude-sonnet-5-5": "Claude Sonnet 5.5",
+	"claude-haiku-5-5": "Claude Haiku 5.5",
+};
+
 /** Text of a model's option: a readable name where one is known, otherwise the id itself. */
 export function modelOptionLabel(agentId: string, model: string): string {
 	if (agentId === "claude-code") return CLAUDE_ALIAS_LABELS[model] ?? model;
+	if (agentId === CLAUDE_API_AGENT_ID) {
+		const name = CLAUDE_API_MODEL_LABELS[model];
+		return name === undefined ? model : `${name} (${model})`;
+	}
 	return model;
 }
 
@@ -250,6 +266,7 @@ export function modelOptionLabel(agentId: string, model: string): string {
 export function customModelPlaceholder(agentId: string): string {
 	if (agentId === OPENROUTER_FREE_AGENT_ID) return "provider/model:free";
 	if (agentId === "opencode" || agentId === "openrouter") return "provider/model";
+	if (agentId === CLAUDE_API_AGENT_ID) return "claude-…";
 	return "model id";
 }
 
@@ -422,6 +439,17 @@ export function evaluateAgentSettings(
 		} else if (!isOpenRouterFreeModelId(modelText.trim())) {
 			problems.push(
 				"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
+			);
+		}
+	}
+	if (selectedAgent !== null && selectedAgent.agentId === CLAUDE_API_AGENT_ID) {
+		// The runner prices every Claude API turn from its own table and refuses
+		// any other id, so an unlisted model would only fail at run time.
+		const listed = reportedModels(agents, CLAUDE_API_AGENT_ID);
+		const model = modelText.trim();
+		if (model !== "" && listed !== null && !listed.includes(model)) {
+			problems.push(
+				"The Claude API runs only the models the runner lists, because it prices each answer from them. Choose one from the list.",
 			);
 		}
 	}

@@ -1,5 +1,6 @@
 //! Backend composition is additive; the orchestrator does not switch on backend ids.
 use crate::{
+	claude_api::ClaudeApiRuntime,
 	claude_code::ClaudeCodeRuntime,
 	codex::CodexRuntime,
 	environment::ProviderEnvironment,
@@ -21,7 +22,8 @@ pub fn create_baseline_agent_runtimes(
 		Arc::new(OpenRouterRuntime::new(environment)),
 	]
 }
-/// Production defaults to five backends; explicit external-only/baseline modes support FR-013.
+/// Production defaults to six backends (the baseline four, OpenRouter free models, the
+/// Claude API — the order of `createAgentRuntimes`); external-only/baseline modes support FR-013.
 pub fn create_agent_runtimes(
 	environment: ProviderEnvironment,
 ) -> Result<Vec<Arc<dyn AgentRuntime>>, ExternalConfigError> {
@@ -36,6 +38,7 @@ pub fn create_agent_runtimes(
 	};
 	if set == "all" {
 		runtimes.push(Arc::new(OpenRouterRuntime::free(environment.clone())));
+		runtimes.push(Arc::new(ClaudeApiRuntime::new(environment.clone())));
 	}
 	if set != "baseline" {
 		runtimes.extend(load_external_runtimes(&environment)?);

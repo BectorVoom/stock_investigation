@@ -109,6 +109,14 @@
 			"output": true
 		},
 		{
+			"input": "zod",
+			"output": true
+		},
+		{
+			"input": "../../src/providers/claudeApi.ts",
+			"output": false
+		},
+		{
 			"input": "../../src/providers/index.ts",
 			"output": false
 		},
@@ -117,23 +125,47 @@
 			"output": false
 		},
 		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"none\"}",
+			"input": "sk-ant-api03-TEST-KEY-0123456789abcdef",
+			"output": true
+		},
+		{
+			"input": "user",
+			"output": true
+		},
+		{
+			"input": "low",
+			"output": true
+		},
+		{
+			"input": "medium",
+			"output": true
+		},
+		{
+			"input": "high",
+			"output": true
+		},
+		{
+			"input": "{}",
 			"output": false
 		},
 		{
-			"input": "system",
+			"input": "message_start",
 			"output": true
 		},
 		{
-			"input": "init",
+			"input": "{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}",
+			"output": false
+		},
+		{
+			"input": "content_block_start",
 			"output": true
 		},
 		{
-			"input": "none",
-			"output": true
+			"input": "{\"type\":\"text\",\"text\":\"\"}",
+			"output": false
 		},
 		{
-			"input": "stream_event",
+			"input": "text",
 			"output": true
 		},
 		{
@@ -145,39 +177,39 @@
 			"output": true
 		},
 		{
-			"input": "{}",
-			"output": false
-		},
-		{
-			"input": "result",
+			"input": "message_delta",
 			"output": true
 		},
 		{
-			"input": "success",
+			"input": "end_turn",
 			"output": true
 		},
 		{
-			"input": "OK",
+			"input": "{\"type\":\"message_stop\"}",
+			"output": false
+		},
+		{
+			"input": "message_stop",
 			"output": true
 		},
 		{
-			"input": "{\"code\":0}",
+			"input": "claude-api runtime metadata",
 			"output": false
 		},
 		{
-			"input": "claude-code runtime metadata",
+			"input": "is a metered, tool-isolated backend distinct from the Claude Code CLI",
 			"output": false
 		},
 		{
-			"input": "is plan-limited, tool-isolated and claims only streaming",
-			"output": false
-		},
-		{
-			"input": "claude-code",
+			"input": "claude-api",
 			"output": true
 		},
 		{
-			"input": "plan-limited",
+			"input": "Claude API",
+			"output": false
+		},
+		{
+			"input": "metered",
 			"output": true
 		},
 		{
@@ -185,171 +217,263 @@
 			"output": true
 		},
 		{
-			"input": "claude-code argv",
+			"input": "claude-api probe",
 			"output": false
 		},
 		{
-			"input": "uses print mode with streaming JSON and every isolation flag",
+			"input": "is NOT_CONFIGURED without ANTHROPIC_API_KEY and never contacts the network",
 			"output": false
 		},
 		{
-			"input": "claude-code/ok.stream.jsonl",
+			"input": "{\"status\":\"unavailable\",\"reasonCode\":\"NOT_CONFIGURED\",\"detail\":\"The Claude API needs ANTHROPIC_API_KEY in the runner environment\"}",
+			"output": false
+		},
+		{
+			"input": "unavailable",
 			"output": true
+		},
+		{
+			"input": "NOT_CONFIGURED",
+			"output": true
+		},
+		{
+			"input": "The Claude API needs ANTHROPIC_API_KEY in the runner environment",
+			"output": false
+		},
+		{
+			"input": "blank",
+			"output": true
+		},
+		{
+			"input": "   ",
+			"output": false
+		},
+		{
+			"input": "too short",
+			"output": false
+		},
+		{
+			"input": "sk-ant",
+			"output": true
+		},
+		{
+			"input": "containing a space",
+			"output": false
+		},
+		{
+			"input": "sk-ant api03 0123456789",
+			"output": false
+		},
+		{
+			"input": "treats a %s key as missing",
+			"output": false
+		},
+		{
+			"input": "is available with a key and offers exactly the priced models, offline",
+			"output": false
+		},
+		{
+			"input": "{\"status\":\"available\"}",
+			"output": false
+		},
+		{
+			"input": "available",
+			"output": true
+		},
+		{
+			"input": "{\"supported\":[\"stream\",\"cancel\"],\"model\":\"claude-opus-5-5\",\"models\":[\"claude-fable-5-1\",\"claude-opus-5-5\",\"claude-sonnet-5-5\",\"claude-haiku-5-5\"]}",
+			"output": false
+		},
+		{
+			"input": "stream",
+			"output": true
+		},
+		{
+			"input": "cancel",
+			"output": true
+		},
+		{
+			"input": "claude-opus-5-5",
+			"output": true
+		},
+		{
+			"input": "claude-fable-5-1",
+			"output": true
+		},
+		{
+			"input": "claude-sonnet-5-5",
+			"output": true
+		},
+		{
+			"input": "claude-haiku-5-5",
+			"output": true
+		},
+		{
+			"input": "claude-api request",
+			"output": false
+		},
+		{
+			"input": "posts one streaming Messages request with the prompt, the effort, and no tools",
+			"output": false
+		},
+		{
+			"input": "claude-api/ok.sse",
+			"output": true
+		},
+		{
+			"input": "{\"prompt\":\"the research prompt\"}",
+			"output": false
+		},
+		{
+			"input": "the research prompt",
+			"output": false
+		},
+		{
+			"input": "{\"scratchDirectory\":null,\"effort\":\"high\",\"model\":\"claude-sonnet-5-5\"}",
+			"output": false
+		},
+		{
+			"input": "https://api.anthropic.com/v1/messages",
+			"output": true
+		},
+		{
+			"input": "POST",
+			"output": true
+		},
+		{
+			"input": "error",
+			"output": true
+		},
+		{
+			"input": "x-api-key",
+			"output": true
+		},
+		{
+			"input": "anthropic-version",
+			"output": true
+		},
+		{
+			"input": "2026-10-21",
+			"output": true
+		},
+		{
+			"input": "authorization",
+			"output": true
+		},
+		{
+			"input": "{\"role\":\"user\",\"content\":\"the research prompt\"}",
+			"output": false
 		},
 		{
 			"input": "{\"effort\":\"high\"}",
 			"output": false
 		},
 		{
-			"input": "high",
+			"input": "uses Claude Opus 5.5 when Settings leaves the model empty",
+			"output": false
+		},
+		{
+			"input": "OK",
 			"output": true
 		},
 		{
-			"input": "claude",
+			"input": "{\"model\":null}",
+			"output": false
+		},
+		{
+			"input": "never sends ANTHROPIC_BASE_URL's host the key: the origin is fixed",
+			"output": false
+		},
+		{
+			"input": "https://evil.example",
 			"output": true
 		},
 		{
-			"input": "-p",
+			"input": "an unpriced model",
 			"output": false
 		},
 		{
-			"input": "--output-format",
+			"input": "{\"model\":\"claude-unknown-9\"}",
 			"output": false
 		},
 		{
-			"input": "stream-json",
+			"input": "claude-unknown-9",
 			"output": true
 		},
 		{
-			"input": "--verbose",
-			"output": false
-		},
-		{
-			"input": "--include-partial-messages",
-			"output": false
-		},
-		{
-			"input": "--tools",
-			"output": false
-		},
-		{
-			"input": "--strict-mcp-config",
-			"output": false
-		},
-		{
-			"input": "--mcp-config",
-			"output": false
-		},
-		{
-			"input": "--setting-sources",
-			"output": false
-		},
-		{
-			"input": "--disable-slash-commands",
-			"output": false
-		},
-		{
-			"input": "--no-session-persistence",
-			"output": false
-		},
-		{
-			"input": "--safe-mode",
-			"output": false
-		},
-		{
-			"input": "--permission-mode",
-			"output": false
-		},
-		{
-			"input": "dontAsk",
+			"input": "PROVIDER_MODEL_INVALID",
 			"output": true
 		},
 		{
-			"input": "--permission-prompts",
+			"input": "a date-suffixed id",
 			"output": false
 		},
 		{
-			"input": "--system-prompt",
+			"input": "{\"model\":\"claude-opus-5-5-20260401\"}",
 			"output": false
 		},
 		{
-			"input": "--effort",
-			"output": false
-		},
-		{
-			"input": "--model",
-			"output": false
-		},
-		{
-			"input": "--allowedTools",
-			"output": false
-		},
-		{
-			"input": "--allowed-tools",
-			"output": false
-		},
-		{
-			"input": "--add-dir",
-			"output": false
-		},
-		{
-			"input": "--settings",
-			"output": false
-		},
-		{
-			"input": "--bare",
-			"output": false
-		},
-		{
-			"input": "passes a requested model through --model",
-			"output": false
-		},
-		{
-			"input": "{\"model\":\"sonnet\"}",
-			"output": false
-		},
-		{
-			"input": "sonnet",
+			"input": "claude-opus-5-5-20260401",
 			"output": true
 		},
 		{
-			"input": "claude-code stream interpretation",
+			"input": "refuses %s before any network activity",
 			"output": false
 		},
 		{
-			"input": "emits the recorded text deltas incrementally, in order",
-			"output": false
-		},
-		{
-			"input": "claude-code/no-tools-attempt.stream.jsonl",
+			"input": "failed",
 			"output": true
+		},
+		{
+			"input": "fails NOT_CONFIGURED without a key, before any network activity",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"NOT_CONFIGURED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "claude-api streaming",
+			"output": false
+		},
+		{
+			"input": "streams the text deltas, drops thinking, and reports the computed cost",
+			"output": false
 		},
 		{
 			"input": "text.delta",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"text.delta\",\"text\":\"N\"}",
+			"input": "{\"type\":\"text.delta\",\"text\":\"Hello\"}",
 			"output": false
 		},
 		{
-			"input": "N",
+			"input": "Hello",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"text.delta\",\"text\":\"O_T\"}",
+			"input": "{\"type\":\"text.delta\",\"text\":\", wor\"}",
 			"output": false
 		},
 		{
-			"input": "O_T",
-			"output": true
-		},
-		{
-			"input": "{\"type\":\"text.delta\",\"text\":\"OOLS\"}",
+			"input": ", wor",
 			"output": false
 		},
 		{
-			"input": "OOLS",
+			"input": "{\"type\":\"text.delta\",\"text\":\"ld — 日本語\"}",
+			"output": false
+		},
+		{
+			"input": "ld — 日本語",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"usage\",\"knownCostUsd\":0.0118}",
+			"output": false
+		},
+		{
+			"input": "usage",
 			"output": true
 		},
 		{
@@ -361,99 +485,79 @@
 			"output": true
 		},
 		{
-			"input": "reports the subscription run's notional total_cost_usd as an unknown cost, not as money spent",
+			"input": "reassembles events split across arbitrary byte boundaries",
 			"output": false
 		},
 		{
-			"input": "\"total_cost_usd\":0.01264",
+			"input": "Hello, world — 日本語",
 			"output": false
+		},
+		{
+			"input": "fails PROVIDER_REFUSED on a refusal, after the partial text, and still reports the cost",
+			"output": false
+		},
+		{
+			"input": "claude-api/refusal.sse",
+			"output": true
+		},
+		{
+			"input": "I can",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"usage\",\"knownCostUsd\":0.00384}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_REFUSED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_REFUSED",
+			"output": true
+		},
+		{
+			"input": "reports a turn stopped at max_tokens as truncated, billed, and not retried",
+			"output": false
+		},
+		{
+			"input": "claude-api/max-tokens.sse",
+			"output": true
+		},
+		{
+			"input": "{\"type\":\"usage\",\"knownCostUsd\":0.3236}",
+			"output": false
+		},
+		{
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_OUTPUT_TRUNCATED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_OUTPUT_TRUNCATED",
+			"output": true
+		},
+		{
+			"input": "fails closed on a tool block although no tools were offered",
+			"output": false
+		},
+		{
+			"input": "claude-api/tool-use.sse",
+			"output": true
 		},
 		{
 			"input": "{\"type\":\"usage\",\"knownCostUsd\":null}",
 			"output": false
 		},
 		{
-			"input": "usage",
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_VIOLATED\",\"retryable\":false}",
+			"output": false
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
 			"output": true
 		},
 		{
-			"input": "falls back to the result text when the CLI streamed no deltas",
-			"output": false
-		},
-		{
-			"input": "{\"result\":\"whole answer\"}",
-			"output": false
-		},
-		{
-			"input": "whole answer",
-			"output": false
-		},
-		{
-			"input": "does not duplicate the text when both deltas and a result are present",
-			"output": false
-		},
-		{
-			"input": "O",
-			"output": true
-		},
-		{
-			"input": "K",
-			"output": true
-		},
-		{
-			"input": "ignores thinking deltas and unknown event types",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"status\",\"status\":\"requesting\"}",
-			"output": false
-		},
-		{
-			"input": "status",
-			"output": true
-		},
-		{
-			"input": "requesting",
-			"output": true
-		},
-		{
-			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}}}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"thinking_delta\",\"thinking\":\"secret plan\"}",
-			"output": false
-		},
-		{
-			"input": "thinking_delta",
-			"output": true
-		},
-		{
-			"input": "secret plan",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"some_future_event\",\"payload\":{\"nested\":true}}",
-			"output": false
-		},
-		{
-			"input": "some_future_event",
-			"output": true
-		},
-		{
-			"input": "{\"nested\":true}",
-			"output": false
-		},
-		{
-			"input": "fails with PROVIDER_OUTPUT_EMPTY when a successful turn produced no text",
-			"output": false
-		},
-		{
-			"input": "{\"result\":\"\"}",
+			"input": "fails PROVIDER_OUTPUT_EMPTY for a complete answer with no text",
 			"output": false
 		},
 		{
@@ -461,15 +565,11 @@
 			"output": false
 		},
 		{
-			"input": "failed",
-			"output": true
-		},
-		{
 			"input": "PROVIDER_OUTPUT_EMPTY",
 			"output": true
 		},
 		{
-			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without a result",
+			"input": "fails PROVIDER_OUTPUT_INVALID when the stream closes before message_stop",
 			"output": false
 		},
 		{
@@ -485,275 +585,107 @@
 			"output": true
 		},
 		{
-			"input": "claude-code tool isolation guard",
+			"input": "fails PROVIDER_OUTPUT_INVALID after more than eight malformed lines",
 			"output": false
 		},
 		{
-			"input": "fails closed when the init event lists any built-in tool",
+			"input": "{\"length\":9}",
 			"output": false
 		},
 		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[\"Bash\",\"Read\"],\"mcp_servers\":[],\"apiKeySource\":\"none\"}",
-			"output": false
-		},
-		{
-			"input": "Bash",
+			"input": "late",
 			"output": true
 		},
 		{
-			"input": "Read",
+			"input": "claude-api failures and retries",
+			"output": false
+		},
+		{
+			"input": "does not retry an error after the message started, and reports the cost as unknown",
+			"output": false
+		},
+		{
+			"input": "claude-api/midstream-error.sse",
 			"output": true
 		},
 		{
-			"input": "should never be emitted",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_VIOLATED\",\"retryable\":false}",
-			"output": false
-		},
-		{
-			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
+			"input": "Partial",
 			"output": true
 		},
 		{
-			"input": "fails closed when the init event lists an MCP server",
+			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_UNAVAILABLE\",\"retryable\":true}",
 			"output": false
 		},
 		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[{\"name\":\"gmail\",\"status\":\"connected\"}],\"apiKeySource\":\"none\"}",
-			"output": false
-		},
-		{
-			"input": "{\"name\":\"gmail\",\"status\":\"connected\"}",
-			"output": false
-		},
-		{
-			"input": "gmail",
+			"input": "PROVIDER_UNAVAILABLE",
 			"output": true
 		},
 		{
-			"input": "connected",
+			"input": "retries an overloaded error that arrives before the message starts",
+			"output": false
+		},
+		{
+			"input": "claude-api/overloaded-before-start.sse",
 			"output": true
 		},
 		{
-			"input": "x",
+			"input": "retries HTTP 529 after the provider's Retry-After",
+			"output": false
+		},
+		{
+			"input": "{\"status\":529,\"headers\":{\"retry-after\":\"3\"}}",
+			"output": false
+		},
+		{
+			"input": "{\"retry-after\":\"3\"}",
+			"output": false
+		},
+		{
+			"input": "retry-after",
 			"output": true
 		},
 		{
-			"input": "fails closed when text arrives before any init event confirmed the tool list",
-			"output": false
-		},
-		{
-			"input": "unverified",
+			"input": "3",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_TOOL_ISOLATION_UNVERIFIED\",\"retryable\":false}",
-			"output": false
-		},
-		{
-			"input": "PROVIDER_TOOL_ISOLATION_UNVERIFIED",
+			"input": "PROVIDER_REQUEST_REJECTED",
 			"output": true
-		},
-		{
-			"input": "fails closed when the init event has no readable tool list",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\"}",
-			"output": false
-		},
-		{
-			"input": "fails closed when a result arrives without any init event",
-			"output": false
-		},
-		{
-			"input": "a streamed tool_use block",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"name\":\"Bash\"}}}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"tool_use\",\"name\":\"Bash\"}}",
-			"output": false
-		},
-		{
-			"input": "content_block_start",
-			"output": true
-		},
-		{
-			"input": "{\"type\":\"tool_use\",\"name\":\"Bash\"}",
-			"output": false
-		},
-		{
-			"input": "tool_use",
-			"output": true
-		},
-		{
-			"input": "a server tool block",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"server_tool_use\",\"name\":\"web_search\"}}}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"content_block_start\",\"content_block\":{\"type\":\"server_tool_use\",\"name\":\"web_search\"}}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"server_tool_use\",\"name\":\"web_search\"}",
-			"output": false
-		},
-		{
-			"input": "server_tool_use",
-			"output": true
-		},
-		{
-			"input": "web_search",
-			"output": true
-		},
-		{
-			"input": "a tool_use block in an assistant message",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}]}}",
-			"output": false
-		},
-		{
-			"input": "assistant",
-			"output": true
-		},
-		{
-			"input": "{\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}]}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{}}",
-			"output": false
-		},
-		{
-			"input": "fails closed and stops the process on %s",
-			"output": false
-		},
-		{
-			"input": "before",
-			"output": true
-		},
-		{
-			"input": "claude-code metered-auth guard (AGT-012)",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[]}",
-			"output": false
-		},
-		{
-			"input": "an environment API key",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"ANTHROPIC_API_KEY\"}",
-			"output": false
-		},
-		{
-			"input": "ANTHROPIC_API_KEY",
-			"output": true
-		},
-		{
-			"input": "a Console-managed key",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"/login managed key\"}",
-			"output": false
-		},
-		{
-			"input": "/login managed key",
-			"output": false
-		},
-		{
-			"input": "an apiKeyHelper",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[],\"mcp_servers\":[],\"apiKeySource\":\"apiKeyHelper\"}",
-			"output": false
-		},
-		{
-			"input": "apiKeyHelper",
-			"output": true
-		},
-		{
-			"input": "no statement about the key source at all",
-			"output": false
-		},
-		{
-			"input": "fails closed at the init event for %s, before any output is accepted",
-			"output": false
-		},
-		{
-			"input": "paid output that must not be delivered",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_METERED_AUTH_NOT_ALLOWED\",\"retryable\":false}",
-			"output": false
-		},
-		{
-			"input": "PROVIDER_METERED_AUTH_NOT_ALLOWED",
-			"output": true
-		},
-		{
-			"input": "never turns the CLI's total_cost_usd into a known cost, even for a completed turn",
-			"output": false
-		},
-		{
-			"input": "{\"total_cost_usd\":1.5}",
-			"output": false
-		},
-		{
-			"input": "reports a tool-isolation violation in preference to the auth kind when both are wrong",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"system\",\"subtype\":\"init\",\"tools\":[\"Bash\"],\"mcp_servers\":[],\"apiKeySource\":\"ANTHROPIC_API_KEY\"}",
-			"output": false
-		},
-		{
-			"input": "claude-code failures",
-			"output": false
-		},
-		{
-			"input": "maps the recorded not-logged-in output to PROVIDER_AUTH without emitting the CLI's message as text",
-			"output": false
-		},
-		{
-			"input": "claude-code/not-logged-in.stream.jsonl",
-			"output": true
-		},
-		{
-			"input": "{\"code\":1}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_AUTH\",\"retryable\":false}",
-			"output": false
 		},
 		{
 			"input": "PROVIDER_AUTH",
 			"output": true
 		},
 		{
-			"input": "rate_limit",
+			"input": "PROVIDER_MODEL_UNAVAILABLE",
 			"output": true
 		},
 		{
-			"input": "PROVIDER_RATE_LIMITED",
+			"input": "maps HTTP %i to %s without retrying and without usage",
+			"output": false
+		},
+		{
+			"input": "maps every documented error type",
+			"output": false
+		},
+		{
+			"input": "overloaded_error",
+			"output": true
+		},
+		{
+			"input": "api_error",
+			"output": true
+		},
+		{
+			"input": "rate_limit_error",
+			"output": true
+		},
+		{
+			"input": "authentication_error",
+			"output": true
+		},
+		{
+			"input": "permission_error",
 			"output": true
 		},
 		{
@@ -761,112 +693,180 @@
 			"output": true
 		},
 		{
+			"input": "timeout_error",
+			"output": true
+		},
+		{
+			"input": "not_found_error",
+			"output": true
+		},
+		{
+			"input": "invalid_request_error",
+			"output": true
+		},
+		{
+			"input": "request_too_large",
+			"output": true
+		},
+		{
+			"input": "PROVIDER_RATE_LIMITED",
+			"output": true
+		},
+		{
 			"input": "PROVIDER_PAYMENT_REQUIRED",
 			"output": true
 		},
 		{
-			"input": "server_error",
+			"input": "PROVIDER_TIMEOUT",
 			"output": true
 		},
 		{
-			"input": "PROVIDER_UNAVAILABLE",
+			"input": "maps every stop reason",
+			"output": false
+		},
+		{
+			"input": "stop_sequence",
 			"output": true
 		},
 		{
-			"input": "authentication_failed",
+			"input": "max_tokens",
 			"output": true
 		},
 		{
-			"input": "maps assistant error %s to %s",
-			"output": false
-		},
-		{
-			"input": "{\"content\":[{\"type\":\"text\",\"text\":\"API error\"}]}",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"text\",\"text\":\"API error\"}",
-			"output": false
-		},
-		{
-			"input": "text",
+			"input": "model_context_window_exceeded",
 			"output": true
 		},
 		{
-			"input": "API error",
-			"output": false
-		},
-		{
-			"input": "maps a rejected rate-limit event to PROVIDER_RATE_LIMITED",
-			"output": false
-		},
-		{
-			"input": "{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"rejected\",\"rateLimitType\":\"five_hour\"}}",
-			"output": false
-		},
-		{
-			"input": "rate_limit_event",
+			"input": "refusal",
 			"output": true
 		},
 		{
-			"input": "{\"status\":\"rejected\",\"rateLimitType\":\"five_hour\"}",
-			"output": false
-		},
-		{
-			"input": "rejected",
+			"input": "tool_use",
 			"output": true
 		},
 		{
-			"input": "five_hour",
+			"input": "pause_turn",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"result\":\"limit\"}",
-			"output": false
-		},
-		{
-			"input": "limit",
+			"input": "something_new",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_RATE_LIMITED\",\"retryable\":true}",
+			"input": "claude-api SSE lines",
 			"output": false
 		},
 		{
-			"input": "maps an unexplained error result to PROVIDER_ERROR",
+			"input": "skips event names, pings, unknown events and non-text deltas",
 			"output": false
 		},
 		{
-			"input": "{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true}",
+			"input": "event: message_start",
 			"output": false
 		},
 		{
-			"input": "error_during_execution",
+			"input": "{\"kind\":\"ignored\"}",
+			"output": false
+		},
+		{
+			"input": "ignored",
 			"output": true
 		},
 		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_ERROR\",\"retryable\":false}",
+			"input": "data: {\"type\":\"ping\"}",
 			"output": false
 		},
 		{
-			"input": "PROVIDER_ERROR",
+			"input": "data: {\"type\":\"brand_new_event\"}",
+			"output": false
+		},
+		{
+			"input": "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret\"}}",
+			"output": false
+		},
+		{
+			"input": "treats invalid JSON and negative or fractional token counts as malformed",
+			"output": false
+		},
+		{
+			"input": "data: {",
+			"output": false
+		},
+		{
+			"input": "{\"kind\":\"malformed\"}",
+			"output": false
+		},
+		{
+			"input": "malformed",
 			"output": true
 		},
 		{
-			"input": "treats a non-zero exit as a failure even after a success result",
+			"input": "data: {\"no\":\"type\"}",
 			"output": false
 		},
 		{
-			"input": "{\"type\":\"failed\",\"code\":\"PROVIDER_EXIT_NONZERO\",\"retryable\":false}",
+			"input": "data: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"output_tokens\":-1}}",
 			"output": false
 		},
 		{
-			"input": "PROVIDER_EXIT_NONZERO",
+			"input": "data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":1.5}}}",
+			"output": false
+		},
+		{
+			"input": "claude-api cost",
+			"output": false
+		},
+		{
+			"input": "lists only models with a price, most capable first",
+			"output": false
+		},
+		{
+			"input": "is unknown until both the input and the output counts are known",
+			"output": false
+		},
+		{
+			"input": "{\"inputTokens\":10}",
+			"output": false
+		},
+		{
+			"input": "{\"outputTokens\":10}",
+			"output": false
+		},
+		{
+			"input": "{\"inputTokens\":0,\"outputTokens\":0}",
+			"output": false
+		},
+		{
+			"input": "prices cache writes at the 1-hour rate and cache reads at the model's read price",
+			"output": false
+		},
+		{
+			"input": "{\"inputTokens\":0,\"cacheCreationInputTokens\":1000000,\"cacheReadInputTokens\":1000000,\"outputTokens\":0}",
+			"output": false
+		},
+		{
+			"input": "charges Claude Haiku 5.5's long-prompt price above 100K prompt tokens",
+			"output": false
+		},
+		{
+			"input": "{\"inputTokens\":100000,\"outputTokens\":1000000}",
+			"output": false
+		},
+		{
+			"input": "{\"inputTokens\":100001,\"outputTokens\":1000000}",
+			"output": false
+		},
+		{
+			"input": "claude-api secret handling",
+			"output": false
+		},
+		{
+			"input": "sends only its own key, only to Anthropic, and never places a secret in an event",
+			"output": false
+		},
+		{
+			"input": "ANTHROPIC_API_KEY",
 			"output": true
-		},
-		{
-			"input": "claude-code probe",
-			"output": false
 		}
 	],
 	"hints": [
@@ -899,11 +899,603 @@
 			"output": null
 		},
 		{
+			"input": "zod",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/claudeApi.ts",
+			"output": null
+		},
+		{
 			"input": "../../src/providers/index.ts",
 			"output": null
 		},
 		{
 			"input": "./helpers.ts",
+			"output": null
+		},
+		{
+			"input": "sk-ant-api03-TEST-KEY-0123456789abcdef",
+			"output": null
+		},
+		{
+			"input": "user",
+			"output": null
+		},
+		{
+			"input": "low",
+			"output": null
+		},
+		{
+			"input": "medium",
+			"output": null
+		},
+		{
+			"input": "high",
+			"output": null
+		},
+		{
+			"input": "message_start",
+			"output": null
+		},
+		{
+			"input": "content_block_start",
+			"output": null
+		},
+		{
+			"input": "text",
+			"output": null
+		},
+		{
+			"input": "content_block_delta",
+			"output": null
+		},
+		{
+			"input": "text_delta",
+			"output": null
+		},
+		{
+			"input": "message_delta",
+			"output": null
+		},
+		{
+			"input": "end_turn",
+			"output": null
+		},
+		{
+			"input": "message_stop",
+			"output": null
+		},
+		{
+			"input": "claude-api runtime metadata",
+			"output": null
+		},
+		{
+			"input": "is a metered, tool-isolated backend distinct from the Claude Code CLI",
+			"output": null
+		},
+		{
+			"input": "claude-api",
+			"output": null
+		},
+		{
+			"input": "Claude API",
+			"output": null
+		},
+		{
+			"input": "metered",
+			"output": null
+		},
+		{
+			"input": "enforced",
+			"output": null
+		},
+		{
+			"input": "claude-api probe",
+			"output": null
+		},
+		{
+			"input": "is NOT_CONFIGURED without ANTHROPIC_API_KEY and never contacts the network",
+			"output": null
+		},
+		{
+			"input": "unavailable",
+			"output": null
+		},
+		{
+			"input": "NOT_CONFIGURED",
+			"output": null
+		},
+		{
+			"input": "The Claude API needs ANTHROPIC_API_KEY in the runner environment",
+			"output": null
+		},
+		{
+			"input": "blank",
+			"output": null
+		},
+		{
+			"input": "   ",
+			"output": null
+		},
+		{
+			"input": "too short",
+			"output": null
+		},
+		{
+			"input": "sk-ant",
+			"output": null
+		},
+		{
+			"input": "containing a space",
+			"output": null
+		},
+		{
+			"input": "sk-ant api03 0123456789",
+			"output": null
+		},
+		{
+			"input": "treats a %s key as missing",
+			"output": null
+		},
+		{
+			"input": "is available with a key and offers exactly the priced models, offline",
+			"output": null
+		},
+		{
+			"input": "available",
+			"output": null
+		},
+		{
+			"input": "stream",
+			"output": null
+		},
+		{
+			"input": "cancel",
+			"output": null
+		},
+		{
+			"input": "claude-opus-5-5",
+			"output": null
+		},
+		{
+			"input": "claude-fable-5-1",
+			"output": null
+		},
+		{
+			"input": "claude-sonnet-5-5",
+			"output": null
+		},
+		{
+			"input": "claude-haiku-5-5",
+			"output": null
+		},
+		{
+			"input": "claude-api request",
+			"output": null
+		},
+		{
+			"input": "posts one streaming Messages request with the prompt, the effort, and no tools",
+			"output": null
+		},
+		{
+			"input": "claude-api/ok.sse",
+			"output": null
+		},
+		{
+			"input": "the research prompt",
+			"output": null
+		},
+		{
+			"input": "https://api.anthropic.com/v1/messages",
+			"output": null
+		},
+		{
+			"input": "POST",
+			"output": null
+		},
+		{
+			"input": "error",
+			"output": null
+		},
+		{
+			"input": "x-api-key",
+			"output": null
+		},
+		{
+			"input": "anthropic-version",
+			"output": null
+		},
+		{
+			"input": "2026-10-21",
+			"output": null
+		},
+		{
+			"input": "authorization",
+			"output": null
+		},
+		{
+			"input": "uses Claude Opus 5.5 when Settings leaves the model empty",
+			"output": null
+		},
+		{
+			"input": "OK",
+			"output": null
+		},
+		{
+			"input": "never sends ANTHROPIC_BASE_URL's host the key: the origin is fixed",
+			"output": null
+		},
+		{
+			"input": "https://evil.example",
+			"output": null
+		},
+		{
+			"input": "an unpriced model",
+			"output": null
+		},
+		{
+			"input": "claude-unknown-9",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_MODEL_INVALID",
+			"output": null
+		},
+		{
+			"input": "a date-suffixed id",
+			"output": null
+		},
+		{
+			"input": "claude-opus-5-5-20260401",
+			"output": null
+		},
+		{
+			"input": "refuses %s before any network activity",
+			"output": null
+		},
+		{
+			"input": "failed",
+			"output": null
+		},
+		{
+			"input": "fails NOT_CONFIGURED without a key, before any network activity",
+			"output": null
+		},
+		{
+			"input": "claude-api streaming",
+			"output": null
+		},
+		{
+			"input": "streams the text deltas, drops thinking, and reports the computed cost",
+			"output": null
+		},
+		{
+			"input": "text.delta",
+			"output": null
+		},
+		{
+			"input": "Hello",
+			"output": null
+		},
+		{
+			"input": ", wor",
+			"output": null
+		},
+		{
+			"input": "ld — 日本語",
+			"output": null
+		},
+		{
+			"input": "usage",
+			"output": null
+		},
+		{
+			"input": "completed",
+			"output": null
+		},
+		{
+			"input": "reassembles events split across arbitrary byte boundaries",
+			"output": null
+		},
+		{
+			"input": "Hello, world — 日本語",
+			"output": null
+		},
+		{
+			"input": "fails PROVIDER_REFUSED on a refusal, after the partial text, and still reports the cost",
+			"output": null
+		},
+		{
+			"input": "claude-api/refusal.sse",
+			"output": null
+		},
+		{
+			"input": "I can",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_REFUSED",
+			"output": null
+		},
+		{
+			"input": "reports a turn stopped at max_tokens as truncated, billed, and not retried",
+			"output": null
+		},
+		{
+			"input": "claude-api/max-tokens.sse",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_TRUNCATED",
+			"output": null
+		},
+		{
+			"input": "fails closed on a tool block although no tools were offered",
+			"output": null
+		},
+		{
+			"input": "claude-api/tool-use.sse",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
+			"output": null
+		},
+		{
+			"input": "fails PROVIDER_OUTPUT_EMPTY for a complete answer with no text",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_EMPTY",
+			"output": null
+		},
+		{
+			"input": "fails PROVIDER_OUTPUT_INVALID when the stream closes before message_stop",
+			"output": null
+		},
+		{
+			"input": "partial",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_OUTPUT_INVALID",
+			"output": null
+		},
+		{
+			"input": "fails PROVIDER_OUTPUT_INVALID after more than eight malformed lines",
+			"output": null
+		},
+		{
+			"input": "late",
+			"output": null
+		},
+		{
+			"input": "claude-api failures and retries",
+			"output": null
+		},
+		{
+			"input": "does not retry an error after the message started, and reports the cost as unknown",
+			"output": null
+		},
+		{
+			"input": "claude-api/midstream-error.sse",
+			"output": null
+		},
+		{
+			"input": "Partial",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "retries an overloaded error that arrives before the message starts",
+			"output": "unavailable"
+		},
+		{
+			"input": "claude-api/overloaded-before-start.sse",
+			"output": "unavailable"
+		},
+		{
+			"input": "retries HTTP 529 after the provider's Retry-After",
+			"output": "unavailable"
+		},
+		{
+			"input": "retry-after",
+			"output": null
+		},
+		{
+			"input": "3",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_REQUEST_REJECTED",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_AUTH",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_MODEL_UNAVAILABLE",
+			"output": null
+		},
+		{
+			"input": "maps HTTP %i to %s without retrying and without usage",
+			"output": null
+		},
+		{
+			"input": "maps every documented error type",
+			"output": null
+		},
+		{
+			"input": "overloaded_error",
+			"output": "unavailable"
+		},
+		{
+			"input": "api_error",
+			"output": null
+		},
+		{
+			"input": "rate_limit_error",
+			"output": null
+		},
+		{
+			"input": "authentication_error",
+			"output": "auth"
+		},
+		{
+			"input": "permission_error",
+			"output": null
+		},
+		{
+			"input": "billing_error",
+			"output": "payment"
+		},
+		{
+			"input": "timeout_error",
+			"output": null
+		},
+		{
+			"input": "not_found_error",
+			"output": null
+		},
+		{
+			"input": "invalid_request_error",
+			"output": null
+		},
+		{
+			"input": "request_too_large",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_RATE_LIMITED",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_PAYMENT_REQUIRED",
+			"output": null
+		},
+		{
+			"input": "PROVIDER_TIMEOUT",
+			"output": null
+		},
+		{
+			"input": "maps every stop reason",
+			"output": null
+		},
+		{
+			"input": "stop_sequence",
+			"output": null
+		},
+		{
+			"input": "max_tokens",
+			"output": null
+		},
+		{
+			"input": "model_context_window_exceeded",
+			"output": null
+		},
+		{
+			"input": "refusal",
+			"output": null
+		},
+		{
+			"input": "tool_use",
+			"output": null
+		},
+		{
+			"input": "pause_turn",
+			"output": null
+		},
+		{
+			"input": "something_new",
+			"output": null
+		},
+		{
+			"input": "claude-api SSE lines",
+			"output": null
+		},
+		{
+			"input": "skips event names, pings, unknown events and non-text deltas",
+			"output": null
+		},
+		{
+			"input": "event: message_start",
+			"output": null
+		},
+		{
+			"input": "ignored",
+			"output": null
+		},
+		{
+			"input": "data: {\"type\":\"ping\"}",
+			"output": null
+		},
+		{
+			"input": "data: {\"type\":\"brand_new_event\"}",
+			"output": null
+		},
+		{
+			"input": "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"secret\"}}",
+			"output": null
+		},
+		{
+			"input": "treats invalid JSON and negative or fractional token counts as malformed",
+			"output": null
+		},
+		{
+			"input": "data: {",
+			"output": null
+		},
+		{
+			"input": "malformed",
+			"output": null
+		},
+		{
+			"input": "data: {\"no\":\"type\"}",
+			"output": null
+		},
+		{
+			"input": "data: {\"type\":\"message_delta\",\"delta\":{},\"usage\":{\"output_tokens\":-1}}",
+			"output": null
+		},
+		{
+			"input": "data: {\"type\":\"message_start\",\"message\":{\"usage\":{\"input_tokens\":1.5}}}",
+			"output": null
+		},
+		{
+			"input": "claude-api cost",
+			"output": null
+		},
+		{
+			"input": "lists only models with a price, most capable first",
+			"output": null
+		},
+		{
+			"input": "is unknown until both the input and the output counts are known",
+			"output": null
+		},
+		{
+			"input": "prices cache writes at the 1-hour rate and cache reads at the model's read price",
+			"output": null
+		},
+		{
+			"input": "charges Claude Haiku 5.5's long-prompt price above 100K prompt tokens",
+			"output": null
+		},
+		{
+			"input": "claude-api secret handling",
+			"output": null
+		},
+		{
+			"input": "sends only its own key, only to Anthropic, and never places a secret in an event",
+			"output": null
+		},
+		{
+			"input": "ANTHROPIC_API_KEY",
 			"output": null
 		},
 		{
@@ -923,23 +1515,11 @@
 			"output": null
 		},
 		{
-			"input": "content_block_delta",
-			"output": null
-		},
-		{
-			"input": "text_delta",
-			"output": null
-		},
-		{
 			"input": "result",
 			"output": null
 		},
 		{
 			"input": "success",
-			"output": null
-		},
-		{
-			"input": "OK",
 			"output": null
 		},
 		{
@@ -959,10 +1539,6 @@
 			"output": null
 		},
 		{
-			"input": "enforced",
-			"output": null
-		},
-		{
 			"input": "claude-code argv",
 			"output": null
 		},
@@ -972,10 +1548,6 @@
 		},
 		{
 			"input": "claude-code/ok.stream.jsonl",
-			"output": null
-		},
-		{
-			"input": "high",
 			"output": null
 		},
 		{
@@ -1095,10 +1667,6 @@
 			"output": null
 		},
 		{
-			"input": "text.delta",
-			"output": null
-		},
-		{
 			"input": "N",
 			"output": null
 		},
@@ -1111,19 +1679,11 @@
 			"output": null
 		},
 		{
-			"input": "completed",
-			"output": null
-		},
-		{
 			"input": "reports the subscription run's notional total_cost_usd as an unknown cost, not as money spent",
 			"output": null
 		},
 		{
 			"input": "\"total_cost_usd\":0.01264",
-			"output": null
-		},
-		{
-			"input": "usage",
 			"output": null
 		},
 		{
@@ -1175,23 +1735,7 @@
 			"output": null
 		},
 		{
-			"input": "failed",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_OUTPUT_EMPTY",
-			"output": null
-		},
-		{
 			"input": "fails with PROVIDER_OUTPUT_INVALID when the stream ends without a result",
-			"output": null
-		},
-		{
-			"input": "partial",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_OUTPUT_INVALID",
 			"output": null
 		},
 		{
@@ -1212,10 +1756,6 @@
 		},
 		{
 			"input": "should never be emitted",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_TOOL_ISOLATION_VIOLATED",
 			"output": null
 		},
 		{
@@ -1259,14 +1799,6 @@
 			"output": null
 		},
 		{
-			"input": "content_block_start",
-			"output": null
-		},
-		{
-			"input": "tool_use",
-			"output": null
-		},
-		{
 			"input": "a server tool block",
 			"output": null
 		},
@@ -1300,10 +1832,6 @@
 		},
 		{
 			"input": "an environment API key",
-			"output": null
-		},
-		{
-			"input": "ANTHROPIC_API_KEY",
 			"output": null
 		},
 		{
@@ -1359,31 +1887,11 @@
 			"output": null
 		},
 		{
-			"input": "PROVIDER_AUTH",
-			"output": null
-		},
-		{
 			"input": "rate_limit",
 			"output": null
 		},
 		{
-			"input": "PROVIDER_RATE_LIMITED",
-			"output": null
-		},
-		{
-			"input": "billing_error",
-			"output": "payment"
-		},
-		{
-			"input": "PROVIDER_PAYMENT_REQUIRED",
-			"output": null
-		},
-		{
 			"input": "server_error",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_UNAVAILABLE",
 			"output": null
 		},
 		{
@@ -1392,10 +1900,6 @@
 		},
 		{
 			"input": "maps assistant error %s to %s",
-			"output": null
-		},
-		{
-			"input": "text",
 			"output": null
 		},
 		{
@@ -1467,10 +1971,6 @@
 			"output": null
 		},
 		{
-			"input": "stream",
-			"output": null
-		},
-		{
 			"input": "fable",
 			"output": null
 		},
@@ -1480,10 +1980,6 @@
 		},
 		{
 			"input": "haiku",
-			"output": null
-		},
-		{
-			"input": "available",
 			"output": null
 		},
 		{
@@ -1500,10 +1996,6 @@
 		},
 		{
 			"input": "claude-code/auth-status.logged-out.json",
-			"output": null
-		},
-		{
-			"input": "unavailable",
 			"output": null
 		},
 		{
@@ -1528,10 +2020,6 @@
 		},
 		{
 			"input": "claude-code/auth-status.api-key.json",
-			"output": null
-		},
-		{
-			"input": "NOT_CONFIGURED",
 			"output": null
 		},
 		{
@@ -1859,10 +2347,6 @@
 			"output": null
 		},
 		{
-			"input": "PROVIDER_MODEL_INVALID",
-			"output": null
-		},
-		{
 			"input": "reports NOT_INSTALLED from probe when the binary is missing",
 			"output": null
 		},
@@ -1916,10 +2400,6 @@
 		},
 		{
 			"input": "/scratch/job_7",
-			"output": null
-		},
-		{
-			"input": "low",
 			"output": null
 		},
 		{
@@ -2112,10 +2592,6 @@
 		},
 		{
 			"input": "turn.started",
-			"output": null
-		},
-		{
-			"input": "error",
 			"output": null
 		},
 		{
@@ -2547,11 +3023,43 @@
 			"output": null
 		},
 		{
-			"input": "openrouter-free",
+			"input": "claude-api ok",
+			"output": null
+		},
+		{
+			"input": "claude-api refusal",
+			"output": null
+		},
+		{
+			"input": "claude-api mid-stream error",
+			"output": null
+		},
+		{
+			"input": "claude-api tool use",
+			"output": null
+		},
+		{
+			"input": "claude-api 529",
+			"output": "unavailable"
+		},
+		{
+			"input": "claude-api garbage",
+			"output": null
+		},
+		{
+			"input": "claude-api unpriced model",
+			"output": null
+		},
+		{
+			"input": "claude-api not configured",
 			"output": null
 		},
 		{
 			"input": "openrouter",
+			"output": null
+		},
+		{
+			"input": "openrouter-free",
 			"output": null
 		},
 		{
@@ -2599,7 +3107,7 @@
 			"output": null
 		},
 		{
-			"input": "provides the baseline four followed by openrouter-free through createAgentRuntimes",
+			"input": "provides the baseline four, then openrouter-free and claude-api, through createAgentRuntimes",
 			"output": null
 		},
 		{
@@ -2627,19 +3135,11 @@
 			"output": null
 		},
 		{
-			"input": "cancel",
-			"output": null
-		},
-		{
 			"input": "only backends that deliver incremental deltas claim stream",
 			"output": null
 		},
 		{
 			"input": "declares cost models and tool isolation exactly as verified",
-			"output": null
-		},
-		{
-			"input": "metered",
 			"output": null
 		},
 		{
@@ -2784,10 +3284,6 @@
 		},
 		{
 			"input": "Reply with the single word OK. Do not call any tool.",
-			"output": null
-		},
-		{
-			"input": "zod",
 			"output": null
 		},
 		{
@@ -3051,10 +3547,6 @@
 			"output": null
 		},
 		{
-			"input": "medium",
-			"output": null
-		},
-		{
 			"input": "sends effort %s as the model's reasoning variant",
 			"output": null
 		},
@@ -3271,10 +3763,6 @@
 			"output": null
 		},
 		{
-			"input": "PROVIDER_MODEL_UNAVAILABLE",
-			"output": null
-		},
-		{
 			"input": "maps the recorded provider.auth refusal (credentials/plan rejected for this model) to PROVIDER_AUTH",
 			"output": null
 		},
@@ -3463,11 +3951,7 @@
 			"output": null
 		},
 		{
-			"input": "../../src/providers/openRouter.ts",
-			"output": null
-		},
-		{
-			"input": "string",
+			"input": "../../src/providers/httpTurn.ts",
 			"output": null
 		},
 		{
@@ -3491,15 +3975,7 @@
 			"output": null
 		},
 		{
-			"input": "the research prompt",
-			"output": null
-		},
-		{
 			"input": "https://openrouter.ai/api/v1/chat/completions",
-			"output": null
-		},
-		{
-			"input": "POST",
 			"output": null
 		},
 		{
@@ -3507,7 +3983,7 @@
 			"output": null
 		},
 		{
-			"input": "user",
+			"input": "string",
 			"output": null
 		},
 		{
@@ -3547,10 +4023,6 @@
 			"output": null
 		},
 		{
-			"input": "max_tokens",
-			"output": null
-		},
-		{
 			"input": "prefers the model from the run context over OPENROUTER_MODEL",
 			"output": null
 		},
@@ -3563,23 +4035,7 @@
 			"output": null
 		},
 		{
-			"input": "Hello, world — 日本語",
-			"output": null
-		},
-		{
 			"input": "streams the documented example: deltas concatenate, cost is reported, one terminal event",
-			"output": null
-		},
-		{
-			"input": "Hello",
-			"output": null
-		},
-		{
-			"input": ", wor",
-			"output": null
-		},
-		{
-			"input": "ld — 日本語",
 			"output": null
 		},
 		{
@@ -3600,10 +4056,6 @@
 		},
 		{
 			"input": "stops at [DONE] and ignores anything after it",
-			"output": null
-		},
-		{
-			"input": "ignored",
 			"output": null
 		},
 		{
@@ -3651,10 +4103,6 @@
 			"output": null
 		},
 		{
-			"input": "PROVIDER_OUTPUT_TRUNCATED",
-			"output": null
-		},
-		{
 			"input": "reports a cap consumed entirely by reasoning as truncated, not as a retryable empty answer",
 			"output": null
 		},
@@ -3695,19 +4143,7 @@
 			"output": null
 		},
 		{
-			"input": "Partial",
-			"output": null
-		},
-		{
 			"input": "maps a mid-stream error with code %j to %s",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_TIMEOUT",
-			"output": null
-		},
-		{
-			"input": "PROVIDER_REQUEST_REJECTED",
 			"output": null
 		},
 		{
@@ -3847,10 +4283,6 @@
 			"output": null
 		},
 		{
-			"input": "   ",
-			"output": null
-		},
-		{
 			"input": "an API key containing a line break",
 			"output": null
 		},
@@ -3944,6 +4376,10 @@
 		},
 		{
 			"input": "sends the key only in the Authorization header, never in the URL or the body",
+			"output": null
+		},
+		{
+			"input": "../../src/providers/openRouter.ts",
 			"output": null
 		},
 		{

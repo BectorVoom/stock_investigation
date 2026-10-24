@@ -32,7 +32,7 @@ use research_net::{FilePageArchive, create_node_safe_fetcher};
 use research_providers::create_agent_runtimes;
 use research_providers::environment::ProviderEnvironment;
 use research_providers::external::ExternalConfigError;
-use research_providers::http::OpenRouterHttpClient;
+use research_providers::http::PinnedProviderHttpClient;
 use research_providers::process::{
 	HELPER_NAME, HelperMissing, ProcessHandle, ProcessRunner, ProcessSpec, UnixProcessRunner,
 };
@@ -215,7 +215,7 @@ pub fn compose(
 
 	let runtimes = create_agent_runtimes(ProviderEnvironment {
 		process_runner: process_runner(&**logger),
-		http: Arc::new(OpenRouterHttpClient::new().map_err(|_| CompositionError::Tls)?),
+		http: Arc::new(PinnedProviderHttpClient::new().map_err(|_| CompositionError::Tls)?),
 		env: env.clone(),
 	})?;
 	let agents = Arc::new(AgentRegistry::new(runtimes)?);

@@ -22,7 +22,7 @@ use research_finance::ports::{
 use research_finance::twelve_data::TwelveDataSeriesSource;
 use research_providers::environment::ProviderEnvironment;
 use research_providers::external::ExternalConfigError;
-use research_providers::http::OpenRouterHttpClient;
+use research_providers::http::PinnedProviderHttpClient;
 use research_providers::process::{ProcessRunner, UnixProcessRunner};
 use research_providers::{create_agent_runtimes, create_baseline_agent_runtimes};
 use research_runner::api_client::{HttpRunnerApi, HttpRunnerApiOptions};
@@ -256,7 +256,7 @@ fn agents(
 ) -> Result<(Arc<AgentRegistry>, Arc<dyn ScratchDirectories>), HarnessError> {
 	let process_runner: Arc<dyn ProcessRunner> =
 		Arc::new(UnixProcessRunner::new().map_err(|_| HarnessError::SpawnHelper)?);
-	let http = Arc::new(OpenRouterHttpClient::new().map_err(|_| HarnessError::Tls)?);
+	let http = Arc::new(PinnedProviderHttpClient::new().map_err(|_| HarnessError::Tls)?);
 	if settings.live {
 		let runtimes = create_baseline_agent_runtimes(ProviderEnvironment {
 			process_runner,
