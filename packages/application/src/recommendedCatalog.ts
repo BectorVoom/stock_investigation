@@ -10,8 +10,16 @@ import type { RecommendedSource } from "@research/contracts";
  * terms unchanged. `licensePolicy` is a conservative default the owner confirms
  * when subscribing: only US federal agency works (generally not subject to
  * copyright under 17 U.S.C. §105) default to permitting a short excerpt.
+ *
+ * "Parseable" is not enough on its own. Each entry was also checked to
+ *  - be UTF-8: the fetcher decodes text as UTF-8 only, so a Shift_JIS feed
+ *    (common on Japanese ministry sites, e.g. MLIT, MIC) shows garbled titles;
+ *  - link its items over https: the article URL policy rejects http links, so a
+ *    feed whose items use http (the Bank of Japan's today) yields no articles;
+ *  - still be updated: a feed whose newest item is months old has been
+ *    abandoned (METI's release feed stopped on 2026-06-19).
  */
-const CHECKED = "2026-10-11";
+const CHECKED = "2026-10-21";
 
 export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 	{
@@ -85,39 +93,13 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 		catalogId: "doe-news",
 		title: "U.S. Department of Energy news",
 		publisher: "U.S. Department of Energy",
-		feedUrl: "https://www.energy.gov/rss.xml",
+		feedUrl: "https://www.energy.gov/newsroom/rss.xml",
 		homepageUrl: "https://www.energy.gov/",
 		region: "US",
 		language: "en",
 		trustClassification: "official",
 		licensePolicy: "short-excerpt-permitted",
 		rationale: "Federal energy programmes and funding that shape multi-year equipment demand.",
-		feedCheckedOn: CHECKED,
-	},
-	{
-		catalogId: "boj-whatsnew",
-		title: "Bank of Japan — What's New",
-		publisher: "Bank of Japan",
-		feedUrl: "https://www.boj.or.jp/rss/whatsnew.xml",
-		homepageUrl: "https://www.boj.or.jp/",
-		region: "JP",
-		language: "ja",
-		trustClassification: "official",
-		licensePolicy: "headline-and-link-only",
-		rationale: "Primary source for Japanese monetary policy and official statistics releases.",
-		feedCheckedOn: CHECKED,
-	},
-	{
-		catalogId: "meti-releases",
-		title: "METI news releases",
-		publisher: "Ministry of Economy, Trade and Industry (Japan)",
-		feedUrl: "https://www.meti.go.jp/ml_index_release_atom.xml",
-		homepageUrl: "https://www.meti.go.jp/",
-		region: "JP",
-		language: "ja",
-		trustClassification: "official",
-		licensePolicy: "headline-and-link-only",
-		rationale: "Japanese industrial policy, subsidies and supply-chain measures.",
 		feedCheckedOn: CHECKED,
 	},
 	{
@@ -144,6 +126,104 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 		trustClassification: "official",
 		licensePolicy: "headline-and-link-only",
 		rationale: "Exchange announcements on listings, market structure and statistics publication.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "mof-news",
+		title: "財務省 新着情報",
+		publisher: "Ministry of Finance (Japan)",
+		feedUrl: "https://www.mof.go.jp/news.rss",
+		homepageUrl: "https://www.mof.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Trade statistics, JGB auctions, FX intervention data and fiscal policy; primary source for export demand by product and region.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "cao-press",
+		title: "内閣府 報道発表",
+		publisher: "Cabinet Office (Japan)",
+		feedUrl: "https://www.cao.go.jp/rss/news.rdf",
+		homepageUrl: "https://www.cao.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Cabinet Office releases, including the monthly economic report and economic and fiscal policy announcements.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "kantei-news",
+		title: "首相官邸 新着情報",
+		publisher: "Prime Minister's Office of Japan",
+		feedUrl: "https://www.kantei.go.jp/index-jnews.rdf",
+		homepageUrl: "https://www.kantei.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Prime Minister's policy decisions and headquarters meetings that set government-wide spending priorities.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "mhlw-news",
+		title: "厚生労働省 新着情報",
+		publisher: "Ministry of Health, Labour and Welfare (Japan)",
+		feedUrl: "https://www.mhlw.go.jp/stf/news.rdf",
+		homepageUrl: "https://www.mhlw.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Wage and employment statistics, drug pricing and healthcare reimbursement changes affecting pharma and labour costs.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "maff-press",
+		title: "農林水産省 報道発表",
+		publisher: "Ministry of Agriculture, Forestry and Fisheries (Japan)",
+		feedUrl: "https://www.maff.go.jp/j/press/rss.xml",
+		homepageUrl: "https://www.maff.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Food, agriculture and export policy, including rice and commodity supply measures relevant to food producers.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "digital-agency-news",
+		title: "デジタル庁 新着・更新",
+		publisher: "Digital Agency (Japan)",
+		feedUrl: "https://www.digital.go.jp/rss/news.xml",
+		homepageUrl: "https://www.digital.go.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Government IT programmes, procurement and standards that drive public-sector software and cloud demand.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "jpx-markets-news",
+		title: "JPX マーケットニュース",
+		publisher: "Japan Exchange Group",
+		feedUrl: "https://www.jpx.co.jp/rss/markets_news.xml",
+		homepageUrl: "https://www.jpx.co.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "official",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Exchange notices on listings, delistings, margin trading measures and derivatives contract changes.",
 		feedCheckedOn: CHECKED,
 	},
 	{
@@ -187,10 +267,10 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 	},
 	{
 		catalogId: "nhk-business",
-		title: "NHK ニュース — 経済",
+		title: "NHK ONE ニュース — 経済",
 		publisher: "NHK",
-		feedUrl: "https://www3.nhk.or.jp/rss/news/cat5.xml",
-		homepageUrl: "https://www3.nhk.or.jp/",
+		feedUrl: "https://news.web.nhk/n-data/conf/na/rss/cat5.xml",
+		homepageUrl: "https://news.web.nhk/",
 		region: "JP",
 		language: "ja",
 		trustClassification: "established-media",
@@ -209,6 +289,47 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 		trustClassification: "established-media",
 		licensePolicy: "headline-and-link-only",
 		rationale: "English-language coverage of Japanese and Asian companies and supply chains.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "japan-times-business",
+		title: "The Japan Times — Business",
+		publisher: "The Japan Times",
+		feedUrl: "https://www.japantimes.co.jp/business/feed/",
+		homepageUrl: "https://www.japantimes.co.jp/",
+		region: "JP",
+		language: "en",
+		trustClassification: "established-media",
+		licensePolicy: "headline-and-link-only",
+		rationale: "English-language coverage of Japanese companies, markets and economic policy.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "asahi-business",
+		title: "朝日新聞 — 経済・マネー",
+		publisher: "The Asahi Shimbun",
+		feedUrl: "https://www.asahi.com/rss/asahi/business.rdf",
+		homepageUrl: "https://www.asahi.com/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "established-media",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"National daily's business news for corroboration and counter-evidence on Japanese companies and policy.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "toyokeizai",
+		title: "東洋経済オンライン",
+		publisher: "Toyo Keizai",
+		feedUrl: "https://toyokeizai.net/list/feed/rss",
+		homepageUrl: "https://toyokeizai.net/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "established-media",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Business magazine analysis of Japanese companies and industries; separate reporting from opinion pieces.",
 		feedCheckedOn: CHECKED,
 	},
 	{
@@ -237,6 +358,76 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = [
 		licensePolicy: "headline-and-link-only",
 		rationale:
 			"Startup and product-launch signals; treat as hypothesis-generating, not confirmation.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "nikkan-kogyo",
+		title: "日刊工業新聞",
+		publisher: "Nikkan Kogyo Shimbun",
+		feedUrl: "https://www.nikkan.co.jp/rss/nksrdf.rdf",
+		homepageUrl: "https://www.nikkan.co.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "trade-press",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Industrial daily covering Japanese manufacturers' capacity, orders and suppliers; useful for supply-chain signals.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "nikkei-xtech",
+		title: "日経クロステック",
+		publisher: "Nikkei Business Publications",
+		feedUrl: "https://xtech.nikkei.com/rss/index.rdf",
+		homepageUrl: "https://xtech.nikkei.com/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "trade-press",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Technology and engineering reporting on Japanese electronics, automotive, construction and IT.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "eetimes-japan",
+		title: "EE Times Japan",
+		publisher: "ITmedia",
+		feedUrl: "https://rss.itmedia.co.jp/rss/2.0/eetimes.xml",
+		homepageUrl: "https://eetimes.itmedia.co.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "trade-press",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Semiconductor and electronic-component industry news, including Japanese equipment and materials suppliers.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "monoist",
+		title: "MONOist",
+		publisher: "ITmedia",
+		feedUrl: "https://rss.itmedia.co.jp/rss/2.0/monoist.xml",
+		homepageUrl: "https://monoist.itmedia.co.jp/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "trade-press",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Manufacturing technology: factory automation, automotive and embedded systems at Japanese makers.",
+		feedCheckedOn: CHECKED,
+	},
+	{
+		catalogId: "smart-japan",
+		title: "スマートジャパン",
+		publisher: "ITmedia",
+		feedUrl: "https://rss.itmedia.co.jp/rss/2.0/smartjapan.xml",
+		homepageUrl: "https://www.itmedia.co.jp/smartjapan/",
+		region: "JP",
+		language: "ja",
+		trustClassification: "trade-press",
+		licensePolicy: "headline-and-link-only",
+		rationale:
+			"Japanese energy and power-market news: renewables, grid, storage and electricity pricing.",
 		feedCheckedOn: CHECKED,
 	},
 ];
