@@ -1,4 +1,4 @@
-import { useMessages } from "@research/i18n/solid";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import {
 	type Accessor,
 	createEffect,
@@ -14,10 +14,13 @@ import {
 	splitProps,
 } from "solid-js";
 import { Portal } from "solid-js/web";
+import { translatedFailureMessage } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
+import { commonMessages } from "../i18n/common.messages.ts";
 import type { Remote } from "../lib/remote.ts";
 import { pageMessages } from "../pages.messages.ts";
 import type { ViewName } from "../pages.ts";
+import { uiMessages } from "./ui.messages.ts";
 
 export const BUTTON =
 	"min-h-6 rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-50";
@@ -439,7 +442,12 @@ export function Field(props: {
 	);
 }
 
-/** An API failure always shows its stable code and message; never a blank area. */
+/**
+ * An API failure always shows its stable code and message; never a blank area.
+ * In English it shows the message as it came. In another UI language it shows
+ * the code's translated description (ADR-0031 decision 8), and the original
+ * message stays on the code as its tooltip for diagnosis.
+ */
 export function ErrorNotice(props: {
 	/**
 	 * The failure to state. `ApiFailure` fits, and so does any other stable
@@ -457,6 +465,10 @@ export function ErrorNotice(props: {
 	/** Opt-in icon-only retry for Home (other pages keep the text button). */
 	readonly iconRetry?: boolean;
 }): JSX.Element {
+	const m = useMessages(uiMessages);
+	const common = useMessages(commonMessages);
+	const locale = useLocale();
+	const translated = () => translatedFailureMessage(props.failure, locale());
 	return (
 		<div
 			role="alert"
@@ -466,15 +478,19 @@ export function ErrorNotice(props: {
 				<Show when={props.title}>
 					<span class="font-semibold">{props.title} </span>
 				</Show>
-				<span data-error-code={props.failure.code} class="font-mono text-xs font-semibold">
+				<span
+					data-error-code={props.failure.code}
+					title={translated() === null ? undefined : props.failure.message}
+					class="font-mono text-xs font-semibold"
+				>
 					{props.failure.code}
 				</span>
 				{": "}
-				{props.failure.message}
+				{translated() ?? props.failure.message}
 				<Show when={props.failure.detail}>{(detail) => <span> ({detail()})</span>}</Show>
 			</p>
 			<Show when={props.failure.issues.length > 0}>
-				<ul aria-label="Validation errors" class="mt-1 list-disc pl-5 text-xs">
+				<ul aria-label={m().validationErrors} class="mt-1 list-disc pl-5 text-xs">
 					<For each={props.failure.issues}>{(issue) => <li>{issue}</li>}</For>
 				</ul>
 			</Show>
@@ -484,12 +500,16 @@ export function ErrorNotice(props: {
 						when={props.iconRetry}
 						fallback={
 							<button type="button" class={`${BUTTON} mt-1`} onClick={() => retry()()}>
-								Try again
+								{common().tryAgain}
 							</button>
 						}
 					>
 						<span class="mt-1 inline-flex">
-							<IconButton label="Try again" icon="arrow-clockwise" onClick={() => retry()()} />
+							<IconButton
+								label={common().tryAgain}
+								icon="arrow-clockwise"
+								onClick={() => retry()()}
+							/>
 						</span>
 					</Show>
 				)}
@@ -499,9 +519,10 @@ export function ErrorNotice(props: {
 }
 
 export function Loading(props: { readonly label: string }): JSX.Element {
+	const common = useMessages(commonMessages);
 	return (
 		<output aria-busy="true" class="block text-sm text-slate-600">
-			Loading {props.label}…
+			{common().loadingThing(props.label)}
 		</output>
 	);
 }
@@ -514,6 +535,7 @@ export function RemoteView<T>(props: {
 	/** Receives an accessor so the content stays reactive when the value is replaced. */
 	readonly children: (value: Accessor<T>) => JSX.Element;
 }): JSX.Element {
+	const m = useMessages(uiMessages);
 	const ready = () => (props.remote.status === "ready" ? { value: props.remote.value } : null);
 	const failure = () => (props.remote.status === "error" ? props.remote.error : null);
 	return (
@@ -525,7 +547,7 @@ export function RemoteView<T>(props: {
 				{(error) => (
 					<ErrorNotice
 						failure={error()}
-						title={`Could not load ${props.label}.`}
+						title={m().couldNotLoad(props.label)}
 						onRetry={props.onRetry}
 					/>
 				)}
@@ -991,6 +1013,8 @@ export function ConfirmDialog(props: {
 	readonly onCancel: () => void;
 	readonly children: JSX.Element;
 }): JSX.Element {
+	const m = useMessages(uiMessages);
+	const common = useMessages(commonMessages);
 	const headingId = createUniqueId();
 	let dialog: HTMLDialogElement | undefined;
 	let cancelButton: HTMLButtonElement | undefined;
@@ -1028,7 +1052,7 @@ export function ConfirmDialog(props: {
 			<Show when={props.failure}>
 				{(failure) => (
 					<div class="mt-2">
-						<ErrorNotice failure={failure()} title="The chat was not deleted." />
+						<ErrorNotice failure={failure()} title={m().chatNotDeleted} />
 					</div>
 				)}
 			</Show>
@@ -1045,7 +1069,7 @@ export function ConfirmDialog(props: {
 						closeToOpener();
 					}}
 				>
-					Cancel
+					{common().cancel}
 				</button>
 				<button
 					type="button"
@@ -1053,7 +1077,7 @@ export function ConfirmDialog(props: {
 					disabled={props.pending}
 					onClick={() => props.onConfirm()}
 				>
-					{props.pending ? "Deleting…" : props.confirmLabel}
+					{props.pending ? m().deleting : props.confirmLabel}
 				</button>
 			</div>
 		</dialog>

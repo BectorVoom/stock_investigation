@@ -6,14 +6,24 @@ import {
 	IDEMPOTENCY_KEY_HEADER,
 } from "@research/contracts";
 import { parseJson } from "@research/domain";
+import { clientFailureMessages } from "./errors.messages.ts";
 
 /** Failure codes produced by the client itself, alongside the server's `ApiErrorCode`s. */
-export type ClientErrorCode =
-	| "NETWORK_ERROR"
-	| "TIMEOUT"
-	| "INVALID_REQUEST"
-	| "INVALID_RESPONSE"
-	| "UNEXPECTED_STATUS";
+export const CLIENT_ERROR_CODES = [
+	"NETWORK_ERROR",
+	"TIMEOUT",
+	"INVALID_REQUEST",
+	"INVALID_RESPONSE",
+	"UNEXPECTED_STATUS",
+] as const;
+
+export type ClientErrorCode = (typeof CLIENT_ERROR_CODES)[number];
+
+/**
+ * The client's failure sentences. They stay English whatever the UI language:
+ * they are the failure's data, and the UI words them by code (ADR-0031 decision 8).
+ */
+const CLIENT_TEXT = clientFailureMessages.en;
 
 /**
  * Every way an API call can fail, as data (ARCH-010). `code` is stable and
@@ -102,8 +112,8 @@ export function validate<T>(
 		status: onInvalid.status,
 		message:
 			onInvalid.kind === "invalid-request"
-				? "The request does not match the API contract and was not sent."
-				: "The server response does not match the API contract.",
+				? CLIENT_TEXT.requestInvalid
+				: CLIENT_TEXT.responseInvalid,
 		issues: describeIssues(parsed.error.issues),
 	});
 }
@@ -131,7 +141,7 @@ async function readErrorBody(response: Response): Promise<ApiFailure> {
 		kind: "invalid-response",
 		code: "UNEXPECTED_STATUS",
 		status: response.status,
-		message: `The server answered HTTP ${response.status} without a recognisable error body.`,
+		message: CLIENT_TEXT.unexpectedStatus(response.status),
 		detail: null,
 		issues: [],
 	};
@@ -191,7 +201,7 @@ export async function request<T>(
 					kind: "network",
 					code: "TIMEOUT",
 					status: null,
-					message: `The server did not answer within ${Math.round(options.timeoutMs / 1000)} s.`,
+					message: CLIENT_TEXT.timeout(Math.round(options.timeoutMs / 1000)),
 				}),
 			);
 		}, options.timeoutMs);
@@ -213,7 +223,7 @@ export async function request<T>(
 				kind: "network",
 				code: "NETWORK_ERROR",
 				status: null,
-				message: `The request could not be completed (${describeCause(cause)}).`,
+				message: CLIENT_TEXT.requestFailed(describeCause(cause)),
 			});
 		}
 		try {
@@ -225,7 +235,7 @@ export async function request<T>(
 				kind: "network",
 				code: "NETWORK_ERROR",
 				status: response.status,
-				message: `The response could not be read completely (${describeCause(cause)}).`,
+				message: CLIENT_TEXT.responseIncomplete(describeCause(cause)),
 			});
 		}
 	};
@@ -246,7 +256,7 @@ export function jsonBody<T>(schema: Parser<T>): BodyReader<T> {
 				kind: "invalid-response",
 				code: "INVALID_RESPONSE",
 				status: response.status,
-				message: "The server response is not valid JSON.",
+				message: CLIENT_TEXT.responseNotJson,
 			});
 		}
 		return validate(schema, body.value, { kind: "invalid-response", status: response.status });

@@ -1,5 +1,7 @@
 import { MAX_REQUEST_BODY_BYTES, type WorkspaceSummary } from "@research/contracts";
 import { parseJson } from "@research/domain";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { createSignal, createUniqueId, For, type JSX, Show } from "solid-js";
 import type { ApiClient, IssuedRunnerCredential, Session } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
@@ -25,6 +27,7 @@ import { createRemote, type Remote } from "../lib/remote.ts";
 import { AgentSettingsSection } from "./AgentSettingsSection.tsx";
 import { CalendarSettingsSection } from "./CalendarSettingsSection.tsx";
 import { LanguageSettingsSection } from "./LanguageSettingsSection.tsx";
+import { settingsMessages } from "./settings.messages.ts";
 
 interface ActionFailure {
 	readonly title: string;
@@ -60,6 +63,7 @@ function TextField(props: {
 /* ---------- Runner credentials ---------- */
 
 function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
+	const m = useMessages(settingsMessages);
 	const credentials = createRemote(() => props.api.listRunnerCredentials());
 	const [label, setLabel] = createSignal("");
 	const [expiresInDays, setExpiresInDays] = createSignal("30");
@@ -85,7 +89,7 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 			setLabel("");
 			await credentials.reload();
 		} else {
-			setFailure({ title: "The credential was not issued.", error: result.error });
+			setFailure({ title: m().notIssued, error: result.error });
 		}
 	};
 
@@ -93,10 +97,10 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 		let status: string;
 		try {
 			await navigator.clipboard.writeText(token);
-			status = "Token copied to the clipboard.";
+			status = m().tokenCopied;
 		} catch {
 			// Clipboard access can be denied by the browser; the token stays visible to copy by hand.
-			status = "Copying was blocked by the browser — select the token and copy it manually.";
+			status = m().copyBlocked;
 		}
 		// The outcome belongs to the token it was started for: if that token has been hidden or
 		// replaced meanwhile, saying "copied" next to another token would be false.
@@ -110,22 +114,20 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 		const result = await props.api.revokeRunnerCredential(credentialId);
 		setBusy(false);
 		if (result.ok) await credentials.reload();
-		else setFailure({ title: "The credential was not revoked.", error: result.error });
+		else setFailure({ title: m().notRevoked, error: result.error });
 	};
 
 	return (
-		<Section title="Runner credentials">
-			<p class="text-xs text-slate-700">
-				A credential lets the local runner on your PC claim jobs. It cannot act as you in this app.
-			</p>
+		<Section title={m().credentialsTitle}>
+			<p class="text-xs text-slate-700">{m().credentialsIntro}</p>
 			<form
-				aria-label="Issue runner credential"
+				aria-label={m().issueFormLabel}
 				class="mt-2 flex flex-wrap items-start gap-2"
 				onSubmit={issue}
 			>
-				<TextField label="Credential label" value={label()} onInput={setLabel} />
+				<TextField label={m().credentialLabel} value={label()} onInput={setLabel} />
 				<TextField
-					label="Expires in days"
+					label={m().expiresInDays}
 					type="number"
 					min={1}
 					max={90}
@@ -138,7 +140,7 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 					class={`${BUTTON_PRIMARY} mt-4`}
 					disabled={busy() || label().trim() === ""}
 				>
-					Issue runner credential
+					{m().issueCredential}
 				</button>
 			</form>
 			<Show when={failure()}>
@@ -148,15 +150,17 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 			<Show when={issued()}>
 				{(current) => (
 					<section
-						aria-label="New runner token"
+						aria-label={m().newTokenLabel}
 						class="mt-2 rounded border border-amber-400 bg-amber-50 p-2"
 					>
 						<p role="alert" class="text-sm font-semibold text-amber-950">
-							Copy this token now. It is shown only once and cannot be displayed again.
+							{m().copyTokenNow}
 						</p>
 						<p class="mt-1 text-xs text-slate-800">
-							Credential “{current().credential.label}”, expires{" "}
-							{formatInstant(current().credential.expiresAt)}.
+							{m().credentialExpires(
+								current().credential.label,
+								formatInstant(current().credential.expiresAt),
+							)}
 						</p>
 						<code
 							data-field="runner-token"
@@ -166,7 +170,7 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 						</code>
 						<div class="mt-2 flex flex-wrap items-center gap-2">
 							<button type="button" class={BUTTON} onClick={() => void copyToken(current().token)}>
-								Copy token
+								{m().copyToken}
 							</button>
 							<button
 								type="button"
@@ -176,7 +180,7 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 									setCopyStatus(null);
 								}}
 							>
-								I have stored the token — hide it
+								{m().hideToken}
 							</button>
 							<Show when={copyStatus()}>
 								{(text) => <output class="text-xs text-slate-800">{text()}</output>}
@@ -188,36 +192,33 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 
 			<RemoteView
 				remote={credentials.state()}
-				label="runner credentials"
+				label={m().credentialsThing}
 				onRetry={() => void credentials.reload()}
 			>
 				{(list) => (
-					<Show
-						when={list().length > 0}
-						fallback={<Empty>No runner credentials issued yet.</Empty>}
-					>
+					<Show when={list().length > 0} fallback={<Empty>{m().noCredentials}</Empty>}>
 						<table class="mt-2 w-full border-collapse text-left text-xs">
 							<caption class="caption-top text-left text-slate-600">
-								Issued runner credentials (tokens are never shown again)
+								{m().credentialsCaption}
 							</caption>
 							<thead>
 								<tr class="border-b border-slate-300">
 									<th scope="col" class="pr-2">
-										Label
+										{m().columnLabel}
 									</th>
 									<th scope="col" class="pr-2">
-										Created
+										{m().columnCreated}
 									</th>
 									<th scope="col" class="pr-2">
-										Expires
+										{m().columnExpires}
 									</th>
 									<th scope="col" class="pr-2">
-										Last used
+										{m().columnLastUsed}
 									</th>
 									<th scope="col" class="pr-2">
-										Status
+										{m().columnStatus}
 									</th>
-									<th scope="col">Actions</th>
+									<th scope="col">{m().columnActions}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -234,24 +235,24 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 											<td class="pr-2">{formatInstant(credential.expiresAt)}</td>
 											<td class="pr-2">
 												{credential.lastUsedAt === null
-													? "never used"
+													? m().neverUsed
 													: formatInstant(credential.lastUsedAt)}
 											</td>
 											<td class="pr-2" data-field="credential-status">
 												{credential.revokedAt === null
-													? "active"
-													: `revoked ${formatInstant(credential.revokedAt)}`}
+													? m().active
+													: m().revokedAt(formatInstant(credential.revokedAt))}
 											</td>
 											<td>
 												<Show when={credential.revokedAt === null}>
 													<button
 														type="button"
 														class={BUTTON_DANGER}
-														aria-label={`Revoke ${credential.label}`}
+														aria-label={m().revokeNamed(credential.label)}
 														disabled={busy()}
 														onClick={() => void revoke(credential.credentialId)}
 													>
-														Revoke
+														{m().revoke}
 													</button>
 												</Show>
 											</td>
@@ -269,9 +270,9 @@ function RunnerCredentials(props: { readonly api: ApiClient }): JSX.Element {
 
 /* ---------- Export / import ---------- */
 
-function invalidFile(message: string): ActionFailure {
+function invalidFile(message: string, text: MessagesOf<typeof settingsMessages>): ActionFailure {
 	return {
-		title: "The file was not imported.",
+		title: text.notImported,
 		error: {
 			kind: "invalid-request",
 			code: "INVALID_REQUEST",
@@ -287,6 +288,7 @@ function ExportImport(props: {
 	readonly api: ApiClient;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
 }): JSX.Element {
+	const m = useMessages(settingsMessages);
 	const workspaces = createRemote(() => props.api.listWorkspaces());
 	const [selectedId, setSelectedId] = createSignal("");
 	const [failure, setFailure] = createSignal<ActionFailure | null>(null);
@@ -314,12 +316,12 @@ function ExportImport(props: {
 					JSON.stringify(result.value, null, 2),
 				);
 			} else {
-				setFailure({ title: "The JSON export failed.", error: result.error });
+				setFailure({ title: m().jsonExportFailed, error: result.error });
 			}
 		} else {
 			const result = await props.api.exportWorkspaceMarkdown(workspace.workspaceId);
 			if (result.ok) downloadTextFile(document, `${baseName}.md`, "text/markdown", result.value);
-			else setFailure({ title: "The Markdown export failed.", error: result.error });
+			else setFailure({ title: m().markdownExportFailed, error: result.error });
 		}
 		setBusy(false);
 	};
@@ -331,20 +333,18 @@ function ExportImport(props: {
 		setFailure(null);
 		setImported(null);
 		if (file.size > MAX_REQUEST_BODY_BYTES) {
-			setFailure(
-				invalidFile(`The file is larger than the ${MAX_REQUEST_BODY_BYTES} byte import limit.`),
-			);
+			setFailure(invalidFile(m().fileTooLarge(MAX_REQUEST_BODY_BYTES), m()));
 		} else {
 			const parsed = parseJson(await file.text());
 			if (!parsed.ok) {
-				setFailure(invalidFile("The file is not valid JSON."));
+				setFailure(invalidFile(m().fileNotJson, m()));
 			} else {
 				const result = await props.api.importWorkspace(parsed.value);
 				if (result.ok) {
 					setImported(result.value);
 					await workspaces.reload();
 				} else {
-					setFailure({ title: "The file was not imported.", error: result.error });
+					setFailure({ title: m().notImported, error: result.error });
 				}
 			}
 		}
@@ -354,25 +354,22 @@ function ExportImport(props: {
 	};
 
 	return (
-		<Section title="Export and import">
-			<p class="text-xs text-slate-700">
-				Exports are versioned and include citations. Imports are validated; an invalid file is
-				rejected and changes nothing.
-			</p>
+		<Section title={m().exportTitle}>
+			<p class="text-xs text-slate-700">{m().exportIntro}</p>
 			<RemoteView
 				remote={workspaces.state()}
-				label="workspaces"
+				label={m().workspacesThing}
 				onRetry={() => void workspaces.reload()}
 			>
 				{(list) => (
 					<div class="mt-2 flex flex-wrap items-end gap-2">
 						<div>
 							<label for={pickerId} class={LABEL}>
-								Workspace to export
+								{m().workspaceToExport}
 							</label>
 							<Select id={pickerId} onChange={(event) => setSelectedId(event.currentTarget.value)}>
 								<option value="" selected={selectedId() === ""}>
-									{list().length === 0 ? "No workspaces yet" : "Choose a workspace…"}
+									{list().length === 0 ? m().noWorkspaces : m().chooseWorkspace}
 								</option>
 								<For each={list()}>
 									{(workspace) => (
@@ -392,7 +389,7 @@ function ExportImport(props: {
 							disabled={busy() || selected() === null}
 							onClick={() => void exportAs("json")}
 						>
-							Download JSON export
+							{m().downloadJson}
 						</button>
 						<button
 							type="button"
@@ -400,14 +397,14 @@ function ExportImport(props: {
 							disabled={busy() || selected() === null}
 							onClick={() => void exportAs("markdown")}
 						>
-							Download Markdown export
+							{m().downloadMarkdown}
 						</button>
 					</div>
 				)}
 			</RemoteView>
 			<div class="mt-3">
 				<label for={fileId} class={LABEL}>
-					Import workspace file (JSON export)
+					{m().importFile}
 				</label>
 				<input
 					id={fileId}
@@ -425,13 +422,13 @@ function ExportImport(props: {
 				{(workspace) => (
 					<div class="mt-2">
 						<Notice tone="success">
-							Imported as “{workspace().title}”.{" "}
+							{m().importedAs(workspace().title)}{" "}
 							<button
 								type="button"
 								class={BUTTON}
 								onClick={() => props.onOpenWorkspace(workspace().workspaceId)}
 							>
-								Open imported workspace
+								{m().openImported}
 							</button>
 						</Notice>
 					</div>
@@ -456,6 +453,7 @@ export function SettingsView(props: {
 	readonly onReloadSession: () => void;
 	readonly onOpenWorkspace: (workspaceId: string) => void;
 }): JSX.Element {
+	const m = useMessages(settingsMessages);
 	return (
 		<div class="space-y-3">
 			<AgentSettingsSection
@@ -469,17 +467,17 @@ export function SettingsView(props: {
 				section={props.section}
 			/>
 			<LanguageSettingsSection localeState={props.localeState} />
-			<Section title="Session">
-				<RemoteView remote={props.session} label="session" onRetry={props.onReloadSession}>
+			<Section title={m().sessionTitle}>
+				<RemoteView remote={props.session} label={m().sessionThing} onRetry={props.onReloadSession}>
 					{(session) => (
 						<dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 text-sm">
-							<dt class="text-slate-600">Owner id</dt>
+							<dt class="text-slate-600">{m().ownerId}</dt>
 							<dd data-field="owner-id" class="font-mono">
 								{session().ownerId}
 							</dd>
-							<dt class="text-slate-600">Sign-in method</dt>
+							<dt class="text-slate-600">{m().signInMethod}</dt>
 							<dd data-field="auth-mode">{session().authMode}</dd>
-							<dt class="text-slate-600">Environment</dt>
+							<dt class="text-slate-600">{m().environment}</dt>
 							<dd data-field="environment">{session().environment}</dd>
 						</dl>
 					)}

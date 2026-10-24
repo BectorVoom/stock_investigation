@@ -4,6 +4,7 @@ import {
 	type AgentsResponse,
 	OPENROUTER_FREE_AGENT_ID,
 } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import {
 	createEffect,
 	createMemo,
@@ -27,10 +28,13 @@ import {
 	Section,
 	Select,
 } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { formatInstant } from "../lib/format.ts";
 import type { PollSchedule } from "../lib/polling.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote, type Remote } from "../lib/remote.ts";
+import { agentSettingsMessages } from "./agentSettings.messages.ts";
+import { agentSettingsModelMessages } from "./agentSettingsModel.messages.ts";
 import {
 	type AgentSettingsDraft,
 	agentOptions,
@@ -38,13 +42,9 @@ import {
 	buildModelSelectOptions,
 	customModelPlaceholder,
 	evaluateAgentSettings,
-	FREE_PLAN_NOTE,
-	FREE_TIER_CAUTION,
 	isFreeTierModelId,
 	isSettingsDraftChanged,
-	MODEL_OTHER_LABEL,
 	MODEL_OTHER_VALUE,
-	MODEL_SAVED_SUFFIX,
 	modelOptionLabel,
 	modelSelectValue,
 	runnerNotice,
@@ -119,6 +119,9 @@ export function AgentSettingsSection(props: {
 	/** Poll schedule; tests pass a fast one so a re-read arrives without waiting. */
 	readonly pollSchedule?: PollSchedule;
 }): JSX.Element {
+	const m = useMessages(agentSettingsMessages);
+	const text = useMessages(agentSettingsModelMessages);
+	const common = useMessages(commonMessages);
 	const agents = createAgentsPoller(
 		props.api,
 		props.visibility ?? ALWAYS_VISIBLE,
@@ -156,10 +159,10 @@ export function AgentSettingsSection(props: {
 		const remote = stored.state();
 		return remote.status === "error" ? remote.error : null;
 	});
-	const options = createMemo(() => agentOptions(agentsValue()));
+	const options = createMemo(() => agentOptions(agentsValue(), text()));
 	const evaluation = createMemo(() => {
 		const current = draft();
-		return current === null ? null : evaluateAgentSettings(current, agentsValue());
+		return current === null ? null : evaluateAgentSettings(current, agentsValue(), text());
 	});
 	const changed = createMemo(() => {
 		const current = draft();
@@ -172,7 +175,7 @@ export function AgentSettingsSection(props: {
 		() =>
 			(changed() || origin() === "carried-over") && evaluation()?.settings !== null && !saving(),
 	);
-	const offlineNotice = createMemo(() => runnerNotice(agentsValue()));
+	const offlineNotice = createMemo(() => runnerNotice(agentsValue(), text()));
 	// While no runner has reported, the model field says so instead of
 	// offering an empty list: a first-time owner opens Settings exactly then.
 	const waitingForModels = createMemo(() => {
@@ -185,7 +188,7 @@ export function AgentSettingsSection(props: {
 	const trimmedModel = createMemo(() => modelText().trim());
 	const requiresModel = createMemo(() => backendRequiresModel(selectedBackendId()));
 	const selectOptions = createMemo(() =>
-		buildModelSelectOptions(reportedList(), trimmedModel(), requiresModel()),
+		buildModelSelectOptions(reportedList(), trimmedModel(), requiresModel(), text()),
 	);
 	const reportedSet = createMemo(() => new Set(reportedList() ?? []));
 	const [otherModes, setOtherModes] = createSignal<Readonly<Record<string, boolean>>>({});
@@ -287,31 +290,27 @@ export function AgentSettingsSection(props: {
 	};
 
 	return (
-		<Section title="AI agent">
+		<Section title={m().title}>
 			<Show when={stored.state().status === "loading" && draft() === null}>
-				<Loading label="agent settings" />
+				<Loading label={m().settingsThing} />
 			</Show>
 			<Show when={settingsError()}>
 				{(error) => (
 					<ErrorNotice
 						failure={error()}
-						title="Could not load agent settings."
+						title={m().settingsLoadFailed}
 						onRetry={() => void stored.reload()}
 					/>
 				)}
 			</Show>
 			<Show when={draft()}>
 				{(current) => (
-					<form aria-label="AI agent settings" class="mt-2 space-y-2" noValidate onSubmit={save}>
+					<form aria-label={m().formLabel} class="mt-2 space-y-2" noValidate onSubmit={save}>
 						<Show when={savedAt() === null && origin() === "defaults"}>
-							<p class="text-xs text-slate-700">
-								These are the defaults — they have not been saved yet.
-							</p>
+							<p class="text-xs text-slate-700">{m().defaultsNotSaved}</p>
 						</Show>
 						<Show when={savedAt() === null && origin() === "carried-over"}>
-							<p class="text-xs text-slate-700">
-								These settings come from your most recent question. Review them and press Save.
-							</p>
+							<p class="text-xs text-slate-700">{m().carriedOver}</p>
 						</Show>
 
 						<Show when={offlineNotice()}>
@@ -324,16 +323,16 @@ export function AgentSettingsSection(props: {
 
 						<div>
 							<label for={backendId} class={LABEL}>
-								Default backend
+								{m().defaultBackend}
 							</label>
 							<Show when={agents.state().status === "loading"}>
-								<Loading label="agent backends" />
+								<Loading label={m().backendsThing} />
 							</Show>
 							<Show when={agentsError()}>
 								{(error) => (
 									<ErrorNotice
 										failure={error()}
-										title="Could not load agent backends."
+										title={m().backendsLoadFailed}
 										onRetry={() => void agents.reload()}
 									/>
 								)}
@@ -346,7 +345,7 @@ export function AgentSettingsSection(props: {
 								}
 							>
 								<option value="" selected={current().defaultAgentId === ""}>
-									Choose a backend…
+									{m().chooseBackend}
 								</option>
 								<For each={options()}>
 									{(option) => (
@@ -361,7 +360,7 @@ export function AgentSettingsSection(props: {
 								</For>
 							</Select>
 							<ul
-								aria-label="Backend availability"
+								aria-label={m().backendAvailability}
 								class="mt-1 space-y-0.5 text-2xs text-slate-700"
 							>
 								<For each={options()}>
@@ -377,7 +376,7 @@ export function AgentSettingsSection(props: {
 
 						<div>
 							<label for={modelSelectId} class={LABEL}>
-								Model for this backend
+								{m().modelForBackend}
 							</label>
 							<Select
 								id={modelSelectId}
@@ -394,7 +393,7 @@ export function AgentSettingsSection(props: {
 											<For each={group.models}>
 												{(model) => (
 													<option value={model} selected={selectValue() === model}>
-														{modelOptionLabel(selectedBackendId(), model)}
+														{modelOptionLabel(selectedBackendId(), model, text())}
 													</option>
 												)}
 											</For>
@@ -409,32 +408,32 @@ export function AgentSettingsSection(props: {
 								<Show when={selectOptions().savedModel}>
 									{(saved) => (
 										<option value={saved()} selected={selectValue() === saved()}>
-											{modelOptionLabel(selectedBackendId(), saved())}
-											{MODEL_SAVED_SUFFIX}
+											{modelOptionLabel(selectedBackendId(), saved(), text())}
+											{text().modelSavedSuffix}
 										</option>
 									)}
 								</Show>
 								<option value={MODEL_OTHER_VALUE} selected={selectValue() === MODEL_OTHER_VALUE}>
-									{MODEL_OTHER_LABEL}
+									{text().modelOther}
 								</option>
 							</Select>
 							<Show when={otherMode()}>
 								<label for={customModelId} class={`${LABEL} mt-1`}>
-									Model id
+									{m().modelId}
 								</label>
 								<input
 									id={customModelId}
 									type="text"
 									class={INPUT}
 									maxLength={100}
-									placeholder={customModelPlaceholder(selectedBackendId())}
+									placeholder={customModelPlaceholder(selectedBackendId(), text())}
 									value={modelText()}
 									onInput={(event) => setModelText(event.currentTarget.value)}
 								/>
 							</Show>
 							<Show when={showFreeCaution()}>
 								<p id={modelCautionId} class="mt-0.5 text-2xs text-amber-900">
-									{FREE_TIER_CAUTION}
+									{text().freeTierCaution}
 								</p>
 							</Show>
 							<Show when={isFreeBackend()}>
@@ -443,7 +442,7 @@ export function AgentSettingsSection(props: {
 									data-free-plan-note="true"
 									class="mt-0.5 text-2xs text-slate-600"
 								>
-									{FREE_PLAN_NOTE}
+									{text().freePlanNote}
 								</p>
 							</Show>
 							<p id={modelHelpId} class="mt-0.5 text-2xs text-slate-600">
@@ -451,23 +450,21 @@ export function AgentSettingsSection(props: {
 									when={waitingForModels()}
 									fallback={
 										<>
-											Models reported by the runner for this backend.{" "}
+											{m().modelsReported}{" "}
 											{requiresModel()
-												? `${selectedDisplayName()} needs a model — choose one from the list.`
-												: "Empty means the backend's own default."}
+												? m().needsModel(selectedDisplayName())
+												: m().emptyMeansDefault}
 										</>
 									}
 								>
-									<span data-waiting-for-models="true">
-										Waiting for the runner to report its models…
-									</span>
+									<span data-waiting-for-models="true">{m().waitingForModels}</span>
 								</Show>
 							</p>
 						</div>
 
 						<div>
 							<label for={effortId} class={LABEL}>
-								Effort
+								{m().effort}
 							</label>
 							<Select
 								id={effortId}
@@ -481,7 +478,7 @@ export function AgentSettingsSection(props: {
 								<For each={EFFORTS}>
 									{(effort) => (
 										<option value={effort} selected={current().effort === effort}>
-											{effort}
+											{m().effortName(effort)}
 										</option>
 									)}
 								</For>
@@ -512,23 +509,20 @@ export function AgentSettingsSection(props: {
 										})
 									}
 								/>
-								<span>Allow the agent to open public web pages</span>
+								<span>{m().allowWeb}</span>
 							</label>
-							<p class="mt-0.5 text-2xs text-slate-600">
-								Pages are fetched by the local runner, saved as Markdown files on this computer, and
-								never uploaded.
-							</p>
+							<p class="mt-0.5 text-2xs text-slate-600">{m().webHint}</p>
 						</div>
 
 						<p data-cost-statement={evaluation()?.costModel} class="text-xs text-slate-800">
-							<span class="font-semibold">Cost: </span>
+							<span class="font-semibold">{m().costLabel}</span>
 							{evaluation()?.costStatement}
 						</p>
 
 						<Show when={(evaluation()?.problems.length ?? 0) > 0}>
 							<ul
 								id={problemsId}
-								aria-label="Before you can save"
+								aria-label={m().beforeSave}
 								class="list-disc pl-5 text-xs text-slate-700"
 							>
 								<For each={evaluation()?.problems ?? []}>{(problem) => <li>{problem}</li>}</For>
@@ -542,17 +536,19 @@ export function AgentSettingsSection(props: {
 								disabled={!canSave()}
 								aria-describedby={(evaluation()?.problems.length ?? 0) > 0 ? problemsId : undefined}
 							>
-								{saving() ? "Saving…" : "Save"}
+								{saving() ? common().saving : common().save}
 							</button>
 							<Show when={savedAt()}>
 								{(at) => (
 									<span class="flex flex-wrap items-center gap-2">
-										<output class="text-xs text-emerald-900">Saved {formatInstant(at())}</output>
+										<output class="text-xs text-emerald-900">
+											{m().savedAt(formatInstant(at()))}
+										</output>
 										<a
 											href="#/chat"
 											class="inline-flex min-h-6 items-center text-blue-800 underline"
 										>
-											Back to chat
+											{m().backToChat}
 										</a>
 									</span>
 								)}
@@ -560,9 +556,7 @@ export function AgentSettingsSection(props: {
 						</div>
 
 						<Show when={failure()}>
-							{(error) => (
-								<ErrorNotice failure={error()} title="The agent settings were not saved." />
-							)}
+							{(error) => <ErrorNotice failure={error()} title={m().notSaved} />}
 						</Show>
 					</form>
 				)}

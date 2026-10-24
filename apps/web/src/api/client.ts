@@ -73,6 +73,7 @@ import {
 	workspaceSummarySchema,
 	workspaceViewSchema,
 } from "@research/contracts";
+import { clientFailureMessages } from "./errors.messages.ts";
 import {
 	type ApiResult,
 	type Conditional,
@@ -455,7 +456,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 							kind: "invalid-response",
 							code: "INVALID_RESPONSE",
 							status: response.status,
-							message: `Expected a text/markdown export but received "${contentType || "no content type"}".`,
+							message: clientFailureMessages.en.markdownContentType(contentType),
 						});
 					}
 					return ok(await response.text());
@@ -626,7 +627,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 							kind: "invalid-response",
 							code: "INVALID_RESPONSE",
 							status: response.status,
-							message: `Expected a text/calendar file but received "${contentType || "no content type"}".`,
+							message: clientFailureMessages.en.calendarContentType(contentType),
 						});
 					}
 					return ok(await response.text());

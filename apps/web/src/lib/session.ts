@@ -5,12 +5,17 @@ import {
 	type ResearchRun,
 	type WorkspaceView,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient, ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { buildCommand, type UiOperation } from "../canvas/commands.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "./polling.ts";
 import { createReadGate } from "./readGate.ts";
+import { sessionMessages } from "./session.messages.ts";
+
+/** The words of the session's notices, in the UI language. */
+export type SessionText = MessagesOf<typeof sessionMessages>;
 
 export interface SessionNotice {
 	readonly tone: "info" | "error";
@@ -61,9 +66,6 @@ function byNewestFirst(a: ResearchRun, b: ResearchRun): number {
  * with a silent hole is never presented.
  */
 const MAX_GAP_FILL_PAGES = 3;
-
-/** The notice a failed retry leaves; the next retry attempt clears it. */
-const RETRY_FAILED = "The run could not be retried.";
 
 function minSeq(messages: readonly Conversation["messages"][number][]): number | null {
 	let minimum: number | null = null;
@@ -146,11 +148,15 @@ function mergeConversation(
  * State and effects for one open workspace. Create it under a Solid owner
  * (it registers cleanup). All domain state comes from API responses; nothing
  * here guesses the outcome of a command.
+ *
+ * `text` gives the notices' words in the UI language, read when a notice is
+ * raised (a view passes `useMessages(sessionMessages)`); English by default.
  */
 export function createWorkspaceSession(
 	api: ApiClient,
 	workspaceId: string,
 	visibility: VisibilitySource,
+	text: Accessor<SessionText> = () => sessionMessages.en,
 ): WorkspaceSession {
 	const [view, setView] = createSignal<WorkspaceView | null>(null);
 	const [conversation, setConversation] = createSignal<Conversation | null>(null);
@@ -178,12 +184,17 @@ export function createWorkspaceSession(
 	/** Set when a run finished and its published results have not been fetched yet. */
 	let fullRefreshDue = false;
 
-	const reportFailure = (text: string, failure: ApiFailure) => {
-		setNotice({ tone: "error", text, failure });
+	const reportFailure = (sentence: string, failure: ApiFailure): SessionNotice => {
+		const raised: SessionNotice = { tone: "error", text: sentence, failure };
+		setNotice(raised);
+		return raised;
 	};
+	/** The notice the last failed retry left; the next retry attempt clears it. */
+	let retryFailure: SessionNotice | null = null;
 	/** Clears only the retry's own failure notice; any other notice stays until dismissed. */
 	const clearRetryFailure = () => {
-		if (notice()?.text === RETRY_FAILED) setNotice(null);
+		if (retryFailure !== null && notice() === retryFailure) setNotice(null);
+		retryFailure = null;
 	};
 
 	/** Installs a view unless it is older than the one held: workspace versions only move forward. */
@@ -451,11 +462,11 @@ export function createWorkspaceSession(
 			await refreshAll();
 			setNotice({
 				tone: "error",
-				text: "The workspace changed since it was loaded (version conflict), so your change was not applied. The latest version has been reloaded — please repeat the action.",
+				text: text().versionConflict,
 				failure: result.error,
 			});
 		} else {
-			reportFailure("The change was rejected and nothing was modified.", result.error);
+			reportFailure(text().changeRejected, result.error);
 		}
 		setCommandPending(false);
 	};
@@ -490,7 +501,7 @@ export function createWorkspaceSession(
 			const result = await api.cancelResearchRun(runId);
 			if (disposed) return;
 			if (result.ok) acceptRun(result.value);
-			else reportFailure("The run could not be cancelled.", result.error);
+			else reportFailure(text().cancelFailed, result.error);
 		},
 		retryRun: async (runId) => {
 			const key = retryKeys.get(runId) ?? api.newIdempotencyKey();
@@ -503,7 +514,7 @@ export function createWorkspaceSession(
 				acceptRun(result.value);
 				poller.pollNow();
 			} else {
-				reportFailure(RETRY_FAILED, result.error);
+				retryFailure = reportFailure(text().retryFailed, result.error);
 			}
 		},
 		approveRun: async (runId, budget) => {

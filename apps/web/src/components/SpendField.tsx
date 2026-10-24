@@ -1,6 +1,8 @@
 import { BUDGET_LIMITS } from "@research/contracts";
+import { useMessages } from "@research/i18n/solid";
 import { type JSX, Show } from "solid-js";
 import type { SpendDraft } from "../settings/agentSettingsModel.ts";
+import { spendFieldMessages } from "./ui.messages.ts";
 import { Field, INPUT } from "./ui.tsx";
 
 /**
@@ -19,13 +21,11 @@ export function SpendField(props: {
 	/** False in Settings → AI agent, where no consent is given. Defaults to true. */
 	readonly showConsent?: boolean;
 }): JSX.Element {
+	const m = useMessages(spendFieldMessages);
 	const patch = (change: Partial<SpendDraft>) => props.onChange({ ...props.draft, ...change });
 	return (
 		<div>
-			<Field
-				label="Max spend (USD)"
-				hint={`Leave empty to authorize no metered spend; at most ${BUDGET_LIMITS.maxSpendUsd.max}`}
-			>
+			<Field label={m().label} hint={m().hint(BUDGET_LIMITS.maxSpendUsd.max)}>
 				{(id) => (
 					<input
 						id={id}
@@ -49,7 +49,7 @@ export function SpendField(props: {
 						checked={props.draft.spendConsent}
 						onChange={(event) => patch({ spendConsent: event.currentTarget.checked })}
 					/>
-					<span>I consent to metered spend up to the maximum above for this run</span>
+					<span>{m().consent}</span>
 				</label>
 			</Show>
 		</div>

@@ -5,6 +5,7 @@ import {
 	RUN_LIMITS,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { agentSettingsModelMessages } from "../src/settings/agentSettingsModel.messages.ts";
 import {
 	type AgentSettingsDraft,
 	agentOptions,
@@ -29,6 +30,9 @@ import {
 	settingsDraftFrom,
 } from "../src/settings/agentSettingsModel.ts";
 import { AGENT_SETTINGS, AGENTS, NO_RUNNER_AGENTS } from "./fixtures.ts";
+
+/** The rules' English words: these tests read the English sentences. */
+const EN = agentSettingsModelMessages.en;
 
 const OPENCODE_AGENTS = agentsResponseSchema.parse({
 	...AGENTS,
@@ -67,7 +71,7 @@ function settingsDraft(overrides: Partial<AgentSettingsDraft> = {}): AgentSettin
 
 describe("agent options", () => {
 	it("lists every reported backend and lets only available ones be chosen", () => {
-		const options = agentOptions(AGENTS);
+		const options = agentOptions(AGENTS, EN);
 		expect(options.map((option) => [option.agentId, option.selectable])).toEqual([
 			["claude-code", true],
 			["openrouter", true],
@@ -79,7 +83,7 @@ describe("agent options", () => {
 	});
 
 	it("offers the baseline backends with unknown availability when no runner ever reported", () => {
-		const options = agentOptions(NO_RUNNER_AGENTS);
+		const options = agentOptions(NO_RUNNER_AGENTS, EN);
 		expect(options.map((option) => option.agentId)).toEqual([
 			"opencode",
 			"codex",
@@ -93,10 +97,10 @@ describe("agent options", () => {
 	});
 
 	it("says the runner is offline and that the question will be queued", () => {
-		expect(runnerNotice(AGENTS)).toBeNull();
-		expect(runnerNotice(NO_RUNNER_AGENTS)).toContain("no runner has ever reported in");
-		expect(runnerNotice(NO_RUNNER_AGENTS)).toContain("will be queued");
-		const offline = runnerNotice({ ...AGENTS, runnerOnline: false });
+		expect(runnerNotice(AGENTS, EN)).toBeNull();
+		expect(runnerNotice(NO_RUNNER_AGENTS, EN)).toContain("no runner has ever reported in");
+		expect(runnerNotice(NO_RUNNER_AGENTS, EN)).toContain("will be queued");
+		const offline = runnerNotice({ ...AGENTS, runnerOnline: false }, EN);
 		expect(offline).toContain("Runner offline (last seen 2026-10-05 00:00 UTC)");
 		expect(offline).toContain("will be queued");
 	});
@@ -104,19 +108,19 @@ describe("agent options", () => {
 
 describe("cost statement (FR-016)", () => {
 	it("never presents a plan-limited backend as free", () => {
-		const text = costStatement("plan-limited");
+		const text = costStatement("plan-limited", EN);
 		expect(text).toContain("Cost unknown — limited by your plan");
 		expect(text).not.toMatch(/\$\s?0|free of charge|no cost/i);
 	});
 
 	it("tells the owner a metered backend needs a spend limit and consent", () => {
-		const text = costStatement("metered");
+		const text = costStatement("metered", EN);
 		expect(text).toContain("maximum spend greater than 0");
 		expect(text).toContain("no paid fallback without consent");
 	});
 
 	it("does not guess the cost model of an unreported backend", () => {
-		expect(costStatement("unknown")).toContain("Cost model unknown");
+		expect(costStatement("unknown", EN)).toContain("Cost model unknown");
 	});
 });
 
@@ -212,19 +216,19 @@ describe("settings draft", () => {
 	it("starts unchosen from the defaults", () => {
 		const draft = settingsDraftFrom(DEFAULT_AGENT_SETTINGS);
 		expect(draft.defaultAgentId).toBe("");
-		expect(evaluateAgentSettings(draft, AGENTS).problems).toContain(
+		expect(evaluateAgentSettings(draft, AGENTS, EN).problems).toContain(
 			"Choose a default agent backend.",
 		);
 	});
 
 	it("waits for the agent list before allowing a save", () => {
-		const result = evaluateAgentSettings(settingsDraft(), null);
+		const result = evaluateAgentSettings(settingsDraft(), null, EN);
 		expect(result.settings).toBeNull();
 		expect(result.problems).toContain("Agent backends are still loading.");
 	});
 
 	it("builds the contract shape for a valid plan-limited draft", () => {
-		const result = evaluateAgentSettings(settingsDraft(), AGENTS);
+		const result = evaluateAgentSettings(settingsDraft(), AGENTS, EN);
 		expect(result.problems).toEqual([]);
 		expect(result.costModel).toBe("plan-limited");
 		expect(result.spendEditable).toBe(false);
@@ -237,14 +241,14 @@ describe("settings draft", () => {
 	});
 
 	it("cannot save to an unavailable backend", () => {
-		const result = evaluateAgentSettings(settingsDraft({ defaultAgentId: "codex" }), AGENTS);
+		const result = evaluateAgentSettings(settingsDraft({ defaultAgentId: "codex" }), AGENTS, EN);
 		expect(result.settings).toBeNull();
 		expect(result.problems).toContain("Codex is unavailable (NOT_INSTALLED) and cannot be used.");
 	});
 
 	it("blocks OpenCode without a model", () => {
 		const draft = settingsDraft({ defaultAgentId: "opencode" });
-		const missing = evaluateAgentSettings(draft, OPENCODE_AGENTS);
+		const missing = evaluateAgentSettings(draft, OPENCODE_AGENTS, EN);
 		expect(missing.settings).toBeNull();
 		expect(
 			missing.problems.some((problem) =>
@@ -260,6 +264,7 @@ describe("settings draft", () => {
 		const wrongShape = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: "opencode", models: { opencode: "just-a-name" } }),
 			OPENCODE_AGENTS,
+			EN,
 		);
 		expect(wrongShape.settings).toBeNull();
 		expect(wrongShape.problems).toContain("The OpenCode model must have the form provider/model.");
@@ -267,6 +272,7 @@ describe("settings draft", () => {
 		const valid = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: "opencode", models: { opencode: "provider/model" } }),
 			OPENCODE_AGENTS,
+			EN,
 		);
 		expect(valid.problems).toEqual([]);
 		expect(valid.settings?.models).toEqual({ opencode: "provider/model" });
@@ -277,8 +283,8 @@ describe("settings draft", () => {
 			defaultAgentId: "openrouter",
 			models: { "claude-code": "custom/model", openrouter: "other/model" },
 		});
-		expect(evaluateAgentSettings(draft, AGENTS).modelText).toBe("other/model");
-		const switched = evaluateAgentSettings({ ...draft, defaultAgentId: "claude-code" }, AGENTS);
+		expect(evaluateAgentSettings(draft, AGENTS, EN).modelText).toBe("other/model");
+		const switched = evaluateAgentSettings({ ...draft, defaultAgentId: "claude-code" }, AGENTS, EN);
 		expect(switched.modelText).toBe("custom/model");
 	});
 
@@ -286,6 +292,7 @@ describe("settings draft", () => {
 		const result = evaluateAgentSettings(
 			settingsDraft({ models: { "claude-code": "   " } }),
 			AGENTS,
+			EN,
 		);
 		expect(result.problems).toEqual([]);
 		expect(result.settings?.models).toEqual({});
@@ -295,13 +302,18 @@ describe("settings draft", () => {
 		const result = evaluateAgentSettings(
 			settingsDraft({ models: { "claude-code": `${"m".repeat(100)}/x` } }),
 			AGENTS,
+			EN,
 		);
 		expect(result.settings).toBeNull();
 		expect(result.problems).toContain("The model must be at most 100 characters.");
 	});
 
 	it("requires a spend for a metered backend but not for an unknown one", () => {
-		const metered = evaluateAgentSettings(settingsDraft({ defaultAgentId: "openrouter" }), AGENTS);
+		const metered = evaluateAgentSettings(
+			settingsDraft({ defaultAgentId: "openrouter" }),
+			AGENTS,
+			EN,
+		);
 		expect(metered.settings).toBeNull();
 		expect(metered.spendEditable).toBe(true);
 		expect(metered.problems).toContain(
@@ -315,6 +327,7 @@ describe("settings draft", () => {
 				budget: budget({ maxSpendUsd: "2.5" }),
 			}),
 			AGENTS,
+			EN,
 		);
 		expect(meteredWithSpend.problems).toEqual([]);
 		expect(meteredWithSpend.settings?.budget.maxSpendUsd).toBe(2.5);
@@ -322,6 +335,7 @@ describe("settings draft", () => {
 		const unknown = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: "claude-code" }),
 			NO_RUNNER_AGENTS,
+			EN,
 		);
 		expect(unknown.problems).toEqual([]);
 		expect(unknown.spendEditable).toBe(true);
@@ -332,6 +346,7 @@ describe("settings draft", () => {
 		const result = evaluateAgentSettings(
 			settingsDraft({ budget: budget({ maxSpendUsd: "25" }) }),
 			AGENTS,
+			EN,
 		);
 		expect(result.problems).toEqual([]);
 		expect(result.settings?.budget.maxSpendUsd).toBeNull();
@@ -344,6 +359,7 @@ describe("settings draft", () => {
 				budget: budget({ maxSpendUsd: "99" }),
 			}),
 			AGENTS,
+			EN,
 		);
 		expect(result.settings).toBeNull();
 		expect(result.problems).toEqual(["Max spend must be greater than 0 and at most 50 USD."]);
@@ -364,9 +380,9 @@ describe("runner-reported models", () => {
 	});
 
 	it("reaches the form through the settings evaluation", () => {
-		expect(evaluateAgentSettings(settingsDraft(), AGENTS).reportedModels).toBeNull();
-		expect(evaluateAgentSettings(settingsDraft(), null).reportedModels).toBeNull();
-		expect(evaluateAgentSettings(settingsDraft(), MODELS_AGENTS).reportedModels).toEqual([
+		expect(evaluateAgentSettings(settingsDraft(), AGENTS, EN).reportedModels).toBeNull();
+		expect(evaluateAgentSettings(settingsDraft(), null, EN).reportedModels).toBeNull();
+		expect(evaluateAgentSettings(settingsDraft(), MODELS_AGENTS, EN).reportedModels).toEqual([
 			"b-model",
 			"a-model",
 		]);
@@ -376,6 +392,7 @@ describe("runner-reported models", () => {
 		const missing = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: "opencode" }),
 			OPENCODE_AGENTS,
+			EN,
 		);
 		expect(missing.problems.some((problem) => problem.includes("list the runner reported"))).toBe(
 			true,
@@ -406,15 +423,17 @@ describe("model selector options", () => {
 	it("uses Choose for a backend that requires a model and Backend default otherwise", () => {
 		expect(backendRequiresModel("opencode")).toBe(true);
 		expect(backendRequiresModel("claude-code")).toBe(false);
-		expect(buildModelSelectOptions(["b/a"], "", true).firstOptionLabel).toBe("Choose a model…");
-		expect(buildModelSelectOptions(["b/a"], "", false).firstOptionLabel).toBe("Backend default");
+		expect(buildModelSelectOptions(["b/a"], "", true, EN).firstOptionLabel).toBe("Choose a model…");
+		expect(buildModelSelectOptions(["b/a"], "", false, EN).firstOptionLabel).toBe(
+			"Backend default",
+		);
 	});
 
 	it("keeps a saved-but-unlisted model exactly when it is not reported", () => {
-		expect(buildModelSelectOptions(["a/x"], "a/x", true).savedModel).toBeNull();
-		expect(buildModelSelectOptions(["a/x"], "kept/y", true).savedModel).toBe("kept/y");
-		expect(buildModelSelectOptions(["a/x"], "", true).savedModel).toBeNull();
-		expect(buildModelSelectOptions(["a/x"], ` ${"kept/y"} `, true).savedModel).toBe("kept/y");
+		expect(buildModelSelectOptions(["a/x"], "a/x", true, EN).savedModel).toBeNull();
+		expect(buildModelSelectOptions(["a/x"], "kept/y", true, EN).savedModel).toBe("kept/y");
+		expect(buildModelSelectOptions(["a/x"], "", true, EN).savedModel).toBeNull();
+		expect(buildModelSelectOptions(["a/x"], ` ${"kept/y"} `, true, EN).savedModel).toBe("kept/y");
 	});
 
 	it("shows a list without provider prefixes flat, in the runner's order", () => {
@@ -423,38 +442,39 @@ describe("model selector options", () => {
 				["gpt-6.1-sol", "gpt-6-astra", "gpt-6.1-sol", MODEL_OTHER_VALUE],
 				"",
 				false,
+				EN,
 			).groups,
 		).toEqual([{ provider: null, models: ["gpt-6.1-sol", "gpt-6-astra"] }]);
 		// One provider-prefixed id keeps the grouped, sorted layout.
-		expect(buildModelSelectOptions(["plain", "a/x"], "", false).groups).toEqual([
+		expect(buildModelSelectOptions(["plain", "a/x"], "", false, EN).groups).toEqual([
 			{ provider: "a", models: ["a/x"] },
 			{ provider: "other", models: ["plain"] },
 		]);
 	});
 
 	it("names Claude Code's aliases and leaves every other id as it is", () => {
-		expect(modelOptionLabel("claude-code", "opus")).toBe("Opus (latest)");
-		expect(modelOptionLabel("claude-code", "fable")).toBe("Fable (latest)");
-		expect(modelOptionLabel("claude-code", "claude-opus-5-5")).toBe("claude-opus-5-5");
-		expect(modelOptionLabel("codex", "gpt-6.1-sol")).toBe("gpt-6.1-sol");
-		expect(modelOptionLabel("opencode", "opus")).toBe("opus");
+		expect(modelOptionLabel("claude-code", "opus", EN)).toBe("Opus (latest)");
+		expect(modelOptionLabel("claude-code", "fable", EN)).toBe("Fable (latest)");
+		expect(modelOptionLabel("claude-code", "claude-opus-5-5", EN)).toBe("claude-opus-5-5");
+		expect(modelOptionLabel("codex", "gpt-6.1-sol", EN)).toBe("gpt-6.1-sol");
+		expect(modelOptionLabel("opencode", "opus", EN)).toBe("opus");
 	});
 
 	it("asks for the id shape each backend expects in the Other input", () => {
-		expect(customModelPlaceholder("opencode")).toBe("provider/model");
-		expect(customModelPlaceholder("openrouter")).toBe("provider/model");
-		expect(customModelPlaceholder(OPENROUTER_FREE_AGENT_ID)).toBe("provider/model:free");
-		expect(customModelPlaceholder("codex")).toBe("model id");
-		expect(customModelPlaceholder("claude-code")).toBe("model id");
+		expect(customModelPlaceholder("opencode", EN)).toBe("provider/model");
+		expect(customModelPlaceholder("openrouter", EN)).toBe("provider/model");
+		expect(customModelPlaceholder(OPENROUTER_FREE_AGENT_ID, EN)).toBe("provider/model:free");
+		expect(customModelPlaceholder("codex", EN)).toBe("model id");
+		expect(customModelPlaceholder("claude-code", EN)).toBe("model id");
 	});
 
 	it("falls back to first plus Other when no models are reported", () => {
 		for (const reported of [null, []] as const) {
-			const optional = buildModelSelectOptions(reported, "", false);
+			const optional = buildModelSelectOptions(reported, "", false, EN);
 			expect(optional.firstOptionLabel).toBe("Backend default");
 			expect(optional.groups).toEqual([]);
 			expect(optional.savedModel).toBeNull();
-			const required = buildModelSelectOptions(reported, "", true);
+			const required = buildModelSelectOptions(reported, "", true, EN);
 			expect(required.firstOptionLabel).toBe("Choose a model…");
 			expect(required.groups).toEqual([]);
 		}
@@ -534,6 +554,7 @@ describe("openrouter free backend", () => {
 		const missing = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: OPENROUTER_FREE_AGENT_ID }),
 			FREE_AGENTS,
+			EN,
 		);
 		expect(missing.settings).toBeNull();
 		expect(missing.problems).toContain(
@@ -546,6 +567,7 @@ describe("openrouter free backend", () => {
 				models: { [OPENROUTER_FREE_AGENT_ID]: "provider/model" },
 			}),
 			FREE_AGENTS,
+			EN,
 		);
 		expect(billed.settings).toBeNull();
 		expect(billed.problems).toContain(
@@ -560,6 +582,7 @@ describe("openrouter free backend", () => {
 				models: { [OPENROUTER_FREE_AGENT_ID]: "a/model:free" },
 			}),
 			FREE_AGENTS,
+			EN,
 		);
 		expect(result.problems).toEqual([]);
 		expect(result.settings?.models).toEqual({ [OPENROUTER_FREE_AGENT_ID]: "a/model:free" });

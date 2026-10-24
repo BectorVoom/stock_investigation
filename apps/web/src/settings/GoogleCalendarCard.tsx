@@ -1,17 +1,24 @@
 import type { GoogleCalendarState } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
+import { useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { createSignal, type JSX, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { BUTTON, BUTTON_DANGER, ConfirmDialog, ErrorNotice } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { googleFailureReason } from "../watchlist/watchlistModel.ts";
+import { googleCalendarMessages } from "./calendarSettings.messages.tsx";
 
-function syncCountsText(state: GoogleCalendarState): string | null {
+function syncCountsText(
+	state: GoogleCalendarState,
+	text: MessagesOf<typeof googleCalendarMessages>,
+): string | null {
 	if (state.lastSync === null) return null;
 	const { inserted, updated, deleted } = state.lastSync;
-	return `${inserted} added, ${updated} changed, ${deleted} removed.`;
+	return text.syncCounts(inserted, updated, deleted);
 }
 
 /**
@@ -27,6 +34,8 @@ export function GoogleCalendarCard(props: {
 	readonly onQueued: () => void;
 	readonly onQueueFailed: (title: string, error: ApiFailure) => void;
 }): JSX.Element {
+	const m = useMessages(googleCalendarMessages);
+	const common = useMessages(commonMessages);
 	const [queueBusy, setQueueBusy] = createSignal(false);
 	const [disconnectConfirm, setDisconnectConfirm] = createSignal<HTMLElement | null>(null);
 	const [cancelBusy, setCancelBusy] = createSignal(false);
@@ -41,10 +50,10 @@ export function GoogleCalendarCard(props: {
 		if (result.kind === "failed") {
 			props.onQueueFailed(
 				action === "connect"
-					? "The Google Calendar connection was not queued."
+					? m().connectNotQueued
 					: action === "sync"
-						? "The Google Calendar sync was not queued."
-						: "The Google Calendar disconnection was not queued.",
+						? m().syncNotQueued
+						: m().disconnectNotQueued,
 				result.error,
 			);
 			return;
@@ -59,7 +68,7 @@ export function GoogleCalendarCard(props: {
 		const result = await props.api.cancelResearchRun(runId);
 		setCancelBusy(false);
 		if (!result.ok) {
-			props.onQueueFailed("The Google Calendar run was not cancelled.", result.error);
+			props.onQueueFailed(m().runNotCancelled, result.error);
 			return;
 		}
 		props.onQueued();
@@ -79,37 +88,37 @@ export function GoogleCalendarCard(props: {
 
 	const connectedLine = (): string => {
 		const state = props.state;
+		const text = m();
 		const since =
 			state.connectedAt === null
-				? "Connected."
-				: `Connected since ${formatInstant(state.connectedAt)}.`;
+				? text.connected
+				: text.connectedSince(formatInstant(state.connectedAt));
 		if (state.activeRunId !== null) {
-			return state.activeAction === "disconnect" ? `${since} Disconnecting…` : `${since} Syncing…`;
+			return state.activeAction === "disconnect" ? text.disconnecting(since) : text.syncing(since);
 		}
 		// Says so when the calendar is behind and nothing is running: after
 		// a failed sync nothing is queued automatically (see below).
-		const behind =
-			state.inSync === false
-				? " The dates here have changed since; use Sync now to update the calendar."
-				: "";
+		const behind = state.inSync === false ? text.behind : "";
 		if (state.lastSyncedAt !== null) {
-			const counts = syncCountsText(state);
-			return `${since} Last synced ${formatInstant(state.lastSyncedAt)}: ${counts ?? "no changes."}${behind}`;
+			const counts = syncCountsText(state, text);
+			return text.lastSynced(
+				since,
+				formatInstant(state.lastSyncedAt),
+				counts ?? text.noChanges,
+				behind,
+			);
 		}
-		return `${since} Not synced yet.`;
+		return text.notSyncedYet(since);
 	};
 
 	const failure = () => props.state.lastFailure;
 
 	return (
 		<div class="mt-3 rounded border border-slate-200 p-2">
+			{/* i18n-exempt: product name */}
 			<h4 class="text-xs font-semibold text-slate-900">Google Calendar</h4>
 			<Show when={props.state.status === "disconnected"}>
-				<p class="mt-1 text-xs text-slate-700">
-					Keeps a calendar named &lsquo;Earnings calendar (Research workspace)&rsquo; in your Google
-					account in step with these dates. The app can only see and change calendars it created
-					itself.
-				</p>
+				<p class="mt-1 text-xs text-slate-700">{m().disconnectedIntro}</p>
 				<div class="mt-1">
 					<button
 						type="button"
@@ -117,7 +126,7 @@ export function GoogleCalendarCard(props: {
 						disabled={queueBusy() || props.busy}
 						onClick={() => void queueAction("connect")}
 					>
-						Connect Google Calendar
+						{m().connect}
 					</button>
 				</div>
 			</Show>
@@ -125,19 +134,12 @@ export function GoogleCalendarCard(props: {
 				<div class="mt-1 space-y-1">
 					<Show
 						when={props.state.authUrl}
-						fallback={
-							<output class="block text-xs text-slate-700">
-								Preparing Google sign-in… It is prepared by the local runner; if the runner is
-								offline this waits until it reconnects.
-							</output>
-						}
+						fallback={<output class="block text-xs text-slate-700">{m().preparingSignIn}</output>}
 					>
 						{(url) => (
 							<>
-								<SafeLink url={url()}>Open Google sign-in</SafeLink>
-								<p class="text-xs text-slate-700">
-									Waiting for you to finish in Google (5 minutes)…
-								</p>
+								<SafeLink url={url()}>{m().openSignIn}</SafeLink>
+								<p class="text-xs text-slate-700">{m().waitingForSignIn}</p>
 							</>
 						)}
 					</Show>
@@ -150,7 +152,7 @@ export function GoogleCalendarCard(props: {
 							disabled={cancelBusy() || props.busy}
 							onClick={() => void cancelRun()}
 						>
-							Cancel
+							{common().cancel}
 						</button>
 					</Show>
 				</div>
@@ -164,7 +166,7 @@ export function GoogleCalendarCard(props: {
 						disabled={queueBusy() || props.busy || runActive()}
 						onClick={() => void queueAction("sync")}
 					>
-						Sync now
+						{m().syncNow}
 					</button>
 					<button
 						type="button"
@@ -173,16 +175,17 @@ export function GoogleCalendarCard(props: {
 						disabled={queueBusy() || props.busy || runActive()}
 						onClick={(event) => setDisconnectConfirm(event.currentTarget)}
 					>
-						Disconnect
+						{m().disconnect}
 					</button>
 				</div>
 			</Show>
 			<Show when={props.state.status === "needs-reconnect"}>
 				<p class="mt-1 text-xs text-slate-700">
-					{props.state.lastFailure === null
-						? "The Google connection needs attention."
-						: googleFailureReason(props.state.lastFailure.code)}{" "}
-					Reconnect to keep the calendar in step.
+					{m().reconnectToKeep(
+						props.state.lastFailure === null
+							? m().needsAttention
+							: googleFailureReason(props.state.lastFailure.code),
+					)}
 				</p>
 				<div class="mt-1">
 					<button
@@ -191,7 +194,7 @@ export function GoogleCalendarCard(props: {
 						disabled={queueBusy() || props.busy}
 						onClick={() => void queueAction("connect")}
 					>
-						Reconnect Google Calendar
+						{m().reconnect}
 					</button>
 				</div>
 			</Show>
@@ -206,12 +209,10 @@ export function GoogleCalendarCard(props: {
 								detail: null,
 								issues: [],
 							}}
-							title="The Google Calendar step failed."
+							title={m().stepFailed}
 						/>
 						<Show when={props.state.status === "connected"}>
-							<p class="mt-1 text-xs text-slate-700">
-								Automatic syncing is paused until a sync succeeds. Use Sync now to try again.
-							</p>
+							<p class="mt-1 text-xs text-slate-700">{m().autoSyncPaused}</p>
 						</Show>
 					</div>
 				)}
@@ -223,16 +224,15 @@ export function GoogleCalendarCard(props: {
 				if (opener === null) return null;
 				return (
 					<ConfirmDialog
-						title="Disconnect Google Calendar?"
+						title={m().disconnectTitle}
 						opener={opener}
-						confirmLabel="Disconnect"
+						confirmLabel={m().disconnect}
 						pending={queueBusy()}
 						failure={null}
 						onConfirm={() => void confirmDisconnect()}
 						onCancel={() => setDisconnectConfirm(null)}
 					>
-						The calendar stays in your Google account — delete it there (Google Calendar settings)
-						if you no longer want it. This app forgets the connection at once.
+						{m().disconnectBody}
 					</ConfirmDialog>
 				);
 			})()}

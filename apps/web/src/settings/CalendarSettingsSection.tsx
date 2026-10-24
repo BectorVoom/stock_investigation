@@ -1,6 +1,8 @@
 import type { WatchlistResponse } from "@research/contracts";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import { createEffect, createSignal, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
+import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	BUTTON,
@@ -13,11 +15,13 @@ import {
 	Notice,
 	Section,
 } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
 import { downloadTextFile } from "../lib/download.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
 import { googleAutoSyncWanted, watchlistRefreshSignal } from "../watchlist/watchlistModel.ts";
+import { calendarSettingsMessages } from "./calendarSettings.messages.tsx";
 import { GoogleCalendarCard } from "./GoogleCalendarCard.tsx";
 
 type FeedConfirm = "replace" | "revoke";
@@ -38,6 +42,9 @@ export function CalendarSettingsSection(props: {
 	/** From the `#/settings/calendar` route marker; scrolls to and focuses this section. */
 	readonly section: string | null;
 }): JSX.Element {
+	const m = useMessages(calendarSettingsMessages);
+	const common = useMessages(commonMessages);
+	const locale = useLocale();
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
 	const [loading, setLoading] = createSignal(true);
@@ -65,9 +72,8 @@ export function CalendarSettingsSection(props: {
 		if (disposed) return "unchanged";
 		setLoading(false);
 		if (!result.ok) {
-			if (data() === null)
-				setFailure({ title: "Could not load the calendar.", error: result.error });
-			else setNotice("The calendar state did not refresh.");
+			if (data() === null) setFailure({ title: m().loadFailed, error: result.error });
+			else setNotice(m().notRefreshed);
 			return "failed";
 		}
 		if (!result.value.changed) return watchlistRefreshSignal(data());
@@ -90,7 +96,7 @@ export function CalendarSettingsSection(props: {
 		void googleQueue.queue("sync").then((result) => {
 			if (disposed) return;
 			if (result.kind === "failed") {
-				setNotice(`The Google Calendar sync was not queued: ${result.error.message}`);
+				setNotice(m().googleSyncNotQueued(failureMessageIn(result.error, locale())));
 				return;
 			}
 			if (result.kind === "queued") void reloadAfterWrite();
@@ -148,7 +154,7 @@ export function CalendarSettingsSection(props: {
 		if (disposed) return;
 		setDownloadBusy(false);
 		if (!result.ok) {
-			setFailure({ title: "The calendar file was not downloaded.", error: result.error });
+			setFailure({ title: m().notDownloaded, error: result.error });
 			return;
 		}
 		downloadTextFile(
@@ -170,7 +176,7 @@ export function CalendarSettingsSection(props: {
 		setBusy(false);
 		setFeedConfirm(null);
 		if (!result.ok) {
-			setFailure({ title: "The subscription link was not created.", error: result.error });
+			setFailure({ title: m().linkNotCreated, error: result.error });
 			return;
 		}
 		setIssuedUrl(`${window.location.origin}${result.value.path}`);
@@ -186,11 +192,11 @@ export function CalendarSettingsSection(props: {
 		setBusy(false);
 		setFeedConfirm(null);
 		if (!result.ok) {
-			setFailure({ title: "The subscription link was not revoked.", error: result.error });
+			setFailure({ title: m().linkNotRevoked, error: result.error });
 			return;
 		}
 		setIssuedUrl(null);
-		setNotice("The subscription link was revoked.");
+		setNotice(m().linkRevoked);
 		await reloadAfterWrite();
 	};
 
@@ -202,12 +208,13 @@ export function CalendarSettingsSection(props: {
 			setCopied(true);
 		} catch {
 			setFailure({
-				title: "The link was not copied.",
+				title: m().linkNotCopied,
 				error: {
 					kind: "invalid-response",
 					code: "UNEXPECTED_STATUS",
 					status: null,
-					message: "Copying failed; select the link and copy it by hand.",
+					// Written in the UI language: a client code with the caller's own sentence is shown as is.
+					message: m().copyFailed,
 					detail: null,
 					issues: [],
 				},
@@ -228,17 +235,16 @@ export function CalendarSettingsSection(props: {
 
 	return (
 		<div data-calendar-settings ref={sectionRef}>
-			<Section title="Calendar" label="Calendar">
+			<Section title={m().title} label={m().title}>
 				<p class="text-xs text-slate-700">
-					Keep the earnings announcement dates of the stocks on your{" "}
-					<a
-						href="#/watchlist"
-						class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
-					>
-						Watchlist
-					</a>{" "}
-					in your own calendar: sync them to Google Calendar, download them as a file, or subscribe
-					to them. Single dates can also be added from the Watchlist table.
+					{m().intro(
+						<a
+							href="#/watchlist"
+							class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:decoration-blue-800"
+						>
+							{m().watchlistLink}
+						</a>,
+					)}
 				</p>
 				<Show when={failure()}>
 					{(current) => (
@@ -263,7 +269,7 @@ export function CalendarSettingsSection(props: {
 					)}
 				</Show>
 				<Show when={loading()}>
-					<Loading label="calendar" />
+					<Loading label={m().calendarThing} />
 				</Show>
 				<Show when={data()}>
 					{(current) => (
@@ -283,38 +289,33 @@ export function CalendarSettingsSection(props: {
 						disabled={downloadBusy() || stockCount() === 0}
 						onClick={() => void downloadIcs()}
 					>
-						{downloadBusy() ? "Preparing file…" : "Download calendar file (.ics)"}
+						{downloadBusy() ? m().preparingFile : m().downloadIcs}
 					</button>
 					<Show when={data() !== null && stockCount() === 0}>
-						<p class="mt-1 text-xs text-slate-700">
-							Add a stock on the Watchlist page to download its dates.
-						</p>
+						<p class="mt-1 text-xs text-slate-700">{m().addStockFirst}</p>
 					</Show>
 				</div>
 				<div class="mt-3 rounded border border-slate-200 p-2">
-					<h4 class="text-xs font-semibold text-slate-900">Subscription link</h4>
+					<h4 class="text-xs font-semibold text-slate-900">{m().subscriptionLink}</h4>
 					<Show when={issuedUrl()}>
 						{(url) => (
 							<div class="mt-1 space-y-1">
-								<p class="text-xs text-slate-700">
-									This is the only time this link is shown. Copy it now; replacing or revoking it
-									stops this link from working.
-								</p>
+								<p class="text-xs text-slate-700">{m().shownOnce}</p>
 								<div class="flex flex-wrap items-center gap-2">
 									<input
 										type="text"
 										readonly
-										aria-label="Subscription link (shown once)"
+										aria-label={m().linkFieldLabel}
 										class={`${INPUT} font-mono`}
 										value={url()}
 										onFocus={(event) => event.currentTarget.select()}
 									/>
 									<button type="button" class={BUTTON} onClick={() => void copyIssuedUrl()}>
-										Copy
+										{common().copy}
 									</button>
 								</div>
 								<Show when={copied()}>
-									<output class="block text-xs text-slate-700">Copied to the clipboard.</output>
+									<output class="block text-xs text-slate-700">{m().copied}</output>
 								</Show>
 							</div>
 						)}
@@ -323,9 +324,9 @@ export function CalendarSettingsSection(props: {
 						{(createdAt) => (
 							<div class="mt-1 space-y-1">
 								<p class="text-xs text-slate-700">
-									A subscription link was created{" "}
-									<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>. The link itself
-									is not shown again.
+									{m().linkCreated(
+										<time dateTime={createdAt()}>{formatInstant(createdAt())}</time>,
+									)}
 								</p>
 								<div class="flex flex-wrap gap-2">
 									<button
@@ -334,7 +335,7 @@ export function CalendarSettingsSection(props: {
 										disabled={busy()}
 										onClick={(event) => openFeedConfirm("replace", event.currentTarget)}
 									>
-										Replace link
+										{m().replaceLink}
 									</button>
 									<button
 										type="button"
@@ -342,7 +343,7 @@ export function CalendarSettingsSection(props: {
 										disabled={busy()}
 										onClick={(event) => openFeedConfirm("revoke", event.currentTarget)}
 									>
-										Revoke link
+										{m().revokeLink}
 									</button>
 								</div>
 							</div>
@@ -350,51 +351,44 @@ export function CalendarSettingsSection(props: {
 					</Show>
 					<Show when={data() !== null && feedCreatedAt() === null && issuedUrl() === null}>
 						<div class="mt-1 space-y-1">
-							<p class="text-xs text-slate-700">
-								No subscription link exists yet. A calendar app can poll it for new dates.
-							</p>
+							<p class="text-xs text-slate-700">{m().noLinkYet}</p>
 							<button
 								type="button"
 								class={BUTTON_PRIMARY}
 								disabled={busy()}
 								onClick={() => void issueFeed()}
 							>
-								Create subscription link
+								{m().createLink}
 							</button>
 						</div>
 					</Show>
-					<p class="mt-2 text-xs text-slate-700">
-						The link is a secret: anyone with it can read the calendar. Google Calendar can only
-						subscribe to it when this app is reachable from the internet over HTTPS (a localhost
-						address works with calendar apps on this computer only). The .ics download and the
-						per-date links work everywhere.
-					</p>
+					<p class="mt-2 text-xs text-slate-700">{m().linkIsSecret}</p>
 				</div>
 			</Section>
 			<Show when={feedConfirm() === "replace"}>
 				<ConfirmDialog
-					title="Replace the subscription link?"
+					title={m().replaceTitle}
 					opener={opener()}
-					confirmLabel="Replace link"
+					confirmLabel={m().replaceLink}
 					pending={busy()}
 					failure={null}
 					onConfirm={() => void issueFeed()}
 					onCancel={closeDialogs}
 				>
-					A new link is created and shown once. The old link stops working immediately.
+					{m().replaceBody}
 				</ConfirmDialog>
 			</Show>
 			<Show when={feedConfirm() === "revoke"}>
 				<ConfirmDialog
-					title="Revoke the subscription link?"
+					title={m().revokeTitle}
 					opener={opener()}
-					confirmLabel="Revoke link"
+					confirmLabel={m().revokeLink}
 					pending={busy()}
 					failure={null}
 					onConfirm={() => void revokeFeed()}
 					onCancel={closeDialogs}
 				>
-					Calendar apps using the link stop receiving updates. This cannot be undone.
+					{m().revokeBody}
 				</ConfirmDialog>
 			</Show>
 		</div>

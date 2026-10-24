@@ -11,8 +11,10 @@ import {
 	runBudget,
 	type WebAccess,
 } from "@research/contracts";
+import type { MessagesOf } from "@research/i18n";
 import type { ResearchBudget } from "../api/client.ts";
 import { formatInstant } from "../lib/format.ts";
+import { agentSettingsModelMessages } from "./agentSettingsModel.messages.ts";
 
 /**
  * Pure agent-settings rules (FR-012 / FR-016 / AGT-012): which backends can be
@@ -21,7 +23,16 @@ import { formatInstant } from "../lib/format.ts";
  * no network — unit-tested directly. This is the single home of the backend
  * options, the availability list content and the budget-text rules; the
  * composer and the approval form import from here (ARCH-010).
+ *
+ * Owner-facing sentences come from the `text` parameter, the words of
+ * `agentSettingsModelMessages` in the UI language (ADR-0031). The functions
+ * the Chat page also calls default it to English.
  */
+
+/** The words the rules build sentences from, in one UI language. */
+export type AgentSettingsText = MessagesOf<typeof agentSettingsModelMessages>;
+
+const ENGLISH: AgentSettingsText = agentSettingsModelMessages.en;
 
 /** "unknown" = no runner has reported this backend, so how it bills is not known. */
 export type CostModelView = AgentDescriptor["costModel"] | "unknown";
@@ -63,27 +74,28 @@ export interface AgentOption {
 const BASELINE_DISPLAY_NAMES: { readonly [Id in (typeof BASELINE_AGENT_IDS)[number]]: string } = {
 	opencode: "OpenCode",
 	codex: "Codex",
+	// i18n-exempt: product name
 	"claude-code": "Claude Code",
 	openrouter: "OpenRouter",
 };
 
-const COST_MODEL_TEXT: { readonly [M in CostModelView]: string } = {
-	"plan-limited": "plan-limited (cost unknown)",
-	metered: "metered (billed per use)",
-	unknown: "cost model unknown",
-};
+function costModelText(costModel: CostModelView, text: AgentSettingsText): string {
+	if (costModel === "plan-limited") return text.costPlanLimited;
+	if (costModel === "metered") return text.costMetered;
+	return text.costUnknown;
+}
 
-function describeAgent(agent: AgentDescriptor): AgentOption {
+function describeAgent(agent: AgentDescriptor, text: AgentSettingsText): AgentOption {
 	const isolationNote =
-		agent.toolIsolation === "enforced" ? "tool isolation enforced" : "tool isolation unverified";
+		agent.toolIsolation === "enforced" ? text.isolationEnforced : text.isolationUnverified;
 	if (agent.availability.status === "available") {
 		return {
 			agentId: agent.agentId,
 			displayName: agent.displayName,
 			selectable: true,
 			costModel: agent.costModel,
-			status: "available",
-			detail: `Available — ${COST_MODEL_TEXT[agent.costModel]}; ${isolationNote}.`,
+			status: text.statusAvailable,
+			detail: text.detailAvailable(costModelText(agent.costModel, text), isolationNote),
 		};
 	}
 	return {
@@ -91,8 +103,8 @@ function describeAgent(agent: AgentDescriptor): AgentOption {
 		displayName: agent.displayName,
 		selectable: false,
 		costModel: agent.costModel,
-		status: `unavailable (${agent.availability.reasonCode})`,
-		detail: `Unavailable — ${agent.availability.reasonCode}${agent.availability.detail === "" ? "" : `: ${agent.availability.detail}`}`,
+		status: text.statusUnavailable(agent.availability.reasonCode),
+		detail: text.detailUnavailable(agent.availability.reasonCode, agent.availability.detail),
 	};
 }
 
@@ -102,16 +114,19 @@ function describeAgent(agent: AgentDescriptor): AgentOption {
  * backends are offered with their availability stated as unknown so a question
  * can still be queued.
  */
-export function agentOptions(agents: AgentsResponse | null): readonly AgentOption[] {
+export function agentOptions(
+	agents: AgentsResponse | null,
+	text: AgentSettingsText = ENGLISH,
+): readonly AgentOption[] {
 	if (agents === null) return [];
-	if (agents.agents.length > 0) return agents.agents.map(describeAgent);
+	if (agents.agents.length > 0) return agents.agents.map((agent) => describeAgent(agent, text));
 	return BASELINE_AGENT_IDS.map((agentId) => ({
 		agentId,
 		displayName: BASELINE_DISPLAY_NAMES[agentId],
 		selectable: true,
 		costModel: "unknown",
-		status: "availability unknown",
-		detail: "Availability unknown — no runner has reported this backend yet.",
+		status: text.statusUnknown,
+		detail: text.detailUnknown,
 	}));
 }
 
@@ -139,20 +154,19 @@ export function backendRequiresModel(agentId: string): boolean {
 /** Value of the "Other — type a model id…" option; never saved as a model id. */
 export const MODEL_OTHER_VALUE = "__other__";
 
-export const MODEL_OTHER_LABEL = "Other — type a model id…";
+/** English label of the "Other" option; the form shows `text.modelOther`. */
+export const MODEL_OTHER_LABEL = ENGLISH.modelOther;
 
-/** Label suffix for a stored model that the runner did not list. */
-export const MODEL_SAVED_SUFFIX = " (saved — not in the runner's list)";
+/** English label suffix for a stored model that the runner did not list (`text.modelSavedSuffix`). */
+export const MODEL_SAVED_SUFFIX = ENGLISH.modelSavedSuffix;
 
-/** Exact caution shown for free-tier OpenCode models (ask-and-reject isolation). */
-export const FREE_TIER_CAUTION =
-	"OpenCode serves free-tier models only to sessions that list its tools, so this app runs them with every tool call rejected; an answer fails if the model tries a tool, and a plan model avoids that.";
+/** Exact English caution for free-tier OpenCode models (ask-and-reject isolation). */
+export const FREE_TIER_CAUTION = ENGLISH.freeTierCaution;
 
 export { isFreeTierModelId };
 
-/** Note shown for the OpenRouter free-models backend, which never authorizes spend. */
-export const FREE_PLAN_NOTE =
-	"OpenRouter limits free models per minute and per day, and each agent step of a question uses one request. No spend is authorized for this backend.";
+/** English note for the OpenRouter free-models backend, which never authorizes spend. */
+export const FREE_PLAN_NOTE = ENGLISH.freePlanNote;
 
 export interface ModelProviderGroup {
 	/** The `<optgroup>` heading, or null for a list shown without one. */
@@ -212,6 +226,7 @@ export function buildModelSelectOptions(
 	reported: readonly string[] | null,
 	currentModel: string,
 	requiresModel: boolean,
+	text: AgentSettingsText,
 ): ModelSelectOptions {
 	const trimmed = currentModel.trim();
 	const listed = reported ?? [];
@@ -223,34 +238,35 @@ export function buildModelSelectOptions(
 	const inList = listed.includes(trimmed);
 	const savedModel = trimmed === "" || inList || trimmed === MODEL_OTHER_VALUE ? null : trimmed;
 	return {
-		firstOptionLabel: requiresModel ? "Choose a model…" : "Backend default",
+		firstOptionLabel: requiresModel ? text.chooseModel : text.backendDefault,
 		groups,
 		savedModel,
 	};
 }
 
 /**
- * Claude Code's `--model` aliases, each the newest model of its family. The
- * runner reports the aliases; this only names them for the owner.
+ * Claude Code's `--model` aliases, each the newest model of its family (a
+ * product name). The runner reports the aliases; this only names them for
+ * the owner.
  */
-const CLAUDE_ALIAS_LABELS: Readonly<Record<string, string>> = {
-	fable: "Fable (latest)",
-	opus: "Opus (latest)",
-	sonnet: "Sonnet (latest)",
-	haiku: "Haiku (latest)",
+const CLAUDE_ALIAS_FAMILIES: Readonly<Record<string, string>> = {
+	fable: "Fable",
+	opus: "Opus",
+	sonnet: "Sonnet",
+	haiku: "Haiku",
 };
 
 /** Text of a model's option: a readable name where one is known, otherwise the id itself. */
-export function modelOptionLabel(agentId: string, model: string): string {
-	if (agentId === "claude-code") return CLAUDE_ALIAS_LABELS[model] ?? model;
-	return model;
+export function modelOptionLabel(agentId: string, model: string, text: AgentSettingsText): string {
+	const family = agentId === "claude-code" ? CLAUDE_ALIAS_FAMILIES[model] : undefined;
+	return family === undefined ? model : text.latestModel(family);
 }
 
 /** Placeholder of the "Other" text input: the id shape the backend expects. */
-export function customModelPlaceholder(agentId: string): string {
+export function customModelPlaceholder(agentId: string, text: AgentSettingsText): string {
 	if (agentId === OPENROUTER_FREE_AGENT_ID) return "provider/model:free";
 	if (agentId === "opencode" || agentId === "openrouter") return "provider/model";
-	return "model id";
+	return text.modelIdPlaceholder;
 }
 
 /**
@@ -266,23 +282,20 @@ export function modelSelectValue(currentModel: string, otherMode: boolean): stri
 }
 
 /** Honest statement about the runner, or null when it is online. */
-export function runnerNotice(agents: AgentsResponse | null): string | null {
+export function runnerNotice(
+	agents: AgentsResponse | null,
+	text: AgentSettingsText = ENGLISH,
+): string | null {
 	if (agents === null || agents.runnerOnline) return null;
-	if (agents.runnerLastSeenAt === null) {
-		return "Runner offline — no runner has ever reported in. Your question will be queued and will start when a runner connects.";
-	}
-	return `Runner offline (last seen ${formatInstant(agents.runnerLastSeenAt)}). Your question will be queued and will start when the runner reconnects. Backend availability below is as last reported.`;
+	if (agents.runnerLastSeenAt === null) return text.runnerNeverSeen;
+	return text.runnerOffline(formatInstant(agents.runnerLastSeenAt));
 }
 
 /** FR-016: what the owner is told about cost before submitting. Never "$0". */
-export function costStatement(costModel: CostModelView): string {
-	if (costModel === "plan-limited") {
-		return "Cost unknown — limited by your plan. This backend runs under your subscription's limits and does not report a price; no metered (paid) spend is authorized for this run.";
-	}
-	if (costModel === "metered") {
-		return "Metered backend — usage is billed to your provider account. Set a maximum spend greater than 0 and confirm consent to continue. There is no paid fallback without consent.";
-	}
-	return "Cost model unknown until a runner reports this backend. No metered (paid) spend is authorized unless you set a maximum spend and confirm consent.";
+export function costStatement(costModel: CostModelView, text: AgentSettingsText = ENGLISH): string {
+	if (costModel === "plan-limited") return text.costStatementPlanLimited;
+	if (costModel === "metered") return text.costStatementMetered;
+	return text.costStatementUnknown;
 }
 
 export interface BudgetEvaluation {
@@ -297,6 +310,7 @@ export function evaluateBudget(
 	draft: SpendDraft,
 	costModel: CostModelView,
 	options: { readonly requireConsent?: boolean } = {},
+	text: AgentSettingsText = ENGLISH,
 ): BudgetEvaluation {
 	// Storing a maximum spend is not consent (AGT-012): the settings form
 	// validates without it, while the composer and the approval form require
@@ -312,21 +326,19 @@ export function evaluateBudget(
 	} else if (spendText === "") {
 		if (costModel === "metered") {
 			spendConsentRequired = requireConsent;
-			problems.push("A metered backend needs a maximum spend greater than 0 USD.");
+			problems.push(text.meteredNeedsSpend);
 		}
 	} else {
 		spendConsentRequired = requireConsent;
 		const spend = Number(spendText);
 		if (!Number.isFinite(spend) || spend <= 0 || spend > BUDGET_LIMITS.maxSpendUsd.max) {
-			problems.push(
-				`Max spend must be greater than 0 and at most ${BUDGET_LIMITS.maxSpendUsd.max} USD.`,
-			);
+			problems.push(text.spendOutOfRange(BUDGET_LIMITS.maxSpendUsd.max));
 		} else {
 			maxSpendUsd = spend;
 		}
 	}
 	if (spendConsentRequired && requireConsent && !draft.spendConsent) {
-		problems.push("Confirm consent to metered spend before submitting.");
+		problems.push(text.confirmConsent);
 	}
 	return {
 		budget: problems.length === 0 ? runBudget(maxSpendUsd) : null,
@@ -385,48 +397,43 @@ const MAX_MODEL_LENGTH = 100;
 export function evaluateAgentSettings(
 	draft: AgentSettingsDraft,
 	agents: AgentsResponse | null,
+	text: AgentSettingsText,
 ): SettingsEvaluation {
-	const options = agentOptions(agents);
+	const options = agentOptions(agents, text);
 	const selectedAgent =
 		draft.defaultAgentId === ""
 			? null
 			: (options.find((option) => option.agentId === draft.defaultAgentId) ?? null);
 	const costModel: CostModelView = selectedAgent?.costModel ?? "unknown";
-	const budget = evaluateBudget(draft.budget, costModel, { requireConsent: false });
+	const budget = evaluateBudget(draft.budget, costModel, { requireConsent: false }, text);
 	const problems: string[] = [];
 
 	if (agents === null) {
-		problems.push("Agent backends are still loading.");
+		problems.push(text.agentsLoading);
 	} else if (selectedAgent === null) {
-		problems.push("Choose a default agent backend.");
+		problems.push(text.chooseDefaultBackend);
 	} else if (!selectedAgent.selectable) {
-		problems.push(`${selectedAgent.displayName} is ${selectedAgent.status} and cannot be used.`);
+		problems.push(text.backendUnusable(selectedAgent.displayName, selectedAgent.status));
 	}
 	const modelText = draft.defaultAgentId === "" ? "" : (draft.models[draft.defaultAgentId] ?? "");
 	if (selectedAgent !== null && selectedAgent.agentId === "opencode") {
 		// The OpenCode adapter refuses to pick a provider by itself, so running
 		// it without a model could spend through a metered provider unasked.
 		if (modelText.trim() === "") {
-			problems.push(
-				"OpenCode needs a model of the form provider/model — without one it cannot run. Choose one from the list the runner reported, or type one.",
-			);
+			problems.push(text.openCodeNeedsModel);
 		} else if (!modelText.trim().includes("/")) {
-			problems.push("The OpenCode model must have the form provider/model.");
+			problems.push(text.openCodeModelShape);
 		}
 	}
 	if (selectedAgent !== null && selectedAgent.agentId === OPENROUTER_FREE_AGENT_ID) {
 		if (modelText.trim() === "") {
-			problems.push(
-				"OpenRouter (free models) needs a model — without one it cannot run. Choose one from the list the runner reported, or type one.",
-			);
+			problems.push(text.openRouterFreeNeedsModel);
 		} else if (!isOpenRouterFreeModelId(modelText.trim())) {
-			problems.push(
-				"The OpenRouter free model must end in :free (or be openrouter/free) — any other model is billed and is refused by this backend.",
-			);
+			problems.push(text.openRouterFreeModelShape);
 		}
 	}
 	if (modelText.length > MAX_MODEL_LENGTH) {
-		problems.push(`The model must be at most ${MAX_MODEL_LENGTH} characters.`);
+		problems.push(text.modelTooLong(MAX_MODEL_LENGTH));
 	}
 	problems.push(...budget.problems);
 
@@ -443,7 +450,7 @@ export function evaluateAgentSettings(
 	return {
 		selectedAgent,
 		costModel,
-		costStatement: costStatement(costModel),
+		costStatement: costStatement(costModel, text),
 		spendEditable: costModel !== "plan-limited",
 		modelText,
 		reportedModels: selectedAgent === null ? null : reportedModels(agents, selectedAgent.agentId),
