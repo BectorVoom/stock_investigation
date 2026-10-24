@@ -2,7 +2,12 @@ import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CSRF_HEADER, CSRF_HEADER_VALUE } from "@research/contracts";
+import {
+	CSRF_HEADER,
+	CSRF_HEADER_VALUE,
+	type ScheduledTask,
+	scheduledTaskListResponseSchema,
+} from "@research/contracts";
 import { baseChildEnv, buildChildEnv } from "../../scripts/testEnv.ts";
 
 /**
@@ -357,4 +362,32 @@ export async function refreshRealFeed(
 		articleCount: articles.articles.length,
 		lastErrorCode,
 	};
+}
+
+/**
+ * A "Once" task time in UTC (ADR-0033): the next whole minute at least
+ * `leadMs` away, so typing it into the editor never races its own time.
+ * `iso` is the slot the server stores (`lastRun.slotAt` / `lastSkip.slotAt`).
+ */
+export function utcSlotAhead(leadMs = 60_000): {
+	readonly date: string;
+	readonly time: string;
+	readonly iso: string;
+	readonly atMs: number;
+} {
+	const atMs = Math.ceil((Date.now() + leadMs) / 60_000) * 60_000;
+	const iso = new Date(atMs).toISOString();
+	return { date: iso.slice(0, 10), time: iso.slice(11, 16), iso, atMs };
+}
+
+/** `GET /api/v1/scheduled-tasks`, parsed with the shared contract (a drift fails here). */
+export async function listScheduledTasks(apiOrigin: string): Promise<readonly ScheduledTask[]> {
+	const response = await fetch(`${apiOrigin}/api/v1/scheduled-tasks`, {
+		headers: ownerHeaders(apiOrigin),
+	});
+	const text = await response.text();
+	if (response.status !== 200) {
+		throw new Error(`GET /api/v1/scheduled-tasks -> ${response.status}: ${text}`);
+	}
+	return scheduledTaskListResponseSchema.parse(JSON.parse(text)).tasks;
 }
