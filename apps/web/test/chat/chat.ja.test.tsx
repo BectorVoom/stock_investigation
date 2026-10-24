@@ -10,6 +10,7 @@ import { defaultComposerDraft, evaluateComposer } from "../../src/chat/composerM
 import { displayedChatTitle } from "../../src/chat/conversationList.ts";
 import { NotebookTurnCard } from "../../src/chat/NotebookTurnCard.tsx";
 import { RunCard } from "../../src/chat/RunCard.tsx";
+import { agentSettingsModelMessages } from "../../src/settings/agentSettingsModel.messages.ts";
 import {
 	AGENT_SETTINGS_RESPONSE,
 	AGENTS,
@@ -55,6 +56,7 @@ describe("Chat in Japanese", () => {
 			AGENT_SETTINGS_RESPONSE.settings,
 			WORKSPACE_ID,
 			composerMessages.ja,
+			agentSettingsModelMessages.ja,
 		);
 		expect(result.problems).toContain("リサーチの質問を入力してください（3 文字以上）。");
 		expect(result.configurationProblems).toEqual([]);

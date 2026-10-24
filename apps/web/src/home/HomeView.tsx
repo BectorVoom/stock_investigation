@@ -10,7 +10,7 @@ import {
 	type WidgetCore,
 	widgetSeriesIds,
 } from "@research/contracts";
-import { useMessages } from "@research/i18n/solid";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import {
 	createEffect,
 	createMemo,
@@ -24,6 +24,7 @@ import {
 	Switch,
 } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
+import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
 import { formatInstant } from "../lib/format.ts";
@@ -84,6 +85,7 @@ export function HomeView(props: {
 }): JSX.Element {
 	ensureHomeIconLibraries();
 	const m = useMessages(homeMessages);
+	const locale = useLocale();
 	const watchlistText = useMessages(watchlistModelMessages);
 	const dashboard = createRemote(() => props.api.getHomeDashboard());
 	/**
@@ -284,7 +286,7 @@ export function HomeView(props: {
 		if (result.kind === "failed") {
 			setNotice({
 				tone: "error",
-				text: m().earningsNotQueued(result.error.message),
+				text: m().earningsNotQueued(failureMessageIn(result.error, locale())),
 			});
 			return;
 		}
@@ -320,7 +322,7 @@ export function HomeView(props: {
 			if (result.kind === "failed") {
 				setNotice({
 					tone: "error",
-					text: m().googleNotQueued(result.error.message),
+					text: m().googleNotQueued(failureMessageIn(result.error, locale())),
 				});
 				return;
 			}
@@ -379,7 +381,7 @@ export function HomeView(props: {
 		if (result.kind === "failed") {
 			setNotice({
 				tone: "error",
-				text: m().marketNotQueued(result.error.message),
+				text: m().marketNotQueued(failureMessageIn(result.error, locale())),
 			});
 			return;
 		}
@@ -516,7 +518,7 @@ export function HomeView(props: {
 					text: m().changedElsewhere,
 				});
 			} else {
-				setNotice({ tone: "error", text: m().notSaved(saved.error.message) });
+				setNotice({ tone: "error", text: m().notSaved(failureMessageIn(saved.error, locale())) });
 			}
 			return false;
 		}
@@ -655,7 +657,7 @@ export function HomeView(props: {
 		if (!result.ok) {
 			setNotice({
 				tone: "error",
-				text: m().notReset(result.error.message),
+				text: m().notReset(failureMessageIn(result.error, locale())),
 			});
 			return;
 		}

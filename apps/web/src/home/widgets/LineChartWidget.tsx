@@ -8,7 +8,8 @@ import { LazyChartViewer } from "../../chartViewer/LazyChartViewer.tsx";
 import { initialPresetForRange } from "../../chartViewer/openChart.ts";
 import { DisclosureSummary } from "../../components/ui.tsx";
 import { commonMessages } from "../../i18n/common.messages.ts";
-import { homeModelMessages, homeRangeMessages } from "../homeModel.messages.ts";
+import { marketRangeMessages } from "../../widgets/marketRange.messages.ts";
+import { homeModelMessages } from "../homeModel.messages.ts";
 import {
 	buildHomeLineModel,
 	formatValue,
@@ -51,7 +52,7 @@ export function LineChartWidget(props: {
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
 	const modelText = useMessages(homeModelMessages);
-	const rangeNames = useMessages(homeRangeMessages);
+	const rangeNames = useMessages(marketRangeMessages);
 	const common = useMessages(commonMessages);
 	const resolved = createMemo(() =>
 		props.widget.seriesIds.map((id) => props.seriesById().get(id) ?? null),

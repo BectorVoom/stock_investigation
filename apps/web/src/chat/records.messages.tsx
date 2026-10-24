@@ -5,6 +5,7 @@ import type {
 	PricingPowerRecord,
 	Security,
 } from "@research/contracts";
+import { type ReportedPositionChange, reportedPositionChangePhrase } from "@research/domain";
 import { defineMessages } from "@research/i18n";
 import type { JSX } from "solid-js";
 
@@ -21,6 +22,9 @@ type Classification = PricingPowerRecord["assessment"]["classification"];
  */
 export const recordsMessages = defineMessages({
 	en: {
+		/** A 13F quarter-to-quarter change; never implies a dated transaction (FR-008). */
+		positionChange: (change: ReportedPositionChange): string =>
+			reportedPositionChangePhrase(change),
 		sectionTitle: (title: string, count: number) => `${title} (${count})`,
 		/** Whether the ticker and exchange were checked against an official directory or only proposed. */
 		listingVerification: (verification: Security["listingVerification"]): string =>
@@ -164,6 +168,15 @@ export const recordsMessages = defineMessages({
 		runRecords: "run records",
 	},
 	ja: {
+		positionChange: (change) =>
+			({
+				"newly-reported-holding": "新たに報告された保有",
+				"increase-in-reported-position": "報告された保有の増加",
+				"decrease-in-reported-position": "報告された保有の減少",
+				"no-longer-reported": "報告されなくなった保有",
+				"unchanged-reported-position": "報告された保有に変化なし",
+				"not-reported": "報告された保有なし",
+			})[change],
 		sectionTitle: (title, count) => `${title}（${count}）`,
 		listingVerification: (verification) =>
 			({

@@ -5,6 +5,7 @@ import {
 	widgetCoreSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { notebookModelMessages } from "../../src/notebook/notebook.messages.ts";
 import { widgetFromAnswer, widgetFromComponent } from "../../src/notebook/notebookModel.ts";
 import {
 	duplicateWidget,
@@ -38,6 +39,7 @@ describe("notebook model", () => {
 	it("converts an answer to editable text with a title from its first words", () => {
 		const core = widgetFromAnswer(
 			chatMessage("Utility tenders are rising across the region this year."),
+			notebookModelMessages.en,
 		);
 		expect(core.type).toBe("text");
 		if (core.type !== "text") throw new Error("expected a text widget");
@@ -48,7 +50,7 @@ describe("notebook model", () => {
 	});
 
 	it("falls back for an empty answer", () => {
-		const core = widgetFromAnswer(chatMessage(""));
+		const core = widgetFromAnswer(chatMessage(""), notebookModelMessages.en);
 		expect(core.type).toBe("text");
 		if (core.type !== "text") throw new Error("expected a text widget");
 		expect(core.text).toBe("(empty answer)");

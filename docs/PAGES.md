@@ -340,6 +340,9 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
   Google Calendar; cancel a sign-in that is waiting or still being prepared
   (one Google step runs at a time); download the earnings calendar file
   (.ics); create, replace or revoke the calendar subscription link.
+- Language (ADR-0031): show the UI in English or 日本語, or follow the
+  browser ("Browser default"); applies at once, without a reload, and is
+  remembered in this browser.
 - View the session (owner id, sign-in method).
 - Issue a runner credential and copy the one-time token; revoke a credential.
 - Export a workspace as JSON or Markdown; import a workspace file and open it.
@@ -358,6 +361,8 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
   watchlist is empty) and the subscription link block (created date,
   replace and revoke with confirmation; the link is shown once and is a
   secret).
+- The Language section (the browser default names the language it stands
+  for; each language is named in itself).
 - The session, runner credentials (never tokens except once at issue),
   export/import.
 

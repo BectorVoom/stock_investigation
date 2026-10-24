@@ -13,8 +13,10 @@ import type { ApiResult } from "../api/http.ts";
 import { BUTTON, CHAT_PANEL, ErrorNotice, Notice, PanelCollapseButton } from "../components/ui.tsx";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
+import { sessionMessages } from "../lib/session.messages.ts";
 import { createWorkspaceSession, type WorkspaceSession } from "../lib/session.ts";
 import { NotebookPanel } from "../notebook/NotebookPanel.tsx";
+import { notebookModelMessages, notebookSessionMessages } from "../notebook/notebook.messages.ts";
 import { widgetFromAnswer } from "../notebook/notebookModel.ts";
 import { createNotebookSession, type NotebookSession } from "../notebook/notebookSession.ts";
 import type { WorkspaceMode } from "../notebook/types.ts";
@@ -60,15 +62,18 @@ export interface OpenWorkspaceProps {
  */
 export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 	const m = useMessages(chatMessages);
+	const notebookModelWords = useMessages(notebookModelMessages);
 	const session: WorkspaceSession = createWorkspaceSession(
 		props.api,
 		props.workspaceId,
 		props.visibility,
+		useMessages(sessionMessages),
 	);
 	const notebookSession: NotebookSession = createNotebookSession(
 		props.api,
 		props.workspaceId,
 		props.visibility,
+		useMessages(notebookSessionMessages),
 	);
 	const agents = createRemote(() => props.api.listAgents());
 	// Saved agent choices (backend, model, effort, limits, web access): loaded
@@ -184,7 +189,7 @@ export function OpenWorkspace(props: OpenWorkspaceProps): JSX.Element {
 
 	const addAnswer = (message: Message): void => {
 		trackNotebookSave(message.messageId, () =>
-			notebookSession.addWidget(widgetFromAnswer(message), {
+			notebookSession.addWidget(widgetFromAnswer(message, notebookModelWords()), {
 				kind: "chat",
 				messageId: message.messageId,
 				runId: message.runId,

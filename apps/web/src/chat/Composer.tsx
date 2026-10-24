@@ -27,6 +27,7 @@ import {
 } from "../components/ui.tsx";
 import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
+import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
 import { runnerNotice } from "../settings/agentSettingsModel.ts";
 import { fitTextarea, supportsFieldSizing } from "./autogrow.ts";
 import { composerMessages } from "./composer.messages.ts";
@@ -51,7 +52,7 @@ export type ComposerTarget = "research" | "notebook";
  */
 export function notebookFailureText(
 	failure: { readonly code: string },
-	text: ComposerText = composerMessages.en,
+	text: ComposerText,
 ): string | null {
 	const code: string = failure.code;
 	if (code === "AGENT_NOT_CONFIGURED") return text.notebookNeedsBackend;
@@ -101,6 +102,7 @@ export function Composer(props: {
 	) => Promise<ApiResult<NotebookAssistResponse>>;
 }): JSX.Element {
 	const m = useMessages(composerMessages);
+	const agentText = useMessages(agentSettingsModelMessages);
 	const runText = useMessages(runMessages);
 	const [draft, setDraft] = createSignal<ComposerDraft>(defaultComposerDraft());
 	const [submitting, setSubmitting] = createSignal(false);
@@ -129,9 +131,9 @@ export function Composer(props: {
 		() => props.settings.status === "ready" && props.settings.value.origin === "carried-over",
 	);
 	const evaluation = createMemo(() =>
-		evaluateComposer(draft(), agents(), settings(), props.workspaceId, m()),
+		evaluateComposer(draft(), agents(), settings(), props.workspaceId, m(), agentText()),
 	);
-	const offlineNotice = createMemo(() => runnerNotice(agents()));
+	const offlineNotice = createMemo(() => runnerNotice(agents(), agentText()));
 	const patch = (change: Partial<ComposerDraft>) =>
 		setDraft((current) => ({ ...current, ...change }));
 
@@ -199,6 +201,7 @@ export function Composer(props: {
 				settings(),
 				props.workspaceId,
 				m(),
+				agentText(),
 			).request;
 			if (candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint) {
 				request = candidate;
@@ -381,6 +384,7 @@ export function Composer(props: {
 			settings(),
 			props.workspaceId,
 			m(),
+			agentText(),
 		).request;
 		return candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint;
 	};

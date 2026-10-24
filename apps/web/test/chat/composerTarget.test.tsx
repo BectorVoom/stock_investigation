@@ -12,6 +12,7 @@ import {
 	notebookFailureLink,
 	notebookFailureText,
 } from "../../src/chat/Composer.tsx";
+import { composerMessages } from "../../src/chat/composer.messages.ts";
 import { addressesNotebook } from "../../src/chat/composerTarget.ts";
 import type { Remote } from "../../src/lib/remote.ts";
 import {
@@ -320,14 +321,14 @@ describe("composer target (unit)", () => {
 	});
 
 	it("maps the notebook-assistant failure codes to their sentences", () => {
-		expect(notebookFailureText({ code: "AGENT_NOT_CONFIGURED" })).toBe(
+		expect(notebookFailureText({ code: "AGENT_NOT_CONFIGURED" }, composerMessages.en)).toBe(
 			"The notebook assistant needs an agent backend.",
 		);
 		expect(notebookFailureLink({ code: "AGENT_NOT_CONFIGURED" })).toBe(true);
-		expect(notebookFailureText({ code: "NOTEBOOK_ASSIST_ACTIVE" })).toBe(
+		expect(notebookFailureText({ code: "NOTEBOOK_ASSIST_ACTIVE" }, composerMessages.en)).toBe(
 			"One notebook request runs at a time. Wait for it to finish and try again.",
 		);
 		expect(notebookFailureLink({ code: "NOTEBOOK_ASSIST_ACTIVE" })).toBe(false);
-		expect(notebookFailureText({ code: "INTERNAL" })).toBeNull();
+		expect(notebookFailureText({ code: "INTERNAL" }, composerMessages.en)).toBeNull();
 	});
 });

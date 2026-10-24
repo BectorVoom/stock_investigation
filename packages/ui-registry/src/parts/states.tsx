@@ -1,7 +1,7 @@
 import { useMessages } from "@research/i18n/solid";
 import type { JSX } from "solid-js";
 import { cellReasonMessages } from "../cellReasons.messages.ts";
-import { cellReasonText } from "../datasetGuard.ts";
+import { cellReasonText } from "../cellReasonText.ts";
 import { stateMessages } from "./parts.messages.tsx";
 
 const FALLBACK_KEY = {

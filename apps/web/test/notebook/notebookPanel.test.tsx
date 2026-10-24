@@ -4,6 +4,7 @@ import { createRoot } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../../src/api/client.ts";
 import { NotebookPanel } from "../../src/notebook/NotebookPanel.tsx";
+import { notebookSessionMessages } from "../../src/notebook/notebook.messages.ts";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
 import {
 	createWidgetClipboardStore,
@@ -41,7 +42,12 @@ function createSession(clipboard?: WidgetClipboardStore): void {
 	// keep it: creating it inside `render` would re-create it on every
 	// render-effect re-run (Solid's `render` is reactive), fetching forever.
 	const release = createRoot((dispose) => {
-		session = createNotebookSession(api, WORKSPACE_ID, ALWAYS_VISIBLE);
+		session = createNotebookSession(
+			api,
+			WORKSPACE_ID,
+			ALWAYS_VISIBLE,
+			() => notebookSessionMessages.en,
+		);
 		return dispose;
 	});
 	rootDisposers.push(release);
@@ -599,7 +605,12 @@ describe("notebook panel", () => {
 		const api = createApiClient({ fetch: backend.fetch });
 		rootDisposers.push(
 			createRoot((dispose) => {
-				session = createNotebookSession(api, WORKSPACE_ID, ALWAYS_VISIBLE);
+				session = createNotebookSession(
+					api,
+					WORKSPACE_ID,
+					ALWAYS_VISIBLE,
+					() => notebookSessionMessages.en,
+				);
 				return dispose;
 			}),
 		);

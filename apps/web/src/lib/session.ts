@@ -12,7 +12,7 @@ import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { buildCommand, type UiOperation } from "../canvas/commands.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "./polling.ts";
 import { createReadGate } from "./readGate.ts";
-import { sessionMessages } from "./session.messages.ts";
+import type { sessionMessages } from "./session.messages.ts";
 
 /** The words of the session's notices, in the UI language. */
 export type SessionText = MessagesOf<typeof sessionMessages>;
@@ -156,7 +156,7 @@ export function createWorkspaceSession(
 	api: ApiClient,
 	workspaceId: string,
 	visibility: VisibilitySource,
-	text: Accessor<SessionText> = () => sessionMessages.en,
+	text: Accessor<SessionText>,
 ): WorkspaceSession {
 	const [view, setView] = createSignal<WorkspaceView | null>(null);
 	const [conversation, setConversation] = createSignal<Conversation | null>(null);

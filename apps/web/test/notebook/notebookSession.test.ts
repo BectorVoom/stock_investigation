@@ -3,6 +3,7 @@ import { cleanup } from "@solidjs/testing-library";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApiClient } from "../../src/api/client.ts";
+import { notebookSessionMessages } from "../../src/notebook/notebook.messages.ts";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
 import type { FakeBackend } from "../fakeBackend.ts";
 import { ALWAYS_VISIBLE, createControllableVisibility, deferred } from "../fakeBackend.ts";
@@ -29,7 +30,12 @@ function setup(widgets: readonly NotebookWidget[] = [], visibility = ALWAYS_VISI
 	const api = createApiClient({ fetch: backend.fetch });
 	let session!: NotebookSession;
 	const dispose = createRoot((release) => {
-		session = createNotebookSession(api, WORKSPACE_ID, visibility);
+		session = createNotebookSession(
+			api,
+			WORKSPACE_ID,
+			visibility,
+			() => notebookSessionMessages.en,
+		);
 		return release;
 	});
 	return { backend, server, session, dispose };

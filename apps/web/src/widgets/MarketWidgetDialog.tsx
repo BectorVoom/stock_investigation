@@ -21,6 +21,7 @@ import { HOME_RANGES } from "../home/homeModel.ts";
 import "../home/shoelace.ts";
 import { WIDGET_REGISTRY } from "../home/widgetRegistry.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
+import { marketRangeMessages } from "./marketRange.messages.ts";
 import { marketWidgetDialogMessages } from "./marketWidgetDialog.messages.ts";
 import { newWidgetId } from "./widgetModel.ts";
 import { widgetTypeMessages } from "./widgetTypes.messages.ts";
@@ -149,6 +150,7 @@ interface MarketWidgetFormProps {
 
 function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 	const m = useMessages(marketWidgetDialogMessages);
+	const rangeNames = useMessages(marketRangeMessages);
 	const common = useMessages(commonMessages);
 	const typeWords = useMessages(widgetTypeMessages);
 	/** The type is chosen before the form opens (the add menu) and never changes in it. */
@@ -511,7 +513,7 @@ function MarketWidgetForm(props: MarketWidgetFormProps): JSX.Element {
 						}}
 					>
 						<For each={HOME_RANGES}>
-							{(entry) => <sl-option value={entry}>{m().rangeLabel(entry)}</sl-option>}
+							{(entry) => <sl-option value={entry}>{rangeNames()[entry]}</sl-option>}
 						</For>
 					</sl-select>
 				</Show>

@@ -8,8 +8,12 @@ import {
 } from "@research/contracts";
 import type { MessagesOf } from "@research/i18n";
 import type { ResearchBudget } from "../api/client.ts";
-import { type AgentOption, agentOptions } from "../settings/agentSettingsModel.ts";
-import { composerMessages } from "./composer.messages.ts";
+import {
+	type AgentOption,
+	type AgentSettingsText,
+	agentOptions,
+} from "../settings/agentSettingsModel.ts";
+import type { composerMessages } from "./composer.messages.ts";
 
 export type ComposerText = MessagesOf<typeof composerMessages>;
 
@@ -63,9 +67,11 @@ export function evaluateComposer(
 	agents: AgentsResponse | null,
 	settings: AgentSettings | null,
 	workspaceId: string,
-	text: ComposerText = composerMessages.en,
+	text: ComposerText,
+	/** Words of the backend options (names, availability) in the UI language. */
+	agentText: AgentSettingsText,
 ): ComposerEvaluation {
-	const options = agentOptions(agents);
+	const options = agentOptions(agents, agentText);
 	const selectedAgent =
 		settings?.defaultAgentId == null
 			? null

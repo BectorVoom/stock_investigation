@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../../src/api/client.ts";
 import { ensureHomeIconLibraries } from "../../src/home/shoelace.ts";
 import { NotebookPanel } from "../../src/notebook/NotebookPanel.tsx";
+import { notebookSessionMessages } from "../../src/notebook/notebook.messages.ts";
 import { createNotebookSession, type NotebookSession } from "../../src/notebook/notebookSession.ts";
 import type { WidgetMarketContext } from "../../src/widgets/marketContext.ts";
 import { WidgetBody } from "../../src/widgets/WidgetBody.tsx";
@@ -278,7 +279,12 @@ function mountPanel(
 	let session!: NotebookSession;
 	rootDisposers.push(
 		createRoot((dispose) => {
-			session = createNotebookSession(api, WORKSPACE_ID, ALWAYS_VISIBLE);
+			session = createNotebookSession(
+				api,
+				WORKSPACE_ID,
+				ALWAYS_VISIBLE,
+				() => notebookSessionMessages.en,
+			);
 			return dispose;
 		}),
 	);

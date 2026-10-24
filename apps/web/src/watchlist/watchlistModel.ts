@@ -6,7 +6,6 @@ import type {
 	WatchMarket,
 } from "@research/contracts";
 import {
-	GOOGLE_CALENDAR_FAILURE_REASONS,
 	type GoogleCalendarState,
 	googleCalendarFailureCodeSchema,
 	parseStockId,
@@ -14,7 +13,7 @@ import {
 import type { MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
 import { formatInstant } from "../lib/format.ts";
-import { watchlistModelMessages } from "./watchlistModel.messages.ts";
+import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
 /**
  * Pure view-model for the Watchlist page and the Home earnings-calendar
@@ -200,9 +199,9 @@ export function isNetworkFailure(failure: ApiFailure): boolean {
  * reason for a code the contract does not know (a runner that sent a
  * non-GOOGLE code) — provider text never reaches the UI.
  */
-export function googleFailureReason(code: string): string {
+export function googleFailureReason(code: string, text: WatchlistModelText): string {
 	const known = googleCalendarFailureCodeSchema.safeParse(code);
-	return GOOGLE_CALENDAR_FAILURE_REASONS[known.success ? known.data : "GOOGLE_REQUEST_FAILED"];
+	return text.googleFailure(known.success ? known.data : "GOOGLE_REQUEST_FAILED");
 }
 
 /**
@@ -241,10 +240,7 @@ export function googleAutoSyncWanted(
  * while it is translated; every caller should pass the current language's
  * table.
  */
-export function googleWidgetStatus(
-	state: GoogleCalendarState,
-	text: WatchlistModelText = watchlistModelMessages.en,
-): string {
+export function googleWidgetStatus(state: GoogleCalendarState, text: WatchlistModelText): string {
 	switch (state.status) {
 		case "connected":
 			if (state.activeRunId !== null) {
@@ -270,20 +266,9 @@ export function googleWidgetStatus(
  */
 export const EARNINGS_AUTO_REFRESH_STALE_MS = 24 * 3_600_000;
 
-export type EarningsAutoRefreshReason = "never-refreshed" | "stale";
+export type { EarningsAutoRefreshReason } from "./watchlistModel.messages.ts";
 
-/**
- * The English announce text per reason. Kept only for Home's existing call
- * while it is translated (technical debt: delete once Home passes
- * `text.autoRefreshNotice(reason)` from `watchlistModelMessages`, as the
- * Watchlist page does).
- */
-export const EARNINGS_AUTO_REFRESH_NOTICE: {
-	readonly [R in EarningsAutoRefreshReason]: string;
-} = {
-	"never-refreshed": watchlistModelMessages.en.autoRefreshNotice("never-refreshed"),
-	stale: watchlistModelMessages.en.autoRefreshNotice("stale"),
-};
+import type { EarningsAutoRefreshReason } from "./watchlistModel.messages.ts";
 
 /** True when at least one stock was never refreshed (`lastRefreshedAt === null`). */
 export function hasNeverRefreshedStock(current: WatchlistResponse): boolean {

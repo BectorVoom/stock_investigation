@@ -6,6 +6,7 @@ import {
 	sourceHost,
 	titleOrHost,
 } from "../src/citationModel.ts";
+import { citationMessages } from "../src/citations.messages.ts";
 
 describe("citation numbering (per scope, first appearance wins)", () => {
 	it("numbers distinct evidence in order of first appearance starting at 1", () => {
@@ -56,9 +57,13 @@ describe("citation numbering (per scope, first appearance wins)", () => {
 	it("names hosts, titles and chip labels", () => {
 		expect(sourceHost("https://news.example.org/a/1?utm=x")).toBe("news.example.org");
 		expect(sourceHost("not a url")).toBeNull();
-		expect(titleOrHost("  ", "https://news.example.org/a")).toBe("news.example.org");
-		expect(titleOrHost("Grid outlook", "https://news.example.org/a")).toBe("Grid outlook");
-		expect(chipLabel(2, "Grid outlook", "https://news.example.org/a")).toBe(
+		expect(titleOrHost("  ", "https://news.example.org/a", citationMessages.en)).toBe(
+			"news.example.org",
+		);
+		expect(titleOrHost("Grid outlook", "https://news.example.org/a", citationMessages.en)).toBe(
+			"Grid outlook",
+		);
+		expect(chipLabel(2, "Grid outlook", "https://news.example.org/a", citationMessages.en)).toBe(
 			"Source 2: Grid outlook",
 		);
 	});

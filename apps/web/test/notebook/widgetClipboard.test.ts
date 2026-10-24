@@ -1,6 +1,7 @@
 import { NOTEBOOK_LIMITS, type NotebookWidgetOrigin, type WidgetCore } from "@research/contracts";
 import { createRoot } from "solid-js";
 import { afterEach, describe, expect, it } from "vitest";
+import { widgetClipboardMessages } from "../../src/widgets/widgetClipboard.messages.ts";
 import {
 	clipboardCountText,
 	createWidgetClipboardStore,
@@ -251,13 +252,13 @@ describe("resolveClipboardPaste", () => {
 	});
 
 	it("words the announcements and the skipped notice", () => {
-		expect(clipboardCountText(1, "Copied")).toBe("Copied 1 widget.");
-		expect(clipboardCountText(2, "Cut")).toBe("Cut 2 widgets.");
-		expect(clipboardCountText(3, "Pasted")).toBe("Pasted 3 widgets.");
-		expect(skippedResearchNoticeText(1)).toBe(
+		expect(clipboardCountText(1, "Copied", widgetClipboardMessages.en)).toBe("Copied 1 widget.");
+		expect(clipboardCountText(2, "Cut", widgetClipboardMessages.en)).toBe("Cut 2 widgets.");
+		expect(clipboardCountText(3, "Pasted", widgetClipboardMessages.en)).toBe("Pasted 3 widgets.");
+		expect(skippedResearchNoticeText(1, widgetClipboardMessages.en)).toBe(
 			"1 research result stays in its own chat and was not pasted.",
 		);
-		expect(skippedResearchNoticeText(2)).toBe(
+		expect(skippedResearchNoticeText(2, widgetClipboardMessages.en)).toBe(
 			"2 research results stay in their own chat and were not pasted.",
 		);
 	});

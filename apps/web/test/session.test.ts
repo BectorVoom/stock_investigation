@@ -2,6 +2,7 @@ import { createRoot } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import type { VisibilitySource } from "../src/lib/polling.ts";
+import { sessionMessages } from "../src/lib/session.messages.ts";
 import { createWorkspaceSession, type WorkspaceSession } from "../src/lib/session.ts";
 import { initialServerState, installWorkspaceRoutes, type ServerState } from "./appHarness.tsx";
 import {
@@ -36,6 +37,7 @@ function startSession(visibility: VisibilitySource): WorkspaceSession {
 			createApiClient({ fetch: backend.fetch }),
 			WORKSPACE_ID,
 			visibility,
+			() => sessionMessages.en,
 		);
 	});
 }

@@ -11,6 +11,7 @@ import type { ResearchBudget } from "../api/client.ts";
 import type { ApiFailure, ApiResult } from "../api/http.ts";
 import { SpendField } from "../components/SpendField.tsx";
 import { BUTTON, BUTTON_DANGER, BUTTON_PRIMARY, ErrorNotice } from "../components/ui.tsx";
+import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
 import {
 	type CostModelView,
 	costStatement,
@@ -29,7 +30,7 @@ type RunText = MessagesOf<typeof runMessages>;
  * appears only when the run's own request says web access was off — no new
  * API field is added for this.
  */
-export function noEvidenceHint(run: ResearchRun, text: RunText = runMessages.en): string | null {
+export function noEvidenceHint(run: ResearchRun, text: RunText): string | null {
 	if (run.failureCode !== "NO_EVIDENCE_COLLECTED") return null;
 	switch (run.failureDetail) {
 		case "NO_TOOL_REQUESTED":
@@ -48,10 +49,7 @@ export function noEvidenceHint(run: ResearchRun, text: RunText = runMessages.en)
  * retried after a backoff, so "a few minutes" is the honest wait; another
  * model is the way out when one model's upstream stays overloaded.
  */
-export function providerFailureHint(
-	run: ResearchRun,
-	text: RunText = runMessages.en,
-): string | null {
+export function providerFailureHint(run: ResearchRun, text: RunText): string | null {
 	switch (run.failureCode) {
 		case "PROVIDER_UNAVAILABLE":
 			return text.providerUnavailable;
@@ -86,7 +84,8 @@ export function ApprovalForm(props: {
 	);
 	const [failure, setFailure] = createSignal<ApiFailure | null>(null);
 	const [submitting, setSubmitting] = createSignal(false);
-	const evaluation = createMemo(() => evaluateBudget(draft(), props.costModel));
+	const agentText = useMessages(agentSettingsModelMessages);
+	const evaluation = createMemo(() => evaluateBudget(draft(), props.costModel, {}, agentText()));
 
 	const submit = async (event: SubmitEvent) => {
 		event.preventDefault();
@@ -122,7 +121,7 @@ export function ApprovalForm(props: {
 					spendConsentRequired={evaluation().spendConsentRequired}
 				/>
 			</Show>
-			<p class="text-xs text-slate-800">{costStatement(props.costModel)}</p>
+			<p class="text-xs text-slate-800">{costStatement(props.costModel, agentText())}</p>
 			<Show when={evaluation().problems.length > 0}>
 				<ul class="list-disc pl-5 text-xs text-slate-700">
 					<For each={evaluation().problems}>{(problem) => <li>{problem}</li>}</For>

@@ -1,8 +1,32 @@
-import type { EarningsTiming, WatchMarket } from "@research/contracts";
+import {
+	type EarningsTiming,
+	GOOGLE_CALENDAR_FAILURE_REASONS,
+	type GoogleCalendarFailureCode,
+	type WatchMarket,
+} from "@research/contracts";
 import { defineMessages } from "@research/i18n";
-import type { EarningsAutoRefreshReason } from "./watchlistModel.ts";
 
 type StatedTiming = Exclude<EarningsTiming, "unknown">;
+
+/** Why the view queues one automatic earnings-date refresh (`earningsAutoRefreshReason`). */
+export type EarningsAutoRefreshReason = "never-refreshed" | "stale";
+
+/** The fixed Japanese sentence per Google Calendar failure code (English is the contract's). */
+const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } = {
+	GOOGLE_NOT_CONFIGURED:
+		"Google Calendar が設定されていません。apps/runner/.env に GOOGLE_OAUTH_CLIENT_ID と GOOGLE_OAUTH_CLIENT_SECRET を設定してください。",
+	GOOGLE_AUTH_TIMEOUT:
+		"Google のサインインが 5 分でタイムアウトしました。もう一度接続してください。",
+	GOOGLE_CONSENT_DENIED: "Google のサインインが完了しませんでした。同意が拒否されました。",
+	GOOGLE_SCOPE_MISSING:
+		"Google がカレンダーへのアクセスを許可しませんでした。再接続してアクセスを許可してください。",
+	GOOGLE_AUTH_EXPIRED:
+		"Google との接続の有効期限が切れました。Google Calendar に再接続してください。",
+	GOOGLE_RATE_LIMITED:
+		"Google Calendar の利用回数の上限に達しました。しばらくしてから再試行してください。",
+	GOOGLE_REQUEST_FAILED: "Google Calendar へのリクエストに失敗しました。",
+	GOOGLE_NOT_CONNECTED: "Google Calendar が接続されていません。同期する前に接続してください。",
+};
 
 /**
  * The sentences the pure watchlist model builds (ADR-0031), shared by the
@@ -12,6 +36,8 @@ type StatedTiming = Exclude<EarningsTiming, "unknown">;
  */
 export const watchlistModelMessages = defineMessages({
 	en: {
+		googleFailure: (code: GoogleCalendarFailureCode): string =>
+			GOOGLE_CALENDAR_FAILURE_REASONS[code],
 		marketName: (market: WatchMarket): string => ({ US: "US", JP: "Japan" })[market],
 		chooseMarket: "Choose a market.",
 		enterSymbol: "Enter a symbol.",
@@ -47,6 +73,7 @@ export const watchlistModelMessages = defineMessages({
 			})[reason],
 	},
 	ja: {
+		googleFailure: (code) => JA_GOOGLE_FAILURES[code],
 		marketName: (market) => ({ US: "米国", JP: "日本" })[market],
 		chooseMarket: "市場を選んでください。",
 		enterSymbol: "銘柄コードを入力してください。",

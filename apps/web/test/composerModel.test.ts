@@ -5,11 +5,13 @@ import {
 	RUN_LIMITS,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
+import { composerMessages } from "../src/chat/composer.messages.ts";
 import {
 	type ComposerDraft,
 	defaultComposerDraft,
 	evaluateComposer,
 } from "../src/chat/composerModel.ts";
+import { agentSettingsModelMessages } from "../src/settings/agentSettingsModel.messages.ts";
 import { AGENT_SETTINGS, AGENTS, NO_RUNNER_AGENTS, WORKSPACE_ID } from "./fixtures.ts";
 
 const OPENCODE_AGENTS = agentsResponseSchema.parse({
@@ -49,7 +51,14 @@ const METERED_SETTINGS = settings({
 
 describe("composer evaluation", () => {
 	it("builds the research request from the saved agent settings under the fixed limits", () => {
-		const result = evaluateComposer(draft(), AGENTS, AGENT_SETTINGS, WORKSPACE_ID);
+		const result = evaluateComposer(
+			draft(),
+			AGENTS,
+			AGENT_SETTINGS,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		expect(result.problems).toEqual([]);
 		expect(result.model).toBeNull();
 		expect(result.spendConsentRequired).toBe(false);
@@ -74,6 +83,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			METERED_SETTINGS,
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.problems).toEqual([]);
 		expect(result.model).toBe("provider/model");
@@ -86,7 +97,14 @@ describe("composer evaluation", () => {
 
 	it("never sends a metered allowance for a plan-limited backend, whatever is stored", () => {
 		const stored = settings({ budget: { ...AGENT_SETTINGS.budget, maxSpendUsd: 5 } });
-		const result = evaluateComposer(draft(), AGENTS, stored, WORKSPACE_ID);
+		const result = evaluateComposer(
+			draft(),
+			AGENTS,
+			stored,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		expect(result.problems).toEqual([]);
 		expect(result.budget?.maxSpendUsd).toBeNull();
 		expect(result.request?.budget.maxSpendUsd).toBeNull();
@@ -99,6 +117,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			settings({ defaultAgentId: null }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.request).toBeNull();
 		expect(result.problems).toContain("Choose a default agent backend in Settings → AI agent.");
@@ -110,6 +130,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			settings({ defaultAgentId: "codex" }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.request).toBeNull();
 		expect(
@@ -126,6 +148,8 @@ describe("composer evaluation", () => {
 			OPENCODE_AGENTS,
 			settings({ defaultAgentId: "opencode" }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(missing.request).toBeNull();
 		expect(missing.problems).toContain(
@@ -137,6 +161,8 @@ describe("composer evaluation", () => {
 			OPENCODE_AGENTS,
 			settings({ defaultAgentId: "opencode", models: { opencode: "provider/model" } }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(chosen.problems).toEqual([]);
 		expect(chosen.request?.model).toBe("provider/model");
@@ -148,6 +174,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			settings({ defaultAgentId: "openrouter", models: { openrouter: "provider/model" } }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.request).toBeNull();
 		expect(result.spendConsentRequired).toBe(false);
@@ -157,7 +185,14 @@ describe("composer evaluation", () => {
 	});
 
 	it("requires the one-time consent on the form for a metered run", () => {
-		const unconsented = evaluateComposer(draft(), AGENTS, METERED_SETTINGS, WORKSPACE_ID);
+		const unconsented = evaluateComposer(
+			draft(),
+			AGENTS,
+			METERED_SETTINGS,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		expect(unconsented.request).toBeNull();
 		expect(unconsented.spendConsentRequired).toBe(true);
 		expect(unconsented.problems).toEqual(["Confirm consent to metered spend on the form itself."]);
@@ -167,6 +202,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			METERED_SETTINGS,
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(consented.request?.budget.maxSpendUsd).toBe(3);
 	});
@@ -177,17 +214,33 @@ describe("composer evaluation", () => {
 			NO_RUNNER_AGENTS,
 			settings({ defaultAgentId: "claude-code" }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.problems).toEqual([]);
 		expect(result.request?.budget.maxSpendUsd).toBeNull();
 	});
 
 	it("waits for the agent list and the saved settings before allowing a submission", () => {
-		const noAgents = evaluateComposer(draft(), null, AGENT_SETTINGS, WORKSPACE_ID);
+		const noAgents = evaluateComposer(
+			draft(),
+			null,
+			AGENT_SETTINGS,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		expect(noAgents.request).toBeNull();
 		expect(noAgents.problems).toContain("Agent backends are still loading.");
 
-		const noSettings = evaluateComposer(draft(), AGENTS, null, WORKSPACE_ID);
+		const noSettings = evaluateComposer(
+			draft(),
+			AGENTS,
+			null,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		expect(noSettings.request).toBeNull();
 		expect(noSettings.problems).toContain("Agent settings are still loading.");
 	});
@@ -198,6 +251,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			settings({ defaultAgentId: null }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.request).toBeNull();
 		expect(result.problems).toEqual([
@@ -213,6 +268,8 @@ describe("composer evaluation", () => {
 			AGENTS,
 			AGENT_SETTINGS,
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(result.request?.markets).toEqual(["US"]);
 		expect(result.request?.question).toBe("Battery demand?");
@@ -220,7 +277,14 @@ describe("composer evaluation", () => {
 	});
 
 	it("carries no cost statement or cost model; limits and cost live in Settings → AI agent", () => {
-		const result = evaluateComposer(draft(), AGENTS, AGENT_SETTINGS, WORKSPACE_ID);
+		const result = evaluateComposer(
+			draft(),
+			AGENTS,
+			AGENT_SETTINGS,
+			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
+		);
 		// Owner decision 2026-10-12: the composer shows the backend/model/effort
 		// summary and the consent amount, never the limits or cost statement.
 		expect("costStatement" in result).toBe(false);
@@ -248,6 +312,8 @@ describe("composer evaluation", () => {
 			freeAgents,
 			settings({ defaultAgentId: OPENROUTER_FREE_AGENT_ID }),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(missing.request).toBeNull();
 		expect(missing.problems).toContain(
@@ -262,6 +328,8 @@ describe("composer evaluation", () => {
 				models: { [OPENROUTER_FREE_AGENT_ID]: "a/model:free" },
 			}),
 			WORKSPACE_ID,
+			composerMessages.en,
+			agentSettingsModelMessages.en,
 		);
 		expect(chosen.problems).toEqual([]);
 		expect(chosen.request?.model).toBe("a/model:free");

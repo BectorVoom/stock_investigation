@@ -57,7 +57,7 @@ const signedPercentFormat = new Intl.NumberFormat("en-US", {
 /** Thirty minutes: a dashboard whose newest refresh is older queues one auto-refresh per visit. */
 export const HOME_AUTO_REFRESH_STALE_MS = 30 * 60 * 1_000;
 
-/** The line chart's ranges; their names are `homeRangeMessages` (`homeModel.messages.ts`). */
+/** The line chart's ranges; their names are `marketRangeMessages` (`widgets/marketRange.messages.ts`). */
 export const HOME_RANGES: readonly MarketRange[] = ["1m", "3m", "6m", "1y", "3y", "max"];
 
 export function seriesById(series: readonly MarketSeries[]): ReadonlyMap<string, MarketSeries> {

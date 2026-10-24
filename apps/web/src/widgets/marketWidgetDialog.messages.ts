@@ -1,4 +1,4 @@
-import type { MarketCatalogEntry, MarketProviderId, MarketRange } from "@research/contracts";
+import type { MarketCatalogEntry, MarketProviderId } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
 import { WIDGET_SIZE_SHAPES } from "@research/widget-grid/core";
 
@@ -33,25 +33,6 @@ const JAPANESE_CATEGORIES: { readonly [C in Category]: string } = {
 	fx: "為替",
 	commodity: "商品",
 	equity: "株式",
-};
-
-/** The range names of `HOME_RANGE_LABELS` (Home's range select shows the same). */
-const ENGLISH_RANGES: { readonly [R in MarketRange]: string } = {
-	"1m": "Past month",
-	"3m": "Past 3 months",
-	"6m": "Past 6 months",
-	"1y": "Past year",
-	"3y": "Past 3 years",
-	max: "All data",
-};
-
-const JAPANESE_RANGES: { readonly [R in MarketRange]: string } = {
-	"1m": "過去 1 か月",
-	"3m": "過去 3 か月",
-	"6m": "過去 6 か月",
-	"1y": "過去 1 年",
-	"3y": "過去 3 年",
-	max: "全期間",
 };
 
 const ENGLISH_SYMBOL_EXAMPLES: { readonly [P in MarketProviderId]: string } = {
@@ -118,7 +99,6 @@ export const marketWidgetDialogMessages = defineMessages({
 		symbolExample: (provider: MarketProviderId): string => ENGLISH_SYMBOL_EXAMPLES[provider],
 		addSeries: "Add series",
 		range: "Range",
-		rangeLabel: (range: MarketRange): string => ENGLISH_RANGES[range],
 		addWidget: "Add widget",
 		saveWidget: "Save widget",
 	},
@@ -164,7 +144,6 @@ export const marketWidgetDialogMessages = defineMessages({
 		symbolExample: (provider) => JAPANESE_SYMBOL_EXAMPLES[provider],
 		addSeries: "系列を追加",
 		range: "期間",
-		rangeLabel: (range) => JAPANESE_RANGES[range],
 		addWidget: "ウィジェットを追加",
 		saveWidget: "ウィジェットを保存",
 	},

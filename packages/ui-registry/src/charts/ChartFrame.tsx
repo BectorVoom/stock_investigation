@@ -2,7 +2,8 @@ import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
 import { createMemo, For, type JSX, Show } from "solid-js";
 import { cellReasonMessages } from "../cellReasons.messages.ts";
-import { cellReasonText, countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
+import { cellReasonText } from "../cellReasonText.ts";
+import { countUnsourcedNumbers, type GuardedDataset } from "../datasetGuard.ts";
 import { formatAxisTick } from "../format.ts";
 import { CitationScope, SourceList } from "../parts/citations.tsx";
 import { cellSourceIdsInOrder, DatasetTable } from "../parts/DatasetTable.tsx";
@@ -163,11 +164,7 @@ type ChartText = MessagesOf<typeof chartMessages>;
  * always has both). `text` is the current language's chart words (English
  * when omitted).
  */
-export function axesPhrase(
-	yAxisTitle: string,
-	xAxisTitle: string,
-	text: ChartText = chartMessages.en,
-): string {
+export function axesPhrase(yAxisTitle: string, xAxisTitle: string, text: ChartText): string {
 	const y = yAxisTitle.trim();
 	const x = xAxisTitle.trim();
 	if (y.length > 0 && x.length > 0) return text.axesBoth(y, x);

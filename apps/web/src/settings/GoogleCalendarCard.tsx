@@ -9,6 +9,7 @@ import { BUTTON, BUTTON_DANGER, ConfirmDialog, ErrorNotice } from "../components
 import { commonMessages } from "../i18n/common.messages.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createGoogleSyncQueue } from "../watchlist/googleSyncQueue.ts";
+import { watchlistModelMessages } from "../watchlist/watchlistModel.messages.ts";
 import { googleFailureReason } from "../watchlist/watchlistModel.ts";
 import { googleCalendarMessages } from "./calendarSettings.messages.tsx";
 
@@ -35,6 +36,7 @@ export function GoogleCalendarCard(props: {
 	readonly onQueueFailed: (title: string, error: ApiFailure) => void;
 }): JSX.Element {
 	const m = useMessages(googleCalendarMessages);
+	const modelText = useMessages(watchlistModelMessages);
 	const common = useMessages(commonMessages);
 	const [queueBusy, setQueueBusy] = createSignal(false);
 	const [disconnectConfirm, setDisconnectConfirm] = createSignal<HTMLElement | null>(null);
@@ -184,7 +186,7 @@ export function GoogleCalendarCard(props: {
 					{m().reconnectToKeep(
 						props.state.lastFailure === null
 							? m().needsAttention
-							: googleFailureReason(props.state.lastFailure.code),
+							: googleFailureReason(props.state.lastFailure.code, modelText()),
 					)}
 				</p>
 				<div class="mt-1">
@@ -205,7 +207,7 @@ export function GoogleCalendarCard(props: {
 						<ErrorNotice
 							failure={{
 								code: current().code,
-								message: googleFailureReason(current().code),
+								message: googleFailureReason(current().code, modelText()),
 								detail: null,
 								issues: [],
 							}}

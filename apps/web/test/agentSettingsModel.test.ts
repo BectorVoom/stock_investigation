@@ -126,7 +126,7 @@ describe("cost statement (FR-016)", () => {
 
 describe("budget evaluation", () => {
 	it("gives a plan-limited backend the fixed limits with no spend authorized (ADR-0029)", () => {
-		expect(evaluateBudget(budget(), "plan-limited")).toEqual({
+		expect(evaluateBudget(budget(), "plan-limited", {}, agentSettingsModelMessages.en)).toEqual({
 			budget: {
 				maxAgentSteps: 12,
 				maxToolCalls: 60,
@@ -143,13 +143,15 @@ describe("budget evaluation", () => {
 		const result = evaluateBudget(
 			budget({ maxSpendUsd: "25", spendConsent: true }),
 			"plan-limited",
+			{},
+			agentSettingsModelMessages.en,
 		);
 		expect(result.budget?.maxSpendUsd).toBeNull();
 		expect(result.spendConsentRequired).toBe(false);
 	});
 
 	it("blocks a metered backend with no spend limit", () => {
-		const result = evaluateBudget(budget(), "metered");
+		const result = evaluateBudget(budget(), "metered", {}, agentSettingsModelMessages.en);
 		expect(result.budget).toBeNull();
 		expect(result.spendConsentRequired).toBe(true);
 		expect(result.problems).toContain(
@@ -158,7 +160,12 @@ describe("budget evaluation", () => {
 	});
 
 	it("blocks a metered backend with a spend limit but no consent", () => {
-		const result = evaluateBudget(budget({ maxSpendUsd: "2.5" }), "metered");
+		const result = evaluateBudget(
+			budget({ maxSpendUsd: "2.5" }),
+			"metered",
+			{},
+			agentSettingsModelMessages.en,
+		);
 		expect(result.budget).toBeNull();
 		expect(result.problems).toEqual(["Confirm consent to metered spend before submitting."]);
 	});
@@ -169,35 +176,62 @@ describe("budget evaluation", () => {
 		"50.01",
 		"abc",
 	])("rejects a metered spend of %s even with consent", (spend) => {
-		const result = evaluateBudget(budget({ maxSpendUsd: spend, spendConsent: true }), "metered");
+		const result = evaluateBudget(
+			budget({ maxSpendUsd: spend, spendConsent: true }),
+			"metered",
+			{},
+			agentSettingsModelMessages.en,
+		);
 		expect(result.budget).toBeNull();
 		expect(result.problems).toContain("Max spend must be greater than 0 and at most 50 USD.");
 	});
 
 	it("authorizes exactly the consented spend for a metered backend", () => {
-		const result = evaluateBudget(budget({ maxSpendUsd: "2.5", spendConsent: true }), "metered");
+		const result = evaluateBudget(
+			budget({ maxSpendUsd: "2.5", spendConsent: true }),
+			"metered",
+			{},
+			agentSettingsModelMessages.en,
+		);
 		expect(result.problems).toEqual([]);
 		expect(result.budget?.maxSpendUsd).toBe(2.5);
 	});
 
 	it("requires consent before any spend on a backend whose cost model is unknown", () => {
-		expect(evaluateBudget(budget(), "unknown").budget?.maxSpendUsd).toBeNull();
-		const withSpend = evaluateBudget(budget({ maxSpendUsd: "1" }), "unknown");
+		expect(
+			evaluateBudget(budget(), "unknown", {}, agentSettingsModelMessages.en).budget?.maxSpendUsd,
+		).toBeNull();
+		const withSpend = evaluateBudget(
+			budget({ maxSpendUsd: "1" }),
+			"unknown",
+			{},
+			agentSettingsModelMessages.en,
+		);
 		expect(withSpend.budget).toBeNull();
 		expect(withSpend.spendConsentRequired).toBe(true);
 	});
 
 	it("stores a spend without consent when the settings form validates (AGT-012)", () => {
-		const result = evaluateBudget(budget({ maxSpendUsd: "2.5" }), "metered", {
-			requireConsent: false,
-		});
+		const result = evaluateBudget(
+			budget({ maxSpendUsd: "2.5" }),
+			"metered",
+			{
+				requireConsent: false,
+			},
+			agentSettingsModelMessages.en,
+		);
 		expect(result.problems).toEqual([]);
 		expect(result.budget?.maxSpendUsd).toBe(2.5);
 		expect(result.spendConsentRequired).toBe(false);
 	});
 
 	it("always pairs the spend with the fixed limits", () => {
-		const result = evaluateBudget(budget({ maxSpendUsd: "2.5", spendConsent: true }), "metered");
+		const result = evaluateBudget(
+			budget({ maxSpendUsd: "2.5", spendConsent: true }),
+			"metered",
+			{},
+			agentSettingsModelMessages.en,
+		);
 		expect(result.budget).toEqual({ ...RUN_LIMITS, maxSpendUsd: 2.5 });
 	});
 });

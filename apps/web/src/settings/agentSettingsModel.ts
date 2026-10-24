@@ -116,7 +116,7 @@ function describeAgent(agent: AgentDescriptor, text: AgentSettingsText): AgentOp
  */
 export function agentOptions(
 	agents: AgentsResponse | null,
-	text: AgentSettingsText = ENGLISH,
+	text: AgentSettingsText,
 ): readonly AgentOption[] {
 	if (agents === null) return [];
 	if (agents.agents.length > 0) return agents.agents.map((agent) => describeAgent(agent, text));
@@ -284,7 +284,7 @@ export function modelSelectValue(currentModel: string, otherMode: boolean): stri
 /** Honest statement about the runner, or null when it is online. */
 export function runnerNotice(
 	agents: AgentsResponse | null,
-	text: AgentSettingsText = ENGLISH,
+	text: AgentSettingsText,
 ): string | null {
 	if (agents === null || agents.runnerOnline) return null;
 	if (agents.runnerLastSeenAt === null) return text.runnerNeverSeen;
@@ -292,7 +292,7 @@ export function runnerNotice(
 }
 
 /** FR-016: what the owner is told about cost before submitting. Never "$0". */
-export function costStatement(costModel: CostModelView, text: AgentSettingsText = ENGLISH): string {
+export function costStatement(costModel: CostModelView, text: AgentSettingsText): string {
 	if (costModel === "plan-limited") return text.costStatementPlanLimited;
 	if (costModel === "metered") return text.costStatementMetered;
 	return text.costStatementUnknown;
@@ -310,7 +310,7 @@ export function evaluateBudget(
 	draft: SpendDraft,
 	costModel: CostModelView,
 	options: { readonly requireConsent?: boolean } = {},
-	text: AgentSettingsText = ENGLISH,
+	text: AgentSettingsText,
 ): BudgetEvaluation {
 	// Storing a maximum spend is not consent (AGT-012): the settings form
 	// validates without it, while the composer and the approval form require

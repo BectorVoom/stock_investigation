@@ -15,7 +15,7 @@ import {
 	presentedSeriesLabels,
 } from "@research/ui-registry";
 import { newWidgetId } from "../widgets/widgetModel.ts";
-import { notebookModelMessages } from "./notebook.messages.ts";
+import type { notebookModelMessages } from "./notebook.messages.ts";
 
 type WorkspaceComponent = WorkspaceView["state"]["components"][number];
 type WorkspaceDataset = WorkspaceView["datasets"][number];
@@ -349,7 +349,7 @@ export function widgetFromComponent(
  */
 export function widgetFromAnswer(
 	message: ChatMessage,
-	words: MessagesOf<typeof notebookModelMessages> = notebookModelMessages.en,
+	words: MessagesOf<typeof notebookModelMessages>,
 ): WidgetCore {
 	const text =
 		message.text.trim().length > 0

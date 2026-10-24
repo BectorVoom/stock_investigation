@@ -8,7 +8,6 @@ import type {
 	RunRecords,
 	Security,
 } from "@research/contracts";
-import { reportedPositionChangePhrase } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
 import { useMessages } from "@research/i18n/solid";
 import {
@@ -601,7 +600,7 @@ function FilingCard(props: {
 									<td data-field="reported-change">
 										{holding.changeFromPriorFiling === null
 											? m().notCompared
-											: reportedPositionChangePhrase(holding.changeFromPriorFiling)}
+											: m().positionChange(holding.changeFromPriorFiling)}
 									</td>
 								</tr>
 							)}

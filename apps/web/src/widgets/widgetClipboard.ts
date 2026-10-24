@@ -15,7 +15,7 @@ import {
 	readStoredText,
 	writeStoredText,
 } from "../lib/browserStorage.ts";
-import { widgetClipboardMessages } from "./widgetClipboard.messages.ts";
+import type { widgetClipboardMessages } from "./widgetClipboard.messages.ts";
 import { duplicateWidget } from "./widgetModel.ts";
 
 /**
@@ -130,7 +130,7 @@ type ClipboardWords = MessagesOf<typeof widgetClipboardMessages>;
 export function clipboardCountText(
 	count: number,
 	verb: "Cut" | "Copied" | "Pasted",
-	words: ClipboardWords = widgetClipboardMessages.en,
+	words: ClipboardWords,
 ): string {
 	if (verb === "Cut") return words.cutCount(count);
 	if (verb === "Copied") return words.copiedCount(count);
@@ -138,18 +138,12 @@ export function clipboardCountText(
 }
 
 /** The announcement after Remove (no confirmation: Undo restores). */
-export function removedCountText(
-	count: number,
-	words: ClipboardWords = widgetClipboardMessages.en,
-): string {
+export function removedCountText(count: number, words: ClipboardWords): string {
 	return words.removedCount(count);
 }
 
 /** The notice when research widgets stayed behind in their own chat. */
-export function skippedResearchNoticeText(
-	skipped: number,
-	words: ClipboardWords = widgetClipboardMessages.en,
-): string {
+export function skippedResearchNoticeText(skipped: number, words: ClipboardWords): string {
 	return words.skippedResearch(skipped);
 }
 

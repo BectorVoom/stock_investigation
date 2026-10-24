@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { formatInstant } from "../src/lib/format.ts";
 import { watchlistModelMessages } from "../src/watchlist/watchlistModel.messages.ts";
 import {
-	EARNINGS_AUTO_REFRESH_NOTICE,
 	EARNINGS_AUTO_REFRESH_STALE_MS,
 	earningsAutoRefreshReason,
 	googleAutoSyncWanted,
@@ -386,10 +385,10 @@ describe("earnings auto-refresh reason", () => {
 	});
 
 	it("announces why, the same text on both views", () => {
-		expect(EARNINGS_AUTO_REFRESH_NOTICE["never-refreshed"]).toBe(
+		expect(watchlistModelMessages.en.autoRefreshNotice("never-refreshed")).toBe(
 			"Earnings dates had not been fetched yet, so one refresh was queued.",
 		);
-		expect(EARNINGS_AUTO_REFRESH_NOTICE.stale).toBe(
+		expect(watchlistModelMessages.en.autoRefreshNotice("stale")).toBe(
 			"Earnings dates were more than a day old, so one refresh was queued.",
 		);
 	});
@@ -479,54 +478,74 @@ describe("google auto-sync rule", () => {
 
 describe("google status text", () => {
 	it("states the widget fragment for every status", () => {
-		expect(googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE)).toBe(
+		expect(googleWidgetStatus(DISCONNECTED_GOOGLE_CALENDAR_STATE, watchlistModelMessages.en)).toBe(
 			"Google Calendar: not connected.",
 		);
 		expect(
-			googleWidgetStatus({ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "connecting" }),
+			googleWidgetStatus(
+				{ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "connecting" },
+				watchlistModelMessages.en,
+			),
 		).toBe("Google Calendar: connecting…");
 		expect(
-			googleWidgetStatus({ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "needs-reconnect" }),
+			googleWidgetStatus(
+				{ ...DISCONNECTED_GOOGLE_CALENDAR_STATE, status: "needs-reconnect" },
+				watchlistModelMessages.en,
+			),
 		).toBe("Google Calendar: reconnect needed.");
 		expect(
-			googleWidgetStatus({
-				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
-				status: "connected",
-				activeRunId: "run_google_1",
-				activeRunState: "claimed",
-			}),
+			googleWidgetStatus(
+				{
+					...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+					status: "connected",
+					activeRunId: "run_google_1",
+					activeRunState: "claimed",
+				},
+				watchlistModelMessages.en,
+			),
 		).toBe("Google Calendar: syncing…");
 		expect(
-			googleWidgetStatus({
-				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
-				status: "connected",
-				lastSyncedAt: "2026-11-02T11:00:00Z",
-			}),
+			googleWidgetStatus(
+				{
+					...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+					status: "connected",
+					lastSyncedAt: "2026-11-02T11:00:00Z",
+				},
+				watchlistModelMessages.en,
+			),
 		).toBe(`Google Calendar: synced ${formatInstant("2026-11-02T11:00:00Z")}.`);
 		expect(
-			googleWidgetStatus({
-				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
-				status: "connected",
-				activeRunId: "run_google_2",
-				activeRunState: "claimed",
-				activeAction: "disconnect",
-			}),
+			googleWidgetStatus(
+				{
+					...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+					status: "connected",
+					activeRunId: "run_google_2",
+					activeRunState: "claimed",
+					activeAction: "disconnect",
+				},
+				watchlistModelMessages.en,
+			),
 		).toBe("Google Calendar: disconnecting…");
 		expect(
-			googleWidgetStatus({
-				...DISCONNECTED_GOOGLE_CALENDAR_STATE,
-				status: "connected",
-			}),
+			googleWidgetStatus(
+				{
+					...DISCONNECTED_GOOGLE_CALENDAR_STATE,
+					status: "connected",
+				},
+				watchlistModelMessages.en,
+			),
 		).toBe("Google Calendar: connected, not synced yet.");
 	});
 
 	it("states the fixed reason sentence per code, generic for unknown codes", () => {
-		expect(googleFailureReason("GOOGLE_NOT_CONFIGURED")).toBe(
+		expect(googleFailureReason("GOOGLE_NOT_CONFIGURED", watchlistModelMessages.en)).toBe(
 			"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
 		);
-		expect(googleFailureReason("GOOGLE_AUTH_EXPIRED")).toBe(
+		expect(googleFailureReason("GOOGLE_AUTH_EXPIRED", watchlistModelMessages.en)).toBe(
 			"The Google connection expired; reconnect Google Calendar.",
 		);
-		expect(googleFailureReason("SOMETHING_ELSE")).toBe("The Google Calendar request failed.");
+		expect(googleFailureReason("SOMETHING_ELSE", watchlistModelMessages.en)).toBe(
+			"The Google Calendar request failed.",
+		);
 	});
 });

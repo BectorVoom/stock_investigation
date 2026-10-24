@@ -9,10 +9,11 @@ import {
 	googleCalendarUrl,
 	outlookCalendarUrl,
 } from "@research/domain";
-import { useMessages } from "@research/i18n/solid";
+import { useLocale, useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
+import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	BUTTON,
@@ -256,6 +257,7 @@ export function WatchlistView(props: {
 	readonly visibility: VisibilitySource;
 }): JSX.Element {
 	const m = useMessages(watchlistMessages);
+	const locale = useLocale();
 	const model = useMessages(watchlistModelMessages);
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
 	const [etag, setEtag] = createSignal<string | null>(null);
@@ -381,7 +383,7 @@ export function WatchlistView(props: {
 		void googleQueue.queue("sync").then((result) => {
 			if (disposed) return;
 			if (result.kind === "failed") {
-				say(m().googleSyncNotQueued(result.error.message));
+				say(m().googleSyncNotQueued(failureMessageIn(result.error, locale())));
 				return;
 			}
 			if (result.kind === "queued") {

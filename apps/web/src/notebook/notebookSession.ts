@@ -12,7 +12,7 @@ import { type Accessor, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import type { ApiFailure } from "../api/http.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
-import { notebookSessionMessages } from "./notebook.messages.ts";
+import type { notebookSessionMessages } from "./notebook.messages.ts";
 
 /** The words of the session's notices (`notebookSessionMessages`). */
 export type NotebookSessionWords = MessagesOf<typeof notebookSessionMessages>;
@@ -142,7 +142,7 @@ export function createNotebookSession(
 	api: ApiClient,
 	workspaceId: string,
 	visibility: VisibilitySource,
-	words: Accessor<NotebookSessionWords> = () => notebookSessionMessages.en,
+	words: Accessor<NotebookSessionWords>,
 ): NotebookSession {
 	const [state, setState] = createSignal<NotebookResponse | null>(null);
 	const [optimistic, setOptimistic] = createSignal<readonly NotebookWidget[] | null>(null);

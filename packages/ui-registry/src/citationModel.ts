@@ -1,6 +1,6 @@
 import { parseUrl } from "@research/domain";
 import type { MessagesOf } from "@research/i18n";
-import { citationMessages } from "./citations.messages.ts";
+import type { citationMessages } from "./citations.messages.ts";
 /**
  * Numbering for NotebookLM-style citation chips in one scope (one chat answer
  * or one canvas component).
@@ -62,11 +62,7 @@ type CitationText = MessagesOf<typeof citationMessages>;
  * Title with host fallback for accessible names and the sources row. `text`
  * is the current language's citation words (English when omitted).
  */
-export function titleOrHost(
-	title: string,
-	sourceUrl: string,
-	text: CitationText = citationMessages.en,
-): string {
+export function titleOrHost(title: string, sourceUrl: string, text: CitationText): string {
 	const trimmed = title.trim();
 	if (trimmed !== "") return trimmed;
 	return sourceHost(sourceUrl) ?? text.untitledSource;
@@ -77,7 +73,7 @@ export function chipLabel(
 	number: number,
 	title: string,
 	sourceUrl: string,
-	text: CitationText = citationMessages.en,
+	text: CitationText,
 ): string {
 	return text.chipLabel(number, titleOrHost(title, sourceUrl, text));
 }

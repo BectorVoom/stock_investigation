@@ -5,7 +5,7 @@ import {
 	type WidgetBase,
 	type WidgetLayoutEdit,
 } from "@research/widget-grid/core";
-import { widgetModelMessages } from "./widgetModel.messages.ts";
+import type { widgetModelMessages } from "./widgetModel.messages.ts";
 
 /**
  * Pure widget edits shared by Home and the Notebook (ADR-0024): fresh ids,
@@ -34,7 +34,7 @@ export function isStarterWidgetType(type: string): type is StarterWidgetType {
 export function starterWidget(
 	type: StarterWidgetType,
 	widgetId: string = newWidgetId(),
-	words: MessagesOf<typeof widgetModelMessages> = widgetModelMessages.en,
+	words: MessagesOf<typeof widgetModelMessages>,
 ): WidgetCore {
 	switch (type) {
 		case "text":
