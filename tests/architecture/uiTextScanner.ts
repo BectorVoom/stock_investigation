@@ -1,6 +1,6 @@
 /**
  * Finds English UI text written straight into UI source instead of a
- * translation catalog (ADR-0031). Text the owner reads lives in a
+ * translation catalog (ADR-0032). Text the owner reads lives in a
  * `*.messages.ts` catalog in every UI language; this scanner reports the
  * places that still bypass one.
  *

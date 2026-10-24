@@ -1,7 +1,7 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * The Chat page's frame (ADR-0031): the Chats panel, the welcome, the
+ * The Chat page's frame (ADR-0032): the Chats panel, the welcome, the
  * Chat/Notebook switch and the panels' notices. Chat titles the owner or the
  * agent wrote stay as written; only the server's untouched default title
  * ("New chat") is shown in the current language.

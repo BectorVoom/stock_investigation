@@ -40,7 +40,7 @@ function alertParts() {
 	return { alert, code };
 }
 
-describe("ErrorNotice in Japanese (ADR-0031 decision 8)", () => {
+describe("ErrorNotice in Japanese (ADR-0032 decision 8)", () => {
 	it("words a server code by its description and keeps the server's message as the code's tooltip", () => {
 		inJapanese(() => (
 			<ErrorNotice

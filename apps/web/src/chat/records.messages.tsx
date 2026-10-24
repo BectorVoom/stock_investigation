@@ -14,7 +14,7 @@ type ScenarioCase = "bear" | "base" | "bull";
 type Classification = PricingPowerRecord["assessment"]["classification"];
 
 /**
- * The run's records drawer (ADR-0031): headings, field labels, empty states
+ * The run's records drawer (ADR-0032): headings, field labels, empty states
  * and the wording of verification issues. Claims, quoted passages, issuer and
  * investor names, methodology text and source titles are research content and
  * stay as written; stored enum values are only worded here (English shows the

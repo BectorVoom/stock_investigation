@@ -29,7 +29,7 @@ function jaUnavailableReason(code: MarketUnavailableCode, provider: MarketProvid
 
 /**
  * The words of Home's pure view-model (`homeModel.ts`), passed to it by the
- * widgets as a parameter (ADR-0031 decision 2).
+ * widgets as a parameter (ADR-0032 decision 2).
  */
 export const homeModelMessages = defineMessages({
 	en: {

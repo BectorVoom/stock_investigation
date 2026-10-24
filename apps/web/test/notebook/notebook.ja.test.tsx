@@ -29,7 +29,7 @@ import { assertOnlyIconFetches, resetGlobalFetchCalls } from "../setup.ts";
 import { createNotebookBackend, notebookFixtures, WORKSPACE_ID } from "./notebookHarness.ts";
 
 /**
- * The Notebook and the shared widget board in Japanese (ADR-0031): the UI's
+ * The Notebook and the shared widget board in Japanese (ADR-0032): the UI's
  * own words follow the language, the owner's content (titles, notes, data)
  * stays as stored.
  */

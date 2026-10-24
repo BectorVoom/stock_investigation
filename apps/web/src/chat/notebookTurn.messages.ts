@@ -4,7 +4,7 @@ import { defineMessages } from "@research/i18n";
 type ChangeKind = NotebookTurn["changes"][number]["kind"];
 
 /**
- * A notebook-assistant turn in the thread (ADR-0031). Widget titles and the
+ * A notebook-assistant turn in the thread (ADR-0032). Widget titles and the
  * before → after text are the notebook's content and stay as written.
  */
 export const notebookTurnMessages = defineMessages({

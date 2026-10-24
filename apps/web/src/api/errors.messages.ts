@@ -1,7 +1,7 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * A short description of each stable API error code (API-008, ADR-0031
+ * A short description of each stable API error code (API-008, ADR-0032
  * decision 8), worded from where the API raises it. The server's own
  * `message` stays English; a UI language other than English shows the
  * description of the code instead, with the server's message as its tooltip.

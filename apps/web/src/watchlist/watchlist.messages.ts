@@ -1,7 +1,7 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * The Watchlist page (ADR-0031). Tickers, exchange codes, company names,
+ * The Watchlist page (ADR-0032). Tickers, exchange codes, company names,
  * fiscal-period labels and dates stay as they are; the sentences the pure
  * model builds are in `watchlistModel.messages.ts`.
  */

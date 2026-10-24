@@ -20,7 +20,7 @@ import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
  * widget (FR-018). No DOM, no fetch, no clock: every function is a pure
  * derivation over contract types, unit-tested in
  * `apps/web/test/watchlistModel.test.ts` with hand-worked values. The
- * sentences come from `watchlistModelMessages` (ADR-0031), passed in by the
+ * sentences come from `watchlistModelMessages` (ADR-0032), passed in by the
  * view as `text` in the current language.
  */
 

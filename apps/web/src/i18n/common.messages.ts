@@ -3,7 +3,7 @@ import { defineMessages } from "@research/i18n";
 /**
  * Words many pages share. A page's own sentences live in its own
  * `*.messages.ts` beside it; only words that mean the same everywhere belong
- * here (the glossary is in ADR-0031).
+ * here (the glossary is in ADR-0032).
  */
 export const commonMessages = defineMessages({
 	en: {

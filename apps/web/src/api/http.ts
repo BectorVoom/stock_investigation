@@ -21,7 +21,7 @@ export type ClientErrorCode = (typeof CLIENT_ERROR_CODES)[number];
 
 /**
  * The client's failure sentences. They stay English whatever the UI language:
- * they are the failure's data, and the UI words them by code (ADR-0031 decision 8).
+ * they are the failure's data, and the UI words them by code (ADR-0032 decision 8).
  */
 const CLIENT_TEXT = clientFailureMessages.en;
 

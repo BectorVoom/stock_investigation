@@ -4,7 +4,7 @@ import { defineMessages } from "@research/i18n";
 type RunState = ResearchRun["state"];
 
 /**
- * A research run as the thread shows it (ADR-0031): the state badge, the
+ * A research run as the thread shows it (ADR-0032): the state badge, the
  * spoken state change, hints after a failure and the approval form. The
  * stored state values and failure codes are never translated; English shows
  * the state value itself, as before. Progress lines come from the runner and

@@ -6,7 +6,7 @@ import { isLocalePreference, type LocaleState } from "../i18n/localeState.ts";
 import { settingsLanguageMessages } from "./languageSettings.messages.ts";
 
 /**
- * Settings → Language (ADR-0031): the UI language for this browser. The
+ * Settings → Language (ADR-0032): the UI language for this browser. The
  * change applies at once, with no reload; "Browser default" follows the
  * browser's preferred languages. Each language is named in itself.
  */

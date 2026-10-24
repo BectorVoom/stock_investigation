@@ -16,7 +16,7 @@ const API_ERROR_TABLES: { readonly [L in Locale]: { readonly [C in ApiErrorCode]
 	apiErrorMessages;
 
 /**
- * What a failure says in `locale` (ADR-0031 decision 8), or null when its own
+ * What a failure says in `locale` (ADR-0032 decision 8), or null when its own
  * `message` is to be shown as it is:
  *  - an API error code → the description of the code (the server's English
  *    message stays the data);

@@ -30,7 +30,7 @@ export default defineConfig({
 		headless: true,
 		trace: "retain-on-failure",
 		// The specs read the English UI. Pinned so a machine whose system
-		// language is another one (ADR-0031: the UI follows the browser) still
+		// language is another one (ADR-0032: the UI follows the browser) still
 		// runs them in English; a spec that checks another language sets its own.
 		locale: "en-US",
 		...browserUse(browser),

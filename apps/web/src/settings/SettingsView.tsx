@@ -448,7 +448,7 @@ export function SettingsView(props: {
 	 */
 	readonly section: string | null;
 	readonly visibility: VisibilitySource;
-	/** The UI language and its stored choice (ADR-0031). */
+	/** The UI language and its stored choice (ADR-0032). */
 	readonly localeState: LocaleState;
 	readonly onReloadSession: () => void;
 	readonly onOpenWorkspace: (workspaceId: string) => void;

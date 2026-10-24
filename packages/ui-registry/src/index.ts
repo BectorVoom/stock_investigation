@@ -1,5 +1,5 @@
 export { BASELINE_REGISTRY_ENTRIES, createBaselineUiRegistry } from "./baseline.ts";
-/** The registry's catalogs that hosts reuse for the same words (ADR-0031). */
+/** The registry's catalogs that hosts reuse for the same words (ADR-0032). */
 export { cellReasonMessages } from "./cellReasons.messages.ts";
 export { BarPlot } from "./charts/BarPlot.tsx";
 export {

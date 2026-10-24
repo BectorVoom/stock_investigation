@@ -35,7 +35,7 @@ import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";
 import "@shoelace-style/shoelace/dist/themes/light.css";
 // The controls' own words (a dialog's Close, a select's Clear) follow
 // `<html lang>`; English is built in, every other UI language is registered
-// here (ADR-0031).
+// here (ADR-0032).
 import "@shoelace-style/shoelace/dist/translations/ja.js";
 import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/icon-library.js";
 

@@ -340,7 +340,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
   Google Calendar; cancel a sign-in that is waiting or still being prepared
   (one Google step runs at a time); download the earnings calendar file
   (.ics); create, replace or revoke the calendar subscription link.
-- Language (ADR-0031): show the UI in English or 日本語, or follow the
+- Language (ADR-0032): show the UI in English or 日本語, or follow the
   browser ("Browser default"); applies at once, without a reload, and is
   remembered in this browser.
 - View the session (owner id, sign-in method).

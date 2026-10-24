@@ -23,7 +23,7 @@ const AGENT_CORE = exact("@research/agent-core");
 const APPLICATION = exact("@research/application");
 const UI_REGISTRY = exact("@research/ui-registry");
 const EFFECTS = exact("@research/effects");
-/** UI languages (ADR-0031): the framework-free core and its Solid binding. */
+/** UI languages (ADR-0032): the framework-free core and its Solid binding. */
 const I18N = exact("@research/i18n");
 const I18N_SOLID = exact("@research/i18n/solid");
 /** The reusable widget grid, by entry point: the Solid UI, the pure core, the agent layer. */
@@ -68,7 +68,7 @@ export const PACKAGE_RULES: readonly PackageRule[] = [
 		zones: [],
 	},
 	{
-		// UI languages (ADR-0031). The core (locales, catalogs) is plain
+		// UI languages (ADR-0032). The core (locales, catalogs) is plain
 		// TypeScript; only the Solid binding may import the UI framework.
 		root: "packages/i18n",
 		allowed: [pkg("solid-js")],

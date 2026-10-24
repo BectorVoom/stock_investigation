@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scanUiText, scanUiTextPaths } from "./uiTextScanner.ts";
 
 /**
- * ADR-0031: every word of the UI comes from a translation catalog, so the UI
+ * ADR-0032: every word of the UI comes from a translation catalog, so the UI
  * reads the same in each supported language. Findings name file and line;
  * run `bun tests/architecture/uiTextScanner.ts <path>` to list them for a
  * folder.

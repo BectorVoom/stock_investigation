@@ -1,4 +1,4 @@
-# ADR-0031: The UI speaks the owner's language (English and Japanese)
+# ADR-0032: The UI speaks the owner's language (English and Japanese)
 
 **Status:** Accepted · **Date:** 2026-10-24 · **Owner decision:** "Please
 support global language", then, asked what that covers: **translate the UI**

@@ -1,7 +1,7 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * Starter questions for an empty conversation (ADR-0031). They are sent to
+ * Starter questions for an empty conversation (ADR-0032). They are sent to
  * the agent exactly as written, so each language asks in its own words.
  */
 export const suggestionsMessages = defineMessages({

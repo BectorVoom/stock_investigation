@@ -1,5 +1,5 @@
 /**
- * The languages the UI is written in (ADR-0031). Adding one means adding its
+ * The languages the UI is written in (ADR-0032). Adding one means adding its
  * code here and a translation to every catalog; the compiler then lists every
  * catalog that lacks it.
  */

@@ -1,7 +1,7 @@
 import { type ConsoleMessage, expect, type Page, test } from "@playwright/test";
 
 /**
- * UI languages end to end (ADR-0031): a browser whose preferred language is
+ * UI languages end to end (ADR-0032): a browser whose preferred language is
  * Japanese gets the Japanese UI on first visit (`<html lang>`, navigation,
  * page headings, the tab title); Settings → Language switches the whole UI
  * at once without a reload, the choice survives a reload, and "Browser

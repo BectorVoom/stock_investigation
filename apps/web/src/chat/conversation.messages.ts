@@ -1,7 +1,7 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * The message thread (ADR-0031): its landmarks, the empty-state greeting, the
+ * The message thread (ADR-0032): its landmarks, the empty-state greeting, the
  * actions under an answer and the result previews. The messages themselves
  * (the owner's questions, the agent's answers and claims) are research content
  * and stay as written.
@@ -61,7 +61,7 @@ export const conversationMessages = defineMessages({
 });
 
 /**
- * An answer's claims (ADR-0031). The words around its sources (chips, source
+ * An answer's claims (ADR-0032). The words around its sources (chips, source
  * list) are the registry's `citationMessages`; claims and source titles stay
  * as written.
  */

@@ -25,7 +25,7 @@ import { agentSettingsModelMessages } from "./agentSettingsModel.messages.ts";
  * composer and the approval form import from here (ARCH-010).
  *
  * Owner-facing sentences come from the `text` parameter, the words of
- * `agentSettingsModelMessages` in the UI language (ADR-0031). The functions
+ * `agentSettingsModelMessages` in the UI language (ADR-0032). The functions
  * the Chat page also calls default it to English.
  */
 

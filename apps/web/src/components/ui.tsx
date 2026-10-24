@@ -445,7 +445,7 @@ export function Field(props: {
 /**
  * An API failure always shows its stable code and message; never a blank area.
  * In English it shows the message as it came. In another UI language it shows
- * the code's translated description (ADR-0031 decision 8), and the original
+ * the code's translated description (ADR-0032 decision 8), and the original
  * message stays on the code as its tooltip for diagnosis.
  */
 export function ErrorNotice(props: {

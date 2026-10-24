@@ -14,9 +14,9 @@ const INTERVAL_NAMES_EN: { readonly [I in ChartInterval]: string } = {
 };
 
 /**
- * The detailed chart viewer (ADR-0025, ADR-0031). Series names, values,
+ * The detailed chart viewer (ADR-0025, ADR-0032). Series names, values,
  * units and dates are data and stay as they are; numbers keep one notation
- * in every language (ADR-0031 decision 7).
+ * in every language (ADR-0032 decision 7).
  */
 export const chartViewerMessages = defineMessages({
 	en: {

@@ -2,7 +2,7 @@ import { catalogProblems, LOCALES } from "@research/i18n";
 import { describe, expect, it } from "vitest";
 
 /**
- * Every translation catalog of the UI (ADR-0031), found by name so a new one
+ * Every translation catalog of the UI (ADR-0032), found by name so a new one
  * is checked without registering it here.
  */
 const CATALOG_MODULES: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {

@@ -7,7 +7,7 @@ type TrustClassification = NewsSource["trustClassification"];
 type FeedStatus = NewsSource["feedStatus"];
 
 /**
- * The Sources page (ADR-0031). The stored enum values (`official`,
+ * The Sources page (ADR-0032). The stored enum values (`official`,
  * `headline-and-link-only`, `paused`…) are never translated; these messages
  * only word them. Recommended-catalog titles, publishers and rationales are
  * content from the server and stay as they are.

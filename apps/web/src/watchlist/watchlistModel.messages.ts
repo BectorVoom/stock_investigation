@@ -29,7 +29,7 @@ const JA_GOOGLE_FAILURES: { readonly [C in GoogleCalendarFailureCode]: string } 
 };
 
 /**
- * The sentences the pure watchlist model builds (ADR-0031), shared by the
+ * The sentences the pure watchlist model builds (ADR-0032), shared by the
  * Watchlist page and Home's earnings-calendar widget. The model takes this
  * table as a parameter; tickers, codes, run ids and instants stay as they are.
  * Google Calendar is a product name and is not translated.

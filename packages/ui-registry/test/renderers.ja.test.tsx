@@ -35,7 +35,7 @@ function renderIn(
 
 const ja = (): Locale => "ja";
 
-describe("registry components in Japanese (ADR-0031)", () => {
+describe("registry components in Japanese (ADR-0032)", () => {
 	it("words a research report's badges, notes and dates, and keeps the agent's text", () => {
 		const container = renderIn(ja, component("research-report", VALID_PROPS["research-report"]));
 		const text = container.textContent ?? "";

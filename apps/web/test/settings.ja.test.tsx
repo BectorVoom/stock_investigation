@@ -11,7 +11,7 @@ import { ALWAYS_VISIBLE, createFakeBackend, jsonResponse } from "./fakeBackend.t
 import { AGENTS } from "./fixtures.ts";
 import { createWatchlistBackend } from "./watchlistHarness.ts";
 
-/** Settings in Japanese (ADR-0031): the sections' own words, names and sentences with values. */
+/** Settings in Japanese (ADR-0032): the sections' own words, names and sentences with values. */
 
 afterEach(cleanup);
 

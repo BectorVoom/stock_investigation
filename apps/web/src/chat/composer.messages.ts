@@ -4,7 +4,7 @@ import { defineMessages } from "@research/i18n";
 type Effort = AgentSettings["effort"];
 
 /**
- * The question form (ADR-0031): its controls, the reasons it cannot send yet
+ * The question form (ADR-0032): its controls, the reasons it cannot send yet
  * (`composerModel.ts` takes these as a parameter) and its notes after a send.
  * Backend names, model ids, market codes and amounts stay as they are.
  */

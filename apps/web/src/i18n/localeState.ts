@@ -5,7 +5,7 @@ import { type KeyValueStorage, readStoredText, writeStoredText } from "../lib/br
 /** The owner's choice: a fixed language, or whatever the browser prefers. */
 export type LocalePreference = Locale | "system";
 
-/** Browser-storage key of the choice; a per-visitor convenience (ADR-0031). */
+/** Browser-storage key of the choice; a per-visitor convenience (ADR-0032). */
 export const LOCALE_STORAGE_KEY = "research.locale";
 
 export function isLocalePreference(value: unknown): value is LocalePreference {
