@@ -3,7 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
-import { agentSettingsResponseSchema, agentsResponseSchema } from "@research/contracts";
+import {
+	agentSettingsResponseSchema,
+	agentsResponseSchema,
+	taskResultResponseSchema,
+} from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
 	launcherEnv,
@@ -28,8 +32,9 @@ import {
  * subscribed, a "Once" task is created on the Tasks page 1–2 minutes ahead
  * (UTC), and nothing else is clicked: the runner's idle claim fires it, the
  * run completes, the task's chat holds the question and an assistant answer
- * with claims and at least one source link, and a Scheduled tasks widget
- * added to Home shows the task with its last run completed.
+ * with claims and at least one source link, a Scheduled tasks widget
+ * added to Home shows the task with its last run completed, and a Task
+ * result widget (ADR-0038) shows the answer text itself.
  *
  * A model reply that fails the protocol is a finding, not something to
  * assert around: the throwaway directories are kept on failure.
@@ -330,5 +335,28 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		await widget.scrollIntoViewIfNeeded();
 		await page.waitForTimeout(1_000);
 		await widget.screenshot({ path: join(SHOTS_DIR, "tasks-live-home-widget.png") });
+
+		// Home: a Task result widget (ADR-0038) shows the run's answer itself —
+		// the same text the chat holds — with when it was given and its status.
+		await page.getByRole("button", { name: "Add widget" }).click();
+		await page.getByRole("menuitem", { name: "Task result", exact: true }).click();
+		const chooser = page.getByRole("dialog", { name: "Choose a task" });
+		await chooser
+			.getByRole("list", { name: "Your scheduled tasks" })
+			.getByRole("button", { name: new RegExp(TITLE) })
+			.click();
+		await expect(chooser).toBeHidden();
+		const result = page.locator(`[data-widget-kind="task-result"][data-task-id="${task.taskId}"]`);
+		const answer = result.locator('[data-field="task-result-text"]');
+		await expect(answer).not.toBeEmpty({ timeout: 60_000 });
+		await expect(result.locator('[data-field="task-result-status"]')).toContainText(/Answered /);
+		await expect(result.locator("[data-verification-status]")).toHaveCount(1);
+		const stored = await fetch(`${API_ORIGIN}/api/v1/scheduled-tasks/${task.taskId}/result`, {
+			headers: ownerHeaders(API_ORIGIN),
+		}).then((response) => response.json());
+		expect(await answer.textContent()).toBe(taskResultResponseSchema.parse(stored).result?.text);
+		await result.scrollIntoViewIfNeeded();
+		await page.waitForTimeout(1_000);
+		await result.screenshot({ path: join(SHOTS_DIR, "tasks-live-home-task-result.png") });
 	});
 });
