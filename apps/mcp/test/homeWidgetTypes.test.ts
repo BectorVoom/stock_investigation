@@ -60,6 +60,13 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		expect(tasks.description).toContain("No fields");
 		expect(tasks.description).toContain("cannot create, edit or run tasks");
 		expect(tasks.description).not.toContain("fred:");
+		// ADR-0038 §6: listed so agents see and arrange it, but only the owner places one.
+		const result = byType("task-result");
+		expect(result.ownerPlaced?.reason).toContain("cannot add one or change its taskId");
+		expect(result.description).toContain("cannot add one");
+		expect(HOME_WIDGET_AGENT_TYPES.filter((entry) => entry.ownerPlaced !== undefined)).toEqual([
+			result,
+		]);
 	});
 
 	it("generates config schemas with no generic fields", () => {
@@ -170,6 +177,8 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			{ type: "indicator-table", config: { seriesIds: ["fred:UNRATE", "fred:CPIAUCSL"] } },
 			{ type: "earnings-calendar", config: { daysAhead: 30 } },
 			{ type: "scheduled-tasks", config: {} },
+			// Built when an agent renames an owner-placed one (ADR-0038 §6).
+			{ type: "task-result", config: { taskId: "task_abc" } },
 		];
 		for (const { type, config } of cases) {
 			const agentType = byType(type);

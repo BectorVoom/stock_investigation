@@ -45,6 +45,7 @@ import {
 	stockDirectorySearchQuerySchema,
 	stockDirectorySearchResponseSchema,
 	stockDirectoryStatusResponseSchema,
+	taskResultResponseSchema,
 	uiCommandSchema,
 	undoNotebookRequestSchema,
 	updateScheduledTaskRequestSchema,
@@ -1121,6 +1122,27 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.scheduledTasks.remove(owner(c), taskId),
 				);
 				return c.body(null, 204);
+			}),
+		),
+	);
+	api.get("/scheduled-tasks/:id/result", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const taskId = yield* pathId(c, "id");
+				const result = yield* useCase("scheduled_tasks.result", () =>
+					c.var.services.scheduledTasks.result(owner(c), taskId),
+				);
+				const parsed = taskResultResponseSchema.parse(result);
+				// ADR-0038 §3: the widget refetches when its task's last run
+				// changes, and an answer it already holds comes back as a 304.
+				// The run id keeps two answers apart; the digest covers the rest.
+				const version =
+					parsed.result === null
+						? "task-result.none"
+						: `task-result.${parsed.result.runId}.${fingerprint(JSON.stringify(parsed))}`;
+				return conditionalJson(c, version, parsed);
 			}),
 		),
 	);

@@ -51,6 +51,11 @@ pub mod limits {
 	pub const MAX_CONTENT_BYTES: usize = 850_000;
 }
 
+/// `WIDGET_TYPE_META["task-result"].agentNote`: why an agent never places a
+/// task-result widget nor changes its task (ADR-0038 §6). The notebook
+/// assistant's refusal quotes it.
+pub const TASK_RESULT_AGENT_NOTE: &str = "Agents can move, resize or remove it but cannot add one or change its taskId; the owner adds it from the add menu or the Tasks page.";
+
 /// `WIDGET_TEXT_MARKDOWN`: the Markdown subset of a text widget, as agents read it.
 pub const WIDGET_TEXT_MARKDOWN: &str = "Markdown subset: # / ## / ### headings, **bold**, *italic*, ~~strike~~, `code`, [label](https://…) links, - bullet lists, 1. numbered lists, - [ ] / - [x] to-dos, > quotes, ``` code blocks, --- dividers; blank line between paragraphs. No HTML, images or tables.";
 
@@ -77,6 +82,7 @@ js_enum! {
 		IndicatorTable = "indicator-table",
 		EarningsCalendar = "earnings-calendar",
 		ScheduledTasks = "scheduled-tasks",
+		TaskResult = "task-result",
 	}
 }
 
@@ -98,7 +104,8 @@ impl WidgetType {
 			| Self::Table
 			| Self::LineChart
 			| Self::StockTable
-			| Self::ScheduledTasks => WidgetSize::Medium,
+			| Self::ScheduledTasks
+			| Self::TaskResult => WidgetSize::Medium,
 		}
 	}
 
@@ -376,10 +383,17 @@ pub enum WidgetContent {
 	/// The owner's scheduled tasks (ADR-0033): no content fields and no series.
 	#[serde(rename = "scheduled-tasks")]
 	ScheduledTasks,
+	/// One scheduled task's latest answer (ADR-0038): the owner picks the
+	/// task when adding it; no series.
+	#[serde(rename = "task-result", rename_all = "camelCase")]
+	TaskResult {
+		/// The task's id.
+		task_id: String,
+	},
 }
 
 /// Content keys per type, in shape order (after the discriminator).
-const CONTENT_KEYS: [&[&str]; 11] = [
+const CONTENT_KEYS: [&[&str]; 12] = [
 	&["text"],
 	&["value", "unit", "change", "caption", "asOf"],
 	&[
@@ -400,6 +414,7 @@ const CONTENT_KEYS: [&[&str]; 11] = [
 	&["seriesIds"],
 	&["daysAhead"],
 	&[],
+	&["taskId"],
 ];
 
 const TABLE_SERIES: &[ArrCheck] = &[
@@ -423,6 +438,7 @@ impl WidgetContent {
 			Self::IndicatorTable { .. } => WidgetType::IndicatorTable,
 			Self::EarningsCalendar { .. } => WidgetType::EarningsCalendar,
 			Self::ScheduledTasks => WidgetType::ScheduledTasks,
+			Self::TaskResult { .. } => WidgetType::TaskResult,
 		}
 	}
 
@@ -472,7 +488,10 @@ impl WidgetContent {
 			9 => decode_fields!(cx, object, Self::EarningsCalendar {
 				days_ahead: "daysAhead" => earnings_calendar_days_ahead,
 			}),
-			_ => Some(Self::ScheduledTasks),
+			10 => Some(Self::ScheduledTasks),
+			_ => decode_fields!(cx, object, Self::TaskResult {
+				task_id: "taskId" => id,
+			}),
 		}
 	}
 

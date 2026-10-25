@@ -1,6 +1,6 @@
 /**
  * Scheduled tasks over HTTP (ADR-0033 §6) against the real migrations, on
- * workerd + D1 and on node:sqlite: the five routes, their auth and CSRF
+ * workerd + D1 and on node:sqlite: the six routes, their auth and CSRF
  * refusals, and the claim-time firing end to end.
  */
 import { env } from "cloudflare:test";
@@ -14,12 +14,16 @@ import {
 	runScheduledTaskResponseSchema,
 	scheduledTaskListResponseSchema,
 	scheduledTaskResponseSchema,
+	taskResultResponseSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
+	advanceToPublishing,
 	apiError,
 	body,
+	bundleFor,
 	claim,
+	completion,
 	createHarness,
 	errorCode,
 	type Harness,
@@ -427,5 +431,91 @@ describe("run now (ADR-0033 §5)", () => {
 		);
 		expect(refused.status).toBe(422);
 		expect(await errorCode(refused)).toBe("AGENT_NOT_CONFIGURED");
+	});
+});
+
+describe("a task's latest result (ADR-0038 §3)", () => {
+	/** "Run now", claimed, walked to publishing and completed with `answerText`. */
+	async function answerOnce(
+		harness: Harness,
+		token: string,
+		taskId: string,
+		bundle: { answerText: string; verificationStatus: "verified" | "partially-verified" },
+	): Promise<string> {
+		const ran = await body(
+			await harness.call("POST", `/scheduled-tasks/${taskId}/run`, undefined, idempotencyKey()),
+			runScheduledTaskResponseSchema,
+		);
+		const lease = await claim(harness, token);
+		if (lease === null || lease.runId !== ran.run.runId) throw new Error("expected the run");
+		await advanceToPublishing(harness, token, lease);
+		const completed = await harness.runner(
+			token,
+			`/jobs/${lease.runId}/complete`,
+			completion(lease, bundleFor(lease.runId, bundle)),
+		);
+		expect(completed.status).toBe(200);
+		return lease.runId;
+	}
+
+	it("answers 404 for a task the owner does not have", async () => {
+		const harness = createHarness();
+		const other = createHarness();
+		const task = await createTask(harness);
+		for (const response of [
+			await harness.call("GET", "/scheduled-tasks/task_unknown/result"),
+			await other.call("GET", `/scheduled-tasks/${task.taskId}/result`),
+		]) {
+			expect(response.status).toBe(404);
+			expect(await errorCode(response)).toBe("NOT_FOUND");
+		}
+	});
+
+	it("answers null before any run, then the answer, a 304 while it holds and a new ETag after another", async () => {
+		const harness = createHarness();
+		await saveSettings(harness);
+		const token = await issueRunnerToken(harness);
+		const task = await createTask(harness);
+		const path = `/scheduled-tasks/${task.taskId}/result`;
+		const before = await harness.call("GET", path);
+		expect(before.status).toBe(200);
+		expect(await body(before, taskResultResponseSchema)).toEqual({ result: null });
+		const emptyTag = before.headers.get("ETag");
+
+		harness.time.advance(60_000);
+		const answeredAt = harness.time.clock.nowIso();
+		const firstRun = await answerOnce(harness, token, task.taskId, {
+			answerText: "Grid storage suppliers rose on new orders.",
+			verificationStatus: "partially-verified",
+		});
+		const first = await harness.call("GET", path, undefined, { "If-None-Match": emptyTag ?? "" });
+		expect(first.status).toBe(200);
+		expect(await body(first, taskResultResponseSchema)).toEqual({
+			result: {
+				runId: firstRun,
+				text: "Grid storage suppliers rose on new orders.",
+				answeredAt,
+				verificationStatus: "partially-verified",
+			},
+		});
+		const etag = first.headers.get("ETag");
+		expect(etag).not.toBeNull();
+		expect(etag).not.toBe(emptyTag);
+		const cached = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
+		expect(cached.status).toBe(304);
+
+		harness.time.advance(60_000);
+		const secondRun = await answerOnce(harness, token, task.taskId, {
+			answerText: "Suppliers fell back after the rally.",
+			verificationStatus: "verified",
+		});
+		const second = await harness.call("GET", path, undefined, { "If-None-Match": etag ?? "" });
+		expect(second.status).toBe(200);
+		expect(second.headers.get("ETag")).not.toBe(etag);
+		expect((await body(second, taskResultResponseSchema)).result).toMatchObject({
+			runId: secondRun,
+			text: "Suppliers fell back after the rally.",
+			verificationStatus: "verified",
+		});
 	});
 });

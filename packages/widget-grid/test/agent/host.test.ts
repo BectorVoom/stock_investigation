@@ -493,3 +493,51 @@ describe("createWidgetAgentHost duplicate", () => {
 		expect(failure.code).toBe("TOO_MANY_WIDGETS");
 	});
 });
+
+describe("createWidgetAgentHost owner-placed types", () => {
+	const REASON = "the owner picks the note in the add menu.";
+	const pinnedType: WidgetAgentType<ToyWidget> = { ...noteType, ownerPlaced: { reason: REASON } };
+	const pinnedHost = (controls: ReturnType<typeof createToyStore>) =>
+		hostOf(controls, { types: [pinnedType, bannerType] });
+
+	it("refuses an add or a duplicate of the type, naming the rule", async () => {
+		const controls = createToyStore();
+		const host = pinnedHost(controls);
+		const added = expectFailureCode(
+			await host.apply({ kind: "add", type: "note", title: "N", config: { text: "x" } }),
+		);
+		expect(added).toEqual({
+			code: "INVALID_WIDGET",
+			message: `agents cannot add "note" widgets: ${REASON}`,
+		});
+		const copied = expectFailureCode(await host.apply({ kind: "duplicate", widgetId: "a" }));
+		expect(copied).toEqual(added);
+		expect(controls.snapshot().revision).toBe(0);
+	});
+
+	it("refuses an update that changes the config but renames, resizes, moves and removes", async () => {
+		const controls = createToyStore();
+		const host = pinnedHost(controls);
+		const changed = expectFailureCode(
+			await host.apply({ kind: "update", widgetId: "a", config: { text: "other" } }),
+		);
+		expect(changed).toEqual({
+			code: "INVALID_WIDGET",
+			message: `agents cannot change the config of "note" widgets: ${REASON}`,
+		});
+		// Restating the current config is not a change.
+		expectSnapshot(
+			await host.apply({
+				kind: "update",
+				widgetId: "a",
+				title: "Renamed",
+				config: { text: "Text a" },
+			}),
+		);
+		expectSnapshot(await host.apply({ kind: "resize", widgetId: "a", size: "medium" }));
+		expectSnapshot(await host.apply({ kind: "move", widgetId: "a", direction: "later" }));
+		const removed = expectSnapshot(await host.apply({ kind: "remove", widgetId: "a" }));
+		expect(removed.widgets.map((widget) => widget.widgetId)).toEqual(["b"]);
+		expect(controls.snapshot().widgets.map((widget) => widget.text)).toEqual(["Text b"]);
+	});
+});

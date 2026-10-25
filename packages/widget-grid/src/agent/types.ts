@@ -130,6 +130,14 @@ export interface WidgetAgentType<W extends WidgetBase> {
 	}) => Result<W, string>;
 	/** The type-specific part of a widget as JSON (the inverse of `build`). */
 	readonly configOf: (widget: W) => JsonObject;
+	/**
+	 * Set when only the owner places widgets of this type, because its
+	 * config names something an agent cannot look up: `add` and `duplicate`
+	 * are refused with `INVALID_WIDGET` and `reason`, and an `update` may
+	 * rename such a widget but not change its config. Moving, resizing and
+	 * removing it stay open to agents.
+	 */
+	readonly ownerPlaced?: { readonly reason: string };
 }
 
 /** A stored layout plus the revision a write must present (compare-and-set). */

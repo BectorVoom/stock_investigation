@@ -1,4 +1,4 @@
 {
-	"body": "{\"outcome\":\"notebook-assisted\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1,\"toolCalls\":0,\"inputBytes\":15912,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"baseVersion\":4,\"reply\":\"Made it larger.\",\"commands\":[{\"kind\":\"resize\",\"widgetId\":\"w-text\",\"size\":\"large\"}],\"proposedRemovals\":[]}",
+	"body": "{\"outcome\":\"notebook-assisted\",\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1,\"toolCalls\":0,\"inputBytes\":16567,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"baseVersion\":4,\"reply\":\"Made it larger.\",\"commands\":[{\"kind\":\"resize\",\"widgetId\":\"w-text\",\"size\":\"large\"}],\"proposedRemovals\":[]}",
 	"schema": "completeJobRequest"
 }

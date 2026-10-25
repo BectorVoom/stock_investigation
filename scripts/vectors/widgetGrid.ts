@@ -403,9 +403,62 @@ async function hostFile(): Promise<VectorFile> {
 	return { path: "widget-grid/host.json", content: cases };
 }
 
+/** Commands that probe the owner-placed rule beyond the shared corpus. */
+const OWNER_PLACED_COMMANDS = [
+	...HOST_COMMANDS,
+	'{"kind":"update","widgetId":"a","config":{"text":"Text a"}}',
+	'{"kind":"update","widgetId":"a","title":"Kept","config":{"text":"Text a"}}',
+	'{"kind":"update","widgetId":"a","config":{"text":"Text a","extra":{"y":1}}}',
+	'{"kind":"update","widgetId":"a","config":{}}',
+	'{"kind":"update","widgetId":"wide","config":{"text":"banner text"}}',
+];
+
+/**
+ * The host with an owner-placed type (`ownerPlaced`, ADR-0038 §6): `note`
+ * widgets can be arranged and renamed but never added, copied or
+ * reconfigured by an agent; `banner` stays open.
+ */
+async function ownerPlacedFile(): Promise<VectorFile> {
+	const random = seededRandom(9_090_004);
+	const types = [
+		{
+			...toyType("note", "small", ["small", "medium"]),
+			ownerPlaced: { reason: "the owner picks it." },
+		},
+		toyType("banner", "large", ["large"]),
+	];
+	const cases = [];
+	for (let index = 0; index < 200; index += 1) {
+		const initial: ToyWidget[] = [toy("a"), toy("b")];
+		if (random() < 0.5) initial.push(toy("wide", "medium", "banner"));
+		const commands = Array.from({ length: 1 + integer(random, 4) }, () =>
+			pick(random, OWNER_PLACED_COMMANDS),
+		);
+		let nextId = 0;
+		const host = createWidgetAgentHost({
+			store: memoryStore(initial),
+			types,
+			newWidgetId: () => {
+				nextId += 1;
+				return `new-${nextId}`;
+			},
+			limits: { maxWidgets: 6 },
+		});
+		const results: unknown[] = [];
+		for (const command of commands) {
+			const result = await host.apply(JSON.parse(command));
+			results.push(
+				result.ok ? { widgets: JSON.stringify(result.value.widgets) } : { error: result.error },
+			);
+		}
+		cases.push({ initial, commands, results });
+	}
+	return { path: "widget-grid/owner-placed.json", content: cases };
+}
+
 export const widgetGridExporter: VectorExporter = {
 	name: "widget-grid",
 	async build() {
-		return [commandsFile(), layoutFile(), await hostFile()];
+		return [commandsFile(), layoutFile(), await hostFile(), await ownerPlacedFile()];
 	},
 };

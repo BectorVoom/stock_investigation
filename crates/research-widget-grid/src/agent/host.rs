@@ -67,6 +67,12 @@ pub trait WidgetAgentType<W> {
 	///
 	/// [`ConfigUnreadable`] when the stored widget cannot be read as this type.
 	fn config_of(&self, widget: &W) -> Result<Object, ConfigUnreadable>;
+	/// `ownerPlaced.reason`: set when only the owner places widgets of this
+	/// type. Agents then cannot `add` or `duplicate` one, nor `update` its
+	/// config; moving, resizing, renaming and removing stay open.
+	fn owner_placed(&self) -> Option<&str> {
+		None
+	}
 }
 
 /// A stored layout plus the revision a write must present.
@@ -318,6 +324,29 @@ fn unknown_type_of(widget_id: &str, widget_type: &str) -> WidgetAgentFailure {
 	)
 }
 
+fn owner_placed_widget(widget_type: &str, reason: &str) -> WidgetAgentFailure {
+	WidgetAgentFailure::new(
+		Code::InvalidWidget,
+		format!("agents cannot add \"{widget_type}\" widgets: {reason}"),
+	)
+}
+
+/// `sameJson`: structural equality with object keys in any order (the
+/// TypeScript compares parsed JSON, where key order carries no meaning).
+fn same_json(left: &Value, right: &Value) -> bool {
+	match (left, right) {
+		(Value::Array(x), Value::Array(y)) => {
+			x.len() == y.len() && x.iter().zip(y).all(|(a, b)| same_json(a, b))
+		}
+		(Value::Object(x), Value::Object(y)) => {
+			x.len() == y.len()
+				&& x.iter()
+					.all(|(key, value)| y.get(key).is_some_and(|other| same_json(value, other)))
+		}
+		_ => left == right,
+	}
+}
+
 fn size_not_allowed(size: WidgetSize, widget_type: &str) -> WidgetAgentFailure {
 	WidgetAgentFailure::new(
 		Code::SizeNotAllowed,
@@ -462,6 +491,9 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 						format!("unknown widget type \"{widget_type}\"."),
 					)
 				})?;
+				if let Some(reason) = agent_type.owner_placed() {
+					return Err(owner_placed_widget(agent_type.type_name(), reason));
+				}
 				let size = size.unwrap_or_else(|| agent_type.default_size());
 				if !agent_type.sizes().contains(&size) {
 					return Err(size_not_allowed(size, widget_type));
@@ -530,6 +562,20 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 				let mut merged = agent_type
 					.config_of(current)
 					.map_err(|_| unreadable_widget(current.widget_id(), current.widget_type()))?;
+				if let (Some(reason), Some(config)) = (agent_type.owner_placed(), config)
+					&& config.iter().any(|(key, value)| {
+						merged
+							.get(key)
+							.is_none_or(|current| !same_json(value, current))
+					}) {
+					return Err(WidgetAgentFailure::new(
+						Code::InvalidWidget,
+						format!(
+							"agents cannot change the config of \"{}\" widgets: {reason}",
+							current.widget_type()
+						),
+					));
+				}
 				if let Some(config) = config {
 					for (key, value) in config.iter() {
 						merged.insert(key, value.clone());
@@ -556,6 +602,10 @@ impl<'a, W: WidgetBase, S: WidgetLayoutStore<W>> WidgetAgentHost<'a, W, S> {
 				let agent_type = self
 					.type_of(current.widget_type())
 					.ok_or_else(|| unknown_type_of(widget_id, current.widget_type()))?;
+				// A copy is a new widget of the type, so the add rule holds.
+				if let Some(reason) = agent_type.owner_placed() {
+					return Err(owner_placed_widget(agent_type.type_name(), reason));
+				}
 				if !agent_type.sizes().contains(&current.size()) {
 					return Err(size_not_allowed(current.size(), current.widget_type()));
 				}

@@ -157,6 +157,14 @@ const widgetCores: Json[] = [
 	{ widgetId: "w-10", type: "earnings-calendar", title: "Earnings", size: "large", daysAhead: 90 },
 	{ widgetId: "w-11", type: "scheduled-tasks", title: "Tasks", size: "medium" },
 	{ widgetId: "w-12", type: "scheduled-tasks", title: "Next task", size: "small" },
+	{
+		widgetId: "w-13",
+		type: "task-result",
+		title: "Morning brief",
+		size: "medium",
+		taskId: "task_1",
+	},
+	{ widgetId: "w-14", type: "task-result", title: "Brief", size: "large", taskId: "task_a.b:c-9" },
 ];
 /** A scheduled-tasks widget has no content fields: any one is rejected (ADR-0033). */
 const scheduledTasksRejected = [
@@ -165,6 +173,19 @@ const scheduledTasksRejected = [
 	'{"widgetId":"w-11","type":"scheduled-tasks","title":"Tasks","size":"huge"}',
 	'{"widgetId":"w-11","type":"scheduled-task","title":"Tasks","size":"medium"}',
 ];
+/** A task-result widget names exactly one task by an id (ADR-0038 §1). */
+const taskResultRejected = [
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium"}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":""}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"-task"}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"task 1"}',
+	`{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"${"t".repeat(97)}"}`,
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":7}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":null}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"task_1","text":"answer"}',
+	'{"widgetId":"w-13","type":"task-result","title":"Brief","size":"medium","taskId":"task_1","seriesIds":[]}',
+];
+const widgetRejected = [...scheduledTasksRejected, ...taskResultRejected];
 const notebookWidgets: Json[] = widgetCores.map((core) => ({
 	...(core as Record<string, Json>),
 	createdAt: "2026-10-14T00:00:00.000Z",
@@ -908,13 +929,13 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		name: "widgetCore",
 		schema: contracts.widgetCoreSchema,
 		baselines: widgetCores,
-		extra: scheduledTasksRejected,
+		extra: widgetRejected,
 	},
 	{
 		name: "notebookWidget",
 		schema: contracts.notebookWidgetSchema,
 		baselines: notebookWidgets,
-		extra: scheduledTasksRejected.map((text) =>
+		extra: widgetRejected.map((text) =>
 			text.replace(
 				"{",
 				`{"createdAt":"2026-10-14T00:00:00.000Z","updatedAt":"2026-10-14T00:00:00.000Z","revision":1,"origin":${JSON.stringify(origin)},`,

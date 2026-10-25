@@ -302,6 +302,7 @@ struct ToyType {
 	default_size: WidgetSize,
 	sizes: &'static [WidgetSize],
 	schema: Value,
+	owner_placed: Option<&'static str>,
 }
 
 impl ToyType {
@@ -315,6 +316,7 @@ impl ToyType {
 			default_size,
 			sizes,
 			schema,
+			owner_placed: None,
 		}
 	}
 }
@@ -359,6 +361,81 @@ impl WidgetAgentType<Toy> for ToyType {
 			"text".to_owned(),
 			widget.text.as_str().into(),
 		)]))
+	}
+	fn owner_placed(&self) -> Option<&str> {
+		self.owner_placed
+	}
+}
+
+fn toys(widgets: &Wire) -> Vec<Toy> {
+	widgets
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|widget| Toy {
+			widget_id: widget["widgetId"].as_str().unwrap().to_owned(),
+			widget_type: widget["type"].as_str().unwrap().to_owned(),
+			title: widget["title"].as_str().unwrap().to_owned(),
+			size: size(&widget["size"]),
+			text: widget["text"].as_str().unwrap().to_owned(),
+		})
+		.collect()
+}
+
+#[test]
+fn owner_placed_sequences_match_typescript() {
+	let note = ToyType {
+		owner_placed: Some("the owner picks it."),
+		..ToyType::new(
+			"note",
+			WidgetSize::Small,
+			&[WidgetSize::Small, WidgetSize::Medium],
+		)
+	};
+	let banner = ToyType::new("banner", WidgetSize::Large, &[WidgetSize::Large]);
+	let types: [&dyn WidgetAgentType<Toy>; 2] = [&note, &banner];
+	let cases = load("vectors/widget-grid/owner-placed.json");
+	for case in cases.as_array().unwrap() {
+		let mut next_id = 0;
+		let mut host = WidgetAgentHost::new(
+			MemoryLayoutStore {
+				widgets: toys(&case["initial"]),
+				revision: 0,
+			},
+			&types,
+			Box::new(move || {
+				next_id += 1;
+				Some(format!("new-{next_id}"))
+			}),
+		)
+		.with_limits(WidgetLayoutLimits { max_widgets: 6 });
+		let commands = case["commands"].as_array().unwrap();
+		for (command, expected) in commands.iter().zip(case["results"].as_array().unwrap()) {
+			let input = json::parse(command.as_str().unwrap()).unwrap();
+			match host.apply(&input) {
+				Ok(snapshot) => {
+					let widgets = snapshot.to_value();
+					let widgets = widgets.as_object().unwrap().get("widgets").unwrap();
+					assert_eq!(
+						Some(json::stringify(widgets).as_str()),
+						expected["widgets"].as_str(),
+						"{command} {case}"
+					);
+				}
+				Err(failure) => {
+					assert_eq!(
+						failure.code.as_str(),
+						expected["error"]["code"],
+						"{command}"
+					);
+					assert_eq!(
+						failure.message,
+						expected["error"]["message"].as_str().unwrap(),
+						"{command}"
+					);
+				}
+			}
+		}
 	}
 }
 

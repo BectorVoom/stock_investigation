@@ -591,8 +591,8 @@ Migration `0010_scheduled_tasks.sql` (ADR-0033) adds `scheduled_tasks`
 (one row per task: question, schedule JSON, time zone, status, next run,
 last run and last skip, compare-and-set `version`) and the index
 `scheduled_tasks_due` for the due scan every runner claim runs. Its header
-comment is the rollback: remove any `scheduled-tasks` widgets from Home and
-the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
+comment is the rollback: remove any `scheduled-tasks` and `task-result`
+(ADR-0038) widgets from Home and the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
 `DROP INDEX` and `DROP TABLE`. The conversations the tasks created stay.
 An already-running `bun run dev` answers 500 on the task routes until it is
 restarted (or the migration is applied to `data-dev/d1`).

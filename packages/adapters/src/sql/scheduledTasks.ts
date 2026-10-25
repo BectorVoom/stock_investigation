@@ -150,8 +150,9 @@ const resultRowSchema = z.object({
  * message id is `<runId>_answer` (the completion writes it so); the join
  * keeps only `research` runs, so a notebook-assistant reply never counts.
  * The walk runs newest first on the `(owner_id, workspace_id, seq)` key.
+ * Exported so the storage test can pin its query plan.
  */
-const LATEST_RESULT_SQL = `SELECT m.run_id, m.text, m.created_at, j.verification_status
+export const LATEST_RESULT_SQL = `SELECT m.run_id, m.text, m.created_at, j.verification_status
 	FROM chat_messages m
 	JOIN research_jobs j ON j.owner_id = m.owner_id AND j.run_id = m.run_id
 	WHERE m.owner_id = ? AND m.workspace_id = ? AND m.role = 'assistant'

@@ -412,6 +412,62 @@ describe("applyNotebookCommands", () => {
 		}
 	});
 
+	it("arranges an owner's task-result widget but never adds one or changes its task (ADR-0038 §6)", async () => {
+		const resultWidget: NotebookWidget = {
+			widgetId: "w-2",
+			type: "task-result",
+			taskId: "task_abc",
+			title: "Morning brief",
+			size: "medium",
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		};
+		const notebook = notebookOf([textWidget("w-1"), resultWidget]);
+		const refusals = [
+			[
+				{ kind: "add", type: "task-result", title: "Brief", config: { taskId: "task_abc" } },
+				'agents cannot add "task-result" widgets',
+			],
+			[{ kind: "duplicate", widgetId: "w-2" }, 'agents cannot add "task-result" widgets'],
+			[
+				{ kind: "update", widgetId: "w-2", config: { taskId: "task_other" } },
+				'agents cannot change the config of "task-result" widgets',
+			],
+		] as const;
+		for (const [command, rule] of refusals) {
+			const applied = await applyNotebookCommands(notebook, [command], context());
+			if (applied.ok) throw new Error(`expected ${command.kind} to fail`);
+			expect(applied.error.failure.code).toBe("INVALID_WIDGET");
+			expect(applied.error.failure.message).toContain(rule);
+			expect(applied.error.failure.message).toContain("the owner adds it from the add menu");
+		}
+
+		const arranged = await applyNotebookCommands(
+			notebook,
+			[
+				{ kind: "move", widgetId: "w-2", direction: "earlier" },
+				{ kind: "resize", widgetId: "w-2", size: "large" },
+				{ kind: "update", widgetId: "w-2", title: "Brief", config: { taskId: "task_abc" } },
+			],
+			context(),
+		);
+		if (!arranged.ok) throw new Error(`expected success: ${arranged.error.failure.message}`);
+		expect(arranged.value.widgets[0]).toEqual({
+			widgetId: "w-2",
+			type: "task-result",
+			taskId: "task_abc",
+			title: "Brief",
+			size: "large",
+		});
+		expect(arranged.value.changes.map((change) => change.kind)).toEqual([
+			"moved",
+			"resized",
+			"updated",
+		]);
+	});
+
 	it("rejects an unknown widget type", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

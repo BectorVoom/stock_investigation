@@ -3,7 +3,7 @@
  * REAL research-run service underneath, so the claim-time firing is pinned
  * together with the admission and backend rules it relies on.
  */
-import type { AgentSettings, CreateScheduledTaskRequest } from "@research/contracts";
+import type { AgentSettings, CreateScheduledTaskRequest, TaskResult } from "@research/contracts";
 import { runBudget, TASK_VALIDATION_DETAILS } from "@research/contracts";
 import { emptyWorkspaceState, type JobState } from "@research/domain";
 import { describe, expect, it } from "vitest";
@@ -75,6 +75,8 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 	const tasks = new Map<string, StoredScheduledTask>();
 	const workspaces = new Map<string, WorkspaceRecord>();
 	const jobs = new Map<string, StoredJob>();
+	/** Each conversation's answers in posting order (the repository returns the newest). */
+	const answers = new Map<string, TaskResult[]>();
 	const audits: AuditEntry[] = [];
 	/** Number of upcoming task writes to lose (a crash or a concurrent claim). */
 	let loseWrites = 0;
@@ -85,8 +87,8 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 	};
 
 	const taskRepository: ScheduledTaskRepository = {
-		async latestResult() {
-			return null;
+		async latestResult(_owner, workspaceId) {
+			return answers.get(workspaceId)?.at(-1) ?? null;
 		},
 		async list() {
 			const rank = { active: 0, paused: 1, completed: 2 };
@@ -293,6 +295,9 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 			stored.job = { ...stored.job, state };
 		},
 		researchJobs: () => [...jobs.values()].map((stored) => stored.job),
+		postAnswer(workspaceId: string, answer: TaskResult) {
+			answers.set(workspaceId, [...(answers.get(workspaceId) ?? []), answer]);
+		},
 	};
 }
 
@@ -782,5 +787,48 @@ describe("conversation cap", () => {
 		const created = await w.service.create(OWNER, taskRequest(), "cap-key-0001");
 		expect(created.ok).toBe(false);
 		if (!created.ok) expect(created.error.code).toBe("CONFLICT");
+	});
+});
+
+describe("the latest result (ADR-0038 §2)", () => {
+	it("answers NOT_FOUND for a task the owner does not have", async () => {
+		const w = world();
+		const result = await w.service.result(OWNER, "task_missing");
+		expect(result.ok).toBe(false);
+		if (!result.ok) expect(result.error.code).toBe("NOT_FOUND");
+	});
+
+	it("answers null before any run has answered", async () => {
+		const w = world();
+		const task = await createTask(w);
+		expect(await w.service.result(OWNER, task.taskId)).toEqual({
+			ok: true,
+			value: { result: null },
+		});
+	});
+
+	it("answers the newest answer of the task's own conversation", async () => {
+		const w = world();
+		const task = await createTask(w);
+		const other = await createTask(w, { title: "Other task" });
+		const older: TaskResult = {
+			runId: "run_old",
+			text: "Older answer.",
+			answeredAt: "2026-10-24T06:05:00.000Z",
+			verificationStatus: "verified",
+		};
+		const newer: TaskResult = {
+			runId: "run_new",
+			text: "Newer answer.",
+			answeredAt: "2026-10-25T06:05:00.000Z",
+			verificationStatus: null,
+		};
+		w.postAnswer(task.workspaceId, older);
+		w.postAnswer(task.workspaceId, newer);
+		w.postAnswer(other.workspaceId, { ...older, runId: "run_other", text: "Not this one." });
+		expect(await w.service.result(OWNER, task.taskId)).toEqual({
+			ok: true,
+			value: { result: newer },
+		});
 	});
 });

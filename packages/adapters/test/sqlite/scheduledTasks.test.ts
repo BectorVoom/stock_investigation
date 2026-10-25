@@ -10,7 +10,7 @@ import { EMPTY_USAGE, emptyWorkspaceState } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import { insertJobStatement } from "../../src/sql/repositories.ts";
 import { StoredDataError } from "../../src/sql/rows.ts";
-import { createScheduledTaskRepository } from "../../src/sql/scheduledTasks.ts";
+import { createScheduledTaskRepository, LATEST_RESULT_SQL } from "../../src/sql/scheduledTasks.ts";
 import { createResearchUnitOfWork } from "../../src/sql/unitOfWork.ts";
 import { applySqlMigrations, openNodeSqlite, readSqlMigrations } from "../../src/sqlite/index.ts";
 
@@ -373,5 +373,220 @@ describe("scheduled task repository (ADR-0033 §7)", () => {
 				StoredDataError,
 			);
 			expect(await count(db, "workspaces")).toBe(0);
+		}));
+});
+
+/** One chat message as the completion (or the owner's question) stores it. */
+async function postMessage(
+	db: Db,
+	message: {
+		readonly ownerId?: string;
+		readonly messageId: string;
+		readonly workspaceId: string;
+		readonly seq: number;
+		readonly role: "owner" | "assistant";
+		readonly text: string;
+		readonly runId: string | null;
+		readonly at: string;
+	},
+): Promise<void> {
+	await db
+		.prepare(
+			`INSERT INTO chat_messages (owner_id, message_id, workspace_id, seq, role, text, run_id, claim_ids_json, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, '[]', ?)`,
+		)
+		.bind(
+			message.ownerId ?? OWNER,
+			message.messageId,
+			message.workspaceId,
+			message.seq,
+			message.role,
+			message.text,
+			message.runId,
+			message.at,
+		)
+		.run();
+}
+
+/** A finished run of `kind`, stored through the production insert. */
+async function storeRun(
+	db: Db,
+	runId: string,
+	workspaceId: string,
+	overrides: Partial<JobRecord> = {},
+): Promise<void> {
+	await db.batch([
+		insertJobStatement(
+			db,
+			{ ...job(runId, workspaceId, "completed"), ...overrides },
+			`key_${runId}`,
+			"fp",
+			`m_${runId}`,
+			5,
+		),
+	]);
+}
+
+describe("a task's latest result (ADR-0038 §2)", () => {
+	it("is null for a conversation no run has answered", () =>
+		withDb(async (db) => {
+			await create(db, task());
+			await postMessage(db, {
+				messageId: "msg_q",
+				workspaceId: "ws_1",
+				seq: 0,
+				role: "owner",
+				text: "What moved?",
+				runId: null,
+				at: AT,
+			});
+			expect(await createScheduledTaskRepository(db).latestResult(OWNER, "ws_1")).toBe(null);
+		}));
+
+	it("answers the newest research answer, its time and verification status", () =>
+		withDb(async (db) => {
+			await create(db, task());
+			await storeRun(db, "run_old", "ws_1", { verificationStatus: "verified" });
+			await storeRun(db, "run_new", "ws_1");
+			await postMessage(db, {
+				messageId: "run_old_answer",
+				workspaceId: "ws_1",
+				seq: 1,
+				role: "assistant",
+				text: "Older answer.",
+				runId: "run_old",
+				at: "2026-10-24T06:05:00.000Z",
+			});
+			const repository = createScheduledTaskRepository(db);
+			expect(await repository.latestResult(OWNER, "ws_1")).toEqual({
+				runId: "run_old",
+				text: "Older answer.",
+				answeredAt: "2026-10-24T06:05:00.000Z",
+				verificationStatus: "verified",
+			});
+			await postMessage(db, {
+				messageId: "run_new_answer",
+				workspaceId: "ws_1",
+				seq: 3,
+				role: "assistant",
+				text: "Newer answer.",
+				runId: "run_new",
+				at: "2026-10-25T06:05:00.000Z",
+			});
+			expect(await repository.latestResult(OWNER, "ws_1")).toEqual({
+				runId: "run_new",
+				text: "Newer answer.",
+				answeredAt: "2026-10-25T06:05:00.000Z",
+				verificationStatus: null,
+			});
+		}));
+
+	it("skips notebook-assistant replies and owner messages posted after the answer", () =>
+		withDb(async (db) => {
+			await create(db, task());
+			await storeRun(db, "run_research", "ws_1", { verificationStatus: "partially-verified" });
+			await storeRun(db, "run_assist", "ws_1", { kind: "notebook-assist" });
+			await postMessage(db, {
+				messageId: "run_research_answer",
+				workspaceId: "ws_1",
+				seq: 0,
+				role: "assistant",
+				text: "The research answer.",
+				runId: "run_research",
+				at: AT,
+			});
+			// The notebook assistant's reply has the same `<runId>_answer` shape.
+			await postMessage(db, {
+				messageId: "run_assist_answer",
+				workspaceId: "ws_1",
+				seq: 1,
+				role: "assistant",
+				text: "I moved the chart.",
+				runId: "run_assist",
+				at: AT,
+			});
+			await postMessage(db, {
+				messageId: "msg_followup",
+				workspaceId: "ws_1",
+				seq: 2,
+				role: "owner",
+				text: "And yesterday?",
+				runId: "run_research",
+				at: AT,
+			});
+			expect(await createScheduledTaskRepository(db).latestResult(OWNER, "ws_1")).toEqual({
+				runId: "run_research",
+				text: "The research answer.",
+				answeredAt: AT,
+				verificationStatus: "partially-verified",
+			});
+		}));
+
+	it("never answers another conversation's or another owner's answer", () =>
+		withDb(async (db) => {
+			await create(db, task());
+			await create(db, task({ taskId: "task_2", workspaceId: "ws_2" }));
+			await create(db, task({ ownerId: "owner_2", taskId: "task_3", workspaceId: "ws_1" }));
+			await storeRun(db, "run_other_ws", "ws_2");
+			await storeRun(db, "run_other_owner", "ws_1", { ownerId: "owner_2" });
+			await postMessage(db, {
+				messageId: "run_other_ws_answer",
+				workspaceId: "ws_2",
+				seq: 0,
+				role: "assistant",
+				text: "Another conversation's answer.",
+				runId: "run_other_ws",
+				at: AT,
+			});
+			await postMessage(db, {
+				ownerId: "owner_2",
+				messageId: "run_other_owner_answer",
+				workspaceId: "ws_1",
+				seq: 0,
+				role: "assistant",
+				text: "Another owner's answer.",
+				runId: "run_other_owner",
+				at: AT,
+			});
+			const repository = createScheduledTaskRepository(db);
+			expect(await repository.latestResult(OWNER, "ws_1")).toBe(null);
+			expect((await repository.latestResult(OWNER, "ws_2"))?.runId).toBe("run_other_ws");
+			expect((await repository.latestResult("owner_2", "ws_1"))?.runId).toBe("run_other_owner");
+		}));
+
+	it("fails a read of an answer that no longer matches the contract", () =>
+		withDb(async (db) => {
+			await create(db, task());
+			await storeRun(db, "run_1", "ws_1");
+			await postMessage(db, {
+				messageId: "run_1_answer",
+				workspaceId: "ws_1",
+				seq: 0,
+				role: "assistant",
+				text: "An answer.",
+				runId: "run_1",
+				at: AT,
+			});
+			await db
+				.prepare("UPDATE research_jobs SET verification_status = 'maybe' WHERE run_id = 'run_1'")
+				.run();
+			await expect(
+				createScheduledTaskRepository(db).latestResult(OWNER, "ws_1"),
+			).rejects.toBeInstanceOf(StoredDataError);
+		}));
+
+	it("walks the conversation's seq key newest first and joins the run by primary key", () =>
+		withDb(async (db) => {
+			const plan = await db
+				.prepare(`EXPLAIN QUERY PLAN ${LATEST_RESULT_SQL}`)
+				.bind(OWNER, "ws_1")
+				.all();
+			const details = plan.results.map((row) => String(row.detail));
+			// The unique (owner_id, workspace_id, seq) key and the research_jobs
+			// primary key: no scan and no sort, whatever the conversation's size.
+			expect(details).toEqual([
+				"SEARCH m USING INDEX sqlite_autoindex_chat_messages_2 (owner_id=? AND workspace_id=?)",
+				"SEARCH j USING INDEX sqlite_autoindex_research_jobs_1 (owner_id=? AND run_id=?)",
+			]);
 		}));
 });

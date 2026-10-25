@@ -608,6 +608,12 @@ export interface WidgetTypeMeta {
 	readonly agentNote: string;
 	readonly defaultSize: WidgetSize;
 	readonly sizes: readonly WidgetSize[];
+	/**
+	 * Only the owner places widgets of this type: its config names something
+	 * an agent cannot look up (ADR-0038 §6). Agents may still move, resize,
+	 * rename and remove one; `agentNote` says why.
+	 */
+	readonly ownerPlacedOnly?: true;
 }
 
 const SERIES_ID_HELP =
@@ -653,7 +659,8 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 		label: "Research result",
 		description:
 			"A research component of this conversation (report, news card, source list), shown read-only with its verification badges.",
-		agentNote: "Agents cannot create this type.",
+		agentNote:
+			"The notebook assistant adds one only for a canvas component of this conversation (its componentId).",
 		defaultSize: "large",
 		sizes: ["medium", "large"],
 	},
@@ -711,8 +718,15 @@ export const WIDGET_TYPE_META: { readonly [T in WidgetType]: WidgetTypeMeta } = 
 			"Agents can move, resize or remove it but cannot add one or change its taskId; the owner adds it from the add menu or the Tasks page.",
 		defaultSize: "medium",
 		sizes: WIDGET_SIZES,
+		ownerPlacedOnly: true,
 	},
 };
+
+/** The `ownerPlaced` rule of an agent type (ADR-0038 §6), read from the one table. */
+export function widgetOwnerPlaced(type: WidgetType): { readonly reason: string } | undefined {
+	const meta = WIDGET_TYPE_META[type];
+	return meta.ownerPlacedOnly === true ? { reason: meta.agentNote } : undefined;
+}
 
 /** The description an agent reads: the owner's sentence plus how to write the type. */
 export function widgetAgentDescription(type: WidgetType): string {

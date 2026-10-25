@@ -1,5 +1,5 @@
 /**
- * Targeted cases for what the seeded corpus does not reach: all eleven widget types,
+ * Targeted cases for what the seeded corpus does not reach: all twelve widget types,
  * chart provenance and evidence copies, a history longer than the context budget,
  * and the repair prompt in each of its three selection modes.
  */
@@ -144,6 +144,14 @@ function allTypes(): NotebookWidget[] {
 			...META,
 			type: "scheduled-tasks",
 		},
+		{
+			widgetId: "tr1",
+			title: "Morning brief",
+			size: "medium",
+			...META,
+			type: "task-result",
+			taskId: "task_1",
+		},
 	];
 }
 
@@ -218,6 +226,13 @@ export async function coverageTurns(): Promise<void> {
 		{ kind: "update", widgetId: "sch1", config: { question: "run this" } },
 		{ kind: "resize", widgetId: "sch1", size: "small" },
 		{ kind: "duplicate", widgetId: "sch1" },
+		// ADR-0038 §6: an owner-placed task-result is arranged, never added or retargeted.
+		{ kind: "add", type: "task-result", title: "Brief", config: { taskId: "task_1" } },
+		{ kind: "duplicate", widgetId: "tr1" },
+		{ kind: "update", widgetId: "tr1", config: { taskId: "task_2" } },
+		{ kind: "update", widgetId: "tr1", title: "Brief", config: { taskId: "task_1" } },
+		{ kind: "resize", widgetId: "tr1", size: "large" },
+		{ kind: "move", widgetId: "tr1", direction: "earlier" },
 		{ kind: "add", type: "research", title: "New", config: { componentId: "comp_1" } },
 		{
 			kind: "add",

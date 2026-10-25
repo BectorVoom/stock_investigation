@@ -422,6 +422,62 @@ describe("createHomeMcpServer", () => {
 		expect(api.puts()).toBe(0);
 	});
 
+	it("arranges a task-result widget but never adds one or changes its task (ADR-0038 §6)", async () => {
+		const withResult: HomeDashboard = {
+			schemaVersion: 2,
+			widgets: [
+				...DEFAULT_HOME_DASHBOARD.widgets,
+				{
+					type: "task-result",
+					widgetId: "w-brief",
+					title: "Morning brief",
+					size: "medium",
+					taskId: "task_abc",
+				},
+			],
+		};
+		const api = fakeHomeApi(withResult, 3);
+		const server = createHomeMcpServer({ apiOrigin: API_ORIGIN, fetch: api.fetch });
+		const refused = [
+			await callTool(server, 1, "widgets_add", {
+				type: "task-result",
+				title: "Brief",
+				config: { taskId: "task_abc" },
+			}),
+			await callTool(server, 2, "widgets_duplicate", { widgetId: "w-brief" }),
+			await callTool(server, 3, "widgets_update", {
+				widgetId: "w-brief",
+				config: { taskId: "task_other" },
+			}),
+		].map(toolError);
+		for (const error of refused) {
+			expect(error.code).toBe("INVALID_WIDGET");
+			expect(error.message).toContain("the owner adds it from the add menu or the Tasks page");
+		}
+		expect(refused[0]?.message).toContain('agents cannot add "task-result" widgets');
+		expect(refused[2]?.message).toContain('agents cannot change the config of "task-result"');
+		expect(api.puts()).toBe(0);
+
+		snapshotWidgets(
+			await callTool(server, 4, "widgets_resize", { widgetId: "w-brief", size: "large" }),
+		);
+		snapshotWidgets(
+			await callTool(server, 5, "widgets_reorder", { widgetId: "w-brief", toIndex: 0 }),
+		);
+		expect(api.dashboard().widgets[0]).toEqual({
+			type: "task-result",
+			widgetId: "w-brief",
+			title: "Morning brief",
+			size: "large",
+			taskId: "task_abc",
+		});
+		const removed = snapshotWidgets(
+			await callTool(server, 6, "widgets_remove", { widgetId: "w-brief" }),
+		);
+		expect(removed.some((widget) => widget.widgetId === "w-brief")).toBe(false);
+		expect(api.puts()).toBe(3);
+	});
+
 	it("allocates ids the contract accepts", () => {
 		expect(newHomeWidgetId()).toMatch(/^w-mcp-[A-Za-z0-9_.-]+$/);
 		expect(newHomeWidgetId()).not.toBe(newHomeWidgetId());

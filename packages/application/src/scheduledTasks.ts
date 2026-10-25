@@ -5,6 +5,7 @@ import {
 	type ScheduledTask,
 	type ScheduledTaskListResponse,
 	TASK_VALIDATION_DETAILS,
+	type TaskResultResponse,
 	type TaskSchedule,
 	taskSkipCodeSchema,
 	type UpdateScheduledTaskRequest,
@@ -435,6 +436,17 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 				at: now,
 			});
 			return ok(await viewOf(ownerId, current));
+		},
+
+		/**
+		 * The task's latest result (ADR-0038 §2): the newest answer a research
+		 * run posted to its conversation, or null before any has. Errors:
+		 * `NOT_FOUND`.
+		 */
+		async result(ownerId: string, taskId: string): Promise<UseCaseResult<TaskResultResponse>> {
+			const task = await deps.scheduledTasks.get(ownerId, taskId);
+			if (task === null) return notFound();
+			return ok({ result: await deps.scheduledTasks.latestResult(ownerId, task.workspaceId) });
 		},
 
 		/** Deletes the task; its conversation (the answers) stays. Errors: `NOT_FOUND`. */

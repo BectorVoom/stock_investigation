@@ -15,6 +15,7 @@ import {
 	widgetAgentDescription,
 	widgetContentSchema,
 	widgetCoreSchema,
+	widgetOwnerPlaced,
 	widgetSeriesIds,
 	withEarnedChartProvenance,
 } from "@research/contracts";
@@ -122,6 +123,7 @@ export function notebookWidgetAgentTypes(
 			sizes: meta.sizes,
 			configSchema,
 			build: (draft) => buildCore(type, draft, context),
+			ownerPlaced: widgetOwnerPlaced(type),
 			configOf: (widget) => {
 				if (widget.type !== type) {
 					throw new Error(`widget "${widget.widgetId}" is not a ${type} widget.`);

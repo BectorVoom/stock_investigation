@@ -15,6 +15,7 @@ import { err, ok, type Result, type WidgetBase } from "../core/types.ts";
 import { parseWidgetCommand } from "./commands.ts";
 import type {
 	JsonObject,
+	JsonValue,
 	WidgetAgentFailure,
 	WidgetAgentHost,
 	WidgetAgentType,
@@ -54,6 +55,43 @@ function unreadableWidget(widgetId: string, type: string): WidgetAgentFailure {
 
 function rejectedWidget(type: string): WidgetAgentFailure {
 	return { code: "INVALID_WIDGET", message: `widget type "${type}" rejected the widget.` };
+}
+
+function ownerPlacedWidget(type: string, reason: string): WidgetAgentFailure {
+	return {
+		code: "INVALID_WIDGET",
+		message: `agents cannot add "${type}" widgets: ${reason}`,
+	};
+}
+
+function isJsonArray(value: JsonValue): value is readonly JsonValue[] {
+	return Array.isArray(value);
+}
+
+/** Equality of parsed JSON; object key order carries no meaning. */
+function sameJson(left: JsonValue | undefined, right: JsonValue | undefined): boolean {
+	if (left === right) return true;
+	if (
+		left === undefined ||
+		right === undefined ||
+		left === null ||
+		right === null ||
+		typeof left !== "object" ||
+		typeof right !== "object"
+	) {
+		return false;
+	}
+	if (isJsonArray(left) || isJsonArray(right)) {
+		return (
+			isJsonArray(left) &&
+			isJsonArray(right) &&
+			left.length === right.length &&
+			left.every((item, index) => sameJson(item, right[index]))
+		);
+	}
+	const leftKeys = Object.keys(left);
+	if (leftKeys.length !== Object.keys(right).length) return false;
+	return leftKeys.every((key) => sameJson(left[key], right[key]));
 }
 
 const ID_UNAVAILABLE: WidgetAgentFailure = {
@@ -184,6 +222,9 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 						message: `unknown widget type "${command.type}".`,
 					});
 				}
+				if (agentType.ownerPlaced !== undefined) {
+					return err(ownerPlacedWidget(agentType.type, agentType.ownerPlaced.reason));
+				}
 				const size = command.size ?? agentType.defaultSize;
 				if (!agentType.sizes.includes(size)) {
 					return err({
@@ -255,6 +296,18 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 				}
 				const config = configOf(agentType, current);
 				if (!config.ok) return config;
+				const ownerPlaced = agentType.ownerPlaced;
+				if (
+					ownerPlaced !== undefined &&
+					Object.entries(command.config ?? {}).some(
+						([key, value]) => !sameJson(value, config.value[key]),
+					)
+				) {
+					return err({
+						code: "INVALID_WIDGET",
+						message: `agents cannot change the config of "${current.type}" widgets: ${ownerPlaced.reason}`,
+					});
+				}
 				const widget = buildWidget(agentType, {
 					widgetId: current.widgetId,
 					title: command.title ?? current.title,
@@ -279,6 +332,10 @@ export function createWidgetAgentHost<W extends WidgetBase, Revision>(
 						code: "UNKNOWN_WIDGET_TYPE",
 						message: `widget "${command.widgetId}" has unknown type "${current.type}".`,
 					});
+				}
+				// A copy is a new widget of the type, so the add rule holds.
+				if (agentType.ownerPlaced !== undefined) {
+					return err(ownerPlacedWidget(agentType.type, agentType.ownerPlaced.reason));
 				}
 				if (!agentType.sizes.includes(current.size)) {
 					return err({

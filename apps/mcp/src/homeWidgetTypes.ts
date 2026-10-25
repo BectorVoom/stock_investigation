@@ -7,6 +7,7 @@ import {
 	WIDGET_TYPE_META,
 	widgetAgentDescription,
 	widgetContentSchema,
+	widgetOwnerPlaced,
 } from "@research/contracts";
 import { isJsonObject, type JsonObject, type WidgetAgentType } from "@research/widget-grid/agent";
 import { err, ok, type Result } from "@research/widget-grid/core";
@@ -87,6 +88,7 @@ export const HOME_WIDGET_AGENT_TYPES: readonly WidgetAgentType<HomeWidget>[] =
 			sizes: meta.sizes,
 			configSchema: configSchemaFor(type),
 			build: (draft) => buildHomeWidget(type, draft),
+			ownerPlaced: widgetOwnerPlaced(type),
 			configOf: (widget) => {
 				if (widget.type !== type) {
 					throw new Error(`widget "${widget.widgetId}" is not a ${type} widget.`);

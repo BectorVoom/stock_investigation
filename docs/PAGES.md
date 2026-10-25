@@ -33,8 +33,10 @@ accessible name), and Home takes every type except a research result.
 
 - Add a widget from the + menu: Text, Metric, Chart, Table (added and opened
   in their editor) or a live market type — Market metric, Line chart, Stock
-  table, Indicator table, Earnings calendar (its dialog opens first), or
-  Scheduled tasks (no fields: placed at once, and its menu has no Edit…).
+  table, Indicator table, Earnings calendar (its dialog opens first),
+  Scheduled tasks (no fields: placed at once, and its menu has no Edit…), or
+  Task result (ADR-0038: a dialog lists your tasks and you pick one; its
+  menu has no Edit…).
 - Edit a widget (Edit…: the content editor, or the market dialog for series,
   range, days ahead), edit a Text widget in place, or change its size from the
   menu (Size: Small / Medium / Large).
@@ -104,6 +106,14 @@ former label); the per-widget actions open a text menu with leading icons.
   Small shows the next task only, Medium up to four, Large up to eight and
   then "N more". It polls the list (30 s; 5 s while a run is unfinished)
   only while the tab is visible, one poll for all such widgets.
+- A Task result widget, when arranged (ADR-0038) — one task's latest
+  answer: the task's title; a status line with when that answer was given,
+  its verification status and, when it applies, "Running now", "Last run
+  failed" or the last skip; the answer as plain text (Small a few lines,
+  Medium more, Large all of it); "Open chat" and Run now. A run in progress
+  or a failed run never hides the previous answer. It reads the same task
+  list as the scheduled-tasks widget and fetches the answer only when the
+  task's last run changes. A deleted task's widget says so.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
@@ -225,6 +235,8 @@ return. At most 10 tasks are active and 30 stored.
 - Delete a task, with confirmation (its chat and answers stay).
 - Open a task's chat (`#/chat/<workspaceId>`), where every run's question and
   answer land.
+- Show a task's result on Home ("Show result on Home", ADR-0038): appends a
+  Task result widget for the task to Home, or says it is already there.
 
 **Shows**
 
@@ -367,8 +379,8 @@ Ask research questions and read the answers, with their sources and run progress
   Sources list as in Chat; a chart without provenance (owner- or
   assistant-made) is marked "basis not stated". The
   earnings calendar reads the Watchlist page's stocks with its own refresh
-  button. The scheduled-tasks widget is Home's too (see Home): it lists the
-  owner's tasks, not this chat's. Titles stay in the data but the frames hide them.
+  button. The scheduled-tasks and Task result widgets are Home's too (see
+  Home): they show the owner's tasks, not this chat's. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header
   and toolbar; dragging near its top or bottom edge scrolls it.
 - Cut, copy and paste widgets (ADR-0023): Cut / Copy / Paste after in each
@@ -490,7 +502,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 7. Continue without local compute | Chat (browse chats, queue while offline; browse findings) |
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
-| 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks") and Chat (each task's answers in its own chat) |
+| 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
 
 ## How the split was checked
 

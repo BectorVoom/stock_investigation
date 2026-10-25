@@ -336,7 +336,10 @@ const added = await host.apply({
 - `store` reads and writes your widgets with a revision (compare-and-set):
   `write` rejects with `CONFLICT` when the revision is no longer current.
 - `types` lists your widget types: label, description, allowed sizes, the
-  JSON Schema of the configuration, and `build` / `configOf`.
+  JSON Schema of the configuration, and `build` / `configOf`. A type with
+  `ownerPlaced: { reason }` is one only the owner places: agents cannot
+  `add` or `duplicate` it, nor `update` its config (they may rename, move,
+  resize and remove it); the refusal is `INVALID_WIDGET` with the reason.
 - `newWidgetId` allocates the id of an added widget.
 - `limits` (default 24 widgets) and `validateLayout` (whole-layout rules
   beyond the per-widget checks) are optional.
