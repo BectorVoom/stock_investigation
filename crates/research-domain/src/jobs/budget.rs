@@ -15,7 +15,7 @@ pub struct ResearchBudget {
 	pub max_wall_clock_ms: u64,
 	/// UTF-8 bytes of prompt input the run may send.
 	pub max_input_bytes: u64,
-	/// `None` = the owner authorized no metered spend at all.
+	/// `None` = no spending cap.
 	pub max_spend_usd: Option<f64>,
 }
 
@@ -152,11 +152,11 @@ pub fn check_budget(
 		return Err(BudgetLimit::MaxInputBytes);
 	}
 	// Written so that NaN fails it: a corrupt counter is over budget, not under.
-	let spend_ceiling = budget.max_spend_usd.unwrap_or(0.0);
-	if !matches!(
-		projected.known_cost_usd.partial_cmp(&spend_ceiling),
-		Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
-	) {
+	if let Some(spend_ceiling) = budget.max_spend_usd
+		&& !matches!(
+			projected.known_cost_usd.partial_cmp(&spend_ceiling),
+			Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+		) {
 		return Err(BudgetLimit::MaxSpend);
 	}
 	Ok(())
@@ -314,7 +314,7 @@ mod tests {
 		};
 		assert_eq!(
 			check_budget(&no_spend, &spent, 0, &UsageDelta::default()),
-			Err(BudgetLimit::MaxSpend)
+			Ok(())
 		);
 	}
 

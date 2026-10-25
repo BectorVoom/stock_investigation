@@ -1,5 +1,7 @@
 # ADR-0029: Fixed per-question limits; OpenCode runs at the chosen effort
 
+Spending consent and mandatory caps are superseded by [ADR-0035](0035-optional-spending-caps.md).
+
 **Status:** Accepted · **Date:** 2026-10-17 · **Owner decision:** remove
 "Limits for each question" from Settings → AI agent
 

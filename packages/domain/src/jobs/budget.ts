@@ -6,7 +6,7 @@ export interface ResearchBudget {
 	readonly maxToolCalls: number;
 	readonly maxWallClockMs: number;
 	readonly maxInputBytes: number;
-	/** null = the owner authorized no metered spend at all. */
+	/** null = no spending cap. */
 	readonly maxSpendUsd: number | null;
 }
 
@@ -82,7 +82,9 @@ export function checkBudget(
 	if (!(projected.toolCalls <= budget.maxToolCalls)) return err("MAX_TOOL_CALLS");
 	if (!(elapsedMs < budget.maxWallClockMs)) return err("MAX_WALL_CLOCK");
 	if (!(projected.inputBytes <= budget.maxInputBytes)) return err("MAX_INPUT_BYTES");
-	if (!(projected.knownCostUsd <= (budget.maxSpendUsd ?? 0))) return err("MAX_SPEND");
+	if (budget.maxSpendUsd !== null && !(projected.knownCostUsd <= budget.maxSpendUsd)) {
+		return err("MAX_SPEND");
+	}
 	return ok(undefined);
 }
 

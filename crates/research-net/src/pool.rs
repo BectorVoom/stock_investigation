@@ -14,6 +14,8 @@
 //! - only a connection that delivered a complete 2xx response is returned
 //!   (abort, timeout, byte cap, decode error, non-2xx and `Connection: close`
 //!   all close it), so no half-read body can desynchronise the next request;
+//! - a POST (`SafeFetchOptions::json_body`) neither takes nor returns a
+//!   connection: it always opens a fresh one, which closes after it;
 //! - idle connections close after [`IDLE_TIMEOUT`]; at most
 //!   [`MAX_IDLE_PER_KEY`] per key and [`MAX_IDLE_TOTAL`] in all.
 //!
@@ -25,7 +27,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError, Weak};
 use std::time::Duration;
 
 use bytes::Bytes;
-use http_body_util::Empty;
+use http_body_util::Full;
 use hyper::client::conn::http1::SendRequest;
 use tokio::task::AbortHandle;
 use tokio::time::Instant;
@@ -49,7 +51,7 @@ impl Drop for DriverGuard {
 
 /// One HTTP/1.1 connection: the request half plus the task driving the socket.
 pub(crate) struct Connection {
-	pub(crate) sender: SendRequest<Empty<Bytes>>,
+	pub(crate) sender: SendRequest<Full<Bytes>>,
 	// Field order: the sender drops first, then the driver is aborted.
 	pub(crate) _driver: DriverGuard,
 }

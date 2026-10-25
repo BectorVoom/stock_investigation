@@ -37,9 +37,9 @@ export const agentSettingsModelMessages = defineMessages({
 		costStatementPlanLimited:
 			"Cost unknown — limited by your plan. This backend runs under your subscription's limits and does not report a price; no metered (paid) spend is authorized for this run.",
 		costStatementMetered:
-			"Metered backend — usage is billed to your provider account. Set a maximum spend greater than 0 and confirm consent to continue. There is no paid fallback without consent.",
+			"Metered backend — usage is billed to your provider account. Set an optional maximum spend to limit each run. Leave it blank for no spending cap.",
 		costStatementUnknown:
-			"Cost model unknown until a runner reports this backend. No metered (paid) spend is authorized unless you set a maximum spend and confirm consent.",
+			"Cost model unknown until a runner reports this backend. A maximum spend is optional; leave it blank for no spending cap.",
 		meteredNeedsSpend: "A metered backend needs a maximum spend greater than 0 USD.",
 		spendOutOfRange: (max: number) => `Max spend must be greater than 0 and at most ${max} USD.`,
 		confirmConsent: "Confirm consent to metered spend before submitting.",
@@ -87,9 +87,9 @@ export const agentSettingsModelMessages = defineMessages({
 		costStatementPlanLimited:
 			"費用不明 — プランの上限内で動きます。このバックエンドはサブスクリプションの上限内で実行され、価格を報告しません。この実行では従量課金（有料）の支出は許可されません。",
 		costStatementMetered:
-			"従量課金のバックエンド — 利用料はプロバイダーのアカウントに請求されます。続けるには 0 より大きい最大支出額を設定し、同意してください。同意なしに有料の代替手段へ切り替わることはありません。",
+			"従量課金のバックエンド — 利用料はプロバイダーのアカウントに請求されます。最大支出額は任意です。空欄の場合、支出額の上限はありません。",
 		costStatementUnknown:
-			"ランナーがこのバックエンドを報告するまで課金方式は不明です。最大支出額を設定して同意しない限り、従量課金（有料）の支出は許可されません。",
+			"ランナーがこのバックエンドを報告するまで課金方式は不明です。最大支出額は任意です。空欄の場合、支出額の上限はありません。",
 		meteredNeedsSpend: "従量課金のバックエンドには、0 USD より大きい最大支出額が必要です。",
 		spendOutOfRange: (max) => `最大支出額は 0 より大きく、${max} USD 以下にしてください。`,
 		confirmConsent: "送信する前に、従量課金の支出に同意してください。",

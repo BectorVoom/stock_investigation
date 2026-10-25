@@ -38,6 +38,17 @@ const FIXED_ENVIRONMENTS: readonly Readonly<Record<string, string>>[] = [
 	},
 	BASE,
 	{ ...BASE, FINNHUB_API_KEY: "finnhub-key" },
+	...[
+		"tvly-dev-0123456789",
+		" tvly-padded ",
+		"short",
+		"has space key",
+		"tvly-é-key",
+		"x".repeat(280),
+		"x".repeat(281),
+		"",
+	].map((value) => ({ ...BASE, TAVILY_API_KEY: value })),
+	{ ...BASE, TAVILY_API_KEY: "has space", SEC_USER_AGENT: "short" },
 	{
 		...BASE,
 		FRED_API_KEY: "fred-key",

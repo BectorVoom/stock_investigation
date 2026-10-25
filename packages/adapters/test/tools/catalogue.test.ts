@@ -19,7 +19,7 @@ import {
 } from "../../src/tools/shared.ts";
 import { createScriptedFetcher, createToolContext, fixedClock, NOW_ISO } from "./support.ts";
 
-function setup() {
+function setup(tavilyApiKey: string | null = null) {
 	const fetcher = createScriptedFetcher({});
 	const tools = createResearchTools({
 		fetcher,
@@ -27,6 +27,7 @@ function setup() {
 		hasher: webCryptoHasher,
 		clock: fixedClock(),
 		secUserAgent: null,
+		tavilyApiKey,
 		pageArchive: null,
 		sleep: async () => {},
 	});
@@ -41,6 +42,7 @@ function setupWithArchive() {
 		hasher: webCryptoHasher,
 		clock: fixedClock(),
 		secUserAgent: null,
+		tavilyApiKey: null,
 		pageArchive: {
 			async save() {
 				return { ok: true as const, value: { fileName: "archived.md" } };
@@ -57,7 +59,7 @@ describe("research tool catalogue", () => {
 		expect(tools.map((tool) => tool.toolId)).toEqual([
 			"news.fetch_feed",
 			"news.fetch_article",
-			"web.search",
+			"news.search",
 			"finance.sec_company_financials",
 			"filings.sec_13f_holdings",
 			"positions.us_short_interest",
@@ -97,8 +99,21 @@ describe("research tool catalogue", () => {
 		}
 		// Without an archive there is nowhere to keep a retrieved page (DATA-010).
 		expect(registry.get("web.fetch_page")).toBeUndefined();
-		// The search tool writes nothing to disk, so it is registered either way (ADR-0025).
-		expect(registry.get("web.search")?.networkAllowlist).toEqual({ kind: "public-web" });
+		// The news search writes nothing to disk, so it is registered either way (ADR-0025).
+		expect(registry.get("news.search")?.networkAllowlist).toEqual({ kind: "public-web" });
+		// Without a Tavily key there is no web search.
+		expect(registry.get("web.search")).toBeUndefined();
+	});
+
+	it("registers web.search before news.search only with a Tavily key", () => {
+		const { tools, registry } = setup("tvly-test-key");
+		expect(tools.map((tool) => tool.toolId).slice(2, 4)).toEqual(["web.search", "news.search"]);
+		expect(registry.get("web.search")).toMatchObject({
+			version: "2.0.0",
+			costCategory: "metered",
+			sideEffect: "external-read",
+			networkAllowlist: { kind: "public-web" },
+		});
 	});
 
 	it("registers web.fetch_page only when a page archive is configured", () => {

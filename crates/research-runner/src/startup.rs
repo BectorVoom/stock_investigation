@@ -53,6 +53,9 @@ fn log_disabled_features(logger: &dyn EventLogger, config: &RunnerConfig) {
 	if config.sec_user_agent.is_none() {
 		logger.warn("sec_tools_disabled", &reason("SEC_USER_AGENT not set"));
 	}
+	if config.tavily_api_key.is_none() {
+		logger.warn("web_search_disabled", &reason("TAVILY_API_KEY not set"));
+	}
 	if config.pages_directory.is_none() {
 		logger.warn("web_pages_disabled", &reason("RUNNER_PAGES_DIR not set"));
 	}
@@ -411,6 +414,7 @@ mod tests {
 			[
 				"runner_started",
 				"sec_tools_disabled",
+				"web_search_disabled",
 				"web_pages_disabled",
 				"market_source_disabled",
 				"market_source_disabled",
@@ -419,7 +423,8 @@ mod tests {
 			]
 		);
 		assert!(lines[1].contains(r#""reason":"SEC_USER_AGENT not set""#));
-		assert!(lines[4].contains(r#""reason":"TWELVE_DATA_API_KEY not set""#));
+		assert!(lines[2].contains(r#""reason":"TAVILY_API_KEY not set""#));
+		assert!(lines[5].contains(r#""reason":"TWELVE_DATA_API_KEY not set""#));
 		// The claim carried the runner version and no agents.
 		let request = &worker.requests()[0];
 		assert_eq!(request.path, "/api/v1/runner/jobs/claim");

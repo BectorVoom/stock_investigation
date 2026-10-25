@@ -68,6 +68,45 @@ export function checkLease(job: JobLeaseView, proof: LeaseProof): Result<void, L
 	return ok(undefined);
 }
 
+/**
+ * What a lease hand-back does (ADR-0036). A runner that is shutting down gives
+ * its lease back instead of letting it run out:
+ *
+ * - `requeue`: the job returns to `pending` with the claim refunded
+ *   (`nextAttempt = attempt - 1`, never below 0), no owner and no expiry. The
+ *   generation is kept: the next claim increments it, and until then the job is
+ *   not leased, so the released proof can never act again.
+ * - `cancel`: the owner asked to cancel while the lease was held. Nobody holds
+ *   a lease once it is handed back, and an owner cancel of a job without a live
+ *   lease is immediate, so the job is cancelled now rather than parked in
+ *   `pending` with a cancel request nobody would act on.
+ */
+export type ReleaseDecision =
+	| { readonly kind: "requeue"; readonly nextAttempt: number }
+	| { readonly kind: "cancel" };
+
+/** Only the current lease holder, with the current generation, may hand the lease back. */
+export function decideRelease(
+	job: JobLeaseView,
+	proof: LeaseProof,
+): Result<ReleaseDecision, LeaseError> {
+	const lease = checkLease(job, proof);
+	if (!lease.ok) return lease;
+	if (job.cancelRequested) return ok({ kind: "cancel" });
+	return ok({ kind: "requeue", nextAttempt: Math.max(job.attempt - 1, 0) });
+}
+
+/**
+ * The job's lease columns after a granted hand-back. Nobody owns it and it has
+ * no expiry; the generation is unchanged (the next claim moves it).
+ */
+export function releasedLeaseView(job: JobLeaseView, decision: ReleaseDecision): JobLeaseView {
+	const released = { ...job, leaseOwnerId: null, leaseExpiresAt: null };
+	return decision.kind === "cancel"
+		? { ...released, state: "cancelled", cancelRequested: false }
+		: { ...released, state: "pending", attempt: decision.nextAttempt };
+}
+
 export function leaseExpiryIso(nowMs: number, leaseDurationMs: number): string {
 	return new Date(nowMs + leaseDurationMs).toISOString();
 }

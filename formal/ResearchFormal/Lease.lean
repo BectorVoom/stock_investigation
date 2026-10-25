@@ -236,4 +236,220 @@ theorem old_proof_never_valid_again {j : Job} {a g : Nat} {f : Bool}
   rw [stale_generation_rejected h newRunner oldRunner oldGeneration hold]
   decide
 
+/-!
+## Lease hand-back on shutdown (ADR-0036)
+
+Formal model of `decideRelease` and `releasedLeaseView` in
+`packages/domain/src/jobs/lease.ts`. A runner that is shutting down gives its
+lease back instead of letting it run out: the job returns to `pending` with
+its claim refunded, or — when the owner asked to cancel meanwhile — is
+cancelled at once, as an owner cancel of a job without a live lease is.
+-/
+
+inductive ReleaseDecision where
+  /-- Back to `pending`, the claim refunded to `nextAttempt`. -/
+  | requeue (nextAttempt : Nat)
+  /-- The owner asked to cancel while the lease was held: cancelled now. -/
+  | cancel
+  /-- Not the current holder: the lease check's verdict. -/
+  | rejected (reason : LeaseCheck)
+  deriving DecidableEq, Repr
+
+def decideRelease (j : Job) (runner generation : Nat) : ReleaseDecision :=
+  if checkLease j runner generation = .ok then
+    if j.cancelRequested then .cancel else .requeue (j.attempt - 1)
+  else .rejected (checkLease j runner generation)
+
+/-- The job after a `requeue` hand-back: pending, no owner, the generation kept. -/
+def applyRequeue (j : Job) (nextAttempt : Nat) : Job :=
+  { j with state := .pending, owner := none, leaseExpired := true, attempt := nextAttempt }
+
+/-- The job after a `cancel` hand-back. -/
+def applyReleaseCancel (j : Job) : Job :=
+  { j with state := .cancelled, owner := none, leaseExpired := true, cancelRequested := false }
+
+/-- The job after the Worker applies a hand-back decision (a refusal changes nothing). -/
+def applyRelease (j : Job) : ReleaseDecision → Job
+  | .requeue a => applyRequeue j a
+  | .cancel => applyReleaseCancel j
+  | .rejected _ => j
+
+/-- What a granted `requeue` implies. -/
+theorem release_requeue_spec {j : Job} {runner generation a : Nat}
+    (h : decideRelease j runner generation = .requeue a) :
+    checkLease j runner generation = .ok ∧ j.cancelRequested = false ∧ a = j.attempt - 1 := by
+  unfold decideRelease at h
+  by_cases hc : checkLease j runner generation = .ok
+  · rw [ifPos hc] at h
+    by_cases hx : j.cancelRequested = true
+    · rw [ifPos hx] at h
+      cases h
+    · rw [ifNeg hx] at h
+      injection h with h1
+      refine ⟨hc, ?_, h1.symm⟩
+      cases hv : j.cancelRequested with
+      | false => rfl
+      | true => exact absurd hv hx
+  · rw [ifNeg hc] at h
+    cases h
+
+/-- What a granted `cancel` implies. -/
+theorem release_cancel_spec {j : Job} {runner generation : Nat}
+    (h : decideRelease j runner generation = .cancel) :
+    checkLease j runner generation = .ok ∧ j.cancelRequested = true := by
+  unfold decideRelease at h
+  by_cases hc : checkLease j runner generation = .ok
+  · rw [ifPos hc] at h
+    by_cases hx : j.cancelRequested = true
+    · exact ⟨hc, hx⟩
+    · rw [ifNeg hx] at h
+      cases h
+  · rw [ifNeg hc] at h
+    cases h
+
+/-- **Only the holder releases.** Anyone else is refused with the lease check's verdict. -/
+theorem non_holder_cannot_release {j : Job} {runner generation : Nat}
+    (h : checkLease j runner generation ≠ .ok) :
+    decideRelease j runner generation = .rejected (checkLease j runner generation) := by
+  unfold decideRelease
+  rw [ifNeg h]
+
+/--
+A granted hand-back (either kind) was made by the runner that owns the lease,
+presenting the current generation, while the job was leased.
+-/
+theorem release_by_holder_only {j : Job} {runner generation : Nat}
+    (h : (∃ a, decideRelease j runner generation = .requeue a) ∨
+      decideRelease j runner generation = .cancel) :
+    j.state.isLeased = true ∧ j.owner = some runner ∧ generation = j.generation := by
+  rcases h with ⟨a, ha⟩ | hc
+  · exact lease_ok_spec (release_requeue_spec ha).1
+  · exact lease_ok_spec (release_cancel_spec hc).1
+
+/--
+**Refund.** A hand-back never raises the attempt count, and gives back exactly
+one claim (a job with no claim recorded stays at zero).
+-/
+theorem release_refunds_one_claim {j : Job} {runner generation a : Nat}
+    (h : decideRelease j runner generation = .requeue a) :
+    a ≤ j.attempt ∧ (0 < j.attempt → a + 1 = j.attempt) := by
+  have ha := (release_requeue_spec h).2.2
+  omega
+
+/-- **Round trip.** A claim followed by the claimant's hand-back leaves the attempt count unchanged. -/
+theorem claim_then_release_restores_attempt {j : Job} {a g : Nat} {f : Bool}
+    (h : decideClaim j = .claim a g f) (runner : Nat) :
+    decideRelease (applyClaim j runner a g) runner g = .requeue j.attempt := by
+  have hs := claim_spec h
+  have hok := claimant_holds_lease j runner a g
+  have hcr : ¬((applyClaim j runner a g).cancelRequested = true) := by
+    show ¬(j.cancelRequested = true)
+    rw [hs.1]
+    decide
+  unfold decideRelease
+  rw [ifPos hok, ifNeg hcr]
+  show ReleaseDecision.requeue (a - 1) = .requeue j.attempt
+  rw [hs.2.2.1]
+  rfl
+
+/--
+**The released proof is dead.** After a hand-back the job is not leased, so
+every proof — the released one included — is refused.
+-/
+theorem requeued_rejects_every_proof (j : Job) (a runner generation : Nat) :
+    checkLease (applyRequeue j a) runner generation = .notLeased := by
+  simp [checkLease, applyRequeue, JobState.isLeased]
+
+theorem release_cancelled_rejects_every_proof (j : Job) (runner generation : Nat) :
+    checkLease (applyReleaseCancel j) runner generation = .notLeased := by
+  simp [checkLease, applyReleaseCancel, JobState.isLeased]
+
+/-- A hand-back cannot be repeated: once requeued, any further release is refused. -/
+theorem release_not_repeatable (j : Job) (a runner generation : Nat) :
+    decideRelease (applyRequeue j a) runner generation = .rejected .notLeased := by
+  have hn := requeued_rejects_every_proof j a runner generation
+  have hne : checkLease (applyRequeue j a) runner generation ≠ .ok := by
+    rw [hn]
+    decide
+  rw [non_holder_cannot_release hne, hn]
+
+/-- A hand-back keeps the generation; only a claim moves it. -/
+theorem requeue_keeps_generation (j : Job) (a : Nat) :
+    (applyRequeue j a).generation = j.generation := rfl
+
+/--
+**Claimable fresh.** The next claim takes a requeued job as a fresh claim with
+the refunded attempt plus one and the next generation — unless the refunded
+count is already at the retry ceiling.
+-/
+theorem requeued_claimable_fresh {j : Job} {runner generation a : Nat}
+    (h : decideRelease j runner generation = .requeue a) :
+    decideClaim (applyRequeue j a) =
+      if a ≥ j.maxAttempts then .exhausted else .claim (a + 1) (j.generation + 1) true := by
+  have hs := release_requeue_spec h
+  have hcr : ¬((applyRequeue j a).cancelRequested = true) := by
+    show ¬(j.cancelRequested = true)
+    rw [hs.2.1]
+    decide
+  have hp : (applyRequeue j a).state = .pending := rfl
+  unfold decideClaim
+  rw [ifNeg hcr, ifPos hp]
+  rfl
+
+/-- Within the retry ceiling the requeued job is always claimed fresh. -/
+theorem requeued_claim_within_ceiling {j : Job} {runner generation a : Nat}
+    (h : decideRelease j runner generation = .requeue a)
+    (hceil : j.attempt ≤ j.maxAttempts) (hpos : 0 < j.maxAttempts) :
+    decideClaim (applyRequeue j a) = .claim (a + 1) (j.generation + 1) true := by
+  rw [requeued_claimable_fresh h]
+  have ha := (release_requeue_spec h).2.2
+  have hlt : ¬(a ≥ j.maxAttempts) := by omega
+  rw [ifNeg hlt]
+
+/--
+**A restart costs no attempt.** Claim, hand back, claim again: the second
+claim is fresh and carries the same attempt number as the first.
+-/
+theorem restart_costs_no_attempt {j : Job} {a g : Nat} {f : Bool}
+    (h : decideClaim j = .claim a g f) (runner : Nat) :
+    decideClaim (applyRequeue (applyClaim j runner a g) j.attempt) = .claim a (g + 1) true := by
+  have hs := claim_spec h
+  rw [requeued_claimable_fresh (claim_then_release_restores_attempt h runner)]
+  have hlt : ¬(j.attempt ≥ (applyClaim j runner a g).maxAttempts) := by
+    show ¬(j.attempt ≥ j.maxAttempts)
+    omega
+  rw [ifNeg hlt]
+  show ClaimDecision.claim (j.attempt + 1) (g + 1) true = .claim a (g + 1) true
+  rw [hs.2.2.1]
+
+/--
+**Release then claim fences the released proof.** The next claim strictly
+raises the generation, so the released proof stays refused once the job is
+leased again — whoever holds it, the releasing runner included.
+-/
+theorem release_then_claim_fences {j : Job} {runner generation a a' g' : Nat} {f : Bool}
+    (h : decideRelease j runner generation = .requeue a)
+    (hc : decideClaim (applyRequeue j a) = .claim a' g' f) (newRunner anyRunner : Nat) :
+    generation < g' ∧
+      checkLease (applyClaim (applyRequeue j a) newRunner a' g') anyRunner generation = .stale := by
+  have hg : generation = j.generation := (lease_ok_spec (release_requeue_spec h).1).2.2
+  have hg' : g' = j.generation + 1 := (claim_increments hc).2
+  refine ⟨by omega, ?_⟩
+  have hold : generation ≤ (applyRequeue j a).generation := by
+    show generation ≤ j.generation
+    omega
+  exact stale_generation_rejected hc newRunner anyRunner generation hold
+
+/-- A requeue is a legal transition of the state machine. -/
+theorem release_requeue_legal {j : Job} {runner generation a : Nat}
+    (h : decideRelease j runner generation = .requeue a) :
+    JobState.canStep j.state .pending = true :=
+  JobState.leased_can_requeue j.state (lease_ok_spec (release_requeue_spec h).1).1
+
+/-- A hand-back cancel is a legal transition of the state machine. -/
+theorem release_cancel_legal {j : Job} {runner generation : Nat}
+    (h : decideRelease j runner generation = .cancel) :
+    JobState.canStep j.state .cancelled = true :=
+  JobState.leased_can_cancel j.state (lease_ok_spec (release_cancel_spec h).1).1
+
 end Research

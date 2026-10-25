@@ -238,6 +238,7 @@ Optional. Put them in `apps/runner/.env` (see `apps/runner/.env.example`); the l
 | `FRED_API_KEY` | Enables the FRED market-data source for Home (FR-017, ADR-0014). Without it FRED series are "unavailable (source not configured)" — never estimated. |
 | `TWELVE_DATA_API_KEY` | Enables the Twelve Data market-data source for Home. Without it Twelve Data series are "unavailable (source not configured)". |
 | `TWELVE_DATA_REQUESTS_PER_MINUTE` | Twelve Data requests per minute (default `8`, the free-plan allowance; integer 1..600). FRED is paced at 100 requests per minute the same way. Pacing counts requests, not series: FRED sends 2 per series (metadata + observations), Twelve Data 1. |
+| `TAVILY_API_KEY` | Enables `web.search`, the whole-web search research tool (Tavily, ADR-0025): 1,000 free searches a month on Tavily's free plan, one per call (basic depth). Without it the runner warns once (`web_search_disabled`) and the planner is offered only `news.search` (GDELT news). The key travels only as `Authorization: Bearer <key>` to `api.tavily.com`. |
 | `FINNHUB_API_KEY` | Enables the Finnhub earnings-date source for the Watchlist (FR-018, ADR-0016). Without it the runner warns once (`earnings_source_disabled`) and US stocks are "unavailable (source not configured — `FINNHUB_API_KEY` is not set)" — never estimated. |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Enable the Google Calendar sync for the Watchlist (FR-019, ADR-0018): an OAuth client of type "Desktop app". Without both values every `google-calendar` job fails with `GOOGLE_NOT_CONFIGURED` and the Watchlist card says so in one fixed sentence. |
 | `GOOGLE_TOKEN_FILE` | Where the runner keeps the Google refresh token (`<dataDir>/google-token.json`, beside `runner-credential.json`, in both environments; mode 0600, written atomically). Delete it (or Disconnect on the Watchlist page) to forget the grant. |
@@ -331,9 +332,13 @@ parses as `"off"` (`webAccessSchema.default("off")` in
 never granted by an old record — that parse default is not the owner's
 default. One page per tool call, robots.txt honoured, requests to one host spaced a second apart.
 
-The `web.search` research tool (ADR-0025) discovers pages for `web.fetch_page`
-under the same gate: short keyword queries sent to `api.gdeltproject.org`
-(GDELT news, requests spaced 5 s apart), headlines only.
+Two search research tools (ADR-0025) discover pages for `web.fetch_page`
+under the same gate: `web.search` sends short keyword queries to
+`api.tavily.com` (the whole web; needs `TAVILY_API_KEY`) and keeps each
+result's snippet; `news.search` sends them to `api.gdeltproject.org` (GDELT
+news, requests spaced 5 s apart), headlines only. A provider that times out,
+rate-limits or errors is paused for 60 s, doubling per consecutive outage up
+to 30 minutes, so it costs one slow request per pause rather than one per run.
 
 - **Where the files are:** `data/pages/` (or wherever `RUNNER_PAGES_DIR` points). File names carry the retrieval date, the host and a hash of the URL; each file's front matter records the requested and final URLs, the title, the retrieval time and a checksum of the Markdown.
 - **How to turn web access off:** uncheck "Allow the agent to open public web pages" in Settings → AI agent and save — the request then says `"off"`, the tool is not even advertised to the model, and without `RUNNER_PAGES_DIR` it is not registered at all.
@@ -506,7 +511,7 @@ fails the test — it is recorded as a finding in
 
 ## Cost profile
 
-- **Local operation costs nothing to host.** The runner polls the local API every 15 s when idle.
+- **Local operation costs nothing to host.** The runner polls the local API every 1 s when idle.
 - **What actually costs money:** metered model APIs (OpenRouter) and any licensed market data. Subscription CLIs are shown as "unknown / plan-limited", never as $0. Home market data (FR-017, ADR-0014) runs on the vendors' free plans: no money, but provider quota.
 - **What a market-data refresh costs in provider requests:** one `market-refresh` job fetches the dashboard's distinct series (at most 30) sequentially with heartbeats — 2 requests per FRED series (metadata + observations) and 1 per Twelve Data series, paced to 8 Twelve Data starts per minute by default (`TWELVE_DATA_REQUESTS_PER_MINUTE`; FRED 100 per minute). The default dashboard (9 FRED + 4 Twelve Data series) costs 22 requests; a full 30-series refresh costs at most 60. On the free plans that is quota, not money (Twelve Data Basic: 8 credits per minute, 800 per day) — and a refresh that finds nothing new writes nothing (observations upsert only on change).
 - **What an earnings-date refresh costs in provider requests:** one `earnings-refresh` job fetches the watchlist's stocks (at most 50) grouped by source — 1–2 requests per US stock through Finnhub (calendar, plus the company profile while the name is unknown), paced to 30 starts per minute, and one JPX batch per refresh (index page plus at most 6 workbooks, mostly served from the 30-minute / per-URL caches), paced to 6 starts per minute. No money on the free plans; quota instead — and a refresh that changes nothing still replaces each successful stock's events (stale dates must vanish) while failed stocks keep theirs.

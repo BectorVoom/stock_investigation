@@ -181,7 +181,9 @@ export function runFinishedFields(
  * dies at any point, nothing is completed; the lease expires and the Worker
  * hands the job to the next claim under a new generation. If the lease is lost
  * while work continues, the runner stops and submits nothing — and anything it
- * did submit would be rejected by generation fencing anyway.
+ * did submit would be rejected by generation fencing anyway. An orderly
+ * shutdown hands the lease back instead (ADR-0036), so the job is claimable at
+ * once and the interrupted attempt is not counted.
  */
 export async function executeJob(
 	job: ClaimedJob,
@@ -446,6 +448,10 @@ export async function executeJob(
 		const reason = currentStopReason();
 		if (reason === "lease-lost" || reason === "shutdown") {
 			if (storedGrant) await discardStoredGoogleGrant(deps, job.runId);
+			// ADR-0036: a runner that is shutting down hands its lease back, so
+			// the next runner claims the job within one poll and the interrupted
+			// attempt is refunded. A lost lease is not ours to hand back.
+			if (reason === "shutdown") await releaseLease(job, usage, deps);
 			logger.info("job_abandoned", { runId: job.runId, reason });
 			return;
 		}
@@ -504,6 +510,29 @@ export async function executeJob(
 				});
 			});
 		}
+	}
+}
+
+/**
+ * Hands the lease back on shutdown (ADR-0036), with the usage so far: the
+ * event queue is not flushed once shutdown starts, so this is the attempt's
+ * last chance to record what it spent (AGT-008). Never throws: a refused or
+ * unanswered release only leaves the lease to run out, as before.
+ */
+async function releaseLease(
+	job: ClaimedJob,
+	usage: ResourceUsage,
+	deps: JobExecutionDeps,
+): Promise<void> {
+	const released = await deps.api
+		.release(job.runId, { leaseGeneration: job.leaseGeneration, usage })
+		.catch((error: unknown) =>
+			err({ code: "RELEASE_REQUEST_FAILED", detail: thrownName(error), transient: false }),
+		);
+	if (released.ok) {
+		deps.logger.info("job_released", { runId: job.runId, state: released.value.state });
+	} else {
+		deps.logger.warn("release_failed", { runId: job.runId, code: released.error.code });
 	}
 }
 

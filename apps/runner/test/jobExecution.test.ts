@@ -88,11 +88,13 @@ describe("job execution under a lease", () => {
 			});
 			await executeJob(RESEARCH_JOB, harness.deps, never);
 			expect(calls.completions, lostVia).toEqual([]);
+			// A lost lease is not ours to hand back (ADR-0036).
+			expect(calls.releases, lostVia).toEqual([]);
 			expect(harness.scratch.removed, lostVia).toEqual([`/scratch/${RUN_ID}`]);
 		}
 	});
 
-	it("abandons the job on shutdown without completing it, leaving recovery to lease expiry", async () => {
+	it("abandons the job on shutdown without completing it and hands the lease back (ADR-0036)", async () => {
 		const shutdown = new AbortController();
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api, {
@@ -100,9 +102,75 @@ describe("job execution under a lease", () => {
 				if (turnIndex === 1) shutdown.abort();
 			},
 		});
-		await executeJob(RESEARCH_JOB, harness.deps, shutdown.signal);
+		const records: { event: string; fields?: LogFields }[] = [];
+		const record = (event: string, fields?: LogFields) => {
+			records.push({ event, fields });
+		};
+		const logger: EventLogger = {
+			info: record,
+			warn: record,
+			error: record,
+			logFailures: () => 0,
+		};
+		await executeJob(RESEARCH_JOB, { ...harness.deps, logger }, shutdown.signal);
 		expect(calls.completions).toEqual([]);
+		// The usage so far travels with the release: the unflushed event queue would lose it.
+		expect(calls.releases).toEqual([
+			{ leaseGeneration: 3, usage: expect.objectContaining({ agentSteps: expect.any(Number) }) },
+		]);
+		expect(calls.releases[0]?.usage.agentSteps).toBeGreaterThanOrEqual(1);
 		expect(harness.scratch.removed).toHaveLength(1);
+		const events = records.map((entry) => entry.event);
+		expect(events.indexOf("job_released")).toBeGreaterThanOrEqual(0);
+		expect(events.indexOf("job_released")).toBeLessThan(events.indexOf("job_abandoned"));
+		expect(records.find((entry) => entry.event === "job_released")?.fields).toEqual({
+			runId: RUN_ID,
+			state: "pending",
+		});
+		expect(records.find((entry) => entry.event === "job_abandoned")?.fields).toEqual({
+			runId: RUN_ID,
+			reason: "shutdown",
+		});
+	});
+
+	it("logs a refused or failed release and still abandons the job", async () => {
+		for (const [reply, expected] of [
+			[apiFailure("STALE_LEASE"), { event: "release_failed", code: "STALE_LEASE" }],
+			[
+				{ ok: true, value: { state: "cancelled" } },
+				{ event: "job_released", state: "cancelled" },
+			],
+			[
+				() => {
+					throw new Error("network down");
+				},
+				{ event: "release_failed", code: "RELEASE_REQUEST_FAILED" },
+			],
+		] as const) {
+			const shutdown = new AbortController();
+			shutdown.abort();
+			const { api, calls } = createFakeApi({ release: [reply] });
+			const harness = createDeps(api);
+			const records: { event: string; fields?: LogFields }[] = [];
+			const record = (event: string, fields?: LogFields) => {
+				records.push({ event, fields });
+			};
+			const logger: EventLogger = {
+				info: record,
+				warn: record,
+				error: record,
+				logFailures: () => 0,
+			};
+			await executeJob(RESEARCH_JOB, { ...harness.deps, logger }, shutdown.signal);
+			expect(calls.completions).toEqual([]);
+			expect(calls.releases).toHaveLength(1);
+			const { event, ...fields } = expected;
+			expect(records.find((entry) => entry.event === event)?.fields).toEqual({
+				runId: RUN_ID,
+				...fields,
+			});
+			expect(records.some((entry) => entry.event === "job_abandoned")).toBe(true);
+		}
 	});
 
 	it("records an honest failure when the Worker rejects the submitted result", async () => {

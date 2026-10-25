@@ -35,7 +35,7 @@ use research_agent_core::{
 	},
 };
 use research_contracts::{
-	agent::{AgentAvailability, CostModel, ToolIsolation},
+	agent::{AgentAvailability, ToolIsolation},
 	jobs::{
 		ApprovalRequest, ConversationContextMessage, ResearchBundle, ResearchRequest,
 		SubscribedSourceRef, WorkspaceComponentSummary, sanitize_tool_error_code,
@@ -287,9 +287,7 @@ pub async fn run_research_pipeline(
 			session.usage,
 		));
 	}
-	if deps.agent.cost_model() == CostModel::Metered && budget.max_spend_usd.unwrap_or(0.0) <= 0.0 {
-		return Ok(failed("SPEND_NOT_AUTHORIZED", false, None, session.usage));
-	}
+
 	deps.reporter.state(JobState::Planning).await;
 	let remaining = budget
 		.max_agent_steps
@@ -318,7 +316,17 @@ pub async fn run_research_pipeline(
 	let mut reminder = None;
 	let mut reached_collecting = false;
 	let mut tool_errors = HashMap::<String, u64>::new();
+	let mut completed_requests = HashSet::new();
+	let mut unavailable_tools = HashSet::new();
+	let mut collection_limit_reached = false;
 	'collection: for step in 0..collection_steps {
+		if step >= 3 {
+			collection_limit_reached = true;
+			deps.reporter
+				.note("Collection stopped after three planning rounds.")
+				.await;
+			break;
+		}
 		let remaining_calls = budget
 			.max_tool_calls
 			.saturating_sub(session.usage.tool_calls);
@@ -455,6 +463,24 @@ pub async fn run_research_pipeline(
 					continue;
 				}
 			};
+			let request_key = format!(
+				"{}\n{}",
+				call.tool_id,
+				research_js::json::stringify(&authorized.args)
+			);
+			if completed_requests.contains(&request_key)
+				|| unavailable_tools.contains(&call.tool_id)
+			{
+				let note = format!(
+					"Tool {label} was not repeated; use its earlier result or another tool."
+				);
+				entries.push(CollectedEntry {
+					step,
+					full_text: note.clone(),
+					digest_lines: vec![note],
+				});
+				continue;
+			}
 			let delta = UsageDelta {
 				tool_calls: 1,
 				..UsageDelta::default()
@@ -500,6 +526,9 @@ pub async fn run_research_pipeline(
 			};
 			match result {
 				Err(error) => {
+					if matches!(error.code.as_str(), "NOT_CONFIGURED" | "SEARCH_COOLDOWN") {
+						unavailable_tools.insert(call.tool_id.clone());
+					}
 					let code =
 						sanitize_tool_error_code(&utf16::truncate(&error.code, 80)).to_owned();
 					*tool_errors.entry(code).or_default() += 1;
@@ -519,6 +548,7 @@ pub async fn run_research_pipeline(
 				}
 				Ok(output) => {
 					succeeded += 1;
+					completed_requests.insert(request_key);
 					entries.push(CollectedEntry {
 						step,
 						full_text: format!("Result of {label}:\n{}", output.model_text),
@@ -719,6 +749,9 @@ pub async fn run_research_pipeline(
 		}
 	}
 	let mut notes = Vec::new();
+	if collection_limit_reached {
+		notes.push("Collection was limited to three planning rounds; additional sources may not have been retrieved.".to_owned());
+	}
 	let omitted = collected.evidence.len() - shown.len();
 	if omitted > 0 {
 		notes.push(if duplicates>0{format!("{omitted} retrieved item(s) were not analysed: {duplicates} exact duplicate(s) skipped and the rest did not fit the input-size budget.")}else{format!("{omitted} retrieved item(s) did not fit the input-size budget and were not analysed.")});

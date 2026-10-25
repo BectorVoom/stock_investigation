@@ -27,6 +27,7 @@ function pinnedRequest(overrides: Partial<PinnedRequest> = {}): PinnedRequest {
 		},
 		maxEncodedBytes: 1_000_000,
 		signal: new AbortController().signal,
+		jsonBody: null,
 		...overrides,
 	};
 }

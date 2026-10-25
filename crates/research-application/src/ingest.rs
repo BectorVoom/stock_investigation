@@ -110,6 +110,7 @@ async fn fetch_document(
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	};
 	Ok(deps
 		.fetcher

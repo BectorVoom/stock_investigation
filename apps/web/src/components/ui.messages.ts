@@ -21,12 +21,12 @@ export const uiMessages = defineMessages({
 export const spendFieldMessages = defineMessages({
 	en: {
 		label: "Max spend (USD)",
-		hint: (max: number) => `Leave empty to authorize no metered spend; at most ${max}`,
+		hint: (max: number) => `Leave empty for no spending cap; at most ${max} when set`,
 		consent: "I consent to metered spend up to the maximum above for this run",
 	},
 	ja: {
 		label: "最大支出額（USD）",
-		hint: (max) => `空欄のままにすると従量課金の支出を許可しません。上限は ${max} です`,
+		hint: (max) => `空欄の場合、支出額の上限はありません。設定できる上限は ${max} です`,
 		consent: "この実行で、上記の最大額までの従量課金の支出に同意します",
 	},
 });

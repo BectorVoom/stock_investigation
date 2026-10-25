@@ -2,7 +2,7 @@
  * The Rust runner's outgoing payloads against the real zod schemas (ADR-0030,
  * shell-wire spec section 6, point 4). `cargo test -p research-runner` writes
  * every payload the runner's producers build (claim requests, heartbeat
- * requests, event batches, every completion outcome) to
+ * and release requests, event batches, every completion outcome) to
  * `vectors/runner/out/`; each file must parse with the schema the Worker uses
  * on the same bytes. A Rust change that departs from zod therefore fails here,
  * and the Rust test fails when the files are stale.
@@ -17,6 +17,7 @@ import {
 	claimJobRequestSchema,
 	completeJobRequestSchema,
 	heartbeatRequestSchema,
+	releaseJobRequestSchema,
 	runnerEventsRequestSchema,
 } from "@research/contracts";
 import { LOG_EVENT_PATTERN } from "@research/effects";
@@ -37,6 +38,7 @@ const STOCK_DIRECTORY_EVENTS = [
 const SCHEMAS: Readonly<Record<string, ZodType>> = {
 	claimJobRequest: claimJobRequestSchema,
 	heartbeatRequest: heartbeatRequestSchema,
+	releaseJobRequest: releaseJobRequestSchema,
 	runnerEventsRequest: runnerEventsRequestSchema,
 	completeJobRequest: completeJobRequestSchema,
 };

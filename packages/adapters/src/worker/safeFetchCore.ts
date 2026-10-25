@@ -8,8 +8,14 @@
  * The core owns everything that is identical in both runtimes:
  *   URL policy -> allowlist -> one hop through the transport -> redirect
  *   handling (manual, re-validated per hop) -> status -> byte cap -> decode.
- * A transport owns the one thing that differs: how a single GET reaches the
- * network, and which destination guarantees it can really give.
+ * A transport owns the one thing that differs: how a single request (a GET,
+ * or the one JSON POST of `SafeFetchOptions.jsonBody`) reaches the network,
+ * and which destination guarantees it can really give.
+ *
+ * POST: the core sends a `jsonBody` only to an allowlisted host, only on the
+ * initial request, at most `MAX_JSON_BODY_BYTES`, and never follows a
+ * redirect from it (`REDIRECT_NOT_AUTHORIZED`), so the body reaches the one
+ * destination the caller named and nowhere else.
  *
  * BYTE LIMIT: `maxBytes` bounds the body bytes the core receives from the
  * transport, i.e. the bytes AFTER content decoding. Bytes on the wire before
@@ -18,13 +24,14 @@
  * `ResponseBodyTooLargeError` from the body. Whether a transport can count
  * encoded bytes at all is runtime-specific; each adapter's header says so.
  */
-import type {
-	BinaryDocument,
-	FetchedDocument,
-	SafeBinaryFetcher,
-	SafeFetchError,
-	SafeFetcher,
-	SafeFetchOptions,
+import {
+	type BinaryDocument,
+	type FetchedDocument,
+	MAX_JSON_BODY_BYTES,
+	type SafeBinaryFetcher,
+	type SafeFetchError,
+	type SafeFetcher,
+	type SafeFetchOptions,
 } from "@research/application";
 import { describeThrown, err, ok, type Result, validateFetchUrl } from "@research/domain";
 
@@ -55,6 +62,30 @@ export interface HopRequest {
 	 */
 	readonly maxBytes: number;
 	readonly signal: AbortSignal;
+	/**
+	 * UTF-8 bytes of the caller's `jsonBody`, or null for a GET. When set the
+	 * transport sends `POST` with `content-type: application/json` and a
+	 * `content-length` of exactly these bytes, and must not re-send them once
+	 * they may have reached the server (see `RequestBodySentError`).
+	 */
+	readonly jsonBody: Uint8Array<ArrayBuffer> | null;
+}
+
+/**
+ * Thrown by a transport's connection layer when a request carrying a body
+ * failed AFTER the connection was established, so the body may have reached
+ * the server. The transport then reports a network error instead of trying
+ * the next address: a POST is sent at most once.
+ */
+export class RequestBodySentError extends Error {
+	/** The underlying failure's `describeThrown` label, so the reported detail is unchanged. */
+	readonly code: string;
+
+	constructor(code: string) {
+		super(code);
+		this.name = "RequestBodySentError";
+		this.code = code;
+	}
 }
 
 /**
@@ -87,7 +118,7 @@ export type HopOutcome =
 	| { readonly kind: "unsafe-destination"; readonly detail: string }
 	| { readonly kind: "network-error"; readonly detail: string };
 
-/** Performs exactly one GET without following redirects. Should not throw; a throw is contained. */
+/** Performs exactly one request without following redirects. Should not throw; a throw is contained. */
 export type HopTransport = (request: HopRequest) => Promise<HopOutcome>;
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
@@ -284,6 +315,20 @@ async function fetchRawBytes(
 		options.allowedHosts === undefined
 			? null
 			: new Set([...options.allowedHosts].map(normalizeHost));
+	// A POST body goes only to a pinned destination and is bounded; either
+	// failure is decided here, before any byte is sent.
+	let jsonBody: Uint8Array<ArrayBuffer> | null = null;
+	if (options.jsonBody !== undefined) {
+		if (allowedHosts === null) {
+			return fail("HOST_NOT_ALLOWED", "a POST request requires an allowlist of hosts");
+		}
+		const encoded = new TextEncoder().encode(options.jsonBody);
+		if (encoded.byteLength > MAX_JSON_BODY_BYTES) {
+			return fail("NETWORK_ERROR", `request body exceeds ${MAX_JSON_BODY_BYTES} bytes`);
+		}
+		// An ArrayBuffer-backed copy (at most 64 KiB): every runtime's `BodyInit` accepts it.
+		jsonBody = new Uint8Array(encoded);
+	}
 
 	const deadline = AbortSignal.timeout(options.timeoutMs);
 	const signal =
@@ -345,6 +390,8 @@ async function fetchRawBytes(
 					},
 					maxBytes: options.maxBytes,
 					signal,
+					// Only hop 0 exists for a POST: a redirect from it ends the fetch below.
+					jsonBody,
 				}),
 				signal,
 			);
@@ -364,6 +411,14 @@ async function fetchRawBytes(
 
 		if (REDIRECT_STATUSES.has(outcome.status)) {
 			outcome.discard();
+			if (jsonBody !== null) {
+				// Following would re-send (307/308) or silently drop (301-303) the
+				// body at a destination the caller did not name.
+				return fail(
+					"REDIRECT_NOT_AUTHORIZED",
+					`HTTP ${outcome.status}: a POST request is never redirected`,
+				);
+			}
 			if (outcome.location === null) {
 				return fail("HTTP_ERROR", `HTTP ${outcome.status} without a Location header`);
 			}

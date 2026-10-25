@@ -26,7 +26,6 @@ import {
 	Select,
 } from "../components/ui.tsx";
 import { runStateMessages } from "../i18n/runState.messages.ts";
-import { formatUsd } from "../lib/format.ts";
 import type { Remote } from "../lib/remote.ts";
 import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
 import { runnerNotice } from "../settings/agentSettingsModel.ts";
@@ -139,7 +138,6 @@ export function Composer(props: {
 
 	const questionId = createUniqueId();
 	const horizonId = createUniqueId();
-	const consentId = createUniqueId();
 	const problemsId = createUniqueId();
 
 	// A suggestion chip fills the input and focuses it; it never sends (sending spends quota).
@@ -187,39 +185,13 @@ export function Composer(props: {
 		}
 		setTried(true);
 		if (submitting()) return;
-		// The live request, or — when consent was already consumed by a
-		// dispatched attempt — the identical resend of that attempt. An
-		// IDENTICAL resend (same captured request, same idempotency key) is
-		// the same authorised action and needs no fresh consent; any change
-		// to the request requires consent again (AGT-012).
-		let request = evaluation().request;
-		let identicalResend = false;
-		if (request === null && pendingKey !== null) {
-			const candidate = evaluateComposer(
-				{ ...draft(), spendConsent: true },
-				agents(),
-				settings(),
-				props.workspaceId,
-				m(),
-				agentText(),
-			).request;
-			if (candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint) {
-				request = candidate;
-				identicalResend = true;
-			}
-		}
+		const request = evaluation().request;
 		if (request === null) return;
 		const fingerprint = JSON.stringify(request);
 		if (pendingKey === null || pendingKey.fingerprint !== fingerprint) {
 			pendingKey = { fingerprint, key: props.newIdempotencyKey() };
 		}
 		const key = pendingKey.key;
-		// Consent is consumed when the request is dispatched, not when it
-		// succeeds: a timed-out request may still have been accepted by the
-		// server, so a DIFFERENT request must not reuse the earlier consent.
-		if (!identicalResend) {
-			setDraft((current) => ({ ...current, spendConsent: false }));
-		}
 		setSubmitting(true);
 		setFailure(null);
 		setQueuedNote(null);
@@ -239,7 +211,7 @@ export function Composer(props: {
 			// or tries to send.
 			setTyped(false);
 			setTried(false);
-			// The one-time consent is withdrawn. The question is cleared only if
+			// The question is cleared only if
 			// it is still the one that was sent: text typed while the request was
 			// in flight is the owner's next draft and must survive.
 			setDraft((current) => ({
@@ -249,7 +221,7 @@ export function Composer(props: {
 			}));
 		} else {
 			// The fingerprint and key are kept: the identical resend reuses
-			// the same key (no second run), while consent stays consumed.
+			// the same key (no second run).
 			setFailure(result.error);
 		}
 	};
@@ -339,14 +311,6 @@ export function Composer(props: {
 		if (current === null) return null;
 		return m().summaryLine(current.backend, current.model, current.effort, current.webAccess);
 	};
-	const consentLabel = () => {
-		// Spend consent is required only when the settings carry a positive
-		// metered allowance, so the amount below is always set in practice;
-		// the fallback keeps the label honest if the budget is missing.
-		const max = evaluation().budget?.maxSpendUsd ?? null;
-		if (max === null) return m().consent;
-		return m().consentUpTo(formatUsd(max));
-	};
 	const optionsSummary = () => {
 		const markets = (["JP", "US"] as const).filter((market) => draft().markets[market]);
 		const marketText = markets.length === 0 ? m().noMarkets : markets.join(", ");
@@ -374,19 +338,7 @@ export function Composer(props: {
 	const canSend = () => {
 		if (isNotebook()) return notebookCanSend();
 		if (submitting()) return false;
-		if (evaluation().request !== null) return true;
-		// The identical resend of a dispatched request stays enabled without
-		// fresh consent; anything else needs a valid request.
-		if (pendingKey === null) return false;
-		const candidate = evaluateComposer(
-			{ ...draft(), spendConsent: true },
-			agents(),
-			settings(),
-			props.workspaceId,
-			m(),
-			agentText(),
-		).request;
-		return candidate !== null && JSON.stringify(candidate) === pendingKey.fingerprint;
+		return evaluation().request !== null;
 	};
 	const sendLabel = () => {
 		if (submitting()) return m().sending;
@@ -671,21 +623,6 @@ export function Composer(props: {
 							</fieldset>
 						</div>
 					</details>
-
-					<Show when={evaluation().spendConsentRequired}>
-						<div>
-							<label for={consentId} class="flex items-start gap-2 text-xs text-slate-900">
-								<input
-									id={consentId}
-									type="checkbox"
-									class="mt-0.5"
-									checked={draft().spendConsent}
-									onChange={(event) => patch({ spendConsent: event.currentTarget.checked })}
-								/>
-								<span>{consentLabel()}</span>
-							</label>
-						</div>
-					</Show>
 
 					<Show when={visibleProblems().length > 0}>
 						<ul

@@ -1,5 +1,7 @@
 # ADR-0031: A metered Claude API backend beside the Claude Code CLI
 
+Spending consent and mandatory caps are superseded by [ADR-0035](0035-optional-spending-caps.md).
+
 **Status:** Accepted · **Date:** 2026-10-24 · **Owner request:** "Please
 support claude api in settings AI Agent."
 

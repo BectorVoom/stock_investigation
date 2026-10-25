@@ -53,7 +53,7 @@ export interface ScheduledTaskServiceDeps {
 	readonly unitOfWork: Pick<ResearchUnitOfWork, "createScheduledTask">;
 	/** The last run's state (the "wait" rule and single-task views). */
 	readonly jobs: Pick<JobRepository, "get">;
-	/** Queues the runs, under the same admission and consent rules as the owner's own questions. */
+	/** Queues the runs, under the same admission rules as the owner's own questions. */
 	readonly runs: Pick<ResearchRunService, "createForTask" | "get">;
 	/** The conversation cap a task's own conversation counts against. */
 	readonly workspaces: Pick<WorkspaceRepository, "list">;
@@ -448,7 +448,7 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 		 * Queues one run now without moving the schedule (ADR-0033 §5). While
 		 * the task's last run is unfinished it answers that run instead of a
 		 * second one. Errors: `NOT_FOUND` and the run service's refusals
-		 * (`AGENT_NOT_CONFIGURED`, `SPEND_CONSENT_REQUIRED`, `RATE_LIMITED`, …).
+		 * (`AGENT_NOT_CONFIGURED`, `RATE_LIMITED`, …).
 		 */
 		async runNow(
 			ownerId: string,

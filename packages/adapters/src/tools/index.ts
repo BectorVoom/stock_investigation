@@ -27,6 +27,8 @@ export interface ResearchToolDeps {
 	clock: Clock;
 	/** SEC requires a descriptive User-Agent with contact info; null → SEC tools report NOT_CONFIGURED. */
 	secUserAgent: string | null;
+	/** The owner's Tavily key; null → `web.search` is not registered (`news.search` still is). */
+	tavilyApiKey: string | null;
 	/**
 	 * Where retrieved public pages are archived. Null → the web tool is not
 	 * registered at all: without an archive there is nowhere to keep the page
@@ -46,13 +48,14 @@ export function createResearchTools(deps: ResearchToolDeps): readonly ToolDefini
 	});
 	return [
 		...createNewsTools(deps),
-		// The search tool writes nothing to disk: unlike the page tool it is
-		// registered unconditionally (ADR-0025).
+		// The search tools write nothing to disk: unlike the page tool they
+		// do not need the archive; web.search needs a Tavily key (ADR-0025).
 		...createSearchTools({
 			fetcher: deps.fetcher,
 			hasher: deps.hasher,
 			clock: deps.clock,
 			sleep: deps.sleep,
+			tavilyApiKey: deps.tavilyApiKey,
 		}),
 		...createSecTools({
 			financials: createSecFinancialsSource({

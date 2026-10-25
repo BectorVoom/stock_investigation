@@ -1,5 +1,6 @@
 /**
- * One HTTPS GET to an address the caller has ALREADY validated (SEC-002,
+ * One HTTPS request — a GET, or the core's single JSON POST — to an address
+ * the caller has ALREADY validated (SEC-002,
  * connection layer). The socket is opened to the IP literal itself, so Node
  * performs no DNS resolution of its own: there is no second lookup an attacker
  * could answer differently (DNS rebinding / TOCTOU).
@@ -18,13 +19,19 @@
  * of how many bytes (possibly none) the decoder produces. The decoded bytes
  * are counted by the caller. An identity body is passed through unchanged, so
  * the caller's count IS the wire count. Any other Content-Encoding is refused.
+ *
+ * POST: the body goes out with an exact Content-Length on a fresh socket
+ * (`agent: false`, as for every request). A failure after the TLS handshake
+ * completed is reported as `RequestBodySentError`, because the body may
+ * have reached the server; the transport then does not try another address.
  */
 import type { IncomingMessage } from "node:http";
 import { request as httpsRequest, type RequestOptions } from "node:https";
 import { isIP, type LookupFunction } from "node:net";
 import { pipeline, Readable } from "node:stream";
 import { createBrotliDecompress, createGunzip, createInflate } from "node:zlib";
-import { ResponseBodyTooLargeError } from "../worker/safeFetchCore.ts";
+import { describeThrown } from "@research/domain";
+import { RequestBodySentError, ResponseBodyTooLargeError } from "../worker/safeFetchCore.ts";
 
 export interface ResolvedAddress {
 	readonly address: string;
@@ -49,6 +56,8 @@ export interface PinnedRequest {
 	/** Ceiling on body bytes read from the socket before content decoding. */
 	readonly maxEncodedBytes: number;
 	readonly signal: AbortSignal;
+	/** UTF-8 JSON body: sent as a POST with an exact Content-Length; null for a GET. */
+	readonly jsonBody: Uint8Array<ArrayBuffer> | null;
 }
 
 export interface PinnedResponse {
@@ -99,7 +108,7 @@ export function buildPinnedRequestOptions(
 	tls: PinnedTlsOverrides = {},
 ): RequestOptions {
 	return {
-		method: "GET",
+		method: request.jsonBody === null ? "GET" : "POST",
 		host: request.address.address,
 		family: request.address.family,
 		port: tls.port ?? 443,
@@ -116,6 +125,12 @@ export function buildPinnedRequestOptions(
 				? {}
 				: { "x-finnhub-token": request.headers.finnhubToken }),
 			"accept-encoding": "gzip",
+			...(request.jsonBody === null
+				? {}
+				: {
+						"content-type": "application/json",
+						"content-length": String(request.jsonBody.byteLength),
+					}),
 		},
 		// A fresh socket per request: a connection validated for one host is never reused for another.
 		agent: false,
@@ -238,8 +253,20 @@ export function createPinnedHttpsConnect(tls: PinnedTlsOverrides = {}): PinnedCo
 	return (request) =>
 		new Promise<PinnedResponse>((resolve, reject) => {
 			const outgoing = httpsRequest(buildPinnedRequestOptions(request, tls));
-			outgoing.once("error", reject);
+			// Once TLS is up the queued request (and body) may reach the server.
+			let established = false;
+			const fail = (error: unknown): void => {
+				reject(
+					request.jsonBody !== null && established
+						? new RequestBodySentError(describeThrown(error))
+						: error,
+				);
+			};
+			outgoing.once("error", fail);
 			outgoing.once("socket", (socket) => {
+				socket.once("secureConnect", () => {
+					established = true;
+				});
 				// Belt and braces: whatever happened below us (proxy agent, future Node behaviour),
 				// refuse to speak to a peer that is not the address that was validated.
 				const verifyPeer = (): void => {
@@ -254,9 +281,10 @@ export function createPinnedHttpsConnect(tls: PinnedTlsOverrides = {}): PinnedCo
 				try {
 					resolve(toPinnedResponse(response, request.maxEncodedBytes));
 				} catch (error) {
-					reject(error);
+					fail(error);
 				}
 			});
-			outgoing.end();
+			if (request.jsonBody === null) outgoing.end();
+			else outgoing.end(request.jsonBody);
 		});
 }

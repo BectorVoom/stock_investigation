@@ -154,6 +154,7 @@ pub async fn compose(
 		hasher: Arc::clone(&hasher),
 		clock: Arc::clone(&clock),
 		sec_user_agent: None,
+		tavily_api_key: None,
 		page_archive: None,
 		sleep: capped,
 		sec_sleep: Arc::clone(&sleeper),

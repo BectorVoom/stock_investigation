@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createHttpRunnerApi } from "../src/apiClient.ts";
+import { createHttpRunnerApi, RELEASE_TIMEOUT_MS } from "../src/apiClient.ts";
 import { loadConfig } from "../src/config.ts";
 import { runRunnerLoop } from "../src/runner.ts";
 import { apiFailure, createDeps, createFakeApi, RESEARCH_JOB } from "./support.ts";
@@ -141,6 +141,43 @@ describe("runner API client (API-007)", () => {
 			error: { code: "INTERNAL", transient: true },
 		});
 		expect(attempts).toBe(4);
+	});
+
+	it("sends a lease hand-back once, never retried, under a short timeout (ADR-0036)", async () => {
+		const seen: { url: string; body: unknown }[] = [];
+		const sleeps: number[] = [];
+		let reply: Response = json(200, { state: "pending" });
+		const api = createHttpRunnerApi(
+			options(async (input, init) => {
+				seen.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+				return reply;
+			}, sleeps),
+		);
+		const usage = {
+			agentSteps: 2,
+			toolCalls: 1,
+			inputBytes: 4_096,
+			knownCostUsd: 0.25,
+			hasUnmeteredUsage: true,
+		};
+		expect(await api.release("run_x", { leaseGeneration: 7, usage })).toEqual({
+			ok: true,
+			value: { state: "pending" },
+		});
+		expect(seen).toEqual([
+			{
+				url: "https://research.example.test/api/v1/runner/jobs/run_x/release",
+				body: { leaseGeneration: 7, usage },
+			},
+		]);
+		reply = json(503, { error: { code: "INTERNAL", message: "x" } });
+		expect(await api.release("run_x", { leaseGeneration: 7, usage })).toMatchObject({
+			ok: false,
+			error: { code: "INTERNAL" },
+		});
+		expect(seen).toHaveLength(2);
+		expect(sleeps).toEqual([]);
+		expect(RELEASE_TIMEOUT_MS).toBeLessThanOrEqual(2_000);
 	});
 
 	it("does not retry a definitive rejection and surfaces its stable code", async () => {

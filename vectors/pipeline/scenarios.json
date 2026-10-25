@@ -125,7 +125,11 @@
 			"runs": 1
 		},
 		{
-			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/will not start a metered backend without an authorized spend",
+			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/runs a metered backend without a spend ceiling (cost %s) [0]",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)/runs a metered backend without a spend ceiling (cost %s) [1]",
 			"runs": 1
 		},
 		{
@@ -243,7 +247,19 @@
 		{
 			"name": "/research pipeline: public-web tools are gated by the request (ARCH-017)/webAccess \"public-web\": the tool is listed, and executes",
 			"runs": 1
+		},
+		{
+			"name": "/research pipeline: collection latency/moves to analysis after three planning rounds even when the planner asks to continue",
+			"runs": 1
+		},
+		{
+			"name": "/research pipeline: collection latency/retrieves identical successful requests only once within a run",
+			"runs": 1
+		},
+		{
+			"name": "/does not re-run an unavailable tool, even with different arguments",
+			"runs": 2
 		}
 	],
-	"handWrittenRuns": 67
+	"handWrittenRuns": 72
 }

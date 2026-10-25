@@ -1,7 +1,7 @@
 /**
  * Scheduled tasks (ADR-0033): the service over in-memory stores, with the
  * REAL research-run service underneath, so the claim-time firing is pinned
- * together with the admission, agent and spend-consent rules it relies on.
+ * together with the admission and backend rules it relies on.
  */
 import type { AgentSettings, CreateScheduledTaskRequest } from "@research/contracts";
 import { runBudget, TASK_VALIDATION_DETAILS } from "@research/contracts";
@@ -496,14 +496,14 @@ describe("refused occurrences are skipped (ADR-0033 §3)", () => {
 	});
 });
 
-describe("spend consent on a metered backend (ADR-0033 §4)", () => {
-	it("skips without consent", async () => {
-		const w = world({ settings: METERED_SETTINGS });
+describe("optional spending caps on a metered backend (ADR-0035)", () => {
+	it("fires without consent or a spending cap", async () => {
+		const w = world({ settings: { ...METERED_SETTINGS, budget: runBudget(null) } });
 		const task = await createTask(w);
 		w.time.advance(6 * HOUR_MS);
-		await w.service.materializeDue(OWNER);
-		expect(stored(w, task.taskId).lastSkip?.code).toBe("SPEND_CONSENT_REQUIRED");
-		expect(w.researchJobs()).toEqual([]);
+		expect((await w.service.materializeDue(OWNER)).fired).toBe(1);
+		expect(stored(w, task.taskId).lastSkip).toBeNull();
+		expect(w.researchJobs()[0]?.request).toMatchObject({ budget: { maxSpendUsd: null } });
 	});
 
 	it("fires under a consent equal to the saved backend, model and ceiling", async () => {
@@ -520,19 +520,22 @@ describe("spend consent on a metered backend (ADR-0033 §4)", () => {
 		});
 	});
 
-	it("skips once the saved ceiling or model no longer equals the consent", async () => {
+	it("uses the current saved model and cap regardless of legacy consent", async () => {
 		const w = world({ settings: METERED_SETTINGS });
-		const task = await createTask(w, {
+		await createTask(w, {
 			spendConsent: { agentId: "openrouter", model: "vendor/model", maxSpendUsd: 2 },
 		});
-		w.setSettings({ ...METERED_SETTINGS, budget: runBudget(5) });
+		w.setSettings({
+			...METERED_SETTINGS,
+			models: { openrouter: "vendor/other" },
+			budget: runBudget(5),
+		});
 		w.time.advance(6 * HOUR_MS);
-		await w.service.materializeDue(OWNER);
-		expect(stored(w, task.taskId).lastSkip?.code).toBe("SPEND_CONSENT_REQUIRED");
-		w.setSettings({ ...METERED_SETTINGS, models: { openrouter: "vendor/other" } });
-		w.time.advance(DAY_MS);
-		await w.service.materializeDue(OWNER);
-		expect(w.researchJobs()).toEqual([]);
+		expect((await w.service.materializeDue(OWNER)).fired).toBe(1);
+		expect(w.researchJobs()[0]?.request).toMatchObject({
+			model: "vendor/other",
+			budget: { maxSpendUsd: 5 },
+		});
 	});
 
 	it("needs no consent on a plan-limited backend", async () => {
@@ -702,12 +705,22 @@ describe("run now (ADR-0033 §5)", () => {
 		expect(w.researchJobs()).toHaveLength(2);
 	});
 
+	it("runs a metered task now without consent or a spending cap", async () => {
+		const w = world({ settings: { ...METERED_SETTINGS, budget: runBudget(null) } });
+		const task = await createTask(w);
+		expect(await w.service.runNow(OWNER, task.taskId, freshKey())).toMatchObject({ ok: true });
+		expect(w.researchJobs()[0]?.request).toMatchObject({
+			agentId: "openrouter",
+			budget: { maxSpendUsd: null },
+		});
+	});
+
 	it("answers the run service's refusal", async () => {
-		const w = world({ settings: METERED_SETTINGS });
+		const w = world({ settings: null });
 		const task = await createTask(w);
 		expect(await w.service.runNow(OWNER, task.taskId, freshKey())).toMatchObject({
 			ok: false,
-			error: { code: "SPEND_CONSENT_REQUIRED" },
+			error: { code: "AGENT_NOT_CONFIGURED" },
 		});
 		expect(await w.service.runNow(OWNER, "task_missing", freshKey())).toMatchObject({
 			ok: false,

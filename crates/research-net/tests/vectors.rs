@@ -324,6 +324,7 @@ async fn hop_core_matches_typescript() {
 			authorization: input.options.authorization,
 			finnhub_token: input.options.finnhub_token,
 			include_error_body: input.options.include_error_body,
+			json_body: None,
 		};
 		let transport = Arc::new(Transport {
 			script: input.script,

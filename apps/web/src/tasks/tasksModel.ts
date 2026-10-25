@@ -1,7 +1,6 @@
 import {
 	type AgentSettings,
 	type AgentsResponse,
-	BUDGET_LIMITS,
 	type CreateScheduledTaskRequest,
 	createScheduledTaskRequestSchema,
 	isTerminalJobState,
@@ -22,7 +21,7 @@ import {
 } from "@research/domain";
 import type { Locale, MessagesOf } from "@research/i18n";
 import type { ApiFailure } from "../api/http.ts";
-import { type AgentSettingsText, agentOptions } from "../settings/agentSettingsModel.ts";
+import type { AgentSettingsText } from "../settings/agentSettingsModel.ts";
 import type { tasksModelMessages } from "./tasksModel.messages.ts";
 
 /**
@@ -257,10 +256,8 @@ export function skipView(
 /* ---------- Spend consent (ADR-0033 §4) ---------- */
 
 /**
- * Whether the backend saved in Settings → AI agent needs this task's spend
- * consent, by the composer's rule (AGT-012): a backend that is not
- * plan-limited with a positive spend ceiling asks for it; a metered one
- * without a ceiling cannot run until Settings has one.
+ * Readiness of the saved backend settings. Spending consent is no longer
+ * required; legacy variants remain readable by older callers.
  */
 export type TaskConsentNeed =
 	| { readonly kind: "loading" }
@@ -275,24 +272,10 @@ export type TaskConsentNeed =
 export function taskConsentNeed(
 	agents: AgentsResponse | null,
 	settings: AgentSettings | null,
-	agentText: AgentSettingsText,
+	_agentText: AgentSettingsText,
 ): TaskConsentNeed {
 	if (agents === null || settings === null) return { kind: "loading" };
-	const agentId = settings.defaultAgentId;
-	if (agentId === null) return { kind: "none" };
-	const option = agentOptions(agents, agentText).find((entry) => entry.agentId === agentId);
-	if (option === undefined || option.costModel === "plan-limited") return { kind: "none" };
-	const spend = settings.budget.maxSpendUsd;
-	if (spend === null || spend <= 0 || spend > BUDGET_LIMITS.maxSpendUsd.max) {
-		return option.costModel === "metered"
-			? { kind: "no-ceiling", backendName: option.displayName }
-			: { kind: "none" };
-	}
-	return {
-		kind: "needed",
-		consent: { agentId, model: settings.models[agentId] ?? null, maxSpendUsd: spend },
-		backendName: option.displayName,
-	};
+	return { kind: "none" };
 }
 
 export function sameConsent(a: TaskSpendConsent | null, b: TaskSpendConsent | null): boolean {
@@ -489,8 +472,6 @@ export function evaluateTaskDraft(
 		problems.push(text.inPast);
 	}
 	if (need.kind === "loading") problems.push(text.agentsLoading);
-	if (need.kind === "no-ceiling") problems.push(text.meteredNeedsSpend(need.backendName));
-	if (need.kind === "needed" && !draft.consent) problems.push(text.confirmConsent);
 	if (problems.length > 0 || scheduled.schedule === null) {
 		return { problems, request: null, consentNeed: need };
 	}
@@ -501,7 +482,7 @@ export function evaluateTaskDraft(
 		markets,
 		schedule: scheduled.schedule,
 		timeZone: draft.timeZone.trim(),
-		spendConsent: need.kind === "needed" ? need.consent : null,
+		spendConsent: null,
 	});
 	if (!parsed.success) {
 		return {

@@ -166,7 +166,7 @@ impl PinnedGoogleHttp {
 			.tls
 			.connect(address)
 			.await
-			.map_err(|e| GoogleHttpError::new(GoogleHttpErrorCode::NetworkError, &e.0))?;
+			.map_err(|e| GoogleHttpError::new(GoogleHttpErrorCode::NetworkError, &e.detail))?;
 		let (mut sender, connection) = hyper::client::conn::http1::handshake(TokioIo::new(stream))
 			.await
 			.map_err(|e| network(&e))?;

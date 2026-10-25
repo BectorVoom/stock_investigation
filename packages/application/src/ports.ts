@@ -150,7 +150,27 @@ export interface SafeFetchOptions {
 	 * untrusted provider text (see `SafeFetchError.body`).
 	 */
 	readonly includeErrorBody?: boolean;
+	/**
+	 * When set, the initial request is a `POST` with `Content-Type:
+	 * application/json` and exactly this body, UTF-8 encoded (a provider
+	 * search API such as Tavily). Narrow by design:
+	 *  - requires `allowedHosts` (a pinned destination); without it the fetch
+	 *    fails with `HOST_NOT_ALLOWED` before any byte is sent;
+	 *  - at most `MAX_JSON_BODY_BYTES` (64 KiB) of UTF-8, or the fetch fails
+	 *    with `NETWORK_ERROR` before any byte is sent;
+	 *  - a POST is never redirected: any 3xx ends the fetch with
+	 *    `REDIRECT_NOT_AUTHORIZED` and the body is sent nowhere else;
+	 *  - the body is sent at most once: no retry once it may have reached
+	 *    the server (a refused connection may still try the next validated
+	 *    address, as for a GET).
+	 * Response handling (status, `maxBytes`, `timeoutMs`, `includeErrorBody`,
+	 * decoding) is unchanged. The body may carry the owner's query: never log it.
+	 */
+	readonly jsonBody?: string;
 }
+
+/** Largest `SafeFetchOptions.jsonBody`, in UTF-8 bytes. */
+export const MAX_JSON_BODY_BYTES = 64 * 1024;
 
 /**
  * Outbound fetch with SSRF defences (SEC-002): https only, per-hop redirect

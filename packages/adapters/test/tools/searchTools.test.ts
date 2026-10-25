@@ -1,11 +1,13 @@
 /**
- * Tests for `web.search`, the model's keyword search over recent news (GDELT).
+ * Tests for the search tools: `news.search` (recent news, GDELT) and
+ * `web.search` (the whole web, Tavily, only with a key).
  *
  * Every test uses a scripted fetcher, a controllable clock and a recording
- * sleep: no socket is ever opened. Asserted here are the tool's own contract —
- * GDELT articles becoming evidence with the right URLs, publishers and dates,
- * a GDELT failure failing the call with its cause, Wikipedia never being
- * contacted, the GDELT 5 s spacing with its abort behaviour, and the URL
+ * sleep: no socket is ever opened. Asserted here are the tools' own contract —
+ * provider results becoming evidence with the right URLs, publishers and
+ * dates, a provider failure failing the call with its cause, the GDELT 5 s
+ * spacing with its abort behaviour, the escalating outage pause, the Tavily
+ * request (a pinned JSON POST with the key in `Authorization`), and the URL
  * policy dropping non-https and private result URLs. The SSRF hard gate lives
  * in `tests/security/`.
  */
@@ -84,9 +86,10 @@ function setup(
 		hasher: { sha256Hex: async (text: string) => sha256(text) },
 		clock: time.clock,
 		sleep: sleep.sleep,
+		tavilyApiKey: null,
 	};
 	const [tool] = createSearchTools(deps);
-	if (tool === undefined) throw new Error("web.search was not created");
+	if (tool === undefined) throw new Error("news.search was not created");
 	return { fetcher, tool, time, sleep };
 }
 
@@ -96,10 +99,10 @@ function pagesFor(query: string): { readonly [url: string]: ScriptedPage } {
 	};
 }
 
-describe("web.search: registration", () => {
+describe("news.search: registration", () => {
 	it("declares the ADR-0025 identity and stays within its description budget", () => {
 		const { tool } = setup({});
-		expect(tool.toolId).toBe("web.search");
+		expect(tool.toolId).toBe("news.search");
 		expect(tool.version).toBe("1.0.0");
 		expect(tool.permission).toBe("research-read");
 		expect(tool.costCategory).toBe("rate-limited");
@@ -111,7 +114,7 @@ describe("web.search: registration", () => {
 	});
 });
 
-describe("web.search: happy path", () => {
+describe("news.search: happy path", () => {
 	it("keeps a GDELT article without a date or domain: its host names the publisher", async () => {
 		const query = "gold price";
 		const { tool } = setup({
@@ -265,7 +268,7 @@ describe("web.search: happy path", () => {
 	});
 });
 
-describe("web.search: failures and empty results", () => {
+describe("news.search: failures and empty results", () => {
 	it("fails with SEARCH_FAILED carrying the first line when GDELT answers with plain text", async () => {
 		const query = "gold price";
 		const { tool } = setup({
@@ -329,7 +332,7 @@ describe("web.search: failures and empty results", () => {
 	});
 });
 
-describe("web.search: arguments", () => {
+describe("news.search: arguments", () => {
 	it("rejects too-short, too-long and extra-key arguments before any fetch", async () => {
 		const { fetcher, tool } = setup({});
 		for (const args of [
@@ -350,7 +353,7 @@ describe("web.search: arguments", () => {
 	});
 });
 
-describe("web.search: GDELT spacing", () => {
+describe("news.search: GDELT spacing", () => {
 	it("spaces GDELT requests at least 5 s apart within the process", async () => {
 		const query = "gold price";
 		const { tool, sleep, time } = setup(pagesFor(query), { advanceClockOnSleep: true });
@@ -378,6 +381,7 @@ describe("web.search: GDELT spacing", () => {
 			hasher: { sha256Hex: async (text: string) => sha256(text) },
 			clock: controllableClock().clock,
 			sleep: hanging,
+			tavilyApiKey: null,
 		});
 		if (aborting === undefined) throw new Error("tool missing");
 		// Same tool instance twice: the second call must space its GDELT request.
@@ -393,5 +397,262 @@ describe("web.search: GDELT spacing", () => {
 			ok: false,
 			error: { code: "TOOL_ABORTED", retryable: false },
 		});
+	});
+});
+
+describe("news.search: provider cooldown", () => {
+	it.each([
+		"TIMEOUT",
+		"NETWORK_ERROR",
+		"HTTP_ERROR",
+	] as const)("skips repeated requests after %s and recovers at expiry", async (code) => {
+		const { tool, fetcher, time, sleep } = setup({
+			[gdeltUrl("gold price")]: { error: { code, detail: "HTTP 429" } },
+			...pagesFor("battery storage"),
+		});
+		expect(await tool.execute({ query: "gold price" }, createToolContext())).toMatchObject({
+			ok: false,
+			error: { code: "SEARCH_FAILED" },
+		});
+		for (let i = 0; i < 4; i += 1) {
+			expect(await tool.execute({ query: "battery storage" }, createToolContext())).toMatchObject({
+				ok: false,
+				error: { code: "SEARCH_COOLDOWN" },
+			});
+		}
+		expect(fetcher.calls).toHaveLength(1);
+		expect(sleep.waits).toEqual([]);
+		time.advance(60_000);
+		expect((await tool.execute({ query: "battery storage" }, createToolContext())).ok).toBe(true);
+		expect(fetcher.calls).toHaveLength(2);
+	});
+
+	it("does not treat a bad query as a provider outage", async () => {
+		const { tool, fetcher } = setup(
+			{
+				[gdeltUrl("gold price")]: { error: { code: "HTTP_ERROR", detail: "HTTP 400" } },
+				...pagesFor("battery storage"),
+			},
+			{ advanceClockOnSleep: true },
+		);
+		expect((await tool.execute({ query: "gold price" }, createToolContext())).ok).toBe(false);
+		expect((await tool.execute({ query: "battery storage" }, createToolContext())).ok).toBe(true);
+		expect(fetcher.calls).toHaveLength(2);
+	});
+});
+
+/** A fetcher that answers each call from a queue (the last answer repeats). */
+function queuedFetcher(answers: readonly ScriptedPage[]) {
+	const calls: { url: string; options: Parameters<SearchToolDeps["fetcher"]["fetchText"]>[1] }[] =
+		[];
+	const fetcher: SearchToolDeps["fetcher"] = {
+		async fetchText(url, options) {
+			calls.push({ url, options });
+			const page = answers[Math.min(calls.length - 1, answers.length - 1)];
+			if (page === undefined)
+				return { ok: false, error: { code: "HTTP_ERROR", detail: "HTTP 404" } };
+			if ("error" in page) return { ok: false, error: page.error };
+			return {
+				ok: true,
+				value: { finalUrl: url, contentType: page.contentType ?? null, text: page.text },
+			};
+		},
+	};
+	return { fetcher, calls };
+}
+
+function queuedTools(answers: readonly ScriptedPage[], tavilyApiKey: string | null) {
+	const { fetcher, calls } = queuedFetcher(answers);
+	const time = controllableClock();
+	const tools = createSearchTools({
+		fetcher,
+		hasher: { sha256Hex: async (text: string) => sha256(text) },
+		clock: time.clock,
+		sleep: recordingSleep(time).sleep,
+		tavilyApiKey,
+	});
+	return { tools, calls, time };
+}
+
+const OUTAGE: ScriptedPage = { error: { code: "HTTP_ERROR", detail: "HTTP 429" } };
+const GDELT_ANSWER: ScriptedPage = {
+	text: JSON.stringify(GDELT_OK),
+	contentType: "application/json",
+};
+
+describe("news.search: escalating outage pause", () => {
+	it("doubles the pause on each consecutive outage, capped at 30 minutes", async () => {
+		const { tools, calls, time } = queuedTools([OUTAGE], null);
+		const [tool] = tools;
+		if (tool === undefined) throw new Error("tool missing");
+		const pauses: number[] = [];
+		for (const expected of [60, 120, 240, 480, 960, 1800, 1800]) {
+			expect((await tool.execute({ query: "gold price" }, createToolContext())).ok).toBe(false);
+			const paused = await tool.execute({ query: "gold price" }, createToolContext());
+			expect(paused).toMatchObject({ ok: false, error: { code: "SEARCH_COOLDOWN" } });
+			if (!paused.ok) expect(paused.error.detail).toContain(`paused for ${expected} seconds`);
+			pauses.push(expected);
+			time.advance(expected * 1000);
+		}
+		expect(calls).toHaveLength(pauses.length);
+	});
+
+	it("starts again at 60 s after a well-formed answer, but not after a malformed one", async () => {
+		const malformed: ScriptedPage = { text: "Please limit requests", contentType: "text/plain" };
+		const { tools, time } = queuedTools([OUTAGE, malformed, OUTAGE, GDELT_ANSWER, OUTAGE], null);
+		const [tool] = tools;
+		if (tool === undefined) throw new Error("tool missing");
+		const detail = async () => {
+			const result = await tool.execute({ query: "gold price" }, createToolContext());
+			return result.ok ? "ok" : result.error.detail;
+		};
+		await detail(); // outage: 60 s
+		time.advance(60_000);
+		await detail(); // malformed: the window length is kept
+		await detail(); // outage again: 120 s
+		expect(await detail()).toContain("paused for 120 seconds");
+		time.advance(120_000);
+		expect(await detail()).toBe("ok"); // well-formed: escalation ends
+		time.advance(5_000);
+		await detail(); // outage: back to 60 s
+		expect(await detail()).toContain("paused for 60 seconds");
+	});
+});
+
+const TAVILY_URL = "https://api.tavily.com/search";
+const TAVILY_OK = {
+	query: "apple revenue",
+	answer: null,
+	images: [],
+	response_time: 0.8,
+	results: [
+		{
+			title: "Apple reports  fourth quarter\nresults",
+			url: "https://www.synthetic-wire.org/apple-q4",
+			content: "Apple posted revenue of $102.5 billion,\tup 8 percent year over year.",
+			score: 0.91,
+			published_date: "Thu, 30 Oct 2026 20:30:00 GMT",
+		},
+		{
+			title: "Apple Inc. — Investor Relations",
+			url: "https://investor.synthetic-corp.org/",
+			content: null,
+			score: 0.7,
+		},
+		{
+			title: "Local time only",
+			url: "https://dates.synthetic-wire.org/x",
+			published_date: "2026-10-30 10:00",
+		},
+		{ title: "", url: "https://skipped.synthetic-wire.org/" },
+		{ title: "Not https", url: "http://plain.synthetic-wire.org/" },
+	],
+};
+
+describe("web.search: Tavily", () => {
+	it("is registered first, and only with a key", () => {
+		expect(queuedTools([], null).tools.map((tool) => tool.toolId)).toEqual(["news.search"]);
+		const [web] = queuedTools([], "tvly-test-key").tools;
+		expect(web).toMatchObject({
+			toolId: "web.search",
+			version: "2.0.0",
+			costCategory: "metered",
+			sideEffect: "external-read",
+			networkAllowlist: { kind: "public-web" },
+			timeoutMs: 20_000,
+		});
+		expect(web?.description.length).toBeLessThanOrEqual(200);
+	});
+
+	it("sends one pinned JSON POST with the key in Authorization", async () => {
+		const { tools, calls } = queuedTools(
+			[{ text: JSON.stringify(TAVILY_OK), contentType: "application/json" }],
+			"tvly-test-key",
+		);
+		const [web] = tools;
+		expect((await web?.execute({ query: " apple revenue " }, createToolContext()))?.ok).toBe(true);
+		expect(calls).toHaveLength(1);
+		const [call] = calls;
+		expect(call?.url).toBe(TAVILY_URL);
+		expect(call?.options).toMatchObject({
+			authorization: "Bearer tvly-test-key",
+			accept: "application/json",
+			timeoutMs: 15_000,
+			maxBytes: 1_000_000,
+		});
+		expect([...(call?.options.allowedHosts ?? [])]).toEqual(["api.tavily.com"]);
+		expect(JSON.parse(call?.options.jsonBody ?? "null")).toEqual({
+			query: "apple revenue",
+			search_depth: "basic",
+			max_results: 10,
+			include_published_date: true,
+		});
+		// The key never appears in the URL.
+		expect(call?.url).not.toContain("tvly");
+	});
+
+	it("turns results into evidence with snippets, hosts as publishers and zone-safe dates", async () => {
+		const { tools } = queuedTools(
+			[{ text: JSON.stringify(TAVILY_OK), contentType: "application/json" }],
+			"tvly-test-key",
+		);
+		const [web] = tools;
+		const result = await web?.execute({ query: "apple revenue" }, createToolContext());
+		if (result === undefined || !result.ok) throw new Error("search failed");
+		const evidence = result.value.evidence.map((item) => item.evidence);
+		for (const item of evidence) expect(evidenceSchema.safeParse(item).success).toBe(true);
+		expect(
+			evidence.map((item) => [item.title, item.publisher, item.publishedAt, item.sourceClass]),
+		).toEqual([
+			[
+				"Apple reports fourth quarter results",
+				"www.synthetic-wire.org",
+				"2026-10-30T20:30:00.000Z",
+				"other",
+			],
+			["Apple Inc. — Investor Relations", "investor.synthetic-corp.org", null, "other"],
+			// No zone: its meaning would depend on the machine, so it is undated.
+			["Local time only", "dates.synthetic-wire.org", null, "other"],
+		]);
+		expect(result.value.evidence[0]?.retrievedText).toBe(
+			"Apple reports fourth quarter results\nApple posted revenue of $102.5 billion, up 8 percent year over year.",
+		);
+		expect(result.value.modelText).toContain(
+			"\n  Apple posted revenue of $102.5 billion, up 8 percent year over year.\n",
+		);
+		expect(result.value.modelText).toContain("web.fetch_page");
+	});
+
+	it("pauses after a bad key or quota error, but not after a rejected query", async () => {
+		for (const [detail, paused] of [
+			["HTTP 401", true],
+			["HTTP 432", true],
+			["HTTP 400", false],
+			["HTTP 422", false],
+		] as const) {
+			const { tools, calls } = queuedTools(
+				[{ error: { code: "HTTP_ERROR", detail } }, { text: JSON.stringify(TAVILY_OK) }],
+				"tvly-test-key",
+			);
+			const [web] = tools;
+			expect(await web?.execute({ query: "apple" }, createToolContext())).toMatchObject({
+				ok: false,
+				error: { code: "SEARCH_FAILED", detail: `HTTP_ERROR: ${detail}` },
+			});
+			const second = await web?.execute({ query: "apple" }, createToolContext());
+			expect(second?.ok).toBe(!paused);
+			expect(calls).toHaveLength(paused ? 1 : 2);
+		}
+	});
+
+	it("keeps its pause separate from news.search", async () => {
+		const { tools, calls } = queuedTools([OUTAGE, GDELT_ANSWER], "tvly-test-key");
+		const [web, news] = tools;
+		expect((await web?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(false);
+		expect((await news?.execute({ query: "apple" }, createToolContext()))?.ok).toBe(true);
+		expect(calls.map((call) => new URL(call.url).hostname)).toEqual([
+			"api.tavily.com",
+			"api.gdeltproject.org",
+		]);
 	});
 });

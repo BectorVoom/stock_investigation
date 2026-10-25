@@ -838,6 +838,16 @@ export const SCHEMAS: readonly SchemaEntry[] = [
 		baselines: [{ leaseExpiresAt: T1, cancelRequested: false }],
 	},
 	{
+		name: "releaseJobRequest",
+		schema: contracts.releaseJobRequestSchema,
+		baselines: [{ leaseGeneration: 3, usage }],
+	},
+	{
+		name: "releaseJobResponse",
+		schema: contracts.releaseJobResponseSchema,
+		baselines: [{ state: "pending" }, { state: "cancelled" }],
+	},
+	{
 		name: "eventsResponse",
 		schema: z.object({ cancelRequested: z.boolean() }),
 		baselines: [{ cancelRequested: true }, { cancelRequested: false, extra: 1, more: { a: 1 } }],

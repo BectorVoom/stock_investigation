@@ -57,6 +57,7 @@ function setup(secUserAgent: string | null = SEC_USER_AGENT, pages = SEC_PAGES) 
 		hasher: webCryptoHasher,
 		clock: fixedClock(),
 		secUserAgent,
+		tavilyApiKey: null,
 		pageArchive: null,
 		sleep: async () => {},
 	});

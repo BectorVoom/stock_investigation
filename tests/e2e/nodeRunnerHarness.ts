@@ -88,6 +88,7 @@ const exit = await runRunnerLoop(
 				hasher: webCryptoHasher,
 				clock: systemClock,
 				secUserAgent: null,
+				tavilyApiKey: null,
 				pageArchive: null,
 				sleep: (ms, signal) =>
 					new Promise<void>((resolve) => {

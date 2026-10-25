@@ -4,6 +4,8 @@ import type {
 	ClaimedJob,
 	ClaimJobResponse,
 	CompleteJobRequest,
+	ReleaseJobRequest,
+	ReleaseJobResponse,
 	RunnerEventsRequest,
 } from "@research/contracts";
 import { marketUnavailableReason } from "@research/contracts";
@@ -76,6 +78,7 @@ export function createFakeApi(
 		heartbeat?: Scripted<{ leaseExpiresAt: string; cancelRequested: boolean }>[];
 		events?: Scripted<{ cancelRequested: boolean }>[];
 		complete?: Scripted<{ state: "completed"; replayed: boolean; newArticleCount: number }>[];
+		release?: Scripted<ReleaseJobResponse>[];
 	} = {},
 ) {
 	const calls = {
@@ -83,6 +86,7 @@ export function createFakeApi(
 		heartbeats: [] as number[],
 		events: [] as RunnerEventsRequest[],
 		completions: [] as CompleteJobRequest[],
+		releases: [] as ReleaseJobRequest[],
 	};
 	const api: RunnerApi = {
 		async claim() {
@@ -106,6 +110,10 @@ export function createFakeApi(
 				script.complete ?? [],
 				ok({ state: "completed", replayed: false, newArticleCount: 0 }),
 			);
+		},
+		async release(_runId, body) {
+			calls.releases.push(body);
+			return next(script.release ?? [], ok({ state: "pending" }));
 		},
 		async renewCredential() {
 			return ok({ token: "rk_renewed" });

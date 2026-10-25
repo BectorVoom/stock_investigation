@@ -149,6 +149,8 @@ function runnerProgram(
 		}
 		if (value.secUserAgent === null)
 			logger.warn("sec_tools_disabled", { reason: "SEC_USER_AGENT not set" });
+		if (value.tavilyApiKey === null)
+			logger.warn("web_search_disabled", { reason: "TAVILY_API_KEY not set" });
 		if (value.pagesDirectory === null)
 			logger.warn("web_pages_disabled", { reason: "RUNNER_PAGES_DIR not set" });
 		if (value.fredApiKey === null)
@@ -176,6 +178,7 @@ function runnerProgram(
 							hasher: webCryptoHasher,
 							clock: systemClock,
 							secUserAgent: value.secUserAgent,
+							tavilyApiKey: value.tavilyApiKey,
 							pageArchive:
 								value.pagesDirectory === null
 									? null

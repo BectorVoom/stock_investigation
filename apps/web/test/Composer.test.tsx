@@ -88,12 +88,6 @@ function submitButton(): HTMLButtonElement {
 	return button;
 }
 
-function consentCheckbox(): HTMLInputElement {
-	const element = screen.getByRole("checkbox", { name: /consent to metered spend/ });
-	if (!(element instanceof HTMLInputElement)) throw new Error("consent is not a checkbox input");
-	return element;
-}
-
 function typeQuestion(text = "Where will storage demand grow?") {
 	fireEvent.input(screen.getByLabelText("Question"), { target: { value: text } });
 }
@@ -161,10 +155,10 @@ describe("Composer: fields", () => {
 		expect(composerText()).toContain("provider/model");
 		expect(composerText()).toContain("high");
 		expect(composerText()).toContain("web access on");
-		// The metered allowance is stated in the consent label itself.
+		// Metered questions do not need a consent checkbox.
 		expect(
-			screen.getByRole("checkbox", { name: /consent to metered spend up to \$3\.00/ }),
-		).toBeDefined();
+			screen.queryByRole("checkbox", { name: /consent to metered spend up to \$3\.00/ }),
+		).toBeNull();
 		expect(composerText()).not.toContain("Limits and cost");
 	});
 
@@ -300,45 +294,29 @@ describe("Composer: cost honesty and consent (FR-016)", () => {
 		expect(idempotencyKeySchema.safeParse(key).success).toBe(true);
 	});
 
-	it("keeps submit disabled for a metered backend until consent is given on the form", async () => {
+	it("submits a metered question without a consent checkbox", async () => {
 		const { submit } = mount(undefined, { status: "ready", value: METERED_RESPONSE });
 		typeQuestion();
-
-		// The consent label states the metered allowance itself (no "above").
-		expect(
-			screen.getByRole("checkbox", { name: /consent to metered spend up to \$3\.00/ }),
-		).toBeDefined();
-		expect(document.querySelector("[data-cost-statement]")).toBeNull();
-		expect(submitButton().disabled).toBe(true);
-		expect(screen.getByRole("list", { name: "Before you can submit" }).textContent).toContain(
-			"Confirm consent to metered spend on the form itself.",
-		);
-
-		fireEvent.click(consentCheckbox());
+		expect(screen.queryByRole("checkbox", { name: /consent to metered spend/ })).toBeNull();
 		expect(submitButton().disabled).toBe(false);
-		expect(screen.queryByRole("list", { name: "Before you can submit" })).toBeNull();
-
 		fireEvent.click(submitButton());
 		await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
 		expect(submit.mock.calls[0]?.[0].budget.maxSpendUsd).toBe(3);
 	});
 
-	it("does not submit a metered request when the form is submitted without consent", () => {
+	it("submits a metered form without consent", () => {
 		const { submit } = mount(undefined, { status: "ready", value: METERED_RESPONSE });
 		typeQuestion();
 		fireEvent.submit(screen.getByRole("form", { name: "Research composer" }));
-		expect(submit).not.toHaveBeenCalled();
+		expect(submit).toHaveBeenCalledTimes(1);
 	});
 
-	it("withdraws consent after a submission", async () => {
+	it("clears the question after a metered submission", async () => {
 		mount(undefined, { status: "ready", value: METERED_RESPONSE });
 		typeQuestion();
-		fireEvent.click(consentCheckbox());
-		expect(submitButton().disabled).toBe(false);
-
 		fireEvent.click(submitButton());
 		await screen.findByText("Question queued. It starts when a runner claims it.");
-		expect(consentCheckbox().checked).toBe(false);
+		expect(screen.queryByRole("checkbox", { name: /consent to metered spend/ })).toBeNull();
 		expect(submitButton().disabled).toBe(true);
 	});
 
@@ -489,7 +467,6 @@ describe("Composer: submission", () => {
 		typeQuestion();
 		fireEvent.change(screen.getByLabelText("Horizon"), { target: { value: "3" } });
 		fireEvent.click(screen.getByRole("checkbox", { name: "Japan (JP)" }));
-		fireEvent.click(consentCheckbox());
 
 		fireEvent.click(submitButton());
 		await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
@@ -574,7 +551,7 @@ describe("Composer: carried-over settings", () => {
 	});
 });
 
-describe("Composer: spend consent is consumed on dispatch (finding 1)", () => {
+describe("Composer: metered submission idempotency", () => {
 	const timeoutError = {
 		kind: "api" as const,
 		code: "TIMEOUT" as const,
@@ -604,24 +581,21 @@ describe("Composer: spend consent is consumed on dispatch (finding 1)", () => {
 		return { submit };
 	}
 
-	it("a timeout then a changed question is blocked until consent is given again", async () => {
+	it("a changed question after a timeout gets a new idempotency key", async () => {
 		const { submit } = mountMetered(async () => ({ ok: false, error: timeoutError }));
 		typeQuestion("Where will storage demand grow?");
-		fireEvent.click(consentCheckbox());
 		expect(submitButton().disabled).toBe(false);
 
 		fireEvent.click(submitButton());
 		await screen.findByRole("alert");
 		expect(submit).toHaveBeenCalledTimes(1);
-		// Consent was consumed by the dispatch, even though it failed: the
-		// timed-out request may still have been accepted by the server.
-		expect(consentCheckbox().checked).toBe(false);
+		// A timeout may still have queued the request; no consent checkbox is needed.
+		expect(screen.queryByRole("checkbox", { name: /consent to metered spend/ })).toBeNull();
 
-		// A DIFFERENT request must not reuse the earlier consent.
+		// A different request must receive a different key.
 		typeQuestion("A changed question about suppliers?");
-		expect(submitButton().disabled).toBe(true);
+		expect(submitButton().disabled).toBe(false);
 
-		fireEvent.click(consentCheckbox());
 		expect(submitButton().disabled).toBe(false);
 		fireEvent.click(submitButton());
 		await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
@@ -632,12 +606,11 @@ describe("Composer: spend consent is consumed on dispatch (finding 1)", () => {
 	it("a timeout then an identical resend reuses the key without fresh consent", async () => {
 		const { submit } = mountMetered(async () => ({ ok: false, error: timeoutError }));
 		typeQuestion("Where will storage demand grow?");
-		fireEvent.click(consentCheckbox());
 
 		fireEvent.click(submitButton());
 		await screen.findByRole("alert");
 		expect(submit).toHaveBeenCalledTimes(1);
-		expect(consentCheckbox().checked).toBe(false);
+		expect(screen.queryByRole("checkbox", { name: /consent to metered spend/ })).toBeNull();
 
 		// The identical resend is the same authorised action: still sendable.
 		expect(submitButton().disabled).toBe(false);

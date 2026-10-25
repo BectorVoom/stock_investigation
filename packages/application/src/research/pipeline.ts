@@ -372,9 +372,6 @@ export async function runResearchPipeline(
 	if (deps.agent.toolIsolation !== "enforced" && !input.allowUnverifiedToolIsolation) {
 		return failed("TOOL_ISOLATION_UNVERIFIED", false);
 	}
-	if (deps.agent.costModel === "metered" && (budget.maxSpendUsd ?? 0) <= 0) {
-		return failed("SPEND_NOT_AUTHORIZED", false);
-	}
 
 	/** One model turn under the run's budget. Never throws for provider failures. */
 	async function turn(prompt: string): Promise<Result<Turn, TurnFailure>> {
@@ -382,7 +379,8 @@ export async function runResearchPipeline(
 		const inputBytes = byteLength(prompt);
 		// On a metered backend an unreported cost means the running total is unknown: stop
 		// and ask, rather than keep spending against a ceiling that can no longer be checked.
-		if (metered && usage.hasUnmeteredUsage) return err({ kind: "unknown-spend" });
+		if (metered && budget.maxSpendUsd !== null && usage.hasUnmeteredUsage)
+			return err({ kind: "unknown-spend" });
 		// Reserve what the most expensive turn so far cost, so the ceiling is checked BEFORE
 		// the request is made. The first metered turn has no history and reserves nothing;
 		// that single turn is the documented worst-case overshoot.
@@ -536,8 +534,18 @@ export async function runResearchPipeline(
 	let reminderSent = false;
 	let reminderPending: string | null = null;
 	const toolErrorCounts = new Map<string, number>();
+	const completedRequests = new Set<string>();
+	const unavailableTools = new Set<string>();
+	let collectionLimitReached = false;
 
 	collection: for (let step = 0; step < collectionSteps; step += 1) {
+		// Spend the remaining model turns on analysis and verification instead
+		// of an open-ended search for more sources.
+		if (step >= 3) {
+			collectionLimitReached = true;
+			await deps.reporter.note("Collection stopped after three planning rounds.");
+			break;
+		}
 		const remainingToolCalls = budget.maxToolCalls - usage.toolCalls;
 		if (remainingToolCalls <= 0) break;
 		const prompt = planningPrompt({
@@ -641,6 +649,12 @@ export async function runResearchPipeline(
 				}
 				continue;
 			}
+			const requestKey = `${call.toolId}\n${JSON.stringify(authorized.value.args)}`;
+			if (completedRequests.has(requestKey) || unavailableTools.has(call.toolId)) {
+				const note = `Tool ${label} was not repeated; use its earlier result or another tool.`;
+				collected.entries.push({ step, fullText: note, digestLines: [note] });
+				continue;
+			}
 			const withinBudget = checkBudget(budget, usage, elapsedMs(), { toolCalls: 1 });
 			if (!withinBudget.ok) {
 				stoppedBy = withinBudget.error;
@@ -662,6 +676,9 @@ export async function runResearchPipeline(
 			}
 			executedToolCalls += 1;
 			if (!result.ok) {
+				if (result.error.code === "NOT_CONFIGURED" || result.error.code === "SEARCH_COOLDOWN") {
+					unavailableTools.add(call.toolId);
+				}
 				const code = sanitizeToolErrorCode(result.error.code.slice(0, 80));
 				toolErrorCounts.set(code, (toolErrorCounts.get(code) ?? 0) + 1);
 				await deps.reporter.tool(label, "failed", result.error.code.slice(0, 300));
@@ -670,6 +687,7 @@ export async function runResearchPipeline(
 				continue;
 			}
 			succeededToolCalls += 1;
+			completedRequests.add(requestKey);
 			const output = result.value;
 			collected.evidence.push(...output.evidence);
 			collected.securities.push(...output.securities);
@@ -805,6 +823,10 @@ export async function runResearchPipeline(
 	}
 	const analysis = draft?.success === true ? draft.data : null;
 	const notes: string[] = [];
+	if (collectionLimitReached)
+		notes.push(
+			"Collection was limited to three planning rounds; additional sources may not have been retrieved.",
+		);
 	if (omittedEvidence > 0) {
 		notes.push(
 			duplicateEvidence > 0

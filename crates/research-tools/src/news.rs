@@ -105,6 +105,7 @@ pub(crate) fn options(
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	}
 }
 pub(crate) fn meta(

@@ -2,7 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { agentsResponseSchema } from "@research/contracts";
 import { writeTestRunnerEnvFile } from "../../scripts/testEnv.ts";
 import {
@@ -39,8 +39,8 @@ import {
  *    directory, beginning with the page's heading rather than site
  *    navigation.
  * 2b. A question no subscribed source covers (the gold price) completes
- *    through `web.search` instead of failing with NO_EVIDENCE_COLLECTED
- *    (ADR-0025).
+ *    through a search tool (`web.search` with `TAVILY_API_KEY`, else
+ *    `news.search`) instead of failing with NO_EVIDENCE_COLLECTED (ADR-0025).
  * 3. Upgraded state: after a restart with a fresh database that has a run
  *    but no saved settings (created through the API), a question can be
  *    sent without visiting Settings.
@@ -66,8 +66,8 @@ const MODEL =
 		: (process.env.RUN_LIVE_MODEL ?? "").trim();
 const PAGE_URL = (process.env.RESEARCH_REAL_PAGE_URL ?? "https://example.com/").trim();
 /**
- * Backends that bill per use (ADR-0031): Settings asks for a maximum spend,
- * every question needs the composer's one-time consent, and the runner needs
+ * Backends that bill per use (ADR-0031): this live suite sets an optional maximum spend,
+ * and the runner needs
  * the provider key, passed explicitly into the throwaway runner env file.
  */
 const METERED_KEYS: Readonly<Record<string, string>> = {
@@ -78,14 +78,6 @@ const METERED_KEY = METERED_KEYS[AGENT_ID] ?? null;
 const METERED = METERED_KEY !== null;
 /** The spend ceiling per question on a metered backend, in USD (`RUN_LIVE_MAX_SPEND`, default 0.50). */
 const MAX_SPEND_USD = Number((process.env.RUN_LIVE_MAX_SPEND ?? "0.5").trim());
-
-/** Ticks the composer's one-time spend consent when the backend is metered. */
-async function consentIfMetered(composer: Locator): Promise<void> {
-	if (!METERED) return;
-	// The label names the ceiling ("… up to $0.50 for this question").
-	const consent = composer.getByRole("checkbox", { name: /^I consent to metered spend\b/ });
-	if (!(await consent.isChecked())) await consent.check();
-}
 
 /** Every run's reported cost: known, positive and within the ceiling on a metered backend. */
 async function expectCostsWithinCeiling(): Promise<void> {
@@ -420,7 +412,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 		// A question asked; the run completes with a claim and a source link.
 		await page.getByRole("link", { name: "Chat", exact: true }).click();
 		await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_1);
-		await consentIfMetered(composer);
 		await composer.getByRole("button", { name: "Send question" }).click();
 		const thread = page.getByRole("list", { name: "Messages" });
 		await expect(thread.locator('[data-run-state="completed"]')).toBeAttached({
@@ -470,7 +461,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 		try {
 			const composer = page.getByRole("form", { name: "Research composer" });
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_2);
-			await consentIfMetered(composer);
 			await composer.getByRole("button", { name: "Send question" }).click();
 			const thread = page.getByRole("list", { name: "Messages" });
 			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(2, {
@@ -527,7 +517,6 @@ test.describe("live positive path through the real backend (spends real quota)",
 			// run on its own after the fresh-state test (`-g`).
 			const completedBefore = await thread.locator('[data-run-state="completed"]').count();
 			await composer.getByRole("textbox", { name: "Question" }).fill(QUESTION_SEARCH);
-			await consentIfMetered(composer);
 			await composer.getByRole("button", { name: "Send question" }).click();
 			await expect(thread.locator('[data-run-state="completed"]')).toHaveCount(
 				completedBefore + 1,

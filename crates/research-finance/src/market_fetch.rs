@@ -35,6 +35,7 @@ pub fn fetch_options(host: &str, accept: &str, cancel: &CancellationToken) -> Sa
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	}
 }
 /// Fetches and parses JSON with JS duplicate-key and number semantics.

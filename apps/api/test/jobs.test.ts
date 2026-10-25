@@ -1,4 +1,5 @@
 import {
+	claimJobResponseSchema,
 	completeJobResponseSchema,
 	conversationResponseSchema,
 	heartbeatResponseSchema,
@@ -97,7 +98,7 @@ describe("creating research runs (FR-014, FR-016)", () => {
 		expect(response.status).toBe(400);
 	});
 
-	it("refuses a metered backend without an explicit spend ceiling (no paid use without consent)", async () => {
+	it("accepts a metered backend with or without an explicit spend ceiling", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);
 		const noConsent = await harness.call(
@@ -106,8 +107,7 @@ describe("creating research runs (FR-014, FR-016)", () => {
 			researchRequest(workspaceId, { agentId: "openrouter" }),
 			idempotencyKey(),
 		);
-		expect(noConsent.status).toBe(422);
-		expect(await errorCode(noConsent)).toBe("SPEND_CONSENT_REQUIRED");
+		expect(noConsent.status).toBe(202);
 
 		const request = researchRequest(workspaceId, { agentId: "openrouter" });
 		const withConsent = await harness.call(
@@ -119,7 +119,7 @@ describe("creating research runs (FR-014, FR-016)", () => {
 		expect(withConsent.status).toBe(202);
 	});
 
-	it("accepts the Claude API backend once a runner reports it, and only with a spend ceiling", async () => {
+	it("accepts the Claude API backend without a spend ceiling once a runner reports it", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);
 		const request = researchRequest(workspaceId, { agentId: "claude-api" });
@@ -145,8 +145,7 @@ describe("creating research runs (FR-014, FR-016)", () => {
 		expect(reported.status).toBe(200);
 
 		const noConsent = await harness.call("POST", "/research-runs", request, idempotencyKey());
-		expect(noConsent.status).toBe(422);
-		expect(await errorCode(noConsent)).toBe("SPEND_CONSENT_REQUIRED");
+		expect(noConsent.status).toBe(202);
 		const accepted = await harness.call("POST", "/research-runs", withSpend, idempotencyKey());
 		expect(accepted.status).toBe(202);
 	});
@@ -200,6 +199,22 @@ describe("creating research runs (FR-014, FR-016)", () => {
 });
 
 describe("leases (section 5.2, AGT-011)", () => {
+	it("picks up a question within the one-second idle polling interval", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const idle = await body(
+			await harness.runner(token, "/jobs/claim", CLAIM_BODY),
+			claimJobResponseSchema,
+		);
+		expect(idle.job).toBeNull();
+		expect(idle.pollAfterMs).toBeGreaterThan(0);
+		expect(idle.pollAfterMs).toBeLessThanOrEqual(1_000);
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		harness.time.advance(idle.pollAfterMs);
+		expect((await claim(harness, token))?.runId).toBe(runId);
+	});
+
 	it("grants one lease per job even when two runners race", async () => {
 		const harness = createHarness();
 		const workspaceId = await createWorkspace(harness);
@@ -848,7 +863,7 @@ describe("cancel, retry, approval (FR-014)", () => {
 			expect(await errorCode(refused)).toBe("VALIDATION_FAILED");
 		});
 
-		it("never moves a retry onto metered spend the owner did not consent to for this run", async () => {
+		it("retries with the currently selected metered backend without renewed consent", async () => {
 			const harness = createHarness();
 			const workspaceId = await createWorkspace(harness);
 			const runId = await queueAndCancel(harness, workspaceId);
@@ -856,13 +871,13 @@ describe("cancel, retry, approval (FR-014)", () => {
 				defaultAgentId: "openrouter",
 				models: { openrouter: "example/model" },
 				effort: "medium",
-				budget: { ...BUDGET, maxSpendUsd: 1.5 },
+				budget: { ...BUDGET, maxSpendUsd: null },
 				webAccess: "off",
 			});
 
-			const refused = await retry(harness, runId);
+			const accepted = await retry(harness, runId);
 
-			expect(await errorCode(refused)).toBe("SPEND_CONSENT_REQUIRED");
+			expect(accepted.status).toBe(202);
 		});
 
 		it("retries a metered run whose backend, model and spend are unchanged, under the fixed limits", async () => {
@@ -1387,5 +1402,124 @@ describe("budgets span attempts and approval can come from any spending stage (A
 		});
 		expect(parked.status).toBe(409);
 		expect(await errorCode(parked)).toBe("ILLEGAL_TRANSITION");
+	});
+});
+
+describe("lease hand-back on runner shutdown (ADR-0036)", () => {
+	const releaseResponseSchema = z.object({ state: z.enum(["pending", "cancelled"]) });
+
+	it("returns the job to the queue at once with the claim refunded, its usage kept and the old proof fenced", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const token = await issueRunnerToken(harness);
+		const first = await claim(harness, token);
+		if (first === null) throw new Error("expected a lease");
+		await harness.runner(token, `/jobs/${runId}/events`, stateEvents(harness, first, ["planning"]));
+
+		const released = await harness.runner(token, `/jobs/${runId}/release`, {
+			leaseGeneration: first.leaseGeneration,
+			usage: USAGE,
+		});
+		expect(released.status).toBe(200);
+		expect(await body(released, releaseResponseSchema)).toEqual({ state: "pending" });
+		const run = await runState(harness, runId);
+		expect(run.state).toBe("pending");
+		expect(run.attempt).toBe(0);
+		// The attempt's spend stays on the run (AGT-008).
+		expect(run.usage).toMatchObject({ agentSteps: 3, toolCalls: 2, inputBytes: 1200 });
+
+		// No lease expiry to wait for: the next claim takes it, as a fresh first attempt.
+		const second = await claim(harness, token);
+		expect(second?.runId).toBe(runId);
+		expect(second?.attempt).toBe(1);
+		expect(second?.leaseGeneration).toBe(first.leaseGeneration + 1);
+		if (second?.kind !== "research") throw new Error("expected a research lease");
+		expect(second.priorUsage).toMatchObject({ agentSteps: 3, toolCalls: 2 });
+
+		// The released proof can never act again.
+		for (const path of ["release", "heartbeat"]) {
+			const stale = await harness.runner(token, `/jobs/${runId}/${path}`, {
+				leaseGeneration: first.leaseGeneration,
+				...(path === "release" ? { usage: USAGE } : {}),
+			});
+			expect(stale.status, path).toBe(409);
+			expect(await errorCode(stale), path).toBe("STALE_LEASE");
+		}
+	});
+
+	it("is refused for another runner, and once nobody holds the lease", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const tokenA = await issueRunnerToken(harness, "runner A");
+		const tokenB = await issueRunnerToken(harness, "runner B");
+		const lease = await claim(harness, tokenA);
+		if (lease === null) throw new Error("expected a lease");
+		const request = { leaseGeneration: lease.leaseGeneration, usage: USAGE };
+
+		const impersonation = await harness.runner(tokenB, `/jobs/${runId}/release`, request);
+		expect(impersonation.status).toBe(409);
+		expect(await apiError(impersonation)).toMatchObject({
+			code: "STALE_LEASE",
+			detail: "WRONG_RUNNER",
+		});
+		expect((await runState(harness, runId)).state).toBe("claimed");
+
+		expect((await harness.runner(tokenA, `/jobs/${runId}/release`, request)).status).toBe(200);
+		const again = await harness.runner(tokenA, `/jobs/${runId}/release`, request);
+		expect(again.status).toBe(409);
+		expect(await apiError(again)).toMatchObject({ code: "STALE_LEASE", detail: "NOT_LEASED" });
+		expect((await runState(harness, runId)).attempt).toBe(0);
+
+		const missing = await harness.runner(tokenA, "/jobs/run_missing/release", request);
+		expect(missing.status).toBe(404);
+		const malformed = await harness.runner(tokenA, `/jobs/${runId}/release`, {
+			leaseGeneration: lease.leaseGeneration,
+		});
+		expect(malformed.status).toBe(400);
+		expect(await errorCode(malformed)).toBe("VALIDATION_FAILED");
+	});
+
+	it("cancels a job whose cancellation was requested instead of requeueing it", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const token = await issueRunnerToken(harness);
+		const lease = await claim(harness, token);
+		if (lease === null) throw new Error("expected a lease");
+		await harness.call("POST", `/research-runs/${runId}/cancel`);
+		expect((await runState(harness, runId)).cancelRequested).toBe(true);
+
+		const released = await harness.runner(token, `/jobs/${runId}/release`, {
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+		});
+		expect(await body(released, releaseResponseSchema)).toEqual({ state: "cancelled" });
+		const run = await runState(harness, runId);
+		expect(run.state).toBe("cancelled");
+		expect(run.cancelRequested).toBe(false);
+		expect(await claim(harness, token)).toBeNull();
+	});
+
+	it("never exhausts the retry ceiling however often the runner restarts", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const token = await issueRunnerToken(harness);
+		for (let restart = 0; restart < 5; restart += 1) {
+			const lease = await claim(harness, token);
+			expect(lease?.runId, `restart ${restart}`).toBe(runId);
+			expect(lease?.attempt, `restart ${restart}`).toBe(1);
+			if (lease === null) throw new Error("expected a lease");
+			const released = await harness.runner(token, `/jobs/${runId}/release`, {
+				leaseGeneration: lease.leaseGeneration,
+				usage: USAGE,
+			});
+			expect(released.status, `restart ${restart}`).toBe(200);
+		}
+		const run = await runState(harness, runId);
+		expect(run.state).toBe("pending");
+		expect(run.failureCode).toBeNull();
 	});
 });

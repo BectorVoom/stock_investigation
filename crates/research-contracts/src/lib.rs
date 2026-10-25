@@ -129,6 +129,8 @@ contract!(
 	jobs::EventsResponse,
 	jobs::HeartbeatRequest,
 	jobs::HeartbeatResponse,
+	jobs::ReleaseJobRequest,
+	jobs::ReleaseJobResponse,
 	jobs::ResearchBundle,
 	jobs::ResearchRequest,
 	jobs::RunnerEvent,

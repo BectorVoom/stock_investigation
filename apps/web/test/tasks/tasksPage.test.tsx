@@ -145,20 +145,19 @@ describe("Tasks page (ADR-0033 §8)", () => {
 		expect(server.backend.requestsTo("POST", /scheduled-tasks/)).toHaveLength(0);
 	});
 
-	it("asks for spend consent only while the saved backend bills per use, and sends it", async () => {
+	it("creates a metered task without asking for spending consent", async () => {
 		const server = createTasksServer({ agentSettings: METERED_SETTINGS });
 		renderPage(server);
 		fireEvent.click(await screen.findByRole("button", { name: "New task" }));
 		const dialog = await screen.findByRole("dialog", { name: "New task" });
 		fireEvent.input(field(dialog, "Title"), { target: { value: "Metered brief" } });
 		fireEvent.input(field(dialog, "Question"), { target: { value: "What changed overnight?" } });
-		const consent = await within(dialog).findByRole("checkbox", {
-			name: "Allow this task to spend up to $0.50 per run on OpenRouter anthropic/claude-sonnet",
-		});
-		fireEvent.click(within(dialog).getByRole("button", { name: "Create task" }));
-		expect(dialog.textContent).toContain("Allow the spend below");
-		expect(server.backend.requestsTo("POST", /scheduled-tasks/)).toHaveLength(0);
-		fireEvent.click(consent);
+		await waitFor(() =>
+			expect(
+				within(dialog).getByRole("button", { name: "Create task" }).hasAttribute("disabled"),
+			).toBe(false),
+		);
+		expect(within(dialog).queryByRole("checkbox", { name: /Allow this task to spend/ })).toBeNull();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Create task" }));
 		await screen.findByText(/Created Metered brief/);
 		const [create] = server.backend.requestsTo("POST", /^\/api\/v1\/scheduled-tasks$/);
@@ -167,11 +166,7 @@ describe("Tasks page (ADR-0033 §8)", () => {
 			typeof body === "object" && body !== null && "spendConsent" in body
 				? body.spendConsent
 				: null,
-		).toEqual({
-			agentId: "openrouter",
-			model: "anthropic/claude-sonnet",
-			maxSpendUsd: 0.5,
-		});
+		).toBeNull();
 	});
 
 	it("edits a task in the same dialog with compare-and-set on its version", async () => {

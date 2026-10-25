@@ -23,7 +23,8 @@ use research_contracts::api::{
 };
 use research_contracts::jobs::{
 	ClaimJobRequest, ClaimJobResponse, CompleteJobRequest, CompleteJobResponse, EventsResponse,
-	HeartbeatRequest, HeartbeatResponse, RunnerEventsRequest,
+	HeartbeatRequest, HeartbeatResponse, ReleaseJobRequest, ReleaseJobResponse,
+	RunnerEventsRequest,
 };
 use research_contracts::json::to_js_json;
 use research_contracts::{Contract, ContractError};
@@ -77,6 +78,12 @@ pub trait RunnerApi: Send + Sync {
 		run_id: &str,
 		request: &CompleteJobRequest,
 	) -> RunnerApiResult<CompleteJobResponse>;
+	/// `POST /jobs/{runId}/release`: hands the lease back on shutdown (ADR-0036).
+	async fn release_lease(
+		&self,
+		run_id: &str,
+		request: &ReleaseJobRequest,
+	) -> RunnerApiResult<ReleaseJobResponse>;
 	/// `POST /credentials/renew`.
 	async fn renew_credential(
 		&self,
@@ -196,10 +203,12 @@ struct Target {
 /// An idle connection is reused only this long (proxies and servers close
 /// idle sockets after a while; a stale one costs a failed attempt).
 const IDLE_LIMIT: Duration = Duration::from_secs(30);
+/// Keep overlapping heartbeat and progress requests warm without retaining unbounded sockets.
+const MAX_IDLE_CONNECTIONS: usize = 4;
 /// Connection Attempt Delay of RFC 8305 (happy eyeballs).
 const CONNECTION_ATTEMPT_DELAY: Duration = Duration::from_millis(250);
 
-/// The production [`RunnerApi`]. Keeps one idle keep-alive connection to the
+/// The production [`RunnerApi`]. Keeps a bounded pool of idle connections to the
 /// configured host: it is one fixed host, so reuse cannot send the token
 /// anywhere else.
 pub struct HttpRunnerApi {
@@ -208,7 +217,7 @@ pub struct HttpRunnerApi {
 	headers: Vec<(&'static str, String)>,
 	tls: TlsConnector,
 	sleeper: Arc<dyn Sleeper>,
-	pool: Mutex<Option<Connection>>,
+	pool: Mutex<Vec<Connection>>,
 	timeout: Duration,
 	max_attempts: u32,
 }
@@ -289,7 +298,7 @@ impl HttpRunnerApi {
 			headers,
 			tls: tls_connector()?,
 			sleeper,
-			pool: Mutex::new(None),
+			pool: Mutex::new(Vec::with_capacity(MAX_IDLE_CONNECTIONS)),
 			timeout: options.request_timeout,
 			max_attempts: options.max_attempts,
 		})
@@ -343,18 +352,24 @@ impl HttpRunnerApi {
 
 	/// The idle connection when it is still usable, else a new one.
 	async fn acquire(&self, deadline: Instant) -> Result<(Connection, bool), TransportFailure> {
-		let idle = self
-			.pool
-			.lock()
-			.unwrap_or_else(std::sync::PoisonError::into_inner)
-			.take();
-		if let Some(mut connection) = idle
-			&& connection.idle_since.elapsed() < IDLE_LIMIT
-			&& matches!(
-				tokio::time::timeout_at(deadline, connection.sender.ready()).await,
-				Ok(Ok(()))
-			) {
-			return Ok((connection, true));
+		loop {
+			// Most recently used first: avoid reviving older, proxy-expired sockets.
+			// Release the lock before waiting for readiness or opening a connection.
+			let idle = self
+				.pool
+				.lock()
+				.unwrap_or_else(std::sync::PoisonError::into_inner)
+				.pop();
+			let Some(mut connection) = idle else {
+				break;
+			};
+			if connection.idle_since.elapsed() < IDLE_LIMIT
+				&& matches!(
+					tokio::time::timeout_at(deadline, connection.sender.ready()).await,
+					Ok(Ok(()))
+				) {
+				return Ok((connection, true));
+			}
 		}
 		let fresh = tokio::time::timeout_at(deadline, self.connect())
 			.await
@@ -368,8 +383,9 @@ impl HttpRunnerApi {
 			.pool
 			.lock()
 			.unwrap_or_else(std::sync::PoisonError::into_inner);
-		if slot.is_none() {
-			*slot = Some(connection);
+		slot.retain(|idle| idle.idle_since.elapsed() < IDLE_LIMIT && !idle.sender.is_closed());
+		if slot.len() < MAX_IDLE_CONNECTIONS {
+			slot.push(connection);
 		}
 	}
 
@@ -464,11 +480,7 @@ impl HttpRunnerApi {
 	}
 
 	async fn post<T: Contract>(&self, path: &str, body: &impl Serialize) -> RunnerApiResult<T> {
-		let text = to_js_json(body).map_err(|_| RunnerApiError {
-			code: "INVALID_REQUEST".to_owned(),
-			detail: "the request body could not be serialised".to_owned(),
-			transient: false,
-		})?;
+		let text = request_text(body)?;
 		let mut result = self.attempt::<T>(path, &text).await;
 		let mut tries = 1;
 		while tries < self.max_attempts && matches!(&result, Err(error) if error.transient) {
@@ -482,6 +494,15 @@ impl HttpRunnerApi {
 		}
 		result
 	}
+}
+
+/// The request body as the Worker reads it.
+fn request_text(body: &impl Serialize) -> RunnerApiResult<String> {
+	to_js_json(body).map_err(|_| RunnerApiError {
+		code: "INVALID_REQUEST".to_owned(),
+		detail: "the request body could not be serialised".to_owned(),
+		transient: false,
+	})
 }
 
 /// Reads the whole body; `None` on a read error or a body over the cap.
@@ -631,6 +652,18 @@ impl RunnerApi for HttpRunnerApi {
 			.await
 	}
 
+	async fn release_lease(
+		&self,
+		run_id: &str,
+		request: &ReleaseJobRequest,
+	) -> RunnerApiResult<ReleaseJobResponse> {
+		// One attempt, no backoff: the runner is shutting down, and a release
+		// that does not arrive only leaves the lease to run out, as before
+		// ADR-0036.
+		self.attempt(&format!("/jobs/{run_id}/release"), &request_text(request)?)
+			.await
+	}
+
 	async fn renew_credential(
 		&self,
 		expires_in_days: u32,
@@ -756,6 +789,38 @@ mod tests {
 		let request = &worker.requests()[0];
 		assert_eq!(request.path, "/api/v1/runner/jobs/run_x/heartbeat");
 		assert_eq!(request.body, r#"{"leaseGeneration":7}"#);
+	}
+
+	#[tokio::test]
+	async fn a_release_is_sent_once_and_never_retried() {
+		let worker = serve(vec![json(200, r#"{"state":"pending"}"#)]).await;
+		let api = client(&worker.url, Arc::new(TokioSleeper));
+		let request = ReleaseJobRequest {
+			lease_generation: 7,
+			usage: research_contracts::jobs::EMPTY_USAGE,
+		};
+		let released = api.release_lease("run_x", &request).await.unwrap();
+		assert_eq!(
+			released.state,
+			research_contracts::jobs::ReleasedJobState::Pending
+		);
+		let seen = &worker.requests()[0];
+		assert_eq!(seen.path, "/api/v1/runner/jobs/run_x/release");
+		assert_eq!(
+			seen.body,
+			r#"{"leaseGeneration":7,"usage":{"agentSteps":0,"toolCalls":0,"inputBytes":0,"knownCostUsd":0,"hasUnmeteredUsage":false}}"#
+		);
+
+		let internal = r#"{"error":{"code":"INTERNAL","message":"x"}}"#;
+		let down = serve(vec![json(503, internal)]).await;
+		let sleeper = Arc::new(RecordingSleeper::default());
+		let error = client(&down.url, sleeper.clone())
+			.release_lease("run_x", &request)
+			.await
+			.unwrap_err();
+		assert_eq!(error.code, "INTERNAL");
+		assert_eq!(down.requests().len(), 1);
+		assert!(sleeper.0.lock().unwrap().is_empty());
 	}
 
 	#[tokio::test]
@@ -987,6 +1052,36 @@ mod tests {
 			api.heartbeat("run_x", 1).await.unwrap();
 		}
 		assert_eq!(connections.load(Ordering::SeqCst), 1);
+	}
+
+	#[tokio::test]
+	async fn concurrent_requests_reuse_a_bounded_pool() {
+		use std::sync::atomic::Ordering;
+		let (url, connections) = serve_keep_alive(BEAT, false).await;
+		let api = client(&url, Arc::new(TokioSleeper));
+		// Every future acquires a socket before the server can respond. The
+		// second wave should use all four warm sockets from the first wave.
+		for _ in 0..2 {
+			let results = futures_util::future::join_all(
+				(0..MAX_IDLE_CONNECTIONS).map(|_| api.heartbeat("run_x", 1)),
+			)
+			.await;
+			assert!(results.iter().all(Result::is_ok));
+		}
+		assert_eq!(connections.load(Ordering::SeqCst), MAX_IDLE_CONNECTIONS);
+		assert_eq!(api.pool.lock().unwrap().len(), MAX_IDLE_CONNECTIONS);
+	}
+
+	#[tokio::test]
+	async fn excess_concurrent_connections_are_not_retained() {
+		let (url, _) = serve_keep_alive(BEAT, false).await;
+		let api = client(&url, Arc::new(TokioSleeper));
+		let results = futures_util::future::join_all(
+			(0..MAX_IDLE_CONNECTIONS + 2).map(|_| api.heartbeat("run_x", 1)),
+		)
+		.await;
+		assert!(results.iter().all(Result::is_ok));
+		assert_eq!(api.pool.lock().unwrap().len(), MAX_IDLE_CONNECTIONS);
 	}
 
 	#[tokio::test]

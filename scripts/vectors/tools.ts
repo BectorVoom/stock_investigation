@@ -161,11 +161,112 @@ async function generated(): Promise<void> {
 			sleep: async (ms) => {
 				now += ms;
 			},
+			tavilyApiKey: null,
 		});
 		await tool?.execute({ query: i % 5 === 0 ? "\uFEFF gold 😀 \uFEFF" : "gold price" }, context());
 		if (i % 8 === 0) {
 			now += 200;
 			await tool?.execute({ query: "gold price" }, context());
+		}
+	}
+	// Tavily (web.search): result shapes, zone-safe dates and the escalating pause.
+	// Its own seed, so the corpora after it (robots) do not shift.
+	const tavilyRandom = seededRandom(20261025);
+	const dates = [
+		"Thu, 30 Oct 2026 20:30:00 GMT",
+		"2026-10-30T20:30:00Z",
+		"2026-10-30T20:30:00.123+09:00",
+		"2026-10-30T20:30:00+0530",
+		"2026-10-30",
+		"2026-10-30 10:00",
+		"2026-02-30",
+		"Oct 30 2026 UTC",
+		"not a date",
+		" 2026-10-30T20:30:00Z\uFEFF",
+		"",
+	];
+	const snippets = [
+		null,
+		"",
+		"Revenue rose\n\t 8 percent\u00a0year over year.\uFEFF",
+		"x".repeat(1_200),
+		"Apple 😀 supplier\u2028news",
+	];
+	const tavilyErrors: [SafeFetchErrorCode, string][] = [
+		["HTTP_ERROR", "HTTP 401"],
+		["HTTP_ERROR", "HTTP 400"],
+		["HTTP_ERROR", "HTTP 422"],
+		["HTTP_ERROR", "HTTP 429"],
+		["HTTP_ERROR", "HTTP 432"],
+		["HTTP_ERROR", "HTTP 503"],
+		["TIMEOUT", "request timed out"],
+		["NETWORK_ERROR", "connection failed"],
+		["UNSAFE_URL", "HTTP 500"],
+	];
+	for (let i = 0; i < 200; i++) {
+		let now = 1792195200000;
+		const pick = <T>(items: readonly T[]): T | undefined =>
+			items[Math.floor(tavilyRandom() * items.length)];
+		const result = () => ({
+			title:
+				tavilyRandom() < 0.03
+					? 7
+					: pick([" Apple  results\n", "", "Apple — IR", "\uFEFF", "Apple supplier news"]),
+			url: pick([
+				"https://www.synthetic-wire.org/a",
+				"https://www.synthetic-wire.org/a",
+				"http://plain.synthetic-wire.org/",
+				"https://10.0.0.1/x",
+				"https://investor.synthetic-corp.org/",
+			]),
+			content: pick(snippets),
+			published_date: tavilyRandom() < 0.03 ? 5 : pick([...dates, null]),
+			score: tavilyRandom(),
+		});
+		const bodies = [
+			JSON.stringify({ query: "q", results: Array.from({ length: i % 6 }, result) }),
+			JSON.stringify({ query: "q", results: Array.from({ length: 1 + (i % 5) }, result) }),
+			JSON.stringify({ query: "q", results: Array.from({ length: 2 + (i % 4) }, result) }),
+			JSON.stringify({ query: "q", results: [{ title: "Only title" }] }),
+			JSON.stringify({ query: "q" }),
+			JSON.stringify({ results: "none" }),
+			"Bad gateway\r\nretry",
+			"[",
+		];
+		const answers = Array.from({ length: 4 }, () =>
+			tavilyRandom() < 0.3
+				? err({
+						code: pick(tavilyErrors)?.[0] ?? "TIMEOUT",
+						detail: pick(tavilyErrors)?.[1] ?? "HTTP 503",
+					})
+				: ok({
+						finalUrl: "https://api.tavily.com/search",
+						contentType: "application/json",
+						text: pick(bodies) ?? "{}",
+					}),
+		);
+		let call = 0;
+		const fetcher: SafeFetcher = {
+			fetchText: async () =>
+				answers[Math.min(call++, answers.length - 1)] ??
+				answers[0] ??
+				err({ code: "TIMEOUT", detail: "none" }),
+		};
+		const [web] = createSearchTools({
+			fetcher,
+			hasher: hash,
+			clock: { nowMs: () => now, nowIso: () => new Date(now).toISOString() },
+			sleep: async (ms) => {
+				now += ms;
+			},
+			tavilyApiKey: i % 7 === 0 ? "tvly-generated-key-😀" : "tvly-generated-key",
+		});
+		for (let step = 0; step < 4; step++) {
+			await web?.execute(
+				{ query: i % 5 === 0 ? '\uFEFF apple "revenue" 😀 \uFEFF' : "apple revenue" },
+				context(),
+			);
+			now += [0, 30_000, 60_000, 125_000][step % 4] ?? 0;
 		}
 	}
 	const atoms = [

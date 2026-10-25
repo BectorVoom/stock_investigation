@@ -137,11 +137,31 @@ pub struct SafeFetchOptions {
 	pub finnhub_token: Option<String>,
 	/// Read the bounded body of an HTTP error status into [`SafeFetchError::body`].
 	pub include_error_body: bool,
+	/// When set, the initial request is a `POST` with `Content-Type:
+	/// application/json` and exactly this body, UTF-8 encoded (a provider
+	/// search API such as Tavily). Narrow by design:
+	///  - requires `allowed_hosts` (a pinned destination); without it the
+	///    fetch fails with `HOST_NOT_ALLOWED` before any byte is sent;
+	///  - at most [`MAX_JSON_BODY_BYTES`] (64 KiB) of UTF-8, or the fetch
+	///    fails with `NETWORK_ERROR` before any byte is sent;
+	///  - a POST is never redirected: any 3xx ends the fetch with
+	///    `REDIRECT_NOT_AUTHORIZED` and the body is sent nowhere else;
+	///  - the body is sent at most once: no retry once it may have reached
+	///    the server (a refused connection may still try the next validated
+	///    address, as for a GET).
+	///
+	/// Response handling (status, `max_bytes`, `timeout_ms`,
+	/// `include_error_body`, decoding) is unchanged. The body may carry the
+	/// owner's query: never log it.
+	pub json_body: Option<String>,
 }
+
+/// Largest [`SafeFetchOptions::json_body`], in UTF-8 bytes (`MAX_JSON_BODY_BYTES`).
+pub const MAX_JSON_BODY_BYTES: usize = 64 * 1024;
 
 impl std::fmt::Debug for SafeFetchOptions {
 	fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		// Header values may carry API keys: never print them.
+		// Header values may carry API keys and the body the owner's query: never print them.
 		formatter
 			.debug_struct("SafeFetchOptions")
 			.field("max_bytes", &self.max_bytes)
@@ -152,6 +172,7 @@ impl std::fmt::Debug for SafeFetchOptions {
 			.field("has_authorization", &self.authorization.is_some())
 			.field("has_finnhub_token", &self.finnhub_token.is_some())
 			.field("include_error_body", &self.include_error_body)
+			.field("has_json_body", &self.json_body.is_some())
 			.finish_non_exhaustive()
 	}
 }

@@ -32,14 +32,33 @@ use crate::errors::io_error_code;
 /// A connection-level failure, as a `describeThrown` label (`ECONNREFUSED`,
 /// `ERR_TLS_CERT_ALTNAME_INVALID`, `PINNED_ADDRESS_MISMATCH`, …).
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-#[error("{0}")]
-pub struct ConnectError(pub String);
+#[error("{detail}")]
+pub struct ConnectError {
+	/// The label.
+	pub detail: String,
+	/// The request carried a body and failed after the connection was
+	/// established, so the body may have reached the server
+	/// (`RequestBodySentError`): the transport must not send it again.
+	pub body_sent: bool,
+}
 
 impl ConnectError {
-	/// A static label.
+	/// A static label; the body (if any) was not sent.
 	#[must_use]
 	pub fn code(code: &str) -> Self {
-		Self(code.to_owned())
+		Self {
+			detail: code.to_owned(),
+			body_sent: false,
+		}
+	}
+
+	/// The same failure, marked as having possibly delivered a request body.
+	#[must_use]
+	pub fn after_body_sent(self) -> Self {
+		Self {
+			body_sent: true,
+			..self
+		}
 	}
 }
 

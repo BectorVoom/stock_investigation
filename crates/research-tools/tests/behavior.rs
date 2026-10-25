@@ -95,6 +95,128 @@ impl SafeFetcher for Fetch {
 	}
 }
 struct Archive(AtomicUsize);
+
+struct UnavailableSearch {
+	calls: AtomicUsize,
+	error: SafeFetchError,
+	cancel_first: bool,
+}
+
+#[async_trait]
+impl SafeFetcher for UnavailableSearch {
+	async fn fetch_text(
+		&self,
+		url: &str,
+		opts: &SafeFetchOptions,
+	) -> Result<FetchedDocument, SafeFetchError> {
+		if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+			tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+			if self.cancel_first {
+				opts.cancel.as_ref().unwrap().cancel();
+			}
+			return Err(self.error.clone());
+		}
+		Ok(FetchedDocument {
+			final_url: url.into(),
+			content_type: Some("application/json".into()),
+			text: "{}".into(),
+		})
+	}
+}
+
+fn unavailable_search(
+	code: SafeFetchErrorCode,
+	detail: &str,
+	cancel_first: bool,
+) -> (Arc<dyn Tool>, Arc<UnavailableSearch>) {
+	let fetcher = Arc::new(UnavailableSearch {
+		calls: AtomicUsize::new(0),
+		error: SafeFetchError {
+			code,
+			detail: detail.into(),
+			body: None,
+		},
+		cancel_first,
+	});
+	let tool = create_search_tools(SearchToolDeps {
+		fetcher: fetcher.clone(),
+		clock: Arc::new(Time::new()),
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		tavily_api_key: None,
+	})
+	.remove(0);
+	(tool, fetcher)
+}
+
+#[tokio::test(start_paused = true)]
+async fn unavailable_search_fails_fast_then_recovers_after_cooldown() {
+	for (code, detail) in [
+		(SafeFetchErrorCode::HttpError, "HTTP 429"),
+		(SafeFetchErrorCode::HttpError, "HTTP 503"),
+		(SafeFetchErrorCode::NetworkError, "connection failed"),
+		(SafeFetchErrorCode::Timeout, "request timed out"),
+	] {
+		let (tool, fetcher) = unavailable_search(code, detail, false);
+		let start = tokio::time::Instant::now();
+		let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
+		assert_eq!(
+			tool.execute(args.clone(), context())
+				.await
+				.unwrap_err()
+				.code,
+			"SEARCH_FAILED"
+		);
+		let failed_at = tokio::time::Instant::now();
+		assert_eq!(failed_at - start, std::time::Duration::from_secs(15));
+		// Different queries hit the same unavailable provider; neither network
+		// attempts nor five-second spacing sleeps should be repeated.
+		for query in ["battery", "oil", "gold", "copper"] {
+			let args = json::Value::Object(json::Object::from_iter([(
+				"query".into(),
+				json::Value::from(query),
+			)]));
+			assert_eq!(
+				tool.execute(args, context()).await.unwrap_err().code,
+				"SEARCH_COOLDOWN"
+			);
+		}
+		assert_eq!(tokio::time::Instant::now(), failed_at);
+		assert_eq!(fetcher.calls.load(Ordering::SeqCst), 1);
+		tokio::time::advance(std::time::Duration::from_secs(60)).await;
+		assert!(tool.execute(args, context()).await.is_ok());
+		assert_eq!(fetcher.calls.load(Ordering::SeqCst), 2);
+	}
+}
+
+#[tokio::test(start_paused = true)]
+async fn query_errors_and_cancellation_do_not_disable_other_searches() {
+	for (code, detail, cancel_first) in [
+		(SafeFetchErrorCode::HttpError, "HTTP 400", false),
+		(SafeFetchErrorCode::Timeout, "cancelled", true),
+	] {
+		let (tool, fetcher) = unavailable_search(code, detail, cancel_first);
+		let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
+		assert!(tool.execute(args.clone(), context()).await.is_err());
+		assert!(tool.execute(args, context()).await.is_ok());
+		assert_eq!(fetcher.calls.load(Ordering::SeqCst), 2);
+	}
+}
+
+#[tokio::test(start_paused = true)]
+async fn cancelled_search_during_cooldown_still_reports_abort() {
+	let (tool, fetcher) = unavailable_search(SafeFetchErrorCode::HttpError, "HTTP 429", false);
+	let args = json::parse(r#"{"query":"gold price"}"#).unwrap();
+	assert!(tool.execute(args.clone(), context()).await.is_err());
+	let cancelled = context();
+	cancelled.cancel.cancel();
+	assert_eq!(
+		tool.execute(args, cancelled).await.unwrap_err().code,
+		"TOOL_ABORTED"
+	);
+	assert_eq!(fetcher.calls.load(Ordering::SeqCst), 1);
+}
+
 #[async_trait]
 impl PageArchive for Archive {
 	async fn save(&self, _: &ArchivedPage) -> Result<String, ArchiveWriteFailed> {
@@ -114,6 +236,7 @@ async fn concurrent_gdelt_calls_keep_five_second_start_spacing() {
 		clock: time.clone(),
 		hasher: Arc::new(Hash),
 		sleep: Arc::new(TokioSleep),
+		tavily_api_key: None,
 	})
 	.remove(0);
 	let (a, b, c) = tokio::join!(
@@ -187,6 +310,7 @@ fn gdelt_search() -> (Arc<dyn Tool>, Arc<Fetch>) {
 		clock: time,
 		hasher: Arc::new(Hash),
 		sleep: Arc::new(TokioSleep),
+		tavily_api_key: None,
 	})
 	.remove(0);
 	(tool, fetcher)
@@ -441,6 +565,7 @@ async fn measure_real_network_tools() {
 		clock: clock.clone(),
 		hasher: hash.clone(),
 		sleep: sleep.clone(),
+		tavily_api_key: None,
 	})
 	.remove(0);
 	let web = create_web_tools(WebToolDeps {
@@ -492,4 +617,53 @@ async fn measure_real_network_tools() {
 		serde_json::to_string_pretty(&rows).unwrap(),
 	)
 	.unwrap();
+}
+
+/// One real request to `api.tavily.com` through the runner's own fetcher: the
+/// JSON POST, the pinned host and the `Authorization` header. With
+/// `TAVILY_API_KEY` set it expects results; without it a dummy key must be
+/// refused with HTTP 401, which pauses the provider so the next call sends nothing.
+#[tokio::test]
+#[ignore = "explicit real-network check, one Tavily request (one credit with a real key)"]
+async fn real_tavily_search_reaches_the_api() {
+	let key = std::env::var("TAVILY_API_KEY")
+		.ok()
+		.filter(|key| !key.trim().is_empty());
+	let real_key = key.is_some();
+	let tools = create_search_tools(SearchToolDeps {
+		fetcher: Arc::new(research_net::create_node_safe_fetcher().unwrap()),
+		clock: Arc::new(RealTime),
+		hasher: Arc::new(Hash),
+		sleep: Arc::new(TokioSleep),
+		tavily_api_key: Some(key.unwrap_or_else(|| "tvly-invalid-key-for-test".into())),
+	});
+	let web = tools
+		.iter()
+		.find(|tool| tool.meta().tool_id == "web.search")
+		.unwrap();
+	let args = json::parse(r#"{"query":"Apple quarterly revenue"}"#).unwrap();
+	let started = Instant::now();
+	let result = web.execute(args.clone(), context()).await;
+	println!(
+		"{}",
+		serde_json::json!({
+			"ms": started.elapsed().as_millis(),
+			"status": result.as_ref().map_or_else(|e| e.code.clone(), |_| "ok".into()),
+			"detail": result.as_ref().map_or_else(|e| e.detail.clone(), |v| v.model_text.lines().take(4).collect::<Vec<_>>().join("\n")),
+			"evidence": result.as_ref().map_or(0, |v| v.evidence.len()),
+		})
+	);
+	if real_key {
+		assert!(!result.unwrap().evidence.is_empty());
+	} else {
+		let failure = result.unwrap_err();
+		assert_eq!(failure.code, "SEARCH_FAILED");
+		assert_eq!(failure.detail, "HTTP_ERROR: HTTP 401");
+		let started = Instant::now();
+		assert_eq!(
+			web.execute(args, context()).await.unwrap_err().code,
+			"SEARCH_COOLDOWN"
+		);
+		assert!(started.elapsed() < std::time::Duration::from_millis(50));
+	}
 }

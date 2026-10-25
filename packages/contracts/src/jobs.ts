@@ -136,7 +136,7 @@ export const researchBudgetSchema = z.strictObject({
 		.int()
 		.min(BUDGET_LIMITS.maxInputBytes.min)
 		.max(BUDGET_LIMITS.maxInputBytes.max),
-	/** null = no metered spend authorized. A metered backend then cannot be used. */
+	/** null = no spending cap. Explicit caps still bound metered runs. */
 	maxSpendUsd: z
 		.number()
 		.min(BUDGET_LIMITS.maxSpendUsd.min)
@@ -609,6 +609,22 @@ export const heartbeatResponseSchema = z.strictObject({
 	cancelRequested: z.boolean(),
 });
 export type HeartbeatResponse = z.infer<typeof heartbeatResponseSchema>;
+
+/**
+ * A runner that is shutting down hands its lease back (ADR-0036). `usage` is
+ * the run's consumption so far: the progress queue is not flushed on shutdown,
+ * so this is the attempt's last chance to record what it spent (AGT-008).
+ */
+export const releaseJobRequestSchema = z.strictObject({
+	leaseGeneration: z.number().int().positive(),
+	usage: resourceUsageSchema,
+});
+export type ReleaseJobRequest = z.infer<typeof releaseJobRequestSchema>;
+/** `pending` when the job went back to the queue, `cancelled` when the owner had asked to cancel. */
+export const releaseJobResponseSchema = z.strictObject({
+	state: z.enum(["pending", "cancelled"]),
+});
+export type ReleaseJobResponse = z.infer<typeof releaseJobResponseSchema>;
 
 export const runnerEventSchema = z.strictObject({
 	/** Monotonic per lease generation; (runId, generation, seq) is the idempotency key. */

@@ -18,7 +18,7 @@ structure Budget where
   maxTools : Nat
   maxWallClock : Nat
   maxBytes : Nat
-  maxSpend : Nat
+  maxSpend : Option Nat
   deriving Repr
 
 structure Usage where
@@ -52,12 +52,12 @@ def checkBudget (b : Budget) (u : Usage) (elapsed : Nat) (d : Delta) : Option Li
   else if b.maxTools < u.tools + d.tools then some .maxToolCalls
   else if b.maxWallClock ≤ elapsed then some .maxWallClock
   else if b.maxBytes < u.bytes + d.bytes then some .maxInputBytes
-  else if b.maxSpend < u.cost + d.cost then some .maxSpend
+  else if (b.maxSpend.isSome && b.maxSpend.getD 0 < u.cost + d.cost) then some .maxSpend
   else none
 
 /-- Usage that respects every ceiling. -/
 def Usage.within (u : Usage) (b : Budget) : Prop :=
-  u.steps ≤ b.maxSteps ∧ u.tools ≤ b.maxTools ∧ u.bytes ≤ b.maxBytes ∧ u.cost ≤ b.maxSpend
+  u.steps ≤ b.maxSteps ∧ u.tools ≤ b.maxTools ∧ u.bytes ≤ b.maxBytes ∧ (b.maxSpend.isSome = true → u.cost ≤ b.maxSpend.getD 0)
 
 /-- **Soundness.** If the check passes, performing the step stays within every ceiling. -/
 theorem check_sound {b : Budget} {u : Usage} {elapsed : Nat} {d : Delta}
@@ -75,9 +75,15 @@ theorem check_sound {b : Budget} {u : Usage} {elapsed : Nat} {d : Delta}
         by_cases h4 : b.maxBytes < u.bytes + d.bytes
         · rw [ifPos h4] at h; cases h
         · rw [ifNeg h4] at h
-          by_cases h5 : b.maxSpend < u.cost + d.cost
-          · rw [ifPos h5] at h; cases h
-          · refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩ <;> (try simp only [Usage.add]) <;> omega
+          cases hs : b.maxSpend with
+          | none =>
+            simp [hs] at h
+            exact ⟨⟨by simp [Usage.add]; omega, by simp [Usage.add]; omega,
+              by simp [Usage.add]; omega, by simp [hs]⟩, by omega⟩
+          | some cap =>
+            simp [hs] at h
+            refine ⟨⟨?_, ?_, ?_, ?_⟩, ?_⟩
+            all_goals simp_all [Usage.add]
 
 /-- **Completeness.** A step that fits is never refused. -/
 theorem check_complete {b : Budget} {u : Usage} {elapsed : Nat} {d : Delta}
@@ -86,7 +92,10 @@ theorem check_complete {b : Budget} {u : Usage} {elapsed : Nat} {d : Delta}
   obtain ⟨h1, h2, h3, h4⟩ := hfit
   simp only [Usage.add] at h1 h2 h3 h4
   unfold checkBudget
-  rw [ifNeg (by omega), ifNeg (by omega), ifNeg (by omega), ifNeg (by omega), ifNeg (by omega)]
+  rw [ifNeg (by omega), ifNeg (by omega), ifNeg (by omega), ifNeg (by omega)]
+  cases hs : b.maxSpend with
+  | none => simp
+  | some cap => simp_all
 
 /-- Usage never decreases. -/
 theorem usage_monotone (u : Usage) (d : Delta) :
@@ -126,15 +135,16 @@ theorem guarded_run_within_budget (b : Budget) (steps : List (Nat × Delta)) :
 theorem guarded_run_from_zero (b : Budget) (steps : List (Nat × Delta)) :
     (runGuarded b Usage.zero steps).within b :=
   guarded_run_within_budget b steps Usage.zero
-    ⟨Nat.zero_le _, Nat.zero_le _, Nat.zero_le _, Nat.zero_le _⟩
+    ⟨Nat.zero_le _, Nat.zero_le _, Nat.zero_le _, fun _ => Nat.zero_le _⟩
 
-/-- With a zero spend ceiling (no consent), no step with a positive metered cost is allowed. -/
-theorem no_spend_without_consent (b : Budget) (u : Usage) (elapsed : Nat) (d : Delta)
-    (hzero : b.maxSpend = 0) (hcost : 0 < d.cost) : checkBudget b u elapsed d ≠ none := by
-  intro h
-  have hs := (check_sound h).1
-  obtain ⟨_, _, _, h4⟩ := hs
-  simp only [Usage.add] at h4
-  omega
+/-- An absent spending cap cannot reject a step for its cost. -/
+theorem no_cap_allows_cost (b : Budget) (u : Usage) (elapsed : Nat) (d : Delta)
+    (hcap : b.maxSpend = none)
+    (hs : u.steps + d.steps ≤ b.maxSteps) (ht : u.tools + d.tools ≤ b.maxTools)
+    (hb : u.bytes + d.bytes ≤ b.maxBytes) (he : elapsed < b.maxWallClock) :
+    checkBudget b u elapsed d = none := by
+  apply check_complete
+  · exact ⟨hs, ht, hb, by simp [hcap]⟩
+  · exact he
 
 end Research

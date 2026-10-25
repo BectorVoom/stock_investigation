@@ -253,12 +253,12 @@ describe("Agent settings: saving", () => {
 		await sectionReady();
 		expect(screen.queryByRole("checkbox", { name: /consent to metered spend/ })).toBeNull();
 
-		// Metered: a spend is required.
+		// Metered: an optional spend cap can be edited.
 		chooseBackend("openrouter");
 		const spend = field("Max spend (USD)");
 		expect(spend.disabled).toBe(false);
 		expect(document.querySelector('[data-cost-statement="metered"]')).not.toBeNull();
-		expect(saveButton().disabled).toBe(true);
+		expect(saveButton().disabled).toBe(false);
 		fireEvent.input(spend, { target: { value: "2.5" } });
 		// Storing the spend needs no consent checkbox: saving is allowed.
 		expect(saveButton().disabled).toBe(false);

@@ -151,11 +151,19 @@ impl HopTransport for PinnedHopTransport {
 				path: &path,
 				headers: request.headers,
 				max_encoded_bytes: request.max_bytes,
+				json_body: request.json_body,
 			};
 			match self.connect.connect(pinned).await {
 				Ok(response) => return to_outcome(response),
+				// The body may have reached the server: sending it again elsewhere
+				// would repeat a non-idempotent request.
+				Err(error) if error.body_sent => {
+					return HopOutcome::NetworkError {
+						detail: error.detail,
+					};
+				}
 				// Typically an unreachable address family; the next validated address may work.
-				Err(error) => last_failure = error.0,
+				Err(error) => last_failure = error.detail,
 			}
 		}
 		HopOutcome::NetworkError {
@@ -229,8 +237,11 @@ mod tests {
 	/// Serves `body` from every address except those in `refuse` (with their code).
 	struct FakeConnect {
 		refuse: HashMap<IpAddr, &'static str>,
+		/// Addresses that fail after the body may have reached them.
+		hang_up_after_body: BTreeSet<IpAddr>,
 		idle: BTreeSet<IpAddr>,
 		attempted: Mutex<Vec<(String, IpAddr, String)>>,
+		bodies: Mutex<Vec<Option<Vec<u8>>>>,
 	}
 
 	#[async_trait]
@@ -244,8 +255,15 @@ mod tests {
 				request.address.ip(),
 				request.path.to_owned(),
 			));
+			self.bodies
+				.lock()
+				.unwrap()
+				.push(request.json_body.map(<[u8]>::to_vec));
 			if let Some(code) = self.refuse.get(&request.address.ip()) {
 				return Err(ConnectError::code(code));
+			}
+			if self.hang_up_after_body.contains(&request.address.ip()) {
+				return Err(ConnectError::code("ECONNRESET").after_body_sent());
 			}
 			Ok(PinnedResponse {
 				status: 200,
@@ -267,8 +285,10 @@ mod tests {
 				.iter()
 				.map(|(address, code)| (ip(address), *code))
 				.collect(),
+			hang_up_after_body: BTreeSet::new(),
 			idle: idle.iter().map(|address| ip(address)).collect(),
 			attempted: Mutex::new(Vec::new()),
+			bodies: Mutex::new(Vec::new()),
 		})
 	}
 
@@ -292,6 +312,7 @@ mod tests {
 			authorization: None,
 			finnhub_token: None,
 			include_error_body: false,
+			json_body: None,
 		}
 	}
 
@@ -437,5 +458,52 @@ mod tests {
 			.unwrap();
 		// 8.8.4.4 is idle but fourth in the answer: never a candidate.
 		assert_eq!(attempted(&network), [ip(PUBLIC_V4_B)]);
+	}
+
+	fn post_limits() -> SafeFetchOptions {
+		SafeFetchOptions {
+			allowed_hosts: Some(BTreeSet::from(["post.synthetic-wire.org".to_owned()])),
+			json_body: Some(r#"{"query":"q"}"#.to_owned()),
+			..limits()
+		}
+	}
+
+	#[tokio::test]
+	async fn a_post_falls_back_only_while_its_body_was_not_sent() {
+		let lookup = || {
+			dns(&[(
+				"post.synthetic-wire.org",
+				Ok(vec![ip(PUBLIC_V6), ip(PUBLIC_V4), ip(PUBLIC_V4_B)]),
+			)])
+		};
+		// Unreachable before any byte: the next validated address is tried.
+		let network = connect(&[(PUBLIC_V6, "ENETUNREACH")], &[]);
+		let document = fetcher(lookup(), network.clone())
+			.fetch_text("https://post.synthetic-wire.org/search", &post_limits())
+			.await
+			.unwrap();
+		assert_eq!(document.text, "reached");
+		assert_eq!(attempted(&network), [ip(PUBLIC_V6), ip(PUBLIC_V4)]);
+		assert_eq!(
+			*network.bodies.lock().unwrap(),
+			[
+				Some(br#"{"query":"q"}"#.to_vec()),
+				Some(br#"{"query":"q"}"#.to_vec())
+			]
+		);
+
+		// Failed after the body may have arrived: never sent to another address.
+		let hung_up = Arc::new(FakeConnect {
+			hang_up_after_body: BTreeSet::from([ip(PUBLIC_V6)]),
+			..Arc::into_inner(connect(&[], &[])).unwrap()
+		});
+		let result = fetcher(lookup(), hung_up.clone())
+			.fetch_text("https://post.synthetic-wire.org/search", &post_limits())
+			.await;
+		assert_eq!(
+			result,
+			Err(failure(SafeFetchErrorCode::NetworkError, "ECONNRESET"))
+		);
+		assert_eq!(attempted(&hung_up), [ip(PUBLIC_V6)]);
 	}
 }

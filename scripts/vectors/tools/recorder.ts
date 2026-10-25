@@ -36,6 +36,8 @@ function capture<D extends { fetcher: SafeFetcher; hasher: Hasher; clock: Clock 
 	kind: string,
 	deps: D,
 	factory: (deps: D) => readonly ToolDefinition[],
+	/** Factory settings the replay needs to build the same tools. */
+	settings: Readonly<Record<string, unknown>> = {},
 ): readonly ToolDefinition[] {
 	const id = `${namespace}:${counter++}`;
 	const fetches: unknown[] = [];
@@ -73,6 +75,8 @@ function capture<D extends { fetcher: SafeFetcher; hasher: Hasher; clock: Clock 
 						allowedHosts: options.allowedHosts === undefined ? null : [...options.allowedHosts],
 						userAgent: options.userAgent ?? null,
 						authorizeRedirect: options.authorizeRedirect !== undefined,
+						authorization: options.authorization ?? null,
+						jsonBody: options.jsonBody ?? null,
 					},
 					redirects,
 					aborted: false,
@@ -154,7 +158,17 @@ function capture<D extends { fetcher: SafeFetcher; hasher: Hasher; clock: Clock 
 			const sortedHashes = [...hashes].sort((a, b) =>
 				JSON.stringify(a) < JSON.stringify(b) ? -1 : 1,
 			);
-			emit({ kind, id, calls, fetches, hashes: sortedHashes, milliseconds, sleeps, archives });
+			emit({
+				kind,
+				...settings,
+				id,
+				calls,
+				fetches,
+				hashes: sortedHashes,
+				milliseconds,
+				sleeps,
+				archives,
+			});
 			return output;
 		},
 	}));
@@ -163,7 +177,7 @@ export function createNewsTools(deps: NewsToolDeps): readonly ToolDefinition[] {
 	return capture("news", deps, news);
 }
 export function createSearchTools(deps: SearchToolDeps): readonly ToolDefinition[] {
-	return capture("search", deps, search);
+	return capture("search", deps, search, { tavilyApiKey: deps.tavilyApiKey });
 }
 export function createWebTools(deps: WebToolDeps): readonly ToolDefinition[] {
 	return capture("web", deps, web);

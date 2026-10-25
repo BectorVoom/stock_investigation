@@ -39,7 +39,7 @@ test.describe.configure({ mode: "serial" });
 const AGENT_ID = (process.env.RUN_LIVE_AGENT ?? "").trim();
 const LIVE = AGENT_ID !== "";
 const MODEL = (process.env.RUN_LIVE_MODEL ?? "").trim();
-/** Metered backends (ADR-0031) and the key each needs; the task must carry spend consent (ADR-0033 §4). */
+/** Metered backends (ADR-0031) and the key each needs; spending caps are optional (ADR-0035). */
 const METERED_KEYS: Readonly<Record<string, string>> = {
 	"claude-api": "ANTHROPIC_API_KEY",
 	openrouter: "OPENROUTER_API_KEY",
@@ -254,11 +254,9 @@ test.describe("a scheduled task fires by itself through the real backend (spends
 		await dialog.getByLabel("Date").fill(slot.date);
 		await dialog.getByLabel("Time", { exact: true }).fill(slot.time);
 		await expect(dialog.getByLabel("Time zone")).toHaveValue("UTC");
-		// A plan-limited backend needs no spend consent: no checkbox to tick.
-		if (METERED) {
-			// The task's own consent: a metered occurrence fires only with it.
-			await dialog.getByRole("checkbox", { name: /^Allow this task to spend up to / }).check();
-		}
+		await expect(
+			dialog.getByRole("checkbox", { name: /^Allow this task to spend up to / }),
+		).toHaveCount(0);
 		await dialog.getByRole("button", { name: "Create task" }).click();
 		await expect(dialog).toBeHidden({ timeout: 30_000 });
 		const row = page

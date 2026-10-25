@@ -2,7 +2,6 @@ import { SCHEDULED_TASK_LIMITS, type ScheduledTask } from "@research/contracts";
 import type { ScheduleWeekday } from "@research/domain";
 import { useMessages } from "@research/i18n/solid";
 import {
-	createEffect,
 	createMemo,
 	createSignal,
 	createUniqueId,
@@ -24,7 +23,6 @@ import {
 	Select,
 } from "../components/ui.tsx";
 import { commonMessages } from "../i18n/common.messages.ts";
-import { formatUsd } from "../lib/format.ts";
 import { createRemote } from "../lib/remote.ts";
 import { agentSettingsModelMessages } from "../settings/agentSettingsModel.messages.ts";
 import { TaskFailure } from "./TaskParts.tsx";
@@ -37,7 +35,6 @@ import {
 	evaluateTaskDraft,
 	SCHEDULE_CHOICES,
 	type ScheduleChoice,
-	sameConsent,
 	type TaskDraft,
 	taskConsentNeed,
 	toggleWeekday,
@@ -101,17 +98,6 @@ export function TaskEditorDialog(props: {
 			: draftFromTask(editing, { kind: "loading" }, Date.now()),
 	);
 	const patch = (change: Partial<TaskDraft>) => setDraft((current) => ({ ...current, ...change }));
-	/**
-	 * An edited task's stored consent counts while it still matches what the
-	 * saved backend needs; that is known once the agent settings load, so the
-	 * box is ticked then (unless the owner already touched it).
-	 */
-	let consentTouched = false;
-	createEffect(() => {
-		const current = need();
-		if (consentTouched || editing === null || current.kind !== "needed") return;
-		patch({ consent: sameConsent(editing.spendConsent, current.consent) });
-	});
 
 	const [tried, setTried] = createSignal(false);
 	const [saving, setSaving] = createSignal(false);
@@ -170,15 +156,6 @@ export function TaskEditorDialog(props: {
 		closeToOpener();
 	};
 
-	const consentLabel = (): string | null => {
-		const current = need();
-		if (current.kind !== "needed") return null;
-		return m().consent(
-			formatUsd(current.consent.maxSpendUsd),
-			current.backendName,
-			current.consent.model ?? m().defaultModel,
-		);
-	};
 	const agentFailure = () => {
 		const agentsState = agents.state();
 		if (agentsState.status === "error") return agentsState.error;
@@ -398,22 +375,7 @@ export function TaskEditorDialog(props: {
 						{text().agentsLoading}
 					</output>
 				</Show>
-				<Show when={consentLabel()}>
-					{(label) => (
-						<label class="flex items-start gap-2 text-xs text-slate-900">
-							<input
-								type="checkbox"
-								class="mt-0.5"
-								checked={draft().consent}
-								onChange={(event) => {
-									consentTouched = true;
-									patch({ consent: event.currentTarget.checked });
-								}}
-							/>
-							<span>{label()}</span>
-						</label>
-					)}
-				</Show>
+
 				<Show when={visibleProblems().length > 0}>
 					<div class="rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
 						<p id={`${problemsId}-intro`} class="font-medium text-slate-900">

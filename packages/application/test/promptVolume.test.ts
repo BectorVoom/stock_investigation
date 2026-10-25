@@ -36,15 +36,7 @@ function hex64(n: number): string {
 	return n.toString(16).padStart(64, "0");
 }
 
-/**
- * Total prompt bytes of this scenario against the pre-change pipeline
- * (planning prompts re-sent every earlier tool output via tail(40_000)).
- * Measured 2026-10-12: planning=[1321,11459,21509,31559,41411]
- * analysis=[98666] verification=[1275]. Locked here so prompt bloat fails loudly.
- */
-const BEFORE_TOTAL_BYTES = 207_200;
-
-/** Deterministic 5-step volume scenario: 2 tool calls per step, 5,000-byte modelText each. */
+/** Three collection rounds, two 5,000-byte tool replies per round. */
 async function runVolumeScenario() {
 	const time = fixedClock();
 	const reporter = recordingReporter();
@@ -71,7 +63,7 @@ async function runVolumeScenario() {
 			callIndex += 1;
 			const marker = `VOLMARK-${callIndex}`;
 			const modelText = padTo(`${marker} `, 5_000, "x");
-			// The first call of steps 1-4 re-returns one item of the previous step exactly.
+			// The first call of later rounds re-returns one item of the previous step exactly.
 			const dupSource = callIndex >= 2 && callIndex % 2 === 0 ? previousFirst : null;
 			const evidence = [];
 			for (let item = 0; item < 3; item += 1) {
@@ -125,13 +117,13 @@ async function runVolumeScenario() {
 		},
 	});
 
-	const plans = Array.from({ length: 5 }, (_, step) =>
+	const plans = Array.from({ length: 3 }, (_, step) =>
 		JSON.stringify({
 			toolCalls: [
 				{ toolId: "test.volume", args: { slot: `s${step}a` } },
 				{ toolId: "test.volume", args: { slot: `s${step}b` } },
 			],
-			done: step === 4,
+			done: step === 2,
 		}),
 	);
 	const replies = [...plans, analysis(), VERDICT_SUPPORTED];
@@ -146,7 +138,7 @@ async function runVolumeScenario() {
 		{
 			runId: RUN_ID,
 			request: request({
-				// 5 collection steps plus the 3 reserved post-collection steps
+				// Three collection rounds plus the three reserved post-collection steps
 				// (analysis, its repair turn, verification).
 				budget: { ...request().budget, maxAgentSteps: 8, maxToolCalls: 10 },
 			}),
@@ -179,7 +171,7 @@ describe("prompt volume budget (FR-016, ADR-0010)", () => {
 		const verification = prompts.filter((prompt) =>
 			prompt.includes("independent verification step"),
 		);
-		expect(planning).toHaveLength(5);
+		expect(planning).toHaveLength(3);
 		expect(analysisPrompts).toHaveLength(1);
 		expect(verification).toHaveLength(1);
 		const planningBytes = planning.map((prompt) => bytes(prompt));
@@ -192,10 +184,10 @@ describe("prompt volume budget (FR-016, ADR-0010)", () => {
 
 		// Full tool text is shown in exactly one planning prompt (the next one);
 		// the last step has no later prompt, so its output appears in none.
-		for (let call = 0; call < 10; call += 1) {
+		for (let call = 0; call < 6; call += 1) {
 			const fullText = padTo(`VOLMARK-${call} `, 5_000, "x");
 			const holders = planning.filter((prompt) => prompt.includes(fullText));
-			if (call < 8) {
+			if (call < 4) {
 				expect(holders).toHaveLength(1);
 				expect(planning.indexOf(holders[0] ?? "")).toBe(Math.floor(call / 2) + 1);
 			} else {
@@ -204,7 +196,7 @@ describe("prompt volume budget (FR-016, ADR-0010)", () => {
 		}
 
 		// Every evidence id of an earlier step is still mentioned in later planning prompts.
-		for (let promptIndex = 1; promptIndex < 5; promptIndex += 1) {
+		for (let promptIndex = 1; promptIndex < 3; promptIndex += 1) {
 			const prompt = planning[promptIndex] ?? "";
 			for (let seq = 1; seq <= promptIndex * 6; seq += 1) {
 				expect(prompt).toContain(`[${RUN_ID}_ev${seq}]`);
@@ -216,14 +208,10 @@ describe("prompt volume budget (FR-016, ADR-0010)", () => {
 		const dupText = padTo(`${BASE_PASSAGES} vol-1 `, 3_000, "y");
 		expect((analysisPrompts[0] ?? "").split(dupText)).toHaveLength(2);
 
-		// Total prompt bytes stay well below the pre-change total. The 60% target
-		// from the task brief proved unreachable for this scenario (measured
-		// 66-67%: the previous step's full output alone is 10 kB per prompt and
-		// the 26 unique evidence items must all stay citable); see ADR-0010.
-		// ADR-0025 adds planning instructions (~0.4 kB per planning prompt),
-		// so the cap is 142,000 (measured ~141,200; still < 0.7 of before).
+		// Keep the existing absolute byte ceiling. The historical five-round
+		// baseline is no longer a like-for-like volume comparison now that
+		// collection is bounded to three rounds.
 		expect(total).toBeLessThanOrEqual(142_000);
-		expect(total / BEFORE_TOTAL_BYTES).toBeLessThan(0.7);
 
 		// Absolute ceiling: no planning prompt exceeds the budget derived from
 		// the planning constants, whatever the tools return.

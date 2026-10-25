@@ -6,6 +6,8 @@
 //! Worker hands the job to the next claim under a new generation. If the lease
 //! is lost while work continues, the runner stops and submits nothing — and
 //! anything it did submit would be rejected by generation fencing anyway.
+//! An orderly shutdown hands the lease back instead (ADR-0036), so the job is
+//! claimable at once and the interrupted attempt is not counted.
 
 use std::collections::{HashMap, VecDeque};
 use std::panic::AssertUnwindSafe;
@@ -33,8 +35,8 @@ use research_contracts::jobs::{
 	ClaimedJob, EarningsRefreshJob, MarketRefreshJob, StockDirectoryRefreshJob,
 };
 use research_contracts::jobs::{
-	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, RunnerEvent, RunnerEventBody,
-	RunnerEventsRequest, ToolOutcome, bundle_limits,
+	CompleteJobRequest, EMPTY_USAGE, LeasedJobState, ReleaseJobRequest, RunnerEvent,
+	RunnerEventBody, RunnerEventsRequest, ToolOutcome, bundle_limits,
 };
 use research_contracts::watchlist::WatchMarket;
 use research_contracts::{Tri, jobs::ResourceUsage};
@@ -725,6 +727,48 @@ async fn report_fault(job: &ClaimedJob, core: &Arc<JobCore>, fault: Fault) {
 	);
 }
 
+/// How long a lease hand-back may take (ADR-0036). Shutdown has already
+/// started when it is sent, and the job's wind-down shares the launcher's 8 s
+/// grace, so it is kept well inside it.
+const RELEASE_GRACE: Duration = Duration::from_secs(2);
+
+/// Hands the lease back on shutdown (ADR-0036), with the usage so far: the
+/// event queue is not flushed once shutdown starts, so this is the attempt's
+/// last chance to record what it spent (AGT-008). Never fails: a refused or
+/// unanswered release only leaves the lease to run out, as before.
+async fn release_lease(core: &JobCore) {
+	let request = ReleaseJobRequest {
+		lease_generation: core.lease_generation,
+		usage: core.usage(),
+	};
+	let run_id = LogValue::from(core.run_id.as_str());
+	match tokio::time::timeout(
+		RELEASE_GRACE,
+		core.api.release_lease(&core.run_id, &request),
+	)
+	.await
+	{
+		Ok(Ok(response)) => core.logger.info(
+			"job_released",
+			&[
+				("runId", run_id),
+				("state", LogValue::from(response.state.as_str())),
+			],
+		),
+		Ok(Err(error)) => core.logger.warn(
+			"release_failed",
+			&[
+				("runId", run_id),
+				("code", LogValue::from(error.code.as_str())),
+			],
+		),
+		Err(_) => core.logger.warn(
+			"release_failed",
+			&[("runId", run_id), ("code", LogValue::from("TIMEOUT"))],
+		),
+	}
+}
+
 /// How long a completion already being sent may finish once shutdown starts.
 const SHUTDOWN_GRACE: Duration = Duration::from_secs(5);
 
@@ -870,6 +914,12 @@ async fn attempt_job(
 		if stored_grant {
 			discard_grant(&deps, &core).await?;
 		}
+		// ADR-0036: a runner that is shutting down hands its lease back, so
+		// the next runner claims the job within one poll and the interrupted
+		// attempt is refunded. A lost lease is not ours to hand back.
+		if reason == Some(StopReason::Shutdown) {
+			release_lease(&core).await;
+		}
 		core.logger.info(
 			"job_abandoned",
 			&[
@@ -891,6 +941,8 @@ async fn attempt_job(
 	let Some(submitted) =
 		within_shutdown_grace(&core.shutdown, deps.api.complete(&core.run_id, &completion)).await
 	else {
+		// No hand-back here: the completion may have landed, and the
+		// shutdown grace is already spent. The lease runs out instead.
 		core.logger.info(
 			"job_abandoned",
 			&[

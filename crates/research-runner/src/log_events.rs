@@ -12,7 +12,7 @@ use research_effects::is_log_event_name;
 /// Every event the shell logs. The launcher greps `invalid_configuration`,
 /// `unsupported_runtime` and `runner_crashed` in `runner.log`
 /// (`scripts/supervision.ts`): they must not be printed in any other context.
-const SHELL_EVENTS: [&str; 23] = [
+const SHELL_EVENTS: [&str; 26] = [
 	"agent_probe",
 	"claim_failed",
 	"completion_rejected",
@@ -24,8 +24,11 @@ const SHELL_EVENTS: [&str; 23] = [
 	"job_claimed",
 	"job_crashed",
 	"job_finished",
+	// The lease hand-back on shutdown (ADR-0036).
+	"job_released",
 	"market_source_disabled",
 	"process_helper_missing",
+	"release_failed",
 	"renew_failed",
 	"runner_credential_rejected",
 	"runner_crashed",
@@ -38,6 +41,7 @@ const SHELL_EVENTS: [&str; 23] = [
 	"stock_directory_rows_dropped",
 	"unsupported_runtime",
 	"web_pages_disabled",
+	"web_search_disabled",
 ];
 
 /// Event literals passed to `.info(` / `.warn(` / `.error(` in non-test code.

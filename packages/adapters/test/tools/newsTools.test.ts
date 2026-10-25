@@ -45,6 +45,7 @@ function setup(pages: { readonly [url: string]: ScriptedPage }) {
 		hasher: webCryptoHasher,
 		clock: fixedClock(),
 		secUserAgent: null,
+		tavilyApiKey: null,
 		pageArchive: null,
 		sleep: async () => {},
 	});

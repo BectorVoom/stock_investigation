@@ -246,24 +246,18 @@ describe("last run and skip lines", () => {
 });
 
 describe("taskConsentNeed", () => {
-	it("needs consent for a metered backend with a ceiling, naming backend, model and amount", () => {
-		const need = taskConsentNeed(AGENTS, METERED_SETTINGS.settings, agentText);
-		expect(need).toEqual({
-			kind: "needed",
-			consent: { agentId: "openrouter", model: "anthropic/claude-sonnet", maxSpendUsd: 0.5 },
-			backendName: "OpenRouter",
-		});
+	it("needs no consent for a metered backend with a ceiling", () => {
+		expect(taskConsentNeed(AGENTS, METERED_SETTINGS.settings, agentText)).toEqual({ kind: "none" });
 	});
 
-	it("needs none for a plan-limited backend, and says a metered one lacks a ceiling", () => {
+	it("needs no consent for plan-limited, metered or unreported backends", () => {
 		expect(taskConsentNeed(AGENTS, AGENT_SETTINGS, agentText)).toEqual({ kind: "none" });
 		const noCeiling = {
 			...METERED_SETTINGS.settings,
 			budget: { ...METERED_SETTINGS.settings.budget, maxSpendUsd: null },
 		};
 		expect(taskConsentNeed(AGENTS, noCeiling, agentText)).toEqual({
-			kind: "no-ceiling",
-			backendName: "OpenRouter",
+			kind: "none",
 		});
 		expect(taskConsentNeed(null, AGENT_SETTINGS, agentText)).toEqual({ kind: "loading" });
 		const noRunner = agentsResponseSchema.parse({
@@ -272,7 +266,7 @@ describe("taskConsentNeed", () => {
 			agents: [],
 		});
 		// A backend whose billing is unknown asks for consent like the composer does.
-		expect(taskConsentNeed(noRunner, METERED_SETTINGS.settings, agentText).kind).toBe("needed");
+		expect(taskConsentNeed(noRunner, METERED_SETTINGS.settings, agentText).kind).toBe("none");
 	});
 });
 
@@ -357,19 +351,15 @@ describe("evaluateTaskDraft", () => {
 		expect(monthly.problems).toEqual([en.dayOfMonthInvalid]);
 	});
 
-	it("asks for consent while the backend needs it and sends exactly the consent shown", () => {
+	it("saves a metered task without consent", () => {
 		const need = taskConsentNeed(AGENTS, METERED_SETTINGS.settings, agentText);
-		expect(evaluateTaskDraft(draft(), need, NOW_MS, en).problems).toEqual([en.confirmConsent]);
-		const consented = evaluateTaskDraft(draft({ consent: true }), need, NOW_MS, en);
-		expect(consented.request?.spendConsent).toEqual({
-			agentId: "openrouter",
-			model: "anthropic/claude-sonnet",
-			maxSpendUsd: 0.5,
-		});
+		const result = evaluateTaskDraft(draft(), need, NOW_MS, en);
+		expect(result.problems).toEqual([]);
+		expect(result.request?.spendConsent).toBeNull();
 		expect(evaluateTaskDraft(draft(), { kind: "loading" }, NOW_MS, en).request).toBeNull();
 	});
 
-	it("reopens a task as it was saved, its consent ticked only while it still matches", () => {
+	it("reopens a task schedule without reusing legacy consent", () => {
 		const need = taskConsentNeed(AGENTS, METERED_SETTINGS.settings, agentText);
 		const task = makeTask({
 			schedule: { kind: "weekly", days: [1, 2, 3, 4, 5], time: "07:15" },
@@ -380,7 +370,7 @@ describe("evaluateTaskDraft", () => {
 		expect(reopened.choice).toBe("weekdays");
 		expect(reopened.time).toBe("07:15");
 		expect(reopened.markets).toEqual({ JP: false, US: true });
-		expect(reopened.consent).toBe(true);
+		expect(reopened.consent).toBe(false);
 		const otherCeiling = makeTask({
 			spendConsent: { agentId: "openrouter", model: "anthropic/claude-sonnet", maxSpendUsd: 0.25 },
 		});

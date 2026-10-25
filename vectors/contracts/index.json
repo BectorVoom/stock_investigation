@@ -33,6 +33,8 @@
 	"claimJobResponse",
 	"heartbeatRequest",
 	"heartbeatResponse",
+	"releaseJobRequest",
+	"releaseJobResponse",
 	"eventsResponse",
 	"runnerEvent",
 	"runnerEventsRequest",

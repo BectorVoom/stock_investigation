@@ -141,17 +141,14 @@ describe("checkBudget", () => {
 		expect(checkBudget(budget, usage({ knownCostUsd: 1.75 }), 0, { costUsd: 0.25 })).toEqual(ok);
 	});
 
-	it("allows no metered spend at all when none was authorized (AGT-012)", () => {
-		const noSpend: ResearchBudget = { ...budget, maxSpendUsd: null };
-		expect(checkBudget(noSpend, EMPTY_USAGE, 0, { costUsd: 0.01 })).toEqual({
+	it("allows metered spend without a cap while enforcing other limits", () => {
+		const uncapped = { ...budget, maxSpendUsd: null };
+		expect(checkBudget(uncapped, EMPTY_USAGE, 0, { costUsd: 100 })).toEqual(ok);
+		expect(checkBudget(uncapped, usage({ knownCostUsd: 100 }), 0)).toEqual(ok);
+		expect(checkBudget(uncapped, EMPTY_USAGE, 0, { agentSteps: 7 })).toEqual({
 			ok: false,
-			error: "MAX_SPEND",
+			error: "MAX_AGENT_STEPS",
 		});
-		expect(checkBudget(noSpend, usage({ knownCostUsd: 0.000001 }), 0)).toEqual({
-			ok: false,
-			error: "MAX_SPEND",
-		});
-		expect(checkBudget(noSpend, EMPTY_USAGE, 0, { agentSteps: 1, costUsd: 0 })).toEqual(ok);
 	});
 
 	it("lets a plan-limited step with unknown cost proceed without counting it as spend", () => {

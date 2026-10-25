@@ -183,7 +183,7 @@ describe("RemoteView and SpendField in Japanese", () => {
 		));
 		expect(screen.getByLabelText("最大支出額（USD）")).toBeTruthy();
 		expect(
-			screen.getByText(/空欄のままにすると従量課金の支出を許可しません。上限は \d+ です/),
+			screen.getByText(/空欄の場合、支出額の上限はありません。設定できる上限は \d+ です/),
 		).toBeTruthy();
 		expect(
 			screen.getByText("この実行で、上記の最大額までの従量課金の支出に同意します"),

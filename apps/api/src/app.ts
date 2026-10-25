@@ -34,6 +34,7 @@ import {
 	putNotebookRequestSchema,
 	type RunnerCredentialCheck,
 	registerSourceRequestSchema,
+	releaseJobRequestSchema,
 	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
 	runScheduledTaskResponseSchema,
@@ -211,6 +212,22 @@ export function createApp(options: AppOptions = {}) {
 					c.var.services.runnerJobs.heartbeat(c.var.runner, runId, body.leaseGeneration),
 				);
 				return c.json(heartbeat);
+			}),
+		),
+	);
+
+	/** ADR-0036: a runner that is shutting down hands its lease back. */
+	runner.post("/jobs/:id/release", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const runId = yield* pathId(c, "id");
+				const body = yield* readJson(c, releaseJobRequestSchema);
+				const released = yield* useCase("runner.jobs.release", () =>
+					c.var.services.runnerJobs.release(c.var.runner, runId, body),
+				);
+				return c.json(released);
 			}),
 		),
 	);

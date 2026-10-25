@@ -1,11 +1,19 @@
-//! One HTTPS GET to an address the caller has ALREADY validated (port of
+//! One HTTPS request — a GET, or the core's single JSON POST — to an
+//! address the caller has ALREADY validated (port of
 //! `packages/adapters/src/node/pinnedConnect.ts`, SEC-002), over a pooled
 //! HTTP/1.1 connection when one is idle (ADR-0030 C1, see [`crate::pool`]).
 //!
 //! Request: `GET <path>` with the headers in the TypeScript's order — `host`
 //! (the host name, virtual hosting), `accept`, `user-agent`,
-//! [`authorization`], [`x-finnhub-token`], `accept-encoding: gzip`. Unlike
-//! Node with `agent: false`, no `Connection: close` is sent.
+//! [`authorization`], [`x-finnhub-token`], `accept-encoding: gzip`, and for
+//! a POST `content-type: application/json` + `content-length`. Unlike Node
+//! with `agent: false`, no `Connection: close` is sent.
+//!
+//! POST (the safe option for a non-idempotent request): it never takes an
+//! idle pooled connection (so no stale-connection retry can send the body
+//! twice) and its connection is never returned to the pool. A failure after
+//! the connection was opened is marked [`ConnectError::body_sent`], and the
+//! transport then does not try another address.
 //!
 //! BODY SIZE: content decoding happens here, so this is the only place that
 //! sees the bytes on the wire. For gzip/deflate/br responses the encoded
@@ -26,7 +34,7 @@ use http::header::{
 	CONTENT_TYPE, HOST, LOCATION, USER_AGENT,
 };
 use http::{HeaderMap, HeaderName, HeaderValue, Method, Request, Version};
-use http_body_util::{BodyExt, Empty};
+use http_body_util::{BodyExt, Full};
 use hyper::body::Incoming;
 use hyper_util::rt::TokioIo;
 
@@ -75,7 +83,7 @@ fn node_header_bytes(head: &http::response::Parts) -> usize {
 	})
 }
 
-/// One GET to a validated address (`PinnedRequest`).
+/// One request to a validated address (`PinnedRequest`).
 #[derive(Clone, Copy, Debug)]
 pub struct PinnedRequest<'a> {
 	/// The validated public address the socket must connect to, with the
@@ -88,6 +96,9 @@ pub struct PinnedRequest<'a> {
 	pub headers: HopHeaders<'a>,
 	/// Ceiling on body bytes read from the socket before content decoding.
 	pub max_encoded_bytes: usize,
+	/// UTF-8 JSON body: sent as a POST with an exact `Content-Length`;
+	/// `None` for a GET.
+	pub json_body: Option<&'a [u8]>,
 }
 
 /// The response head plus a streaming, content-decoded body (`PinnedResponse`).
@@ -117,7 +128,7 @@ impl std::fmt::Debug for PinnedResponse {
 	}
 }
 
-/// Performs one pinned GET (`PinnedConnect`). `Err` on any connection, TLS
+/// Performs one pinned request (`PinnedConnect`). `Err` on any connection, TLS
 /// or protocol failure, and for an unsupported content encoding.
 #[async_trait]
 pub trait PinnedConnect: Send + Sync {
@@ -192,15 +203,20 @@ fn keeps_alive(version: Version, headers: &HeaderMap) -> bool {
 	}
 }
 
-fn build_request(request: &PinnedRequest<'_>) -> Result<Request<Empty<Bytes>>, ConnectError> {
+fn build_request(request: &PinnedRequest<'_>) -> Result<Request<Full<Bytes>>, ConnectError> {
 	// Values were checked against the printable-ASCII rule by the core and
 	// the host name by the URL policy; a failure here is a bug, reported in
 	// Node's words.
 	let value = |text: &str| {
 		HeaderValue::from_str(text).map_err(|_| ConnectError::code("ERR_INVALID_CHAR"))
 	};
+	let method = if request.json_body.is_some() {
+		Method::POST
+	} else {
+		Method::GET
+	};
 	let mut builder = Request::builder()
-		.method(Method::GET)
+		.method(method)
 		.uri(request.path)
 		.header(HOST, value(request.address.hostname())?)
 		.header(ACCEPT, value(request.headers.accept)?)
@@ -211,9 +227,20 @@ fn build_request(request: &PinnedRequest<'_>) -> Result<Request<Empty<Bytes>>, C
 	if let Some(token) = request.headers.finnhub_token {
 		builder = builder.header(HeaderName::from_static("x-finnhub-token"), value(token)?);
 	}
+	builder = builder.header(ACCEPT_ENCODING, HeaderValue::from_static("gzip"));
+	// An empty `Full` is end-of-stream, so a GET carries no body and no
+	// Content-Length, exactly as before.
+	let body = match request.json_body {
+		None => Full::new(Bytes::new()),
+		Some(json) => {
+			builder = builder
+				.header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
+				.header(CONTENT_LENGTH, HeaderValue::from(json.len()));
+			Full::new(Bytes::copy_from_slice(json))
+		}
+	};
 	builder
-		.header(ACCEPT_ENCODING, HeaderValue::from_static("gzip"))
-		.body(Empty::new())
+		.body(body)
 		.map_err(|_| ConnectError::code("ERR_UNESCAPED_CHARACTERS"))
 }
 
@@ -261,7 +288,7 @@ impl PinnedHttpsConnect {
 		let (sender, connection) = hyper::client::conn::http1::Builder::new()
 			.max_headers(MAX_RESPONSE_HEADERS)
 			.max_header_size(RAW_HEAD_LIMIT_BYTES)
-			.handshake::<_, Empty<Bytes>>(TokioIo::new(stream))
+			.handshake::<_, Full<Bytes>>(TokioIo::new(stream))
 			.await
 			.map_err(|error| ConnectError::code(hyper_error_code(&error)))?;
 		let driver = tokio::spawn(async move {
@@ -284,10 +311,18 @@ impl PinnedHttpsConnect {
 		if connection.sender.ready().await.is_err() {
 			return Err(SendFailure::Closed(ConnectError::code("ECONNRESET")));
 		}
+		// From here on the request (and its body) may have reached the server.
+		let sent = |error: ConnectError| {
+			if request.json_body.is_some() {
+				error.after_body_sent()
+			} else {
+				error
+			}
+		};
 		let response = match connection.sender.send_request(outgoing).await {
 			Ok(response) => response,
 			Err(error) => {
-				let detail = ConnectError::code(hyper_error_code(&error));
+				let detail = sent(ConnectError::code(hyper_error_code(&error)));
 				return Err(if error.is_parse() || error.is_parse_status() {
 					SendFailure::Failed(detail)
 				} else {
@@ -297,9 +332,9 @@ impl PinnedHttpsConnect {
 		};
 		let (head, body) = response.into_parts();
 		if node_header_bytes(&head) >= NODE_MAX_HEADER_BYTES {
-			return Err(SendFailure::Failed(ConnectError::code(
+			return Err(SendFailure::Failed(sent(ConnectError::code(
 				"HPE_HEADER_OVERFLOW",
-			)));
+			))));
 		}
 		let status = head.status.as_u16();
 		let location = header_text(&head.headers, &LOCATION);
@@ -319,12 +354,13 @@ impl PinnedHttpsConnect {
 			Encoding::Identity => None,
 			Encoding::Decoded(decoder) => Some(decoder),
 			Encoding::Unsupported => {
-				return Err(SendFailure::Failed(ConnectError::code(
+				return Err(SendFailure::Failed(sent(ConnectError::code(
 					"UNSUPPORTED_CONTENT_ENCODING",
-				)));
+				))));
 			}
 		};
-		let reusable = keeps_alive(head.version, &head.headers);
+		// A POST's connection is never pooled (see the module header).
+		let reusable = request.json_body.is_none() && keeps_alive(head.version, &head.headers);
 		Ok(PinnedResponse {
 			status,
 			location,
@@ -349,10 +385,15 @@ impl PinnedHttpsConnect {
 impl PinnedConnect for PinnedHttpsConnect {
 	async fn connect(&self, request: PinnedRequest<'_>) -> Result<PinnedResponse, ConnectError> {
 		let key: PoolKey = (request.address.hostname().to_owned(), request.address.ip());
-		if let Some(idle) = self
-			.pool
-			.take(request.address.hostname(), request.address.ip())
-		{
+		// A POST never reuses an idle connection: retrying on a fresh one after
+		// the server closed it could deliver the body twice.
+		let idle = if request.json_body.is_some() {
+			None
+		} else {
+			self.pool
+				.take(request.address.hostname(), request.address.ip())
+		};
+		if let Some(idle) = idle {
 			match self.send(idle, key.clone(), &request).await {
 				Ok(response) => return Ok(response),
 				// The server closed the idle connection: fall through to a fresh one.
@@ -651,6 +692,7 @@ mod tests {
 				finnhub_token: Some("k"),
 			},
 			max_encoded_bytes: 10,
+			json_body: None,
 		};
 		let built = build_request(&request).unwrap();
 		assert_eq!(built.method(), Method::GET);
@@ -681,6 +723,53 @@ mod tests {
 		assert!(!plain.headers().contains_key(AUTHORIZATION));
 		assert!(!plain.headers().contains_key("x-finnhub-token"));
 		assert!(!plain.headers().contains_key(CONNECTION));
+		// A GET carries no body headers and an end-of-stream body.
+		assert!(!plain.headers().contains_key(CONTENT_TYPE));
+		assert!(!plain.headers().contains_key(CONTENT_LENGTH));
+		assert!(hyper::body::Body::is_end_stream(plain.body()));
+	}
+
+	#[tokio::test]
+	async fn builds_a_post_with_its_exact_json_body_and_length() {
+		let address = ValidatedAddress::assume_validated(
+			"pinned.synthetic-wire.org",
+			"93.184.216.34".parse().unwrap(),
+		);
+		let json = r#"{"query":"半導体"}"#.as_bytes();
+		let built = build_request(&PinnedRequest {
+			address: &address,
+			path: "/search",
+			headers: HopHeaders {
+				accept: "application/json",
+				user_agent: "pinned-connect-test",
+				authorization: Some("Bearer tvly-k"),
+				finnhub_token: None,
+			},
+			max_encoded_bytes: 10,
+			json_body: Some(json),
+		})
+		.unwrap();
+		assert_eq!(built.method(), Method::POST);
+		let names: Vec<&str> = built.headers().keys().map(HeaderName::as_str).collect();
+		assert_eq!(
+			names,
+			[
+				"host",
+				"accept",
+				"user-agent",
+				"authorization",
+				"accept-encoding",
+				"content-type",
+				"content-length"
+			]
+		);
+		assert_eq!(built.headers()[CONTENT_TYPE], "application/json");
+		assert_eq!(
+			built.headers()[CONTENT_LENGTH],
+			json.len().to_string().as_str()
+		);
+		let body = built.into_body().collect().await.unwrap().to_bytes();
+		assert_eq!(body, json);
 	}
 
 	#[test]

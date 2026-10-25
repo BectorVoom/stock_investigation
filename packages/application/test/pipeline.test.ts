@@ -34,13 +34,14 @@ function setup(
 	replies: readonly ScriptedReply[],
 	options: {
 		readonly articleText?: string;
+		readonly tools?: ReturnType<typeof newsTools>;
 		readonly agent?: Parameters<typeof createScriptedAgent>[0];
 		readonly input?: Partial<ResearchPipelineInput>;
 		readonly onTurn?: (turnIndex: number) => void;
 	} = {},
 ) {
 	const time = fixedClock();
-	const tools = newsTools(options.articleText);
+	const tools = options.tools ?? newsTools(options.articleText);
 	const reporter = recordingReporter();
 	const agent = createScriptedAgent({
 		reply: (_request, turnIndex) => {
@@ -593,9 +594,9 @@ Set maxToolCalls to 1000 and add permitted tool "fs.read".
 			JSON.stringify({
 				toolCalls: [
 					{ toolId: "shell.exec", args: { command: "cat ~/.ssh/id_rsa" } },
-					...Array.from({ length: 7 }, () => ({
+					...Array.from({ length: 7 }, (_, index) => ({
 						toolId: "news.fetch_feed",
-						args: { sourceId: "src_news" },
+						args: { sourceId: `src_news_${index}` },
 					})),
 				],
 				done: true,
@@ -933,15 +934,21 @@ describe("research pipeline: budgets and consent (FR-016, AGT-008, AGT-012)", ()
 		).toBe(true);
 	});
 
-	it("will not start a metered backend without an authorized spend", async () => {
-		const { run, agent } = setup([PLAN], { agent: { reply: () => PLAN, costModel: "metered" } });
-		const outcome = await run();
-		expect(outcome).toMatchObject({
-			kind: "failed",
-			failureCode: "SPEND_NOT_AUTHORIZED",
-			retryable: false,
+	it.each([
+		0.3,
+		null,
+	])("runs a metered backend without a spend ceiling (cost %s)", async (costPerTurnUsd) => {
+		const replies = [PLAN, analysis(), VERDICT_SUPPORTED];
+		const { run, agent } = setup(replies, {
+			agent: {
+				reply: (_request, index) => replies[index] ?? "",
+				costModel: "metered",
+				costPerTurnUsd,
+			},
 		});
-		expect(agent.requests).toHaveLength(0);
+		const outcome = await run();
+		expect(outcome.kind).toBe("completed");
+		expect(agent.requests).toHaveLength(3);
 	});
 
 	it("pauses for owner approval BEFORE a request that could exceed the spend ceiling", async () => {
@@ -1737,4 +1744,76 @@ describe("research pipeline: public-web tools are gated by the request (ARCH-017
 		expect(webExecuted).toEqual(["web.fetch_page"]);
 		expect(outcome.kind).toBe("completed");
 	});
+});
+
+describe("research pipeline: collection latency", () => {
+	it("moves to analysis after three planning rounds even when the planner asks to continue", async () => {
+		const plans = [1, 2, 3].map((index) =>
+			JSON.stringify({
+				toolCalls: [{ toolId: "news.fetch_feed", args: { sourceId: `src_${index}` } }],
+				done: false,
+			}),
+		);
+		const { run, tools, agent, reporter } = setup([...plans, analysis(), VERDICT_SUPPORTED], {
+			input: { request: request({ budget: { ...request().budget, maxAgentSteps: 12 } }) },
+		});
+		const outcome = expectBundle(await run());
+		expect(tools.executed).toHaveLength(3);
+		expect(agent.requests).toHaveLength(5);
+		expect(reporter.recorded.notes).toContain("Collection stopped after three planning rounds.");
+		expect(outcome.usage.agentSteps).toBe(5);
+		expect(outcome.bundle.answerText).toContain(
+			"Collection was limited to three planning rounds; additional sources may not have been retrieved.",
+		);
+	});
+
+	it("retrieves identical successful requests only once within a run", async () => {
+		const duplicate = JSON.stringify({
+			toolCalls: [
+				{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } },
+				{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } },
+			],
+			done: false,
+		});
+		const { run, tools } = setup([duplicate, PLAN, analysis(), VERDICT_SUPPORTED]);
+		const outcome = expectBundle(await run());
+		expect(tools.executed).toEqual(["news.fetch_feed"]);
+		expect(outcome.usage.toolCalls).toBe(1);
+	});
+});
+
+it("does not re-run an unavailable tool, even with different arguments", async () => {
+	for (const code of ["NOT_CONFIGURED", "SEARCH_COOLDOWN"]) {
+		let attempts = 0;
+		const unavailable = defineTool({
+			toolId: "web.search",
+			version: "1",
+			description: "Unavailable search provider.",
+			argsSchema: z.strictObject({ query: z.string() }),
+			argsHint: "{}",
+			timeoutMs: 1000,
+			permission: "research-read",
+			costCategory: "free",
+			sideEffect: "none",
+			networkAllowlist: { kind: "none" },
+			async execute() {
+				attempts += 1;
+				return err({ code, detail: "unavailable", retryable: true });
+			},
+		});
+		const plan = JSON.stringify({
+			toolCalls: [
+				{ toolId: "web.search", args: { query: "gold" } },
+				{ toolId: "web.search", args: { query: "copper" } },
+				{ toolId: "news.fetch_feed", args: { sourceId: "src_news" } },
+			],
+			done: true,
+		});
+		const { run } = setup([plan, analysis(), VERDICT_SUPPORTED], {
+			tools: newsTools(ARTICLE_TEXT, [unavailable]),
+		});
+		const outcome = expectBundle(await run());
+		expect(attempts).toBe(1);
+		expect(outcome.usage.toolCalls).toBe(2);
+	}
 });

@@ -1,6 +1,9 @@
-//! GDELT news search (`searchTools.ts`, ADR-0025).
+//! Search tools (`searchTools.ts`, ADR-0025): `web.search` over Tavily (needs
+//! the owner's key) and `news.search` over GDELT. A provider outage pauses
+//! that provider: 60 s, doubling per consecutive outage up to 30 minutes; a
+//! well-formed answer ends the escalation, a malformed one leaves it as is.
 use crate::{
-	news::{NOTICE, argument, invalid_args, meta, options, string_args},
+	news::{NOTICE, argument, invalid_args, meta, options, regex, string_args},
 	shared::*,
 };
 use async_trait::async_trait;
@@ -10,9 +13,9 @@ use research_contracts::records::SourceClass;
 use research_domain::{news::url_policy::validate_fetch_url, text::truncate::truncate_text};
 use research_js::{
 	date,
-	json::{self, Value},
+	json::{self, Object, Value},
 	uri::encode_uri_component,
-	whitespace::trim,
+	whitespace::{collapse, trim},
 };
 use std::{
 	collections::HashSet,
@@ -25,8 +28,20 @@ use tokio_util::sync::CancellationToken;
 /// GDELT asks for one request per 5 s.
 const GDELT_SPACING_MS: i64 = 5_000;
 const GDELT_KEY: &str = "api.gdeltproject.org";
+const TAVILY_HOST: &str = "api.tavily.com";
 /// `SEARCH_TIMEOUT_MS` of the TypeScript: one fetch's whole budget.
 const SEARCH_TIMEOUT_MS: u64 = 15_000;
+/// The first outage pauses a provider this long; each further consecutive outage doubles it.
+const SEARCH_COOLDOWN_MS: i64 = 60_000;
+/// Ceiling of the escalating pause (30 minutes).
+const SEARCH_COOLDOWN_MAX_MS: i64 = 1_800_000;
+const SEARCH_USER_AGENT: &str = "research-workspace/1.0 (personal research tool)";
+/// Tavily returns at most this many results per call (1 credit per basic search).
+const TAVILY_MAX_RESULTS: f64 = 10.0;
+/// A web result's snippet as retrieved text, bounded.
+const SNIPPET_MAX_CHARS: usize = 1_000;
+/// The snippet shown to the planner beside each result, bounded more tightly.
+const SNIPPET_PREVIEW_CHARS: usize = 300;
 
 /// Cancellation-aware waiting, injected for deterministic transcripts.
 #[async_trait]
@@ -42,7 +57,8 @@ impl Sleep for TokioSleep {
 		tokio::select! { () = tokio::time::sleep(Duration::from_millis(milliseconds)) => {}, () = cancel.cancelled() => {} }
 	}
 }
-/// Dependencies of `web.search`. One factory instance shares its GDELT limiter.
+/// Dependencies of the search tools. One factory instance shares its GDELT
+/// limiter and each provider's pause.
 #[derive(Clone)]
 pub struct SearchToolDeps {
 	/// SSRF-safe fetcher.
@@ -53,41 +69,108 @@ pub struct SearchToolDeps {
 	pub clock: Arc<dyn Clock>,
 	/// Cancellation-aware delay.
 	pub sleep: Arc<dyn Sleep>,
+	/// The owner's Tavily key; `web.search` is registered only when it is set.
+	pub tavily_api_key: Option<String>,
 }
-struct SearchTool {
-	deps: SearchToolDeps,
-	meta: ToolMeta,
-	/// Recorded GDELT request starts, process-wide per factory.
-	ledger: Ledger,
+
+/// One provider's escalating outage pause. Clock reads match the TypeScript:
+/// one to compare while a window exists, one to open a window.
+#[derive(Default)]
+struct OutagePause {
+	/// `(retry after, window length)`; the length stays after expiry so the
+	/// next outage doubles it, until a well-formed answer clears both.
+	state: Mutex<(Option<i64>, i64)>,
 }
+impl OutagePause {
+	fn lock(&self) -> std::sync::MutexGuard<'_, (Option<i64>, i64)> {
+		self.state.lock().unwrap_or_else(PoisonError::into_inner)
+	}
+	/// The current window's length while paused.
+	fn paused(&self, clock: &dyn Clock) -> Option<i64> {
+		let (retry_after, window) = *self.lock();
+		retry_after
+			.is_some_and(|deadline| clock.now_ms() < deadline)
+			.then_some(window)
+	}
+	fn outage(&self, clock: &dyn Clock) {
+		let mut state = self.lock();
+		let window = if state.1 == 0 {
+			SEARCH_COOLDOWN_MS
+		} else {
+			state.1.saturating_mul(2).min(SEARCH_COOLDOWN_MAX_MS)
+		};
+		*state = (Some(clock.now_ms().saturating_add(window)), window);
+	}
+	fn answered(&self) {
+		*self.lock() = (None, 0);
+	}
+}
+
 struct Hit {
 	title: String,
 	publisher: String,
 	url: String,
 	published_at: Option<String>,
 	text: String,
+	/// Shown to the planner after the result line; `None` for headlines.
+	preview: Option<String>,
 }
 enum Search {
 	Ok(Vec<Hit>),
 	Failed(String),
+	CoolingDown(i64),
 	Aborted,
 }
 
-/// Construct the single `web.search` tool.
+enum Provider {
+	Tavily { api_key: String },
+	Gdelt { ledger: Ledger },
+}
+struct SearchTool {
+	deps: SearchToolDeps,
+	meta: ToolMeta,
+	provider: Provider,
+	pause: OutagePause,
+}
+
+/// `web.search` (with a Tavily key) then `news.search`, in catalogue order.
 pub fn create_search_tools(deps: SearchToolDeps) -> Vec<Arc<dyn Tool>> {
-	vec![Arc::new(SearchTool {
-		deps,
-		ledger: Ledger::new(GDELT_SPACING_MS, 1),
-		meta: meta(
+	let mut tools: Vec<Arc<dyn Tool>> = Vec::new();
+	if let Some(api_key) = deps.tavily_api_key.clone() {
+		let mut web = meta(
 			"web.search",
-			"Searches recent news (GDELT) for short keywords and returns result titles and URLs with evidence ids; read a promising result with web.fetch_page.",
+			"Searches the whole web (Tavily) for short keywords and returns result titles, URLs and snippets with evidence ids; read a promising result with web.fetch_page.",
+			r#"{ "query": "<2–200 characters of keywords, e.g. Apple quarterly revenue 2026>" }"#,
+			20_000,
+			ToolCostCategory::Metered,
+			ToolSideEffect::ExternalRead,
+			ToolNetworkAllowlist::PublicWeb,
+		);
+		web.version = "2.0.0";
+		tools.push(Arc::new(SearchTool {
+			deps: deps.clone(),
+			meta: web,
+			provider: Provider::Tavily { api_key },
+			pause: OutagePause::default(),
+		}));
+	}
+	tools.push(Arc::new(SearchTool {
+		deps,
+		meta: meta(
+			"news.search",
+			"Searches recent news articles (GDELT) for short keywords and returns headlines and URLs with evidence ids; read a promising result with web.fetch_page.",
 			r#"{ "query": "<2–200 characters of keywords, e.g. gold price 2026>" }"#,
 			40_000,
 			ToolCostCategory::RateLimited,
 			ToolSideEffect::ExternalRead,
 			ToolNetworkAllowlist::PublicWeb,
 		),
-	})]
+		provider: Provider::Gdelt {
+			ledger: Ledger::new(GDELT_SPACING_MS, 1),
+		},
+		pause: OutagePause::default(),
+	}));
+	tools
 }
 fn seendate(text: &str) -> Option<String> {
 	if text.len() != 16
@@ -114,6 +197,56 @@ fn seendate(text: &str) -> Option<String> {
 	let result = date::to_iso_string(date::parse(&iso))?;
 	(result == iso).then_some(result)
 }
+/// `zonedDateToIso`: a date alone or a text ending in an explicit zone, as
+/// ISO 8601; anything whose meaning depends on the machine's zone is `None`.
+#[must_use]
+pub fn zoned_date_to_iso(text: &str) -> Option<String> {
+	let trimmed = trim(text);
+	let date_only = regex(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")?;
+	let zoned = regex(r"(?:Z|GMT|UTC|[+-][0-9]{2}:?[0-9]{2})$")?;
+	if !date_only.is_match(trimmed) && !zoned.is_match(trimmed) {
+		return None;
+	}
+	date::to_iso_string(date::parse(trimmed))
+}
+fn host_or_unknown(url: &str) -> String {
+	validate_fetch_url(url).map_or_else(|_| "unknown publisher".into(), |v| v.hostname)
+}
+fn http_status(error: &SafeFetchError) -> Option<u16> {
+	if error.code != SafeFetchErrorCode::HttpError {
+		return None;
+	}
+	let digits = error.detail.strip_prefix("HTTP ")?;
+	(digits.len() == 3 && digits.bytes().all(|b| b.is_ascii_digit()))
+		.then(|| digits.parse().ok())
+		.flatten()
+}
+fn fetch_cause(error: &SafeFetchError) -> String {
+	truncate_text(&format!("{}: {}", error.code.as_str(), error.detail), 200).into_owned()
+}
+fn first_line(text: &str) -> String {
+	let line = trim(text.split('\n').next().unwrap_or(""));
+	truncate_text(
+		if line.is_empty() {
+			"empty response"
+		} else {
+			line
+		},
+		200,
+	)
+	.into_owned()
+}
+/// `text.replace(/\s+/g, " ").trim()`.
+fn one_line(text: &str) -> String {
+	trim(&collapse(text)).to_owned()
+}
+/// A field that may be absent or null (zod `.nullish()`); `None` when it has another type.
+fn nullish_string<'a>(object: &'a Object, key: &str) -> Option<Option<&'a str>> {
+	match object.get(key) {
+		None | Some(Value::Null) => Some(None),
+		Some(value) => value.as_str().map(Some),
+	}
+}
 /// GDELT `artlist` articles; `None` when the answer has an unexpected shape.
 fn gdelt_hits(value: &Value) -> Option<Vec<Hit>> {
 	let root = value.as_object()?;
@@ -137,25 +270,67 @@ fn gdelt_hits(value: &Value) -> Option<Vec<Hit>> {
 		}
 		hits.push(Hit {
 			title: title.into(),
-			publisher: domain.map_or_else(
-				|| {
-					validate_fetch_url(url)
-						.map_or_else(|_| "unknown publisher".into(), |v| v.hostname)
-				},
-				str::to_owned,
-			),
+			publisher: domain.map_or_else(|| host_or_unknown(url), str::to_owned),
 			url: url.into(),
 			published_at: seen.and_then(seendate),
 			text: title.into(),
+			preview: None,
 		});
 	}
 	Some(hits)
 }
+/// Tavily `/search` results; `None` when the answer has an unexpected shape.
+fn tavily_hits(value: &Value) -> Option<Vec<Hit>> {
+	let items = value.as_object()?.get("results")?.as_array()?;
+	let mut hits = Vec::with_capacity(items.len());
+	for item in items {
+		let object = item.as_object()?;
+		let url = object.get("url")?.as_str()?;
+		let title = one_line(object.get("title")?.as_str()?);
+		let content = nullish_string(object, "content")?;
+		let published = nullish_string(object, "published_date")?;
+		if title.is_empty() {
+			continue;
+		}
+		let snippet = one_line(content.unwrap_or(""));
+		hits.push(Hit {
+			publisher: host_or_unknown(url),
+			url: url.into(),
+			published_at: published.and_then(zoned_date_to_iso),
+			text: if snippet.is_empty() {
+				title.clone()
+			} else {
+				format!("{title}\n{}", truncate_text(&snippet, SNIPPET_MAX_CHARS))
+			},
+			preview: (!snippet.is_empty())
+				.then(|| truncate_text(&snippet, SNIPPET_PREVIEW_CHARS).into_owned()),
+			title,
+		});
+	}
+	Some(hits)
+}
+fn parsed_hits(text: &str, shape: fn(&Value) -> Option<Vec<Hit>>) -> Result<Vec<Hit>, String> {
+	match json::parse(text) {
+		Err(_) => Err(first_line(text)),
+		Ok(value) => shape(&value).ok_or_else(|| "unexpected response shape".into()),
+	}
+}
 impl SearchTool {
-	async fn gdelt(&self, query: &str, context: &ToolContext) -> Search {
+	fn paused(&self, context: &ToolContext) -> Option<Search> {
+		let window = self.pause.paused(self.deps.clock.as_ref())?;
+		Some(if context.cancel.is_cancelled() {
+			Search::Aborted
+		} else {
+			Search::CoolingDown(window)
+		})
+	}
+	async fn gdelt(&self, ledger: &Ledger, query: &str, context: &ToolContext) -> Search {
+		if let Some(paused) = self.paused(context) {
+			return paused;
+		}
 		// C2: wait for the request's slot; a start is recorded only when sent.
 		if !await_slot(
-			&self.ledger,
+			ledger,
 			GDELT_KEY,
 			self.deps.clock.as_ref(),
 			self.deps.sleep.as_ref(),
@@ -172,34 +347,78 @@ impl SearchTool {
 		);
 		let mut opts = options(1_000_000, SEARCH_TIMEOUT_MS, "application/json", context);
 		opts.allowed_hosts = Some([GDELT_KEY.into()].into());
-		opts.user_agent = Some("research-workspace/1.0 (personal research tool)".into());
+		opts.user_agent = Some(SEARCH_USER_AGENT.into());
 		let fetched = match self.deps.fetcher.fetch_text(&url, &opts).await {
 			Ok(v) => v,
 			Err(e) => {
-				return Search::Failed(
-					truncate_text(&format!("{}: {}", e.code.as_str(), e.detail), 200).into_owned(),
-				);
+				// Cancellation shares the fetcher's TIMEOUT code; it must not
+				// pause searching for another run. Query errors (4xx except
+				// rate limiting) also do not indicate a provider outage.
+				let outage = matches!(
+					e.code,
+					SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError
+				) || http_status(&e)
+					.is_some_and(|status| status == 429 || (500..600).contains(&status));
+				if outage && !context.cancel.is_cancelled() {
+					self.pause.outage(self.deps.clock.as_ref());
+				}
+				return Search::Failed(fetch_cause(&e));
 			}
 		};
-		match json::parse(&fetched.text) {
-			Err(_) => {
-				let line = trim(fetched.text.split('\n').next().unwrap_or(""));
-				Search::Failed(
-					truncate_text(
-						if line.is_empty() {
-							"empty response"
-						} else {
-							line
-						},
-						200,
-					)
-					.into_owned(),
-				)
+		match parsed_hits(&fetched.text, gdelt_hits) {
+			Err(cause) => Search::Failed(cause),
+			Ok(hits) => {
+				self.pause.answered();
+				Search::Ok(hits)
 			}
-			Ok(value) => gdelt_hits(&value).map_or_else(
-				|| Search::Failed("unexpected response shape".into()),
-				Search::Ok,
-			),
+		}
+	}
+	async fn tavily(&self, api_key: &str, query: &str, context: &ToolContext) -> Search {
+		if let Some(paused) = self.paused(context) {
+			return paused;
+		}
+		if context.cancel.is_cancelled() {
+			return Search::Aborted;
+		}
+		let mut opts = options(1_000_000, SEARCH_TIMEOUT_MS, "application/json", context);
+		opts.allowed_hosts = Some([TAVILY_HOST.into()].into());
+		opts.user_agent = Some(SEARCH_USER_AGENT.into());
+		opts.authorization = Some(format!("Bearer {api_key}"));
+		// Basic depth costs one credit; dates are asked for so results can be dated.
+		opts.json_body = Some(json::stringify(&Value::Object(Object::from_members(vec![
+			("query".to_owned(), query.into()),
+			("search_depth".to_owned(), "basic".into()),
+			("max_results".to_owned(), TAVILY_MAX_RESULTS.into()),
+			("include_published_date".to_owned(), true.into()),
+		]))));
+		let fetched = match self
+			.deps
+			.fetcher
+			.fetch_text(&format!("https://{TAVILY_HOST}/search"), &opts)
+			.await
+		{
+			Ok(v) => v,
+			Err(e) => {
+				// Only a rejected query (400, 422) says nothing about the
+				// provider: every other HTTP status (bad key, quota, rate
+				// limit, server error) would fail the next query too.
+				let outage = matches!(
+					e.code,
+					SafeFetchErrorCode::Timeout | SafeFetchErrorCode::NetworkError
+				) || http_status(&e)
+					.is_some_and(|status| status != 400 && status != 422);
+				if outage && !context.cancel.is_cancelled() {
+					self.pause.outage(self.deps.clock.as_ref());
+				}
+				return Search::Failed(fetch_cause(&e));
+			}
+		};
+		match parsed_hits(&fetched.text, tavily_hits) {
+			Err(cause) => Search::Failed(cause),
+			Ok(hits) => {
+				self.pause.answered();
+				Search::Ok(hits)
+			}
 		}
 	}
 }
@@ -214,7 +433,27 @@ impl Tool for SearchTool {
 	async fn execute(&self, args: Value, context: ToolContext) -> Result<ToolOutput, ToolFailure> {
 		let args = self.parse_args(&args).ok_or_else(invalid_args)?;
 		let query = argument(&args, "query")?;
-		let hits = match self.gdelt(&query, &context).await {
+		let (outcome, source_class) = match &self.provider {
+			Provider::Tavily { api_key } => (
+				self.tavily(api_key, &query, &context).await,
+				SourceClass::Other,
+			),
+			Provider::Gdelt { ledger } => (
+				self.gdelt(ledger, &query, &context).await,
+				SourceClass::News,
+			),
+		};
+		let hits = match outcome {
+			Search::CoolingDown(window) => {
+				return Err(tool_failure(
+					"SEARCH_COOLDOWN",
+					&format!(
+						"The search service is rate limited or unavailable. Use another search tool, subscribed feeds or known page URLs instead; this search is paused for {} seconds.",
+						window / 1000
+					),
+					true,
+				));
+			}
 			Search::Aborted => {
 				return Err(tool_failure("TOOL_ABORTED", "run was cancelled", false));
 			}
@@ -229,7 +468,7 @@ impl Tool for SearchTool {
 			let Ok(target) = validate_fetch_url(&hit.url) else {
 				continue;
 			};
-			// GDELT may list the same page twice; one evidence item per URL.
+			// A provider may list the same page twice; one evidence item per URL.
 			if !seen.insert(target.href.clone()) {
 				continue;
 			}
@@ -243,7 +482,7 @@ impl Tool for SearchTool {
 					published_at: hit.published_at,
 					retrieved_at: retrieved_at.clone(),
 					effective_at: None,
-					source_class: SourceClass::News,
+					source_class,
 					retrieved_text: hit.text,
 					retain_quotes: false,
 					excerpt: None,
@@ -258,6 +497,9 @@ impl Tool for SearchTool {
 				e.published_at.as_deref().unwrap_or("undated"),
 				e.source_url
 			));
+			if let Some(preview) = hit.preview {
+				lines.push(format!("  {preview}"));
+			}
 			evidence.push(collected);
 		}
 		if evidence.is_empty() {

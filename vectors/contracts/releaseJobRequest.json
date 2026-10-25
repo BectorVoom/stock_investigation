@@ -1,0 +1,1352 @@
+{
+	"schema": "releaseJobRequest",
+	"cases": [
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true},\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":null,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":\"3\",\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":true,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":0,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":1,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":0.5,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1.5,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":4,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":4,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":2,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":2,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3.5,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":9007199254740991,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":9007199254740991,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":9007199254740992,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-9007199254740992,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1e+21,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1e-7,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-0,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Too small: expected number to be >0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1e400,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":-1e400,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"leaseGeneration"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":1.0,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":1,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":2e0,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":2,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage"
+					],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":[]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage"
+					],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":\"x\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage"
+					],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage"
+					],
+					"message": "Invalid input: expected object, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true,\"zzUnknownKey\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"usage"
+					],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true,\"__proto__\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [
+						"usage"
+					],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":null,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":\"3\",\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":true,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":-1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":4,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":4,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3.5,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":9007199254740991,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":9007199254740991,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":9007199254740992,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":-9007199254740992,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1e+21,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":-1e-7,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":-0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1e400,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":-1e400,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"agentSteps"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1.0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":1,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":2e0,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":2,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":null,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":\"7\",\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":true,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":-1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":0.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":8,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":8,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":6,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":6,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7.5,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":9007199254740991,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":9007199254740991,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":9007199254740992,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":-9007199254740992,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1e+21,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":-1e-7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":-0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1e400,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":-1e400,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"toolCalls"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1.0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":1,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":2e0,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":2,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":null,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":\"120000\",\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":true,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120001,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120001,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":119999,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":119999,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000.5,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740991,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740991,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":9007199254740992,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-9007199254740992,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Too small: expected int to be >=-9007199254740991"
+				},
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1e+21,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_big",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Too big: expected int to be <=9007199254740991"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1e-7,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected int, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1e400,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":-1e400,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"inputBytes"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1.0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":1,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":2e0,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":2,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":null,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":\"0\",\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":true,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received boolean"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0.5,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0.5,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.5,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.5,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740991,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740991,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740992,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":9007199254740992,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-9007199254740992,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e+21,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e+21,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1e-7,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "too_small",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Too small: expected number to be >=0"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1e400,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":-1e400,\"hasUnmeteredUsage\":true}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"knownCostUsd"
+					],
+					"message": "Invalid input: expected number, received -Infinity"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1.0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":1,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":2e0,\"hasUnmeteredUsage\":true}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":2,\"hasUnmeteredUsage\":true}}"
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":null}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received null"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":\"true\"}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received number"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [
+						"usage",
+						"hasUnmeteredUsage"
+					],
+					"message": "Invalid input: expected boolean, received undefined"
+				}
+			]
+		},
+		{
+			"input": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false}}",
+			"valid": true,
+			"output": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":3,\"toolCalls\":7,\"inputBytes\":120000,\"knownCostUsd\":0,\"hasUnmeteredUsage\":false}}"
+		}
+	]
+}

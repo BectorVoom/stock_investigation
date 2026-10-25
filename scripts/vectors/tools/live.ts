@@ -27,7 +27,9 @@ try {
 			signal.addEventListener("abort", done, { once: true });
 		});
 	const deps = { fetcher, hasher: webCryptoHasher, clock: systemClock, sleep };
-	const [search] = createSearchTools(deps);
+	// With TAVILY_API_KEY set the first tool is web.search (Tavily), else news.search (GDELT).
+	const tavilyApiKey = process.env.TAVILY_API_KEY?.trim() || null;
+	const [search] = createSearchTools({ ...deps, tavilyApiKey });
 	const [web] = createWebTools({
 		...deps,
 		pageArchive: createFilePageArchive({ directory, hasher: webCryptoHasher }),

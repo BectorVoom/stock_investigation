@@ -463,7 +463,7 @@ describe("authorization on every resource id (API-004)", () => {
 			(await body(await mallory.call("GET", "/sources"), sourceListResponseSchema)).sources,
 		).toHaveLength(0);
 
-		// Mallory's runner cannot claim, heartbeat or complete Alice's job.
+		// Mallory's runner cannot claim, heartbeat, release or complete Alice's job.
 		const stolen = await mallory.runner(malloryToken, "/jobs/claim", CLAIM_BODY);
 		expect(await stolen.text()).toContain('"job":null');
 		const lease = await alice.runner(aliceToken, "/jobs/claim", CLAIM_BODY);
@@ -472,6 +472,18 @@ describe("authorization on every resource id (API-004)", () => {
 			leaseGeneration: 1,
 		});
 		expect(heartbeat.status).toBe(404);
+		// Nor hand Alice's lease back (ADR-0036).
+		const release = await mallory.runner(malloryToken, `/jobs/${runId}/release`, {
+			leaseGeneration: 1,
+			usage: {
+				agentSteps: 0,
+				toolCalls: 0,
+				inputBytes: 0,
+				knownCostUsd: 0,
+				hasUnmeteredUsage: false,
+			},
+		});
+		expect(release.status).toBe(404);
 	});
 
 	it("never echoes internals in error responses", async () => {

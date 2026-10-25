@@ -36,6 +36,8 @@ pub struct ResearchToolDeps {
 	/// SEC requires a descriptive User-Agent with contact info; `None` makes
 	/// the SEC tools report NOT_CONFIGURED.
 	pub sec_user_agent: Option<String>,
+	/// The owner's Tavily key; `None` → `web.search` is not registered (`news.search` still is).
+	pub tavily_api_key: Option<String>,
 	/// Where retrieved public pages are archived. `None` → the web tool is not
 	/// registered at all: without an archive there is nowhere to keep the page
 	/// (DATA-010), so the tool must not run.
@@ -62,13 +64,14 @@ pub fn create_research_tools(deps: ResearchToolDeps) -> Vec<Arc<dyn Tool>> {
 		hasher: Arc::clone(&deps.hasher),
 		clock: Arc::clone(&deps.clock),
 	});
-	// The search tool writes nothing to disk: unlike the page tool it is
-	// registered unconditionally (ADR-0025).
+	// The search tools write nothing to disk: unlike the page tool they do
+	// not need the archive; web.search needs a Tavily key (ADR-0025).
 	tools.extend(create_search_tools(SearchToolDeps {
 		fetcher: Arc::clone(&deps.fetcher),
 		hasher: Arc::clone(&deps.hasher),
 		clock: Arc::clone(&deps.clock),
 		sleep: Arc::clone(&deps.sleep),
+		tavily_api_key: deps.tavily_api_key.clone(),
 	}));
 	tools.extend(create_sec_tools(SecToolDeps {
 		financials: Arc::new(EdgarFinancialsSource::new(
@@ -154,6 +157,10 @@ mod tests {
 	}
 
 	fn tools(with_archive: bool) -> Vec<Arc<dyn Tool>> {
+		tools_with_key(with_archive, None)
+	}
+
+	fn tools_with_key(with_archive: bool, tavily_api_key: Option<&str>) -> Vec<Arc<dyn Tool>> {
 		let never = Arc::new(Never);
 		create_research_tools(ResearchToolDeps {
 			fetcher: never.clone(),
@@ -161,6 +168,7 @@ mod tests {
 			hasher: never.clone(),
 			clock: never.clone(),
 			sec_user_agent: None,
+			tavily_api_key: tavily_api_key.map(str::to_owned),
 			page_archive: with_archive.then(|| never.clone() as Arc<dyn PageArchive>),
 			sleep: never.clone(),
 			sec_sleep: never,
@@ -179,7 +187,7 @@ mod tests {
 			[
 				"news.fetch_feed",
 				"news.fetch_article",
-				"web.search",
+				"news.search",
 				"finance.sec_company_financials",
 				"filings.sec_13f_holdings",
 				"positions.us_short_interest",
@@ -232,13 +240,31 @@ mod tests {
 			assert_eq!(meta(id).network_allowlist, ToolNetworkAllowlist::None);
 			assert_eq!(meta(id).side_effect, ToolSideEffect::None);
 		}
-		// The search tool writes nothing to disk, so it is registered either way (ADR-0025).
+		// The news search writes nothing to disk, so it is registered either way (ADR-0025).
 		assert_eq!(
-			meta("web.search").network_allowlist,
+			meta("news.search").network_allowlist,
 			ToolNetworkAllowlist::PublicWeb
 		);
+		// Without a Tavily key there is no web search.
+		assert!(!ids(&tools).contains(&"web.search"));
 		// Without an archive there is nowhere to keep a retrieved page (DATA-010).
 		assert!(!ids(&tools).contains(&"web.fetch_page"));
+	}
+
+	#[test]
+	fn registers_web_search_before_news_search_only_with_a_tavily_key() {
+		let tools = tools_with_key(false, Some("tvly-test-key"));
+		let ids = ids(&tools);
+		assert_eq!(ids.get(2..4), Some(&["web.search", "news.search"][..]));
+		let meta = tools
+			.iter()
+			.find(|t| t.meta().tool_id == "web.search")
+			.unwrap()
+			.meta();
+		assert_eq!(meta.version, "2.0.0");
+		assert_eq!(meta.network_allowlist, ToolNetworkAllowlist::PublicWeb);
+		assert_eq!(meta.cost_category, ToolCostCategory::Metered);
+		assert_eq!(meta.side_effect, ToolSideEffect::ExternalRead);
 	}
 
 	#[test]

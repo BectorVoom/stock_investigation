@@ -1,6 +1,42 @@
 # ADR-0025: A web search research tool
 
-**Status:** Accepted · **Date:** 2026-10-16 · **Amended:** 2026-10-19 (Wikipedia search removed)
+**Status:** Accepted · **Date:** 2026-10-16 · **Amended:** 2026-10-19 (Wikipedia search removed), 2026-10-25 (web search over Tavily; GDELT becomes `news.search`)
+
+> **Amendment (2026-10-25).** The owner asked for `web.search` to search
+> "normal web information" and chose Tavily, keeping GDELT as a separate
+> tool. Measured before the change (owner's 14 latest dev runs): `web.search`
+> was 96% of all tool time (777 of 810 s) because GDELT answered this machine
+> with HTTP 429 after a ~10 s TLS handshake, so every run spent ~15 s on a
+> search that could not succeed and no run got web results.
+>
+> - **`web.search` = Tavily** (`POST https://api.tavily.com/search`, version
+>   2.0.0): registered only when the runner has `TAVILY_API_KEY` (warning
+>   `web_search_disabled` otherwise). Body
+>   `{"query","search_depth":"basic","max_results":10,"include_published_date":true}`
+>   (one credit per call; Tavily's free plan has 1,000 a month). The key
+>   travels only as `Authorization: Bearer <key>` through the fetcher's fixed
+>   header allowlist; the fetcher gained a narrow JSON-POST option (pinned host
+>   required, body ≤ 64 KiB, never redirected). Each result becomes one
+>   evidence item (`sourceClass` `other`, publisher = the result's host);
+>   its retrieved text is the title plus the provider's snippet (≤ 1,000
+>   characters), still with `retainQuotes` false and `excerpt` null; the
+>   planner sees a 300-character preview. A provider date is kept only when
+>   its meaning cannot depend on the machine's time zone (a date alone, or an
+>   explicit `Z`/`GMT`/`UTC`/offset); otherwise the result is undated.
+>   `costCategory` is `metered`.
+> - **`news.search` = GDELT**, exactly the earlier tool under a new id
+>   (version 1.0.0): headlines only, 5 s spacing, `sourceClass` `news`.
+> - **Escalating outage pause, per provider.** A timeout, network failure,
+>   rate limit or server error (for Tavily: any HTTP status except a rejected
+>   query, 400/422 — a bad key or used-up quota fails every later call too)
+>   pauses that provider: 60 s, doubling on each consecutive outage up to
+>   30 minutes. A well-formed answer ends the escalation; a malformed answer
+>   (e.g. GDELT's plain-text rate-limit notice) neither opens nor ends a pause.
+>   During a pause the call fails at once with `SEARCH_COOLDOWN`, naming the
+>   pause length and pointing at the other search tool.
+> - Both languages implement it; TypeScript transcripts (unit tests plus a
+>   seeded corpus of 200 Tavily and 200 GDELT factories) are replayed by the
+>   Rust tools.
 
 > **Amendment (2026-10-19).** The owner asked to delete the Wikipedia search.
 > `web.search` now queries GDELT only: one request, pinned to

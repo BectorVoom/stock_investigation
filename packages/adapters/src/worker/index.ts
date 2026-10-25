@@ -11,9 +11,11 @@
  *  - the caller's `authorizeRedirect` callback before each redirect hop is
  *    contacted (shared core, so both runtimes honour it; a refusal ends the
  *    fetch with `REDIRECT_NOT_AUTHORIZED`);
- *  - GET only, no cookies, byte and time limits. At most two caller-supplied
- *    headers (`Authorization`, `X-Finnhub-Token`), each sent on the first
- *    request only (the core strips them from every redirect hop).
+ *  - GET, or one JSON POST (`SafeFetchOptions.jsonBody`: allowlisted host
+ *    only, bounded, never redirected — enforced by the core); no cookies,
+ *    byte and time limits. At most two caller-supplied headers
+ *    (`Authorization`, `X-Finnhub-Token`), each sent on the first request
+ *    only (the core strips them from every redirect hop).
  *
  * RESPONSE SIZE — what is and is not bounded here
  *  `fetch` decodes Content-Encoding inside the runtime and exposes only the
@@ -90,7 +92,10 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 		let response: Response;
 		try {
 			response = await doFetch(request.url.href, {
-				method: "GET",
+				// The runtime derives Content-Length from the byte body itself.
+				...(request.jsonBody === null
+					? { method: "GET" }
+					: { method: "POST", body: request.jsonBody }),
 				// The core validates each Location itself; the runtime must not follow anything.
 				redirect: "manual",
 				headers: {
@@ -102,6 +107,7 @@ export function createWorkerSafeFetcher(fetchImpl?: typeof fetch): SafeFetcher {
 					...(request.headers.finnhubToken === null
 						? {}
 						: { "x-finnhub-token": request.headers.finnhubToken }),
+					...(request.jsonBody === null ? {} : { "content-type": "application/json" }),
 				},
 				signal: request.signal,
 			});

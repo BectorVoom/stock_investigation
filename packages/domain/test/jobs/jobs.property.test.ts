@@ -341,7 +341,9 @@ describe("budget properties (AGT-008)", () => {
 				expect(usage.agentSteps).toBeLessThanOrEqual(budget.maxAgentSteps);
 				expect(usage.toolCalls).toBeLessThanOrEqual(budget.maxToolCalls);
 				expect(usage.inputBytes).toBeLessThanOrEqual(budget.maxInputBytes);
-				expect(usage.knownCostUsd).toBeLessThanOrEqual(budget.maxSpendUsd ?? 0);
+				if (budget.maxSpendUsd !== null) {
+					expect(usage.knownCostUsd).toBeLessThanOrEqual(budget.maxSpendUsd);
+				}
 			}),
 			{ numRuns: 300 },
 		);

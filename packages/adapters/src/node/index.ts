@@ -43,6 +43,7 @@ import {
 	type HopOutcome,
 	type HopRequest,
 	type HopTransport,
+	RequestBodySentError,
 } from "../worker/safeFetchCore.ts";
 import {
 	createPinnedHttpsConnect,
@@ -160,9 +161,15 @@ function createNodeHopTransport(overrides: NodeSafeFetcherOverrides): HopTranspo
 					headers: request.headers,
 					maxEncodedBytes: request.maxBytes,
 					signal: request.signal,
+					jsonBody: request.jsonBody,
 				});
 				return toOutcome(response);
 			} catch (error) {
+				// The body may have reached the server: sending it again elsewhere
+				// would repeat a non-idempotent request.
+				if (error instanceof RequestBodySentError) {
+					return { kind: "network-error", detail: describeThrown(error) };
+				}
 				// Typically an unreachable address family; the next validated address may work.
 				lastFailure = describeThrown(error);
 			}

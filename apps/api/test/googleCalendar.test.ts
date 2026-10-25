@@ -666,6 +666,57 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 		expect((await googleState(harness)).status).toBe("connecting");
 	});
 
+	it("requeues a connect whose runner shut down, dropping its dead sign-in link (ADR-0036)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const run = await queueGoogle(harness, "connect");
+		const lease = await claim(harness, token);
+		if (lease?.kind !== "google-calendar") throw new Error("expected a google claim");
+		await harness.runner(token, `/jobs/${lease.runId}/events`, {
+			leaseGeneration: lease.leaseGeneration,
+			events: [
+				{
+					seq: 0,
+					at: harness.time.clock.nowIso(),
+					event: { type: "google-auth-url", url: AUTH_URL },
+				},
+			],
+		});
+		expect((await googleState(harness)).authUrl).toBe(AUTH_URL);
+		const released = await harness.runner(token, `/jobs/${lease.runId}/release`, {
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+		});
+		expect(released.status).toBe(200);
+		expect(await googleState(harness)).toMatchObject({
+			status: "connecting",
+			authUrl: null,
+			activeRunId: run.runId,
+		});
+		// Taken again at once as a fresh claim, not failed as an abandoned sign-in.
+		const again = await claim(harness, token);
+		expect(again).toMatchObject({ kind: "google-calendar", runId: run.runId, attempt: 1 });
+	});
+
+	it("restores the link when a connect with a requested cancel is handed back", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const run = await queueGoogle(harness, "connect");
+		const lease = await claim(harness, token);
+		if (lease?.kind !== "google-calendar") throw new Error("expected a google claim");
+		expect((await harness.call("POST", `/research-runs/${run.runId}/cancel`)).status).toBe(200);
+		const released = await harness.runner(token, `/jobs/${lease.runId}/release`, {
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+		});
+		expect(released.status).toBe(200);
+		expect(await googleState(harness)).toMatchObject({
+			status: "disconnected",
+			activeRunId: null,
+			lastFailure: null,
+		});
+	});
+
 	it("restores a cancelled connect with no failure recorded", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);

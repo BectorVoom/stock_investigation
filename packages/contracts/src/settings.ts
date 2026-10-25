@@ -18,8 +18,8 @@ export const agentSettingsSchema = z
 		models: z.record(agentIdSchema, z.string().trim().min(1).max(100)),
 		effort: effortSchema,
 		/**
-		 * Kept for stored records; only `maxSpendUsd` is the owner's (null = no
-		 * metered spend authorized). Every question runs under RUN_LIMITS.
+		 * Kept for stored records; only `maxSpendUsd` is the owner's optional spending
+		 * cap (null = no cap). Every question runs under RUN_LIMITS.
 		 */
 		budget: researchBudgetSchema,
 		/** Whether the agent may open public web pages (the web.fetch_page tool). */

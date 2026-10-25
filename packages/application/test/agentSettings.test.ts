@@ -109,7 +109,7 @@ describe("agent settings service (section 10)", () => {
 					maxToolCalls: 10,
 					maxWallClockMs: 300_000,
 					maxInputBytes: 200_000,
-					// A stored or carried-over amount is never consent (AGT-012).
+					// Unsaved settings use the default optional spending cap.
 					maxSpendUsd: null,
 				},
 				// Web access stays the default for the owner to review.

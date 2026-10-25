@@ -1,5 +1,7 @@
 # ADR-0033: Scheduled tasks — research questions that run on a schedule
 
+Spending consent and mandatory caps are superseded by [ADR-0035](0035-optional-spending-caps.md).
+
 **Status:** Accepted · **Date:** 2026-10-24 · **Owner request:** "Please
 support Scheduled Tasks widgets like chatgpt function."
 
@@ -54,7 +56,7 @@ Limits: at most **10 active** tasks and **30 tasks** in all
 A task fires **when a runner asks for work**: `POST /runner/jobs/claim`
 first materialises the owner's due tasks, then scans claim candidates as
 before, so a fired task's run is claimed in the same request. The runner
-polls every ≤ 15 s while idle, so a task starts within seconds of its time
+polls every ≤ 1 s while idle, so a task starts within seconds of its time
 while the runner is online and idle; while the runner runs another job, it
 starts when that job ends. Nothing runs while no runner polls — which is
 also when nothing could execute a run. ADR-0004 stands: no scheduled

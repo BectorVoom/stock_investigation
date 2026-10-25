@@ -10,6 +10,8 @@ import type {
 	HeartbeatResponse,
 	HomeDashboard,
 	IngestedArticle,
+	ReleaseJobRequest,
+	ReleaseJobResponse,
 	RunnerEventsRequest,
 	SubscribedSourceRef,
 	WorkspaceComponentSummary,
@@ -25,6 +27,7 @@ import {
 	addDaysIso,
 	checkLease,
 	decideClaim,
+	decideRelease,
 	distinctDashboardSeriesIds,
 	err,
 	isLeasedJobState,
@@ -35,6 +38,7 @@ import {
 	ok,
 	type ResourceUsage,
 	type Result,
+	releasedLeaseView,
 	STOCK_SEARCH_FOLD_VERSION,
 	thrownName,
 	transitionJob,
@@ -93,7 +97,9 @@ export const HEARTBEAT_INTERVAL_MS = 20_000;
 const CLAIM_SCAN_LIMIT = 5;
 const POLL_AFTER_CLAIM_MS = 2_000;
 const POLL_WHEN_BLOCKED_MS = 5_000;
-const POLL_WHEN_IDLE_MS = 15_000;
+// A question can arrive just after an empty claim. Keep its polling wait
+// within one second; the runner still backs off separately on API failures.
+const POLL_WHEN_IDLE_MS = 1_000;
 const CAS_RETRIES = 4;
 /**
  * A completion attempt costs up to ~20 D1 queries (reads, reference lookups and
@@ -857,6 +863,77 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				if (written) return ok({ leaseExpiresAt, cancelRequested: job.cancelRequested });
 			}
 			return fail("CONFLICT", "The run changed concurrently; retry the heartbeat.");
+		},
+
+		/**
+		 * Lease hand-back (ADR-0036): a runner that is shutting down gives the
+		 * lease back instead of letting it run out. The job returns to
+		 * `pending` at once with the claim refunded, so the next runner claims
+		 * it within one poll and an owner's restart never uses up an attempt;
+		 * a job whose cancellation was requested is cancelled instead. The
+		 * runner's usage so far is recorded like an events usage (it only
+		 * grows). Only the holder of the current generation may release; any
+		 * other proof gets the lease check's STALE_LEASE answer.
+		 */
+		async release(
+			runner: RunnerIdentity,
+			runId: string,
+			request: ReleaseJobRequest,
+		): Promise<UseCaseResult<ReleaseJobResponse>> {
+			for (let attempt = 0; attempt < CAS_RETRIES; attempt += 1) {
+				const job = await deps.jobs.get(runner.ownerId, runId);
+				if (job === null) return fail("NOT_FOUND", "Run not found.");
+				const view = leaseView(job);
+				const decision = decideRelease(view, {
+					runnerId: runner.credentialId,
+					leaseGeneration: request.leaseGeneration,
+				});
+				if (!decision.ok) return staleLease(decision.error);
+				const released = releasedLeaseView(view, decision.value);
+				const state = decision.value.kind === "cancel" ? "cancelled" : "pending";
+				const now = deps.clock.nowIso();
+				const written = await deps.jobs.write(runner.ownerId, {
+					runId,
+					expectedVersion: job.version,
+					patch: {
+						state: released.state,
+						attempt: released.attempt,
+						leaseOwnerId: released.leaseOwnerId,
+						leaseExpiresAt: released.leaseExpiresAt,
+						cancelRequested: released.cancelRequested,
+						usage: cumulativeUsage(job.usage, request.usage),
+					},
+					audits: [
+						auditFor(
+							runner,
+							job.state,
+							released.state,
+							state === "cancelled"
+								? "cancel requested; lease released on runner shutdown"
+								: "released on runner shutdown",
+						),
+					],
+					at: now,
+				});
+				if (!written) continue;
+				if (state === "cancelled") {
+					// No runner will complete this run: restore the Google link
+					// row like any other cancel (FR-019 section 2.5).
+					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, now);
+				} else if (
+					job.kind === "google-calendar" &&
+					job.request !== null &&
+					"action" in job.request &&
+					job.request.action === "connect"
+				) {
+					// The sign-in link points at the stopped runner's loopback
+					// port, which nobody listens on any more; the next runner
+					// opens a new sign-in and reports its own link.
+					await deps.googleCalendar.apply(runner.ownerId, { pendingAuthUrl: null }, now);
+				}
+				return ok({ state });
+			}
+			return fail("CONFLICT", "The run changed concurrently; retry the release.");
 		},
 
 		/**

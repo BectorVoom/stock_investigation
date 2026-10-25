@@ -75,6 +75,8 @@ fn runners() -> BTreeMap<&'static str, Runner> {
 		"claimJobResponse" => jobs::ClaimJobResponse,
 		"heartbeatRequest" => jobs::HeartbeatRequest,
 		"heartbeatResponse" => jobs::HeartbeatResponse,
+		"releaseJobRequest" => jobs::ReleaseJobRequest,
+		"releaseJobResponse" => jobs::ReleaseJobResponse,
 		"eventsResponse" => jobs::EventsResponse,
 		"runnerEvent" => jobs::RunnerEvent,
 		"runnerEventsRequest" => jobs::RunnerEventsRequest,

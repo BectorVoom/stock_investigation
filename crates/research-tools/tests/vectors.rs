@@ -84,13 +84,9 @@ impl SafeFetcher for Script {
 			used[index] = true;
 			(index, rows[index].clone())
 		};
-		let actual = json!({"maxBytes":opts.max_bytes,"timeoutMs":opts.timeout_ms,"accept":opts.accept,"allowedHosts":opts.allowed_hosts.as_ref().map(|h|h.iter().collect::<Vec<_>>()),"userAgent":opts.user_agent,"authorizeRedirect":opts.authorize_redirect.is_some()});
+		let actual = json!({"maxBytes":opts.max_bytes,"timeoutMs":opts.timeout_ms,"accept":opts.accept,"allowedHosts":opts.allowed_hosts.as_ref().map(|h|h.iter().collect::<Vec<_>>()),"userAgent":opts.user_agent,"authorizeRedirect":opts.authorize_redirect.is_some(),"authorization":opts.authorization,"jsonBody":opts.json_body});
 		assert_eq!(actual, entry["options"], "fetch {index} {url}");
-		assert!(
-			opts.authorization.is_none()
-				&& opts.finnhub_token.is_none()
-				&& !opts.include_error_body
-		);
+		assert!(opts.finnhub_token.is_none() && !opts.include_error_body);
 		assert!(opts.cancel.is_some());
 		for redirect in entry["redirects"].as_array().unwrap() {
 			let allowed = opts
@@ -220,6 +216,7 @@ async fn transcript(value: Value) {
 			hasher: script.clone(),
 			clock: script.clone(),
 			sleep: script.clone(),
+			tavily_api_key: value["tavilyApiKey"].as_str().map(str::to_owned),
 		}),
 		"web" => create_web_tools(WebToolDeps {
 			fetcher: script.clone(),

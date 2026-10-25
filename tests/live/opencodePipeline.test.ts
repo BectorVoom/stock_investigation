@@ -102,6 +102,7 @@ describe.skipIf(!LIVE)("live OpenCode research pipeline (spends real quota)", ()
 					hasher: webCryptoHasher,
 					clock: systemClock,
 					secUserAgent: null,
+					tavilyApiKey: null,
 					// No page archive: the web tool is not registered, so the run is feed-only.
 					pageArchive: null,
 					sleep: (ms, signal) =>

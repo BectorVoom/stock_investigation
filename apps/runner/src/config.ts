@@ -40,6 +40,18 @@ const configSchema = z.object({
 	/** Finnhub API key for earnings dates (FR-018); without it US stocks are unavailable. */
 	finnhubApiKey: z.string().min(1).nullable(),
 	/**
+	 * Tavily API key for `web.search` (ADR-0025); without it only `news.search`
+	 * is offered. It travels as `Authorization: Bearer <key>`, so it must fit the
+	 * fetcher's header rule (printable ASCII, no spaces).
+	 */
+	tavilyApiKey: z
+		.string()
+		.regex(
+			/^[\x21-\x7e]{8,280}$/,
+			"TAVILY_API_KEY must be 8–280 printable characters without spaces",
+		)
+		.nullable(),
+	/**
 	 * Google OAuth "Desktop app" client (FR-019). Without both, every
 	 * google-calendar job fails honestly with GOOGLE_NOT_CONFIGURED; the
 	 * values never leave this object (never logged, never sent to the API).
@@ -87,6 +99,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
 		fredApiKey: blankToNull(env.FRED_API_KEY),
 		twelveDataApiKey: blankToNull(env.TWELVE_DATA_API_KEY),
 		finnhubApiKey: blankToNull(env.FINNHUB_API_KEY),
+		tavilyApiKey: blankToNull(env.TAVILY_API_KEY),
 		googleOAuthClientId: blankToNull(env.GOOGLE_OAUTH_CLIENT_ID),
 		googleOAuthClientSecret: blankToNull(env.GOOGLE_OAUTH_CLIENT_SECRET),
 		googleTokenFile:

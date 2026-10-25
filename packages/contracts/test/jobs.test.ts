@@ -22,6 +22,8 @@ import {
 	leasedJobStateSchema,
 	MAX_RUNNER_EVENTS_PER_REQUEST,
 	type ResearchBundle,
+	releaseJobRequestSchema,
+	releaseJobResponseSchema,
 	researchBudgetSchema,
 	researchBundleSchema,
 	researchRequestSchema,
@@ -752,6 +754,29 @@ describe("runner protocol: claim", () => {
 		expectRejected(subscribedSourceRefSchema, without(subscribedSource, "licensePolicy"), [
 			"licensePolicy",
 		]);
+	});
+});
+
+describe("runner protocol: lease hand-back (ADR-0036)", () => {
+	const usage = {
+		agentSteps: 2,
+		toolCalls: 1,
+		inputBytes: 4_096,
+		knownCostUsd: 0.25,
+		hasUnmeteredUsage: false,
+	};
+
+	it("accepts a release with its generation and usage, and both answers", () => {
+		expectAccepted(releaseJobRequestSchema, { leaseGeneration: 1, usage });
+		expectAccepted(releaseJobResponseSchema, { state: "pending" });
+		expectAccepted(releaseJobResponseSchema, { state: "cancelled" });
+	});
+
+	it("rejects a release without usage, with a bad generation or extra fields", () => {
+		expectRejected(releaseJobRequestSchema, { leaseGeneration: 1 }, ["usage"]);
+		expectRejected(releaseJobRequestSchema, { leaseGeneration: 0, usage }, ["leaseGeneration"]);
+		expectRejected(releaseJobRequestSchema, { leaseGeneration: 1, usage, attempt: 0 });
+		expectRejected(releaseJobResponseSchema, { state: "claimed" }, ["state"]);
 	});
 });
 

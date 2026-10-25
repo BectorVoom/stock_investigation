@@ -1152,6 +1152,51 @@ impl HeartbeatResponse {
 	}
 }
 
+/// `releaseJobRequestSchema` (ADR-0036): a runner that is shutting down hands
+/// its lease back, with the run's consumption so far.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReleaseJobRequest {
+	/// Lease generation (> 0).
+	pub lease_generation: u64,
+	/// The run's usage so far (AGT-008).
+	pub usage: ResourceUsage,
+}
+
+impl ReleaseJobRequest {
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		decode_object!(cx, input, strict, [], Self {
+			lease_generation: "leaseGeneration" => uint(POSITIVE_INT),
+			usage: "usage" => ResourceUsage::decode,
+		})
+	}
+}
+
+js_enum! {
+	/// The state a hand-back left the job in.
+	pub enum ReleasedJobState {
+		Pending = "pending",
+		Cancelled = "cancelled",
+	}
+}
+
+/// `releaseJobResponseSchema`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReleaseJobResponse {
+	/// `pending` (back in the queue) or `cancelled` (the owner had asked to cancel).
+	pub state: ReleasedJobState,
+}
+
+impl ReleaseJobResponse {
+	/// zod decoder.
+	pub fn decode(cx: &mut Cx, input: Option<&Value>) -> Option<Self> {
+		decode_object!(cx, input, strict, [], Self {
+			state: "state" => ReleasedJobState::decode,
+		})
+	}
+}
+
 /// The events response: `z.object({cancelRequested})`, non-strict — unknown
 /// keys are stripped, not rejected (`apiClient.ts`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

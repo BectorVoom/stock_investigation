@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	checkLease,
 	decideClaim,
+	decideRelease,
 	type JobLeaseView,
 	leaseExpiryIso,
 } from "../../src/jobs/lease.ts";
@@ -199,6 +200,63 @@ describe("checkLease (lease fencing, AGT-011)", () => {
 		expect(checkLease(reclaimed, { runnerId: "runner_a", leaseGeneration: 4 })).toEqual({
 			ok: false,
 			error: "STALE_LEASE",
+		});
+	});
+});
+
+describe("decideRelease (lease hand-back on shutdown, ADR-0036)", () => {
+	const holder = { runnerId: "runner_a", leaseGeneration: 4 };
+
+	it.each(LEASED_JOB_STATES)("requeues a %s job and refunds its claim", (state) => {
+		expect(decideRelease(leased({ state, attempt: 2 }), holder)).toEqual({
+			ok: true,
+			value: { kind: "requeue", nextAttempt: 1 },
+		});
+	});
+
+	it("never refunds below zero attempts", () => {
+		expect(decideRelease(leased({ attempt: 0 }), holder)).toEqual({
+			ok: true,
+			value: { kind: "requeue", nextAttempt: 0 },
+		});
+	});
+
+	it("cancels instead of requeueing when the owner asked to cancel", () => {
+		expect(decideRelease(leased({ cancelRequested: true }), holder)).toEqual({
+			ok: true,
+			value: { kind: "cancel" },
+		});
+	});
+
+	it("is refused for anyone but the current holder, with the lease check's code", () => {
+		expect(decideRelease(leased(), { runnerId: "runner_a", leaseGeneration: 3 })).toEqual({
+			ok: false,
+			error: "STALE_LEASE",
+		});
+		expect(decideRelease(leased(), { runnerId: "runner_b", leaseGeneration: 4 })).toEqual({
+			ok: false,
+			error: "WRONG_RUNNER",
+		});
+		expect(decideRelease(leased({ state: "pending" }), holder)).toEqual({
+			ok: false,
+			error: "NOT_LEASED",
+		});
+	});
+
+	it("leaves a job the next claim takes fresh, and the released proof dead", () => {
+		const released = leased({
+			state: "pending",
+			attempt: 0,
+			leaseOwnerId: null,
+			leaseExpiresAt: null,
+		});
+		expect(checkLease(released, holder)).toEqual({ ok: false, error: "NOT_LEASED" });
+		expect(decideRelease(released, holder)).toEqual({ ok: false, error: "NOT_LEASED" });
+		expect(decideClaim(released, NOW_MS)).toEqual({
+			kind: "claim",
+			reason: "fresh",
+			nextAttempt: 1,
+			nextLeaseGeneration: 5,
 		});
 	});
 });

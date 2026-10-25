@@ -26,8 +26,8 @@ use research_contracts::agent::{
 };
 use research_contracts::jobs::{
 	ClaimJobResponse, ClaimedJob, CompleteJobRequest, CompleteJobResponse, EMPTY_USAGE,
-	EventsResponse, GoogleCalendarJob, HeartbeatResponse, ResourceUsage, RunnerEventBody,
-	RunnerEventsRequest,
+	EventsResponse, GoogleCalendarJob, HeartbeatResponse, ReleaseJobRequest, ReleaseJobResponse,
+	ReleasedJobState, ResourceUsage, RunnerEventBody, RunnerEventsRequest,
 };
 use research_contracts::{Tri, parse};
 use research_domain::jobs::state_machine::JobState;
@@ -72,6 +72,7 @@ struct ApiScript {
 	heartbeat: Vec<Scripted<HeartbeatResponse>>,
 	events: Vec<Scripted<EventsResponse>>,
 	complete: Vec<Scripted<CompleteJobResponse>>,
+	release: Vec<Scripted<ReleaseJobResponse>>,
 }
 
 #[derive(Default, Clone)]
@@ -80,6 +81,7 @@ struct ApiCalls {
 	heartbeats: Vec<u64>,
 	events: Vec<RunnerEventsRequest>,
 	completions: Vec<CompleteJobRequest>,
+	releases: Vec<ReleaseJobRequest>,
 }
 
 /// In-memory Worker stand-in that records every runner call and plays scripted answers.
@@ -180,6 +182,20 @@ impl RunnerApi for FakeApi {
 	) -> RunnerApiResult<CompleteJobResponse> {
 		self.calls.lock().unwrap().completions.push(request.clone());
 		next(&mut self.script.lock().unwrap().complete, Ok(completed()))
+	}
+
+	async fn release_lease(
+		&self,
+		_run_id: &str,
+		request: &ReleaseJobRequest,
+	) -> RunnerApiResult<ReleaseJobResponse> {
+		self.calls.lock().unwrap().releases.push(request.clone());
+		next(
+			&mut self.script.lock().unwrap().release,
+			Ok(ReleaseJobResponse {
+				state: ReleasedJobState::Pending,
+			}),
+		)
 	}
 
 	async fn renew_credential(
@@ -788,12 +804,12 @@ fn idle(poll_after_ms: u64) -> Scripted<ClaimJobResponse> {
 #[tokio::test]
 async fn the_loop_follows_the_servers_poll_hint_when_idle_and_never_polls_faster() {
 	let api = FakeApi::new(ApiScript {
-		claim: vec![idle(15_000)],
+		claim: vec![idle(1_000), idle(5_000), idle(15_000)],
 		..ApiScript::default()
 	});
 	let (exit, sleeps, harness) = run_loop(&api, 3).await;
 	assert_eq!(exit, RunnerExit::Shutdown);
-	assert_eq!(sleeps, [15_000, 15_000, 15_000]);
+	assert_eq!(sleeps, [1_000, 5_000, 15_000]);
 	assert_eq!(api.calls().claim, 3);
 	// The probe is logged once, before the first claim.
 	assert_eq!(
@@ -1061,6 +1077,8 @@ async fn submits_nothing_once_the_lease_is_lost() {
 		)
 		.await;
 		assert!(api.calls().completions.is_empty(), "{lost_via}");
+		// A lost lease is not ours to hand back (ADR-0036).
+		assert!(api.calls().releases.is_empty(), "{lost_via}");
 		assert_eq!(
 			harness.scratch.removed.lock().unwrap().len(),
 			1,
@@ -1091,11 +1109,70 @@ async fn abandons_the_job_on_shutdown_without_completing_it() {
 		},
 	);
 	execute_job(research_job(), Arc::clone(&harness.deps), shutdown).await;
-	assert!(api.calls().completions.is_empty());
+	let calls = api.calls();
+	assert!(calls.completions.is_empty());
+	// ADR-0036: the lease is handed back with the usage so far, which the
+	// unflushed event queue would otherwise lose.
+	assert_eq!(calls.releases.len(), 1);
+	assert_eq!(calls.releases[0].lease_generation, 3);
+	assert!(
+		calls.releases[0].usage.agent_steps >= 1,
+		"{:?}",
+		calls.releases[0]
+	);
 	assert_eq!(harness.scratch.removed.lock().unwrap().len(), 1);
-	assert!(harness.log.lines().iter().any(|line| {
-		line.contains(r#""event":"job_abandoned","runId":"run_test","reason":"shutdown""#)
-	}));
+	let lines = harness.log.lines();
+	let released = lines
+		.iter()
+		.position(|line| {
+			line.contains(r#""event":"job_released","runId":"run_test","state":"pending""#)
+		})
+		.expect("job_released");
+	let abandoned = lines
+		.iter()
+		.position(|line| {
+			line.contains(r#""event":"job_abandoned","runId":"run_test","reason":"shutdown""#)
+		})
+		.expect("job_abandoned");
+	assert!(released < abandoned);
+}
+
+#[tokio::test]
+async fn a_refused_release_is_logged_and_the_job_is_still_abandoned() {
+	for (reply, expected) in [
+		(
+			api_failure("STALE_LEASE", false),
+			r#""event":"release_failed","runId":"run_market","code":"STALE_LEASE""#,
+		),
+		(
+			Ok(ReleaseJobResponse {
+				state: ReleasedJobState::Cancelled,
+			}),
+			r#""event":"job_released","runId":"run_market","state":"cancelled""#,
+		),
+	] {
+		let shutdown = CancellationToken::new();
+		shutdown.cancel();
+		let api = FakeApi::new(ApiScript {
+			release: vec![reply],
+			..ApiScript::default()
+		});
+		let harness = harness(Arc::clone(&api), Options::default());
+		execute_job(market_job(&[], 20_000), Arc::clone(&harness.deps), shutdown).await;
+		let calls = api.calls();
+		assert!(calls.completions.is_empty(), "{expected}");
+		assert_eq!(calls.releases.len(), 1, "{expected}");
+		let lines = harness.log.lines();
+		assert!(
+			lines.iter().any(|line| line.contains(expected)),
+			"{lines:?}"
+		);
+		assert!(
+			lines.iter().any(|line| line
+				.contains(r#""event":"job_abandoned","runId":"run_market","reason":"shutdown""#)),
+			"{lines:?}"
+		);
+	}
 }
 
 #[tokio::test]
@@ -1105,7 +1182,10 @@ async fn shutdown_requested_before_the_job_starts_stops_it_immediately() {
 	let api = FakeApi::new(ApiScript::default());
 	let harness = harness(Arc::clone(&api), Options::default());
 	execute_job(market_job(&[], 20_000), Arc::clone(&harness.deps), shutdown).await;
-	assert!(api.calls().completions.is_empty());
+	let calls = api.calls();
+	assert!(calls.completions.is_empty());
+	assert_eq!(calls.releases.len(), 1);
+	assert_eq!(calls.releases[0].lease_generation, 5);
 	assert_eq!(harness.scratch.removed.lock().unwrap().len(), 1);
 }
 
@@ -1734,14 +1814,21 @@ async fn shutdown_cancels_an_events_request_in_flight_and_completes_nothing() {
 	});
 	let started = std::time::Instant::now();
 	execute_job(market_job(&[], 20_000), Arc::clone(&harness.deps), shutdown).await;
+	// The events request is cancelled at once; the only request sent after
+	// shutdown is the lease hand-back (ADR-0036), which an unanswering
+	// Worker gets 2 s for — still well inside the launcher's 8 s grace.
+	let elapsed = started.elapsed();
 	assert!(
-		started.elapsed() < Duration::from_secs(2),
-		"{:?}",
-		started.elapsed()
+		elapsed >= Duration::from_secs(2) && elapsed < Duration::from_secs(4),
+		"{elapsed:?}"
 	);
 	let seen = worker.requests();
-	assert_eq!(seen.len(), 1);
+	assert_eq!(seen.len(), 2);
 	assert!(seen[0].path.ends_with("/events"));
+	assert!(seen[1].path.ends_with("/jobs/run_market/release"));
+	assert!(harness.log.lines().iter().any(|line| {
+		line.contains(r#""event":"release_failed","runId":"run_market","code":"TIMEOUT""#)
+	}));
 	assert_eq!(harness.scratch.removed.lock().unwrap().len(), 1);
 }
 
@@ -2155,6 +2242,20 @@ async fn golden_outgoing_payloads_are_current() {
 		name: "heartbeat-request".to_owned(),
 		schema: "heartbeatRequest",
 		body: wire(&crate::api_client::heartbeat_request(3)),
+	});
+	out.push(Golden {
+		name: "release-request".to_owned(),
+		schema: "releaseJobRequest",
+		body: wire(&ReleaseJobRequest {
+			lease_generation: 3,
+			usage: ResourceUsage {
+				agent_steps: 2,
+				tool_calls: 1,
+				input_bytes: 4_096,
+				known_cost_usd: 0.25,
+				has_unmetered_usage: true,
+			},
+		}),
 	});
 
 	/* a completed research run: events and the completion */

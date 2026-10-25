@@ -5965,7 +5965,7 @@
 					}
 				},
 				"elapsedMs": 724564,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 11,
 					"toolCalls": 19,
@@ -8305,7 +8305,7 @@
 					}
 				},
 				"elapsedMs": 608600,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 9,
@@ -8329,7 +8329,7 @@
 					}
 				},
 				"elapsedMs": 1241182,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 9,
@@ -8377,7 +8377,7 @@
 					}
 				},
 				"elapsedMs": 1470427,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 14,
@@ -8557,7 +8557,7 @@
 					}
 				},
 				"elapsedMs": 130789,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 8,
 					"toolCalls": 10,
@@ -20023,7 +20023,7 @@
 					}
 				},
 				"elapsedMs": 32834,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 7,
 					"toolCalls": 21,
@@ -22549,7 +22549,7 @@
 					}
 				},
 				"elapsedMs": 952916,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 3,
 					"toolCalls": 7,
@@ -25177,7 +25177,7 @@
 					}
 				},
 				"elapsedMs": 82333,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 36,
@@ -25201,7 +25201,7 @@
 					}
 				},
 				"elapsedMs": 860689,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 36,
@@ -30379,7 +30379,7 @@
 					}
 				},
 				"elapsedMs": 797382,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 21,
@@ -31045,7 +31045,7 @@
 					}
 				},
 				"elapsedMs": 979522,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 1,
 					"toolCalls": 5,
@@ -31069,7 +31069,7 @@
 					}
 				},
 				"elapsedMs": 846092,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 1,
 					"toolCalls": 5,
@@ -32329,7 +32329,7 @@
 					}
 				},
 				"elapsedMs": 989705,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 9,
 					"toolCalls": 19,
@@ -34789,7 +34789,7 @@
 					}
 				},
 				"elapsedMs": 613647,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 11,
 					"toolCalls": 16,
@@ -40831,7 +40831,7 @@
 					}
 				},
 				"elapsedMs": 110727,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 6,
 					"toolCalls": 12,
@@ -40921,7 +40921,7 @@
 					}
 				},
 				"elapsedMs": 130817,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 21,
@@ -43237,7 +43237,7 @@
 					}
 				},
 				"elapsedMs": 146673,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 2,
@@ -46975,7 +46975,7 @@
 					}
 				},
 				"elapsedMs": 1013708,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 9,
 					"toolCalls": 27,
@@ -55771,7 +55771,7 @@
 					}
 				},
 				"elapsedMs": 203082,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 3,
 					"toolCalls": 42,
@@ -55909,7 +55909,7 @@
 					}
 				},
 				"elapsedMs": 1161431,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 12,
 					"toolCalls": 4,
@@ -57685,7 +57685,7 @@
 					}
 				},
 				"elapsedMs": 729688,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 1,
@@ -58807,7 +58807,7 @@
 					}
 				},
 				"elapsedMs": 264022,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 3,
 					"toolCalls": 17,
@@ -60487,7 +60487,7 @@
 					}
 				},
 				"elapsedMs": 720388,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 5,
 					"toolCalls": 3,
@@ -60511,7 +60511,7 @@
 					}
 				},
 				"elapsedMs": 371797,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 5,
 					"toolCalls": 3,
@@ -60535,7 +60535,7 @@
 					}
 				},
 				"elapsedMs": 1637745,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 5,
 					"toolCalls": 3,
@@ -64621,7 +64621,7 @@
 					}
 				},
 				"elapsedMs": 55084,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 26,
@@ -67795,7 +67795,7 @@
 					}
 				},
 				"elapsedMs": 383690,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 0,
 					"toolCalls": 28,
@@ -67843,7 +67843,7 @@
 					}
 				},
 				"elapsedMs": 646292,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 2,
 					"toolCalls": 29,
@@ -68131,7 +68131,7 @@
 					}
 				},
 				"elapsedMs": 1456339,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 0,
@@ -74059,7 +74059,7 @@
 					}
 				},
 				"elapsedMs": 1407815,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 3,
 					"toolCalls": 22,
@@ -74083,7 +74083,7 @@
 					}
 				},
 				"elapsedMs": 1235062,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 3,
 					"toolCalls": 22,
@@ -74299,7 +74299,7 @@
 					}
 				},
 				"elapsedMs": 1532416,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 10,
 					"toolCalls": 16,
@@ -76591,7 +76591,7 @@
 					}
 				},
 				"elapsedMs": 1243275,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 9,
 					"toolCalls": 6,
@@ -76615,7 +76615,7 @@
 					}
 				},
 				"elapsedMs": 140809,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 9,
 					"toolCalls": 6,
@@ -79879,7 +79879,7 @@
 					}
 				},
 				"elapsedMs": 589608,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 4,
 					"toolCalls": 6,
@@ -83311,7 +83311,7 @@
 					}
 				},
 				"elapsedMs": 906785,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 11,
 					"toolCalls": 29,
@@ -84379,7 +84379,7 @@
 					}
 				},
 				"elapsedMs": 721038,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 6,
 					"toolCalls": 8,
@@ -85069,7 +85069,7 @@
 					}
 				},
 				"elapsedMs": 139052,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 2,
 					"toolCalls": 13,
@@ -85399,7 +85399,7 @@
 					}
 				},
 				"elapsedMs": 98888,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 11,
 					"toolCalls": 4,
@@ -86641,7 +86641,7 @@
 					}
 				},
 				"elapsedMs": 630807,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 5,
 					"toolCalls": 30,
@@ -95701,7 +95701,7 @@
 					}
 				},
 				"elapsedMs": 638030,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 2,
 					"toolCalls": 46,
@@ -95725,7 +95725,7 @@
 					}
 				},
 				"elapsedMs": 854854,
-				"limit": "MAX_SPEND",
+				"limit": null,
 				"after": {
 					"agentSteps": 2,
 					"toolCalls": 46,

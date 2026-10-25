@@ -1,0 +1,833 @@
+{
+	"schema": "releaseJobResponse",
+	"cases": [
+		{
+			"input": "{\"state\":\"pending\"}",
+			"valid": true,
+			"output": "{\"state\":\"pending\"}"
+		},
+		{
+			"input": "null",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received null"
+				}
+			]
+		},
+		{
+			"input": "[]",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received array"
+				}
+			]
+		},
+		{
+			"input": "\"x\"",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_type",
+					"path": [],
+					"message": "Invalid input: expected object, received string"
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":null}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":[\"x\"]}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":{\"length\":1}}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"WRONG-VALUE\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"PENDING\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\tpending\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\npending\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\u000bpending\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\fpending\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\rpending\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" pending \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"　pending　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"﻿pending﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"​pending​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"᠎pending᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pendinga\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pendingé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pending😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"pendin\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelled\"}",
+			"valid": true,
+			"output": "{\"state\":\"cancelled\"}"
+		},
+		{
+			"input": "{\"state\":\"cancelled\",\"zzUnknownKey\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"zzUnknownKey\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelled\",\"__proto__\":1}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "unrecognized_keys",
+					"path": [],
+					"message": "Unrecognized key: \"__proto__\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"CANCELLED\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelled\\u0000\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\tcancelled\\t\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\ncancelled\\n\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\u000bcancelled\\u000b\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\fcancelled\\f\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"\\rcancelled\\r\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\" cancelled \"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"　cancelled　\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"﻿cancelled﻿\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelled\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"​cancelled​\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"᠎cancelled᠎\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelleda\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelledé\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelled😀\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		},
+		{
+			"input": "{\"state\":\"cancelle\"}",
+			"valid": false,
+			"issues": [
+				{
+					"code": "invalid_value",
+					"path": [
+						"state"
+					],
+					"message": "Invalid option: expected one of \"pending\"|\"cancelled\""
+				}
+			]
+		}
+	]
+}

@@ -17,7 +17,7 @@ exactly that.
 | 1 | "Assume that switching the database to another DB will work without any issues." | **Partial** | Persistence behind two seams (ADR-0008): the app depends on the `Persistence` ports bundle, the SQL repositories run on the narrow `SqlDatabase` driver interface. The same API suite passes on D1 (workerd project) and on `node:sqlite` (api-sqlite project). | `vitest.config.ts` (`workers` + `api-sqlite` projects), `packages/adapters/src/sql/`, `packages/adapters/src/sqlite/`, `docs/OPERATIONS.md` ("Switching the database") | The second engine is SQLite through `node:sqlite`; a non-SQLite database needs a new adapter (a new `SqlDatabase` for another SQLite dialect, or the `Persistence` ports for a non-SQLite store). Data migration between engines is not provided — move rows by exporting each workspace as JSON and re-importing. So a switch is NOT without issues. |
 | 2 | "Retain chat history." | **Met** | Conversations persist in D1: paged message history (`GET /api/v1/workspaces/:id/messages` with `before`/`limit`, `hasEarlier`), one summary per workspace (`GET /api/v1/conversations`), survival across reloads. | API tests, `tests/e2e/research.spec.ts` (reload test) | — |
 | 3 | "Create a page where chat is the main feature." / "Please modify chat page like copilotkit." | **Met** | Chat is the default page (`#/chat`), the CopilotKit-like surface (centred column, owner bubbles, inline run cards, pinned rounded composer, starter suggestions) is specified in `docs/DESIGN_GUIDELINE.md` section 12 and reviewed in `docs/UI_review.md`. Agent choices are not made on the page — they are chosen once in Settings → AI agent. | `apps/web/src/pages.ts`, `docs/PAGES.md`, `tests/architecture/pagesDoc.test.ts`, `tests/ui-review/` | — |
-| 4 | "Have the AI agent access web pages and convert the retrieved data into Markdown files." | **Met** (mechanism) | The `web.fetch_page` research tool (ADR-0009): one https page per call, robots.txt honoured before every hop, archived as Markdown with front matter under `data/pages/` (or `data-dev/pages/`), gated by the request's `webAccess`. The `web.search` research tool (ADR-0025) discovers pages for it: short keyword queries over GDELT news, pinned to that host under the same gate, headlines only. | `packages/adapters/test/tools/webTools.test.ts`, `robotsPolicy.test.ts`, `packages/adapters/test/tools/searchTools.test.ts`, `tests/real/live.spec.ts` (archived `https://example.com/` with title and article-first body on 2026-10-12) | No JavaScript rendering (pages needing a browser come back empty/partial), HTML/XHTML/plain text only, publication dates unknown (ADR-0009 "What is NOT done"); search is GDELT recent news only (ADR-0025; Wikipedia search removed 2026-10-19). |
+| 4 | "Have the AI agent access web pages and convert the retrieved data into Markdown files." | **Met** (mechanism) | The `web.fetch_page` research tool (ADR-0009): one https page per call, robots.txt honoured before every hop, archived as Markdown with front matter under `data/pages/` (or `data-dev/pages/`), gated by the request's `webAccess`. Two search tools (ADR-0025) discover pages for it under the same gate: `web.search` over the whole web (Tavily, with `TAVILY_API_KEY`, result snippets kept) and `news.search` over GDELT news (headlines only), each pinned to its provider's host. | `packages/adapters/test/tools/webTools.test.ts`, `robotsPolicy.test.ts`, `packages/adapters/test/tools/searchTools.test.ts`, `tests/real/live.spec.ts` (archived `https://example.com/` with title and article-first body on 2026-10-12) | No JavaScript rendering (pages needing a browser come back empty/partial), HTML/XHTML/plain text only, publication dates unknown (ADR-0009 "What is NOT done"); search is GDELT recent news only (ADR-0025; Wikipedia search removed 2026-10-19). |
 | 5 | "Design the system to minimize data volume when sending data to the API." | **Partial** | Planning prompts show each tool output once then as digests (76,000-byte ceiling, fail closed); evidence pack dedupes by checksum; polled routes use conditional 304s; conversation context and previews are bounded (ADR-0010). Measured on the ADR-0010 scenario: total 139,385 bytes after vs 207,200 before (67.3%). | ADR-0010, `packages/application/test/promptVolume.test.ts`, `packages/application/test/prompts.test.ts` | The 60% target set for the scenario was not met (67.3%); the remaining repetition is load-bearing (previous step's full output shown once; every unique evidence item kept citable). |
 | 6 | "Conduct happy-path testing for OpenCode." | **Partial** | Three levels, all passing with the Go-plan model `opencode-go/muse-spark-1.3-contributor` (`opencode` v2.0.27): adapter smoke, pipeline (`tests/live/opencodePipeline.test.ts`), whole application (`tests/e2e/opencodeLive.spec.ts`, completed runs with claims, source links, unknown-not-$0 cost, reload stability); plus an adapter smoke case for the free-tier model `opencode/muse-spark-1.3-contributor-free` through the ask-and-reject config (ADR-0012). | "OpenCode happy path (2026-10-12)" above; `bun run test:live:opencode` | Verified with the Go-plan model end to end; the free-tier model is covered by the adapter smoke case only (a turn in which it tries a tool fails with `PROVIDER_TOOL_CALL_REJECTED`). Not an evaluation of research quality ("AI evaluation" below: not done). |
 | 7 | "Consolidate AI agent settings by creating an AI agent section on the settings page." / "Please move Agent backend to settings from Chat." / "User do not know opencode go plan model, so use selector." / "Please modify to be able to use selector for selecting codex and claude model. User do not know model id." | **Met** (mechanism) | Settings → AI agent is the one place for default backend, model, effort, per-question limits and web access (`apps/web/src/settings/AgentSettingsSection.tsx`); the Chat composer only shows a read-only summary. The model is a `<select>` of runner-reported models with an "Other — type a model id" escape hatch and a free-tier caution. Codex reports its model-picker catalog (`codex debug models`, newest first) and Claude Code its `--model` aliases, shown as "Opus (latest)" and so on (2026-10-19; real probes of both CLIs in both runners: `cargo test -p research-runner --test process -- --ignored`). The section re-reads `/api/v1/agents` while open on visibility-aware polling (conditional 304s; a changed answer updates the selector without touching the draft). Spend consent is consumed at dispatch (identical resend allowed; any change needs fresh consent). | `apps/web/test/agentSettings.test.tsx`, `apps/web/test/Composer.test.tsx`, `tests/e2e/opencodeLive.spec.ts` (selector path) | The spend-consent fix (consent consumed at dispatch) is covered by scripted tests only — no metered backend is configured on the development machine (OpenRouter reports `NOT_CONFIGURED`), so the consent checkbox cannot be exercised live. A real owner who opens Settings before the runner's first report sees "Waiting for the runner to report its models…" until the next poll delivers it. |
@@ -174,3 +174,86 @@ machine is re-run quiet before it counts.
 ## Deliberately out of scope (per §1)
 
 Order placement, brokerage credentials, multi-user features, autonomous code editing, unbounded crawling, streaming / real-time market feeds (end-of-day and periodic series retrieved on request are in scope, FR-017), self-hosted inference.
+
+
+## Optional spending caps — 2026-10-24
+
+[ADR-0035](adr/0035-optional-spending-caps.md) supersedes the spending-consent
+requirements described in earlier verification records above. Chat, retries,
+approvals, scheduled occurrences and Run now accept metered backends without a
+spending cap or task consent. Explicit caps and the other resource limits remain
+enforced in both runners. Legacy consent fields remain readable.
+
+Verification: the main Vitest suite passed (6,147 tests, 15 opt-in skips), with
+additional targeted API/task regressions for uncapped metered retries and Run
+now; Lean 4 proofs and 1,536 capped/uncapped budget vectors passed; Rust
+workspace tests passed after rebuilding stale artifacts from a removed
+worktree; the build, lint, typecheck, vector checks and benchmark
+budgets passed. Chrome’s full scripted UI review and WebKit’s Chat/Tasks review
+passed; their screenshots were inspected. The remaining automated findings
+were advisory target/heading/visibility findings; no new blocked primary action
+was found in the changed forms. Firefox could not launch
+because the installed browser reported “Could not find profile folder,” also
+when retried with `TMPDIR=/tmp`. No live paid-model test was enabled for this
+change: the live backend/model opt-in was absent. Network-only checks do not
+establish the paid-model positive path, which remains unverified for this change.
+
+
+Real-environment run: `bun run test:real` exercised the real Rust runner with
+throwaway development/production data, including live feed and market data,
+rebuild/rollback, side-by-side launchers, and fresh/upgraded task scheduling.
+Live model tests were skipped (no model selected). One upgraded-task browser
+cleanup reported an ENOENT for a Playwright network trace even though the test
+passed; this artifact-cleanup limitation is recorded rather than counted as a
+clean run. A benchmark run during concurrent builds exceeded the unrelated
+Home view-model budget (30.7 ms / 25 ms); the follow-up run passed (12.6 ms).
+
+
+Final `bun run test:real` result: **11 passed, 12 skipped, 1 failed** (17.2 min).
+The failure was `watchlistUpgrade.spec.ts` during `browserContext.close` and
+trace finalization: the `.network` and `.zip` files beneath
+`test-results-real/.playwright-artifacts-0/` were missing (ENOENT). There was
+no reported application assertion failure. This broader suite is not recorded
+as passing; the trace-artifact failure remains an environment/test-harness
+limitation. Chrome and WebKit reviews completed successfully; Firefox remained
+unverified because its browser process could not create/open its profile.
+
+
+### Collection latency validation (2026-10-24)
+
+Collection now stops after at most three planning rounds per attempt and
+reuses identical successful requests. See
+[research performance validation](RESEARCH_API_PERFORMANCE.md) for scope and
+tradeoffs. All 299 application tests and the Rust workspace tests passed.
+The isolated real Rust development feed/restart test passed (43.0 s).
+
+Live chat attempt: `RUN_LIVE_AGENT=claude-code bunx playwright test --config
+tests/real/playwright.config.ts live.spec.ts -g
+'fresh state: notice|upgraded state: a run'` (CLI default model). The fresh
+research run failed with `PROVIDER_RATE_LIMITED` on all three attempts,
+before collection. The suite was interrupted after confirming the terminal
+failure; its serial upgraded-state case did not run. These chat positive
+paths and end-to-end latency remain unverified.
+
+
+### Research speed: profile, lease hand-back, web search (2026-10-25)
+
+The owner asked to speed up collecting and analyzing and to profile it.
+`bun run profile:runs` showed, over 14 development runs, 42% of wall time
+lost to runner restarts (lease expiry, then a full restart) and 96% of tool
+time in a GDELT search that answered HTTP 429. Owner choices: keep the
+Settings effort for every model step; hand the lease back on shutdown
+([ADR-0036](adr/0036-runner-releases-lease-on-shutdown.md)); `web.search`
+over Tavily with GDELT kept as `news.search`
+([ADR-0025 amendment](adr/0025-web-search-research-tool.md)). Details and
+measurements: [research performance](RESEARCH_API_PERFORMANCE.md).
+
+Verified: Lean proofs and 1,152 `decideRelease` vectors replayed in both
+languages; API release tests on real local D1 and SQLite; both runners'
+release paths; a real SIGTERM of each runner during a claimed job in an
+isolated dev launcher (released within 25 ms, re-claimed at attempt 1 and
+completed); `devReal.spec.ts`; search tools in both languages with 425
+replayed transcripts; the real `api.tavily.com` reached by both runners'
+fetchers (HTTP 401 without a key in 0.8–1.3 s). Not verified: a research run
+with a real `TAVILY_API_KEY` and a real model, and an interrupted chat
+research run with a real agent.

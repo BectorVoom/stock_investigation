@@ -24,7 +24,8 @@ use research_domain::jobs::budget::{
 	CostReport, ResearchBudget, ResourceUsage, UsageDelta, check_budget,
 };
 use research_domain::jobs::lease::{
-	ClaimDecision, ClaimReason, JobLeaseView, LeaseProof, check_lease, decide_claim,
+	ClaimDecision, ClaimReason, JobLeaseView, LeaseProof, ReleaseDecision, check_lease,
+	decide_claim, decide_release, released_lease_view,
 };
 use research_domain::jobs::state_machine::{
 	JOB_STATES, JobState, LEASED_JOB_STATES, TERMINAL_JOB_STATES,
@@ -180,6 +181,66 @@ fn check_lease_matches_the_model() {
 	}
 }
 
+fn release_json(decision: ReleaseDecision) -> Value {
+	match decision {
+		ReleaseDecision::Requeue { next_attempt } => {
+			serde_json::json!({ "kind": "requeue", "nextAttempt": next_attempt })
+		}
+		ReleaseDecision::Cancel => serde_json::json!({ "kind": "cancel" }),
+	}
+}
+
+#[test]
+fn decide_release_matches_the_model() {
+	let cases = family("decideRelease");
+	assert!(cases.len() > 1000);
+	for case in cases {
+		let job = JobLeaseView {
+			state: state(&case["state"]),
+			lease_generation: nat(&case["leaseGeneration"]),
+			lease_owner_id: case["leaseOwner"]
+				.as_u64()
+				.map(|owner| format!("runner-{owner}")),
+			lease_expires_at: Some(FUTURE.to_owned()),
+			attempt: nat(&case["attempt"]),
+			max_attempts: 3,
+			cancel_requested: case["cancelRequested"].as_bool().unwrap(),
+		};
+		let proof = LeaseProof {
+			runner_id: format!("runner-{}", nat(&case["runner"])),
+			lease_generation: nat(&case["proofGeneration"]),
+		};
+		match decide_release(&job, &proof) {
+			Err(error) => {
+				assert_eq!(
+					serde_json::json!({ "kind": "rejected", "error": error.as_str() }),
+					case["decision"],
+					"{case}"
+				);
+				assert!(case["releasedState"].is_null(), "{case}");
+			}
+			Ok(decision) => {
+				assert_eq!(release_json(decision), case["decision"], "{case}");
+				let released = released_lease_view(&job, decision);
+				assert_eq!(
+					released.state.as_str(),
+					case["releasedState"].as_str().unwrap(),
+					"{case}"
+				);
+				assert_eq!(released.lease_generation, job.lease_generation, "{case}");
+				let check =
+					check_lease(&released, &proof).map_or_else(|error| error.as_str(), |()| "OK");
+				assert_eq!(check, case["releasedCheck"].as_str().unwrap(), "{case}");
+				assert_eq!(
+					decision_json(decide_claim(&released, NOW_MS)),
+					case["releasedClaim"],
+					"{case}"
+				);
+			}
+		}
+	}
+}
+
 #[test]
 fn check_budget_matches_the_model() {
 	let budget = &vectors()["budget"];
@@ -192,8 +253,12 @@ fn check_budget_matches_the_model() {
 		max_spend_usd: limits["maxSpendUsd"].as_f64(),
 	};
 	let cases = budget["vectors"].as_array().unwrap();
-	assert_eq!(cases.len(), 768);
+	assert_eq!(cases.len(), 1536);
 	for case in cases {
+		let limits = ResearchBudget {
+			max_spend_usd: case["maxSpendUsd"].as_f64(),
+			..limits
+		};
 		let usage = &case["usage"];
 		let next = &case["next"];
 		let usage = ResourceUsage {

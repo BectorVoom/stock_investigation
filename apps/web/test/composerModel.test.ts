@@ -168,23 +168,22 @@ describe("composer evaluation", () => {
 		expect(chosen.request?.model).toBe("provider/model");
 	});
 
-	it("cannot submit to a metered backend without a stored spend limit", () => {
+	it("submits to a metered backend without a stored spend limit", () => {
 		const result = evaluateComposer(
-			draft({ spendConsent: true }),
+			draft(),
 			AGENTS,
 			settings({ defaultAgentId: "openrouter", models: { openrouter: "provider/model" } }),
 			WORKSPACE_ID,
 			composerMessages.en,
 			agentSettingsModelMessages.en,
 		);
-		expect(result.request).toBeNull();
+		expect(result.request?.budget.maxSpendUsd).toBeNull();
+		expect(result.request?.agentId).toBe("openrouter");
 		expect(result.spendConsentRequired).toBe(false);
-		expect(result.problems).toContain(
-			"A metered backend needs a maximum spend greater than 0 USD — set it in Settings → AI agent.",
-		);
+		expect(result.problems).toEqual([]);
 	});
 
-	it("requires the one-time consent on the form for a metered run", () => {
+	it("accepts a metered run regardless of the legacy consent field", () => {
 		const unconsented = evaluateComposer(
 			draft(),
 			AGENTS,
@@ -193,9 +192,9 @@ describe("composer evaluation", () => {
 			composerMessages.en,
 			agentSettingsModelMessages.en,
 		);
-		expect(unconsented.request).toBeNull();
-		expect(unconsented.spendConsentRequired).toBe(true);
-		expect(unconsented.problems).toEqual(["Confirm consent to metered spend on the form itself."]);
+		expect(unconsented.request?.budget.maxSpendUsd).toBe(3);
+		expect(unconsented.spendConsentRequired).toBe(false);
+		expect(unconsented.problems).toEqual([]);
 
 		const consented = evaluateComposer(
 			draft({ spendConsent: true }),

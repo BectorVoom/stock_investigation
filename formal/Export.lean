@@ -89,6 +89,47 @@ def checkLeaseVectors : List String := Id.run do
               ("result", jsonStr (leaseCheckName (checkLease job runner proofGeneration)))] :: out
   return out.reverse
 
+def releaseDecisionJson : ReleaseDecision → String
+  | .requeue a => jsonObj [("kind", jsonStr "requeue"), ("nextAttempt", jsonNat a)]
+  | .cancel => jsonObj [("kind", jsonStr "cancel")]
+  | .rejected c => jsonObj [("kind", jsonStr "rejected"), ("error", jsonStr (leaseCheckName c))]
+
+/--
+`decideRelease` over every state, owner, generation, presenting runner, proof
+generation, attempt and cancel bit. For a granted hand-back the vector also
+records what the released job then answers: the presenting proof's lease
+check, and the next claim's decision.
+-/
+def decideReleaseVectors : List String := Id.run do
+  let mut out := []
+  for state in JobState.all do
+    for owner in [none, some 1] do
+      for generation in [1, 2] do
+        for runner in [1, 2] do
+          for proofGeneration in [1, 2] do
+            for attempt in [0, 1, 3] do
+              for cancelRequested in [true, false] do
+                let job : Job :=
+                  { state, generation, owner, leaseExpired := false, attempt, maxAttempts := 3,
+                    cancelRequested }
+                let decision := decideRelease job runner proofGeneration
+                let after := applyRelease job decision
+                let granted := match decision with
+                  | .rejected _ => false
+                  | _ => true
+                out := jsonObj [("state", jsonStr (JobState.name state)), ("leaseOwner", jsonOptNat owner),
+                  ("leaseGeneration", jsonNat generation), ("runner", jsonNat runner),
+                  ("proofGeneration", jsonNat proofGeneration), ("attempt", jsonNat attempt),
+                  ("cancelRequested", jsonBool cancelRequested),
+                  ("decision", releaseDecisionJson decision),
+                  ("releasedState", if granted then jsonStr (JobState.name after.state) else "null"),
+                  ("releasedCheck",
+                    if granted then jsonStr (leaseCheckName (checkLease after runner proofGeneration))
+                    else "null"),
+                  ("releasedClaim",
+                    if granted then claimDecisionJson (decideClaim after) else "null")] :: out
+  return out.reverse
+
 def limitName : Option Limit → String
   | none => "null"
   | some .maxAgentSteps => jsonStr "MAX_AGENT_STEPS"
@@ -98,23 +139,25 @@ def limitName : Option Limit → String
   | some .maxSpend => jsonStr "MAX_SPEND"
 
 def budgetVectors : List String := Id.run do
-  let budget : Budget := { maxSteps := 2, maxTools := 2, maxWallClock := 10, maxBytes := 5, maxSpend := 3 }
   let mut out := []
-  for steps in [0, 2] do
-    for tools in [1, 2] do
-      for bytes in [0, 5] do
-        for cost in [0, 3] do
-          for elapsed in [0, 9, 10] do
-            for dSteps in [0, 1] do
-              for dTools in [0, 1] do
-                for dBytes in [0, 1] do
-                  for dCost in [0, 1] do
-                    let usage : Usage := ⟨steps, tools, bytes, cost⟩
-                    let delta : Delta := ⟨dSteps, dTools, dBytes, dCost⟩
-                    out := jsonObj [("usage", jsonNatList [steps, tools, bytes, cost]),
-                      ("elapsedMs", jsonNat elapsed),
-                      ("next", jsonNatList [dSteps, dTools, dBytes, dCost]),
-                      ("limit", limitName (checkBudget budget usage elapsed delta))] :: out
+  for cap in [some 3, none] do
+    let budget : Budget := { maxSteps := 2, maxTools := 2, maxWallClock := 10, maxBytes := 5, maxSpend := cap }
+    for steps in [0, 2] do
+      for tools in [1, 2] do
+        for bytes in [0, 5] do
+          for cost in [0, 3] do
+            for elapsed in [0, 9, 10] do
+              for dSteps in [0, 1] do
+                for dTools in [0, 1] do
+                  for dBytes in [0, 1] do
+                    for dCost in [0, 1] do
+                      let usage : Usage := ⟨steps, tools, bytes, cost⟩
+                      let delta : Delta := ⟨dSteps, dTools, dBytes, dCost⟩
+                      out := jsonObj [("maxSpendUsd", cap.map jsonNat |>.getD "null"),
+                        ("usage", jsonNatList [steps, tools, bytes, cost]),
+                        ("elapsedMs", jsonNat elapsed),
+                        ("next", jsonNatList [dSteps, dTools, dBytes, dCost]),
+                        ("limit", limitName (checkBudget budget usage elapsed delta))] :: out
   return out.reverse
 
 def positionChangeName : PositionChange → String
@@ -922,6 +965,7 @@ def main : IO Unit := do
   IO.println ("\"transitions\": " ++ transitionsJson ++ ",")
   IO.println ("\"decideClaim\": [\n" ++ ",\n".intercalate decideClaimVectors ++ "\n],")
   IO.println ("\"checkLease\": [\n" ++ ",\n".intercalate checkLeaseVectors ++ "\n],")
+  IO.println ("\"decideRelease\": [\n" ++ ",\n".intercalate decideReleaseVectors ++ "\n],")
   IO.println ("\"budget\": {\"limits\": " ++
     jsonObj [("maxAgentSteps", jsonNat 2), ("maxToolCalls", jsonNat 2), ("maxWallClockMs", jsonNat 10),
          ("maxInputBytes", jsonNat 5), ("maxSpendUsd", jsonNat 3)] ++

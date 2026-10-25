@@ -1,0 +1,4 @@
+{
+	"body": "{\"leaseGeneration\":3,\"usage\":{\"agentSteps\":2,\"toolCalls\":1,\"inputBytes\":4096,\"knownCostUsd\":0.25,\"hasUnmeteredUsage\":true}}",
+	"schema": "releaseJobRequest"
+}

@@ -45,6 +45,7 @@ struct Seen {
 	authorization: Option<String>,
 	finnhub_token: Option<String>,
 	user_agent: String,
+	json_body: Option<Vec<u8>>,
 }
 
 #[derive(Default)]
@@ -99,6 +100,7 @@ impl HopTransport for Scripted {
 			authorization: request.headers.authorization.map(str::to_owned),
 			finnhub_token: request.headers.finnhub_token.map(str::to_owned),
 			user_agent: request.headers.user_agent.to_owned(),
+			json_body: request.json_body.map(<[u8]>::to_vec),
 		});
 		if let Some((unsafe_destination, detail)) = self.outcomes.get(request.url.as_str()) {
 			let detail = detail.clone();
@@ -139,6 +141,7 @@ fn options(max_bytes: usize) -> SafeFetchOptions {
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	}
 }
 
@@ -640,4 +643,104 @@ fn resolves_locations_like_node() {
 		some("https://a.b/x/hello")
 	);
 	assert_eq!(resolve("https://bad host/", "https://a.b/"), None);
+}
+
+/* ---------- JSON POST (`SafeFetchOptions::json_body`) ---------- */
+
+const SEARCH_URL: &str = "https://api.synthetic-search.org/search";
+
+fn post(body: &str) -> SafeFetchOptions {
+	let mut limits = options(1_000);
+	limits.allowed_hosts = hosts(&["api.synthetic-search.org"]);
+	limits.json_body = Some(body.to_owned());
+	limits
+}
+
+#[tokio::test]
+async fn hands_the_json_body_to_the_transport_as_utf8_bytes() {
+	let body = r#"{"query":"半導体 受注"}"#;
+	let transport = Scripted::with(&[(SEARCH_URL, ok_page(b"{}"))]);
+	let document = fetch_raw_bytes(&transport, SEARCH_URL, &post(body))
+		.await
+		.unwrap();
+	assert_eq!(document.bytes, b"{}");
+	assert_eq!(
+		transport.seen()[0].json_body.as_deref(),
+		Some(body.as_bytes())
+	);
+	let get = Scripted::with(&[(SEARCH_URL, ok_page(b"{}"))]);
+	fetch_raw_bytes(&get, SEARCH_URL, &options(100))
+		.await
+		.unwrap();
+	assert_eq!(get.seen()[0].json_body, None);
+}
+
+#[tokio::test]
+async fn refuses_a_post_without_an_allowlist_or_over_64_kib_before_any_request() {
+	let transport = Scripted::with(&[(SEARCH_URL, ok_page(b"{}"))]);
+	let mut unpinned = post("{}");
+	unpinned.allowed_hosts = None;
+	assert_eq!(
+		fetch_raw_bytes(&transport, SEARCH_URL, &unpinned).await,
+		Err(error(
+			SafeFetchErrorCode::HostNotAllowed,
+			"a POST request requires an allowlist of hosts"
+		))
+	);
+	// "あ" is three UTF-8 bytes: the limit counts bytes, not characters.
+	let kana = (MAX_JSON_BODY_BYTES - 2) / 3;
+	let padding = " ".repeat(MAX_JSON_BODY_BYTES - 2 - 3 * kana);
+	let at_limit = format!("\"{}{padding}\"", "あ".repeat(kana));
+	assert_eq!(at_limit.len(), MAX_JSON_BODY_BYTES);
+	assert_eq!(
+		fetch_raw_bytes(&transport, SEARCH_URL, &post(&format!("{at_limit} "))).await,
+		Err(error(
+			SafeFetchErrorCode::NetworkError,
+			"request body exceeds 65536 bytes"
+		))
+	);
+	assert!(transport.seen().is_empty());
+	fetch_raw_bytes(&transport, SEARCH_URL, &post(&at_limit))
+		.await
+		.unwrap();
+	assert_eq!(
+		transport.seen()[0].json_body.as_ref().map(Vec::len),
+		Some(MAX_JSON_BODY_BYTES)
+	);
+}
+
+#[tokio::test]
+async fn never_follows_a_redirect_from_a_post() {
+	for status in [301, 302, 303, 307, 308] {
+		let transport = Scripted::with(&[
+			(
+				SEARCH_URL,
+				redirect(status, "https://api.synthetic-search.org/elsewhere"),
+			),
+			("https://api.synthetic-search.org/elsewhere", ok_page(b"{}")),
+		]);
+		let authorizer = Arc::new(Authorizer {
+			allow: true,
+			panics: false,
+			asked: Mutex::new(Vec::new()),
+		});
+		let mut limits = post("{}");
+		limits.authorize_redirect = Some(authorizer.clone());
+		assert_eq!(
+			fetch_raw_bytes(&transport, SEARCH_URL, &limits).await,
+			Err(error(
+				SafeFetchErrorCode::RedirectNotAuthorized,
+				&format!("HTTP {status}: a POST request is never redirected")
+			))
+		);
+		assert_eq!(transport.seen().len(), 1);
+		assert!(authorizer.asked.lock().unwrap().is_empty());
+	}
+}
+
+#[test]
+fn debug_output_never_contains_the_json_body() {
+	let printed = format!("{:?}", post(r#"{"query":"secret plans"}"#));
+	assert!(printed.contains("has_json_body: true"));
+	assert!(!printed.contains("secret plans"));
 }

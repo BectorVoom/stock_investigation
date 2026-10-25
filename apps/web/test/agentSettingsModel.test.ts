@@ -139,10 +139,10 @@ describe("cost statement (FR-016)", () => {
 		expect(text).not.toMatch(/\$\s?0|free of charge|no cost/i);
 	});
 
-	it("tells the owner a metered backend needs a spend limit and consent", () => {
+	it("explains billing and optional spending caps", () => {
 		const text = costStatement("metered", EN);
-		expect(text).toContain("maximum spend greater than 0");
-		expect(text).toContain("no paid fallback without consent");
+		expect(text).toContain("optional maximum spend");
+		expect(text).toContain("Leave it blank for no spending cap");
 	});
 
 	it("does not guess the cost model of an unreported backend", () => {
@@ -176,24 +176,23 @@ describe("budget evaluation", () => {
 		expect(result.spendConsentRequired).toBe(false);
 	});
 
-	it("blocks a metered backend with no spend limit", () => {
+	it("allows a metered backend with no spend limit", () => {
 		const result = evaluateBudget(budget(), "metered", {}, agentSettingsModelMessages.en);
-		expect(result.budget).toBeNull();
-		expect(result.spendConsentRequired).toBe(true);
-		expect(result.problems).toContain(
-			"A metered backend needs a maximum spend greater than 0 USD.",
-		);
+		expect(result.budget?.maxSpendUsd).toBeNull();
+		expect(result.spendConsentRequired).toBe(false);
+		expect(result.problems).toEqual([]);
 	});
 
-	it("blocks a metered backend with a spend limit but no consent", () => {
+	it("accepts an optional spend limit without consent", () => {
 		const result = evaluateBudget(
 			budget({ maxSpendUsd: "2.5" }),
 			"metered",
 			{},
 			agentSettingsModelMessages.en,
 		);
-		expect(result.budget).toBeNull();
-		expect(result.problems).toEqual(["Confirm consent to metered spend before submitting."]);
+		expect(result.budget?.maxSpendUsd).toBe(2.5);
+		expect(result.spendConsentRequired).toBe(false);
+		expect(result.problems).toEqual([]);
 	});
 
 	it.each([
@@ -223,7 +222,7 @@ describe("budget evaluation", () => {
 		expect(result.budget?.maxSpendUsd).toBe(2.5);
 	});
 
-	it("requires consent before any spend on a backend whose cost model is unknown", () => {
+	it("allows an optional spending cap on an unreported backend", () => {
 		expect(
 			evaluateBudget(budget(), "unknown", {}, agentSettingsModelMessages.en).budget?.maxSpendUsd,
 		).toBeNull();
@@ -233,8 +232,8 @@ describe("budget evaluation", () => {
 			{},
 			agentSettingsModelMessages.en,
 		);
-		expect(withSpend.budget).toBeNull();
-		expect(withSpend.spendConsentRequired).toBe(true);
+		expect(withSpend.budget?.maxSpendUsd).toBe(1);
+		expect(withSpend.spendConsentRequired).toBe(false);
 	});
 
 	it("stores a spend without consent when the settings form validates (AGT-012)", () => {
@@ -368,17 +367,15 @@ describe("settings draft", () => {
 		expect(result.problems).toContain("The model must be at most 100 characters.");
 	});
 
-	it("requires a spend for a metered backend but not for an unknown one", () => {
+	it("allows metered and unreported backends without spending caps", () => {
 		const metered = evaluateAgentSettings(
 			settingsDraft({ defaultAgentId: "openrouter" }),
 			AGENTS,
 			EN,
 		);
-		expect(metered.settings).toBeNull();
+		expect(metered.settings?.budget.maxSpendUsd).toBeNull();
 		expect(metered.spendEditable).toBe(true);
-		expect(metered.problems).toContain(
-			"A metered backend needs a maximum spend greater than 0 USD.",
-		);
+		expect(metered.problems).toEqual([]);
 
 		const meteredWithSpend = evaluateAgentSettings(
 			settingsDraft({
@@ -689,7 +686,7 @@ describe("Claude API settings", () => {
 		budget: budget({ maxSpendUsd: "2" }),
 	});
 
-	it("is metered: it needs a maximum spend and says it bills the provider account", () => {
+	it("is metered and accepts an optional maximum spend", () => {
 		const evaluation = evaluateAgentSettings(
 			{ ...draft(undefined), budget: budget() },
 			CLAUDE_API_AGENTS,
@@ -697,9 +694,7 @@ describe("Claude API settings", () => {
 		);
 		expect(evaluation.costModel).toBe("metered");
 		expect(evaluation.spendEditable).toBe(true);
-		expect(evaluation.problems).toContain(
-			"A metered backend needs a maximum spend greater than 0 USD.",
-		);
+		expect(evaluation.problems).toEqual([]);
 	});
 
 	it("saves the backend default or a listed model", () => {

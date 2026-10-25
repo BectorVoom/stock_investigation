@@ -10,6 +10,15 @@ export interface FakeFetchCall {
 	readonly redirect: string | undefined;
 	readonly headers: { readonly [name: string]: string };
 	readonly signal: AbortSignal | null;
+	/** The request body as UTF-8 text (a POST's JSON), or null when none was sent. */
+	readonly body: string | null;
+}
+
+function bodyText(body: RequestInit["body"]): string | null {
+	if (body === undefined || body === null) return null;
+	if (typeof body === "string") return body;
+	if (body instanceof Uint8Array) return new TextDecoder("utf-8").decode(body);
+	throw new TypeError("the fake fetch records string and byte bodies only");
 }
 
 export type FakeRoute = (call: FakeFetchCall) => Response | Promise<Response>;
@@ -34,6 +43,7 @@ export function createFakeFetch(routes: { readonly [url: string]: FakeRoute }): 
 			redirect: init?.redirect,
 			headers,
 			signal: init?.signal ?? null,
+			body: bodyText(init?.body),
 		};
 		calls.push(call);
 		const route = Object.hasOwn(routes, url) ? routes[url] : undefined;

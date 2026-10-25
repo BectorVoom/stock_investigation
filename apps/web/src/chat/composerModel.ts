@@ -22,16 +22,17 @@ export type ComposerText = MessagesOf<typeof composerMessages>;
  * belongs to one question, while backend, model, effort, spend ceiling and
  * web access are read from the saved agent settings and the other limits are
  * fixed (RUN_LIMITS, ADR-0029). The composer shows the
- * backend/model/effort/web-access summary and the consent amount; the spend
+ * backend/model/effort/web-access summary; the optional spend
  * ceiling and the cost statement live in Settings → AI agent (owner decision
  * 2026-10-12). No Solid, no network — unit-tested directly.
  */
 
-/** Form draft: only what belongs to ONE question. Consent is one-time per submission. */
+/** Form draft: only what belongs to one question. */
 export interface ComposerDraft {
 	readonly question: string;
 	readonly horizonYears: ResearchRequest["horizonYears"];
 	readonly markets: { readonly JP: boolean; readonly US: boolean };
+	/** Legacy draft field; ignored when validating a question. */
 	readonly spendConsent: boolean;
 }
 
@@ -124,20 +125,12 @@ export function evaluateComposer(
 			? null
 			: runBudget(costModel === "plan-limited" ? null : settings.budget.maxSpendUsd);
 	const spend = budget?.maxSpendUsd ?? null;
-	let spendConsentRequired = false;
-	if (settings !== null && selectedAgent !== null && costModel !== "plan-limited") {
-		if (spend === null || spend <= 0) {
-			if (costModel === "metered") {
-				configuration(text.meteredNeedsSpend);
-			}
-		} else if (spend > BUDGET_LIMITS.maxSpendUsd.max) {
-			configuration(text.maxSpendRange(BUDGET_LIMITS.maxSpendUsd.max));
-		} else {
-			spendConsentRequired = true;
-		}
-	}
-	if (spendConsentRequired && !draft.spendConsent) {
-		problems.push(text.confirmConsent);
+	const spendConsentRequired = false;
+	if (
+		spend !== null &&
+		(!Number.isFinite(spend) || spend <= 0 || spend > BUDGET_LIMITS.maxSpendUsd.max)
+	) {
+		configuration(text.maxSpendRange(BUDGET_LIMITS.maxSpendUsd.max));
 	}
 
 	const request: ResearchRequest | null =

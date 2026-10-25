@@ -263,6 +263,7 @@ pub fn compose(
 		hasher: Arc::clone(&hasher),
 		clock: Arc::clone(&clock),
 		sec_user_agent: config.sec_user_agent.clone(),
+		tavily_api_key: config.tavily_api_key.clone(),
 		page_archive,
 		sleep: Arc::new(TokioSleep),
 		sec_sleep: Arc::clone(&sleeper),

@@ -141,23 +141,6 @@ function savedAgentChoice(
 	};
 }
 
-/**
- * Whether a scheduled task's stored consent covers a metered request
- * (AGT-012, ADR-0033 §4): the backend, model and spend ceiling saved now
- * must all equal what the owner consented to in the task editor.
- */
-export function taskConsentCovers(
-	consent: TaskSpendConsent | null,
-	request: Pick<ResearchRequest, "agentId" | "model" | "budget">,
-): boolean {
-	return (
-		consent !== null &&
-		consent.agentId === request.agentId &&
-		consent.model === request.model &&
-		consent.maxSpendUsd === request.budget.maxSpendUsd
-	);
-}
-
 /** One run a scheduled task asks for — a due occurrence or "Run now" (ADR-0033). */
 export interface TaskRunInput {
 	readonly taskId: string;
@@ -173,21 +156,6 @@ export interface TaskRunInput {
 	readonly requestFingerprint: string;
 	/** `scheduler` for a due occurrence, `owner` for "Run now". */
 	readonly actor: "owner" | "scheduler";
-}
-
-/**
- * Metered spend needs the owner's consent on the composer (AGT-012). A retry
- * is that same consented action only while backend, model and spend ceiling
- * are unchanged; any other metered retry must be asked again from the
- * composer. The other limits are fixed (ADR-0029), so an older run's
- * different limits do not count as a change.
- */
-function sameMeteredChoice(original: ResearchRequest, next: ResearchRequest): boolean {
-	return (
-		original.agentId === next.agentId &&
-		original.model === next.model &&
-		original.budget.maxSpendUsd === next.budget.maxSpendUsd
-	);
 }
 
 export function createResearchRunService(deps: ResearchRunServiceDeps) {
@@ -301,27 +269,15 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		};
 	}
 
-	/**
-	 * A backend is usable when it is one of the four baseline ids or a runner has
-	 * reported it. A metered backend additionally needs an explicit spend ceiling:
-	 * that ceiling is the owner's consent, and there is no paid fallback (AGT-012).
-	 */
-	async function checkAgentAndConsent(
+	/** Only registered or baseline backends may be queued. Spending caps are optional. */
+	async function checkAgent(
 		ownerId: string,
 		agentId: string,
-		budget: ResearchBudget,
 		knownModels?: CostModels,
 	): Promise<UseCaseResult<void>> {
 		const models = knownModels ?? (await costModels(ownerId));
 		if (!models.known(agentId)) {
 			return fail("UNKNOWN_AGENT", `Agent backend "${agentId}" is not registered.`);
-		}
-		const costModel = models.of(agentId);
-		if (costModel === "metered" && (budget.maxSpendUsd === null || budget.maxSpendUsd <= 0)) {
-			return fail(
-				"SPEND_CONSENT_REQUIRED",
-				"This backend is metered. Set a maximum spend to authorize paid usage.",
-			);
 		}
 		return ok(undefined);
 	}
@@ -405,7 +361,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 
 			const workspace = await deps.workspaces.get(ownerId, request.workspaceId);
 			if (workspace === null) return fail("NOT_FOUND", "Workspace not found.");
-			const agent = await checkAgentAndConsent(ownerId, request.agentId, request.budget);
+			const agent = await checkAgent(ownerId, request.agentId);
 			if (!agent.ok) return agent;
 			const admitted = await admit(ownerId);
 			if (!admitted.ok) return admitted;
@@ -419,8 +375,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 		 * Queues one run of a scheduled task (ADR-0033 §2–§5) on the agent
 		 * choice saved in Settings → AI agent NOW, like Retry. Errors:
 		 * `AGENT_NOT_CONFIGURED` (nothing saved), `VALIDATION_FAILED` (the
-		 * saved backend needs a model), `SPEND_CONSENT_REQUIRED` (metered and
-		 * the task's consent does not cover backend, model and ceiling),
+		 * saved backend needs a model),
 		 * `UNKNOWN_AGENT`, `NOT_FOUND` (conversation gone), `RATE_LIMITED`
 		 * (hourly allowance or unfinished-run cap). A repeated key answers
 		 * its run before any of these checks (ARCH-016).
@@ -450,16 +405,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					"The backend saved in Settings → AI agent needs a model; choose one there.",
 				);
 			}
-			if (
-				models.of(request.agentId) === "metered" &&
-				!taskConsentCovers(input.spendConsent, request)
-			) {
-				return fail(
-					"SPEND_CONSENT_REQUIRED",
-					"The backend saved in Settings → AI agent is metered and this task has no matching spend consent; edit the task to allow it.",
-				);
-			}
-			const agent = await checkAgentAndConsent(ownerId, request.agentId, request.budget, models);
+			const agent = await checkAgent(ownerId, request.agentId, models);
 			if (!agent.ok) return agent;
 			const workspace = await deps.workspaces.get(ownerId, request.workspaceId);
 			if (workspace === null) return fail("NOT_FOUND", "Workspace not found.");
@@ -647,13 +593,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 						"The backend saved in Settings → AI agent needs a model; choose one there and retry.",
 					);
 				}
-				if (models.of(next.agentId) === "metered" && !sameMeteredChoice(request, next)) {
-					return fail(
-						"SPEND_CONSENT_REQUIRED",
-						"The backend saved in Settings → AI agent is metered and differs from this run's; ask the question again from the composer to confirm the spend.",
-					);
-				}
-				const agent = await checkAgentAndConsent(ownerId, next.agentId, next.budget, models);
+				const agent = await checkAgent(ownerId, next.agentId, models);
 				if (!agent.ok) return agent;
 				request = next;
 			}
@@ -686,7 +626,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 				return fail("VALIDATION_FAILED", "This run does not wait for approval.");
 			}
 			if (current.request !== null && "agentId" in current.request) {
-				const agent = await checkAgentAndConsent(ownerId, current.request.agentId, budget);
+				const agent = await checkAgent(ownerId, current.request.agentId);
 				if (!agent.ok) return agent;
 			}
 			const result = await mutate(ownerId, runId, (job) => {

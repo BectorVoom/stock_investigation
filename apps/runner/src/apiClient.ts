@@ -9,8 +9,11 @@ import {
 	type HeartbeatResponse,
 	heartbeatResponseSchema,
 	issuedRunnerCredentialSchema,
+	type ReleaseJobRequest,
+	type ReleaseJobResponse,
 	RUNNER_API_PREFIX,
 	type RunnerEventsRequest,
+	releaseJobResponseSchema,
 } from "@research/contracts";
 import { err, ok, type Result, thrownName } from "@research/domain";
 import { z } from "zod";
@@ -37,6 +40,8 @@ export interface RunnerApi {
 		runId: string,
 		request: CompleteJobRequest,
 	): Promise<RunnerApiResult<CompleteJobResponse>>;
+	/** Hands the lease back on shutdown (ADR-0036). One attempt, never retried. */
+	release(runId: string, request: ReleaseJobRequest): Promise<RunnerApiResult<ReleaseJobResponse>>;
 	renewCredential(expiresInDays: number): Promise<RunnerApiResult<{ token: string }>>;
 }
 
@@ -52,6 +57,12 @@ export interface HttpRunnerApiOptions {
 }
 
 const eventsResponseSchema = z.object({ cancelRequested: z.boolean() });
+
+/**
+ * How long a lease hand-back may take (ADR-0036). Shutdown has already started
+ * when it is sent, and the job's wind-down shares the launcher's 8 s grace.
+ */
+export const RELEASE_TIMEOUT_MS = 2_000;
 
 /**
  * HTTPS client for the runner endpoints (API-007): every call has a timeout,
@@ -75,6 +86,7 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 		path: string,
 		body: unknown,
 		schema: z.ZodType<T>,
+		attemptTimeoutMs = timeoutMs,
 	): Promise<RunnerApiResult<T>> {
 		let response: Response;
 		try {
@@ -82,7 +94,7 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 				method: "POST",
 				headers,
 				body: JSON.stringify(body),
-				signal: AbortSignal.timeout(timeoutMs),
+				signal: AbortSignal.timeout(attemptTimeoutMs),
 				redirect: "error",
 			});
 		} catch (error) {
@@ -141,6 +153,16 @@ export function createHttpRunnerApi(options: HttpRunnerApiOptions): RunnerApi {
 		events: (runId, request) => post(`/jobs/${runId}/events`, request, eventsResponseSchema),
 		complete: (runId, request) =>
 			post(`/jobs/${runId}/complete`, request, completeJobResponseSchema),
+		// One attempt, no backoff: the runner is shutting down, and a release
+		// that does not arrive only leaves the lease to run out, as before
+		// ADR-0036.
+		release: (runId, request) =>
+			attempt(
+				`/jobs/${runId}/release`,
+				request,
+				releaseJobResponseSchema,
+				Math.min(timeoutMs, RELEASE_TIMEOUT_MS),
+			),
 		renewCredential: (expiresInDays) =>
 			post("/credentials/renew", { expiresInDays }, issuedRunnerCredentialSchema),
 	};

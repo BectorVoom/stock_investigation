@@ -87,7 +87,10 @@ impl Session<'_> {
 		}
 		let budget = &self.input.request.budget;
 		let metered = self.deps.agent.cost_model() == CostModel::Metered;
-		if metered && self.usage.has_unmetered_usage {
+		if metered
+			&& self.input.request.budget.max_spend_usd.is_some()
+			&& self.usage.has_unmetered_usage
+		{
 			return Err(TurnFailure::UnknownSpend);
 		}
 		let delta = UsageDelta {

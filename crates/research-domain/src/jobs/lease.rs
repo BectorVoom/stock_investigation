@@ -2,7 +2,7 @@
 //! `leaseGeneration` increases on every claim, so a runner whose lease was
 //! superseded is rejected even if its clock disagrees.
 //!
-//! The Worker API decides claims; the runner does not call these functions
+//! The Worker API decides claims and releases; the runner does not call these functions
 //! today. They are ported because the Lean model proves them and its vectors
 //! are replayed here.
 //!
@@ -213,6 +213,62 @@ pub fn check_lease(job: &JobLeaseView, proof: &LeaseProof) -> Result<(), LeaseEr
 	Ok(())
 }
 
+/// `ReleaseDecision` (ADR-0036): what a lease hand-back does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReleaseDecision {
+	/// Back to `pending` with the claim refunded; the generation is kept, the
+	/// next claim increments it.
+	Requeue {
+		/// `max(attempt - 1, 0)`.
+		next_attempt: u64,
+	},
+	/// The owner asked to cancel while the lease was held: nobody holds a
+	/// lease once it is handed back, so the cancel is immediate.
+	Cancel,
+}
+
+/// `decideRelease`: only the current lease holder, with the current
+/// generation, may hand the lease back.
+///
+/// # Errors
+///
+/// The [`check_lease`] failure.
+pub fn decide_release(
+	job: &JobLeaseView,
+	proof: &LeaseProof,
+) -> Result<ReleaseDecision, LeaseError> {
+	check_lease(job, proof)?;
+	if job.cancel_requested {
+		return Ok(ReleaseDecision::Cancel);
+	}
+	Ok(ReleaseDecision::Requeue {
+		next_attempt: job.attempt.saturating_sub(1),
+	})
+}
+
+/// `releasedLeaseView`: the job's lease columns after a granted hand-back.
+/// Nobody owns it and it has no expiry; the generation is unchanged.
+#[must_use]
+pub fn released_lease_view(job: &JobLeaseView, decision: ReleaseDecision) -> JobLeaseView {
+	let released = JobLeaseView {
+		lease_owner_id: None,
+		lease_expires_at: None,
+		..job.clone()
+	};
+	match decision {
+		ReleaseDecision::Cancel => JobLeaseView {
+			state: JobState::Cancelled,
+			cancel_requested: false,
+			..released
+		},
+		ReleaseDecision::Requeue { next_attempt } => JobLeaseView {
+			state: JobState::Pending,
+			attempt: next_attempt,
+			..released
+		},
+	}
+}
+
 /// `leaseExpiryIso`.
 #[must_use]
 pub fn lease_expiry_iso(now_ms: i64, lease_duration_ms: i64) -> String {
@@ -231,6 +287,40 @@ mod tests {
 		assert_eq!(lease_expiry_iso(0, 1), "1970-01-01T00:00:00.001Z");
 		assert_eq!(iso_to_epoch_ms("2026-02-30T00:00:00.000Z"), None);
 		assert_eq!(iso_to_epoch_ms("not a date"), None);
+	}
+
+	#[test]
+	fn a_release_refunds_the_claim_or_cancels_and_only_for_the_holder() {
+		let job = JobLeaseView {
+			state: JobState::Collecting,
+			lease_generation: 3,
+			lease_owner_id: Some("runner-1".to_owned()),
+			lease_expires_at: None,
+			attempt: 2,
+			max_attempts: 3,
+			cancel_requested: false,
+		};
+		let holder = LeaseProof {
+			runner_id: "runner-1".to_owned(),
+			lease_generation: 3,
+		};
+		assert_eq!(
+			decide_release(&job, &holder),
+			Ok(ReleaseDecision::Requeue { next_attempt: 1 })
+		);
+		let cancelling = JobLeaseView {
+			cancel_requested: true,
+			..job.clone()
+		};
+		assert_eq!(
+			decide_release(&cancelling, &holder),
+			Ok(ReleaseDecision::Cancel)
+		);
+		let stale = LeaseProof {
+			lease_generation: 2,
+			..holder
+		};
+		assert_eq!(decide_release(&job, &stale), Err(LeaseError::StaleLease));
 	}
 
 	#[test]

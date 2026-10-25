@@ -39,12 +39,12 @@ const ENGLISH: AgentSettingsText = agentSettingsModelMessages.en;
 export type CostModelView = AgentDescriptor["costModel"] | "unknown";
 
 /**
- * The only per-question ceiling the owner edits: the maximum spend, which is
- * their consent to metered cost (AGT-012). The other limits are fixed
+ * The only per-question ceiling the owner edits: an optional maximum spend.
+ * The other limits are fixed
  * (RUN_LIMITS, ADR-0029). The amount stays as typed text until it validates.
  */
 export interface SpendDraft {
-	/** Empty = no metered spend authorized. */
+	/** Empty = no spending cap. */
 	readonly maxSpendUsd: string;
 	readonly spendConsent: boolean;
 }
@@ -56,7 +56,7 @@ export function defaultSpendDraft(): SpendDraft {
 export function spendDraftFrom(budget: ResearchBudget): SpendDraft {
 	return {
 		maxSpendUsd: budget.maxSpendUsd === null ? "" : String(budget.maxSpendUsd),
-		// Consent is never carried over: it is given again for each submission.
+		// Kept for compatibility with existing drafts; consent no longer gates a run.
 		spendConsent: false,
 	};
 }
@@ -323,46 +323,30 @@ export function costStatement(costModel: CostModelView, text: AgentSettingsText)
 }
 
 export interface BudgetEvaluation {
-	/** The question's budget (fixed limits plus the spend), or null while the spend is invalid or consent is missing. */
+	/** The question's budget (fixed limits plus the spend), or null while an explicit cap is invalid. */
 	readonly budget: ResearchBudget | null;
 	readonly problems: readonly string[];
-	/** True when the consent checkbox must be shown and ticked. */
+	/** Legacy view-model flag; always false because consent is no longer required. */
 	readonly spendConsentRequired: boolean;
 }
 
 export function evaluateBudget(
 	draft: SpendDraft,
 	costModel: CostModelView,
-	options: { readonly requireConsent?: boolean } = {},
+	_options: { readonly requireConsent?: boolean } = {},
 	text: AgentSettingsText,
 ): BudgetEvaluation {
-	// Storing a maximum spend is not consent (AGT-012): the settings form
-	// validates without it, while the composer and the approval form require
-	// the one-time consent again for each run.
-	const requireConsent = options.requireConsent ?? true;
 	const problems: string[] = [];
 	const spendText = draft.maxSpendUsd.trim();
 	let maxSpendUsd: number | null = null;
-	let spendConsentRequired = false;
-	if (costModel === "plan-limited") {
-		// A plan-limited backend never gets a metered allowance, whatever was typed.
-		maxSpendUsd = null;
-	} else if (spendText === "") {
-		if (costModel === "metered") {
-			spendConsentRequired = requireConsent;
-			problems.push(text.meteredNeedsSpend);
-		}
-	} else {
-		spendConsentRequired = requireConsent;
+	const spendConsentRequired = false;
+	if (costModel !== "plan-limited" && spendText !== "") {
 		const spend = Number(spendText);
 		if (!Number.isFinite(spend) || spend <= 0 || spend > BUDGET_LIMITS.maxSpendUsd.max) {
 			problems.push(text.spendOutOfRange(BUDGET_LIMITS.maxSpendUsd.max));
 		} else {
 			maxSpendUsd = spend;
 		}
-	}
-	if (spendConsentRequired && requireConsent && !draft.spendConsent) {
-		problems.push(text.confirmConsent);
 	}
 	return {
 		budget: problems.length === 0 ? runBudget(maxSpendUsd) : null,
@@ -415,8 +399,7 @@ export interface SettingsEvaluation {
 const MAX_MODEL_LENGTH = 100;
 
 /**
- * Validates the settings draft. Storing a maximum spend is not consent, so no
- * consent problem is ever reported here — consent is asked on each question.
+ * Validates the settings draft, including an optional spending cap.
  */
 export function evaluateAgentSettings(
 	draft: AgentSettingsDraft,

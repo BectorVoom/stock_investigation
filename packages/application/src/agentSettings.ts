@@ -27,10 +27,8 @@ export interface AgentSettingsView {
 
 /**
  * Carries the owner's most recent research choice into unset settings: the
- * backend, its model when one was used, effort and limits. A stored or
- * carried-over spend amount is never consent, so maxSpendUsd is forced to
- * null (AGT-012); web access stays the default, which the owner reviews on
- * the settings form.
+ * backend, its model when one was used, effort and limits. The optional
+ * spend cap and web access use their defaults until the owner saves settings.
  */
 export function carriedOverSettings(request: ResearchRequest): AgentSettings {
 	return {

@@ -68,8 +68,11 @@ fn ip(text: &str) -> IpAddr {
 #[derive(Clone, Debug)]
 struct SeenRequest {
 	server_name: Option<String>,
+	method: String,
 	path: String,
 	headers: Vec<(String, String)>,
+	/// The request body (`content-length` bytes; empty without one).
+	body: Vec<u8>,
 }
 
 impl SeenRequest {
@@ -191,6 +194,18 @@ async fn read_head(stream: &mut Tls, buffer: &mut Vec<u8>) -> Option<String> {
 	}
 }
 
+/// Reads a `content-length` body that follows a head; `None` when the client closed.
+async fn read_body(stream: &mut Tls, buffer: &mut Vec<u8>, length: usize) -> Option<Vec<u8>> {
+	while buffer.len() < length {
+		let mut chunk = [0u8; 4096];
+		match stream.read(&mut chunk).await {
+			Ok(0) | Err(_) => return None,
+			Ok(read) => buffer.extend_from_slice(&chunk[..read]),
+		}
+	}
+	Some(buffer.drain(..length).collect())
+}
+
 /// Waits for the client to hang up (it never sends more on a stalled response).
 async fn until_client_closes(stream: &mut Tls) {
 	let mut sink = [0u8; 1024];
@@ -238,21 +253,27 @@ async fn serve(mut stream: Tls, connection: usize, state: &ServerState) {
 	while let Some(head) = read_head(&mut stream, &mut buffer).await {
 		served += 1;
 		let mut lines = head.split("\r\n");
-		let path = lines
-			.next()
-			.unwrap_or("")
-			.split(' ')
-			.nth(1)
-			.unwrap_or("/")
-			.to_owned();
+		let mut request_line = lines.next().unwrap_or("").split(' ');
+		let method = request_line.next().unwrap_or("").to_owned();
+		let path = request_line.next().unwrap_or("/").to_owned();
 		let headers: Vec<(String, String)> = lines
 			.filter_map(|line| line.split_once(':'))
 			.map(|(name, value)| (name.to_ascii_lowercase(), value.trim().to_owned()))
 			.collect();
+		let length = headers
+			.iter()
+			.find(|(name, _)| name == "content-length")
+			.and_then(|(_, value)| value.parse().ok())
+			.unwrap_or(0);
+		let Some(body) = read_body(&mut stream, &mut buffer, length).await else {
+			return;
+		};
 		let request = SeenRequest {
 			server_name: server_name.clone(),
+			method,
 			path: path.clone(),
 			headers,
+			body,
 		};
 		state.requests.lock().unwrap().push(request.clone());
 		let host = request.header("host").unwrap_or("").to_owned();
@@ -418,6 +439,17 @@ async fn serve(mut stream: Tls, connection: usize, state: &ServerState) {
 				return;
 			}
 			"/gone" => respond(&mut stream, "410 Gone", &[], b"gone").await,
+			"/search" => {
+				let mut echoed = format!("connection {connection}; ").into_bytes();
+				echoed.extend_from_slice(&request.body);
+				respond(&mut stream, "200 OK", &text("application/json"), &echoed).await
+			}
+			"/moved" => {
+				let location = vec![("location", format!("https://{HOST_A}/search"))];
+				respond(&mut stream, "307 Temporary Redirect", &location, b"").await
+			}
+			// The body arrived; the connection dies before any response.
+			"/hang-up" => return,
 			"/many-headers" | "/huge-headers" | "/head-at-limit" | "/head-over-limit" => {
 				// Node counts reason phrase + names + values: "OK" (2) and
 				// "content-length" + "2" (15) here, then the x-* headers.
@@ -575,6 +607,7 @@ fn limits() -> SafeFetchOptions {
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	}
 }
 
@@ -983,6 +1016,7 @@ async fn reports_a_refused_connection_by_its_code() {
 			finnhub_token: None,
 		},
 		max_encoded_bytes: 10,
+		json_body: None,
 	};
 	assert_eq!(
 		connect.connect(request).await.unwrap_err(),
@@ -1038,6 +1072,7 @@ fn pinned(path: &str, max_encoded_bytes: usize) -> PinnedRequest<'_> {
 			finnhub_token: None,
 		},
 		max_encoded_bytes,
+		json_body: None,
 	}
 }
 
@@ -1383,6 +1418,7 @@ async fn measure_fresh_and_reused_search_requests() {
 		authorization: None,
 		finnhub_token: None,
 		include_error_body: false,
+		json_body: None,
 	};
 	for (name, url, host) in [("GDELT", gdelt.as_str(), "api.gdeltproject.org")] {
 		for attempt in ["fresh", "reused"] {
@@ -1473,4 +1509,126 @@ async fn measure_gdelt_handshake_versus_warm_requests() {
 			started.elapsed().as_secs_f64() * 1_000.0
 		);
 	}
+}
+
+/* ---------- JSON POST (`SafeFetchOptions::json_body`) ---------- */
+
+const QUERY: &str = r#"{"query":"半導体 受注 outlook","max_results":5}"#;
+
+fn post_limits() -> SafeFetchOptions {
+	SafeFetchOptions {
+		accept: "application/json".to_owned(),
+		allowed_hosts: Some([HOST_A.to_owned()].into()),
+		authorization: Some("Bearer tvly-synthetic".to_owned()),
+		json_body: Some(QUERY.to_owned()),
+		..limits()
+	}
+}
+
+#[tokio::test]
+async fn a_post_sends_method_headers_and_the_exact_body_once() {
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	let document = harness
+		.fetcher
+		.fetch_text(&format!("https://{HOST_A}/search"), &post_limits())
+		.await
+		.unwrap();
+	assert_eq!(document.text, format!("connection 1; {QUERY}"));
+	assert_eq!(document.content_type.as_deref(), Some("application/json"));
+	let requests = server.requests();
+	assert_eq!(requests.len(), 1);
+	let seen = &requests[0];
+	assert_eq!(seen.method, "POST");
+	assert_eq!(seen.body, QUERY.as_bytes());
+	let names: Vec<&str> = seen.headers.iter().map(|(name, _)| name.as_str()).collect();
+	assert_eq!(
+		names,
+		[
+			"host",
+			"accept",
+			"user-agent",
+			"authorization",
+			"accept-encoding",
+			"content-type",
+			"content-length"
+		]
+	);
+	assert_eq!(seen.header("content-type"), Some("application/json"));
+	let length = QUERY.len().to_string();
+	assert_eq!(seen.header("content-length"), Some(length.as_str()));
+	assert_eq!(seen.header("authorization"), Some("Bearer tvly-synthetic"));
+}
+
+#[tokio::test]
+async fn a_post_neither_takes_nor_returns_a_pooled_connection() {
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	let get = |path: &str| format!("https://{HOST_A}/{path}");
+	assert_eq!(
+		harness.get(&get("conn"), &limits()).await.unwrap(),
+		"connection 1 request 1"
+	);
+	assert_eq!(harness.connector().pool().idle_count(), 1);
+	let posted = harness
+		.fetcher
+		.fetch_text(&get("search"), &post_limits())
+		.await
+		.unwrap();
+	// A fresh connection, closed afterwards; the idle one stays for GETs.
+	assert_eq!(posted.text, format!("connection 2; {QUERY}"));
+	assert_eq!(harness.connector().pool().idle_count(), 1);
+	server.wait_closed(1).await;
+	assert_eq!(
+		harness.get(&get("conn"), &limits()).await.unwrap(),
+		"connection 1 request 2"
+	);
+	assert_eq!(harness.connector().connections_opened(), 2);
+}
+
+#[tokio::test]
+async fn a_post_is_never_redirected() {
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	let result = harness
+		.fetcher
+		.fetch_text(&format!("https://{HOST_A}/moved"), &post_limits())
+		.await;
+	assert_eq!(
+		result,
+		Err(failure(
+			SafeFetchErrorCode::RedirectNotAuthorized,
+			"HTTP 307: a POST request is never redirected"
+		))
+	);
+	let paths: Vec<String> = server
+		.requests()
+		.into_iter()
+		.map(|seen| seen.path)
+		.collect();
+	assert_eq!(paths, ["/moved"]);
+}
+
+#[tokio::test]
+async fn a_post_body_is_not_resent_to_the_next_address_once_a_connection_carried_it() {
+	let server = start_server(LEAF_PEM).await;
+	let harness = harness(&server);
+	harness.set_dns(HOST_A, &[PUBLIC_V4, PUBLIC_V4_B]);
+	let url = format!("https://{HOST_A}/hang-up");
+	let result = harness.fetcher.fetch_text(&url, &post_limits()).await;
+	assert_eq!(
+		result,
+		Err(failure(SafeFetchErrorCode::NetworkError, "ECONNRESET"))
+	);
+	assert_eq!(harness.requested(), [(HOST_A.to_owned(), ip(PUBLIC_V4))]);
+	assert_eq!(server.requests().len(), 1);
+	// The same failure on a GET still tries the next validated address.
+	let _ = harness.get(&url, &limits()).await;
+	assert_eq!(
+		harness.requested()[1..],
+		[
+			(HOST_A.to_owned(), ip(PUBLIC_V4)),
+			(HOST_A.to_owned(), ip(PUBLIC_V4_B))
+		]
+	);
 }

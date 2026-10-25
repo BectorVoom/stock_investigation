@@ -10,6 +10,7 @@ import {
 	classifyReportedPositionChange,
 	daysInMonth,
 	decideClaim,
+	decideRelease,
 	emptyWorkspaceState,
 	encodeBase32Hex,
 	foldIcsLine,
@@ -24,6 +25,7 @@ import {
 	planGoogleSync,
 	rateWindowPermit,
 	recentCountWithinBudget,
+	releasedLeaseView,
 	selectUpcomingEarnings,
 	transitionJob,
 	type UiCommand,
@@ -79,6 +81,21 @@ const vectorsSchema = z.object({
 			result: z.string(),
 		}),
 	),
+	decideRelease: z.array(
+		z.object({
+			state: jobState,
+			leaseOwner: z.number().nullable(),
+			leaseGeneration: z.number(),
+			runner: z.number(),
+			proofGeneration: z.number(),
+			attempt: z.number(),
+			cancelRequested: z.boolean(),
+			decision: z.unknown(),
+			releasedState: jobState.nullable(),
+			releasedCheck: z.string().nullable(),
+			releasedClaim: z.unknown(),
+		}),
+	),
 	budget: z.object({
 		limits: z.object({
 			maxAgentSteps: z.number(),
@@ -88,7 +105,13 @@ const vectorsSchema = z.object({
 			maxSpendUsd: z.number(),
 		}),
 		vectors: z.array(
-			z.object({ usage: quad, elapsedMs: z.number(), next: quad, limit: z.string().nullable() }),
+			z.object({
+				maxSpendUsd: z.number().nullable(),
+				usage: quad,
+				elapsedMs: z.number(),
+				next: quad,
+				limit: z.string().nullable(),
+			}),
 		),
 	}),
 	positionChange: z.array(
@@ -254,13 +277,48 @@ describe("Lean model conformance: leases", () => {
 	});
 });
 
+describe("Lean model conformance: lease hand-back (ADR-0036)", () => {
+	it(`agrees with decideRelease and releasedLeaseView on all ${vectors.decideRelease.length} vectors`, () => {
+		expect(vectors.decideRelease.length).toBeGreaterThan(1000);
+		for (const vector of vectors.decideRelease) {
+			const job = {
+				state: vector.state,
+				leaseGeneration: vector.leaseGeneration,
+				leaseOwnerId: vector.leaseOwner === null ? null : `runner-${vector.leaseOwner}`,
+				leaseExpiresAt: FUTURE,
+				attempt: vector.attempt,
+				maxAttempts: 3,
+				cancelRequested: vector.cancelRequested,
+			};
+			const proof = {
+				runnerId: `runner-${vector.runner}`,
+				leaseGeneration: vector.proofGeneration,
+			};
+			const decision = decideRelease(job, proof);
+			const label = JSON.stringify(vector);
+			if (!decision.ok) {
+				expect({ kind: "rejected", error: decision.error }, label).toEqual(vector.decision);
+				expect(vector.releasedState, label).toBeNull();
+				continue;
+			}
+			expect(decision.value, label).toEqual(vector.decision);
+			const released = releasedLeaseView(job, decision.value);
+			expect(released.state, label).toBe(vector.releasedState);
+			expect(released.leaseGeneration, label).toBe(job.leaseGeneration);
+			const check = checkLease(released, proof);
+			expect(check.ok ? "OK" : check.error, label).toBe(vector.releasedCheck);
+			expect(decideClaim(released, NOW_MS), label).toEqual(vector.releasedClaim);
+		}
+	});
+});
+
 describe("Lean model conformance: budgets", () => {
 	it(`agrees with checkBudget on all ${vectors.budget.vectors.length} vectors`, () => {
 		for (const vector of vectors.budget.vectors) {
 			const [agentSteps, toolCalls, inputBytes, knownCostUsd] = vector.usage;
 			const [nextSteps, nextTools, nextBytes, nextCost] = vector.next;
 			const result = checkBudget(
-				vectors.budget.limits,
+				{ ...vectors.budget.limits, maxSpendUsd: vector.maxSpendUsd },
 				{ agentSteps, toolCalls, inputBytes, knownCostUsd, hasUnmeteredUsage: false },
 				vector.elapsedMs,
 				{ agentSteps: nextSteps, toolCalls: nextTools, inputBytes: nextBytes, costUsd: nextCost },

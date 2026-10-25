@@ -223,6 +223,7 @@ mod tests {
 			authorization: authorization.map(str::to_owned),
 			finnhub_token: None,
 			include_error_body: true,
+			json_body: None,
 		}
 	}
 

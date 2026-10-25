@@ -5,8 +5,14 @@
 //! network:
 //!   URL policy -> allowlist -> one hop through the transport -> redirect
 //!   handling (manual, re-validated per hop) -> status -> byte cap -> decode.
-//! A [`HopTransport`] owns the one thing that differs: how a single GET is
-//! sent, and which destination guarantees it can give.
+//! A [`HopTransport`] owns the one thing that differs: how a single request
+//! (a GET, or the one JSON POST of `SafeFetchOptions::json_body`) is sent,
+//! and which destination guarantees it can give.
+//!
+//! POST: the core sends a `json_body` only to an allowlisted host, only on
+//! the initial request, at most `MAX_JSON_BODY_BYTES`, and never follows a
+//! redirect from it (`REDIRECT_NOT_AUTHORIZED`), so the body reaches the one
+//! destination the caller named and nowhere else.
 //!
 //! BYTE LIMIT: `max_bytes` bounds the body bytes the core receives from the
 //! transport, i.e. the bytes AFTER content decoding. Bytes on the wire are
@@ -28,8 +34,8 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use futures_util::FutureExt;
 use research_application::ports::{
-	BinaryDocument, FetchedDocument, SafeBinaryFetcher, SafeFetchError, SafeFetchErrorCode,
-	SafeFetchOptions, SafeFetcher,
+	BinaryDocument, FetchedDocument, MAX_JSON_BODY_BYTES, SafeBinaryFetcher, SafeFetchError,
+	SafeFetchErrorCode, SafeFetchOptions, SafeFetcher,
 };
 use research_domain::news::url_policy::validate_fetch_url;
 use research_js::text_decoder::{decode_utf8, decode_utf8_owned};
@@ -57,7 +63,7 @@ pub struct HopHeaders<'a> {
 	pub finnhub_token: Option<&'a str>,
 }
 
-/// One GET the core asks a transport to perform.
+/// One request the core asks a transport to perform.
 #[derive(Clone, Copy)]
 pub struct HopRequest<'a> {
 	/// Already validated: https, no credentials, default port, public-looking host name.
@@ -71,6 +77,11 @@ pub struct HopRequest<'a> {
 	pub max_bytes: usize,
 	/// Deadline and caller cancellation of the whole fetch.
 	pub signal: &'a AbortSignal,
+	/// UTF-8 bytes of the caller's `json_body`, or `None` for a GET. When set
+	/// the transport sends `POST` with `content-type: application/json` and a
+	/// `content-length` of exactly these bytes, and must not re-send them once
+	/// they may have reached the server.
+	pub json_body: Option<&'a [u8]>,
 }
 
 impl HopRequest<'_> {
@@ -153,7 +164,7 @@ pub enum HopOutcome {
 	},
 }
 
-/// Performs exactly one GET without following redirects.
+/// Performs exactly one request without following redirects.
 #[async_trait]
 pub trait HopTransport: Send + Sync {
 	/// Sends `request` and returns the response head with a streaming body.
@@ -428,6 +439,27 @@ pub async fn fetch_raw_bytes(
 		.allowed_hosts
 		.as_ref()
 		.map(|hosts| hosts.iter().map(|host| normalize_host(host)).collect());
+	// A POST body goes only to a pinned destination and is bounded; either
+	// failure is decided here, before any byte is sent.
+	let json_body = match options.json_body.as_deref() {
+		None => None,
+		Some(_) if allowed_hosts.is_none() => {
+			return fail(
+				SafeFetchErrorCode::HostNotAllowed,
+				"a POST request requires an allowlist of hosts",
+			);
+		}
+		Some(body) if body.len() > MAX_JSON_BODY_BYTES => {
+			return fail(
+				SafeFetchErrorCode::NetworkError,
+				format!(
+					"request body exceeds {} bytes",
+					usize_count(MAX_JSON_BODY_BYTES)
+				),
+			);
+		}
+		Some(body) => Some(body.as_bytes()),
+	};
 
 	let signal = AbortSignal::new(
 		Duration::from_millis(options.timeout_ms),
@@ -502,6 +534,8 @@ pub async fn fetch_raw_bytes(
 			},
 			max_bytes: options.max_bytes,
 			signal: &signal,
+			// Only hop 0 exists for a POST: a redirect from it ends the fetch below.
+			json_body,
 		};
 		let outcome = signal.until_aborted(transport.hop(request)).await;
 		let response = match outcome {
@@ -528,6 +562,14 @@ pub async fn fetch_raw_bytes(
 			let HopResponse {
 				status, location, ..
 			} = response;
+			if json_body.is_some() {
+				// Following would re-send (307/308) or silently drop (301-303) the
+				// body at a destination the caller did not name.
+				return fail(
+					SafeFetchErrorCode::RedirectNotAuthorized,
+					format!("HTTP {status}: a POST request is never redirected"),
+				);
+			}
 			let Some(location) = location else {
 				return fail(
 					SafeFetchErrorCode::HttpError,
