@@ -1,13 +1,22 @@
 import {
+	type AddWatchlistListStockRequest,
 	type AddWatchlistStockRequest,
+	addWatchlistListStockRequestSchema,
 	addWatchlistStockRequestSchema,
 	type CalendarFeedIssued,
+	type CreateWatchlistListRequest,
+	createWatchlistListRequestSchema,
+	DEFAULT_HOME_DASHBOARD,
 	EARNINGS_LIMITS,
 	earningsUnavailable,
 	formatStockId,
 	type GoogleCalendarState,
+	idSchema,
 	parseStockId,
 	type RefreshScope,
+	type RenameWatchlistListRequest,
+	renameWatchlistListRequestSchema,
+	WATCHLIST_LISTS_LIMITS,
 	type WatchlistResponse,
 	type WatchMarket,
 } from "@research/contracts";
@@ -25,6 +34,7 @@ import {
 	type GoogleActiveRun,
 	toGoogleCalendarState,
 } from "./googleCalendar.ts";
+import { ownerSeries } from "./pageSeries.ts";
 import type {
 	AuditLog,
 	CalendarFeedRepository,
@@ -32,14 +42,19 @@ import type {
 	EarningsRepository,
 	GoogleCalendarRepository,
 	Hasher,
+	HomeDashboardRepository,
 	IdGenerator,
 	JobRecord,
 	JobRepository,
+	MarketRepository,
+	NotebookRepository,
 	RateLimiter,
 	SecretGenerator,
 	StockDirectoryRepository,
 	StoredEarningsEvent,
+	StoredWatchlistList,
 	StoredWatchlistStock,
+	WatchlistListRepository,
 	WatchlistRepository,
 } from "./ports.ts";
 import { activeRefreshJob, refreshFingerprint, refreshScopeRequest } from "./refreshScope.ts";
@@ -48,6 +63,15 @@ import { toRunView } from "./runView.ts";
 
 export interface WatchlistServiceDeps {
 	readonly watchlist: WatchlistRepository;
+	/** Titled lists of watchlist stocks (ADR-0040). */
+	readonly watchlistLists: WatchlistListRepository;
+	/**
+	 * What a series clean-up after a list change must keep (ADR-0040 §2):
+	 * Home's and every notebook's named and listed series.
+	 */
+	readonly homeDashboard: Pick<HomeDashboardRepository, "get">;
+	readonly notebooks: Pick<NotebookRepository, "listMarketSeriesIds" | "listWatchlistListIds">;
+	readonly market: Pick<MarketRepository, "deleteSeriesNotIn">;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;
@@ -82,6 +106,13 @@ export interface WatchlistDigest {
 	readonly lastSucceededAt: string | null;
 	readonly lastFailure: WatchlistResponse["refresh"]["lastFailure"];
 	readonly feedCreatedAt: string | null;
+	/**
+	 * One stamp per list in creation order (ADR-0040): every change to a list
+	 * — a rename, a stock added or removed, one of its stocks leaving the
+	 * watchlist — bumps its version, so the ETag covers lists without
+	 * comparing titles or members. A created or deleted list changes the set.
+	 */
+	readonly listStamps: readonly { readonly listId: string; readonly version: number }[];
 	/**
 	 * Repository-backed Google Calendar state (FR-019 section 2.5). It is
 	 * part of the digest so the ETag covers every field of it: both views
@@ -142,7 +173,8 @@ export function watchlistDigestEtag(digest: WatchlistDigest): string {
 		`${digest.googleCalendar.lastSyncedAt ?? "never"}.${sync}.` +
 		`${digest.googleCalendar.inSync ?? "na"}.${digest.googleCalendar.activeRunId ?? "idle"}.` +
 		`${digest.googleCalendar.activeRunState ?? "idle"}.${digest.googleCalendar.activeAction ?? "none"}.${googleFailure}`;
-	return `watchlist.${digest.stockStamps.length}.${digest.activeRunId ?? "idle"}.${digest.activeRunState ?? "idle"}.${digest.lastSucceededAt ?? "never"}.${failure}.${digest.feedCreatedAt ?? "no-feed"}.${stocks}.${google}`;
+	const lists = digest.listStamps.map((entry) => `${entry.listId}:${entry.version}`).join(",");
+	return `watchlist.${digest.stockStamps.length}.${digest.activeRunId ?? "idle"}.${digest.activeRunState ?? "idle"}.${digest.lastSucceededAt ?? "never"}.${failure}.${digest.feedCreatedAt ?? "no-feed"}.${stocks}.lists.${digest.listStamps.length}.${lists}.${google}`;
 }
 
 /** Feed path relative to the origin; the token is the path segment. */
@@ -151,6 +183,32 @@ export function calendarFeedPath(token: string): string {
 }
 
 const FEED_TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,200}$/;
+
+const LIST_NOT_FOUND = "List not found.";
+const NOT_IN_LIST = "The stock is not in this list.";
+
+function listFull(): UseCaseResult<never> {
+	return fail(
+		"VALIDATION_FAILED",
+		`A list holds at most ${WATCHLIST_LISTS_LIMITS.maxStocksPerList} stocks.`,
+		"WATCHLIST_LIST_FULL",
+	);
+}
+
+/** A stored list as the API answers it (ADR-0040), naming only stocks the response holds. */
+function toWatchlistList(
+	list: StoredWatchlistList,
+	watched: ReadonlySet<string>,
+): WatchlistResponse["lists"][number] {
+	return {
+		listId: list.listId,
+		title: list.title,
+		stockIds: list.stockIds.filter((stockId) => watched.has(stockId)),
+		version: list.version,
+		createdAt: list.createdAt,
+		updatedAt: list.updatedAt,
+	};
+}
 
 const JOBS_PER_HOUR = JOB_ADMISSION.jobsPerHour;
 const HOUR_MS = JOB_ADMISSION.windowMs;
@@ -219,22 +277,29 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 		ownerId: string,
 		stocks: readonly StoredWatchlistStock[],
 	): Promise<WatchlistResponse> {
-		const events = await deps.earnings.getEvents(
-			ownerId,
-			stocks.map((stock) => stock.stockId),
-		);
+		const [events, lists] = await Promise.all([
+			deps.earnings.getEvents(
+				ownerId,
+				stocks.map((stock) => stock.stockId),
+			),
+			deps.watchlistLists.listLists(ownerId),
+		]);
 		const byStock = new Map<string, StoredEarningsEvent[]>();
 		for (const event of events) {
 			const list = byStock.get(event.stockId) ?? [];
 			list.push(event);
 			byStock.set(event.stockId, list);
 		}
+		// The stocks and the lists are two reads: a stock added to the
+		// watchlist and a list between them would make the list name a stock
+		// this response does not hold. Such a member is left out until the
+		// next read rather than failing the whole response.
+		const watched = new Set(stocks.map((stock) => stock.stockId));
 		const header = await refreshState(ownerId);
 		const feed = await deps.calendarFeed.get(ownerId);
 		return {
 			stocks: stocks.map((stock) => toWatchlistStock(stock, byStock.get(stock.stockId) ?? [])),
-			// Seam placeholder (ADR-0040): the backend worker reads the lists.
-			lists: [],
+			lists: lists.map((list) => toWatchlistList(list, watched)),
 			refresh: {
 				activeRunId: header.activeRunId,
 				activeRunState: header.activeRunState,
@@ -244,6 +309,86 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			feed: { enabled: feed !== null, createdAt: feed?.createdAt ?? null },
 			googleCalendar: await googleState(ownerId),
 		};
+	}
+
+	/** The current watchlist response (after a change, or for an idempotent no-op). */
+	async function current(ownerId: string): Promise<WatchlistResponse> {
+		return assemble(ownerId, await deps.watchlist.listStocks(ownerId));
+	}
+
+	/**
+	 * Adds a stock to the watchlist (ADR-0034 naming, the 50-stock cap, the
+	 * audit row): the ONE implementation behind `POST /watchlist/stocks` and
+	 * adding a stock to a list that is not watched yet (ADR-0040 §2).
+	 */
+	async function addToWatchlist(
+		ownerId: string,
+		market: WatchMarket,
+		symbol: string,
+	): Promise<UseCaseResult<{ readonly stockId: string }>> {
+		const stockId = formatStockId(market, symbol);
+		const now = deps.clock.nowIso();
+		// ADR-0034: a stock the directory lists is stored with the
+		// directory's (English / SEC / JPX) name, so the table names the
+		// company at once. The Japanese local name never goes here, and a
+		// stock outside the directory starts with a null name. Either way
+		// the earnings refresh may replace the name later: a refresh that
+		// returns a company name stores it (`COALESCE(new, stored)` in the
+		// completion commit), and one that returns none keeps the stored
+		// name.
+		const listed = await deps.stockDirectory.getEntry(ownerId, market, symbol);
+		// The cap is enforced by the INSERT itself (see the port): the
+		// outcome tells an idempotent re-add apart from a full list, and
+		// only a written row is audited — a lost race writes no second
+		// audit row.
+		const outcome = await deps.watchlist.insertStock(
+			ownerId,
+			{ stockId, market, symbol, name: listed?.name ?? null, addedAt: now },
+			EARNINGS_LIMITS.maxStocks,
+		);
+		if (outcome === "full") {
+			return fail(
+				"VALIDATION_FAILED",
+				`At most ${EARNINGS_LIMITS.maxStocks} stocks can be watched.`,
+				"WATCHLIST_FULL",
+			);
+		}
+		if (outcome === "added") {
+			await deps.audit.record({
+				ownerId,
+				actor: "owner",
+				action: "watchlist.stock.add",
+				resource: stockId,
+				detail: `market=${market}`,
+				at: now,
+			});
+		}
+		return ok({ stockId });
+	}
+
+	/**
+	 * After a list change or a watchlist removal, deletes the price series no
+	 * page tracks any more (ADR-0040 §2), like a Home save does (S4b). An
+	 * unreadable stored dashboard keeps everything: what it names cannot be
+	 * known, and its reset way out runs the same clean-up.
+	 */
+	async function deleteUntrackedSeries(ownerId: string): Promise<void> {
+		const stored = await deps.homeDashboard.get(ownerId);
+		if (stored === "unreadable") return;
+		const dashboard = stored === null ? DEFAULT_HOME_DASHBOARD : stored.dashboard;
+		const { keep } = await ownerSeries(deps, ownerId, dashboard.widgets);
+		await deps.market.deleteSeriesNotIn(ownerId, keep);
+	}
+
+	async function auditList(
+		ownerId: string,
+		action: string,
+		listId: string,
+		detail: string,
+		at: string,
+	): Promise<void> {
+		// The list title is owner text and never goes into an audit row.
+		await deps.audit.record({ ownerId, actor: "owner", action, resource: listId, detail, at });
 	}
 
 	/**
@@ -320,10 +465,11 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 
 	return {
 		async getDigest(ownerId: string): Promise<UseCaseResult<WatchlistDigest>> {
-			const [stocks, header, feed] = await Promise.all([
+			const [stocks, header, feed, lists] = await Promise.all([
 				deps.watchlist.listStocks(ownerId),
 				refreshState(ownerId),
 				deps.calendarFeed.get(ownerId),
+				deps.watchlistLists.listLists(ownerId),
 			]);
 			return ok({
 				stockStamps: stocks.map((stock) => ({
@@ -335,6 +481,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				})),
 				...header,
 				feedCreatedAt: feed?.createdAt ?? null,
+				listStamps: lists.map((list) => ({ listId: list.listId, version: list.version })),
 				googleCalendar: await googleState(ownerId),
 			});
 		},
@@ -350,51 +497,9 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 		): Promise<UseCaseResult<WatchlistResponse>> {
 			const parsed = addWatchlistStockRequestSchema.safeParse(request);
 			if (!parsed.success) return fail("VALIDATION_FAILED", "The stock could not be added.");
-			const market: WatchMarket = parsed.data.market;
-			const stockId = formatStockId(market, parsed.data.symbol);
-			const now = deps.clock.nowIso();
-			// ADR-0034: a stock the directory lists is stored with the
-			// directory's (English / SEC / JPX) name, so the table names the
-			// company at once. The Japanese local name never goes here, and a
-			// stock outside the directory starts with a null name. Either way
-			// the earnings refresh may replace the name later: a refresh that
-			// returns a company name stores it (`COALESCE(new, stored)` in the
-			// completion commit), and one that returns none keeps the stored
-			// name.
-			const listed = await deps.stockDirectory.getEntry(ownerId, market, parsed.data.symbol);
-			// The cap is enforced by the INSERT itself (see the port): the
-			// outcome tells an idempotent re-add apart from a full list, and
-			// only a written row is audited — a lost race writes no second
-			// audit row.
-			const outcome = await deps.watchlist.insertStock(
-				ownerId,
-				{
-					stockId,
-					market,
-					symbol: parsed.data.symbol,
-					name: listed?.name ?? null,
-					addedAt: now,
-				},
-				EARNINGS_LIMITS.maxStocks,
-			);
-			if (outcome === "already-present")
-				return ok(await assemble(ownerId, await deps.watchlist.listStocks(ownerId)));
-			if (outcome === "full") {
-				return fail(
-					"VALIDATION_FAILED",
-					`At most ${EARNINGS_LIMITS.maxStocks} stocks can be watched.`,
-					"WATCHLIST_FULL",
-				);
-			}
-			await deps.audit.record({
-				ownerId,
-				actor: "owner",
-				action: "watchlist.stock.add",
-				resource: stockId,
-				detail: `market=${market}`,
-				at: now,
-			});
-			return ok(await assemble(ownerId, await deps.watchlist.listStocks(ownerId)));
+			const added = await addToWatchlist(ownerId, parsed.data.market, parsed.data.symbol);
+			if (!added.ok) return added;
+			return ok(await current(ownerId));
 		},
 
 		async removeStock(ownerId: string, stockId: string): Promise<UseCaseResult<WatchlistResponse>> {
@@ -410,7 +515,135 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				detail: "",
 				at: now,
 			});
-			return ok(await assemble(ownerId, await deps.watchlist.listStocks(ownerId)));
+			// Its price series may have been shown only through a list.
+			await deleteUntrackedSeries(ownerId);
+			return ok(await current(ownerId));
+		},
+
+		/** `POST /watchlist/lists` (ADR-0040): a new, empty list. */
+		async createList(
+			ownerId: string,
+			request: CreateWatchlistListRequest,
+		): Promise<UseCaseResult<WatchlistResponse>> {
+			const parsed = createWatchlistListRequestSchema.safeParse(request);
+			if (!parsed.success) return fail("VALIDATION_FAILED", "The list could not be created.");
+			const listId = deps.ids.newId("list");
+			if (!idSchema.safeParse(listId).success) return fail("INTERNAL", "Internal error.");
+			const now = deps.clock.nowIso();
+			const outcome = await deps.watchlistLists.insertList(
+				ownerId,
+				{ listId, title: parsed.data.title, createdAt: now },
+				WATCHLIST_LISTS_LIMITS.maxLists,
+			);
+			if (outcome === "full") {
+				return fail(
+					"VALIDATION_FAILED",
+					`At most ${WATCHLIST_LISTS_LIMITS.maxLists} lists can be kept.`,
+					"WATCHLIST_LISTS_FULL",
+				);
+			}
+			await auditList(ownerId, "watchlist.list.create", listId, "", now);
+			return ok(await current(ownerId));
+		},
+
+		/** `PATCH /watchlist/lists/:listId` (ADR-0040): a new title. */
+		async renameList(
+			ownerId: string,
+			listId: string,
+			request: RenameWatchlistListRequest,
+		): Promise<UseCaseResult<WatchlistResponse>> {
+			if (!idSchema.safeParse(listId).success) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			const parsed = renameWatchlistListRequestSchema.safeParse(request);
+			if (!parsed.success) return fail("VALIDATION_FAILED", "The list could not be renamed.");
+			const now = deps.clock.nowIso();
+			const renamed = await deps.watchlistLists.renameList(ownerId, listId, parsed.data.title, now);
+			if (!renamed) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			await auditList(ownerId, "watchlist.list.rename", listId, "", now);
+			return ok(await current(ownerId));
+		},
+
+		/**
+		 * `DELETE /watchlist/lists/:listId` (ADR-0040): the list and its
+		 * memberships; its widgets stay and say the list was deleted. Series
+		 * only the list kept are deleted with it.
+		 */
+		async deleteList(ownerId: string, listId: string): Promise<UseCaseResult<WatchlistResponse>> {
+			if (!idSchema.safeParse(listId).success) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			const deleted = await deps.watchlistLists.deleteList(ownerId, listId);
+			if (!deleted) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			await auditList(ownerId, "watchlist.list.delete", listId, "", deps.clock.nowIso());
+			await deleteUntrackedSeries(ownerId);
+			return ok(await current(ownerId));
+		},
+
+		/**
+		 * `POST /watchlist/lists/:listId/stocks` (ADR-0040 §2). The list's
+		 * existence and room are checked BEFORE the watchlist is touched, so
+		 * the common failures add nothing; a stock not on the watchlist is
+		 * then added to it exactly as `addStock` does. A lost race (the list
+		 * deleted or filled in between) may leave the stock on the watchlist
+		 * only, which is a valid state. Adding a member again is a no-op.
+		 */
+		async addListStock(
+			ownerId: string,
+			listId: string,
+			request: AddWatchlistListStockRequest,
+		): Promise<UseCaseResult<WatchlistResponse>> {
+			if (!idSchema.safeParse(listId).success) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			const parsed = addWatchlistListStockRequestSchema.safeParse(request);
+			if (!parsed.success) return fail("VALIDATION_FAILED", "The stock could not be added.");
+			const stockId = formatStockId(parsed.data.market, parsed.data.symbol);
+			const list = (await deps.watchlistLists.listLists(ownerId)).find(
+				(entry) => entry.listId === listId,
+			);
+			if (list === undefined) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			if (list.stockIds.includes(stockId)) return ok(await current(ownerId));
+			if (list.stockIds.length >= WATCHLIST_LISTS_LIMITS.maxStocksPerList) return listFull();
+			const watched = await addToWatchlist(ownerId, parsed.data.market, parsed.data.symbol);
+			if (!watched.ok) return watched;
+			const now = deps.clock.nowIso();
+			const outcome = await deps.watchlistLists.addStock(
+				ownerId,
+				listId,
+				stockId,
+				now,
+				WATCHLIST_LISTS_LIMITS.maxStocksPerList,
+			);
+			switch (outcome) {
+				case "added":
+					await auditList(ownerId, "watchlist.list.stock.add", listId, `stock=${stockId}`, now);
+					return ok(await current(ownerId));
+				case "already-present":
+					return ok(await current(ownerId));
+				case "list-full":
+					return listFull();
+				case "list-not-found":
+					return fail("NOT_FOUND", LIST_NOT_FOUND);
+				case "stock-not-found":
+					// Removed from the watchlist between the two writes.
+					return fail("NOT_FOUND", "Stock not found.");
+			}
+		},
+
+		/**
+		 * `DELETE /watchlist/lists/:listId/stocks/:stockId` (ADR-0040): the
+		 * stock leaves the list but stays on the watchlist. Its price series
+		 * is deleted when no page tracks it any more.
+		 */
+		async removeListStock(
+			ownerId: string,
+			listId: string,
+			stockId: string,
+		): Promise<UseCaseResult<WatchlistResponse>> {
+			if (!idSchema.safeParse(listId).success) return fail("NOT_FOUND", LIST_NOT_FOUND);
+			if (parseStockId(stockId) === null) return fail("NOT_FOUND", NOT_IN_LIST);
+			const now = deps.clock.nowIso();
+			const outcome = await deps.watchlistLists.removeStock(ownerId, listId, stockId, now);
+			if (outcome === "list-not-found") return fail("NOT_FOUND", LIST_NOT_FOUND);
+			if (outcome === "not-in-list") return fail("NOT_FOUND", NOT_IN_LIST);
+			await auditList(ownerId, "watchlist.list.stock.remove", listId, `stock=${stockId}`, now);
+			await deleteUntrackedSeries(ownerId);
+			return ok(await current(ownerId));
 		},
 
 		/**

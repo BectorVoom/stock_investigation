@@ -593,6 +593,7 @@ const homeBenchService = createHomeService({
 		listMarketSeriesIds: async () => [],
 		listWatchlistListIds: async () => [],
 	},
+	watchlistLists: { membersOf: async () => new Map() },
 	clock: { nowMs: () => Date.parse("2026-10-12T12:00:00Z"), nowIso: () => "2026-10-12T12:00:00Z" },
 	audit: { record: async () => undefined },
 	records: { resolve: async () => ({ datasets: [], evidence: [], claims: [] }) },

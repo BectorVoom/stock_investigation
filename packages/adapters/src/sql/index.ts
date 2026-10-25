@@ -26,6 +26,7 @@ import type {
 	SettingsRepository,
 	SourceRepository,
 	StockDirectoryRepository,
+	WatchlistListRepository,
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "@research/application";
@@ -54,6 +55,7 @@ import {
 } from "./repositories.ts";
 import { createScheduledTaskRepository } from "./scheduledTasks.ts";
 import { createResearchUnitOfWork } from "./unitOfWork.ts";
+import { createWatchlistListRepository } from "./watchlistLists.ts";
 
 export type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
 export { StoredDataError } from "./rows.ts";
@@ -75,6 +77,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 	const notebooks: NotebookRepository = createNotebookRepository(db);
 	const chartEvidence: ChartEvidenceReferences = createChartEvidenceReferences(db);
 	const watchlist: WatchlistRepository = createWatchlistRepository(db);
+	const watchlistLists: WatchlistListRepository = createWatchlistListRepository(db);
 	const earnings: EarningsRepository = createEarningsRepository(db);
 	const calendarFeed: CalendarFeedRepository = createCalendarFeedRepository(db);
 	const googleCalendar: GoogleCalendarRepository = createGoogleCalendarRepository(db);
@@ -98,6 +101,7 @@ export function createSqlPersistence(db: SqlDatabase): Persistence {
 		notebooks,
 		chartEvidence,
 		watchlist,
+		watchlistLists,
 		earnings,
 		calendarFeed,
 		googleCalendar,

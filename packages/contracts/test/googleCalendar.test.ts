@@ -100,6 +100,7 @@ describe("google calendar state", () => {
 	it("is required on the watchlist response", () => {
 		expectAccepted(watchlistResponseSchema, {
 			stocks: [],
+			lists: [],
 			refresh: {
 				activeRunId: null,
 				activeRunState: null,
@@ -113,6 +114,7 @@ describe("google calendar state", () => {
 			watchlistResponseSchema,
 			{
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: null,
 					activeRunState: null,

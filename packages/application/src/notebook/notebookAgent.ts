@@ -233,6 +233,8 @@ function preview(widget: WidgetCore | undefined): string | null {
 function marketPreview(widget: MarketWidgetCore): string {
 	const label = WIDGET_TYPE_META[widget.type].label;
 	if (widget.type === "earnings-calendar") return `${label}, next ${widget.daysAhead} days`;
+	// ADR-0040: it names a list, not series; the agent cannot look lists up.
+	if (widget.type === "watchlist-prices") return `${label} of list ${widget.listId}`;
 	const series = widgetSeriesIds(widget).join(", ");
 	return widget.type === "line-chart"
 		? `${label} of ${series}, ${widget.range}`

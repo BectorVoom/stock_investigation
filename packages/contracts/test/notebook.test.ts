@@ -59,6 +59,7 @@ describe("notebook widgets", () => {
 			"table",
 			"task-result",
 			"text",
+			"watchlist-prices",
 		]);
 		for (const type of WIDGET_TYPES) {
 			expect(WIDGET_TYPE_META[type].sizes.length).toBeGreaterThan(0);

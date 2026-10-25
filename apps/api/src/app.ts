@@ -6,6 +6,7 @@ import {
 } from "@research/application";
 import type { ApiErrorBody } from "@research/contracts";
 import {
+	addWatchlistListStockRequestSchema,
 	addWatchlistStockRequestSchema,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
@@ -17,6 +18,7 @@ import {
 	completeJobRequestSchema,
 	createResearchRunRequestSchema,
 	createScheduledTaskRequestSchema,
+	createWatchlistListRequestSchema,
 	createWorkspaceRequestSchema,
 	DEFAULT_CONVERSATION_TITLE,
 	heartbeatRequestSchema,
@@ -36,6 +38,7 @@ import {
 	refreshRequestSchema,
 	registerSourceRequestSchema,
 	releaseJobRequestSchema,
+	renameWatchlistListRequestSchema,
 	renameWorkspaceRequestSchema,
 	runnerEventsRequestSchema,
 	runScheduledTaskResponseSchema,
@@ -1209,6 +1212,79 @@ export function createApp(options: AppOptions = {}) {
 				const stockId = c.req.param("stockId");
 				const watchlist = yield* useCase("watchlist.remove_stock", () =>
 					c.var.services.watchlist.removeStock(owner(c), stockId),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	/* Titled watchlist lists (ADR-0040): every route answers the full
+	 * watchlist, like the stock routes, so the page re-renders from one
+	 * response. A list id of the wrong shape is NOT_FOUND. */
+	api.post("/watchlist/lists", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const body = yield* readJson(c, createWatchlistListRequestSchema);
+				const watchlist = yield* useCase("watchlist.create_list", () =>
+					c.var.services.watchlist.createList(owner(c), body),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist), 201);
+			}),
+		),
+	);
+	api.patch("/watchlist/lists/:listId", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const listId = yield* pathId(c, "listId");
+				const body = yield* readJson(c, renameWatchlistListRequestSchema);
+				const watchlist = yield* useCase("watchlist.rename_list", () =>
+					c.var.services.watchlist.renameList(owner(c), listId, body),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.delete("/watchlist/lists/:listId", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const listId = yield* pathId(c, "listId");
+				const watchlist = yield* useCase("watchlist.delete_list", () =>
+					c.var.services.watchlist.deleteList(owner(c), listId),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.post("/watchlist/lists/:listId/stocks", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const listId = yield* pathId(c, "listId");
+				const body = yield* readJson(c, addWatchlistListStockRequestSchema);
+				const watchlist = yield* useCase("watchlist.add_list_stock", () =>
+					c.var.services.watchlist.addListStock(owner(c), listId, body),
+				);
+				return c.json(watchlistResponseSchema.parse(watchlist));
+			}),
+		),
+	);
+	api.delete("/watchlist/lists/:listId/stocks/:stockId", (c) =>
+		respond(
+			c,
+			logger,
+			Effect.gen(function* () {
+				const listId = yield* pathId(c, "listId");
+				// Like the stock route: an unknown stock id shape is the use
+				// case's NOT_FOUND, never a 500.
+				const stockId = c.req.param("stockId");
+				const watchlist = yield* useCase("watchlist.remove_list_stock", () =>
+					c.var.services.watchlist.removeListStock(owner(c), listId, stockId),
 				);
 				return c.json(watchlistResponseSchema.parse(watchlist));
 			}),

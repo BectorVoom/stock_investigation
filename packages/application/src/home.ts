@@ -6,7 +6,7 @@ import {
 	homeDashboardSchema,
 	MARKET_LIMITS,
 } from "@research/contracts";
-import { distinctDashboardSeriesIds, err, ok } from "@research/domain";
+import { err, ok } from "@research/domain";
 import { chartSourceProblem } from "./chartSources.ts";
 import { fail, type UseCaseError, type UseCaseResult } from "./errors.ts";
 import { MARKET_CATALOG } from "./marketCatalog.ts";
@@ -16,6 +16,7 @@ import {
 	type MarketSeriesStamp,
 	seriesStampsFor,
 } from "./marketData.ts";
+import { ownerSeries, pageSeriesFor } from "./pageSeries.ts";
 import type {
 	AuditLog,
 	Clock,
@@ -25,6 +26,7 @@ import type {
 	MarketRepository,
 	NotebookRepository,
 	ResearchRecordRepository,
+	WatchlistListRepository,
 } from "./ports.ts";
 
 export interface HomeServiceDeps {
@@ -33,6 +35,8 @@ export interface HomeServiceDeps {
 	readonly jobs: JobRepository;
 	/** The notebooks' series a Home save must keep (ADR-0021). */
 	readonly notebooks: NotebookRepository;
+	/** Resolves `watchlist-prices` widgets to their stocks' series (ADR-0040). */
+	readonly watchlistLists: Pick<WatchlistListRepository, "membersOf">;
 	readonly clock: Clock;
 	readonly audit: AuditLog;
 	/** The owner's evidence, which a chart widget's source copies must equal (ADR-0026). */
@@ -92,13 +96,15 @@ export function createHomeService(deps: HomeServiceDeps) {
 	}
 
 	/**
-	 * Series a Home save must keep: the dashboard's series plus every series
-	 * a notebook still names (ADR-0021). Only series named by neither are
-	 * deleted with the save.
+	 * Series a Home save must keep: the dashboard's named and listed series
+	 * plus every series a notebook still names or lists (ADR-0021, ADR-0040).
+	 * Only series named by none of them are deleted with the save.
 	 */
-	async function keepSeriesIds(ownerId: string, dashboard: HomeDashboard): Promise<string[]> {
-		const notebookIds = await deps.notebooks.listMarketSeriesIds(ownerId);
-		return [...new Set([...distinctDashboardSeriesIds(dashboard.widgets), ...notebookIds])];
+	async function keepSeriesIds(
+		ownerId: string,
+		dashboard: HomeDashboard,
+	): Promise<readonly string[]> {
+		return (await ownerSeries(deps, ownerId, dashboard.widgets)).keep;
 	}
 
 	return {
@@ -205,7 +211,8 @@ export function createHomeService(deps: HomeServiceDeps) {
 			const stored = await readableRecord(ownerId);
 			if (!stored.ok) return stored;
 			const dashboard = stored.value?.dashboard ?? DEFAULT_HOME_DASHBOARD;
-			const ids = distinctDashboardSeriesIds(dashboard.widgets).slice(0, MARKET_LIMITS.maxSeries);
+			// ADR-0040 §4: named series first, then the lists' series, at most 30.
+			const ids = await pageSeriesFor(deps.watchlistLists, ownerId, dashboard.widgets);
 			const [status, metas] = await Promise.all([
 				fetchMarketRefreshStatus(deps.jobs, ownerId),
 				deps.market.getSeriesMeta(ownerId, ids),

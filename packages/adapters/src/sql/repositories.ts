@@ -1705,10 +1705,23 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 				.first();
 			return present === null ? "full" : "already-present";
 		},
-		async removeStock(ownerId, stockId, _now) {
-			// The stock and its events go in one atomic batch: a crash between
-			// the two statements cannot orphan event rows.
+		async removeStock(ownerId, stockId, now) {
+			// The stock, its events and its list memberships go in one atomic
+			// batch: a crash between the statements cannot orphan event or
+			// membership rows (ADR-0040). The lists that held it are bumped
+			// FIRST, while the memberships that name them still exist, so the
+			// `/watchlist` ETag sees every list the stock leaves.
 			const results = await db.batch([
+				db
+					.prepare(
+						`UPDATE watchlist_lists SET version = version + 1, updated_at = ?3
+						WHERE owner_id = ?1 AND list_id IN (
+							SELECT list_id FROM watchlist_list_stocks WHERE owner_id = ?1 AND stock_id = ?2)`,
+					)
+					.bind(ownerId, stockId, now),
+				db
+					.prepare(`DELETE FROM watchlist_list_stocks WHERE owner_id = ? AND stock_id = ?`)
+					.bind(ownerId, stockId),
 				db
 					.prepare(`DELETE FROM earnings_events WHERE owner_id = ? AND stock_id = ?`)
 					.bind(ownerId, stockId),
@@ -1716,7 +1729,7 @@ export function createWatchlistRepository(db: SqlDatabase): WatchlistRepository 
 					.prepare(`DELETE FROM watchlist_stocks WHERE owner_id = ? AND stock_id = ?`)
 					.bind(ownerId, stockId),
 			]);
-			return (results[1]?.meta.changes ?? 0) === 1;
+			return (results[3]?.meta.changes ?? 0) === 1;
 		},
 	};
 }

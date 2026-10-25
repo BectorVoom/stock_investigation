@@ -614,6 +614,18 @@ the code beside it. Its header comment is the rollback: after a `wrangler d1
 export`, `ALTER TABLE … DROP COLUMN` the five columns; the version-10 code
 never reads them.
 
+Migration `0013_watchlist_lists.sql` (ADR-0040) adds `watchlist_lists`
+(one row per titled list: title, `version`, creation and update times) and
+`watchlist_list_stocks` (`WITHOUT ROWID`, one row per stock in a list), with
+no secondary index (an owner holds at most 20 lists × 12 stocks). Every
+member is a watchlist stock: removing a stock from the watchlist deletes its
+memberships in the same batch. Its header comment is the rollback: remove any
+`watchlist-prices` widgets from Home and the notebooks first (the version-12
+code cannot read that type), then after a `wrangler d1 export`, `DELETE` both
+tables' rows and `DROP TABLE` them; the watchlist stocks themselves are
+untouched. An already-running `bun run dev` answers 500 on `/watchlist` until
+it is restarted (or the migration is applied to `data-dev/d1`).
+
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,
 attempt/success stamps, failure code), `earnings_events` (`WITHOUT ROWID`,

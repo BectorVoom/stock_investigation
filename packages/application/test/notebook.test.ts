@@ -316,6 +316,7 @@ function service(f: Fakes, rateLimiter?: RateLimiter, records = recordsWith()) {
 			getObservations: async () => [],
 			deleteSeriesNotIn: async () => 0,
 		},
+		watchlistLists: { membersOf: async () => new Map() },
 		unitOfWork: f.unitOfWork,
 		clock: f.clock,
 		ids: f.ids,

@@ -28,7 +28,6 @@ import {
 	checkLease,
 	decideClaim,
 	decideRelease,
-	distinctDashboardSeriesIds,
 	err,
 	isLeasedJobState,
 	isTerminalJobState,
@@ -50,12 +49,12 @@ import {
 	googleSuccessPatch,
 	googleTerminalPatch,
 } from "./googleCalendar.ts";
-import { unionSeriesIds } from "./marketData.ts";
 import {
 	type NotebookClaimData,
 	notebookAssistedEffects,
 	prepareNotebookAssistClaim,
 } from "./notebook/notebook.ts";
+import { ownerSeries } from "./pageSeries.ts";
 import type {
 	AuditLog,
 	ChatRepository,
@@ -79,6 +78,7 @@ import type {
 	SourceRepository,
 	StockDirectoryJobRequest,
 	TransitionAudit,
+	WatchlistListRepository,
 	WatchlistRepository,
 	WorkspaceRepository,
 } from "./ports.ts";
@@ -150,6 +150,8 @@ export interface RunnerJobServiceDeps {
 	readonly market: MarketRepository;
 	readonly notebooks: NotebookRepository;
 	readonly watchlist: WatchlistRepository;
+	/** Resolves `watchlist-prices` widgets to their stocks' series (ADR-0040). */
+	readonly watchlistLists: Pick<WatchlistListRepository, "membersOf">;
 	/** Sync-payload assembly at claim time (FR-019). */
 	readonly earnings: EarningsRepository;
 	readonly hasher: Hasher;
@@ -219,9 +221,10 @@ function toArticle(article: IngestedArticle): Article {
 
 export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	/**
-	 * The series a market-refresh claim fetches: the union of the Home
-	 * dashboard's series (first) and every notebook's market series,
-	 * de-duplicated, at most maxTrackedSeries (ADR-0021) — or, for an
+	 * The series a market-refresh claim fetches: Home's page series (first,
+	 * its lists' series included) and every notebook's named and listed
+	 * series, de-duplicated, at most maxTrackedSeries (ADR-0021, ADR-0040
+	 * §4: `ownerSeries(...).tracked`) — or, for an
 	 * `"unrefreshed"` job, only those with no stored observations or never
 	 * refreshed, in the same order (ADR-0039). `coversEverything` says the
 	 * narrowing left every tracked series in.
@@ -236,11 +239,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 		}[];
 		readonly coversEverything: boolean;
 	}> {
-		const dashboard = await marketDashboard(ownerId);
-		const tracked = unionSeriesIds(
-			distinctDashboardSeriesIds(dashboard.widgets),
-			await deps.notebooks.listMarketSeriesIds(ownerId),
-		);
+		const { tracked } = await trackedSeries(ownerId);
 		const state = await deps.market.getRefreshState(ownerId, tracked);
 		const ids =
 			storedRefreshScope(job) === "all"
@@ -301,6 +300,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 			// next claim tries again. Reported by class name only.
 			deps.onSchedulerFailure(thrownName(error));
 		}
+	}
+
+	/** The owner's tracked series, for the claim and the completion alike. */
+	async function trackedSeries(ownerId: string) {
+		return ownerSeries(deps, ownerId, (await marketDashboard(ownerId)).widgets);
 	}
 
 	async function marketDashboard(ownerId: string): Promise<HomeDashboard> {
@@ -1321,14 +1325,12 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					patch.approvalRequest = null;
 					const built = await marketEffects(request);
 					if (!built.ok) return built;
-					// S4a: store only series on the owner's CURRENT dashboard or
-					// in a CURRENT notebook — either may have changed since the
-					// claim. Dropped series are counted in the audit detail,
-					// never stored.
-					const current = new Set([
-						...distinctDashboardSeriesIds((await marketDashboard(runner.ownerId)).widgets),
-						...(await deps.notebooks.listMarketSeriesIds(runner.ownerId)),
-					]);
+					// S4a: store only series the owner's CURRENT pages track —
+					// the dashboard, a notebook or a Watchlist list may have
+					// changed since the claim (ADR-0040 §4: the same set the
+					// claim fetches). Dropped series are counted in the audit
+					// detail, never stored.
+					const current = new Set((await trackedSeries(runner.ownerId)).tracked);
 					const kept = built.value.marketSeries.filter((entry) => current.has(entry.seriesId));
 					droppedMarketSeries = built.value.marketSeries.length - kept.length;
 					effects = { ...built.value, marketSeries: kept };

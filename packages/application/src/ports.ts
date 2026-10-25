@@ -1601,6 +1601,8 @@ export interface Persistence {
 	readonly notebooks: NotebookRepository;
 	readonly chartEvidence: ChartEvidenceReferences;
 	readonly watchlist: WatchlistRepository;
+	/** Titled lists of watchlist stocks (ADR-0040). */
+	readonly watchlistLists: WatchlistListRepository;
 	readonly earnings: EarningsRepository;
 	readonly calendarFeed: CalendarFeedRepository;
 	readonly googleCalendar: GoogleCalendarRepository;

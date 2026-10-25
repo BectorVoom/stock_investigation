@@ -468,6 +468,61 @@ describe("applyNotebookCommands", () => {
 		]);
 	});
 
+	it("arranges an owner's watchlist-prices widget but never adds one or changes its list (ADR-0040 §8)", async () => {
+		const pricesWidget: NotebookWidget = {
+			widgetId: "w-2",
+			type: "watchlist-prices",
+			listId: "list_abc",
+			title: "Semiconductors",
+			size: "medium",
+			createdAt: EARLIER,
+			updatedAt: EARLIER,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		};
+		const notebook = notebookOf([textWidget("w-1"), pricesWidget]);
+		const refusals = [
+			[
+				{ kind: "add", type: "watchlist-prices", title: "Chips", config: { listId: "list_abc" } },
+				'agents cannot add "watchlist-prices" widgets',
+			],
+			[{ kind: "duplicate", widgetId: "w-2" }, 'agents cannot add "watchlist-prices" widgets'],
+			[
+				{ kind: "update", widgetId: "w-2", config: { listId: "list_other" } },
+				'agents cannot change the config of "watchlist-prices" widgets',
+			],
+		] as const;
+		for (const [command, rule] of refusals) {
+			const applied = await applyNotebookCommands(notebook, [command], context());
+			if (applied.ok) throw new Error(`expected ${command.kind} to fail`);
+			expect(applied.error.failure.code).toBe("INVALID_WIDGET");
+			expect(applied.error.failure.message).toContain(rule);
+			expect(applied.error.failure.message).toContain("the Watchlist page");
+		}
+
+		const arranged = await applyNotebookCommands(
+			notebook,
+			[
+				{ kind: "resize", widgetId: "w-2", size: "small" },
+				{ kind: "update", widgetId: "w-2", title: "Chips" },
+			],
+			context(),
+		);
+		if (!arranged.ok) throw new Error(`expected success: ${arranged.error.failure.message}`);
+		expect(arranged.value.widgets[1]).toEqual({
+			widgetId: "w-2",
+			type: "watchlist-prices",
+			listId: "list_abc",
+			title: "Chips",
+			size: "small",
+		});
+		// The change card names the list, never a blank "of" with no series.
+		expect(arranged.value.changes[1]).toMatchObject({
+			kind: "updated",
+			after: "Watchlist prices of list list_abc",
+		});
+	});
+
 	it("rejects an unknown widget type", async () => {
 		const applied = await applyNotebookCommands(
 			notebookOf([]),

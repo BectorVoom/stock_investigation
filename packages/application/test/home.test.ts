@@ -54,6 +54,7 @@ function serviceWith(dashboard: HomeDashboardRepository, market: MarketRepositor
 		market,
 		jobs: stubJobs(),
 		notebooks: NOTEBOOKS,
+		watchlistLists: { membersOf: async () => new Map() },
 		clock: fixedClock().clock,
 		audit: AUDIT,
 		records: recordsWith(),
@@ -288,6 +289,7 @@ describe("home getData (FR-017)", () => {
 			market: marketOf({ getSeriesMeta: async () => [VIX_META] }),
 			jobs,
 			notebooks: NOTEBOOKS,
+			watchlistLists: { membersOf: async () => new Map() },
 			clock: fixedClock().clock,
 			audit: AUDIT,
 			records: recordsWith(),
@@ -370,5 +372,105 @@ describe("home getData (FR-017)", () => {
 			),
 		);
 		expect(tags.size).toBe(4);
+	});
+});
+
+describe("home series of Watchlist lists (ADR-0040 §4)", () => {
+	const LIST_MEMBERS = new Map([
+		[
+			"list_chips",
+			[
+				{ stockId: "us:NVDA", market: "US", symbol: "NVDA" },
+				{ stockId: "jp:7203", market: "JP", symbol: "7203" },
+			] as const,
+		],
+	]);
+	const lists = {
+		membersOf: async (_owner: string, listIds: readonly string[]) =>
+			new Map([...LIST_MEMBERS].filter(([listId]) => listIds.includes(listId))),
+	};
+
+	function homeWith(
+		widgets: HomeDashboard["widgets"],
+		kept: { keep: readonly string[] | null },
+		notebookListIds: readonly string[] = [],
+	) {
+		return createHomeService({
+			dashboard: dashboardOf(widgets),
+			market: marketOf({
+				deleteSeriesNotIn: async (_owner, keep) => {
+					kept.keep = [...keep];
+					return 0;
+				},
+			}),
+			jobs: stubJobs(),
+			notebooks: { ...NOTEBOOKS, listWatchlistListIds: async () => notebookListIds },
+			watchlistLists: lists,
+			clock: fixedClock().clock,
+			audit: AUDIT,
+			records: recordsWith(),
+		});
+	}
+
+	it("serves a list widget's stocks after the named series, and a deleted list adds nothing", async () => {
+		const service = homeWith(
+			[
+				{
+					type: "watchlist-prices",
+					widgetId: "w-l",
+					title: "Chips",
+					size: "medium",
+					listId: "list_chips",
+				},
+				{
+					type: "watchlist-prices",
+					widgetId: "w-gone",
+					title: "Gone",
+					size: "medium",
+					listId: "list_gone",
+				},
+				{
+					type: "market-metric",
+					widgetId: "w-v",
+					title: "VIX",
+					size: "small",
+					seriesId: "fred:VIXCLS",
+				},
+			],
+			{ keep: null },
+		);
+		const digest = unwrapOk(await service.getDataDigest(OWNER));
+		expect(digest.seriesIds).toEqual(["fred:VIXCLS", "twelve-data:NVDA", "twelve-data:7203:JPX"]);
+		expect(digest.seriesStamps.map((stamp) => stamp.seriesId)).toEqual(digest.seriesIds);
+		const data = unwrapOk(await service.getData(OWNER, digest));
+		expect(data.series.map((entry) => entry.seriesId)).toEqual(digest.seriesIds);
+	});
+
+	it("keeps Home's and the notebooks' list series on a save", async () => {
+		const kept: { keep: readonly string[] | null } = { keep: null };
+		const service = homeWith([], kept, ["list_chips"]);
+		unwrapOk(
+			await service.putDashboard(
+				OWNER,
+				{
+					schemaVersion: 2,
+					widgets: [
+						{
+							type: "market-metric",
+							widgetId: "w-v",
+							title: "VIX",
+							size: "small",
+							seriesId: "fred:VIXCLS",
+						},
+					],
+				},
+				1,
+			),
+		);
+		expect([...(kept.keep ?? [])].sort()).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:7203:JPX",
+			"twelve-data:NVDA",
+		]);
 	});
 });

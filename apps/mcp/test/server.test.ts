@@ -478,6 +478,62 @@ describe("createHomeMcpServer", () => {
 		expect(api.puts()).toBe(3);
 	});
 
+	it("arranges a watchlist-prices widget but never adds one or changes its list (ADR-0040 §8)", async () => {
+		const withPrices: HomeDashboard = {
+			schemaVersion: 2,
+			widgets: [
+				...DEFAULT_HOME_DASHBOARD.widgets,
+				{
+					type: "watchlist-prices",
+					widgetId: "w-chips",
+					title: "Semiconductors",
+					size: "medium",
+					listId: "list_abc",
+				},
+			],
+		};
+		const api = fakeHomeApi(withPrices, 3);
+		const server = createHomeMcpServer({ apiOrigin: API_ORIGIN, fetch: api.fetch });
+		const refused = [
+			await callTool(server, 1, "widgets_add", {
+				type: "watchlist-prices",
+				title: "Chips",
+				config: { listId: "list_abc" },
+			}),
+			await callTool(server, 2, "widgets_duplicate", { widgetId: "w-chips" }),
+			await callTool(server, 3, "widgets_update", {
+				widgetId: "w-chips",
+				config: { listId: "list_other" },
+			}),
+		].map(toolError);
+		for (const error of refused) {
+			expect(error.code).toBe("INVALID_WIDGET");
+			expect(error.message).toContain("the owner adds it from the add menu or the Watchlist page");
+		}
+		expect(refused[0]?.message).toContain('agents cannot add "watchlist-prices" widgets');
+		expect(refused[2]?.message).toContain('agents cannot change the config of "watchlist-prices"');
+		expect(api.puts()).toBe(0);
+
+		snapshotWidgets(
+			await callTool(server, 4, "widgets_resize", { widgetId: "w-chips", size: "large" }),
+		);
+		snapshotWidgets(
+			await callTool(server, 5, "widgets_reorder", { widgetId: "w-chips", toIndex: 0 }),
+		);
+		expect(api.dashboard().widgets[0]).toEqual({
+			type: "watchlist-prices",
+			widgetId: "w-chips",
+			title: "Semiconductors",
+			size: "large",
+			listId: "list_abc",
+		});
+		const removed = snapshotWidgets(
+			await callTool(server, 6, "widgets_remove", { widgetId: "w-chips" }),
+		);
+		expect(removed.some((widget) => widget.widgetId === "w-chips")).toBe(false);
+		expect(api.puts()).toBe(3);
+	});
+
 	it("allocates ids the contract accepts", () => {
 		expect(newHomeWidgetId()).toMatch(/^w-mcp-[A-Za-z0-9_.-]+$/);
 		expect(newHomeWidgetId()).not.toBe(newHomeWidgetId());

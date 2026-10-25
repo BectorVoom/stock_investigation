@@ -11,6 +11,7 @@ export * from "./notebook/assistTurn.ts";
 export * from "./notebook/notebook.ts";
 export * from "./notebook/notebookAgent.ts";
 export * from "./notebook/prompts.ts";
+export * from "./pageSeries.ts";
 export * from "./ports.ts";
 export * from "./recommendedCatalog.ts";
 export * from "./recordIntegrity.ts";

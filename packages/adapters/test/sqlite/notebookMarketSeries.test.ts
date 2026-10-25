@@ -177,4 +177,44 @@ describe("notebook market series scan (ADR-0021)", () => {
 			db.close();
 		}
 	});
+
+	it("reads the distinct list ids of every notebook's watchlist-prices widgets (ADR-0040)", async () => {
+		const db = openMigrated();
+		try {
+			const prices = (widgetId: string, listId: string) =>
+				widget({ widgetId, type: "watchlist-prices", listId });
+			await insertNotebook(
+				db,
+				"owner_1",
+				"ws_1",
+				JSON.stringify({
+					widgets: [
+						prices("w-1", "list_b"),
+						prices("w-2", "bad id"),
+						widget({ widgetId: "w-3", type: "market-metric", size: "small", seriesId: "fred:X" }),
+					],
+				}),
+			);
+			await insertNotebook(
+				db,
+				"owner_1",
+				"ws_2",
+				JSON.stringify({ widgets: [prices("w-1", "list_a"), prices("w-2", "list_b")] }),
+			);
+			await insertNotebook(db, "owner_1", "ws_3", "{not json");
+			await insertNotebook(
+				db,
+				"owner_2",
+				"ws_1",
+				JSON.stringify({ widgets: [prices("w-1", "list_z")] }),
+			);
+			const repository = createNotebookRepository(db);
+			// Sorted, de-duplicated, invalid ids dropped, unreadable bodies skipped.
+			expect(await repository.listWatchlistListIds("owner_1")).toEqual(["list_a", "list_b"]);
+			expect(await repository.listWatchlistListIds("owner_2")).toEqual(["list_z"]);
+			expect(await repository.listWatchlistListIds("owner_missing")).toEqual([]);
+		} finally {
+			db.close();
+		}
+	});
 });

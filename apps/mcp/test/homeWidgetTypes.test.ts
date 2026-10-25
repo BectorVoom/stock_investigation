@@ -35,6 +35,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			"table",
 			"task-result",
 			"text",
+			"watchlist-prices",
 		]);
 		for (const entry of HOME_WIDGET_AGENT_TYPES) {
 			expect(entry.label.trim().length).toBeGreaterThan(0);
@@ -64,9 +65,17 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 		const result = byType("task-result");
 		expect(result.ownerPlaced?.reason).toContain("cannot add one or change its taskId");
 		expect(result.description).toContain("cannot add one");
-		expect(HOME_WIDGET_AGENT_TYPES.filter((entry) => entry.ownerPlaced !== undefined)).toEqual([
-			result,
-		]);
+		// ADR-0040 §8: the same rule for a Watchlist prices widget (agents cannot look lists up).
+		const prices = byType("watchlist-prices");
+		expect(prices.label).toBe("Watchlist prices");
+		expect(prices.defaultSize).toBe("medium");
+		expect(prices.ownerPlaced?.reason).toContain("cannot add one or change its listId");
+		expect(prices.description).not.toContain("fred:");
+		expect(
+			HOME_WIDGET_AGENT_TYPES.filter((entry) => entry.ownerPlaced !== undefined)
+				.map((entry) => entry.type)
+				.sort(),
+		).toEqual([result.type, prices.type]);
 	});
 
 	it("generates config schemas with no generic fields", () => {
@@ -179,6 +188,7 @@ describe("HOME_WIDGET_AGENT_TYPES", () => {
 			{ type: "scheduled-tasks", config: {} },
 			// Built when an agent renames an owner-placed one (ADR-0038 §6).
 			{ type: "task-result", config: { taskId: "task_abc" } },
+			{ type: "watchlist-prices", config: { listId: "list_abc" } },
 		];
 		for (const { type, config } of cases) {
 			const agentType = byType(type);

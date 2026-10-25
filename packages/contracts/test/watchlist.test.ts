@@ -1,8 +1,10 @@
-import { WATCHLIST_LIMITS } from "@research/domain";
+import { WATCHLIST_LIMITS, WATCHLIST_LIST_LIMITS } from "@research/domain";
 import { describe, expect, it } from "vitest";
 import {
+	addWatchlistListStockRequestSchema,
 	addWatchlistStockRequestSchema,
 	calendarFeedIssuedSchema,
+	createWatchlistListRequestSchema,
 	DISCONNECTED_GOOGLE_CALENDAR_STATE,
 	EARNINGS_LIMITS,
 	EARNINGS_UNAVAILABLE_CODES,
@@ -14,6 +16,9 @@ import {
 	earningsUnavailableSchema,
 	formatStockId,
 	parseStockId,
+	renameWatchlistListRequestSchema,
+	WATCHLIST_LISTS_LIMITS,
+	watchlistListSchema,
 	watchlistResponseSchema,
 	watchlistStockIdSchema,
 	watchlistStockSchema,
@@ -44,8 +49,18 @@ const STOCK = {
 	events: [EVENT],
 } as const;
 
+const LIST = {
+	listId: "list_0123456789ab",
+	title: "Semiconductors",
+	stockIds: ["us:AAPL"],
+	version: 2,
+	createdAt: "2026-10-11T03:00:00.000Z",
+	updatedAt: "2026-10-11T04:00:00.000Z",
+} as const;
+
 const RESPONSE = {
 	stocks: [STOCK],
+	lists: [LIST],
 	refresh: {
 		activeRunId: null,
 		activeRunState: null,
@@ -250,6 +265,109 @@ describe("addWatchlistStockRequest", () => {
 		expectRejected(addWatchlistStockRequestSchema, { market: "US", symbol: "" });
 		expectRejected(addWatchlistStockRequestSchema, { market: "XX", symbol: "AAPL" });
 		expectRejected(addWatchlistStockRequestSchema, { market: "US", symbol: "AAPL", extra: 1 });
+	});
+});
+
+describe("watchlist lists (ADR-0040)", () => {
+	it("re-exports the domain list bounds by reference", () => {
+		expect(WATCHLIST_LISTS_LIMITS).toBe(WATCHLIST_LIST_LIMITS);
+		expect(WATCHLIST_LISTS_LIMITS).toEqual({
+			maxLists: 20,
+			maxStocksPerList: 12,
+			maxTitleChars: 80,
+		});
+	});
+
+	it("accepts an empty list and a full one, trimming the title", () => {
+		expectAccepted(watchlistListSchema, { ...LIST, stockIds: [], version: 1 });
+		const symbols = [
+			"AAPL",
+			"MSFT",
+			"NVDA",
+			"AMD",
+			"INTC",
+			"TSM",
+			"AVGO",
+			"QCOM",
+			"MU",
+			"TXN",
+			"ARM",
+			"ASML",
+		];
+		expectAccepted(watchlistListSchema, {
+			...LIST,
+			stockIds: symbols.map((symbol) => `us:${symbol}`),
+		});
+		expect(watchlistListSchema.parse({ ...LIST, title: "  Chips  " }).title).toBe("Chips");
+	});
+
+	it("rejects bad titles, ids, repeats, over-long lists and version 0", () => {
+		expectRejected(watchlistListSchema, { ...LIST, title: "   " }, ["title"]);
+		expectRejected(
+			watchlistListSchema,
+			{ ...LIST, title: "x".repeat(WATCHLIST_LIST_LIMITS.maxTitleChars + 1) },
+			["title"],
+		);
+		expectAccepted(watchlistListSchema, {
+			...LIST,
+			title: "x".repeat(WATCHLIST_LIST_LIMITS.maxTitleChars),
+		});
+		expectRejected(watchlistListSchema, { ...LIST, listId: "bad id" }, ["listId"]);
+		expectRejected(watchlistListSchema, { ...LIST, stockIds: ["AAPL"] }, ["stockIds"]);
+		expectRejected(watchlistListSchema, { ...LIST, stockIds: ["us:AAPL", "us:AAPL"] }, [
+			"stockIds",
+		]);
+		const thirteen = Array.from({ length: WATCHLIST_LIST_LIMITS.maxStocksPerList + 1 }, (_, i) =>
+			formatStockId("JP", String(1300 + i)),
+		);
+		expectRejected(watchlistListSchema, { ...LIST, stockIds: thirteen }, ["stockIds"]);
+		expectRejected(watchlistListSchema, { ...LIST, version: 0 }, ["version"]);
+		expectRejected(watchlistListSchema, without(LIST, "updatedAt"));
+		expectRejected(watchlistListSchema, { ...LIST, extra: true });
+	});
+
+	it("refuses a response whose list names a stock off the watchlist", () => {
+		expectRejected(
+			watchlistResponseSchema,
+			{ ...RESPONSE, lists: [{ ...LIST, stockIds: ["us:MSFT"] }] },
+			["lists"],
+		);
+		expectAccepted(watchlistResponseSchema, { ...RESPONSE, lists: [] });
+		expectRejected(watchlistResponseSchema, without(RESPONSE, "lists"), ["lists"]);
+	});
+
+	it("refuses repeated list ids and more than maxLists lists", () => {
+		expectRejected(watchlistResponseSchema, { ...RESPONSE, lists: [LIST, LIST] }, ["lists"]);
+		expectAccepted(watchlistResponseSchema, {
+			...RESPONSE,
+			lists: [LIST, { ...LIST, listId: "list_other", title: "Semiconductors" }],
+		});
+		const many = Array.from({ length: WATCHLIST_LIST_LIMITS.maxLists + 1 }, (_, i) => ({
+			...LIST,
+			listId: `list_${i}`,
+		}));
+		expectRejected(watchlistResponseSchema, { ...RESPONSE, lists: many }, ["lists"]);
+	});
+
+	it("validates the create, rename and add-stock bodies", () => {
+		expect(createWatchlistListRequestSchema.parse({ title: "  Japan banks " })).toEqual({
+			title: "Japan banks",
+		});
+		expect(renameWatchlistListRequestSchema.parse({ title: "Banks" })).toEqual({ title: "Banks" });
+		for (const schema of [createWatchlistListRequestSchema, renameWatchlistListRequestSchema]) {
+			expectRejected(schema, { title: "" }, ["title"]);
+			expectRejected(schema, { title: " \t " }, ["title"]);
+			expectRejected(schema, { title: 7 }, ["title"]);
+			expectRejected(schema, {});
+			expectRejected(schema, { title: "Banks", extra: 1 });
+		}
+		expect(addWatchlistListStockRequestSchema.parse({ market: "JP", symbol: " 8306 " })).toEqual({
+			market: "JP",
+			symbol: "8306",
+		});
+		expectRejected(addWatchlistListStockRequestSchema, { market: "JP", symbol: "MUFG" }, [
+			"symbol",
+		]);
 	});
 });
 

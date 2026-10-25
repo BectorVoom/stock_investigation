@@ -3,15 +3,18 @@ import { createD1Adapters } from "@research/adapters/d1";
 import {
 	calendarFeedIssuedSchema,
 	completeJobResponseSchema,
+	homeDataResponseSchema,
 	researchRunResponseSchema,
 	watchlistResponseSchema,
 } from "@research/contracts";
 import { describe, expect, it } from "vitest";
 import {
 	advanceToPublishing,
+	apiError,
 	body,
 	claim,
 	createHarness,
+	createWorkspace,
 	errorCode,
 	idempotencyKey,
 	issueRunnerToken,
@@ -798,5 +801,427 @@ describe("calendar subscription feed (FR-018)", () => {
 		} finally {
 			console.error = errors;
 		}
+	});
+});
+
+describe("watchlist lists (ADR-0040)", () => {
+	// Each change one second after the last, so creation and add order are
+	// the stored timestamps' order (same-instant ties fall back to the ids).
+	async function createList(harness: ReturnType<typeof createHarness>, title: string) {
+		harness.time.advance(1_000);
+		const response = await harness.call("POST", "/watchlist/lists", { title });
+		expect(response.status).toBe(201);
+		const watchlist = await body(response, watchlistResponseSchema);
+		const created = watchlist.lists.at(-1);
+		if (created === undefined) throw new Error("no list was created");
+		return created;
+	}
+
+	async function addToList(
+		harness: ReturnType<typeof createHarness>,
+		listId: string,
+		market: string,
+		symbol: string,
+	) {
+		harness.time.advance(1_000);
+		const response = await harness.call("POST", `/watchlist/lists/${listId}/stocks`, {
+			market,
+			symbol,
+		});
+		expect(response.status).toBe(200);
+		return body(response, watchlistResponseSchema);
+	}
+
+	async function storedSeriesIds(ownerId: string): Promise<string[]> {
+		const rows = await env.DB.prepare(
+			"SELECT series_id AS id FROM market_series WHERE owner_id = ? ORDER BY series_id",
+		)
+			.bind(ownerId)
+			.all<{ id: string }>();
+		return rows.results.map((row) => row.id);
+	}
+
+	async function auditRows(ownerId: string) {
+		const rows = await env.DB.prepare(
+			"SELECT action, resource, detail FROM audit_log WHERE owner_id = ? AND action LIKE 'watchlist.%' ORDER BY rowid",
+		)
+			.bind(ownerId)
+			.all<{ action: string; resource: string; detail: string }>();
+		return rows.results;
+	}
+
+	function pricesWidget(widgetId: string, listId: string) {
+		return { type: "watchlist-prices", widgetId, title: "Chips", size: "medium", listId };
+	}
+
+	async function saveHome(harness: ReturnType<typeof createHarness>, widgets: readonly unknown[]) {
+		const response = await harness.call("PUT", "/home/dashboard", {
+			dashboard: { schemaVersion: 2, widgets },
+			expectedVersion: 0,
+		});
+		expect(response.status).toBe(200);
+	}
+
+	it("creates, renames and deletes lists, answering the whole watchlist", async () => {
+		const harness = createHarness();
+		const list = await createList(harness, "  Semiconductors ");
+		expect(list).toMatchObject({ title: "Semiconductors", stockIds: [], version: 1 });
+		expect(list.listId).toMatch(/^list_/);
+		const renamed = await harness.call("PATCH", `/watchlist/lists/${list.listId}`, {
+			title: "Chips",
+		});
+		expect(renamed.status).toBe(200);
+		expect((await body(renamed, watchlistResponseSchema)).lists).toEqual([
+			expect.objectContaining({ listId: list.listId, title: "Chips", version: 2 }),
+		]);
+		const second = await createList(harness, "Japan banks");
+		const listed = await body(await harness.call("GET", "/watchlist"), watchlistResponseSchema);
+		expect(listed.lists.map((entry) => entry.listId)).toEqual([list.listId, second.listId]);
+		const deleted = await harness.call("DELETE", `/watchlist/lists/${list.listId}`);
+		expect(deleted.status).toBe(200);
+		expect(
+			(await body(deleted, watchlistResponseSchema)).lists.map((entry) => entry.listId),
+		).toEqual([second.listId]);
+		const audits = await auditRows(harness.ownerId);
+		expect(audits.map((row) => row.action)).toEqual([
+			"watchlist.list.create",
+			"watchlist.list.rename",
+			"watchlist.list.create",
+			"watchlist.list.delete",
+		]);
+		// Titles are owner text: never in an audit row.
+		expect(JSON.stringify(audits)).not.toMatch(/Semiconductors|Chips|Japan banks/);
+	});
+
+	it("answers NOT_FOUND for unknown or malformed list ids and VALIDATION_FAILED for bad titles", async () => {
+		const harness = createHarness();
+		const list = await createList(harness, "Chips");
+		for (const [method, path, payload] of [
+			["PATCH", "/watchlist/lists/list_missing", { title: "X" }],
+			["DELETE", "/watchlist/lists/list_missing", undefined],
+			["POST", "/watchlist/lists/list_missing/stocks", { market: "US", symbol: "AAPL" }],
+			["DELETE", "/watchlist/lists/list_missing/stocks/us:AAPL", undefined],
+			["DELETE", `/watchlist/lists/${list.listId}/stocks/us:AAPL`, undefined],
+			["DELETE", `/watchlist/lists/${list.listId}/stocks/not-a-stock`, undefined],
+			["DELETE", "/watchlist/lists/bad%20id", undefined],
+		] as const) {
+			const response = await harness.call(method, path, payload);
+			expect(response.status, `${method} ${path}`).toBe(404);
+			expect(await errorCode(response)).toBe("NOT_FOUND");
+		}
+		// Another owner cannot see the list.
+		const other = createHarness();
+		const foreign = await other.call("DELETE", `/watchlist/lists/${list.listId}`);
+		expect(foreign.status).toBe(404);
+		for (const payload of [{ title: "" }, { title: "   " }, { title: "x".repeat(81) }, {}]) {
+			const created = await harness.call("POST", "/watchlist/lists", payload);
+			expect(created.status).toBe(400);
+			expect(await errorCode(created)).toBe("VALIDATION_FAILED");
+			const renamed = await harness.call("PATCH", `/watchlist/lists/${list.listId}`, payload);
+			expect(renamed.status).toBe(400);
+			expect(await errorCode(renamed)).toBe("VALIDATION_FAILED");
+		}
+		const badSymbol = await harness.call("POST", `/watchlist/lists/${list.listId}/stocks`, {
+			market: "JP",
+			symbol: "AAPL",
+		});
+		expect(badSymbol.status).toBe(400);
+		expect(await errorCode(badSymbol)).toBe("VALIDATION_FAILED");
+	});
+
+	it("refuses the 21st list with WATCHLIST_LISTS_FULL", async () => {
+		const harness = createHarness();
+		for (let index = 0; index < 20; index += 1) await createList(harness, `List ${index}`);
+		const refused = await harness.call("POST", "/watchlist/lists", { title: "One more" });
+		expect(refused.status).toBe(400);
+		expect(await apiError(refused)).toMatchObject({
+			code: "VALIDATION_FAILED",
+			detail: "WATCHLIST_LISTS_FULL",
+		});
+	});
+
+	it("adds a stock to the watchlist and the list, idempotently, up to 12", async () => {
+		const harness = createHarness();
+		await addStock(harness, "US", "AAPL");
+		const list = await createList(harness, "Chips");
+		const first = await addToList(harness, list.listId, "US", "nvda");
+		expect(first.stocks.map((stock) => stock.stockId)).toEqual(["us:AAPL", "us:NVDA"]);
+		expect(first.lists[0]).toMatchObject({ stockIds: ["us:NVDA"], version: 2 });
+		const already = await addToList(harness, list.listId, "US", "AAPL");
+		expect(already.lists[0]).toMatchObject({ stockIds: ["us:NVDA", "us:AAPL"], version: 3 });
+		const again = await addToList(harness, list.listId, "US", "NVDA");
+		expect(again.lists[0]).toMatchObject({ stockIds: ["us:NVDA", "us:AAPL"], version: 3 });
+		for (const symbol of ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]) {
+			await addToList(harness, list.listId, "US", symbol);
+		}
+		const full = await harness.call("POST", `/watchlist/lists/${list.listId}/stocks`, {
+			market: "US",
+			symbol: "K",
+		});
+		expect(full.status).toBe(400);
+		expect(await apiError(full)).toMatchObject({
+			code: "VALIDATION_FAILED",
+			detail: "WATCHLIST_LIST_FULL",
+		});
+		// The refused stock was not added to the watchlist either.
+		const watched = await body(await harness.call("GET", "/watchlist"), watchlistResponseSchema);
+		expect(watched.stocks.map((stock) => stock.stockId)).not.toContain("us:K");
+		expect(watched.lists[0]?.stockIds).toHaveLength(12);
+		const audits = await auditRows(harness.ownerId);
+		expect(audits.filter((row) => row.action === "watchlist.stock.add")).toHaveLength(12);
+		expect(audits.filter((row) => row.action === "watchlist.list.stock.add")).toHaveLength(12);
+		expect(audits.find((row) => row.action === "watchlist.list.stock.add")).toEqual({
+			action: "watchlist.list.stock.add",
+			resource: list.listId,
+			detail: "stock=us:NVDA",
+		});
+	});
+
+	it("answers WATCHLIST_FULL when a new stock would be the 51st, adding nothing", async () => {
+		const harness = createHarness();
+		for (let index = 0; index < 50; index += 1) {
+			await addStock(harness, "JP", String(1300 + index));
+		}
+		const list = await createList(harness, "Japan");
+		const refused = await harness.call("POST", `/watchlist/lists/${list.listId}/stocks`, {
+			market: "US",
+			symbol: "AAPL",
+		});
+		expect(refused.status).toBe(400);
+		expect(await apiError(refused)).toMatchObject({ detail: "WATCHLIST_FULL" });
+		const watched = await addToList(harness, list.listId, "JP", "1300");
+		expect(watched.stocks).toHaveLength(50);
+		expect(watched.lists[0]?.stockIds).toEqual(["jp:1300"]);
+	});
+
+	it("removes a stock from a list but keeps it on the watchlist", async () => {
+		const harness = createHarness();
+		const list = await createList(harness, "Chips");
+		await addToList(harness, list.listId, "US", "NVDA");
+		const removed = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
+		expect(removed.status).toBe(200);
+		const watchlist = await body(removed, watchlistResponseSchema);
+		expect(watchlist.lists[0]).toMatchObject({ stockIds: [], version: 3 });
+		expect(watchlist.stocks.map((stock) => stock.stockId)).toEqual(["us:NVDA"]);
+		const again = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
+		expect(again.status).toBe(404);
+	});
+
+	it("changes the /watchlist ETag on every list change", async () => {
+		const harness = createHarness();
+		const etags: string[] = [];
+		const etagNow = async () => {
+			const response = await harness.call("GET", "/watchlist");
+			const etag = response.headers.get("ETag") ?? "";
+			const cached = await harness.call("GET", "/watchlist", undefined, { "If-None-Match": etag });
+			expect(cached.status).toBe(304);
+			etags.push(etag);
+		};
+		await etagNow();
+		const list = await createList(harness, "Chips");
+		await etagNow();
+		await addToList(harness, list.listId, "US", "NVDA");
+		await etagNow();
+		await harness.call("PATCH", `/watchlist/lists/${list.listId}`, { title: "Semis" });
+		await etagNow();
+		await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
+		await etagNow();
+		await harness.call("DELETE", `/watchlist/lists/${list.listId}`);
+		await etagNow();
+		expect(new Set(etags).size).toBe(etags.length);
+	});
+
+	it("removing a watchlist stock takes it out of every list", async () => {
+		const harness = createHarness();
+		const chips = await createList(harness, "Chips");
+		const ai = await createList(harness, "AI");
+		await addToList(harness, chips.listId, "US", "NVDA");
+		await addToList(harness, chips.listId, "US", "AMD");
+		await addToList(harness, ai.listId, "US", "NVDA");
+		const removed = await harness.call("DELETE", "/watchlist/stocks/us:NVDA");
+		expect(removed.status).toBe(200);
+		const watchlist = await body(removed, watchlistResponseSchema);
+		expect(watchlist.stocks.map((stock) => stock.stockId)).toEqual(["us:AMD"]);
+		expect(watchlist.lists.map(({ stockIds, version }) => ({ stockIds, version }))).toEqual([
+			{ stockIds: ["us:AMD"], version: 4 },
+			{ stockIds: [], version: 3 },
+		]);
+		const memberships = await env.DB.prepare(
+			"SELECT COUNT(*) AS n FROM watchlist_list_stocks WHERE owner_id = ? AND stock_id = 'us:NVDA'",
+		)
+			.bind(harness.ownerId)
+			.all<{ n: number }>();
+		expect(memberships.results[0]?.n).toBe(0);
+	});
+
+	it("serves a list's prices on Home and in the notebook, refreshes them and cleans them up", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const list = await createList(harness, "Chips");
+		await addToList(harness, list.listId, "US", "NVDA");
+		await addToList(harness, list.listId, "JP", "7203");
+		await saveHome(harness, [
+			pricesWidget("w-prices", list.listId),
+			{
+				type: "market-metric",
+				widgetId: "w-vix",
+				title: "VIX",
+				size: "small",
+				seriesId: "fred:VIXCLS",
+			},
+		]);
+
+		const home = await harness.call("GET", "/home/data");
+		expect(home.status).toBe(200);
+		const homeEtag = home.headers.get("ETag") ?? "";
+		// Named series first, then the list's stocks in list order.
+		expect(
+			(await body(home, homeDataResponseSchema)).series.map((entry) => entry.seriesId),
+		).toEqual(["fred:VIXCLS", "twelve-data:NVDA", "twelve-data:7203:JPX"]);
+
+		// The notebook resolves a list the same way.
+		const workspaceId = await createWorkspace(harness);
+		const savedNotebook = await harness.call("PUT", `/workspaces/${workspaceId}/notebook`, {
+			notebook: {
+				widgets: [
+					{
+						...pricesWidget("w-nb", list.listId),
+						createdAt: "2026-10-11T00:00:00.000Z",
+						updatedAt: "2026-10-11T00:00:00.000Z",
+						revision: 1,
+						origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+					},
+				],
+			},
+			expectedVersion: 0,
+		});
+		expect(savedNotebook.status).toBe(200);
+		const notebookData = await body(
+			await harness.call("GET", `/workspaces/${workspaceId}/notebook/market-data`),
+			homeDataResponseSchema,
+		);
+		expect(notebookData.series.map((entry) => entry.seriesId)).toEqual([
+			"twelve-data:NVDA",
+			"twelve-data:7203:JPX",
+		]);
+
+		// The market claim fetches them, and the completion stores them.
+		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
+		expect(queued.status).toBe(202);
+		const job = await claim(harness, token);
+		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
+		expect(job.series.map((entry) => entry.seriesId)).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:NVDA",
+			"twelve-data:7203:JPX",
+		]);
+		await advanceToPublishing(harness, token, job);
+		const fetchedAt = harness.time.clock.nowIso();
+		const completed = await harness.runner(token, `/jobs/${job.runId}/complete`, {
+			outcome: "market-refreshed",
+			leaseGeneration: job.leaseGeneration,
+			usage: USAGE,
+			series: job.series.map((entry) => ({
+				seriesId: entry.seriesId,
+				fetchedAt,
+				meta: null,
+				observations: [],
+				errorCode: entry.seriesId.endsWith(":JPX") ? "PLAN_NOT_ENTITLED" : "SOURCE_NOT_CONFIGURED",
+			})),
+		});
+		expect(completed.status).toBe(200);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:7203:JPX",
+			"twelve-data:NVDA",
+		]);
+		const refreshed = await harness.call("GET", "/home/data", undefined, {
+			"If-None-Match": homeEtag,
+		});
+		expect(refreshed.status).toBe(200);
+		expect(
+			(await body(refreshed, homeDataResponseSchema)).series.find(
+				(entry) => entry.seriesId === "twelve-data:7203:JPX",
+			)?.unavailable,
+		).toMatchObject({ code: "PLAN_NOT_ENTITLED" });
+
+		// A stock leaving the list changes Home's ETag, and its series goes:
+		// no page shows it any more (Home and the notebook show the same list).
+		const beforeRemoval = (await harness.call("GET", "/home/data")).headers.get("ETag") ?? "";
+		const left = await harness.call("DELETE", `/watchlist/lists/${list.listId}/stocks/us:NVDA`);
+		expect(left.status).toBe(200);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS", "twelve-data:7203:JPX"]);
+		const afterRemoval = await harness.call("GET", "/home/data", undefined, {
+			"If-None-Match": beforeRemoval,
+		});
+		expect(afterRemoval.status).toBe(200);
+		expect(
+			(await body(afterRemoval, homeDataResponseSchema)).series.map((entry) => entry.seriesId),
+		).toEqual(["fred:VIXCLS", "twelve-data:7203:JPX"]);
+
+		// A deleted list contributes nothing, and its series are cleaned up.
+		const deleted = await harness.call("DELETE", `/watchlist/lists/${list.listId}`);
+		expect(deleted.status).toBe(200);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["fred:VIXCLS"]);
+		expect(
+			(await body(await harness.call("GET", "/home/data"), homeDataResponseSchema)).series.map(
+				(entry) => entry.seriesId,
+			),
+		).toEqual(["fred:VIXCLS"]);
+	});
+
+	it("keeps a list's series while a notebook still shows the list", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const list = await createList(harness, "Chips");
+		await addToList(harness, list.listId, "US", "AMD");
+		const workspaceId = await createWorkspace(harness);
+		expect(
+			(
+				await harness.call("PUT", `/workspaces/${workspaceId}/notebook`, {
+					notebook: {
+						widgets: [
+							{
+								...pricesWidget("w-nb", list.listId),
+								createdAt: "2026-10-11T00:00:00.000Z",
+								updatedAt: "2026-10-11T00:00:00.000Z",
+								revision: 1,
+								origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+							},
+						],
+					},
+					expectedVersion: 0,
+				})
+			).status,
+		).toBe(200);
+		const queued = await harness.call("POST", "/home/refresh", undefined, idempotencyKey());
+		expect(queued.status).toBe(202);
+		const job = await claim(harness, token);
+		if (job?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
+		// Home's default series first, then the notebook's list (AMD is on no default widget).
+		expect(job.series.map((entry) => entry.seriesId).at(-1)).toBe("twelve-data:AMD");
+		await advanceToPublishing(harness, token, job);
+		const completed = await harness.runner(token, `/jobs/${job.runId}/complete`, {
+			outcome: "market-refreshed",
+			leaseGeneration: job.leaseGeneration,
+			usage: USAGE,
+			series: [
+				{
+					seriesId: "twelve-data:AMD",
+					fetchedAt: harness.time.clock.nowIso(),
+					meta: null,
+					observations: [],
+					errorCode: "SOURCE_NOT_CONFIGURED",
+				},
+			],
+		});
+		expect(completed.status).toBe(200);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["twelve-data:AMD"]);
+		// A Home save does not delete what the notebook's list shows.
+		await saveHome(harness, []);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual(["twelve-data:AMD"]);
+		// Removing the stock from the watchlist does.
+		expect((await harness.call("DELETE", "/watchlist/stocks/us:AMD")).status).toBe(200);
+		expect(await storedSeriesIds(harness.ownerId)).toEqual([]);
 	});
 });

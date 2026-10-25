@@ -19,6 +19,7 @@ import type {
 	MarketRepository,
 	NotebookRepository,
 	StoredMarketSeries,
+	WatchlistListRepository,
 } from "../src/ports.ts";
 import { fixedClock, recordsWith } from "./support.ts";
 
@@ -190,6 +191,7 @@ describe("home saves keep notebook series (ADR-0021)", () => {
 			market,
 			jobs: stubJobs(),
 			notebooks,
+			watchlistLists: { membersOf: async () => new Map() },
 			clock: fixedClock().clock,
 			audit: AUDIT,
 			records: recordsWith(),
@@ -224,6 +226,9 @@ describe("notebook market data (ADR-0021)", () => {
 	function notebookService(
 		widgets: readonly NotebookWidget[] | "unreadable",
 		marketOverrides?: Partial<MarketRepository>,
+		watchlistLists: Pick<WatchlistListRepository, "membersOf"> = {
+			membersOf: async () => new Map(),
+		},
 	) {
 		const notebooks: NotebookRepository = {
 			get: async () =>
@@ -245,6 +250,7 @@ describe("notebook market data (ADR-0021)", () => {
 		};
 		return createNotebookService({
 			notebooks,
+			watchlistLists,
 			workspaces: {
 				list: async () => [],
 				get: async (ownerId, workspaceId) =>
@@ -349,6 +355,51 @@ describe("notebook market data (ADR-0021)", () => {
 		expect(seen.ids).toEqual(["fred:VIXCLS", "fred:DGS10"]);
 		const data = unwrap(await service.getNotebookMarketData(OWNER, WORKSPACE, digest));
 		expect(data.series.map((entry) => entry.seriesId)).toEqual(["fred:VIXCLS", "fred:DGS10"]);
+	});
+
+	it("serves a Watchlist prices widget's stocks after the named series (ADR-0040 §4)", async () => {
+		const asked: (readonly string[])[] = [];
+		const prices: NotebookWidget = {
+			widgetId: "w-p",
+			type: "watchlist-prices",
+			listId: "list_chips",
+			title: "Chips",
+			size: "medium",
+			createdAt: NOW,
+			updatedAt: NOW,
+			revision: 1,
+			origin: { kind: "owner", messageId: null, runId: null, componentId: null },
+		};
+		const service = notebookService(
+			[
+				{ ...prices, widgetId: "w-gone", listId: "list_gone" },
+				prices,
+				marketMetric("w-m", "fred:VIXCLS"),
+			],
+			undefined,
+			{
+				membersOf: async (_owner, listIds) => {
+					asked.push(listIds);
+					return new Map([
+						[
+							"list_chips",
+							[
+								{ stockId: "us:NVDA", market: "US", symbol: "NVDA" },
+								{ stockId: "jp:7203", market: "JP", symbol: "7203" },
+							],
+						],
+					]);
+				},
+			},
+		);
+		const digest = unwrap(await service.getNotebookMarketDataDigest(OWNER, WORKSPACE));
+		expect([...digest.seriesIds]).toEqual([
+			"fred:VIXCLS",
+			"twelve-data:NVDA",
+			"twelve-data:7203:JPX",
+		]);
+		// One lookup for every list the notebook shows; the deleted one adds nothing.
+		expect(asked).toEqual([["list_gone", "list_chips"]]);
 	});
 
 	it("answers series [] for a notebook without market widgets", async () => {

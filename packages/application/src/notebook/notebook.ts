@@ -12,7 +12,6 @@ import {
 	CONVERSATION_CONTEXT_LIMITS,
 	type CompleteJobRequest,
 	type ConversationContextMessage,
-	distinctWidgetSeriesIds,
 	EMPTY_NOTEBOOK,
 	type HomeDataResponse,
 	MARKET_LIMITS,
@@ -31,6 +30,7 @@ import { chartSourceProblem } from "../chartSources.ts";
 import { fail, type UseCaseResult } from "../errors.ts";
 import type { HomeDataDigest } from "../home.ts";
 import { assembleMarketSeries, fetchMarketRefreshStatus, seriesStampsFor } from "../marketData.ts";
+import { pageSeriesFor } from "../pageSeries.ts";
 import type {
 	AuditLog,
 	ChatRepository,
@@ -45,6 +45,7 @@ import type {
 	ResearchRecordRepository,
 	ResearchUnitOfWork,
 	SettingsRepository,
+	WatchlistListRepository,
 	WorkspaceRepository,
 } from "../ports.ts";
 import { buildConversationContextBeforeAnchor } from "../research/conversationContext.ts";
@@ -67,6 +68,8 @@ export interface NotebookServiceDeps {
 	readonly settings: SettingsRepository;
 	/** Live series for this conversation's market widgets (ADR-0021). */
 	readonly market: MarketRepository;
+	/** Resolves `watchlist-prices` widgets to their stocks' series (ADR-0040). */
+	readonly watchlistLists: Pick<WatchlistListRepository, "membersOf">;
 	readonly unitOfWork: ResearchUnitOfWork;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
@@ -158,9 +161,9 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 		/**
 		 * The cheap, owner-scoped facts a notebook market-data ETag covers
 		 * (ADR-0021, like `/home/data`): the notebook version, the refresh
-		 * state and one stamp per series this notebook names. Observations
-		 * are NOT part of the digest, so a 304 is answered before any
-		 * observation row is loaded. A notebook without market widgets
+		 * state and one stamp per series this notebook names or lists
+		 * (ADR-0040). Observations are NOT part of the digest, so a 304 is
+		 * answered before any observation row is loaded. A notebook without market widgets
 		 * answers `series: []` with no market reads at all.
 		 */
 		async getNotebookMarketDataDigest(
@@ -172,7 +175,8 @@ export function createNotebookService(deps: NotebookServiceDeps) {
 			const stored = await deps.notebooks.get(ownerId, workspaceId);
 			if (stored === "unreadable") return fail("STORED_NOTEBOOK_UNREADABLE", UNREADABLE_SHOWN);
 			const notebook = stored === null ? EMPTY_NOTEBOOK : stored.notebook;
-			const ids = distinctWidgetSeriesIds(notebook.widgets).slice(0, MARKET_LIMITS.maxSeries);
+			// ADR-0040 §4: named series first, then the lists' series, at most 30.
+			const ids = await pageSeriesFor(deps.watchlistLists, ownerId, notebook.widgets);
 			const [status, metas] = await Promise.all([
 				fetchMarketRefreshStatus(deps.jobs, ownerId),
 				deps.market.getSeriesMeta(ownerId, ids),

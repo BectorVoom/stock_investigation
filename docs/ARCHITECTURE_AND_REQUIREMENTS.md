@@ -1,9 +1,20 @@
 # Personal AI Research Workspace — Architecture and Requirements
 
 **Status:** Accepted baseline
-**Version:** 1.9
+**Version:** 1.10
 **Date:** 2026-10-25
 **Companion:** [ENGINEERING_DESIGN_RULES.md](ENGINEERING_DESIGN_RULES.md)
+
+**Change note (1.9 → 1.10):** FR-018 gains titled Watchlist lists and the
+`watchlist-prices` widget (ADR-0040): up to 20 lists of up to 12 watchlist
+stocks each (adding a stock to a list adds it to the watchlist; removing it
+from the watchlist takes it out of every list), and a widget on Home and in
+the Notebook showing one list's stocks with their last close and change from
+the previous close. A page's series are its named series first, then its
+lists' stocks' price series (`pageSeriesIds`, at most 30); the market
+refresh and every series clean-up count list series too. The endpoint list
+gains the five `/watchlist/lists` routes; migration 0013 adds the
+`watchlist_lists` and `watchlist_list_stocks` tables.
 
 **Change note (1.8 → 1.9):** fewer requests to external services
 (ADR-0039), no requirement changed: `POST /home/refresh` and
@@ -132,7 +143,7 @@ The page for each journey step is mapped in [PAGES.md](PAGES.md).
 | FR-015 | Export/import a portable research record | Should | Versioned JSON/Markdown including citations; invalid files rejected |
 | FR-016 | Explain cost and show current job resource limits | Must | Max calls/time/spend visible; no paid fallback without consent |
 | FR-017 | Home dashboard: arrange widgets over market series with unit, as-of date and source on every number | Must | Owner-arranged widgets show FRED / Twelve Data series refreshed on request by the local runner; arrangement stored on the server and surviving reload; nothing fabricated |
-| FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Watchlist page (`#/watchlist`) with add/remove/refresh and per-date Google/Outlook links; Settings → Calendar (`#/settings/calendar`) with the `.ics` download and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
+| FR-018 | Watchlist and earnings-date calendar: register US/JP stocks, refresh their announcement dates automatically and on request, keep them in your own calendar | Must | Watchlist page (`#/watchlist`) with add/remove/refresh and per-date Google/Outlook links; Settings → Calendar (`#/settings/calendar`) with the `.ics` download and a secret-token subscription feed; Home `earnings-calendar` widget over a day window with its own refresh button; Finnhub (US, keyed) + JPX schedule (JP, keyless) refreshed by the local runner — each add queues its own refresh, and a view with dates never fetched or more than a day old queues one refresh per mount; titled lists of watchlist stocks (at most 20 lists × 12 stocks; a stock may be in several; adding one to a list adds it to the watchlist) and a `watchlist-prices` widget on Home and in the Notebook with each list stock's last close and change from the previous close (ADR-0040); arrangement and dates stored on the server and surviving reload; unknown dates "unavailable (reason)", never fabricated |
 | FR-019 | Earnings month calendar and Google Calendar sync: browse announcement dates on a month grid and keep a dedicated Google calendar in step | Must | Settings → Calendar (`#/settings/calendar`) with the Google Calendar card (connect, sign-in link, sync, disconnect, fixed failure sentences); Home `earnings-calendar` widget glanceable after the Apple widget guidelines and the only month grid (announcement days link to the Watchlist page, at most 3 next announcements, one status line, Refresh + Open Watchlist; amended by ADR-0022, which removed the Watchlist page's full month calendar); runner-side loopback OAuth holding the only `calendar.app.created` scope, deterministic idempotent sync with `inSync` derived from the current digest, automatic sync only while no failure is on record and at most once per watchlist ETag, no automatic retry of a Google step, a grant that is not kept is revoked; unknown dates "unavailable (reason)", never fabricated |
 | FR-021 | Scheduled tasks: research questions that run on a schedule (ADR-0033) | Must | Tasks page (`#/tasks`): create, edit, pause/resume, run now and delete (with confirmation) tasks with a title, question, horizon, markets, schedule (once / daily / weekdays / weekly / monthly at a local time) and time zone; at most 10 active and 30 stored; each task has its own conversation where its runs' questions and answers land; a task fires when a runner claims work, with at most one unfinished run per task, missed times collapsing into one run, a skipped occurrence recorded with its reason, and optional spending caps for metered backends; `scheduled-tasks` widget on Home and in the Notebook (next runs, latest results, Pause/Resume, Run now, New task, Open Tasks); `task-result` widget per task with its latest answer text, time and verification status (ADR-0038); stored on the server and surviving reload |
 | FR-020 | Chat-first to Notebook-first workspace: think in Chat, keep results as widgets, organise them in a Notebook the AI can also edit | Must | Chat page (`#/chat/<id>`) in exactly two states — Chat-first and Notebook-first, switched directly, remembered per conversation; a per-conversation Notebook (text, metric, chart, table and research widgets; S/M/L sizes; drag to reorder; edit, duplicate, remove with confirmation; 20-step undo) persisted with compare-and-set; "Add to Notebook" on answers and research results; a notebook assistant that creates, edits, moves, resizes and duplicates widgets of the selected context through validated commands, proposes removals for the owner to confirm, and shows every change with Undo (ADR-0020) |
@@ -377,6 +388,11 @@ POST   /api/v1/home/refresh
 GET    /api/v1/watchlist
 POST   /api/v1/watchlist/stocks
 DELETE /api/v1/watchlist/stocks/:stockId
+POST   /api/v1/watchlist/lists
+PATCH  /api/v1/watchlist/lists/:listId
+DELETE /api/v1/watchlist/lists/:listId
+POST   /api/v1/watchlist/lists/:listId/stocks
+DELETE /api/v1/watchlist/lists/:listId/stocks/:stockId
 POST   /api/v1/watchlist/refresh
 GET    /api/v1/watchlist/directory
 GET    /api/v1/watchlist/directory/search?q=...&market=...&limit=...
@@ -469,6 +485,38 @@ write can leave an earlier market queued; resending the key replays it). A
 stock added while the directory lists it is stored with the directory's
 English name; a later earnings refresh that returns a company name replaces
 it.
+
+The owner's titled Watchlist lists (ADR-0040) are stored in
+`watchlist_lists` (one row per list: title, `version`, creation and update
+times) and `watchlist_list_stocks` (`WITHOUT ROWID`, one row per membership
+with the time it was added; migration 0013), and served inside every
+`WatchlistResponse` as `lists` (creation order; members in the order they
+were added). `POST /watchlist/lists` creates an empty list (201; at most 20,
+`WATCHLIST_LISTS_FULL`), `PATCH` renames it, `DELETE` removes it with its
+memberships; `POST …/lists/:listId/stocks` takes the add-a-stock body and,
+for a stock not yet watched, first adds it to the watchlist exactly as
+`POST /watchlist/stocks` does (`WATCHLIST_FULL` adds nothing) — the list's
+existence and room (12, `WATCHLIST_LIST_FULL`) are checked before the
+watchlist is touched, and adding a member again is a no-op; `DELETE
+…/stocks/:stockId` takes the stock out of the list only. An unknown list or a
+stock not in the list is 404 `NOT_FOUND`. The caps and the "stock is on the
+watchlist" rule live inside the membership INSERT; removing a watchlist
+stock deletes its memberships and bumps those lists' versions in the same
+batch, so every member is always a watchlist stock. Every change bumps the
+list's `version`, and the `/watchlist` ETag covers each list's id and
+version. Every change is audited (`watchlist.list.create`, `.rename`,
+`.delete`, `.stock.add`, `.stock.remove`) without the title.
+
+A `watchlist-prices` widget names a list, not series: a page's series are
+`pageSeriesIds` (`packages/domain`, proved in Lean) — the series its widgets
+name first, then each list widget's stocks' price series
+(`stockPriceSeriesId`: `twelve-data:<symbol>`, `twelve-data:<code>:JPX`) in
+list order, at most 30 — resolved in one query per request
+(`packages/application/src/pageSeries.ts`). `/home/data`, the notebook market
+data and the market refresh (Home's page first, then every notebook's named
+and listed series, at most 60) use it, and every series clean-up (a Home save
+or reset, removing a list stock, deleting a list, removing a watchlist stock)
+keeps every series any page names or lists.
 
 Home dashboards and notebooks hold widgets of one specification (ADR-0024,
 `packages/contracts/src/widgets.ts`): the same types, fields, title rule and

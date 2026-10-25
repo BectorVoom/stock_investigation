@@ -288,6 +288,7 @@ describe("home widget type metadata", () => {
 			"table",
 			"task-result",
 			"text",
+			"watchlist-prices",
 		]);
 		expect([...WIDGET_SIZES].sort()).toEqual(["large", "medium", "small"]);
 		for (const type of HOME_WIDGET_TYPES) {

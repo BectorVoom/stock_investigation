@@ -71,7 +71,8 @@ same batch as the change (no FK enforcement, like every other table):
 ### 2. API
 
 All owner-authenticated, all answering the full `WatchlistResponse` (which
-now carries `lists`), like the existing watchlist routes:
+now carries `lists`), like the existing watchlist routes — 201 for a
+created list, 200 otherwise:
 
 ```text
 POST   /api/v1/watchlist/lists                    { title }            create
@@ -143,12 +144,14 @@ Where the rule is applied (one application helper, not copies):
   the page's series changes the ETag.
 - The notebook's market data read: the same over the notebook's widgets.
 - The market-refresh claim (`prepareMarketClaim`) and the completion's
-  "still tracked" filter: Home's page series first, then every notebook's
-  named series and list series (`NotebookRepository.listWatchlistListIds`),
-  de-duplicated, at most `maxTrackedSeries` (60) — `unionSeriesIds` as today.
+  "still tracked" filter (the same set): Home's page series first, then
+  every notebook's named series and list series
+  (`NotebookRepository.listWatchlistListIds`), de-duplicated, at most
+  `maxTrackedSeries` (60) — `unionSeriesIds` as today.
 - The keep set of every series clean-up (`deleteSeriesNotIn` after a Home
-  save or reset, a notebook save, and the list changes in §2): Home's and
-  every notebook's named and list series, uncapped.
+  save or reset, and the list changes in §2): Home's and every notebook's
+  named and list series, uncapped. A notebook save deletes no series, as
+  before this decision.
 
 `pageSeriesIds` is proved in Lean (`formal/ResearchFormal/PageSeries.lean`):
 the result has no repeats and at most `limit` ids; it begins with the named
