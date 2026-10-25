@@ -597,6 +597,23 @@ the notebooks first, then after a `wrangler d1 export`, `DELETE` the rows,
 An already-running `bun run dev` answers 500 on the task routes until it is
 restarted (or the migration is applied to `data-dev/d1`).
 
+Migration `0012_upstream_status.sql` (ADR-0037, error-handling rule §4a)
+adds one nullable `INTEGER` column beside each stored failure code: the
+status the external service that caused the failure answered with, exactly
+as received (`research_jobs.failure_upstream_status`,
+`news_sources.last_error_upstream_status`,
+`market_series.unavailable_upstream_status`,
+`watchlist_stocks.unavailable_upstream_status`,
+`google_calendar_links.last_failure_upstream_status`). NULL on every row
+written before it and whenever no external answer caused the failure (a
+timeout, our own refusal); the API returns it as `failureUpstreamStatus`,
+`lastErrorUpstreamStatus`, `unavailable.upstreamStatus` and the calendar's
+`lastFailure.upstreamStatus`, and a value that is not a 100–599 integer reads
+as null rather than failing the list. It is set and cleared together with
+the code beside it. Its header comment is the rollback: after a `wrangler d1
+export`, `ALTER TABLE … DROP COLUMN` the five columns; the version-10 code
+never reads them.
+
 Migration `0007_watchlist_earnings.sql` (FR-018) adds `watchlist_stocks`
 (one row per registered stock: market, symbol, company name once known,
 attempt/success stamps, failure code), `earnings_events` (`WITHOUT ROWID`,

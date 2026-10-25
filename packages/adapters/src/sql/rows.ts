@@ -4,7 +4,9 @@ import type {
 	GoogleCalendarLinkStatus,
 	JobRecord,
 	StockDirectoryMeta,
+	StoredMarketSeries,
 	StoredStockDirectoryEntry,
+	StoredWatchlistStock,
 	WorkspaceRecord,
 } from "@research/application";
 import {
@@ -18,7 +20,6 @@ import {
 	chatMessageSchema,
 	conversationSummarySchema,
 	type EarningsTiming,
-	type EarningsUnavailableCode,
 	earningsTimingSchema,
 	earningsUnavailableCodeSchema,
 	failureCodeTakesDetail,
@@ -40,13 +41,12 @@ import {
 	stockListingSchema,
 	storedHomeDashboardSchema,
 	uiCommandSchema,
-	type WatchMarket,
 	type WorkspaceSummary,
 	watchMarketSchema,
 	workspaceStateSchema,
 	workspaceSummarySchema,
 } from "@research/contracts";
-import { isJobState, parseJson, type WorkspaceState } from "@research/domain";
+import { isJobState, parseJson, upstreamStatusOrNull, type WorkspaceState } from "@research/domain";
 import { z } from "zod";
 
 /**
@@ -83,6 +83,24 @@ export function parseJsonColumn<T>(table: string, schema: z.ZodType<T>, text: un
 
 const nullableText = z.string().nullable();
 
+/**
+ * A stored `*_upstream_status` column (migration 0012): the status an
+ * external service answered with (docs/rule/error_handling.md §4a). A value
+ * that is not a 100–599 integer decodes to null instead of throwing: one bad
+ * number (a hand-edited row) must not make a whole list unreadable, and null
+ * loses only the number, never the failure code stored beside it. A missing
+ * column (a row read before the migration) is null as well.
+ */
+export const storedUpstreamStatus = z
+	.unknown()
+	.optional()
+	.transform((value) => upstreamStatusOrNull(value));
+
+/** The status is shown only beside its code, as every view's schema requires. */
+export function statusBesideCode(code: string | null, status: number | null): number | null {
+	return code === null ? null : status;
+}
+
 const sourceRowSchema = z.object({
 	source_id: z.string(),
 	canonical_url: z.string(),
@@ -94,6 +112,7 @@ const sourceRowSchema = z.object({
 	feed_status: z.string(),
 	last_fetched_at: nullableText,
 	last_error_code: nullableText,
+	last_error_upstream_status: storedUpstreamStatus,
 	created_at: z.string(),
 	updated_at: z.string(),
 });
@@ -111,6 +130,7 @@ export function toNewsSource(row: unknown): NewsSource {
 		feedStatus: r.feed_status,
 		lastFetchedAt: r.last_fetched_at,
 		lastErrorCode: r.last_error_code,
+		lastErrorUpstreamStatus: statusBesideCode(r.last_error_code, r.last_error_upstream_status),
 		createdAt: r.created_at,
 		updatedAt: r.updated_at,
 	});
@@ -161,6 +181,7 @@ const jobRowSchema = z.object({
 	cancel_requested: z.number(),
 	failure_code: nullableText,
 	failure_detail: nullableText.nullish(),
+	failure_upstream_status: storedUpstreamStatus,
 	approval_request_json: nullableText,
 	retry_of_run_id: nullableText,
 	// Optional so a row written before migration 0003 (no such column) still
@@ -226,6 +247,7 @@ export function toJobRecord(row: unknown): JobRecord & { readonly requestFingerp
 		failureCode: r.failure_code,
 		// Rows written before the failure-detail migration have no column.
 		failureDetail,
+		failureUpstreamStatus: statusBesideCode(r.failure_code, r.failure_upstream_status),
 		approvalRequest:
 			r.approval_request_json === null
 				? null
@@ -467,18 +489,10 @@ const watchlistStockRowSchema = z.object({
 	last_refreshed_at: z.string().nullable(),
 	retrieved_at: z.string().nullable(),
 	unavailable_code: z.string().nullable(),
+	unavailable_upstream_status: storedUpstreamStatus,
 });
 
-export function toStoredWatchlistStock(row: unknown): {
-	readonly stockId: string;
-	readonly market: WatchMarket;
-	readonly symbol: string;
-	readonly name: string | null;
-	readonly addedAt: string;
-	readonly lastRefreshedAt: string | null;
-	readonly retrievedAt: string | null;
-	readonly unavailableCode: EarningsUnavailableCode | null;
-} {
+export function toStoredWatchlistStock(row: unknown): StoredWatchlistStock {
 	const r = decode("watchlist_stocks", watchlistStockRowSchema, row);
 	return {
 		stockId: r.stock_id,
@@ -492,6 +506,7 @@ export function toStoredWatchlistStock(row: unknown): {
 			r.unavailable_code === null
 				? null
 				: decode("watchlist_stocks", earningsUnavailableCodeSchema, r.unavailable_code),
+		unavailableUpstreamStatus: statusBesideCode(r.unavailable_code, r.unavailable_upstream_status),
 	};
 }
 
@@ -588,6 +603,7 @@ const googleCalendarLinkRowSchema = z.object({
 	last_deleted: z.number().nullable(),
 	last_unchanged: z.number().nullable(),
 	last_failure_code: z.string().nullable(),
+	last_failure_upstream_status: storedUpstreamStatus,
 	last_failure_at: z.string().nullable(),
 	updated_at: z.string(),
 });
@@ -629,6 +645,10 @@ export function toGoogleCalendarLink(row: unknown): GoogleCalendarLink {
 		syncedDigest: r.synced_digest,
 		lastSync: counts,
 		lastFailureCode: r.last_failure_code,
+		lastFailureUpstreamStatus: statusBesideCode(
+			r.last_failure_code,
+			r.last_failure_upstream_status,
+		),
 		lastFailureAt: r.last_failure_at,
 		updatedAt: r.updated_at,
 	};
@@ -646,6 +666,7 @@ const marketSeriesRowSchema = z.object({
 	last_refreshed_at: z.string().nullable(),
 	retrieved_at: z.string().nullable(),
 	unavailable_code: z.string().nullable(),
+	unavailable_upstream_status: storedUpstreamStatus,
 });
 
 const marketFrequencySchema = z.enum([
@@ -667,28 +688,7 @@ const marketUnavailableCodeSchema = z.enum([
 	"SOURCE_FAILED",
 ]);
 
-export function toStoredMarketSeries(row: unknown): {
-	readonly seriesId: string;
-	readonly provider: "fred" | "twelve-data";
-	readonly symbol: string;
-	readonly title: string;
-	readonly unit: string;
-	readonly frequency: "daily" | "weekly" | "monthly" | "quarterly" | "annual" | "unknown";
-	readonly publisher: string;
-	readonly sourceUrl: string;
-	readonly lastRefreshedAt: string | null;
-	readonly retrievedAt: string | null;
-	readonly unavailableCode:
-		| "NEVER_REFRESHED"
-		| "SOURCE_NOT_CONFIGURED"
-		| "SOURCE_AUTH_FAILED"
-		| "SERIES_NOT_FOUND"
-		| "PLAN_NOT_ENTITLED"
-		| "RATE_LIMITED"
-		| "NO_DATA"
-		| "SOURCE_FAILED"
-		| null;
-} {
+export function toStoredMarketSeries(row: unknown): StoredMarketSeries {
 	const r = decode("market_series", marketSeriesRowSchema, row);
 	const provider = r.provider === "twelve-data" ? "twelve-data" : "fred";
 	if (r.provider !== "fred" && r.provider !== "twelve-data") {
@@ -709,6 +709,7 @@ export function toStoredMarketSeries(row: unknown): {
 			r.unavailable_code === null
 				? null
 				: decode("market_series", marketUnavailableCodeSchema, r.unavailable_code),
+		unavailableUpstreamStatus: statusBesideCode(r.unavailable_code, r.unavailable_upstream_status),
 	};
 }
 

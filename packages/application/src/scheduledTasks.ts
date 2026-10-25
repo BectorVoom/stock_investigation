@@ -115,6 +115,7 @@ export function toScheduledTaskView(
 						slotAt: task.lastSlotAt,
 						queuedAt: task.lastQueuedAt ?? task.updatedAt,
 						failureCode: lastRun.failureCode,
+						failureUpstreamStatus: lastRun.failureUpstreamStatus,
 					},
 		lastSkip: task.lastSkip,
 		version: task.version,
@@ -149,7 +150,13 @@ export function createScheduledTaskService(deps: ScheduledTaskServiceDeps) {
 	): Promise<ScheduledTaskRunState | null> {
 		if (task.lastRunId === null) return null;
 		const job = await deps.jobs.get(ownerId, task.lastRunId);
-		return job === null ? null : { state: job.state, failureCode: job.failureCode };
+		return job === null
+			? null
+			: {
+					state: job.state,
+					failureCode: job.failureCode,
+					failureUpstreamStatus: job.failureUpstreamStatus,
+				};
 	}
 
 	async function viewOf(ownerId: string, task: StoredScheduledTask): Promise<ScheduledTask> {

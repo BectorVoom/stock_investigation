@@ -182,6 +182,7 @@ function watched(market: WatchMarket, symbol: string): StoredWatchlistStock {
 		lastRefreshedAt: null,
 		retrievedAt: null,
 		unavailableCode: null,
+		unavailableUpstreamStatus: null,
 	};
 }
 

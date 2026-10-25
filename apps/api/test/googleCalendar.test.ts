@@ -412,6 +412,7 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 			lastFailure: {
 				code: "GOOGLE_AUTH_TIMEOUT",
 				reason: "Google sign-in timed out after 5 minutes; try connecting again.",
+				upstreamStatus: null,
 			},
 		});
 
@@ -436,14 +437,18 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 			leaseGeneration: sync.leaseGeneration,
 			usage: USAGE,
 			failureCode: "GOOGLE_AUTH_EXPIRED",
+			// Google's own answer, stored on the link and the run unchanged (§4a).
+			failureUpstreamStatus: 401,
 			retryable: false,
 		});
 		expect(expired.status).toBe(200);
 		expect(await googleState(harness)).toMatchObject({
 			status: "needs-reconnect",
 			calendarId: "cal_1",
-			lastFailure: { code: "GOOGLE_AUTH_EXPIRED" },
+			lastFailure: { code: "GOOGLE_AUTH_EXPIRED", upstreamStatus: 401 },
 		});
+		const expiredRun = await harness.call("GET", `/research-runs/${sync.runId}`);
+		expect((await body(expiredRun, researchRunResponseSchema)).run.failureUpstreamStatus).toBe(401);
 
 		// A failed connect from needs-reconnect restores needs-reconnect.
 		await queueGoogle(harness, "connect");
@@ -460,8 +465,57 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 		expect(denied.status).toBe(200);
 		expect(await googleState(harness)).toMatchObject({
 			status: "needs-reconnect",
-			lastFailure: { code: "GOOGLE_CONSENT_DENIED" },
+			// A later failure with no Google answer replaces the status too.
+			lastFailure: { code: "GOOGLE_CONSENT_DENIED", upstreamStatus: null },
 		});
+	});
+
+	it("keeps Google's status on a failed sync's lastFailure, and a later sync clears it (§4a)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await seedOneDatedEvent(harness, token);
+		await queueGoogle(harness, "connect");
+		const connect = await claim(harness, token);
+		if (connect?.kind !== "google-calendar") throw new Error("expected a google claim");
+		await advanceToPublishing(harness, token, connect);
+		await harness.runner(token, `/jobs/${connect.runId}/complete`, {
+			outcome: "google-calendar-connected",
+			leaseGeneration: connect.leaseGeneration,
+			usage: USAGE,
+			calendarId: "cal_1",
+		});
+		const syncWith = async (completion: Record<string, unknown>) => {
+			await queueGoogle(harness, "sync");
+			const lease = await claim(harness, token);
+			if (lease?.kind !== "google-calendar") throw new Error("expected a google claim");
+			await advanceToPublishing(harness, token, lease);
+			const response = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
+				leaseGeneration: lease.leaseGeneration,
+				usage: USAGE,
+				...completion,
+			});
+			expect(response.status).toBe(200);
+		};
+		await syncWith({
+			outcome: "failed",
+			failureCode: "GOOGLE_REQUEST_FAILED",
+			failureUpstreamStatus: 503,
+			retryable: false,
+		});
+		expect(await googleState(harness)).toMatchObject({
+			status: "connected",
+			lastFailure: { code: "GOOGLE_REQUEST_FAILED", upstreamStatus: 503 },
+		});
+		await syncWith({
+			outcome: "google-calendar-synced",
+			calendarId: "cal_1",
+			desiredDigest: "d".repeat(64),
+			inserted: 1,
+			updated: 0,
+			deleted: 0,
+			unchanged: 0,
+		});
+		expect(await googleState(harness)).toMatchObject({ status: "connected", lastFailure: null });
 	});
 
 	it("never retries a google step on its own: a retryable failure is terminal and restores the link", async () => {
@@ -538,11 +592,13 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 		expect((await body(shown, researchRunResponseSchema)).run).toMatchObject({
 			state: "failed",
 			failureCode: "GOOGLE_REQUEST_FAILED",
+			// The API refused it itself: no external answer behind it.
+			failureUpstreamStatus: null,
 		});
 		expect(await googleState(harness)).toMatchObject({
 			status: "connected",
 			activeRunId: null,
-			lastFailure: { code: "GOOGLE_REQUEST_FAILED" },
+			lastFailure: { code: "GOOGLE_REQUEST_FAILED", upstreamStatus: null },
 		});
 	});
 
@@ -627,12 +683,13 @@ describe("google-calendar completions (FR-019 section 2.5)", () => {
 		expect((await body(shown, researchRunResponseSchema)).run).toMatchObject({
 			state: "failed",
 			failureCode: "GOOGLE_AUTH_TIMEOUT",
+			failureUpstreamStatus: null,
 		});
 		expect(await googleState(harness)).toMatchObject({
 			status: "disconnected",
 			authUrl: null,
 			activeRunId: null,
-			lastFailure: { code: "GOOGLE_AUTH_TIMEOUT" },
+			lastFailure: { code: "GOOGLE_AUTH_TIMEOUT", upstreamStatus: null },
 		});
 	});
 

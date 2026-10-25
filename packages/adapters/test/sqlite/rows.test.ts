@@ -86,3 +86,41 @@ describe("toJobRecord failureDetail decoding (finding 10, task 23b, ADR-0025)", 
 		expect(record.failureDetail).toBeNull();
 	});
 });
+
+/**
+ * Migration 0012 (§4a): the stored upstream status is a number read back as
+ * written; a value that cannot be an HTTP status decodes to null so one bad
+ * row never makes a list unreadable, and a status never shows without a code.
+ */
+describe("toJobRecord failure_upstream_status decoding (ADR-0037)", () => {
+	it("reads a stored status unchanged, including one Hono has no name for", () => {
+		for (const status of [404, 418, 503, 529]) {
+			expect(toJobRecord(baseRow({ failure_upstream_status: status })).failureUpstreamStatus).toBe(
+				status,
+			);
+		}
+	});
+
+	it("reads a row written before the column existed, or a NULL, as null", () => {
+		expect(toJobRecord(baseRow()).failureUpstreamStatus).toBeNull();
+		expect(
+			toJobRecord(baseRow({ failure_upstream_status: null })).failureUpstreamStatus,
+		).toBeNull();
+	});
+
+	it("decodes an out-of-range or non-integer stored value to null instead of throwing", () => {
+		for (const stored of [0, 99, 600, 404.5, -1, "404", Number.NaN]) {
+			expect(toJobRecord(baseRow({ failure_upstream_status: stored })).failureUpstreamStatus).toBe(
+				null,
+			);
+		}
+	});
+
+	it("shows no status without a failure code", () => {
+		const record = toJobRecord(
+			baseRow({ failure_code: null, failure_detail: null, failure_upstream_status: 503 }),
+		);
+		expect(record.failureCode).toBeNull();
+		expect(record.failureUpstreamStatus).toBeNull();
+	});
+});

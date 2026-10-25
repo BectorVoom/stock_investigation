@@ -400,7 +400,7 @@ function marketStatements(
 					: "https://twelvedata.com/",
 			lastRefreshedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
-			upstreamStatus: entry.upstreamStatus ?? null,
+			upstreamStatus: entry.upstreamStatus,
 		}));
 		statements.push(
 			db
@@ -515,7 +515,7 @@ function earningsStatements(
 			name: entry.name,
 			fetchedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
-			upstreamStatus: entry.upstreamStatus ?? null,
+			upstreamStatus: entry.upstreamStatus,
 		}));
 		statements.push(
 			db
@@ -549,7 +549,7 @@ function earningsStatements(
 			stockId: entry.stockId,
 			fetchedAt: entry.fetchedAt,
 			unavailableCode: entry.errorCode,
-			upstreamStatus: entry.upstreamStatus ?? null,
+			upstreamStatus: entry.upstreamStatus,
 		}));
 		statements.push(
 			db

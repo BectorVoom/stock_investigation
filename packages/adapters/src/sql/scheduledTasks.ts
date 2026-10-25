@@ -24,7 +24,7 @@ import {
 } from "@research/contracts";
 import { z } from "zod";
 import type { SqlDatabase, SqlStatement, SqlValue } from "./database.ts";
-import { decode, parseJsonColumn } from "./rows.ts";
+import { decode, parseJsonColumn, statusBesideCode, storedUpstreamStatus } from "./rows.ts";
 
 const TABLE = "scheduled_tasks";
 
@@ -120,6 +120,7 @@ function encodeJson<T>(schema: z.ZodType<T>, value: unknown): string {
 const lastRunRowSchema = z.object({
 	last_run_state: nullableText,
 	last_run_failure_code: nullableText,
+	last_run_failure_upstream_status: storedUpstreamStatus,
 });
 
 function toRunState(row: unknown): ScheduledTaskRunState | null {
@@ -128,6 +129,10 @@ function toRunState(row: unknown): ScheduledTaskRunState | null {
 	return {
 		state: decode("research_jobs", jobStateSchema, r.last_run_state),
 		failureCode: r.last_run_failure_code,
+		failureUpstreamStatus: statusBesideCode(
+			r.last_run_failure_code,
+			r.last_run_failure_upstream_status,
+		),
 	};
 }
 
@@ -244,7 +249,8 @@ export function createScheduledTaskRepository(db: SqlDatabase): ScheduledTaskRep
 			// same bound, so a list can never outgrow its response schema.
 			const { results } = await db
 				.prepare(
-					`SELECT t.*, j.state AS last_run_state, j.failure_code AS last_run_failure_code
+					`SELECT t.*, j.state AS last_run_state, j.failure_code AS last_run_failure_code,
+						j.failure_upstream_status AS last_run_failure_upstream_status
 					FROM scheduled_tasks t
 					LEFT JOIN research_jobs j ON j.owner_id = t.owner_id AND j.run_id = t.last_run_id
 					WHERE t.owner_id = ?

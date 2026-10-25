@@ -68,6 +68,8 @@ import {
 	numberColumn,
 	parseJsonColumn,
 	StoredDataError,
+	statusBesideCode,
+	storedUpstreamStatus,
 	textColumn,
 	toAppliedCommand,
 	toArticle,
@@ -136,8 +138,8 @@ export function createSourceRepository(db: SqlDatabase): SourceRepository {
 				.prepare(
 					`INSERT INTO news_sources (owner_id, source_id, canonical_url, source_type, title, publisher,
 						license_policy, trust_classification, feed_status, last_fetched_at, last_error_code,
-						created_at, updated_at)
-					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+						last_error_upstream_status, created_at, updated_at)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 					ON CONFLICT (owner_id, canonical_url) DO NOTHING`,
 				)
 				.bind(
@@ -152,6 +154,7 @@ export function createSourceRepository(db: SqlDatabase): SourceRepository {
 					source.feedStatus,
 					source.lastFetchedAt,
 					source.lastErrorCode,
+					source.lastErrorUpstreamStatus,
 					source.createdAt,
 					source.updatedAt,
 				)
@@ -269,10 +272,10 @@ export function insertJobStatement(
 		.prepare(
 			`INSERT INTO research_jobs (owner_id, run_id, kind, state, idempotency_key, request_fingerprint,
 				request_json, workspace_id, usage_json, attempt, max_attempts, lease_generation, lease_owner_id,
-				lease_expires_at, last_event_seq, cancel_requested, failure_code, failure_detail, approval_request_json,
-				retry_of_run_id, context_anchor_seq, verification_status, provider_model, provider_session_ref,
+				lease_expires_at, last_event_seq, cancel_requested, failure_code, failure_detail, failure_upstream_status,
+				approval_request_json, retry_of_run_id, context_anchor_seq, verification_status, provider_model, provider_session_ref,
 				completed_generation, provenance_json, version, last_mutation_id, created_at, updated_at)
-			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			WHERE (SELECT COUNT(*) FROM research_jobs
 				WHERE owner_id = ? AND state NOT IN (${TERMINAL_SQL})) < ?
 				AND (? IS NULL OR EXISTS (SELECT 1 FROM workspaces WHERE owner_id = ? AND workspace_id = ?))
@@ -305,6 +308,7 @@ export function insertJobStatement(
 			job.cancelRequested ? 1 : 0,
 			job.failureCode,
 			job.failureDetail,
+			job.failureUpstreamStatus,
 			job.approvalRequest === null ? null : JSON.stringify(job.approvalRequest),
 			job.retryOfRunId,
 			job.contextAnchorSeq,
@@ -483,6 +487,9 @@ function jobAssignments(patch: JobWrite["patch"]): { sql: string[]; values: SqlV
 	if (patch.cancelRequested !== undefined) set("cancel_requested", patch.cancelRequested ? 1 : 0);
 	if (patch.failureCode !== undefined) set("failure_code", patch.failureCode);
 	if (patch.failureDetail !== undefined) set("failure_detail", patch.failureDetail);
+	if (patch.failureUpstreamStatus !== undefined) {
+		set("failure_upstream_status", patch.failureUpstreamStatus);
+	}
 	if (patch.approvalRequest !== undefined) {
 		set(
 			"approval_request_json",
@@ -559,6 +566,16 @@ export function jobWriteStatements(
 	);
 	return [update, ...audits];
 }
+
+/** The newest `failed` job of a kind: its code, the upstream status beside it (§4a), its time. */
+const latestFailedRowSchema = z.object({
+	failure_code: z.string().nullable(),
+	failure_upstream_status: storedUpstreamStatus,
+	updated_at: z.string(),
+});
+
+/** The newest non-completed terminal job of a kind (S2), likewise. */
+const latestFailureRowSchema = latestFailedRowSchema.extend({ state: z.string() });
 
 export function createJobRepository(db: SqlDatabase): JobRepository {
 	const get = async (ownerId: string, runId: string) => {
@@ -715,19 +732,22 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 		async findLatestFailedByKind(ownerId, kind, scope) {
 			const row = await db
 				.prepare(
-					`SELECT failure_code, updated_at FROM research_jobs
+					`SELECT failure_code, failure_upstream_status, updated_at FROM research_jobs
 					WHERE owner_id = ?1 AND kind = ?2 AND state = 'failed' AND ${marketScopeSql(3)}
 					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
 				)
 				.bind(ownerId, kind, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
-			const failed = decode(
-				"research_jobs",
-				z.object({ failure_code: z.string().nullable(), updated_at: z.string() }),
-				row,
-			);
-			return { failureCode: failed.failure_code, at: failed.updated_at };
+			const failed = decode("research_jobs", latestFailedRowSchema, row);
+			return {
+				failureCode: failed.failure_code,
+				failureUpstreamStatus: statusBesideCode(
+					failed.failure_code,
+					failed.failure_upstream_status,
+				),
+				at: failed.updated_at,
+			};
 		},
 		async countUnfinished(ownerId) {
 			const row = await db
@@ -743,7 +763,7 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 			// are excluded here; they feed lastSucceededAt instead).
 			const row = await db
 				.prepare(
-					`SELECT state, failure_code, updated_at FROM research_jobs
+					`SELECT state, failure_code, failure_upstream_status, updated_at FROM research_jobs
 					WHERE owner_id = ?1 AND kind = ?2 AND state IN (${TERMINAL_SQL}) AND state <> 'completed'
 						AND ${marketScopeSql(3)}
 					ORDER BY updated_at DESC, run_id DESC LIMIT 1`,
@@ -751,13 +771,16 @@ export function createJobRepository(db: SqlDatabase): JobRepository {
 				.bind(ownerId, kind, scope?.market ?? null)
 				.first();
 			if (row === null) return null;
-			const record = row as Record<string, unknown>;
-			const { state, failure_code, updated_at } = record;
-			if (typeof state !== "string" || typeof updated_at !== "string") return null;
+			// A row whose state or time is not text has no line to show (null),
+			// as before; a non-text code reads as no code.
+			const parsed = latestFailureRowSchema.safeParse(row);
+			if (!parsed.success) return null;
+			const failureCode = parsed.data.failure_code;
 			return {
-				state,
-				failureCode: typeof failure_code === "string" ? failure_code : null,
-				at: updated_at,
+				state: parsed.data.state,
+				failureCode,
+				failureUpstreamStatus: statusBesideCode(failureCode, parsed.data.failure_upstream_status),
+				at: parsed.data.updated_at,
 			};
 		},
 	};
@@ -1851,8 +1874,15 @@ const GOOGLE_LINK_COLUMNS = [
 	"last_deleted",
 	"last_unchanged",
 	"last_failure_code",
+	"last_failure_upstream_status",
 	"last_failure_at",
 ] as const;
+
+/** `?` per bound value: the owner, every link column, the stamp. */
+const GOOGLE_LINK_PLACEHOLDERS = Array.from(
+	{ length: GOOGLE_LINK_COLUMNS.length + 2 },
+	() => "?",
+).join(", ");
 
 function googleLinkValues(link: GoogleCalendarLink): SqlValue[] {
 	return [
@@ -1868,6 +1898,7 @@ function googleLinkValues(link: GoogleCalendarLink): SqlValue[] {
 		link.lastSync?.deleted ?? null,
 		link.lastSync?.unchanged ?? null,
 		link.lastFailureCode,
+		link.lastFailureUpstreamStatus,
 		link.lastFailureAt,
 	];
 }
@@ -1890,6 +1921,10 @@ function applyGoogleLinkPatch(
 		lastSync: "lastSync" in patch ? (patch.lastSync ?? null) : link.lastSync,
 		lastFailureCode:
 			"lastFailureCode" in patch ? (patch.lastFailureCode ?? null) : link.lastFailureCode,
+		lastFailureUpstreamStatus:
+			"lastFailureUpstreamStatus" in patch
+				? (patch.lastFailureUpstreamStatus ?? null)
+				: link.lastFailureUpstreamStatus,
 		lastFailureAt: "lastFailureAt" in patch ? (patch.lastFailureAt ?? null) : link.lastFailureAt,
 		updatedAt: link.updatedAt,
 	};
@@ -1907,6 +1942,7 @@ function disconnectedGoogleLink(at: string): GoogleCalendarLink {
 		syncedDigest: null,
 		lastSync: null,
 		lastFailureCode: null,
+		lastFailureUpstreamStatus: null,
 		lastFailureAt: null,
 		updatedAt: at,
 	};
@@ -1946,6 +1982,8 @@ export function googleLinkStatements(
 		set("last_unchanged", patch.lastSync?.unchanged ?? null);
 	}
 	if (patch.lastFailureCode !== undefined) set("last_failure_code", patch.lastFailureCode);
+	if (patch.lastFailureUpstreamStatus !== undefined)
+		set("last_failure_upstream_status", patch.lastFailureUpstreamStatus);
 	if (patch.lastFailureAt !== undefined) set("last_failure_at", patch.lastFailureAt);
 	if (assignments.length === 0) return [];
 	return [
@@ -1963,7 +2001,7 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 		await db
 			.prepare(
 				`INSERT INTO google_calendar_links (owner_id, ${GOOGLE_LINK_COLUMNS.join(", ")}, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				VALUES (${GOOGLE_LINK_PLACEHOLDERS})
 				ON CONFLICT (owner_id) DO UPDATE SET
 					status = excluded.status, connect_from = excluded.connect_from,
 					pending_auth_url = excluded.pending_auth_url, calendar_id = excluded.calendar_id,
@@ -1972,6 +2010,7 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 					last_updated = excluded.last_updated, last_deleted = excluded.last_deleted,
 					last_unchanged = excluded.last_unchanged,
 					last_failure_code = excluded.last_failure_code,
+					last_failure_upstream_status = excluded.last_failure_upstream_status,
 					last_failure_at = excluded.last_failure_at, updated_at = excluded.updated_at`,
 			)
 			.bind(ownerId, ...googleLinkValues(link), link.updatedAt)
@@ -1992,21 +2031,7 @@ export function createGoogleCalendarRepository(db: SqlDatabase): GoogleCalendarR
 				.bind(ownerId)
 				.first();
 			const previous: GoogleCalendarLink =
-				current === null
-					? {
-							status: "disconnected",
-							connectFrom: null,
-							pendingAuthUrl: null,
-							calendarId: null,
-							connectedAt: null,
-							lastSyncedAt: null,
-							syncedDigest: null,
-							lastSync: null,
-							lastFailureCode: null,
-							lastFailureAt: null,
-							updatedAt: input.at,
-						}
-					: toGoogleCalendarLink(current);
+				current === null ? disconnectedGoogleLink(input.at) : toGoogleCalendarLink(current);
 			await upsert(ownerId, {
 				...previous,
 				status: "connecting",

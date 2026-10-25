@@ -395,6 +395,7 @@ const homeBenchMetas = HOME_BENCH_SERIES.map((entry, series) => {
 		lastRefreshedAt: "2026-10-12T12:00:00Z",
 		retrievedAt: "2026-10-12T12:00:00Z",
 		unavailableCode: null,
+		unavailableUpstreamStatus: null,
 	};
 });
 

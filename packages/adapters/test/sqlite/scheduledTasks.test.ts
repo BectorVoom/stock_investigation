@@ -76,6 +76,7 @@ function job(runId: string, workspaceId: string, state: JobRecord["state"]): Job
 		cancelRequested: false,
 		failureCode: state === "failed" ? "AGENT_TIMEOUT" : null,
 		failureDetail: null,
+		failureUpstreamStatus: state === "failed" ? 504 : null,
 		approvalRequest: null,
 		retryOfRunId: null,
 		contextAnchorSeq: null,
@@ -301,7 +302,12 @@ describe("scheduled task repository (ADR-0033 §7)", () => {
 				"task_paused",
 				"task_done",
 			]);
-			expect(rows[1]?.lastRun).toEqual({ state: "failed", failureCode: "AGENT_TIMEOUT" });
+			// The join carries the run's upstream status beside its code (§4a).
+			expect(rows[1]?.lastRun).toEqual({
+				state: "failed",
+				failureCode: "AGENT_TIMEOUT",
+				failureUpstreamStatus: 504,
+			});
 			expect(rows[0]?.lastRun).toBe(null);
 			expect(rows[2]?.lastRun).toBe(null);
 		}));

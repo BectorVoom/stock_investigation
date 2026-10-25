@@ -21,6 +21,7 @@ export interface MarketSeriesStamp {
 	readonly lastRefreshedAt: string | null;
 	readonly retrievedAt: string | null;
 	readonly unavailableCode: string | null;
+	readonly unavailableUpstreamStatus: number | null;
 }
 
 /** The owner-global refresh state every market-data response carries. */
@@ -55,6 +56,7 @@ export async function fetchMarketRefreshStatus(
 				: {
 						state: lastFailureRow.state,
 						code: lastFailureRow.failureCode,
+						upstreamStatus: lastFailureRow.failureUpstreamStatus,
 						at: lastFailureRow.at,
 					},
 	};
@@ -73,6 +75,7 @@ export function seriesStampsFor(
 			lastRefreshedAt: meta?.lastRefreshedAt ?? null,
 			retrievedAt: meta?.retrievedAt ?? null,
 			unavailableCode: meta?.unavailableCode ?? null,
+			unavailableUpstreamStatus: meta?.unavailableUpstreamStatus ?? null,
 		};
 	});
 }
@@ -171,7 +174,7 @@ export function assembleMarketSeries(
 			unavailable:
 				meta.unavailableCode === null
 					? null
-					: marketUnavailable(meta.unavailableCode, meta.provider),
+					: marketUnavailable(meta.unavailableCode, meta.provider, meta.unavailableUpstreamStatus),
 			observations: obs,
 		};
 	});
