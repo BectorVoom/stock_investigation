@@ -4,6 +4,8 @@ import {
 	marketUnavailableReason,
 } from "@research/contracts";
 import { defineMessages } from "@research/i18n";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { reasonWithUpstreamStatus } from "../i18n/upstreamStatus.ts";
 
 /** The fixed Japanese wording per unavailable code (the English one is the contract's). */
 const JA_UNAVAILABLE_REASONS: { readonly [C in MarketUnavailableCode]: string } = {
@@ -54,6 +56,9 @@ export const homeModelMessages = defineMessages({
 			_code: MarketUnavailableCode,
 			_provider: MarketProviderId,
 		): string => stored,
+		/** A stored reason with the provider's own answer status after it (ADR-0037). */
+		withUpstreamStatus: (reason: string, upstreamStatus: number | null): string =>
+			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.en),
 	},
 	ja: {
 		up: "上昇",
@@ -64,5 +69,7 @@ export const homeModelMessages = defineMessages({
 		notANumber: "値が数値でない",
 		unavailableReason: (code, provider) => jaUnavailableReason(code, provider),
 		storedUnavailableReason: (_stored, code, provider) => jaUnavailableReason(code, provider),
+		withUpstreamStatus: (reason, upstreamStatus) =>
+			reasonWithUpstreamStatus(reason, upstreamStatus, commonMessages.ja),
 	},
 });

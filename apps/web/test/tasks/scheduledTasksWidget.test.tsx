@@ -43,6 +43,7 @@ const pending = {
 	slotAt: null,
 	queuedAt: "2026-10-24T08:59:00Z",
 	failureCode: null,
+	failureUpstreamStatus: null,
 };
 
 /** Lets the fake fetches and Solid's effects settle under fake timers. */

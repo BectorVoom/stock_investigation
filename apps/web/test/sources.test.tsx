@@ -17,6 +17,7 @@ const SOURCE: NewsSource = newsSourceSchema.parse({
 	feedStatus: "failing",
 	lastFetchedAt: "2026-10-05T03:00:00Z",
 	lastErrorCode: "FETCH_TIMEOUT",
+	lastErrorUpstreamStatus: null,
 	createdAt: "2026-10-01T00:00:00Z",
 	updatedAt: "2026-10-05T03:00:00Z",
 });
@@ -91,6 +92,7 @@ beforeEach(() => {
 			title: "Energy Wire",
 			feedStatus: "active",
 			lastErrorCode: null,
+			lastErrorUpstreamStatus: null,
 		};
 		subscribed = [...subscribed, created];
 		return jsonResponse(created, { status: 201 });
@@ -124,6 +126,45 @@ describe("Sources view", () => {
 		expect(row.querySelector('[data-field="feed-status"]')?.textContent).toContain("failing");
 		expect(row.textContent).toContain("Last fetch: 2026-10-05 03:00 UTC");
 		expect(row.textContent).toContain("Last error: FETCH_TIMEOUT");
+		// A timeout had no answer from the feed host, so no status is stated.
+		expect(row.querySelector('[data-field="last-error-upstream-status"]')).toBeNull();
+	});
+
+	it("states the feed host's answer status beside the last error code", async () => {
+		subscribed = [{ ...SOURCE, lastErrorCode: "HTTP_ERROR", lastErrorUpstreamStatus: 410 }];
+		mount();
+		const table = await screen.findByRole("table", {
+			name: "Sources you subscribe to, with their last fetch status",
+		});
+		const row = within(table).getByRole("row", { name: /Example Energy News/ });
+		expect(row.textContent).toContain("Last error: HTTP_ERROR (service answered HTTP 410)");
+	});
+
+	it("states the feed host's answer status when a preview fails because of it", async () => {
+		// The API answers with the host's own status (ADR-0037): a 404, not 502.
+		backend.on("POST", /^\/api\/v1\/sources\/preview$/, () =>
+			jsonResponse(
+				{
+					error: {
+						code: "FETCH_FAILED",
+						message: "The source could not be retrieved.",
+						detail: "HTTP_ERROR",
+						upstreamStatus: 404,
+					},
+				},
+				{ status: 404 },
+			),
+		);
+		mount();
+		await screen.findByRole("table");
+		fireEvent.input(screen.getByLabelText("Feed or site URL"), {
+			target: { value: "https://feeds.example.org/gone.xml" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Preview source" }));
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain(
+			"FETCH_FAILED: The source could not be retrieved. (HTTP_ERROR) (service answered HTTP 404)",
+		);
 	});
 
 	it("previews a URL without subscribing, then subscribes only on an explicit click", async () => {
@@ -214,6 +255,7 @@ describe("Sources view", () => {
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("UNSAFE_URL");
 		expect(alert.textContent).toContain("PRIVATE_ADDRESS");
+		expect(alert.textContent).not.toContain("service answered");
 		expect(screen.queryByRole("region", { name: "Source preview" })).toBeNull();
 	});
 

@@ -17,6 +17,7 @@ const SOURCE: NewsSource = newsSourceSchema.parse({
 	feedStatus: "failing",
 	lastFetchedAt: "2026-10-05T03:00:00Z",
 	lastErrorCode: "FETCH_TIMEOUT",
+	lastErrorUpstreamStatus: null,
 	createdAt: "2026-10-01T00:00:00Z",
 	updatedAt: "2026-10-05T03:00:00Z",
 });
@@ -92,6 +93,18 @@ describe("Sources view in Japanese", () => {
 		expect(entry).toBeTruthy();
 		expect(screen.getByRole("button", { name: "「Official Statistics Feed」を購読" })).toBeTruthy();
 		expect(document.body.textContent).toContain("JP · ja · 公式 · 既定のライセンス:");
+	});
+
+	it("states the feed host's answer status beside the last error in Japanese", async () => {
+		backend.on("GET", /^\/api\/v1\/sources$/, () =>
+			jsonResponse({
+				sources: [{ ...SOURCE, lastErrorCode: "HTTP_ERROR", lastErrorUpstreamStatus: 403 }],
+			}),
+		);
+		mountJapanese();
+		const table = await screen.findByRole("table", { name: "購読中の情報源と最終取得の状況" });
+		const row = within(table).getByRole("row", { name: /Example Energy News/ });
+		expect(row.textContent).toContain("最後のエラー: HTTP_ERROR（サービスの応答: HTTP 403）");
 	});
 
 	it("previews a source with Japanese labels and counts", async () => {

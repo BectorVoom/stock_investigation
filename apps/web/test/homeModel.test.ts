@@ -224,7 +224,11 @@ describe("home view-model", () => {
 			sourceUrl: "https://fred.stlouisfed.org/series/VIXCLS",
 			lastRefreshedAt: "2026-10-12T12:00:00Z",
 			retrievedAt: "2026-10-11T00:00:00Z",
-			unavailable: { code: "SOURCE_FAILED", reason: "The data source request failed." },
+			unavailable: {
+				code: "SOURCE_FAILED",
+				reason: "The data source request failed.",
+				upstreamStatus: null,
+			},
 			observations: [
 				["2026-10-07", 15.08],
 				["2026-10-08", 15.41],

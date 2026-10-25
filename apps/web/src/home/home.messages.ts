@@ -27,7 +27,8 @@ export const homeMessages = defineMessages({
 		refreshing: (state: string, runId: string) =>
 			`Refreshing market data… (${state}, run ${runId}). It is fetched by the local runner; if the runner is offline it stays queued until the runner reconnects.`,
 		lastSucceeded: (when: string) => `Last successful refresh: ${when}.`,
-		lastFailed: (code: string, when: string) => `Last refresh failed (${code}) at ${when}.`,
+		/** `failure`: the code, with the service's status after it when one caused it (`withUpstreamStatus`). */
+		lastFailed: (failure: string, when: string) => `Last refresh failed (${failure}) at ${when}.`,
 		noRefreshYet: "No market-data refresh has completed yet.",
 		dataFailedToLoad: "Market data failed to load.",
 		loadingDataLabel: "Loading market data",
@@ -68,7 +69,7 @@ export const homeMessages = defineMessages({
 		refreshing: (state, runId) =>
 			`市場データを更新中…（${runStateMessages.ja.name(state)}、実行 ${runId}）。ローカルのランナーが取得します。ランナーがオフラインの場合は、再接続するまで登録済みのまま待機します。`,
 		lastSucceeded: (when) => `前回の更新成功：${when}。`,
-		lastFailed: (code, when) => `前回の更新は ${when} に失敗しました（${code}）。`,
+		lastFailed: (failure, when) => `前回の更新は ${when} に失敗しました（${failure}）。`,
 		noRefreshYet: "市場データの更新はまだ完了していません。",
 		dataFailedToLoad: "市場データの読み込みに失敗しました。",
 		loadingDataLabel: "市場データを読み込み中",

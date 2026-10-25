@@ -124,6 +124,7 @@ describe("Home market widgets in Japanese", () => {
 			unit: "USD",
 			unavailable: {
 				code: "SOURCE_NOT_CONFIGURED",
+				upstreamStatus: null,
 				reason:
 					"The Twelve Data source is not configured; set TWELVE_DATA_API_KEY in apps/runner/.env.",
 			},
@@ -146,6 +147,37 @@ describe("Home market widgets in Japanese", () => {
 		expect(within(table).getByRole("columnheader", { name: "時点" })).toBeTruthy();
 		expect(table.textContent).toContain(
 			"取得できません（Twelve Data のデータソースが設定されていません。apps/runner/.env に TWELVE_DATA_API_KEY を設定してください。）",
+		);
+	});
+
+	it("adds the provider's answer status to a missing series' reason in Japanese", () => {
+		const limited: MarketSeries = {
+			...vix([]),
+			seriesId: "twelve-data:AAPL",
+			provider: "twelve-data",
+			symbol: "AAPL",
+			title: "Apple Inc",
+			unit: "USD",
+			unavailable: {
+				code: "RATE_LIMITED",
+				upstreamStatus: 429,
+				reason: "The provider rate limit was reached.",
+			},
+		};
+		renderJa(() => (
+			<StockTableWidget
+				widget={{
+					widgetId: "w-stocks",
+					type: "stock-table",
+					title: "Stocks",
+					size: "medium",
+					seriesIds: [limited.seriesId],
+				}}
+				seriesById={() => new Map([[limited.seriesId, limited]])}
+			/>
+		));
+		expect(screen.getByRole("table").textContent).toContain(
+			"取得できません（プロバイダーのレート制限に達しました。しばらくしてから再試行してください。サービスの応答は HTTP 429 でした。）",
 		);
 	});
 

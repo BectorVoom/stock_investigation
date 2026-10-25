@@ -31,6 +31,7 @@ const SERVER_FAILURE: ApiFailure = {
 	message: "boom",
 	detail: null,
 	issues: [],
+	upstreamStatus: null,
 };
 
 const NETWORK_FAILURE: ApiFailure = {

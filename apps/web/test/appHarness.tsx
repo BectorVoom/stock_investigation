@@ -592,7 +592,12 @@ export interface HomeServerState {
 	activeRunId: string | null;
 	runState: string;
 	lastSucceededAt: string | null;
-	lastFailure: { readonly state: string; readonly code: string; readonly at: string } | null;
+	lastFailure: {
+		readonly state: string;
+		readonly code: string;
+		readonly upstreamStatus: number | null;
+		readonly at: string;
+	} | null;
 	refreshCount: number;
 	/** Test hook: the next N data GETs answer 500 instead (V1/V2b). */
 	dataFailures: number;
@@ -626,7 +631,7 @@ function homeDataEtag(home: HomeServerState): string {
 	const failure =
 		home.lastFailure === null
 			? "no-failure"
-			: `${home.lastFailure.state}:${home.lastFailure.code}:${home.lastFailure.at}`;
+			: `${home.lastFailure.state}:${home.lastFailure.code}:${home.lastFailure.upstreamStatus ?? "none"}:${home.lastFailure.at}`;
 	return `"home-${home.activeRunId ?? "idle"}-${home.runState}-${home.lastSucceededAt ?? "never"}-${failure}-${stamp.length}-${stamp}"`;
 }
 
@@ -783,7 +788,12 @@ export interface WatchlistServerState {
 		activeRunId: string | null;
 		activeRunState: string | null;
 		activeAction: "connect" | "sync" | "disconnect" | null;
-		lastFailure: { readonly code: string; readonly reason: string; readonly at: string } | null;
+		lastFailure: {
+			readonly code: string;
+			readonly reason: string;
+			readonly upstreamStatus: number | null;
+			readonly at: string;
+		} | null;
 	};
 	syncCount: number;
 }

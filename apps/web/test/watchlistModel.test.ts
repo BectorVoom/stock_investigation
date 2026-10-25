@@ -130,13 +130,31 @@ describe("event helpers", () => {
 		expect(
 			withoutUpcomingReason(
 				stock({
-					unavailable: { code: "RATE_LIMITED", reason: "The provider rate limit was reached." },
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: null,
+					},
 				}),
 				90,
 				TODAY,
 				EN,
 			),
 		).toBe("The provider rate limit was reached.");
+		expect(
+			withoutUpcomingReason(
+				stock({
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: 429,
+					},
+				}),
+				90,
+				TODAY,
+				EN,
+			),
+		).toBe("The provider rate limit was reached. The service answered HTTP 429.");
 		expect(withoutUpcomingReason(stock({ events: [undecided] }), 90, TODAY, EN)).toBe(
 			"The source lists the announcement with the date undecided.",
 		);
@@ -148,7 +166,11 @@ describe("event helpers", () => {
 			withoutUpcomingReason(
 				stock({
 					events: [past],
-					unavailable: { code: "RATE_LIMITED", reason: "The provider rate limit was reached." },
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: null,
+					},
 				}),
 				90,
 				TODAY,
@@ -310,6 +332,7 @@ describe("refresh status", () => {
 				message: "t",
 				detail: null,
 				issues: [],
+				upstreamStatus: null,
 			}),
 		).toBe(false);
 	});
@@ -451,6 +474,7 @@ describe("google auto-sync rule", () => {
 		const failed = response({
 			lastFailure: {
 				code: "GOOGLE_RATE_LIMITED",
+				upstreamStatus: null,
 				reason: "Google is limiting requests right now; try again later.",
 				at: "2026-11-02T11:00:00Z",
 			},

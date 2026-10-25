@@ -144,6 +144,7 @@ describe("nextRunText", () => {
 			slotAt: null,
 			queuedAt,
 			failureCode: null,
+			failureUpstreamStatus: null,
 		});
 		const skipped = makeTask({ status: "completed", nextRunAt: null, lastSkip: skip });
 		expect(nextRunText(skipped, NOW_MS, TOKYO, "en", en)).toBe(
@@ -183,6 +184,7 @@ describe("last run and skip lines", () => {
 		slotAt: "2026-10-23T23:00:00Z",
 		queuedAt: "2026-10-23T23:00:05Z",
 		failureCode: "PROVIDER_UNAVAILABLE",
+		failureUpstreamStatus: null,
 	};
 
 	it("states the last run with its failure code, or that none ran yet", () => {
@@ -190,6 +192,14 @@ describe("last run and skip lines", () => {
 		expect(lastRunText(makeTask(), name, en)).toBe("Not run yet");
 		expect(lastRunText(makeTask({ lastRun }), name, en)).toBe(
 			"Last run: failed (PROVIDER_UNAVAILABLE)",
+		);
+		// The provider's own answer status follows the code, unchanged (ADR-0037).
+		const answered = { ...lastRun, failureUpstreamStatus: 529 };
+		expect(lastRunText(makeTask({ lastRun: answered }), name, en)).toBe(
+			"Last run: failed (PROVIDER_UNAVAILABLE, service answered HTTP 529)",
+		);
+		expect(lastRunText(makeTask({ lastRun: answered }), name, ja)).toBe(
+			"前回の実行: failed（PROVIDER_UNAVAILABLE、サービスの応答: HTTP 529）",
 		);
 		expect(
 			lastRunText(
@@ -386,6 +396,7 @@ describe("taskFailureHint", () => {
 		message: "refused",
 		detail,
 		issues: [],
+		upstreamStatus: null,
 	});
 
 	it("explains the task limits, a past time and a conflict; nothing for other failures", () => {
@@ -424,6 +435,7 @@ describe("outcomeStillCurrent", () => {
 				slotAt: "2026-10-23T23:00:00.000Z",
 				queuedAt: "2026-10-23T23:00:05.000Z",
 				failureCode: null,
+				failureUpstreamStatus: null,
 			},
 		});
 		expect(outcomeStillCurrent(notice, [fired])).toBe(false);

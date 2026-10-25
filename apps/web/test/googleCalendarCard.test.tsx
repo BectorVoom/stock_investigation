@@ -61,6 +61,7 @@ function mount(
 						message: "boom",
 						detail: null,
 						issues: [],
+						upstreamStatus: null,
 					},
 				};
 			return { ok: true as const, value: googleRun("connect") };
@@ -222,6 +223,7 @@ describe("GoogleCalendarCard", () => {
 				inSync: false,
 				lastFailure: {
 					code: "GOOGLE_RATE_LIMITED",
+					upstreamStatus: null,
 					reason: "Google is limiting requests right now; try again later.",
 					at: "2026-11-03T11:00:00Z",
 				},
@@ -240,6 +242,7 @@ describe("GoogleCalendarCard", () => {
 				calendarId: "cal_1",
 				lastFailure: {
 					code: "GOOGLE_AUTH_EXPIRED",
+					upstreamStatus: null,
 					reason: "x",
 					at: "2026-11-03T11:00:00Z",
 				},
@@ -279,6 +282,7 @@ describe("GoogleCalendarCard", () => {
 				calendarId: "cal_1",
 				lastFailure: {
 					code: "GOOGLE_AUTH_EXPIRED",
+					upstreamStatus: null,
 					reason: "The Google connection expired; reconnect Google Calendar.",
 					at: "2026-11-02T11:00:00Z",
 				},
@@ -295,6 +299,7 @@ describe("GoogleCalendarCard", () => {
 			state({
 				lastFailure: {
 					code: "GOOGLE_NOT_CONFIGURED",
+					upstreamStatus: null,
 					reason:
 						"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
 					at: "2026-11-02T11:00:00Z",
@@ -306,12 +311,67 @@ describe("GoogleCalendarCard", () => {
 		expect(alert.textContent).toContain("GOOGLE_OAUTH_CLIENT_ID");
 	});
 
+	it("states Google's answer status beside a failure Google caused, and none otherwise", () => {
+		backend = createFakeBackend();
+		mount(
+			state({
+				status: "connected",
+				calendarId: "cal_1",
+				connectedAt: "2026-11-02T10:00:00Z",
+				lastFailure: {
+					code: "GOOGLE_RATE_LIMITED",
+					upstreamStatus: 429,
+					reason: "Google is limiting requests right now; try again later.",
+					at: "2026-11-03T11:00:00Z",
+				},
+			}),
+		);
+		expect(screen.getByRole("alert").textContent).toContain(
+			"GOOGLE_RATE_LIMITED: The Google Calendar rate limit was reached; try again later. (service answered HTTP 429)",
+		);
+		cleanup();
+
+		mount(
+			state({
+				lastFailure: {
+					code: "GOOGLE_AUTH_TIMEOUT",
+					upstreamStatus: null,
+					reason: "x",
+					at: "2026-11-03T11:00:00Z",
+				},
+			}),
+		);
+		expect(screen.getByRole("alert").textContent).not.toContain("service answered");
+	});
+
+	it("adds Google's answer status to the needs-reconnect reason", () => {
+		backend = createFakeBackend();
+		mount(
+			state({
+				status: "needs-reconnect",
+				calendarId: "cal_1",
+				lastFailure: {
+					code: "GOOGLE_AUTH_EXPIRED",
+					upstreamStatus: 401,
+					reason: "x",
+					at: "2026-11-03T11:00:00Z",
+				},
+			}),
+		);
+		expect(
+			screen.getByText(
+				"The Google connection expired; reconnect Google Calendar. The service answered HTTP 401. Reconnect to keep the calendar in step.",
+			),
+		).toBeTruthy();
+	});
+
 	it("maps an unknown stored failure code to the generic reason", () => {
 		backend = createFakeBackend();
 		mount(
 			state({
 				lastFailure: {
 					code: "GOOGLE_REQUEST_FAILED",
+					upstreamStatus: null,
 					reason: "The Google Calendar request failed.",
 					at: "2026-11-02T11:00:00Z",
 				},

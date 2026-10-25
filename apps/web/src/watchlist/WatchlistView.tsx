@@ -44,6 +44,7 @@ import {
 	addTargetText,
 	directoryStatusLine,
 	earningsAutoRefreshReason,
+	earningsUnavailableText,
 	googleAutoSyncWanted,
 	hasNeverRefreshedStock,
 	isWatchlistRefreshActive,
@@ -150,7 +151,11 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 							when={passed()}
 							fallback={
 								<Show when={stock().unavailable} fallback={<span>{m().dateUndecided}</span>}>
-									{(unavailable) => <span>{common().unavailable(unavailable().reason)}</span>}
+									{(unavailable) => (
+										<span>
+											{common().unavailable(earningsUnavailableText(unavailable(), model()))}
+										</span>
+									)}
 								</Show>
 							}
 						>

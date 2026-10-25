@@ -1194,6 +1194,29 @@ describe("chat run controls", () => {
 		expect(failed.querySelector('[data-field="failure-hint"]')).toBeNull();
 	});
 
+	it("states the provider's answer status beside the failure code, and nothing without one", async () => {
+		server.runs = [
+			makeRun({
+				runId: "run_429",
+				state: "failed",
+				failureCode: "PROVIDER_RATE_LIMITED",
+				failureUpstreamStatus: 429,
+			}),
+			makeRun({ runId: "run_plain", state: "failed", failureCode: "BUDGET_MAX_TOOL_CALLS" }),
+		];
+		mountApp(backend);
+
+		const limited = await screen.findByRole("article", { name: "Run run_429" });
+		expect(limited.querySelector('[role="alert"]')?.textContent).toBe(
+			"Failure code: PROVIDER_RATE_LIMITED (service answered HTTP 429)",
+		);
+		const plain = await screen.findByRole("article", { name: "Run run_plain" });
+		expect(plain.querySelector('[role="alert"]')?.textContent).toBe(
+			"Failure code: BUDGET_MAX_TOOL_CALLS",
+		);
+		expect(plain.querySelector('[data-field="failure-upstream-status"]')).toBeNull();
+	});
+
 	it("hints why nothing was collected for each NO_EVIDENCE_COLLECTED detail", async () => {
 		const baseRequest = makeRun({ runId: "x" }).request;
 		if (baseRequest === null) throw new Error("expected a request fixture");
@@ -1841,5 +1864,18 @@ describe("conversation status announcements (finding 9)", () => {
 			makeRun({ runId: "run_live", state: "failed", failureCode: "BUDGET_MAX_TOOL_CALLS" }),
 		]);
 		await waitFor(() => expect(region.textContent).toBe("Failed: BUDGET_MAX_TOOL_CALLS."));
+
+		// A failure the provider caused is announced with its answer status.
+		setRuns([
+			makeRun({
+				runId: "run_live",
+				state: "failed",
+				failureCode: "PROVIDER_UNAVAILABLE",
+				failureUpstreamStatus: 503,
+			}),
+		]);
+		await waitFor(() =>
+			expect(region.textContent).toBe("Failed: PROVIDER_UNAVAILABLE, service answered HTTP 503."),
+		);
 	});
 });

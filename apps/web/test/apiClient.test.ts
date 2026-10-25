@@ -149,6 +149,38 @@ describe("error mapping", () => {
 				message: "workspace is at version 7",
 				detail: "expected 4",
 				issues: [],
+				upstreamStatus: null,
+			},
+		});
+	});
+
+	it("carries an external service's status from the error body, unchanged (ADR-0037)", async () => {
+		const { backend, api } = setup();
+		backend.on("POST", /sources\/preview$/, () =>
+			jsonResponse(
+				{
+					error: {
+						code: "FETCH_FAILED",
+						message: "The source could not be retrieved.",
+						detail: "HTTP_ERROR",
+						upstreamStatus: 404,
+					},
+				},
+				{ status: 404 },
+			),
+		);
+		const result = await api.previewSource("https://feeds.example.org/gone.xml");
+		expect(result).toEqual({
+			ok: false,
+			error: {
+				kind: "api",
+				// The meaning stays in the code; the status line is the host's own 404.
+				code: "FETCH_FAILED",
+				status: 404,
+				message: "The source could not be retrieved.",
+				detail: "HTTP_ERROR",
+				issues: [],
+				upstreamStatus: 404,
 			},
 		});
 	});

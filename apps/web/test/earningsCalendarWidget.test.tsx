@@ -61,7 +61,11 @@ const WATCHLIST: WatchlistResponse = {
 			sourceUrl: "https://www.jpx.co.jp/listing/event-schedules/financial-announcement/index.html",
 			lastRefreshedAt: "2026-10-12T12:00:00Z",
 			retrievedAt: "2026-10-12T12:00:00Z",
-			unavailable: { code: "NO_SCHEDULED_DATE", reason: "The source lists no upcoming date." },
+			unavailable: {
+				code: "NO_SCHEDULED_DATE",
+				reason: "The source lists no upcoming date.",
+				upstreamStatus: null,
+			},
 			events: [],
 		},
 	],
@@ -115,6 +119,7 @@ function mount(
 					message: error.message,
 					detail: null,
 					issues: [],
+					upstreamStatus: null,
 				},
 	);
 	render(() => (
@@ -293,6 +298,7 @@ describe("EarningsCalendarWidget", () => {
 			message: "boom",
 			detail: null,
 			issues: [],
+			upstreamStatus: null,
 		});
 		const client = {};
 		render(() => (

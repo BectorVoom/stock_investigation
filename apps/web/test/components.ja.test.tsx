@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiClient } from "../src/api/client.ts";
 import { clientFailureMessages } from "../src/api/errors.messages.ts";
 import { translatedFailureMessage } from "../src/api/errorText.ts";
-import { type ApiFailure, CLIENT_ERROR_CODES } from "../src/api/http.ts";
+import {
+	type ApiAnswerFailure,
+	CLIENT_ERROR_CODES,
+	type ClientSideFailure,
+} from "../src/api/http.ts";
 import { SpendField } from "../src/components/SpendField.tsx";
 import { ErrorNotice, RemoteView } from "../src/components/ui.tsx";
 import { sessionMessages } from "../src/lib/session.messages.ts";
@@ -21,7 +25,7 @@ function inJapanese(content: () => JSX.Element) {
 	return render(() => <LocaleProvider locale={() => "ja"}>{content()}</LocaleProvider>);
 }
 
-function failure(overrides: Partial<ApiFailure>): ApiFailure {
+function failure(overrides: Partial<ApiAnswerFailure>): ApiAnswerFailure {
 	return {
 		kind: "api",
 		code: "INTERNAL",
@@ -29,8 +33,15 @@ function failure(overrides: Partial<ApiFailure>): ApiFailure {
 		message: "Internal error.",
 		detail: null,
 		issues: [],
+		upstreamStatus: null,
 		...overrides,
 	};
+}
+
+function clientFailure(
+	overrides: Pick<ClientSideFailure, "kind" | "code" | "message"> & Partial<ClientSideFailure>,
+): ClientSideFailure {
+	return { status: null, detail: null, issues: [], ...overrides };
 }
 
 function alertParts() {
@@ -61,6 +72,22 @@ describe("ErrorNotice in Japanese (ADR-0032 decision 8)", () => {
 		expect(screen.getByRole("button", { name: "再試行" })).toBeTruthy();
 	});
 
+	it("states an external service's answer status after the reason", () => {
+		inJapanese(() => (
+			<ErrorNotice
+				failure={failure({
+					code: "FETCH_FAILED",
+					status: 404,
+					message: "The source could not be retrieved.",
+					upstreamStatus: 404,
+				})}
+			/>
+		));
+		expect(screen.getByRole("alert").textContent).toBe(
+			"FETCH_FAILED: 情報源を取得できませんでした。（サービスの応答: HTTP 404）",
+		);
+	});
+
 	it("words the client's own failure with its values", async () => {
 		const api = createApiClient({
 			fetch: () => Promise.reject(new Error("Failed to fetch")),
@@ -87,7 +114,7 @@ describe("ErrorNotice in Japanese (ADR-0032 decision 8)", () => {
 					}}
 				/>
 				<ErrorNotice
-					failure={failure({
+					failure={clientFailure({
 						kind: "invalid-request",
 						code: "INVALID_REQUEST",
 						status: null,
@@ -105,7 +132,7 @@ describe("ErrorNotice in Japanese (ADR-0032 decision 8)", () => {
 	it("names the validation issues list in Japanese", () => {
 		inJapanese(() => (
 			<ErrorNotice
-				failure={failure({
+				failure={clientFailure({
 					kind: "invalid-response",
 					code: "INVALID_RESPONSE",
 					message: clientFailureMessages.en.responseInvalid,

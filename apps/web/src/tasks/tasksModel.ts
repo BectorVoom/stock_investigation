@@ -204,7 +204,10 @@ export function nextRunText(
 	return text.nextRunAt(taskTimeText(task.nextRunAt, task.timeZone, viewerZone, locale, text));
 }
 
-/** The last run's state in words, with its failure code; "Not run yet" without one. */
+/**
+ * The last run's state in words, with its failure code (and the external
+ * service's status when one caused it); "Not run yet" without one.
+ */
 export function lastRunText(
 	task: ScheduledTask,
 	stateName: (state: string) => string,
@@ -212,7 +215,12 @@ export function lastRunText(
 ): string {
 	const run = task.lastRun;
 	if (run === null) return text.notRunYet;
-	if (run.failureCode !== null) return text.lastRunFailed(stateName(run.state), run.failureCode);
+	if (run.failureCode !== null) {
+		return text.lastRunFailed(
+			stateName(run.state),
+			text.codeWithUpstreamStatus(run.failureCode, run.failureUpstreamStatus),
+		);
+	}
 	return text.lastRun(stateName(run.state));
 }
 

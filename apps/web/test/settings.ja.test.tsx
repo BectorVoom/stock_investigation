@@ -104,4 +104,38 @@ describe("Settings → Calendar in Japanese", () => {
 		expect(screen.getByRole("button", { name: "今すぐ同期" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "切断" })).toBeTruthy();
 	});
+
+	it("adds Google's answer status to the reconnect reason in Japanese", () => {
+		inJapanese(() => (
+			<GoogleCalendarCard
+				state={{
+					status: "needs-reconnect",
+					authUrl: null,
+					calendarId: "cal_1",
+					connectedAt: "2026-11-02T10:00:00Z",
+					lastSyncedAt: null,
+					lastSync: null,
+					inSync: null,
+					activeRunId: null,
+					activeRunState: null,
+					activeAction: null,
+					lastFailure: {
+						code: "GOOGLE_AUTH_EXPIRED",
+						reason: "The Google connection expired; reconnect Google Calendar.",
+						upstreamStatus: 401,
+						at: "2026-11-03T11:00:00Z",
+					},
+				}}
+				api={createApiClient({ fetch: createFakeBackend().fetch })}
+				busy={false}
+				onQueued={() => {}}
+				onQueueFailed={() => {}}
+			/>
+		));
+		expect(
+			screen.getByText(
+				/サービスの応答は HTTP 401 でした。カレンダーを同期し続けるには再接続してください。$/,
+			),
+		).toBeTruthy();
+	});
 });

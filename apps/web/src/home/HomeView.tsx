@@ -27,6 +27,8 @@ import type { ApiClient } from "../api/client.ts";
 import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import { Empty, ErrorNotice, IconButton, Notice } from "../components/ui.tsx";
+import { commonMessages } from "../i18n/common.messages.ts";
+import { withUpstreamStatus } from "../i18n/upstreamStatus.ts";
 import { formatInstant } from "../lib/format.ts";
 import { createPoller, type VisibilitySource } from "../lib/polling.ts";
 import { createRemote } from "../lib/remote.ts";
@@ -85,6 +87,7 @@ export function HomeView(props: {
 }): JSX.Element {
 	ensureHomeIconLibraries();
 	const m = useMessages(homeMessages);
+	const common = useMessages(commonMessages);
 	const locale = useLocale();
 	const watchlistText = useMessages(watchlistModelMessages);
 	const dashboard = createRemote(() => props.api.getHomeDashboard());
@@ -685,7 +688,11 @@ export function HomeView(props: {
 		if (current.refresh.lastFailure !== null) {
 			parts.push(
 				m().lastFailed(
-					current.refresh.lastFailure.code,
+					withUpstreamStatus(
+						current.refresh.lastFailure.code,
+						current.refresh.lastFailure.upstreamStatus,
+						common(),
+					),
 					formatInstant(current.refresh.lastFailure.at),
 				),
 			);

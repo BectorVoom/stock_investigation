@@ -257,6 +257,7 @@ export function makeRun(overrides: Partial<ResearchRun> = {}): ResearchRun {
 		cancelRequested: false,
 		failureCode: null,
 		failureDetail: null,
+		failureUpstreamStatus: null,
 		approvalRequest: null,
 		retryOfRunId: null,
 		verificationStatus: "verified",

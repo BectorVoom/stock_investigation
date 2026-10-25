@@ -242,7 +242,7 @@ export interface WatchServer {
 		activeRunId: string | null;
 		activeRunState: string | null;
 		activeAction: "connect" | "sync" | "disconnect" | null;
-		lastFailure: { code: string; reason: string; at: string } | null;
+		lastFailure: { code: string; reason: string; upstreamStatus: number | null; at: string } | null;
 	};
 }
 

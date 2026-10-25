@@ -159,6 +159,7 @@ export function createTasksServer(
 						slotAt: null,
 						queuedAt: "2026-10-24T09:00:00Z",
 						failureCode: null,
+						failureUpstreamStatus: null,
 					},
 					version: current.version + 1,
 				});
