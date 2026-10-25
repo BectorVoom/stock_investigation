@@ -60,6 +60,8 @@ export type NotebookAssistTurnOutcome =
 	| {
 			readonly kind: "failed";
 			readonly failureCode: string;
+			/** The model provider's answer status behind `failureCode`, unchanged (§4a); null otherwise. */
+			readonly failureUpstreamStatus: number | null;
 			readonly retryable: boolean;
 			readonly usage: ResourceUsage;
 	  }
@@ -80,6 +82,7 @@ type ModelTurnResult =
 			readonly cancelled: false;
 			readonly code: string;
 			readonly retryable: boolean;
+			readonly upstreamStatus: number | null;
 	  };
 
 interface CheckedTurn {
@@ -95,9 +98,14 @@ export async function runNotebookAssistTurn(
 	deps: NotebookAssistTurnDeps,
 ): Promise<NotebookAssistTurnOutcome> {
 	let usage: ResourceUsage = EMPTY_USAGE;
-	const failed = (failureCode: string, retryable: boolean): NotebookAssistTurnOutcome => ({
+	const failed = (
+		failureCode: string,
+		retryable: boolean,
+		failureUpstreamStatus: number | null = null,
+	): NotebookAssistTurnOutcome => ({
 		kind: "failed",
 		failureCode,
+		failureUpstreamStatus,
 		retryable,
 		usage,
 	});
@@ -131,7 +139,11 @@ export async function runNotebookAssistTurn(
 		let text = "";
 		// undefined = the provider reported nothing; that is an unknown cost, not a zero one.
 		let reportedCost: number | null | undefined;
-		let providerFailure: { readonly code: string; readonly retryable: boolean } | null = null;
+		let providerFailure: {
+			readonly code: string;
+			readonly retryable: boolean;
+			readonly upstreamStatus: number | null;
+		} | null = null;
 		let finished = false;
 		try {
 			const events = deps.agent.run(
@@ -153,20 +165,28 @@ export async function runNotebookAssistTurn(
 			for await (const raw of events) {
 				const parsed = parseAgentEvent(raw);
 				if (!parsed.ok) {
-					providerFailure = { code: "AGENT_EVENT_INVALID", retryable: false };
+					providerFailure = { code: "AGENT_EVENT_INVALID", retryable: false, upstreamStatus: null };
 					break;
 				}
 				const event = parsed.value;
 				if (event.type === "text.delta") {
 					text += event.text;
 					if (text.length > MAX_MODEL_OUTPUT_CHARS) {
-						providerFailure = { code: "AGENT_OUTPUT_TOO_LARGE", retryable: false };
+						providerFailure = {
+							code: "AGENT_OUTPUT_TOO_LARGE",
+							retryable: false,
+							upstreamStatus: null,
+						};
 						break;
 					}
 				} else if (event.type === "usage") {
 					reportedCost = event.knownCostUsd;
 				} else if (event.type === "failed") {
-					providerFailure = { code: event.code, retryable: event.retryable };
+					providerFailure = {
+						code: event.code,
+						retryable: event.retryable,
+						upstreamStatus: event.upstreamStatus ?? null,
+					};
 					break;
 				} else if (event.type === "completed") {
 					finished = true;
@@ -176,7 +196,7 @@ export async function runNotebookAssistTurn(
 			}
 		} catch (error) {
 			// Adapters are contractually non-throwing; treat a throw as a provider failure, not a crash.
-			providerFailure = { code: agentThrewCode(error), retryable: true };
+			providerFailure = { code: agentThrewCode(error), retryable: true, upstreamStatus: null };
 		}
 		usage = addUsage(usage, { costUsd: reportedCost ?? null });
 		await deps.reporter.usage(usage);
@@ -185,7 +205,13 @@ export async function runNotebookAssistTurn(
 			return { ok: false, cancelled: false, ...providerFailure };
 		}
 		if (!finished) {
-			return { ok: false, cancelled: false, code: "AGENT_STREAM_ENDED_EARLY", retryable: true };
+			return {
+				ok: false,
+				cancelled: false,
+				code: "AGENT_STREAM_ENDED_EARLY",
+				retryable: true,
+				upstreamStatus: null,
+			};
 		}
 		return { ok: true, text };
 	}
@@ -293,7 +319,9 @@ export async function runNotebookAssistTurn(
 	await deps.reporter.state("analyzing");
 	const first = await modelTurn(firstPrompt);
 	if (!first.ok) {
-		return first.cancelled ? { kind: "cancelled", usage } : failed(first.code, first.retryable);
+		return first.cancelled
+			? { kind: "cancelled", usage }
+			: failed(first.code, first.retryable, first.upstreamStatus);
 	}
 	await deps.reporter.state("verifying");
 	const checked = await checkTurn(first.text);
@@ -316,7 +344,9 @@ export async function runNotebookAssistTurn(
 	}
 	const second = await modelTurn(repairPrompt);
 	if (!second.ok) {
-		return second.cancelled ? { kind: "cancelled", usage } : failed(second.code, second.retryable);
+		return second.cancelled
+			? { kind: "cancelled", usage }
+			: failed(second.code, second.retryable, second.upstreamStatus);
 	}
 	const rechecked = await checkTurn(second.text);
 	if (rechecked.ok) {

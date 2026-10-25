@@ -1,8 +1,8 @@
+import { upstreamStatusOf } from "@research/application";
 import { describe, expect, it } from "vitest";
 import {
 	datePrefixOf,
 	fetchJsonDocument,
-	httpStatusOf,
 	isIsoDate,
 	subtractDaysIso,
 } from "../../src/finance/marketFetch.ts";
@@ -12,11 +12,13 @@ const URL = "https://api.synthetic-wire.org/x";
 const LIMITS = { maxBytes: 1000, timeoutMs: 2000, accept: "application/json" } as const;
 
 describe("market HTTP helpers", () => {
-	it("reads the status out of an HTTP_ERROR detail and nothing else", () => {
-		expect(httpStatusOf({ code: "HTTP_ERROR", detail: "HTTP 404" })).toBe(404);
-		expect(httpStatusOf({ code: "HTTP_ERROR", detail: "HTTP 429" })).toBe(429);
-		expect(httpStatusOf({ code: "TIMEOUT", detail: "no complete response" })).toBeNull();
-		expect(httpStatusOf({ code: "NETWORK_ERROR", detail: "404 in a message" })).toBeNull();
+	it("reads the upstream status from the status field, never from the detail text", () => {
+		expect(upstreamStatusOf({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 })).toBe(404);
+		expect(upstreamStatusOf({ code: "HTTP_ERROR", detail: "HTTP 429", status: 429 })).toBe(429);
+		// The detail is for people: a different number in it is ignored.
+		expect(upstreamStatusOf({ code: "HTTP_ERROR", detail: "HTTP 500", status: 529 })).toBe(529);
+		expect(upstreamStatusOf({ code: "TIMEOUT", detail: "no complete response" })).toBeNull();
+		expect(upstreamStatusOf({ code: "NETWORK_ERROR", detail: "404 in a message" })).toBeNull();
 	});
 
 	it("parses a JSON document and keeps the final URL", async () => {
@@ -35,7 +37,12 @@ describe("market HTTP helpers", () => {
 	});
 
 	it("passes transport failures through untouched, error body included", async () => {
-		const failure = { code: "HTTP_ERROR", detail: "HTTP 400", body: '{"error_code":400}' } as const;
+		const failure = {
+			code: "HTTP_ERROR",
+			detail: "HTTP 400",
+			status: 400,
+			body: '{"error_code":400}',
+		} as const;
 		const fetcher = createScriptedFetcher({ [URL]: { error: failure } });
 		const result = await fetchJsonDocument(fetcher, URL, LIMITS);
 		expect(result).toEqual({ ok: false, error: failure });

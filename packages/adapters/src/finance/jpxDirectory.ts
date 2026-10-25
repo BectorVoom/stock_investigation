@@ -31,6 +31,7 @@
 import type {
 	SafeBinaryFetcher,
 	SafeFetcher,
+	StockDirectoryFailure,
 	StockDirectoryQuery,
 	StockDirectorySource,
 } from "@research/application";
@@ -45,6 +46,7 @@ import { MAX_ZIP_ARCHIVE_BYTES, readZipEntries } from "../node/zipReader.ts";
 import { anchorHrefs, JPX_HOST, JPX_SHEET_PATH, JPX_STRINGS_PATH } from "./jpxEarnings.ts";
 import { readWorkbookRows, type WorkbookCell } from "./jpxWorkbook.ts";
 import {
+	directoryFailure,
 	directoryFetchFailure,
 	finishDirectory,
 	fitsDirectoryName,
@@ -268,10 +270,10 @@ export function createJpxDirectorySource(deps: JpxDirectoryDeps): StockDirectory
 	async function listing(
 		language: JpxListingLanguage,
 		query: StockDirectoryQuery,
-	): Promise<Result<JpxListingRow[], StockDirectoryFailureCode>> {
+	): Promise<Result<JpxListingRow[], StockDirectoryFailure>> {
 		// One grant per request start, taken immediately before it is sent;
 		// a false hook (the job stopped while waiting) sends nothing more.
-		if (!(await query.beforeRequest())) return err("DIRECTORY_SOURCE_FAILED");
+		if (!(await query.beforeRequest())) return err(directoryFailure("DIRECTORY_SOURCE_FAILED"));
 		const page = await deps.fetcher.fetchText(JPX_LISTING_PAGE_URLS[language], {
 			maxBytes: PAGE_MAX_BYTES,
 			timeoutMs: PAGE_TIMEOUT_MS,
@@ -281,8 +283,8 @@ export function createJpxDirectorySource(deps: JpxDirectoryDeps): StockDirectory
 		});
 		if (!page.ok) return err(directoryFetchFailure(page.error));
 		const url = extractJpxListingUrl(page.value.text, language);
-		if (url === null) return err("DIRECTORY_PARSE_FAILED");
-		if (!(await query.beforeRequest())) return err("DIRECTORY_SOURCE_FAILED");
+		if (url === null) return err(directoryFailure("DIRECTORY_PARSE_FAILED"));
+		if (!(await query.beforeRequest())) return err(directoryFailure("DIRECTORY_SOURCE_FAILED"));
 		const workbook = await deps.binaryFetcher.fetchBytes(url, {
 			maxBytes: MAX_ZIP_ARCHIVE_BYTES,
 			timeoutMs: WORKBOOK_TIMEOUT_MS,
@@ -291,7 +293,8 @@ export function createJpxDirectorySource(deps: JpxDirectoryDeps): StockDirectory
 			signal: query.signal,
 		});
 		if (!workbook.ok) return err(directoryFetchFailure(workbook.error));
-		return parseJpxListingWorkbook(workbook.value.bytes, language);
+		const rows = parseJpxListingWorkbook(workbook.value.bytes, language);
+		return rows.ok ? rows : err(directoryFailure(rows.error));
 	}
 
 	return {
@@ -302,7 +305,7 @@ export function createJpxDirectorySource(deps: JpxDirectoryDeps): StockDirectory
 			const english = await listing("en", query);
 			if (!english.ok) return english;
 			const parsed = parseJpxDirectory(japanese.value, english.value);
-			if (!parsed.ok) return parsed;
+			if (!parsed.ok) return err(directoryFailure(parsed.error));
 			if (parsed.value.droppedRows > 0) deps.onDroppedRows?.(parsed.value.droppedRows);
 			return ok(parsed.value.data);
 		},

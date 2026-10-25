@@ -173,26 +173,32 @@ describe("createSecDirectorySource", () => {
 		const { fetcher, calls } = fakeFetcher(async () => err({ code: "TIMEOUT", detail: "x" }));
 		const { source } = sourceWith(fetcher);
 		const result = await source.fetchDirectory({ signal: never, beforeRequest: async () => false });
-		expect(expectErr(result)).toBe("DIRECTORY_SOURCE_FAILED");
+		expect(expectErr(result)).toEqual({ code: "DIRECTORY_SOURCE_FAILED", upstreamStatus: null });
 		expect(calls).toHaveLength(0);
 	});
 
 	it("maps SEC failures to stable codes without provider text", async () => {
-		const cases: [SafeFetchError, string][] = [
-			[{ code: "HTTP_ERROR", detail: "HTTP 429 Too Many Requests" }, "DIRECTORY_RATE_LIMITED"],
-			[{ code: "HTTP_ERROR", detail: "HTTP 403" }, "DIRECTORY_SOURCE_FAILED"],
-			[{ code: "HTTP_ERROR", detail: "HTTP 503" }, "DIRECTORY_SOURCE_FAILED"],
-			[{ code: "TIMEOUT", detail: "no response" }, "DIRECTORY_SOURCE_FAILED"],
-			[{ code: "RESPONSE_TOO_LARGE", detail: "cap" }, "DIRECTORY_SOURCE_FAILED"],
+		// SEC's own status travels beside the code, unchanged (§4a).
+		const cases: [SafeFetchError, string, number | null][] = [
+			[
+				{ code: "HTTP_ERROR", detail: "HTTP 429 Too Many Requests", status: 429 },
+				"DIRECTORY_RATE_LIMITED",
+				429,
+			],
+			[{ code: "HTTP_ERROR", detail: "HTTP 403", status: 403 }, "DIRECTORY_SOURCE_FAILED", 403],
+			[{ code: "HTTP_ERROR", detail: "HTTP 503", status: 503 }, "DIRECTORY_SOURCE_FAILED", 503],
+			[{ code: "HTTP_ERROR", detail: "HTTP 529", status: 529 }, "DIRECTORY_SOURCE_FAILED", 529],
+			[{ code: "TIMEOUT", detail: "no response" }, "DIRECTORY_SOURCE_FAILED", null],
+			[{ code: "RESPONSE_TOO_LARGE", detail: "cap" }, "DIRECTORY_SOURCE_FAILED", null],
 		];
-		for (const [error, code] of cases) {
+		for (const [error, code, upstreamStatus] of cases) {
 			const { fetcher } = fakeFetcher(async () => err(error));
 			const { source } = sourceWith(fetcher);
 			const result = await source.fetchDirectory({
 				signal: never,
 				beforeRequest: async () => true,
 			});
-			expect(expectErr(result)).toBe(code);
+			expect(expectErr(result)).toEqual({ code, upstreamStatus });
 		}
 	});
 
@@ -206,7 +212,7 @@ describe("createSecDirectorySource", () => {
 				signal: never,
 				beforeRequest: async () => true,
 			});
-			expect(expectErr(result)).toBe("DIRECTORY_PARSE_FAILED");
+			expect(expectErr(result)).toEqual({ code: "DIRECTORY_PARSE_FAILED", upstreamStatus: null });
 		}
 	});
 
@@ -214,7 +220,7 @@ describe("createSecDirectorySource", () => {
 		const { fetcher, calls } = fakeFetcher(async () => err({ code: "TIMEOUT", detail: "x" }));
 		const { source } = sourceWith(fetcher, "no contact");
 		const result = await source.fetchDirectory({ signal: never, beforeRequest: async () => true });
-		expect(expectErr(result)).toBe("DIRECTORY_NOT_CONFIGURED");
+		expect(expectErr(result)).toEqual({ code: "DIRECTORY_NOT_CONFIGURED", upstreamStatus: null });
 		expect(calls).toHaveLength(0);
 	});
 });

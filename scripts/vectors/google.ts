@@ -37,6 +37,7 @@ import {
 	createCalendar,
 	deleteEvent,
 	type GoogleCallCode,
+	type GoogleCallFailure,
 	getCalendar,
 	insertEvent,
 	listManagedEvents,
@@ -337,7 +338,10 @@ type CalendarOp =
 	| { readonly name: "update"; readonly calendarId: string; readonly body: CalendarEventWrite }
 	| { readonly name: "delete"; readonly calendarId: string; readonly eventId: string };
 
-type RefreshAnswer = { readonly token: string } | { readonly code: string };
+/** A scripted refresh: a new token, or a failure with Google's status (null when none). */
+type RefreshAnswer =
+	| { readonly token: string }
+	| { readonly code: string; readonly upstreamStatus?: number | null };
 
 interface CalendarCase {
 	readonly ops: readonly CalendarOp[];
@@ -490,12 +494,17 @@ async function runCalendar(
 	const deps: CalendarCallDeps = {
 		http,
 		accessToken: () => token,
-		refreshAccessToken: async (): Promise<Result<string, { code: GoogleCallCode }>> => {
+		refreshAccessToken: async (): Promise<Result<string, GoogleCallFailure>> => {
 			const answer = refreshes[refreshIndex];
 			refreshIndex += 1;
 			trace.push({ refresh: true });
-			if (answer === undefined) return err({ code: "GOOGLE_REQUEST_FAILED" });
-			if ("code" in answer) return err({ code: answer.code as GoogleCallCode });
+			if (answer === undefined) return err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: null });
+			if ("code" in answer) {
+				return err({
+					code: answer.code as GoogleCallCode,
+					upstreamStatus: answer.upstreamStatus ?? null,
+				});
+			}
 			token = answer.token;
 			return ok(token);
 		},

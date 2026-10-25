@@ -31,6 +31,20 @@ export const upstreamStatusSchema = z
 	.min(UPSTREAM_STATUS_MIN)
 	.max(UPSTREAM_STATUS_MAX);
 
+/**
+ * The latest terminal refresh run that did not succeed (failed/cancelled):
+ * its state, stable failure code, the external service's answer status
+ * behind it (unchanged, §4a; null when none) and when it ended. One shape
+ * for Home, the Watchlist and the stock directory. `state` is a plain string
+ * (not jobStateSchema: jobs.ts imports the modules that use this).
+ */
+export const lastRefreshFailureSchema = z.strictObject({
+	state: z.string(),
+	code: z.string().min(1).max(80),
+	upstreamStatus: upstreamStatusSchema.nullable(),
+	at: isoDateTimeSchema,
+});
+
 export const shortTextSchema = z.string().trim().min(1).max(300);
 export const longTextSchema = z.string().trim().min(1).max(4000);
 

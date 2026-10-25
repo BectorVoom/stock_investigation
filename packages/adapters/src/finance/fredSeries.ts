@@ -22,10 +22,12 @@
  * When `since` is given, `observation_start` is `since − 45 days` (to pick up
  * revisions); otherwise the newest `maxObservations`.
  */
-import type {
-	MarketSeriesSource,
-	MarketSourceUnavailable,
-	SafeFetcher,
+import {
+	type MarketSeriesSource,
+	type MarketSourceUnavailable,
+	type SafeFetchError,
+	type SafeFetcher,
+	upstreamStatusOf,
 } from "@research/application";
 import {
 	type MarketFrequency,
@@ -33,9 +35,9 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailable,
 } from "@research/contracts";
-import { err, ok, parseJsonOrNull } from "@research/domain";
+import { err, ok, parseJsonOrNull, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
-import { fetchJsonDocument, httpStatusOf, isIsoDate, subtractDaysIso } from "./marketFetch.ts";
+import { fetchJsonDocument, isIsoDate, subtractDaysIso } from "./marketFetch.ts";
 
 export const FRED_HOST = "api.stlouisfed.org";
 const FRED_ALLOWED_HOSTS: ReadonlySet<string> = new Set([FRED_HOST]);
@@ -99,25 +101,46 @@ function toUnit(units: string, seasonalAdjustmentShort: string): string {
 	return base;
 }
 
-function unavailable(code: MarketSourceUnavailable["code"]): MarketSourceUnavailable {
-	return marketUnavailable(code, "fred");
+function unavailable(
+	code: MarketSourceUnavailable["code"],
+	upstreamStatus: number | null = null,
+): MarketSourceUnavailable {
+	return marketUnavailable(code, "fred", upstreamStatus);
 }
 
-function mapFredErrorBody(error: FredError): MarketSourceUnavailable {
+/**
+ * Maps FRED's JSON error. `upstreamStatus` is the answer's HTTP status when
+ * FRED answered with an error status; on a 200 that carries an error body it
+ * is FRED's own `error_code` (§4a: FRED's status, unchanged).
+ */
+function mapFredErrorBody(
+	error: FredError,
+	upstreamStatus: number | null,
+): MarketSourceUnavailable {
 	const message = error.error_message;
-	if (/api_key/i.test(message)) return unavailable("SOURCE_AUTH_FAILED");
-	if (/series_id|does not exist/i.test(message)) return unavailable("SERIES_NOT_FOUND");
-	return unavailable("SOURCE_FAILED");
+	if (/api_key/i.test(message)) return unavailable("SOURCE_AUTH_FAILED", upstreamStatus);
+	if (/series_id|does not exist/i.test(message)) {
+		return unavailable("SERIES_NOT_FOUND", upstreamStatus);
+	}
+	return unavailable("SOURCE_FAILED", upstreamStatus);
 }
 
 /** Maps a failed metadata/observations request; the body may be absent. */
-function mapFredFailure(status: number | null, body: string | null): MarketSourceUnavailable {
-	if (status === 429) return unavailable("RATE_LIMITED");
-	if (body !== null) {
-		const error = fredErrorSchema.safeParse(parseJsonOrNull(body));
-		if (error.success) return mapFredErrorBody(error.data);
+function mapFredFailure(error: SafeFetchError): MarketSourceUnavailable {
+	const upstreamStatus = upstreamStatusOf(error);
+	if (error.code === "HTTP_ERROR" && error.status === 429) {
+		return unavailable("RATE_LIMITED", upstreamStatus);
 	}
-	return unavailable("SOURCE_FAILED");
+	if (error.code === "HTTP_ERROR" && error.body !== undefined) {
+		const body = fredErrorSchema.safeParse(parseJsonOrNull(error.body));
+		if (body.success) return mapFredErrorBody(body.data, upstreamStatus);
+	}
+	return unavailable("SOURCE_FAILED", upstreamStatus);
+}
+
+/** A 200 answer carrying FRED's error body: its `error_code` is FRED's status. */
+function mapFredErrorPayload(error: FredError): MarketSourceUnavailable {
+	return mapFredErrorBody(error, upstreamStatusOrNull(error.error_code));
 }
 
 function seriesUrl(apiKey: string, symbol: string): string {
@@ -164,12 +187,12 @@ export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource
 				signal: query.signal,
 			});
 			if (!meta.ok) {
-				return err(mapFredFailure(httpStatusOf(meta.error), meta.error.body ?? null));
+				return err(mapFredFailure(meta.error));
 			}
 			// An error payload on 200 is not expected from FRED, but mapping it
 			// costs nothing and keeps a misbehaving response honest.
 			const asError = fredErrorSchema.safeParse(meta.value.json);
-			if (asError.success) return err(mapFredErrorBody(asError.data));
+			if (asError.success) return err(mapFredErrorPayload(asError.data));
 			const parsedMeta = fredSeriesMetaSchema.safeParse(meta.value.json);
 			if (!parsedMeta.success) return err(unavailable("SOURCE_FAILED"));
 			const [first] = parsedMeta.data.seriess;
@@ -193,12 +216,10 @@ export function createFredSeriesSource(deps: FredSeriesDeps): MarketSeriesSource
 				{ ...FETCH_OPTIONS, signal: query.signal },
 			);
 			if (!observations.ok) {
-				return err(
-					mapFredFailure(httpStatusOf(observations.error), observations.error.body ?? null),
-				);
+				return err(mapFredFailure(observations.error));
 			}
 			const asObsError = fredErrorSchema.safeParse(observations.value.json);
-			if (asObsError.success) return err(mapFredErrorBody(asObsError.data));
+			if (asObsError.success) return err(mapFredErrorPayload(asObsError.data));
 			const parsedObs = fredObservationsSchema.safeParse(observations.value.json);
 			if (!parsedObs.success) return err(unavailable("SOURCE_FAILED"));
 			const points: { readonly observedOn: string; readonly value: number }[] = [];

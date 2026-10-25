@@ -111,7 +111,7 @@ describe("earnings-refresh execution (FR-018)", () => {
 				const results: EarningsSourceResult[] = query.stocks.map((stock) =>
 					stock.symbol === "AAPL"
 						? ok({ name: "Apple Inc", events: [{ ...AAPL_EVENT }] })
-						: err({ code: "SYMBOL_NOT_FOUND" }),
+						: err({ code: "SYMBOL_NOT_FOUND", upstreamStatus: null }),
 				);
 				return Promise.resolve(results);
 			},

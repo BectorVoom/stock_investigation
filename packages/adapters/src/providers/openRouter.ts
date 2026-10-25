@@ -68,7 +68,7 @@ import {
 	isOpenRouterFreeModelId,
 	OPENROUTER_FREE_AGENT_ID,
 } from "@research/contracts";
-import { parseJson } from "@research/domain";
+import { parseJson, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
 import { AVAILABLE, unavailable } from "./cliProbe.ts";
 import type { ProviderEnvironment } from "./environment.ts";
@@ -102,6 +102,7 @@ import {
 	type TurnGuard,
 	textDeltaEvent,
 	usageEvent,
+	withUpstreamStatus,
 } from "./turn.ts";
 
 export const OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -152,10 +153,13 @@ const chunkSchema = z.looseObject({
 	usage: z.looseObject({ cost: z.number().nullable().optional() }).nullable().optional(),
 });
 
-/** A mid-stream error arrives with HTTP 200; its `code` mirrors an HTTP status when numeric. */
+/**
+ * A mid-stream error arrives with HTTP 200; its `code` mirrors an HTTP
+ * status when numeric, and is then kept unchanged as the upstream status (§4a).
+ */
 function failureForStreamError(code: number | string | undefined): ProviderFailure {
 	const hint = typeof code === "number" ? hintFromHttpStatus(code) : null;
-	return failureForHint(hint ?? "unavailable");
+	return withUpstreamStatus(failureForHint(hint ?? "unavailable"), upstreamStatusOrNull(code));
 }
 
 export type SseVerdict =

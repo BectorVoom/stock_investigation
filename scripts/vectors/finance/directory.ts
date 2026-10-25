@@ -50,7 +50,7 @@ const STRINGS = "xl/sharedStrings.xml";
 
 /** A Result as the replays compare it. */
 function resultJson<T>(
-	result: { ok: true; value: T } | { ok: false; error: string },
+	result: { ok: true; value: T } | { ok: false; error: unknown },
 	value: (inner: T) => unknown,
 ): unknown {
 	return result.ok ? { ok: plain(value(result.value)) } : { err: result.error };

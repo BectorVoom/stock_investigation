@@ -4,14 +4,18 @@
  * whole market's list into `StockDirectoryEntry` rows and must hand the
  * runner a list the completion contract accepts, or a stable failure code.
  */
-import type { SafeFetchError, StockDirectoryData } from "@research/application";
+import {
+	type SafeFetchError,
+	type StockDirectoryData,
+	type StockDirectoryFailure,
+	upstreamStatusOf,
+} from "@research/application";
 import {
 	STOCK_DIRECTORY_LIMITS,
 	type StockDirectoryEntry,
 	type StockDirectoryFailureCode,
 } from "@research/contracts";
 import { err, ok, type Result } from "@research/domain";
-import { httpStatusOf } from "./marketFetch.ts";
 
 /** A parsed list plus how many rows were dropped for an over-long name (logged as a count only). */
 export interface ParsedStockDirectory {
@@ -47,7 +51,22 @@ export function finishDirectory(
 	return ok({ data: { asOf, entries }, droppedRows });
 }
 
-/** A failed download as its stable code: HTTP 429 is a rate limit, anything else a source failure. */
-export function directoryFetchFailure(error: SafeFetchError): StockDirectoryFailureCode {
-	return httpStatusOf(error) === 429 ? "DIRECTORY_RATE_LIMITED" : "DIRECTORY_SOURCE_FAILED";
+/** A failure no external answer caused (parse, not configured, a stopped job). */
+export function directoryFailure(code: StockDirectoryFailureCode): StockDirectoryFailure {
+	return { code, upstreamStatus: null };
+}
+
+/**
+ * A failed download: HTTP 429 is a rate limit, anything else a source
+ * failure; the source's own status travels unchanged (§4a).
+ */
+export function directoryFetchFailure(error: SafeFetchError): StockDirectoryFailure {
+	const upstreamStatus = upstreamStatusOf(error);
+	return {
+		code:
+			error.code === "HTTP_ERROR" && error.status === 429
+				? "DIRECTORY_RATE_LIMITED"
+				: "DIRECTORY_SOURCE_FAILED",
+		upstreamStatus,
+	};
 }

@@ -168,7 +168,7 @@ describe("token calls against a fake Google server", () => {
 				redirectUri: "http://127.0.0.1:1/",
 				signal: never,
 			});
-			expect(exchanged).toEqual(err("GOOGLE_SCOPE_MISSING"));
+			expect(exchanged).toEqual(err({ code: "GOOGLE_SCOPE_MISSING", upstreamStatus: null }));
 		} finally {
 			await server.close();
 		}
@@ -185,7 +185,8 @@ describe("token calls against a fake Google server", () => {
 				refreshToken: "old",
 				signal: never,
 			});
-			expect(refreshed).toEqual(err("GOOGLE_AUTH_EXPIRED"));
+			// Google's 400 travels beside the code, unchanged (§4a).
+			expect(refreshed).toEqual(err({ code: "GOOGLE_AUTH_EXPIRED", upstreamStatus: 400 }));
 			expect(seen[0]?.fields.get("grant_type")).toBe("refresh_token");
 			expect(seen[0]?.fields.get("refresh_token")).toBe("old");
 		} finally {

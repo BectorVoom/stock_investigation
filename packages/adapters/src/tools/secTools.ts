@@ -60,7 +60,7 @@ const PER_NOT_IMPLEMENTED_REASON =
 	"A share-price source is configured, but computing PER from it is not implemented in this version; no ratio is reported.";
 
 function secFailure(error: SecError): ToolFailure {
-	return toolFailure(error.code, error.detail, error.retryable);
+	return toolFailure(error.code, error.detail, error.retryable, error.upstreamStatus);
 }
 
 /** SEC's exchange text mapped to the contract's venue name by exact, case-insensitive match only. */

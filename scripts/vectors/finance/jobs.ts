@@ -441,7 +441,14 @@ async function drive(
 
 type MarketAnswer =
 	| { readonly ok: { readonly meta: unknown; readonly count: number } }
-	| { readonly err: { readonly code: string; readonly reason: string } }
+	| {
+			readonly err: {
+				readonly code: string;
+				readonly reason: string;
+				/** The provider's answer status the fake source reports (§4a); null when none. */
+				readonly upstreamStatus: number | null;
+			};
+	  }
 	| Thrown;
 
 interface MarketCase {
@@ -504,7 +511,11 @@ function fakeMarketSource(
 					max: query.maxObservations,
 					aborted: query.signal.aborted,
 				});
-				return err({ code: "SOURCE_NOT_CONFIGURED", reason: "not configured" });
+				return err({
+					code: "SOURCE_NOT_CONFIGURED",
+					reason: "not configured",
+					upstreamStatus: null,
+				});
 			},
 		};
 	}
@@ -522,10 +533,16 @@ function fakeMarketSource(
 			harness.bumpAbort("source");
 			const answer = answers[index];
 			index += 1;
-			if (answer === undefined) return err({ code: "NO_DATA", reason: "script exhausted" });
+			if (answer === undefined) {
+				return err({ code: "NO_DATA", reason: "script exhausted", upstreamStatus: null });
+			}
 			if ("throw" in answer) throw new Error("boom");
 			if ("err" in answer) {
-				return err({ code: answer.err.code as never, reason: answer.err.reason });
+				return err({
+					code: answer.err.code as never,
+					reason: answer.err.reason,
+					upstreamStatus: answer.err.upstreamStatus,
+				});
 			}
 			return ok({
 				meta: answer.ok.meta as never,
@@ -570,25 +587,34 @@ const SERIES_IDS = [
 	"twelve-data:AAPL:N",
 ];
 
+/**
+ * The upstream status a fake source reports with each code. Derived from the
+ * code (no extra random draw) so the rest of the generated cases stay put;
+ * 529 is a status no mapping table names, NO_DATA comes with none.
+ */
+const SPEC_STATUS: { readonly [code: string]: number } = {
+	RATE_LIMITED: 429,
+	SOURCE_FAILED: 529,
+	SERIES_NOT_FOUND: 404,
+	SOURCE_AUTH_FAILED: 401,
+	PLAN_NOT_ENTITLED: 403,
+};
+
 function marketAnswer(rng: Rng): MarketAnswer {
 	const roll = rng.float();
 	if (roll < 0.55) {
 		return { ok: { meta: META, count: rng.pick([0, 1, 5, 12, 800, 801, 805]) } };
 	}
 	if (roll < 0.9) {
-		return {
-			err: {
-				code: rng.pick([
-					"RATE_LIMITED",
-					"SOURCE_FAILED",
-					"NO_DATA",
-					"SERIES_NOT_FOUND",
-					"SOURCE_AUTH_FAILED",
-					"PLAN_NOT_ENTITLED",
-				]),
-				reason: "fixed reason",
-			},
-		};
+		const code = rng.pick([
+			"RATE_LIMITED",
+			"SOURCE_FAILED",
+			"NO_DATA",
+			"SERIES_NOT_FOUND",
+			"SOURCE_AUTH_FAILED",
+			"PLAN_NOT_ENTITLED",
+		]);
+		return { err: { code, reason: "fixed reason", upstreamStatus: SPEC_STATUS[code] ?? null } };
 	}
 	return { throw: "Error" };
 }
@@ -638,7 +664,7 @@ async function marketCases(): Promise<MarketCase[]> {
 			],
 			quiet,
 			{
-				fred: [{ err: { code: "RATE_LIMITED", reason: "limited" } }],
+				fred: [{ err: { code: "RATE_LIMITED", reason: "limited", upstreamStatus: 429 } }],
 				"twelve-data": [{ throw: "Error" }],
 			},
 		),
@@ -695,7 +721,14 @@ async function marketCases(): Promise<MarketCase[]> {
 
 type EarningsResultSpec =
 	| { readonly ok: { readonly name: string | null; readonly events: readonly unknown[] } }
-	| { readonly err: { readonly code: string; readonly name?: string | null } };
+	| {
+			readonly err: {
+				readonly code: string;
+				readonly name?: string | null;
+				/** The provider's answer status the fake source reports (§4a); absent with a name. */
+				readonly upstreamStatus?: number | null;
+			};
+	  };
 
 type EarningsAnswer =
 	| { readonly results: readonly EarningsResultSpec[]; readonly beforePerStock: readonly number[] }
@@ -755,7 +788,7 @@ function fakeEarningsSource(
 			return answer.results.map((spec): EarningsSourceResult => {
 				if ("ok" in spec) return ok({ name: spec.ok.name, events: spec.ok.events as never });
 				return spec.err.name === undefined
-					? err({ code: spec.err.code as never })
+					? err({ code: spec.err.code as never, upstreamStatus: spec.err.upstreamStatus ?? null })
 					: err({ code: "NO_SCHEDULED_DATE", name: spec.err.name });
 			});
 		},
@@ -832,17 +865,14 @@ function earningsResult(rng: Rng): EarningsResultSpec {
 	}
 	if (roll < 0.6)
 		return { err: { code: "NO_SCHEDULED_DATE", name: rng.pick([null, "Apple Inc"]) } };
-	return {
-		err: {
-			code: rng.pick([
-				"SYMBOL_NOT_FOUND",
-				"SOURCE_FAILED",
-				"RATE_LIMITED",
-				"SOURCE_AUTH_FAILED",
-				"PLAN_NOT_ENTITLED",
-			]),
-		},
-	};
+	const code = rng.pick([
+		"SYMBOL_NOT_FOUND",
+		"SOURCE_FAILED",
+		"RATE_LIMITED",
+		"SOURCE_AUTH_FAILED",
+		"PLAN_NOT_ENTITLED",
+	]);
+	return { err: { code, upstreamStatus: SPEC_STATUS[code] ?? null } };
 }
 
 function earningsAnswer(rng: Rng, expected: number): EarningsAnswer {

@@ -256,7 +256,10 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(true),
 		});
-		expect(result).toEqual({ ok: false, error: { code: "SYMBOL_NOT_FOUND" } });
+		expect(result).toEqual({
+			ok: false,
+			error: { code: "SYMBOL_NOT_FOUND", upstreamStatus: null },
+		});
 	});
 
 	it("resolves the profile before the calendar when the name is needed", async () => {
@@ -273,7 +276,10 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 		});
 		// The empty calendar must not mask the unknown symbol: the profile
 		// (no ticker) decides first.
-		expect(result).toEqual({ ok: false, error: { code: "SYMBOL_NOT_FOUND" } });
+		expect(result).toEqual({
+			ok: false,
+			error: { code: "SYMBOL_NOT_FOUND", upstreamStatus: null },
+		});
 		expect(fetcher.urls()).toEqual([profileUrl("NOPE")]);
 	});
 
@@ -337,16 +343,19 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 		]);
 	});
 
-	it("maps HTTP statuses to the fixed codes and never leaks response text", async () => {
+	it("maps HTTP statuses to the fixed codes, keeps the upstream status and never leaks response text", async () => {
 		const cases = [
-			["HTTP 401", "SOURCE_AUTH_FAILED"],
-			["HTTP 403", "PLAN_NOT_ENTITLED"],
-			["HTTP 429", "RATE_LIMITED"],
-			["HTTP 500", "SOURCE_FAILED"],
+			[401, "SOURCE_AUTH_FAILED"],
+			[403, "PLAN_NOT_ENTITLED"],
+			[429, "RATE_LIMITED"],
+			[500, "SOURCE_FAILED"],
+			// A status no mapping names still comes out unchanged (§4a).
+			[418, "SOURCE_FAILED"],
+			[529, "SOURCE_FAILED"],
 		] as const;
-		for (const [detail, code] of cases) {
+		for (const [status, code] of cases) {
 			const { source } = sourceWith({
-				[calendarUrl("AAPL")]: { error: { code: "HTTP_ERROR", detail } },
+				[calendarUrl("AAPL")]: { error: { code: "HTTP_ERROR", detail: `HTTP ${status}`, status } },
 			});
 			const [result] = await source.fetchEarnings({
 				stocks: [{ symbol: "AAPL", needName: false }],
@@ -355,7 +364,7 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 				signal: NEVER,
 				beforeRequest: () => Promise.resolve(true),
 			});
-			expect(result).toEqual({ ok: false, error: { code } });
+			expect(result).toEqual({ ok: false, error: { code, upstreamStatus: status } });
 		}
 	});
 
@@ -370,7 +379,8 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(true),
 		});
-		expect(timedOut).toEqual({ ok: false, error: { code: "SOURCE_FAILED" } });
+		// A timeout is not an answer: no upstream status.
+		expect(timedOut).toEqual({ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: null } });
 
 		const malformed = sourceWith({
 			[calendarUrl("AAPL")]: { text: JSON.stringify({ earningsCalendar: [{ nope: 1 }] }) },
@@ -382,6 +392,6 @@ describe("Finnhub adapter (documentation-derived fixtures): failures", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(true),
 		});
-		expect(badShape).toEqual({ ok: false, error: { code: "SOURCE_FAILED" } });
+		expect(badShape).toEqual({ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: null } });
 	});
 });

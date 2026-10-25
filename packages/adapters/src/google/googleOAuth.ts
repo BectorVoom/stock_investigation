@@ -128,6 +128,23 @@ export function mapTokenFailure(status: number | null, text: string | null): Goo
 	return "GOOGLE_REQUEST_FAILED";
 }
 
+/**
+ * A failed token request. `upstreamStatus` is the status Google's token
+ * endpoint answered with, unchanged; null when it did not answer (a timeout,
+ * a refused connection) or answered 200 with an unusable body (§4a).
+ */
+export interface GoogleTokenFailure<Code extends string = GoogleStableCode> {
+	readonly code: Code;
+	readonly upstreamStatus: number | null;
+}
+
+function tokenFailure<Code extends string>(
+	code: Code,
+	upstreamStatus: number | null = null,
+): Result<never, GoogleTokenFailure<Code>> {
+	return err({ code, upstreamStatus });
+}
+
 export interface TokenExchangeInput {
 	readonly clientId: string;
 	readonly clientSecret: string;
@@ -154,7 +171,7 @@ function formBody(fields: Readonly<Record<string, string>>): string {
 export async function exchangeCode(
 	http: GoogleOAuthHttp,
 	input: TokenExchangeInput,
-): Promise<Result<TokenSuccess, GoogleStableCode | "GOOGLE_SCOPE_MISSING">> {
+): Promise<Result<TokenSuccess, GoogleTokenFailure<GoogleStableCode | "GOOGLE_SCOPE_MISSING">>> {
 	const response = await http({
 		host: GOOGLE_OAUTH_HOST,
 		method: "POST",
@@ -170,16 +187,19 @@ export async function exchangeCode(
 		}),
 		signal: input.signal,
 	});
-	if (!response.ok) return err("GOOGLE_REQUEST_FAILED");
+	if (!response.ok) return tokenFailure("GOOGLE_REQUEST_FAILED");
 	if (response.value.status !== 200) {
-		return err(mapTokenFailure(response.value.status, response.value.text));
+		return tokenFailure(
+			mapTokenFailure(response.value.status, response.value.text),
+			response.value.status,
+		);
 	}
 	const parsed = tokenResponseSchema.safeParse(parseJsonOrNull(response.value.text));
-	if (!parsed.success) return err("GOOGLE_REQUEST_FAILED");
+	if (!parsed.success) return tokenFailure("GOOGLE_REQUEST_FAILED");
 	if (parsed.data.refresh_token === undefined) {
 		// No refresh token: without it there is nothing to store, so the
 		// grant is unusable. The caller reports GOOGLE_SCOPE_MISSING.
-		return err("GOOGLE_SCOPE_MISSING");
+		return tokenFailure("GOOGLE_SCOPE_MISSING");
 	}
 	return ok({
 		accessToken: parsed.data.access_token,
@@ -201,7 +221,7 @@ export async function refreshAccessToken(
 	http: GoogleOAuthHttp,
 	input: TokenRefreshInput,
 ): Promise<
-	Result<{ readonly accessToken: string; readonly expiresIn: number | null }, GoogleStableCode>
+	Result<{ readonly accessToken: string; readonly expiresIn: number | null }, GoogleTokenFailure>
 > {
 	const response = await http({
 		host: GOOGLE_OAUTH_HOST,
@@ -216,12 +236,15 @@ export async function refreshAccessToken(
 		}),
 		signal: input.signal,
 	});
-	if (!response.ok) return err("GOOGLE_REQUEST_FAILED");
+	if (!response.ok) return tokenFailure("GOOGLE_REQUEST_FAILED");
 	if (response.value.status !== 200) {
-		return err(mapTokenFailure(response.value.status, response.value.text));
+		return tokenFailure(
+			mapTokenFailure(response.value.status, response.value.text),
+			response.value.status,
+		);
 	}
 	const parsed = tokenResponseSchema.safeParse(parseJsonOrNull(response.value.text));
-	if (!parsed.success) return err("GOOGLE_REQUEST_FAILED");
+	if (!parsed.success) return tokenFailure("GOOGLE_REQUEST_FAILED");
 	return ok({ accessToken: parsed.data.access_token, expiresIn: parsed.data.expires_in ?? null });
 }
 

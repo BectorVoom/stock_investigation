@@ -292,6 +292,7 @@ describe("Twelve Data adapter: failures", () => {
 				error: {
 					code: "HTTP_ERROR",
 					detail: "HTTP 404",
+					status: 404,
 					body: fixture("twelvedata-key-symbol_7203_exchange_JPX.json"),
 				},
 			},
@@ -320,7 +321,7 @@ describe("Twelve Data adapter: failures", () => {
 		expect(first.error.code).toBe("RATE_LIMITED");
 
 		const onStatus = sourceWith({
-			[AAPL_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 429" } },
+			[AAPL_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429 } },
 		});
 		const second = await onStatus.source.fetchSeries({
 			symbol: "AAPL",
@@ -352,17 +353,17 @@ describe("Twelve Data adapter: failures", () => {
 	it.each([
 		[
 			"HTTP 403 without a body",
-			{ code: "HTTP_ERROR", detail: "HTTP 403" } as const,
+			{ code: "HTTP_ERROR", detail: "HTTP 403", status: 403 } as const,
 			"PLAN_NOT_ENTITLED",
 		],
 		[
 			"HTTP 401 without a body",
-			{ code: "HTTP_ERROR", detail: "HTTP 401" } as const,
+			{ code: "HTTP_ERROR", detail: "HTTP 401", status: 401 } as const,
 			"SOURCE_AUTH_FAILED",
 		],
 		[
 			"HTTP 500 without a body",
-			{ code: "HTTP_ERROR", detail: "HTTP 500" } as const,
+			{ code: "HTTP_ERROR", detail: "HTTP 500", status: 500 } as const,
 			"SOURCE_FAILED",
 		],
 		[

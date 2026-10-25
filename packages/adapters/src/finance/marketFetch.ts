@@ -10,13 +10,6 @@
 import type { SafeFetchError, SafeFetcher, SafeFetchOptions } from "@research/application";
 import { err, ok, parseJson, type Result } from "@research/domain";
 
-/** HTTP status carried by an `HTTP_ERROR`, or null for any other failure. */
-export function httpStatusOf(error: SafeFetchError): number | null {
-	if (error.code !== "HTTP_ERROR") return null;
-	const match = /\b(\d{3})\b/.exec(error.detail);
-	return match?.[1] === undefined ? null : Number(match[1]);
-}
-
 export interface JsonDocument {
 	/** The URL that was actually retrieved (after validated redirects). */
 	readonly finalUrl: string;

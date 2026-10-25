@@ -5,6 +5,7 @@ import {
 	idSchema,
 	isoDateSchema,
 	isoDateTimeSchema,
+	lastRefreshFailureSchema,
 	upstreamStatusSchema,
 } from "./primitives.ts";
 
@@ -200,15 +201,7 @@ export const homeDataResponseSchema = z.strictObject({
 		 * its stable failure code and time; null when none (S2: Home shows
 		 * "Last refresh failed (CODE) at …" beside the last success).
 		 */
-		lastFailure: z
-			.strictObject({
-				state: z.string(),
-				code: z.string().min(1).max(80),
-				/** The status the provider answered with when it caused the failure, unchanged. */
-				upstreamStatus: upstreamStatusSchema.nullable(),
-				at: isoDateTimeSchema,
-			})
-			.nullable(),
+		lastFailure: lastRefreshFailureSchema.nullable(),
 	}),
 });
 export type HomeDataResponse = z.infer<typeof homeDataResponseSchema>;

@@ -19,7 +19,6 @@ import { createFredSeriesSource } from "../../../packages/adapters/src/finance/f
 import {
 	datePrefixOf,
 	fetchJsonDocument,
-	httpStatusOf,
 	isIsoDate,
 	subtractDaysIso,
 } from "../../../packages/adapters/src/finance/marketFetch.ts";
@@ -27,6 +26,7 @@ import {
 	createTwelveDataSeriesSource,
 	splitTwelveSymbol,
 } from "../../../packages/adapters/src/finance/twelveDataSeries.ts";
+import { upstreamStatusOf } from "../../../packages/application/src/ports.ts";
 import { doubleBits } from "../shared.ts";
 import {
 	type FetchEvent,
@@ -197,12 +197,18 @@ function dateHelperCases(): unknown {
 		isIsoDate: ISO_CANDIDATES.map((input) => ({ input, output: isIsoDate(input) })),
 		datePrefix: prefixes,
 		subtractDays: subtract,
-		httpStatus: HTTP_DETAILS.flatMap((detail) =>
-			(["HTTP_ERROR", "TIMEOUT", "NETWORK_ERROR"] as const).map((code) => ({
-				code,
-				detail,
-				output: httpStatusOf({ code, detail }),
-			})),
+		// The status comes from the error's `status` field only, never its detail (§4a).
+		upstreamStatus: HTTP_DETAILS.flatMap((detail) =>
+			(["HTTP_ERROR", "TIMEOUT", "NETWORK_ERROR", "REDIRECT_NOT_AUTHORIZED"] as const).map(
+				(code) => {
+					const entry = fetchError(code, detail);
+					const error = "error" in entry ? entry.error : null;
+					return {
+						error,
+						output: error === null ? null : upstreamStatusOf(error),
+					};
+				},
+			),
 		),
 		splitTwelve: ["AAPL", "AAPL:NASDAQ", "7203:JPX", "A:B:C", ":X", "X:", ":", "", "EUR/USD"].map(
 			(input) => ({ input, output: splitTwelveSymbol(input) }),

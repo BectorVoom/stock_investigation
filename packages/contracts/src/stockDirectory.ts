@@ -1,6 +1,12 @@
 import { STOCK_SEARCH_LIMITS } from "@research/domain";
 import { z } from "zod";
-import { httpsUrlSchema, idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
+import {
+	httpsUrlSchema,
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	lastRefreshFailureSchema,
+} from "./primitives.ts";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
 	formatStockId,
@@ -140,13 +146,7 @@ export const stockDirectoryMarketStatusSchema = z.strictObject({
 	retrievedAt: isoDateTimeSchema.nullable(),
 	activeRunId: idSchema.nullable(),
 	activeRunState: z.string().nullable(),
-	lastFailure: z
-		.strictObject({
-			state: z.string(),
-			code: z.string().min(1).max(80),
-			at: isoDateTimeSchema,
-		})
-		.nullable(),
+	lastFailure: lastRefreshFailureSchema.nullable(),
 });
 export type StockDirectoryMarketStatus = z.infer<typeof stockDirectoryMarketStatusSchema>;
 

@@ -95,6 +95,7 @@ function httpError(status: number, body: string): Result<FetchedDocument, SafeFe
 	return err({
 		code: "HTTP_ERROR",
 		detail: `HTTP ${status} from the fixture provider`,
+		status: status,
 		body,
 	});
 }

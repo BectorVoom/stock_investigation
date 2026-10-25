@@ -104,7 +104,7 @@ function scriptedNetwork(
 			if (!allowed.ok) return Promise.resolve(allowed);
 			const page = Object.hasOwn(textPages, url) ? textPages[url] : undefined;
 			if (page === undefined) {
-				return Promise.resolve(err({ code: "HTTP_ERROR", detail: "HTTP 404" }));
+				return Promise.resolve(err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 }));
 			}
 			const document: FetchedDocument = { finalUrl: url, contentType: "text/html", text: page };
 			return Promise.resolve(ok(document));
@@ -117,7 +117,7 @@ function scriptedNetwork(
 			if (!allowed.ok) return Promise.resolve(allowed);
 			const page = Object.hasOwn(binaryPages, url) ? binaryPages[url] : undefined;
 			if (page === undefined) {
-				return Promise.resolve(err({ code: "HTTP_ERROR", detail: "HTTP 404" }));
+				return Promise.resolve(err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 }));
 			}
 			const document: BinaryDocument = {
 				finalUrl: url,
@@ -329,7 +329,9 @@ describe("JPX adapter: success on the synthetic workbook", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(false),
 		});
-		expect(refusedResults).toEqual([{ ok: false, error: { code: "SOURCE_FAILED" } }]);
+		expect(refusedResults).toEqual([
+			{ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: null } },
+		]);
 		expect(network.textCalls).toHaveLength(textBefore);
 	});
 
@@ -386,7 +388,7 @@ describe("JPX adapter: failures", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(true),
 		});
-		expect(results).toEqual([{ ok: false, error: { code: "SOURCE_FAILED" } }]);
+		expect(results).toEqual([{ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: 404 } }]);
 	});
 
 	it("evicts parsed workbooks the current index no longer lists", async () => {
@@ -471,7 +473,7 @@ describe("JPX adapter: failures", () => {
 			signal: NEVER,
 			beforeRequest: () => Promise.resolve(true),
 		});
-		expect(results).toEqual([{ ok: false, error: { code: "SOURCE_FAILED" } }]);
+		expect(results).toEqual([{ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: 404 } }]);
 	});
 
 	it("keeps the company name on NO_SCHEDULED_DATE results", async () => {
@@ -518,7 +520,9 @@ describe("JPX adapter: failures", () => {
 				signal: NEVER,
 				beforeRequest: () => Promise.resolve(true),
 			});
-			expect(results).toEqual([{ ok: false, error: { code: "SOURCE_FAILED" } }]);
+			expect(results).toEqual([
+				{ ok: false, error: { code: "SOURCE_FAILED", upstreamStatus: null } },
+			]);
 		}
 	});
 });

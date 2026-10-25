@@ -366,8 +366,9 @@ describe("claude-code failures", () => {
 			{ code: 1 },
 		);
 
+		// The CLI's `api_error_status` is the API's own status, kept unchanged (§4a).
 		expect(terminalEvents(await collect(runtime.run(makeRequest(), makeContext())))).toEqual([
-			{ type: "failed", code, retryable },
+			{ type: "failed", code, retryable, upstreamStatus: status },
 		]);
 	});
 

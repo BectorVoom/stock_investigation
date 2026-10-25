@@ -9,6 +9,7 @@ import type { SafeFetchErrorCode, SafeFetcher } from "@research/application";
 import { err, ok } from "@research/domain";
 import { createFeedParser } from "../../packages/adapters/src/feed/index.ts";
 import { createToolContext } from "../../packages/adapters/test/tools/support.ts";
+import { scriptedFetchError } from "./finance/support.ts";
 import { seededRandom, type VectorExporter, type VectorFile } from "./shared.ts";
 import {
 	createNewsTools,
@@ -57,9 +58,9 @@ async function generated(): Promise<void> {
 			fetchText: async (url, options) => {
 				if (url.endsWith("robots.txt"))
 					return i % 13 === 0
-						? err({ code: "HTTP_ERROR", detail: "HTTP 503" })
+						? err({ code: "HTTP_ERROR", detail: "HTTP 503", status: 503 })
 						: i % 11 === 0
-							? err({ code: "HTTP_ERROR", detail: "HTTP 404" })
+							? err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 })
 							: ok({
 									finalUrl: url,
 									contentType: "text/plain",
@@ -144,10 +145,12 @@ async function generated(): Promise<void> {
 		const fetcher: SafeFetcher = {
 			fetchText: async (url) =>
 				i % 9 === 0
-					? err({
-							code: errors[i % errors.length] ?? "TIMEOUT",
-							detail: "HTTP 503 generated failure",
-						})
+					? err(
+							scriptedFetchError(
+								errors[i % errors.length] ?? "TIMEOUT",
+								"HTTP 503 generated failure",
+							),
+						)
 					: ok({
 							finalUrl: url,
 							contentType: "application/json",
@@ -235,10 +238,12 @@ async function generated(): Promise<void> {
 		];
 		const answers = Array.from({ length: 4 }, () =>
 			tavilyRandom() < 0.3
-				? err({
-						code: pick(tavilyErrors)?.[0] ?? "TIMEOUT",
-						detail: pick(tavilyErrors)?.[1] ?? "HTTP 503",
-					})
+				? err(
+						scriptedFetchError(
+							pick(tavilyErrors)?.[0] ?? "TIMEOUT",
+							pick(tavilyErrors)?.[1] ?? "HTTP 503",
+						),
+					)
 				: ok({
 						finalUrl: "https://api.tavily.com/search",
 						contentType: "application/json",

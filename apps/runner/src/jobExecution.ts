@@ -13,6 +13,7 @@ import {
 	runNotebookAssistTurn,
 	runResearchPipeline,
 	type StockDirectoryData,
+	type StockDirectoryFailure,
 	type StockDirectorySourceRegistry,
 } from "@research/application";
 import {
@@ -29,7 +30,6 @@ import {
 	parseStockId,
 	type RunnerEvent,
 	STOCK_DIRECTORY_SOURCES,
-	type StockDirectoryFailureCode,
 	type WatchMarket,
 } from "@research/contracts";
 import {
@@ -337,6 +337,7 @@ export async function executeJob(
 							kind: "failed",
 							failureCode: "AGENT_NOT_REGISTERED",
 							failureDetail: null,
+							failureUpstreamStatus: null,
 							retryable: false,
 							usage,
 						}
@@ -404,6 +405,7 @@ export async function executeJob(
 						leaseGeneration: job.leaseGeneration,
 						usage,
 						failureCode: assist.failureCode.slice(0, 80),
+						...upstreamField(assist.failureUpstreamStatus),
 						retryable: assist.retryable,
 					};
 				} else {
@@ -623,6 +625,8 @@ async function executeMarketRefresh(
 				meta: null,
 				observations: [],
 				errorCode: result.error.code,
+				// The provider's own status, unchanged (§4a).
+				upstreamStatus: result.error.upstreamStatus,
 			});
 			continue;
 		}
@@ -782,6 +786,11 @@ async function executeEarningsRefresh(
 							: null,
 					events: [],
 					errorCode: result === undefined ? "SOURCE_FAILED" : result.error.code,
+					// The provider's own status, unchanged (§4a); a listed-nothing success has none.
+					upstreamStatus:
+						result === undefined || result.error.code === "NO_SCHEDULED_DATE"
+							? null
+							: result.error.upstreamStatus,
 				});
 				return;
 			}
@@ -844,12 +853,14 @@ async function executeStockDirectoryRefresh(
 	await reporter.state("analyzing");
 	await reporter.state("verifying");
 	await reporter.state("publishing");
-	const failed = (code: StockDirectoryFailureCode): CompleteJobRequest => ({
+	const failed = (failure: StockDirectoryFailure): CompleteJobRequest => ({
 		outcome: "failed",
 		leaseGeneration: job.leaseGeneration,
 		usage: EMPTY_USAGE,
-		failureCode: code,
-		retryable: code === "DIRECTORY_SOURCE_FAILED",
+		failureCode: failure.code,
+		// SEC's or JPX's own status, unchanged (§4a).
+		...upstreamField(failure.upstreamStatus),
+		retryable: failure.code === "DIRECTORY_SOURCE_FAILED",
 	});
 	if (!result.ok) return failed(result.error);
 	const completion: CompleteJobRequest = {
@@ -863,7 +874,7 @@ async function executeStockDirectoryRefresh(
 	};
 	if (!completeJobRequestSchema.safeParse(completion).success) {
 		deps.logger.warn("stock_directory_rejected", { runId: job.runId, market: job.market });
-		return failed("DIRECTORY_PARSE_FAILED");
+		return failed({ code: "DIRECTORY_PARSE_FAILED", upstreamStatus: null });
 	}
 	deps.logger.info("stock_directory_fetched", {
 		runId: job.runId,
@@ -878,9 +889,9 @@ async function fetchStockDirectory(
 	market: WatchMarket,
 	deps: JobExecutionDeps,
 	signal: AbortSignal,
-): Promise<Result<StockDirectoryData, StockDirectoryFailureCode>> {
+): Promise<Result<StockDirectoryData, StockDirectoryFailure>> {
 	const source = deps.stockDirectorySources.get(market);
-	if (source === undefined) return err("DIRECTORY_NOT_CONFIGURED");
+	if (source === undefined) return err({ code: "DIRECTORY_NOT_CONFIGURED", upstreamStatus: null });
 	const pacerKey = STOCK_DIRECTORY_SOURCES[market].sourceId;
 	try {
 		return await source.fetchDirectory({
@@ -891,8 +902,13 @@ async function fetchStockDirectory(
 		// An adapter throws only for the unexpected: log its class name
 		// (never its message or URL, SEC-010) and fail with a stable code.
 		deps.logger.warn("stock_directory_source_failed", { market, error: thrownName(error) });
-		return err("DIRECTORY_SOURCE_FAILED");
+		return err({ code: "DIRECTORY_SOURCE_FAILED", upstreamStatus: null });
 	}
+}
+
+/** The completion's `failureUpstreamStatus` field: the external service's status, unchanged (§4a). */
+function upstreamField(status: number | null): { readonly failureUpstreamStatus?: number } {
+	return status === null ? {} : { failureUpstreamStatus: status };
 }
 
 export function toCompletion(
@@ -914,6 +930,7 @@ export function toCompletion(
 				...base,
 				outcome: "partial",
 				failureCode: outcome.failureCode.slice(0, 80),
+				...upstreamField(outcome.failureUpstreamStatus),
 				bundle: outcome.bundle,
 				articles: [...outcome.articles],
 				sourceReports: [],
@@ -926,6 +943,7 @@ export function toCompletion(
 				...(outcome.failureDetail === null
 					? {}
 					: { failureDetail: outcome.failureDetail.slice(0, 80) }),
+				...upstreamField(outcome.failureUpstreamStatus),
 				retryable: outcome.retryable,
 			};
 		case "cancelled":

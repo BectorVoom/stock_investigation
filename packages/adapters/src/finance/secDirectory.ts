@@ -25,7 +25,12 @@ import {
 	SEC_TICKER_DIRECTORY_URL,
 	TICKER_DIRECTORY_MAX_BYTES,
 } from "./secFinancials.ts";
-import { finishDirectory, fitsDirectoryName, type ParsedStockDirectory } from "./stockDirectory.ts";
+import {
+	directoryFailure,
+	finishDirectory,
+	fitsDirectoryName,
+	type ParsedStockDirectory,
+} from "./stockDirectory.ts";
 
 /** SEC's exchange text (exact) → the listing kept; every other exchange is dropped. */
 export const SEC_DIRECTORY_LISTINGS: ReadonlyMap<string, StockListing> = new Map([
@@ -104,17 +109,23 @@ export function createSecDirectorySource(deps: SecDirectoryDeps): StockDirectory
 		async fetchDirectory(query) {
 			// One grant per request start, taken immediately before it is sent;
 			// a false hook (the job stopped while waiting) sends nothing.
-			if (!(await query.beforeRequest())) return err("DIRECTORY_SOURCE_FAILED");
+			if (!(await query.beforeRequest())) return err(directoryFailure("DIRECTORY_SOURCE_FAILED"));
 			const document = await deps.client.fetchDocument(SEC_TICKER_DIRECTORY_URL, {
 				maxBytes: TICKER_DIRECTORY_MAX_BYTES,
 				accept: "application/json",
 				signal: query.signal,
 			});
-			if (!document.ok) return err(failureOf(document.error.code));
+			if (!document.ok) {
+				// SEC's own status travels unchanged beside our code (§4a).
+				return err({
+					code: failureOf(document.error.code),
+					upstreamStatus: document.error.upstreamStatus,
+				});
+			}
 			const json = parseSecJson(document.value);
-			if (!json.ok) return err("DIRECTORY_PARSE_FAILED");
+			if (!json.ok) return err(directoryFailure("DIRECTORY_PARSE_FAILED"));
 			const parsed = parseSecDirectory(json.value);
-			if (!parsed.ok) return parsed;
+			if (!parsed.ok) return err(directoryFailure(parsed.error));
 			if (parsed.value.droppedRows > 0) deps.onDroppedRows?.(parsed.value.droppedRows);
 			return ok(parsed.value.data);
 		},

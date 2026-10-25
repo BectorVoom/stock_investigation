@@ -78,6 +78,7 @@ import {
 	type TurnGuard,
 	textDeltaEvent,
 	usageEvent,
+	withUpstreamStatus,
 } from "./turn.ts";
 
 export const CLAUDE_API_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
@@ -184,7 +185,9 @@ export function buildClaudeRequestBody(
 
 /** A 404 names a model this key cannot use; other statuses read as for any HTTP backend. */
 export function failureForClaudeHttpStatus(status: number): ProviderFailure {
-	if (status === 404) return PROVIDER_FAILURES.PROVIDER_MODEL_UNAVAILABLE;
+	if (status === 404) {
+		return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_MODEL_UNAVAILABLE, status);
+	}
 	return failureForHttpStatus(status);
 }
 

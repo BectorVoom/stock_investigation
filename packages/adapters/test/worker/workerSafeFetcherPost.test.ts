@@ -138,7 +138,7 @@ describe("worker SafeFetcher: JSON POST", () => {
 			}),
 		).toEqual({
 			ok: false,
-			error: { code: "HTTP_ERROR", detail: "HTTP 401", body: '{"detail":"bad key"}' },
+			error: { code: "HTTP_ERROR", detail: "HTTP 401", status: 401, body: '{"detail":"bad key"}' },
 		});
 		expect(
 			await fetcher.fetchText("https://api.synthetic-search.org/big", {

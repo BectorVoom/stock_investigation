@@ -33,6 +33,11 @@ export type GoogleCallCode =
 
 export interface GoogleCallFailure {
 	readonly code: GoogleCallCode;
+	/**
+	 * The status Google answered with when its answer caused the failure,
+	 * unchanged; null otherwise (aborted, timed out, an unusable 200) (§4a).
+	 */
+	readonly upstreamStatus: number | null;
 }
 
 export type GoogleCallResult<T> = Result<T, GoogleCallFailure>;
@@ -123,8 +128,13 @@ const errorBodySchema = z.object({
 		.optional(),
 });
 
-function fail<T>(code: GoogleCallCode): GoogleCallResult<T> {
-	return err({ code });
+function fail<T>(code: GoogleCallCode, upstreamStatus: number | null = null): GoogleCallResult<T> {
+	return err({ code, upstreamStatus });
+}
+
+/** Google's error answer: our code for it, with Google's status kept unchanged. */
+function failStatus<T>(response: RawResponse): GoogleCallResult<T> {
+	return fail(mapStatus(response.status, response.text), response.status);
 }
 
 const RATE_LIMIT_REASONS: ReadonlySet<string> = new Set([
@@ -204,7 +214,7 @@ async function send(
 	}
 	if (first.value.status !== 401) return ok(first.value);
 	const refreshed = await deps.refreshAccessToken();
-	if (!refreshed.ok) return fail(refreshed.error.code);
+	if (!refreshed.ok) return err(refreshed.error);
 	if (deps.signal.aborted) return fail("ABORTED");
 	const second = await attempt(refreshed.value);
 	if (!second.ok) return deps.signal.aborted ? fail("ABORTED") : fail("GOOGLE_REQUEST_FAILED");
@@ -262,9 +272,9 @@ export async function createCalendar(
 			timeZone: input.timeZone,
 		}),
 	);
-	if (!response.ok) return fail(response.error.code);
+	if (!response.ok) return err(response.error);
 	if (response.value.status !== 200) {
-		return fail(mapStatus(response.value.status, response.value.text));
+		return failStatus(response.value);
 	}
 	const parsed = calendarSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
@@ -286,10 +296,10 @@ export async function getCalendar(
 		`/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
 		null,
 	);
-	if (!response.ok) return fail(response.error.code);
+	if (!response.ok) return err(response.error);
 	if (response.value.status === 404) return ok({ found: false });
 	if (response.value.status !== 200) {
-		return fail(mapStatus(response.value.status, response.value.text));
+		return failStatus(response.value);
 	}
 	const parsed = calendarSchema.safeParse(parseJsonOrNull(response.value.text));
 	if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
@@ -323,9 +333,9 @@ export async function listManagedEvents(
 			`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${query.toString()}`,
 			null,
 		);
-		if (!response.ok) return fail(response.error.code);
+		if (!response.ok) return err(response.error);
 		if (response.value.status !== 200) {
-			return fail(mapStatus(response.value.status, response.value.text));
+			return failStatus(response.value);
 		}
 		const parsed = eventsListSchema.safeParse(parseJsonOrNull(response.value.text));
 		if (!parsed.success) return fail("GOOGLE_REQUEST_FAILED");
@@ -357,10 +367,10 @@ export async function insertEvent(
 		`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
 		eventResource(body),
 	);
-	if (!response.ok) return fail(response.error.code);
+	if (!response.ok) return err(response.error);
 	if (response.value.status === 409) return ok({ inserted: false, conflict: true });
 	if (response.value.status !== 200) {
-		return fail(mapStatus(response.value.status, response.value.text));
+		return failStatus(response.value);
 	}
 	return ok({ inserted: true });
 }
@@ -377,9 +387,9 @@ export async function updateEvent(
 		`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(body.id)}`,
 		eventResource(body),
 	);
-	if (!response.ok) return fail(response.error.code);
+	if (!response.ok) return err(response.error);
 	if (response.value.status !== 200) {
-		return fail(mapStatus(response.value.status, response.value.text));
+		return failStatus(response.value);
 	}
 	return ok({ updated: true });
 }
@@ -400,10 +410,10 @@ export async function deleteEvent(
 		`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
 		null,
 	);
-	if (!response.ok) return fail(response.error.code);
+	if (!response.ok) return err(response.error);
 	const status = response.value.status;
 	if (status !== 200 && status !== 204 && status !== 404 && status !== 410) {
-		return fail(mapStatus(status, response.value.text));
+		return failStatus(response.value);
 	}
 	return ok({ deleted: true });
 }

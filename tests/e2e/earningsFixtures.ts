@@ -56,7 +56,7 @@ const finnhub: EarningsCalendarSource = {
 			query.stocks.map((stock) =>
 				stock.symbol === apple.symbol
 					? ok({ name: apple.name, events: [fixtureEvent(apple)] })
-					: err({ code: "SYMBOL_NOT_FOUND" as const }),
+					: err({ code: "SYMBOL_NOT_FOUND" as const, upstreamStatus: null }),
 			),
 		),
 };

@@ -283,7 +283,7 @@ describe("finance.sec_company_financials", () => {
 		).toMatchObject({ ok: false, error: { code: "NOT_FOUND" } });
 
 		const blocked = setup(SEC_USER_AGENT, {
-			[DIRECTORY_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 403" } },
+			[DIRECTORY_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 403", status: 403 } },
 		});
 		expect(
 			await blocked

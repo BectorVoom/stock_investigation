@@ -167,11 +167,11 @@ describe("SEC client: fair-access request spacing", () => {
 
 describe("SEC client: failure translation", () => {
 	const cases = [
-		[{ code: "HTTP_ERROR", detail: "HTTP 404" }, "NOT_FOUND", false],
-		[{ code: "HTTP_ERROR", detail: "HTTP 403" }, "ACCESS_DENIED", false],
-		[{ code: "HTTP_ERROR", detail: "HTTP 429" }, "RATE_LIMITED", true],
-		[{ code: "HTTP_ERROR", detail: "HTTP 503" }, "FETCH_FAILED", true],
-		[{ code: "HTTP_ERROR", detail: "HTTP 400" }, "FETCH_FAILED", false],
+		[{ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 }, "NOT_FOUND", false],
+		[{ code: "HTTP_ERROR", detail: "HTTP 403", status: 403 }, "ACCESS_DENIED", false],
+		[{ code: "HTTP_ERROR", detail: "HTTP 429", status: 429 }, "RATE_LIMITED", true],
+		[{ code: "HTTP_ERROR", detail: "HTTP 503", status: 503 }, "FETCH_FAILED", true],
+		[{ code: "HTTP_ERROR", detail: "HTTP 400", status: 400 }, "FETCH_FAILED", false],
 		[{ code: "TIMEOUT", detail: "no complete response within 30000 ms" }, "FETCH_FAILED", true],
 		[{ code: "NETWORK_ERROR", detail: "ECONNRESET" }, "FETCH_FAILED", true],
 		[

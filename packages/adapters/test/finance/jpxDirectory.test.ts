@@ -355,7 +355,7 @@ function scripted(answers: readonly Answer[]) {
 	let next = 0;
 	const take = (url: string, options: SafeFetchOptions): Answer => {
 		calls.push({ url, options });
-		const answer = answers[next] ?? err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+		const answer = answers[next] ?? err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 		next += 1;
 		return answer;
 	};
@@ -441,7 +441,7 @@ describe("createJpxDirectorySource", () => {
 		]);
 		const source = createJpxDirectorySource({ fetcher, binaryFetcher });
 		const result = await source.fetchDirectory({ signal: never, beforeRequest: async () => true });
-		expect(expectErr(result)).toBe("DIRECTORY_PARSE_FAILED");
+		expect(expectErr(result)).toEqual({ code: "DIRECTORY_PARSE_FAILED", upstreamStatus: null });
 		expect(calls).toHaveLength(2);
 	});
 
@@ -449,29 +449,52 @@ describe("createJpxDirectorySource", () => {
 		const { fetcher, binaryFetcher, calls } = scripted([ok("<html>moved</html>")]);
 		const source = createJpxDirectorySource({ fetcher, binaryFetcher });
 		const result = await source.fetchDirectory({ signal: never, beforeRequest: async () => true });
-		expect(expectErr(result)).toBe("DIRECTORY_PARSE_FAILED");
+		expect(expectErr(result)).toEqual({ code: "DIRECTORY_PARSE_FAILED", upstreamStatus: null });
 		expect(calls).toHaveLength(1);
 	});
 
 	it("maps HTTP 429 to DIRECTORY_RATE_LIMITED and other failures to DIRECTORY_SOURCE_FAILED", async () => {
-		const cases: [Answer[], string][] = [
-			[[err({ code: "HTTP_ERROR", detail: "HTTP 429" })], "DIRECTORY_RATE_LIMITED"],
-			[[ok(JA_PAGE), err({ code: "HTTP_ERROR", detail: "HTTP 429" })], "DIRECTORY_RATE_LIMITED"],
-			[[err({ code: "HTTP_ERROR", detail: "HTTP 500" })], "DIRECTORY_SOURCE_FAILED"],
-			[[ok(JA_PAGE), ok(fullJa), err({ code: "TIMEOUT", detail: "x" })], "DIRECTORY_SOURCE_FAILED"],
+		// JPX's own status travels beside the code, unchanged (§4a).
+		const cases: [Answer[], string, number | null][] = [
+			[
+				[err({ code: "HTTP_ERROR", detail: "HTTP 429", status: 429 })],
+				"DIRECTORY_RATE_LIMITED",
+				429,
+			],
+			[
+				[ok(JA_PAGE), err({ code: "HTTP_ERROR", detail: "HTTP 429", status: 429 })],
+				"DIRECTORY_RATE_LIMITED",
+				429,
+			],
+			[
+				[err({ code: "HTTP_ERROR", detail: "HTTP 500", status: 500 })],
+				"DIRECTORY_SOURCE_FAILED",
+				500,
+			],
+			[
+				[err({ code: "HTTP_ERROR", detail: "HTTP 418", status: 418 })],
+				"DIRECTORY_SOURCE_FAILED",
+				418,
+			],
+			[
+				[ok(JA_PAGE), ok(fullJa), err({ code: "TIMEOUT", detail: "x" })],
+				"DIRECTORY_SOURCE_FAILED",
+				null,
+			],
 			[
 				[ok(JA_PAGE), ok(fullJa), ok(EN_PAGE), err({ code: "NETWORK_ERROR", detail: "x" })],
 				"DIRECTORY_SOURCE_FAILED",
+				null,
 			],
 		];
-		for (const [answers, code] of cases) {
+		for (const [answers, code, upstreamStatus] of cases) {
 			const { fetcher, binaryFetcher } = scripted(answers);
 			const source = createJpxDirectorySource({ fetcher, binaryFetcher });
 			const result = await source.fetchDirectory({
 				signal: never,
 				beforeRequest: async () => true,
 			});
-			expect(expectErr(result)).toBe(code);
+			expect(expectErr(result)).toEqual({ code, upstreamStatus });
 		}
 	});
 
@@ -483,7 +506,7 @@ describe("createJpxDirectorySource", () => {
 			signal: never,
 			beforeRequest: async () => answers.shift() ?? true,
 		});
-		expect(expectErr(result)).toBe("DIRECTORY_SOURCE_FAILED");
+		expect(expectErr(result)).toEqual({ code: "DIRECTORY_SOURCE_FAILED", upstreamStatus: null });
 		expect(calls).toHaveLength(1);
 	});
 

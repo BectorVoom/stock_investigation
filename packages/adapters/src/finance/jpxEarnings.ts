@@ -26,12 +26,13 @@
  * carries its update date) with the injected clock, and identifies with the
  * runner's normal User-Agent (the safe fetcher's default).
  */
-import type {
-	Clock,
-	EarningsCalendarSource,
-	EarningsSourceResult,
-	SafeBinaryFetcher,
-	SafeFetcher,
+import {
+	type Clock,
+	type EarningsCalendarSource,
+	type EarningsSourceResult,
+	type SafeBinaryFetcher,
+	type SafeFetcher,
+	upstreamStatusOf,
 } from "@research/application";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
@@ -40,7 +41,7 @@ import {
 	type EarningsUnavailableCode,
 	earningsEventSchema,
 } from "@research/contracts";
-import { EARNINGS_SOURCE_INFO, err, ok } from "@research/domain";
+import { EARNINGS_SOURCE_INFO, err, ok, type Result } from "@research/domain";
 import { MAX_ZIP_ARCHIVE_BYTES, readZipEntries } from "../node/zipReader.ts";
 import { type JpxWorkbookRow, parseJpxWorkbook } from "./jpxWorkbook.ts";
 
@@ -107,9 +108,20 @@ export function extractJpxWorkbookUrls(html: string): string[] {
 	return urls;
 }
 
-function failed(code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE">): EarningsSourceResult {
-	return err({ code });
+/** `upstreamStatus`: JPX's answer status behind the failure, unchanged; null when it did not answer (§4a). */
+function failed(
+	code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE">,
+	upstreamStatus: number | null,
+): EarningsSourceResult {
+	return err({ code, upstreamStatus });
 }
+
+/** Why a JPX download failed: JPX's answer status, or null when nothing JPX answered caused it. */
+interface JpxDownloadFailure {
+	readonly upstreamStatus: number | null;
+}
+
+const NOT_ANSWERED: JpxDownloadFailure = { upstreamStatus: null };
 
 /**
  * A successful retrieval with nothing listed (not a failed attempt): it
@@ -127,12 +139,12 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 	async function indexHtml(
 		signal: AbortSignal,
 		beforeRequest: () => Promise<boolean>,
-	): Promise<string | null> {
+	): Promise<Result<string, JpxDownloadFailure>> {
 		const nowMs = deps.clock.nowMs();
 		if (cachedIndex !== null && nowMs - cachedIndex.fetchedAtMs < JPX_INDEX_TTL_MS) {
-			return cachedIndex.html;
+			return ok(cachedIndex.html);
 		}
-		if (!(await beforeRequest())) return null;
+		if (!(await beforeRequest())) return err(NOT_ANSWERED);
 		const fetched = await deps.fetcher.fetchText(JPX_INDEX_URL, {
 			maxBytes: JPX_INDEX_MAX_BYTES,
 			timeoutMs: JPX_INDEX_TIMEOUT_MS,
@@ -140,19 +152,19 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 			allowedHosts: JPX_ALLOWED_HOSTS,
 			signal,
 		});
-		if (!fetched.ok) return null;
+		if (!fetched.ok) return err({ upstreamStatus: upstreamStatusOf(fetched.error) });
 		cachedIndex = { html: fetched.value.text, fetchedAtMs: nowMs };
-		return fetched.value.text;
+		return ok(fetched.value.text);
 	}
 
 	async function workbookRows(
 		url: string,
 		signal: AbortSignal,
 		beforeRequest: () => Promise<boolean>,
-	): Promise<JpxWorkbookRow[] | null> {
+	): Promise<Result<JpxWorkbookRow[], JpxDownloadFailure>> {
 		const cached = cachedWorkbooks.get(url);
-		if (cached !== undefined) return cached;
-		if (!(await beforeRequest())) return null;
+		if (cached !== undefined) return ok(cached);
+		if (!(await beforeRequest())) return err(NOT_ANSWERED);
 		const downloaded = await deps.binaryFetcher.fetchBytes(url, {
 			maxBytes: MAX_ZIP_ARCHIVE_BYTES,
 			timeoutMs: JPX_WORKBOOK_TIMEOUT_MS,
@@ -160,19 +172,19 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 			allowedHosts: JPX_ALLOWED_HOSTS,
 			signal,
 		});
-		if (!downloaded.ok) return null;
+		if (!downloaded.ok) return err({ upstreamStatus: upstreamStatusOf(downloaded.error) });
 		const entries = readZipEntries(downloaded.value.bytes, [JPX_SHEET_PATH, JPX_STRINGS_PATH]);
-		if (!entries.ok) return null;
+		if (!entries.ok) return err(NOT_ANSWERED);
 		const sheet = entries.value.get(JPX_SHEET_PATH);
 		const strings = entries.value.get(JPX_STRINGS_PATH);
-		if (sheet === undefined || strings === undefined) return null;
+		if (sheet === undefined || strings === undefined) return err(NOT_ANSWERED);
 		const parsed = parseJpxWorkbook(
 			new TextDecoder("utf-8").decode(sheet),
 			new TextDecoder("utf-8").decode(strings),
 		);
-		if (!parsed.ok) return null;
+		if (!parsed.ok) return err(NOT_ANSWERED);
 		cachedWorkbooks.set(url, parsed.value);
-		return parsed.value;
+		return ok(parsed.value);
 	}
 
 	return {
@@ -184,10 +196,10 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 			// nothing and take no grant. A false hook fails the whole batch
 			// without sending anything further.
 			const html = await indexHtml(query.signal, query.beforeRequest);
-			if (html === null) {
-				return query.stocks.map(() => failed("SOURCE_FAILED"));
+			if (!html.ok) {
+				return query.stocks.map(() => failed("SOURCE_FAILED", html.error.upstreamStatus));
 			}
-			const urls = extractJpxWorkbookUrls(html);
+			const urls = extractJpxWorkbookUrls(html.value);
 			// Each JPX update is a new URL, so an ever-growing cache would
 			// leak one parsed workbook per update: keep only the URLs the
 			// current index lists.
@@ -198,10 +210,10 @@ export function createJpxEarningsSource(deps: JpxEarningsDeps): EarningsCalendar
 			const allRows: JpxWorkbookRow[] = [];
 			for (const url of urls) {
 				const rows = await workbookRows(url, query.signal, query.beforeRequest);
-				if (rows === null) {
-					return query.stocks.map(() => failed("SOURCE_FAILED"));
+				if (!rows.ok) {
+					return query.stocks.map(() => failed("SOURCE_FAILED", rows.error.upstreamStatus));
 				}
-				allRows.push(...rows);
+				allRows.push(...rows.value);
 			}
 			return query.stocks.map((stock) =>
 				toResult(stock.symbol, stock.needName, allRows, query.fromDate, query.toDate),

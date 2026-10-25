@@ -1,5 +1,6 @@
 import type { AgentRunContext } from "@research/agent-core";
 import type { AgentEvent, AgentRequest } from "@research/contracts";
+import { isUpstreamStatus } from "@research/domain";
 
 export interface ProviderFailure {
 	readonly code: string;
@@ -17,7 +18,10 @@ export function withUpstreamStatus(
 	failure: ProviderFailure,
 	status: number | null,
 ): ProviderFailure {
-	return status === null ? failure : { ...failure, upstreamStatus: status };
+	// A value that is not an HTTP status is dropped, never corrected (§4a rule 2).
+	return status === null || !isUpstreamStatus(status)
+		? failure
+		: { ...failure, upstreamStatus: status };
 }
 
 /**
@@ -108,8 +112,16 @@ export function usageEvent(knownCostUsd: number | null): AgentEvent {
 	return { type: "usage", knownCostUsd };
 }
 
+/** The turn's `failed` event; the provider's answer status rides along unchanged (§4a). */
 export function failedEvent(failure: ProviderFailure): AgentEvent {
-	return { type: "failed", code: failure.code, retryable: failure.retryable };
+	return failure.upstreamStatus === undefined
+		? { type: "failed", code: failure.code, retryable: failure.retryable }
+		: {
+				type: "failed",
+				code: failure.code,
+				retryable: failure.retryable,
+				upstreamStatus: failure.upstreamStatus,
+			};
 }
 
 /** A cost is "known" only when it is a finite, non-negative number. */

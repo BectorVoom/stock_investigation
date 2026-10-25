@@ -126,7 +126,8 @@ async function runFinancials(args: unknown, setup: FinancialsSetup): Promise<Too
 			},
 		},
 		filings: {
-			latestHoldings: async () => err({ code: "NO_DATA", detail: "unused", retryable: false }),
+			latestHoldings: async () =>
+				err({ code: "NO_DATA", detail: "unused", retryable: false, upstreamStatus: null }),
 		},
 		sharePrice:
 			price === "unconfigured"
@@ -251,10 +252,25 @@ async function financialsCases(): Promise<ToolCase[]> {
 		cases.push(await runFinancials(args, base(factsPool[0])));
 	}
 	for (const error of [
-		{ code: "NOT_CONFIGURED", detail: "SEC EDGAR access is not configured", retryable: false },
-		{ code: "NOT_FOUND", detail: "ticker is not in SEC's ticker directory", retryable: false },
-		{ code: "RATE_LIMITED", detail: "SEC rate limit reached (HTTP 429)", retryable: true },
-		{ code: "FETCH_FAILED", detail: "TIMEOUT: x", retryable: true },
+		{
+			code: "NOT_CONFIGURED",
+			detail: "SEC EDGAR access is not configured",
+			retryable: false,
+			upstreamStatus: null,
+		},
+		{
+			code: "NOT_FOUND",
+			detail: "ticker is not in SEC's ticker directory",
+			retryable: false,
+			upstreamStatus: 404,
+		},
+		{
+			code: "RATE_LIMITED",
+			detail: "SEC rate limit reached (HTTP 429)",
+			retryable: true,
+			upstreamStatus: 429,
+		},
+		{ code: "FETCH_FAILED", detail: "TIMEOUT: x", retryable: true, upstreamStatus: null },
 	] as const) {
 		cases.push(await runFinancials({ ticker: "MSFT" }, base(factsPool[0], { sourceError: error })));
 	}
@@ -350,7 +366,7 @@ async function runHoldings(args: unknown, report: Sec13FReport | SecError): Prom
 	const tools = createSecTools({
 		financials: {
 			latestAnnualFinancials: async () =>
-				err({ code: "NO_DATA", detail: "unused", retryable: false }),
+				err({ code: "NO_DATA", detail: "unused", retryable: false, upstreamStatus: null }),
 		},
 		filings: {
 			async latestHoldings() {
@@ -440,13 +456,24 @@ async function holdingsCases(): Promise<ToolCase[]> {
 		);
 	}
 	for (const error of [
-		{ code: "NOT_CONFIGURED", detail: "SEC EDGAR access is not configured", retryable: false },
+		{
+			code: "NOT_CONFIGURED",
+			detail: "SEC EDGAR access is not configured",
+			retryable: false,
+			upstreamStatus: null,
+		},
 		{
 			code: "NO_DATA",
 			detail: "no 13F-HR filing among this filer's recent SEC submissions",
 			retryable: false,
+			upstreamStatus: null,
 		},
-		{ code: "RATE_LIMITED", detail: "SEC rate limit reached (HTTP 429)", retryable: true },
+		{
+			code: "RATE_LIMITED",
+			detail: "SEC rate limit reached (HTTP 429)",
+			retryable: true,
+			upstreamStatus: 429,
+		},
 	] as const) {
 		cases.push(await runHoldings({ managerCik: "0009999993" }, error));
 	}

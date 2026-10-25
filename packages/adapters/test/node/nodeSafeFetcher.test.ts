@@ -279,11 +279,11 @@ describe("node SafeFetcher over a real TLS connection", () => {
 		const { fetcher } = fetcherWith();
 		expect(await fetcher.fetchText(`https://${HOST_A}/gone`, FETCH_LIMITS)).toEqual({
 			ok: false,
-			error: { code: "HTTP_ERROR", detail: "HTTP 410" },
+			error: { code: "HTTP_ERROR", detail: "HTTP 410", status: 410 },
 		});
 		expect(await fetcher.fetchText(`https://${HOST_A}/nothing-here`, FETCH_LIMITS)).toEqual({
 			ok: false,
-			error: { code: "HTTP_ERROR", detail: "HTTP 404" },
+			error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 },
 		});
 	});
 

@@ -272,7 +272,7 @@ describe("web.fetch_page: failures", () => {
 
 		const serverError = setup({
 			[ROBOTS_URL]: { text: ALLOW_ALL_ROBOTS },
-			[PAGE_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 503" } },
+			[PAGE_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 503", status: 503 } },
 		});
 		expect(await serverError.tool.execute({ url: PAGE_URL }, createToolContext())).toMatchObject({
 			ok: false,
@@ -333,7 +333,10 @@ describe("web.fetch_page: robots.txt (RFC 9309)", () => {
 	});
 
 	it.each([
-		["a 503 answer", { error: { code: "HTTP_ERROR", detail: "HTTP 503" } } as ScriptedPage],
+		[
+			"a 503 answer",
+			{ error: { code: "HTTP_ERROR", detail: "HTTP 503", status: 503 } } as ScriptedPage,
+		],
 		["a timeout", { error: { code: "TIMEOUT", detail: "timed out" } } as ScriptedPage],
 		[
 			"a network error",
@@ -411,13 +414,15 @@ describe("web.fetch_page: robots.txt (RFC 9309)", () => {
 				contacted.push(url);
 				if (url.endsWith("/robots.txt")) {
 					const text = robots[url];
-					if (text === undefined) return err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+					if (text === undefined)
+						return err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 					return ok({ finalUrl: url, contentType: "text/plain", text });
 				}
 				let current = url;
 				for (let hop = 0; hop <= 5; hop += 1) {
 					const entry = hops[current];
-					if (entry === undefined) return err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+					if (entry === undefined)
+						return err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 					if (entry.redirectTo !== undefined) {
 						if (options.authorizeRedirect !== undefined) {
 							const authorized = await options.authorizeRedirect(entry.redirectTo);
@@ -433,7 +438,8 @@ describe("web.fetch_page: robots.txt (RFC 9309)", () => {
 						continue;
 					}
 					const page = entry.page;
-					if (page === undefined) return err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+					if (page === undefined)
+						return err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 					if ("error" in page) return err(page.error);
 					return ok({
 						finalUrl: current,
@@ -492,7 +498,7 @@ describe("web.fetch_page: robots.txt (RFC 9309)", () => {
 				if (url === "https://site.synthetic-wire.org/gated") {
 					return ok({ finalUrl: url, contentType: "text/html", text: HTML_PAGE });
 				}
-				return err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+				return err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 			},
 		};
 		const time = controllableClock();

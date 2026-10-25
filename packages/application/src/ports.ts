@@ -1214,6 +1214,8 @@ export interface MarketSeriesPoint {
 export interface MarketSourceUnavailable {
 	readonly code: MarketUnavailableCode;
 	readonly reason: string;
+	/** The provider's answer status behind `code`, unchanged; null when it did not answer (§4a). */
+	readonly upstreamStatus: number | null;
 }
 
 /** Source-neutral fetch port; adapters implement it per provider (ARCH-006). */
@@ -1249,7 +1251,11 @@ export function unconfiguredMarketSeriesSource(
 		fetchSeries: () =>
 			Promise.resolve({
 				ok: false as const,
-				error: { code: "SOURCE_NOT_CONFIGURED", reason } satisfies MarketSourceUnavailable,
+				error: {
+					code: "SOURCE_NOT_CONFIGURED",
+					reason,
+					upstreamStatus: null,
+				} satisfies MarketSourceUnavailable,
 			}),
 	};
 }
@@ -1289,7 +1295,11 @@ export interface EarningsCalendarResult {
  * profile is not requested again. Every other code carries no name.
  */
 export type EarningsSourceFailure =
-	| { readonly code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE"> }
+	| {
+			readonly code: Exclude<EarningsUnavailableCode, "NO_SCHEDULED_DATE">;
+			/** The provider's answer status behind `code`, unchanged; null when it did not answer (§4a). */
+			readonly upstreamStatus: number | null;
+	  }
 	| { readonly code: "NO_SCHEDULED_DATE"; readonly name: string | null };
 
 /** One result per requested symbol, in the same order. */
@@ -1308,6 +1318,8 @@ export type EarningsSourceRegistry = ReadonlyMap<EarningsSourceId, EarningsCalen
 export interface EarningsSourceUnavailable {
 	readonly code: EarningsUnavailableCode;
 	readonly reason: string;
+	/** The provider's answer status behind `code`, unchanged; null when it did not answer (§4a). */
+	readonly upstreamStatus: number | null;
 }
 
 /**
@@ -1326,7 +1338,7 @@ export function unconfiguredEarningsCalendarSource(
 				query.stocks.map(
 					(): EarningsSourceResult => ({
 						ok: false as const,
-						error: { code: "SOURCE_NOT_CONFIGURED" },
+						error: { code: "SOURCE_NOT_CONFIGURED", upstreamStatus: null },
 					}),
 				),
 			),
@@ -1353,12 +1365,22 @@ export interface StockDirectoryData {
 	readonly entries: readonly StockDirectoryEntry[];
 }
 
+/**
+ * Why a market's list could not be downloaded. `upstreamStatus` is the
+ * status SEC or JPX answered with, unchanged; null when it did not answer
+ * with one (not configured, a timeout, a file that did not parse) (§4a).
+ */
+export interface StockDirectoryFailure {
+	readonly code: StockDirectoryFailureCode;
+	readonly upstreamStatus: number | null;
+}
+
 /** Downloads one market's full list; adapters implement it per market (SEC, JPX). */
 export interface StockDirectorySource {
 	readonly market: WatchMarket;
 	fetchDirectory(
 		query: StockDirectoryQuery,
-	): Promise<Result<StockDirectoryData, StockDirectoryFailureCode>>;
+	): Promise<Result<StockDirectoryData, StockDirectoryFailure>>;
 }
 
 /** Registry keyed by market; the runner looks the leased market up here. */
@@ -1372,7 +1394,8 @@ export type StockDirectorySourceRegistry = ReadonlyMap<WatchMarket, StockDirecto
 export function unconfiguredStockDirectorySource(market: WatchMarket): StockDirectorySource {
 	return {
 		market,
-		fetchDirectory: () => Promise.resolve(err("DIRECTORY_NOT_CONFIGURED")),
+		fetchDirectory: () =>
+			Promise.resolve(err({ code: "DIRECTORY_NOT_CONFIGURED", upstreamStatus: null })),
 	};
 }
 

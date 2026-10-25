@@ -147,6 +147,8 @@ export type PipelineOutcome =
 	| {
 			readonly kind: "partial";
 			readonly failureCode: string;
+			/** The external service's status behind `failureCode`, unchanged (§4a); null otherwise. */
+			readonly failureUpstreamStatus: number | null;
 			readonly bundle: ResearchBundle;
 			readonly articles: readonly IngestedArticle[];
 			readonly usage: ResourceUsage;
@@ -160,6 +162,15 @@ export type PipelineOutcome =
 			 * `PLAN_NOT_JSON`, `TOOLS_RETURNED_NOTHING` (ADR-0025).
 			 */
 			readonly failureDetail: string | null;
+			/**
+			 * The status the external service that caused the failure answered
+			 * with, unchanged (docs/rule/error_handling.md §4a): the model
+			 * provider's for a provider failure; for `ALL_TOOL_CALLS_FAILED`
+			 * the most frequent status among the calls that failed with the
+			 * reported `failureDetail` code (the latest wins a tie). Null when
+			 * no external answer caused it.
+			 */
+			readonly failureUpstreamStatus: number | null;
 			readonly retryable: boolean;
 			readonly usage: ResourceUsage;
 	  }
@@ -175,7 +186,13 @@ type TurnFailure =
 	| { readonly kind: "budget"; readonly limit: BudgetLimit }
 	/** A metered turn ran without reporting its cost, so further spend cannot be bounded. */
 	| { readonly kind: "unknown-spend" }
-	| { readonly kind: "provider"; readonly code: string; readonly retryable: boolean };
+	| {
+			readonly kind: "provider";
+			readonly code: string;
+			readonly retryable: boolean;
+			/** The provider API's answer status, unchanged; null when no answer caused it (§4a). */
+			readonly upstreamStatus: number | null;
+	  };
 
 interface Turn {
 	readonly text: string;
@@ -340,10 +357,12 @@ export async function runResearchPipeline(
 		failureCode: string,
 		retryable: boolean,
 		failureDetail: string | null = null,
+		failureUpstreamStatus: number | null = null,
 	): PipelineOutcome => ({
 		kind: "failed",
 		failureCode,
 		failureDetail,
+		failureUpstreamStatus,
 		retryable,
 		usage,
 	});
@@ -359,6 +378,26 @@ export async function runResearchPipeline(
 			if (count > bestCount || (count === bestCount && (best === null || stable < best))) {
 				best = stable;
 				bestCount = count;
+			}
+		}
+		return best;
+	};
+
+	/**
+	 * The upstream status reported with `ALL_TOOL_CALLS_FAILED`: the most
+	 * frequent status among the calls that failed with `code`, the latest
+	 * wins a tie; null when none of them carried one (§4a rule 6).
+	 */
+	const toolErrorStatus = (code: string | null): number | null => {
+		if (code === null) return null;
+		let best: number | null = null;
+		let bestCount = 0;
+		let bestLast = -1;
+		for (const [status, seen] of toolErrorStatuses.get(code) ?? []) {
+			if (seen.count > bestCount || (seen.count === bestCount && seen.last > bestLast)) {
+				best = status;
+				bestCount = seen.count;
+				bestLast = seen.last;
 			}
 		}
 		return best;
@@ -419,14 +458,24 @@ export async function runResearchPipeline(
 			for await (const raw of events) {
 				const parsed = parseAgentEvent(raw);
 				if (!parsed.ok) {
-					failure = { kind: "provider", code: "AGENT_EVENT_INVALID", retryable: false };
+					failure = {
+						kind: "provider",
+						code: "AGENT_EVENT_INVALID",
+						retryable: false,
+						upstreamStatus: null,
+					};
 					break;
 				}
 				const event = parsed.value;
 				if (event.type === "text.delta") {
 					text += event.text;
 					if (text.length > MAX_MODEL_OUTPUT_CHARS) {
-						failure = { kind: "provider", code: "AGENT_OUTPUT_TOO_LARGE", retryable: false };
+						failure = {
+							kind: "provider",
+							code: "AGENT_OUTPUT_TOO_LARGE",
+							retryable: false,
+							upstreamStatus: null,
+						};
 						break;
 					}
 				} else if (event.type === "tool.request") {
@@ -436,7 +485,12 @@ export async function runResearchPipeline(
 				} else if (event.type === "usage") {
 					reportedCost = event.knownCostUsd;
 				} else if (event.type === "failed") {
-					failure = { kind: "provider", code: event.code, retryable: event.retryable };
+					failure = {
+						kind: "provider",
+						code: event.code,
+						retryable: event.retryable,
+						upstreamStatus: event.upstreamStatus ?? null,
+					};
 					break;
 				} else if (event.type === "completed") {
 					finished = true;
@@ -445,7 +499,12 @@ export async function runResearchPipeline(
 			}
 		} catch (error) {
 			// Adapters are contractually non-throwing; treat a throw as a provider failure, not a crash.
-			failure = { kind: "provider", code: agentThrewCode(error), retryable: true };
+			failure = {
+				kind: "provider",
+				code: agentThrewCode(error),
+				retryable: true,
+				upstreamStatus: null,
+			};
 		}
 		usage = addUsage(usage, { costUsd: reportedCost ?? null });
 		if (typeof reportedCost === "number" && Number.isFinite(reportedCost)) {
@@ -455,7 +514,12 @@ export async function runResearchPipeline(
 		if (input.signal.aborted) return err({ kind: "aborted" });
 		if (failure !== null) return err(failure);
 		if (!finished) {
-			return err({ kind: "provider", code: "AGENT_STREAM_ENDED_EARLY", retryable: true });
+			return err({
+				kind: "provider",
+				code: "AGENT_STREAM_ENDED_EARLY",
+				retryable: true,
+				upstreamStatus: null,
+			});
 		}
 		const spend = checkBudget(budget, usage, 0);
 		if (!spend.ok && spend.error === "MAX_SPEND")
@@ -494,6 +558,9 @@ export async function runResearchPipeline(
 			: failure.kind === "unknown-spend"
 				? "METERED_COST_UNKNOWN"
 				: failure.code;
+	/** The provider's answer status behind a turn failure, unchanged (§4a). */
+	const failureStatus = (failure: Exclude<TurnFailure, { kind: "aborted" }>): number | null =>
+		failure.kind === "provider" ? failure.upstreamStatus : null;
 
 	/* ----- Planning and collection ----- */
 	await deps.reporter.state("planning");
@@ -534,6 +601,9 @@ export async function runResearchPipeline(
 	let reminderSent = false;
 	let reminderPending: string | null = null;
 	const toolErrorCounts = new Map<string, number>();
+	// Per tool error code: each upstream status seen, how often and the index
+	// of its latest call — for `toolErrorStatus` (§4a rule 6).
+	const toolErrorStatuses = new Map<string, Map<number, { count: number; last: number }>>();
 	const completedRequests = new Set<string>();
 	const unavailableTools = new Set<string>();
 	let collectionLimitReached = false;
@@ -579,7 +649,12 @@ export async function runResearchPipeline(
 				break;
 			}
 			if (planned.error.kind === "provider" && collected.evidence.length === 0) {
-				return failed(planned.error.code, planned.error.retryable);
+				return failed(
+					planned.error.code,
+					planned.error.retryable,
+					null,
+					planned.error.upstreamStatus,
+				);
 			}
 			await deps.reporter.note(`Planning stopped early: ${failureCode(planned.error)}.`);
 			break;
@@ -681,6 +756,17 @@ export async function runResearchPipeline(
 				}
 				const code = sanitizeToolErrorCode(result.error.code.slice(0, 80));
 				toolErrorCounts.set(code, (toolErrorCounts.get(code) ?? 0) + 1);
+				const upstreamStatus = result.error.upstreamStatus;
+				if (upstreamStatus !== undefined) {
+					const statuses =
+						toolErrorStatuses.get(code) ?? new Map<number, { count: number; last: number }>();
+					const seen = statuses.get(upstreamStatus);
+					statuses.set(upstreamStatus, {
+						count: (seen?.count ?? 0) + 1,
+						last: executedToolCalls,
+					});
+					toolErrorStatuses.set(code, statuses);
+				}
 				await deps.reporter.tool(label, "failed", result.error.code.slice(0, 300));
 				const note = `Tool ${label} failed: ${result.error.code}.`;
 				collected.entries.push({ step, fullText: note, digestLines: [note] });
@@ -712,7 +798,8 @@ export async function runResearchPipeline(
 	].slice(0, BUNDLE_LIMITS.articles);
 	if (collected.evidence.length === 0) {
 		if (executedToolCalls > 0 && succeededToolCalls === 0) {
-			return failed("ALL_TOOL_CALLS_FAILED", false, mostFrequentToolError(toolErrorCounts));
+			const detail = mostFrequentToolError(toolErrorCounts);
+			return failed("ALL_TOOL_CALLS_FAILED", false, detail, toolErrorStatus(detail));
 		}
 		// ADR-0025: NO_EVIDENCE_COLLECTED carries why. Precedence is fixed:
 		// a success with no evidence beats a parse question (a success implies
@@ -782,6 +869,8 @@ export async function runResearchPipeline(
 	let repairNote: string | null = null;
 	let draft: ReturnType<typeof analysisDraftSchema.safeParse> | null = null;
 	let analysisFailure: string | null = null;
+	// The provider's status behind `analysisFailure`, unchanged (§4a); null when none.
+	let analysisFailureStatus: number | null = null;
 	for (let attempt = 0; attempt < 2 && draft?.success !== true; attempt += 1) {
 		const analysed = await turn(
 			analysisPrompt({
@@ -801,6 +890,7 @@ export async function runResearchPipeline(
 			const pause = spendApproval(analysed.error);
 			if (pause !== null) return pause;
 			analysisFailure = failureCode(analysed.error);
+			analysisFailureStatus = failureStatus(analysed.error);
 			break;
 		}
 		uiProposals.push(...analysed.value.uiProposals);
@@ -808,6 +898,7 @@ export async function runResearchPipeline(
 		if (!json.ok) {
 			repairNote = "the reply contained no parseable JSON object";
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
+			analysisFailureStatus = null;
 			continue;
 		}
 		draft = analysisDraftSchema.safeParse(json.value);
@@ -817,8 +908,10 @@ export async function runResearchPipeline(
 				.map((issue) => issue.path.join("."))
 				.join(", ")}`;
 			analysisFailure = "ANALYSIS_OUTPUT_INVALID";
+			analysisFailureStatus = null;
 		} else {
 			analysisFailure = null;
+			analysisFailureStatus = null;
 		}
 	}
 	const analysis = draft?.success === true ? draft.data : null;
@@ -843,6 +936,8 @@ export async function runResearchPipeline(
 		return failed(
 			analysisFailure ?? "ANALYSIS_FAILED",
 			analysisFailure !== "ANALYSIS_OUTPUT_INVALID",
+			null,
+			analysisFailureStatus,
 		);
 	}
 
@@ -1285,7 +1380,15 @@ export async function runResearchPipeline(
 	const incomplete = stoppedBy ?? analysisFailure;
 	return incomplete === null
 		? { kind: "completed", bundle: bundle.data, articles, usage }
-		: { kind: "partial", failureCode: incomplete, bundle: bundle.data, articles, usage };
+		: {
+				kind: "partial",
+				failureCode: incomplete,
+				// A budget stop is ours; only an analysis failure can carry a provider status.
+				failureUpstreamStatus: stoppedBy === null ? analysisFailureStatus : null,
+				bundle: bundle.data,
+				articles,
+				usage,
+			};
 }
 
 /**

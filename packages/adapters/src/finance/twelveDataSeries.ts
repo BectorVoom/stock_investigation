@@ -32,10 +32,11 @@
  * When `since` is given, `start_date` is `since − 45 days` (revision overlap,
  * like FRED); otherwise the newest `maxObservations`.
  */
-import type {
-	MarketSeriesSource,
-	MarketSourceUnavailable,
-	SafeFetcher,
+import {
+	type MarketSeriesSource,
+	type MarketSourceUnavailable,
+	type SafeFetcher,
+	upstreamStatusOf,
 } from "@research/application";
 import {
 	type MarketSeriesMeta,
@@ -43,9 +44,9 @@ import {
 	marketSeriesMetaSchema,
 	marketUnavailable,
 } from "@research/contracts";
-import { err, ok } from "@research/domain";
+import { err, ok, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
-import { datePrefixOf, fetchJsonDocument, httpStatusOf, subtractDaysIso } from "./marketFetch.ts";
+import { datePrefixOf, fetchJsonDocument, subtractDaysIso } from "./marketFetch.ts";
 
 export const TWELVE_DATA_HOST = "api.twelvedata.com";
 const TWELVE_DATA_ALLOWED_HOSTS: ReadonlySet<string> = new Set([TWELVE_DATA_HOST]);
@@ -89,16 +90,26 @@ const twelveErrorSchema = z.object({
 	status: z.literal("error"),
 });
 
-function unavailable(code: MarketUnavailableCode): MarketSourceUnavailable {
-	return marketUnavailable(code, "twelve-data");
+function unavailable(
+	code: MarketUnavailableCode,
+	upstreamStatus: number | null = null,
+): MarketSourceUnavailable {
+	return marketUnavailable(code, "twelve-data", upstreamStatus);
 }
 
+/**
+ * Twelve Data's status — the HTTP status of an error answer, or the JSON
+ * error `code` it puts on any answer — as our code, with the status itself
+ * kept unchanged beside it (§4a). A `code` that is not an HTTP status is
+ * classified but not reported as one.
+ */
 function mapTwelveCode(code: number): MarketSourceUnavailable {
-	if (code === 401) return unavailable("SOURCE_AUTH_FAILED");
-	if (code === 404 || code === 400) return unavailable("SERIES_NOT_FOUND");
-	if (code === 403) return unavailable("PLAN_NOT_ENTITLED");
-	if (code === 429) return unavailable("RATE_LIMITED");
-	return unavailable("SOURCE_FAILED");
+	const upstreamStatus = upstreamStatusOrNull(code);
+	if (code === 401) return unavailable("SOURCE_AUTH_FAILED", upstreamStatus);
+	if (code === 404 || code === 400) return unavailable("SERIES_NOT_FOUND", upstreamStatus);
+	if (code === 403) return unavailable("PLAN_NOT_ENTITLED", upstreamStatus);
+	if (code === 429) return unavailable("RATE_LIMITED", upstreamStatus);
+	return unavailable("SOURCE_FAILED", upstreamStatus);
 }
 
 /**
@@ -170,7 +181,7 @@ export function createTwelveDataSeriesSource(deps: TwelveDataSeriesDeps): Market
 				},
 			);
 			if (!fetched.ok) {
-				const status = httpStatusOf(fetched.error);
+				const status = upstreamStatusOf(fetched.error);
 				return err(status === null ? unavailable("SOURCE_FAILED") : mapTwelveCode(status));
 			}
 			const asError = twelveErrorSchema.safeParse(fetched.value.json);

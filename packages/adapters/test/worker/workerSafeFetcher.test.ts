@@ -445,7 +445,7 @@ describe("worker SafeFetcher: size, time and failure limits", () => {
 			);
 			expect(result).toEqual({
 				ok: false,
-				error: { code: "HTTP_ERROR", detail: `HTTP ${code}` },
+				error: { code: "HTTP_ERROR", detail: `HTTP ${code}`, status: code },
 			});
 		});
 	}
@@ -528,7 +528,10 @@ describe("worker SafeFetcher: Authorization header and error bodies", () => {
 			"https://a.synthetic-wire.org/x",
 			FETCH_LIMITS,
 		);
-		expect(without).toEqual({ ok: false, error: { code: "HTTP_ERROR", detail: "HTTP 429" } });
+		expect(without).toEqual({
+			ok: false,
+			error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429 },
+		});
 
 		const fake = createFakeFetch(routes);
 		const withBody = await createWorkerSafeFetcher(fake.fetch).fetchText(
@@ -537,7 +540,7 @@ describe("worker SafeFetcher: Authorization header and error bodies", () => {
 		);
 		expect(withBody).toEqual({
 			ok: false,
-			error: { code: "HTTP_ERROR", detail: "HTTP 429", body: '{"code":429}' },
+			error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429, body: '{"code":429}' },
 		});
 	});
 });

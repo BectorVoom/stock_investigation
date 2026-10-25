@@ -10,6 +10,7 @@ import {
 	idSchema,
 	isoDateSchema,
 	isoDateTimeSchema,
+	lastRefreshFailureSchema,
 	upstreamStatusSchema,
 } from "./primitives.ts";
 
@@ -199,13 +200,7 @@ export const watchlistRefreshSchema = z.strictObject({
 	activeRunId: idSchema.nullable(),
 	activeRunState: z.string().nullable(),
 	lastSucceededAt: isoDateTimeSchema.nullable(),
-	lastFailure: z
-		.strictObject({
-			state: z.string(),
-			code: z.string().min(1).max(80),
-			at: isoDateTimeSchema,
-		})
-		.nullable(),
+	lastFailure: lastRefreshFailureSchema.nullable(),
 });
 export type WatchlistRefresh = z.infer<typeof watchlistRefreshSchema>;
 

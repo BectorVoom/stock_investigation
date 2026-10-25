@@ -136,7 +136,8 @@ describe("market-refresh execution (FR-017)", () => {
 		};
 		const fredDown: MarketSeriesSource = {
 			providerId: "fred",
-			fetchSeries: () => Promise.resolve(err({ code: "RATE_LIMITED", reason: "limited" })),
+			fetchSeries: () =>
+				Promise.resolve(err({ code: "RATE_LIMITED", reason: "limited", upstreamStatus: 429 })),
 		};
 		const { api, calls } = createFakeApi();
 		const harness = createDeps(api);
@@ -153,11 +154,14 @@ describe("market-refresh execution (FR-017)", () => {
 		);
 		expect(seen).toEqual([{ symbol: "AAPL", since: "2026-10-01" }]);
 		const completion = marketCompletionOf(calls.completions[0]);
-		expect(completion.series.find((entry) => entry.seriesId === "fred:VIXCLS")?.errorCode).toBe(
-			"RATE_LIMITED",
-		);
+		const vix = completion.series.find((entry) => entry.seriesId === "fred:VIXCLS");
+		expect(vix?.errorCode).toBe("RATE_LIMITED");
+		// The provider's own status, unchanged (§4a).
+		expect(vix?.upstreamStatus).toBe(429);
 		const aapl = completion.series.find((entry) => entry.seriesId === "twelve-data:AAPL");
 		expect(aapl?.errorCode).toBe("SOURCE_FAILED");
+		// A throw is not an answer: no upstream status.
+		expect(aapl?.upstreamStatus ?? null).toBeNull();
 		expect(aapl?.meta).toBeNull();
 		expect(aapl?.observations).toEqual([]);
 	});

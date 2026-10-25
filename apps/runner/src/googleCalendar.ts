@@ -98,16 +98,19 @@ type GoogleFailure =
 	| "GOOGLE_RATE_LIMITED"
 	| "GOOGLE_REQUEST_FAILED";
 
+/** `upstreamStatus`: Google's answer status behind the failure, unchanged (§4a). */
 function failed(
 	job: Extract<ClaimedJob, { kind: "google-calendar" }>,
 	failureCode: GoogleFailure,
 	retryable: boolean,
+	upstreamStatus: number | null = null,
 ): CompleteJobRequest {
 	return {
 		outcome: "failed",
 		leaseGeneration: job.leaseGeneration,
 		usage: EMPTY_USAGE,
 		failureCode,
+		...(upstreamStatus === null ? {} : { failureUpstreamStatus: upstreamStatus }),
 		retryable,
 	};
 }
@@ -163,10 +166,10 @@ function retryable(code: GoogleCallCode | GoogleFailure): boolean {
 /** Maps a calendar-call failure; ABORTED becomes the stop placeholder. */
 function callFailed(
 	job: Extract<ClaimedJob, { kind: "google-calendar" }>,
-	code: GoogleCallCode,
+	failure: GoogleCallFailure,
 ): CompleteJobRequest {
-	if (code === "ABORTED") return aborted(job);
-	return failed(job, code, retryable(code));
+	if (failure.code === "ABORTED") return aborted(job);
+	return failed(job, failure.code, retryable(failure.code), failure.upstreamStatus);
 }
 
 export async function executeGoogleCalendar(
@@ -246,8 +249,17 @@ async function executeConnect(
 		});
 		if (!exchanged.ok) {
 			if (signal.aborted) return aborted(job);
-			env.logger.warn("google_exchange_failed", { runId: job.runId, code: exchanged.error });
-			return failed(job, exchanged.error, retryable(exchanged.error));
+			env.logger.warn("google_exchange_failed", {
+				runId: job.runId,
+				code: exchanged.error.code,
+				upstreamStatus: exchanged.error.upstreamStatus,
+			});
+			return failed(
+				job,
+				exchanged.error.code,
+				retryable(exchanged.error.code),
+				exchanged.error.upstreamStatus,
+			);
 		}
 		// From here on a refresh token exists. Unless it ends up stored, it
 		// is given back: a grant the app holds no token for could never be
@@ -275,7 +287,7 @@ async function executeConnect(
 					refreshToken,
 					signal,
 				});
-				if (!refreshed.ok) return err({ code: refreshed.error } satisfies GoogleCallFailure);
+				if (!refreshed.ok) return err(refreshed.error satisfies GoogleCallFailure);
 				accessToken = refreshed.value.accessToken;
 				return ok(accessToken);
 			},
@@ -288,7 +300,7 @@ async function executeConnect(
 			const checked = await getCalendar(calls, previous.calendarId);
 			if (!checked.ok) {
 				if (signal.aborted) return giveBack(aborted(job));
-				return giveBack(callFailed(job, checked.error.code));
+				return giveBack(callFailed(job, checked.error));
 			}
 			if (checked.value.found) calendarId = previous.calendarId;
 		}
@@ -302,7 +314,7 @@ async function executeConnect(
 			if (!created.ok) {
 				if (signal.aborted) return giveBack(aborted(job));
 				env.logger.warn("google_create_failed", { runId: job.runId, code: created.error.code });
-				return giveBack(callFailed(job, created.error.code));
+				return giveBack(callFailed(job, created.error));
 			}
 			calendarId = created.value.id;
 		}
@@ -391,7 +403,7 @@ async function executeSync(
 				refreshToken: stored.refreshToken,
 				signal,
 			});
-			if (!refreshed.ok) return err({ code: refreshed.error } satisfies GoogleCallFailure);
+			if (!refreshed.ok) return err(refreshed.error satisfies GoogleCallFailure);
 			accessToken = refreshed.value.accessToken;
 			return ok(accessToken);
 		},
@@ -400,7 +412,7 @@ async function executeSync(
 	if (!initial.ok) {
 		if (signal.aborted) return aborted(job);
 		env.logger.warn("google_refresh_failed", { runId: job.runId, code: initial.error.code });
-		return callFailed(job, initial.error.code);
+		return callFailed(job, initial.error);
 	}
 	await reporter.state("analyzing");
 	// The claim names the calendar the API believes is connected; the token
@@ -410,7 +422,7 @@ async function executeSync(
 	const checked = await getCalendar(calls, calendarId);
 	if (!checked.ok) {
 		if (signal.aborted) return aborted(job);
-		return callFailed(job, checked.error.code);
+		return callFailed(job, checked.error);
 	}
 	if (!checked.value.found) {
 		// The calendar is gone from Google (deleted there): create a new
@@ -423,7 +435,7 @@ async function executeSync(
 		});
 		if (!created.ok) {
 			if (signal.aborted) return aborted(job);
-			return callFailed(job, created.error.code);
+			return callFailed(job, created.error);
 		}
 		calendarId = created.value.id;
 		await writeGoogleTokenFile(env.google.config.tokenFile, {
@@ -435,7 +447,7 @@ async function executeSync(
 		const listed = await listManagedEvents(calls, calendarId);
 		if (!listed.ok) {
 			if (signal.aborted) return aborted(job);
-			return callFailed(job, listed.error.code);
+			return callFailed(job, listed.error);
 		}
 		existing = listed.value;
 	}
@@ -453,7 +465,7 @@ async function executeSync(
 		const removed = await deleteEvent(calls, calendarId, eventId);
 		if (!removed.ok) {
 			if (signal.aborted) return aborted(job);
-			return callFailed(job, removed.error.code);
+			return callFailed(job, removed.error);
 		}
 		deleted += 1;
 	}
@@ -462,7 +474,7 @@ async function executeSync(
 		const written = await updateEvent(calls, calendarId, body);
 		if (!written.ok) {
 			if (signal.aborted) return aborted(job);
-			return callFailed(job, written.error.code);
+			return callFailed(job, written.error);
 		}
 		updated += 1;
 	}
@@ -471,7 +483,7 @@ async function executeSync(
 		const added = await insertEvent(calls, calendarId, body);
 		if (!added.ok) {
 			if (signal.aborted) return aborted(job);
-			return callFailed(job, added.error.code);
+			return callFailed(job, added.error);
 		}
 		if (added.value.inserted) {
 			inserted += 1;
@@ -480,7 +492,7 @@ async function executeSync(
 			const rewritten = await updateEvent(calls, calendarId, body);
 			if (!rewritten.ok) {
 				if (signal.aborted) return aborted(job);
-				return callFailed(job, rewritten.error.code);
+				return callFailed(job, rewritten.error);
 			}
 			updated += 1;
 		}

@@ -246,6 +246,7 @@ describe("job execution under a lease", () => {
 				kind: "failed",
 				failureCode: "ALL_TOOL_CALLS_FAILED",
 				failureDetail: "TIMEOUT",
+				failureUpstreamStatus: null,
 				retryable: false,
 				usage: RESEARCH_JOB.priorUsage,
 			}),

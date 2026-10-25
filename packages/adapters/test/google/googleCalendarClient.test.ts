@@ -290,12 +290,13 @@ describe("calendar client against a fake Google server", () => {
 		});
 		try {
 			const limited = await getCalendar(depsThrough(server), "cal_1");
-			expect(limited).toEqual(err({ code: "GOOGLE_RATE_LIMITED" }));
+			// Google's own status travels beside our code, unchanged (§4a).
+			expect(limited).toEqual(err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 429 }));
 			const stopped = await getCalendar(
 				depsThrough(server, { beforeRequest: async () => false }),
 				"cal_1",
 			);
-			expect(stopped).toEqual(err({ code: "ABORTED" }));
+			expect(stopped).toEqual(err({ code: "ABORTED", upstreamStatus: null }));
 			// The refused call sent nothing: still exactly one request seen.
 			expect(seen).toHaveLength(1);
 		} finally {
@@ -334,8 +335,12 @@ describe("calendar client against a fake Google server", () => {
 		});
 		try {
 			const deps = depsThrough(server);
-			expect(await getCalendar(deps, "cal_1")).toEqual(err({ code: "GOOGLE_RATE_LIMITED" }));
-			expect(await getCalendar(deps, "cal_2")).toEqual(err({ code: "GOOGLE_REQUEST_FAILED" }));
+			expect(await getCalendar(deps, "cal_1")).toEqual(
+				err({ code: "GOOGLE_RATE_LIMITED", upstreamStatus: 403 }),
+			);
+			expect(await getCalendar(deps, "cal_2")).toEqual(
+				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: 403 }),
+			);
 		} finally {
 			await server.close();
 		}
@@ -355,7 +360,7 @@ describe("calendar client against a fake Google server", () => {
 			expect(await deleteEvent(deps, "cal_1", "gone404")).toEqual(ok({ deleted: true }));
 			expect(await deleteEvent(deps, "cal_1", "gone410")).toEqual(ok({ deleted: true }));
 			expect(await deleteEvent(deps, "cal_1", "broken")).toEqual(
-				err({ code: "GOOGLE_REQUEST_FAILED" }),
+				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: 500 }),
 			);
 		} finally {
 			await server.close();
@@ -374,8 +379,9 @@ describe("calendar client against a fake Google server", () => {
 			},
 		});
 		try {
+			// Every page answered 200: the failure is ours, so no upstream status.
 			expect(await listManagedEvents(depsThrough(server), "cal_1")).toEqual(
-				err({ code: "GOOGLE_REQUEST_FAILED" }),
+				err({ code: "GOOGLE_REQUEST_FAILED", upstreamStatus: null }),
 			);
 			expect(seen).toHaveLength(10);
 		} finally {

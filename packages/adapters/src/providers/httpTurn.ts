@@ -21,6 +21,7 @@ import {
 	settle,
 	type TurnGuard,
 	usageEvent,
+	withUpstreamStatus,
 } from "./turn.ts";
 
 /** Longest silence tolerated between two chunks (or before the response headers). */
@@ -37,10 +38,14 @@ export function readApiKey(value: string | undefined): string | null {
 	return API_KEY_PATTERN.test(apiKey) ? apiKey : null;
 }
 
+/** Our code for a provider's HTTP error answer, carrying the status itself unchanged (§4a). */
 export function failureForHttpStatus(status: number): ProviderFailure {
-	if (status === 408) return PROVIDER_FAILURES.PROVIDER_TIMEOUT;
+	if (status === 408) return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_TIMEOUT, status);
 	const hint = hintFromHttpStatus(status);
-	return hint === null ? PROVIDER_FAILURES.PROVIDER_REQUEST_REJECTED : failureForHint(hint);
+	return withUpstreamStatus(
+		hint === null ? PROVIDER_FAILURES.PROVIDER_REQUEST_REJECTED : failureForHint(hint),
+		status,
+	);
 }
 
 export interface IdleWatch {

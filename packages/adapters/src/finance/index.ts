@@ -73,7 +73,6 @@ export {
 export {
 	datePrefixOf,
 	fetchJsonDocument,
-	httpStatusOf,
 	isIsoDate,
 	subtractDaysIso,
 } from "./marketFetch.ts";

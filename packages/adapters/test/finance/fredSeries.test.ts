@@ -186,7 +186,12 @@ describe("FRED adapter: failures", () => {
 	it("maps a bad key to SOURCE_AUTH_FAILED with the fixed wording", async () => {
 		const { source } = sourceWith({
 			[META_URL]: {
-				error: { code: "HTTP_ERROR", detail: "HTTP 400", body: fixture("fred-series-badkey.json") },
+				error: {
+					code: "HTTP_ERROR",
+					detail: "HTTP 400",
+					status: 400,
+					body: fixture("fred-series-badkey.json"),
+				},
 			},
 		});
 		const result = await source.fetchSeries({
@@ -209,6 +214,7 @@ describe("FRED adapter: failures", () => {
 				error: {
 					code: "HTTP_ERROR",
 					detail: "HTTP 400",
+					status: 400,
 					body: fixture("fred-series-notfound.json"),
 				},
 			},
@@ -226,7 +232,7 @@ describe("FRED adapter: failures", () => {
 
 	it("maps HTTP 429 to RATE_LIMITED without needing a body", async () => {
 		const { source } = sourceWith({
-			[META_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 429" } },
+			[META_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429 } },
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
@@ -239,14 +245,29 @@ describe("FRED adapter: failures", () => {
 	});
 
 	it.each([
-		["HTTP 500 without a body", { code: "HTTP_ERROR", detail: "HTTP 500" } as const],
-		["HTTP 400 without a body", { code: "HTTP_ERROR", detail: "HTTP 400" } as const],
+		[
+			"HTTP 500 without a body",
+			{ code: "HTTP_ERROR", detail: "HTTP 500", status: 500 } as const,
+			500,
+		],
+		[
+			"HTTP 400 without a body",
+			{ code: "HTTP_ERROR", detail: "HTTP 400", status: 400 } as const,
+			400,
+		],
+		// A status no mapping names comes out unchanged (§4a).
+		[
+			"HTTP 529 without a body",
+			{ code: "HTTP_ERROR", detail: "HTTP 529", status: 529 } as const,
+			529,
+		],
 		[
 			"an oversize body",
 			{ code: "RESPONSE_TOO_LARGE", detail: "body exceeds 1000 bytes" } as const,
+			null,
 		],
-		["a timeout", { code: "TIMEOUT", detail: "no complete response" } as const],
-	])("maps %s to SOURCE_FAILED", async (_label, error) => {
+		["a timeout", { code: "TIMEOUT", detail: "no complete response" } as const, null],
+	])("maps %s to SOURCE_FAILED, keeping the upstream status", async (_label, error, status) => {
 		const { source } = sourceWith({ [META_URL]: { error } });
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",
@@ -258,6 +279,7 @@ describe("FRED adapter: failures", () => {
 		expect(result.error).toEqual({
 			code: "SOURCE_FAILED",
 			reason: marketUnavailableReason("SOURCE_FAILED", "fred"),
+			upstreamStatus: status,
 		});
 	});
 
@@ -315,7 +337,7 @@ describe("FRED adapter: failures", () => {
 	it("maps an observations failure after good metadata", async () => {
 		const { source } = sourceWith({
 			[META_URL]: { text: VIX_META },
-			[OBS_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 500" } },
+			[OBS_URL]: { error: { code: "HTTP_ERROR", detail: "HTTP 500", status: 500 } },
 		});
 		const result = await source.fetchSeries({
 			symbol: "VIXCLS",

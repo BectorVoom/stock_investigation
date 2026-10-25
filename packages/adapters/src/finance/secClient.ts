@@ -11,7 +11,13 @@
  * All network access goes through the injected SafeFetcher, pinned to the two
  * SEC hosts, with a byte cap and a timeout per request (API-007).
  */
-import type { Clock, SafeFetchError, SafeFetcher, SafeFetchOptions } from "@research/application";
+import {
+	type Clock,
+	type SafeFetchError,
+	type SafeFetcher,
+	type SafeFetchOptions,
+	upstreamStatusOf,
+} from "@research/application";
 import { err, ok, parseJson, type Result } from "@research/domain";
 
 export const SEC_HOSTS: readonly string[] = ["www.sec.gov", "data.sec.gov"];
@@ -38,10 +44,17 @@ export interface SecError {
 	readonly code: SecErrorCode;
 	readonly detail: string;
 	readonly retryable: boolean;
+	/** SEC's answer status behind `code`, unchanged; null when SEC did not answer with one (§4a). */
+	readonly upstreamStatus: number | null;
 }
 
-export function secError(code: SecErrorCode, detail: string, retryable = false): SecError {
-	return { code, detail, retryable };
+export function secError(
+	code: SecErrorCode,
+	detail: string,
+	retryable = false,
+	upstreamStatus: number | null = null,
+): SecError {
+	return { code, detail, retryable, upstreamStatus };
 }
 
 export interface SecDocument {
@@ -81,28 +94,30 @@ export function isUsableSecUserAgent(userAgent: string | null): userAgent is str
 	);
 }
 
-function httpStatusOf(error: SafeFetchError): number | null {
-	if (error.code !== "HTTP_ERROR") return null;
-	const match = /\b(\d{3})\b/.exec(error.detail);
-	return match?.[1] === undefined ? null : Number(match[1]);
-}
-
 function translateFetchError(error: SafeFetchError): SecError {
-	const status = httpStatusOf(error);
-	if (status === 404) return secError("NOT_FOUND", "SEC has no document at this address");
-	if (status === 403) {
+	const httpStatus = error.code === "HTTP_ERROR" ? error.status : null;
+	// SEC's own status travels with every translation, unchanged (§4a).
+	const upstreamStatus = upstreamStatusOf(error);
+	if (httpStatus === 404) {
+		return secError("NOT_FOUND", "SEC has no document at this address", false, upstreamStatus);
+	}
+	if (httpStatus === 403) {
 		return secError(
 			"ACCESS_DENIED",
 			"SEC refused the request (HTTP 403): check the configured User-Agent contact details and request rate",
+			false,
+			upstreamStatus,
 		);
 	}
-	if (status === 429) return secError("RATE_LIMITED", "SEC rate limit reached (HTTP 429)", true);
+	if (httpStatus === 429) {
+		return secError("RATE_LIMITED", "SEC rate limit reached (HTTP 429)", true, upstreamStatus);
+	}
 	if (error.code === "RESPONSE_TOO_LARGE") return secError("RESPONSE_TOO_LARGE", error.detail);
 	const retryable =
 		error.code === "TIMEOUT" ||
 		error.code === "NETWORK_ERROR" ||
-		(status !== null && status >= 500);
-	return secError("FETCH_FAILED", `${error.code}: ${error.detail}`, retryable);
+		(httpStatus !== null && httpStatus >= 500);
+	return secError("FETCH_FAILED", `${error.code}: ${error.detail}`, retryable, upstreamStatus);
 }
 
 function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {

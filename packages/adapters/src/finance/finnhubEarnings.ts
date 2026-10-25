@@ -31,11 +31,13 @@
  * `SOURCE_FAILED`. Response text is never stored, shown or logged; every
  * failure carries only the fixed wording per code.
  */
-import type {
-	EarningsCalendarSource,
-	EarningsSourceResult,
-	EarningsSourceUnavailable,
-	SafeFetcher,
+import {
+	type EarningsCalendarSource,
+	type EarningsSourceResult,
+	type EarningsSourceUnavailable,
+	type SafeFetchError,
+	type SafeFetcher,
+	upstreamStatusOf,
 } from "@research/application";
 import {
 	EARNINGS_COMPANY_NAME_MAX,
@@ -47,7 +49,7 @@ import {
 } from "@research/contracts";
 import { EARNINGS_SOURCE_INFO, err, isValidIsoDate, ok } from "@research/domain";
 import { z } from "zod";
-import { fetchJsonDocument, httpStatusOf } from "./marketFetch.ts";
+import { fetchJsonDocument } from "./marketFetch.ts";
 
 export const FINNHUB_HOST = "finnhub.io";
 const FINNHUB_ALLOWED_HOSTS: ReadonlySet<string> = new Set([FINNHUB_HOST]);
@@ -88,22 +90,33 @@ function toTiming(hour: string | undefined): FinnhubTiming {
 	return "unknown";
 }
 
-function unavailable(code: EarningsUnavailableCode): EarningsSourceUnavailable {
-	return earningsUnavailable(code, "finnhub");
+function unavailable(
+	code: EarningsUnavailableCode,
+	upstreamStatus: number | null,
+): EarningsSourceUnavailable {
+	return earningsUnavailable(code, "finnhub", upstreamStatus);
 }
 
 function mapFinnhubStatus(status: number | null): EarningsSourceUnavailable {
-	if (status === 401) return unavailable("SOURCE_AUTH_FAILED");
-	if (status === 403) return unavailable("PLAN_NOT_ENTITLED");
-	if (status === 429) return unavailable("RATE_LIMITED");
-	return unavailable("SOURCE_FAILED");
+	if (status === 401) return unavailable("SOURCE_AUTH_FAILED", status);
+	if (status === 403) return unavailable("PLAN_NOT_ENTITLED", status);
+	if (status === 429) return unavailable("RATE_LIMITED", status);
+	return unavailable("SOURCE_FAILED", status);
 }
 
-/** Narrowing constructor: the mapped statuses never carry a company name. */
-function statusFailure(status: number | null): EarningsSourceResult {
-	const code = mapFinnhubStatus(status).code;
-	if (code === "NO_SCHEDULED_DATE") return err({ code, name: null });
-	return err({ code });
+/**
+ * Narrowing constructor: the mapped statuses never carry a company name.
+ * Finnhub's own status travels unchanged beside the code (§4a).
+ */
+function statusFailure(error: SafeFetchError): EarningsSourceResult {
+	const mapped = mapFinnhubStatus(upstreamStatusOf(error));
+	if (mapped.code === "NO_SCHEDULED_DATE") return err({ code: mapped.code, name: null });
+	return err({ code: mapped.code, upstreamStatus: mapped.upstreamStatus });
+}
+
+/** A failure Finnhub's answer status did not cause (a stopped job, an unexpected shape). */
+function ownFailure(code: "SOURCE_FAILED" | "SYMBOL_NOT_FOUND"): EarningsSourceResult {
+	return err({ code, upstreamStatus: null });
 }
 
 function calendarUrl(symbol: string, fromDate: string, toDate: string): string {
@@ -164,34 +177,34 @@ async function fetchOne(
 		// even when the calendar has no row for it (an empty calendar alone
 		// must not mask it), and a listed stock without an upcoming date
 		// still gets its name.
-		if (!(await query.beforeRequest())) return err({ code: "SOURCE_FAILED" as const });
+		if (!(await query.beforeRequest())) return ownFailure("SOURCE_FAILED");
 		const profile = await fetchJsonDocument(
 			deps.fetcher,
 			profileUrl(symbol),
 			fetchOptions(query.signal, deps.apiKey),
 		);
 		if (!profile.ok) {
-			return statusFailure(httpStatusOf(profile.error));
+			return statusFailure(profile.error);
 		}
 		const parsedProfile = finnhubProfileSchema.safeParse(profile.value.json);
-		if (!parsedProfile.success) return err({ code: "SOURCE_FAILED" as const });
-		if (parsedProfile.data.ticker === undefined) return err({ code: "SYMBOL_NOT_FOUND" as const });
+		if (!parsedProfile.success) return ownFailure("SOURCE_FAILED");
+		if (parsedProfile.data.ticker === undefined) return ownFailure("SYMBOL_NOT_FOUND");
 		const trimmed = parsedProfile.data.name?.trim() ?? "";
 		// The completion contract bounds `name`: an over-long provider name
 		// is dropped (null), never allowed to fail the whole refresh.
 		name = trimmed === "" || trimmed.length > EARNINGS_COMPANY_NAME_MAX ? null : trimmed;
 	}
-	if (!(await query.beforeRequest())) return err({ code: "SOURCE_FAILED" as const });
+	if (!(await query.beforeRequest())) return ownFailure("SOURCE_FAILED");
 	const calendar = await fetchJsonDocument(
 		deps.fetcher,
 		calendarUrl(symbol, query.fromDate, query.toDate),
 		fetchOptions(query.signal, deps.apiKey),
 	);
 	if (!calendar.ok) {
-		return statusFailure(httpStatusOf(calendar.error));
+		return statusFailure(calendar.error);
 	}
 	const parsed = finnhubCalendarSchema.safeParse(calendar.value.json);
-	if (!parsed.success) return err({ code: "SOURCE_FAILED" as const });
+	if (!parsed.success) return ownFailure("SOURCE_FAILED");
 	const events: EarningsEvent[] = [];
 	for (const row of parsed.data.earningsCalendar) {
 		if (!isValidIsoDate(row.date)) continue;

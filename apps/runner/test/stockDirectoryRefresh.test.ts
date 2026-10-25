@@ -1,4 +1,8 @@
-import type { StockDirectoryData, StockDirectorySource } from "@research/application";
+import type {
+	StockDirectoryData,
+	StockDirectoryFailure,
+	StockDirectorySource,
+} from "@research/application";
 import { unconfiguredStockDirectorySource } from "@research/application";
 import {
 	type ClaimedJob,
@@ -52,7 +56,7 @@ function jpEntries(count: number): StockDirectoryEntry[] {
 function answering(
 	market: WatchMarket,
 	answer: () => Promise<
-		{ ok: true; value: StockDirectoryData } | { ok: false; error: StockDirectoryFailureCode }
+		{ ok: true; value: StockDirectoryData } | { ok: false; error: StockDirectoryFailure }
 	>,
 ) {
 	const seen = { calls: 0, grants: [] as boolean[] };
@@ -172,15 +176,16 @@ describe("stock-directory-refresh execution (ADR-0034)", () => {
 		}
 	});
 
-	it("passes the source's code through and retries only a source failure", async () => {
-		const cases: [StockDirectoryFailureCode, boolean][] = [
-			["DIRECTORY_SOURCE_FAILED", true],
-			["DIRECTORY_RATE_LIMITED", false],
-			["DIRECTORY_PARSE_FAILED", false],
-			["DIRECTORY_NOT_CONFIGURED", false],
+	it("passes the source's code and upstream status through and retries only a source failure", async () => {
+		const cases: [StockDirectoryFailureCode, number | null, boolean][] = [
+			["DIRECTORY_SOURCE_FAILED", 503, true],
+			["DIRECTORY_SOURCE_FAILED", null, true],
+			["DIRECTORY_RATE_LIMITED", 429, false],
+			["DIRECTORY_PARSE_FAILED", null, false],
+			["DIRECTORY_NOT_CONFIGURED", null, false],
 		];
-		for (const [code, retryable] of cases) {
-			const { source } = answering("JP", async () => err(code));
+		for (const [code, upstreamStatus, retryable] of cases) {
+			const { source } = answering("JP", async () => err({ code, upstreamStatus }));
 			const { api, calls } = createFakeApi();
 			const harness = createDeps(api);
 			await executeJob(
@@ -193,6 +198,8 @@ describe("stock-directory-refresh execution (ADR-0034)", () => {
 				leaseGeneration: 4,
 				usage: expect.any(Object),
 				failureCode: code,
+				// The source's own status, unchanged; absent when there was none (§4a).
+				...(upstreamStatus === null ? {} : { failureUpstreamStatus: upstreamStatus }),
 				retryable,
 			});
 		}
@@ -278,7 +285,7 @@ describe("stock-directory-refresh execution (ADR-0034)", () => {
 				await harness.tickHeartbeat();
 				// The pacing hook reports the stop: the source sends nothing more.
 				expect(query.signal.aborted).toBe(true);
-				return err("DIRECTORY_SOURCE_FAILED");
+				return err({ code: "DIRECTORY_SOURCE_FAILED", upstreamStatus: null });
 			},
 		};
 		await executeJob(

@@ -161,6 +161,7 @@ describe("node SafeFetcher: JSON POST over a real TLS connection", () => {
 			error: {
 				code: "REDIRECT_NOT_AUTHORIZED",
 				detail: "HTTP 307: a POST request is never redirected",
+				status: 307,
 			},
 		});
 		expect(seen.map((post) => post.url)).toEqual(["/moved"]);

@@ -363,12 +363,14 @@ describe("claude-api failures and retries", () => {
 		[403, "PROVIDER_AUTH"],
 		[404, "PROVIDER_MODEL_UNAVAILABLE"],
 		[413, "PROVIDER_REQUEST_REJECTED"],
-	])("maps HTTP %i to %s without retrying and without usage", async (status, code) => {
+		// A status no mapping names still comes out unchanged (§4a).
+		[418, "PROVIDER_REQUEST_REJECTED"],
+	])("maps HTTP %i to %s without retrying and without usage, keeping the status", async (status, code) => {
 		const fake = recordingFetch(() => new Response("{}", { status }));
 
 		const events = await collect(runtimeWith(fake).run(makeRequest(), makeContext()));
 
-		expect(events).toEqual([{ type: "failed", code, retryable: false }]);
+		expect(events).toEqual([{ type: "failed", code, retryable: false, upstreamStatus: status }]);
 		expect(fake.calls).toHaveLength(1);
 	});
 

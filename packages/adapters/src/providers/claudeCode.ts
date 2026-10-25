@@ -63,7 +63,7 @@ import type {
 	AgentEvent,
 	AgentRequest,
 } from "@research/contracts";
-import { parseJson } from "@research/domain";
+import { parseJson, upstreamStatusOrNull } from "@research/domain";
 import { z } from "zod";
 import {
 	AVAILABLE,
@@ -91,6 +91,7 @@ import {
 	PROVIDER_FAILURES,
 	type ProviderFailure,
 	preflightTurn,
+	withUpstreamStatus,
 } from "./turn.ts";
 
 const COMMAND = "claude";
@@ -282,11 +283,19 @@ export function createClaudeStreamInterpreter(): CliStreamInterpreter {
 			statusHint ??
 			(rateLimitRejected ? "rate-limit" : null) ??
 			hintFromText(`${finalResult?.result ?? ""}\n${exit.stderrTail}`);
-		if (hint !== null) return failureForHint(hint);
-		if (exit.code !== 0) return PROVIDER_FAILURES.PROVIDER_EXIT_NONZERO;
-		return finalResult === null
-			? PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID
-			: PROVIDER_FAILURES.PROVIDER_ERROR;
+		// The CLI's report of its API's answer status travels unchanged,
+		// whichever signal chose the code (§4a).
+		const upstreamStatus = upstreamStatusOrNull(finalResult?.api_error_status);
+		if (hint !== null) return withUpstreamStatus(failureForHint(hint), upstreamStatus);
+		if (exit.code !== 0) {
+			return withUpstreamStatus(PROVIDER_FAILURES.PROVIDER_EXIT_NONZERO, upstreamStatus);
+		}
+		return withUpstreamStatus(
+			finalResult === null
+				? PROVIDER_FAILURES.PROVIDER_OUTPUT_INVALID
+				: PROVIDER_FAILURES.PROVIDER_ERROR,
+			upstreamStatus,
+		);
 	}
 
 	return {

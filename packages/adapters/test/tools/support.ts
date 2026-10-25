@@ -51,7 +51,7 @@ export function createScriptedFetcher(pages: {
 				return err({ code: "HOST_NOT_ALLOWED", detail: "host is not on the allowlist" });
 			}
 			const page = Object.hasOwn(pages, url) ? pages[url] : undefined;
-			if (page === undefined) return err({ code: "HTTP_ERROR", detail: "HTTP 404" });
+			if (page === undefined) return err({ code: "HTTP_ERROR", detail: "HTTP 404", status: 404 });
 			if ("error" in page) return err(page.error);
 			const document: FetchedDocument = {
 				finalUrl: page.finalUrl ?? url,

@@ -407,7 +407,12 @@ describe("news.search: provider cooldown", () => {
 		"HTTP_ERROR",
 	] as const)("skips repeated requests after %s and recovers at expiry", async (code) => {
 		const { tool, fetcher, time, sleep } = setup({
-			[gdeltUrl("gold price")]: { error: { code, detail: "HTTP 429" } },
+			[gdeltUrl("gold price")]: {
+				error:
+					code === "HTTP_ERROR"
+						? { code, detail: "HTTP 429", status: 429 }
+						: { code, detail: "no complete response" },
+			},
 			...pagesFor("battery storage"),
 		});
 		expect(await tool.execute({ query: "gold price" }, createToolContext())).toMatchObject({
@@ -430,7 +435,9 @@ describe("news.search: provider cooldown", () => {
 	it("does not treat a bad query as a provider outage", async () => {
 		const { tool, fetcher } = setup(
 			{
-				[gdeltUrl("gold price")]: { error: { code: "HTTP_ERROR", detail: "HTTP 400" } },
+				[gdeltUrl("gold price")]: {
+					error: { code: "HTTP_ERROR", detail: "HTTP 400", status: 400 },
+				},
 				...pagesFor("battery storage"),
 			},
 			{ advanceClockOnSleep: true },
@@ -450,7 +457,7 @@ function queuedFetcher(answers: readonly ScriptedPage[]) {
 			calls.push({ url, options });
 			const page = answers[Math.min(calls.length - 1, answers.length - 1)];
 			if (page === undefined)
-				return { ok: false, error: { code: "HTTP_ERROR", detail: "HTTP 404" } };
+				return { ok: false, error: { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 } };
 			if ("error" in page) return { ok: false, error: page.error };
 			return {
 				ok: true,
@@ -474,7 +481,7 @@ function queuedTools(answers: readonly ScriptedPage[], tavilyApiKey: string | nu
 	return { tools, calls, time };
 }
 
-const OUTAGE: ScriptedPage = { error: { code: "HTTP_ERROR", detail: "HTTP 429" } };
+const OUTAGE: ScriptedPage = { error: { code: "HTTP_ERROR", detail: "HTTP 429", status: 429 } };
 const GDELT_ANSWER: ScriptedPage = {
 	text: JSON.stringify(GDELT_OK),
 	contentType: "application/json",
@@ -624,20 +631,22 @@ describe("web.search: Tavily", () => {
 	});
 
 	it("pauses after a bad key or quota error, but not after a rejected query", async () => {
-		for (const [detail, paused] of [
-			["HTTP 401", true],
-			["HTTP 432", true],
-			["HTTP 400", false],
-			["HTTP 422", false],
+		for (const [status, paused] of [
+			[401, true],
+			[432, true],
+			[400, false],
+			[422, false],
 		] as const) {
+			const detail = `HTTP ${status}`;
 			const { tools, calls } = queuedTools(
-				[{ error: { code: "HTTP_ERROR", detail } }, { text: JSON.stringify(TAVILY_OK) }],
+				[{ error: { code: "HTTP_ERROR", detail, status } }, { text: JSON.stringify(TAVILY_OK) }],
 				"tvly-test-key",
 			);
 			const [web] = tools;
 			expect(await web?.execute({ query: "apple" }, createToolContext())).toMatchObject({
 				ok: false,
-				error: { code: "SEARCH_FAILED", detail: `HTTP_ERROR: ${detail}` },
+				// Tavily's own status comes out unchanged beside our code (§4a).
+				error: { code: "SEARCH_FAILED", detail: `HTTP_ERROR: ${detail}`, upstreamStatus: status },
 			});
 			const second = await web?.execute({ query: "apple" }, createToolContext());
 			expect(second?.ok).toBe(!paused);

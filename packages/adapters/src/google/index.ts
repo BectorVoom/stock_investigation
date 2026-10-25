@@ -53,6 +53,7 @@ export {
 	GOOGLE_CALENDAR_SCOPE,
 	type GoogleOAuthHttp,
 	type GoogleStableCode,
+	type GoogleTokenFailure,
 	mapTokenFailure,
 	newCodeVerifier,
 	newOAuthState,

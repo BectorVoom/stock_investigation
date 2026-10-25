@@ -127,7 +127,7 @@ export function scriptedFetcher(
 		}
 		const entry = script[index];
 		index += 1;
-		if (entry === undefined) return { code: "HTTP_ERROR", detail: "HTTP 404" };
+		if (entry === undefined) return { code: "HTTP_ERROR", detail: "HTTP 404", status: 404 };
 		return entry;
 	}
 	return {
@@ -227,13 +227,37 @@ export function digestOf(value: unknown): string {
 		.digest("hex");
 }
 
-/** A SafeFetchError as the exporters script it. */
+/**
+ * The status a scripted `HTTP_ERROR` carries when its detail names none
+ * ("x", "HTTP 1234"): a status no mapping table names, so a replay shows it
+ * comes out unchanged (docs/rule/error_handling.md §4a).
+ */
+export const UNNAMED_STATUS = 520;
+
+/**
+ * A SafeFetchError as the exporters script it. An `HTTP_ERROR` carries
+ * `status` like the real fetcher's: the number its "HTTP NNN" detail names
+ * (fixture generation only — production code never reads a status from
+ * text), else `UNNAMED_STATUS`.
+ */
+export function scriptedFetchError(
+	code: SafeFetchError["code"],
+	detail: string,
+	body?: string,
+): SafeFetchError {
+	if (code !== "HTTP_ERROR") return { code, detail };
+	const named = /^HTTP (\d{3})(?!\d)/.exec(detail)?.[1];
+	const status = named === undefined ? UNNAMED_STATUS : Number(named);
+	return body === undefined ? { code, detail, status } : { code, detail, status, body };
+}
+
+/** `scriptedFetchError` as a script entry. */
 export function fetchError(
 	code: SafeFetchError["code"],
 	detail: string,
 	body?: string,
 ): ScriptEntry {
-	return { error: body === undefined ? { code, detail } : { code, detail, body } };
+	return { error: scriptedFetchError(code, detail, body) };
 }
 
 export const FETCH_ERROR_CODES: readonly SafeFetchError["code"][] = [
