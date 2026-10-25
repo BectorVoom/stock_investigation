@@ -5,7 +5,13 @@ import {
 } from "@research/domain";
 import { z } from "zod";
 import { googleCalendarStateSchema } from "./googleCalendar.ts";
-import { httpsUrlSchema, idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
+import {
+	httpsUrlSchema,
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	upstreamStatusSchema,
+} from "./primitives.ts";
 
 /**
  * Bounds used everywhere a watchlist stock, earnings event list or refresh
@@ -111,16 +117,24 @@ export function earningsUnavailableReason(
 	return "The JPX source is not configured.";
 }
 
+/** `upstreamStatus`: the provider's answer status, unchanged (docs/rule/error_handling.md §4a). */
 export function earningsUnavailable(
 	code: EarningsUnavailableCode,
 	sourceId?: EarningsSourceId,
-): { readonly code: EarningsUnavailableCode; readonly reason: string } {
-	return { code, reason: earningsUnavailableReason(code, sourceId) };
+	upstreamStatus: number | null = null,
+): {
+	readonly code: EarningsUnavailableCode;
+	readonly reason: string;
+	readonly upstreamStatus: number | null;
+} {
+	return { code, reason: earningsUnavailableReason(code, sourceId), upstreamStatus };
 }
 
 export const earningsUnavailableSchema = z.strictObject({
 	code: earningsUnavailableCodeSchema,
 	reason: z.string().min(1).max(300),
+	/** The status the provider answered with, unchanged; null when no provider answer caused it. */
+	upstreamStatus: upstreamStatusSchema.nullable(),
 });
 export type EarningsUnavailable = z.infer<typeof earningsUnavailableSchema>;
 

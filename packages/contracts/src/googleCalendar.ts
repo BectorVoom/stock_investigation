@@ -1,6 +1,12 @@
 import { JOB_STATES, parseStockId as parseDomainStockId, WATCHLIST_LIMITS } from "@research/domain";
 import { z } from "zod";
-import { httpsUrlSchema, idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
+import {
+	httpsUrlSchema,
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	upstreamStatusSchema,
+} from "./primitives.ts";
 
 /**
  * Google Calendar sync contract (FR-019 section 2.4). Stable failure codes
@@ -40,16 +46,24 @@ export function googleCalendarFailureReason(code: GoogleCalendarFailureCode): st
 	return GOOGLE_CALENDAR_FAILURE_REASONS[code];
 }
 
+/** `upstreamStatus`: Google's own answer status, unchanged (docs/rule/error_handling.md §4a). */
 export function googleCalendarFailure(
 	code: GoogleCalendarFailureCode,
 	at: string,
-): { readonly code: GoogleCalendarFailureCode; readonly reason: string; readonly at: string } {
-	return { code, reason: googleCalendarFailureReason(code), at };
+	upstreamStatus: number | null = null,
+): {
+	readonly code: GoogleCalendarFailureCode;
+	readonly reason: string;
+	readonly upstreamStatus: number | null;
+	readonly at: string;
+} {
+	return { code, reason: googleCalendarFailureReason(code), upstreamStatus, at };
 }
 
 export const googleCalendarFailureSchema = z.strictObject({
 	code: googleCalendarFailureCodeSchema,
 	reason: z.string().min(1).max(300),
+	upstreamStatus: upstreamStatusSchema.nullable(),
 	at: isoDateTimeSchema,
 });
 export type GoogleCalendarFailure = z.infer<typeof googleCalendarFailureSchema>;

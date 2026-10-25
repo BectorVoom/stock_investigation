@@ -31,6 +31,7 @@ import {
 	isoDateTimeSchema,
 	jsonObjectSchema,
 	marketSchema,
+	upstreamStatusSchema,
 } from "./primitives.ts";
 import {
 	articleSchema,
@@ -267,6 +268,13 @@ export const researchRunSchema = z
 		 * non-null only with `ALL_TOOL_CALLS_FAILED` or `NO_EVIDENCE_COLLECTED` (ARCH-005).
 		 */
 		failureDetail: stableFailureCodeSchema.nullable(),
+		/**
+		 * The status an external service (model provider, data source, Google,
+		 * a tool's site) answered with when it caused the failure, unchanged
+		 * (docs/rule/error_handling.md §4a); null otherwise. Only a failed or
+		 * partial run carries one.
+		 */
+		failureUpstreamStatus: upstreamStatusSchema.nullable(),
 		approvalRequest: z
 			.strictObject({ reasonCode: z.string().max(80), detail: z.string().max(400) })
 			.nullable(),
@@ -282,6 +290,10 @@ export const researchRunSchema = z
 		message:
 			"failureDetail may be non-null only when failureCode is ALL_TOOL_CALLS_FAILED or NO_EVIDENCE_COLLECTED",
 		path: ["failureDetail"],
+	})
+	.refine((run) => run.failureUpstreamStatus === null || run.failureCode !== null, {
+		message: "failureUpstreamStatus may be non-null only with a failureCode",
+		path: ["failureUpstreamStatus"],
 	});
 export type ResearchRun = z.infer<typeof researchRunSchema>;
 
@@ -364,12 +376,23 @@ export type ResearchBundle = z.infer<typeof researchBundleSchema>;
 export const ingestedArticleSchema = articleSchema.omit({ articleId: true });
 export type IngestedArticle = z.infer<typeof ingestedArticleSchema>;
 
-export const sourceFetchReportSchema = z.strictObject({
-	sourceId: idSchema,
-	fetchedAt: isoDateTimeSchema,
-	/** null on success; otherwise a stable fetch/parse error code. */
-	errorCode: z.string().max(100).nullable(),
-});
+export const sourceFetchReportSchema = z
+	.strictObject({
+		sourceId: idSchema,
+		fetchedAt: isoDateTimeSchema,
+		/** null on success; otherwise a stable fetch/parse error code. */
+		errorCode: z.string().max(100).nullable(),
+		/**
+		 * The status the feed host answered with when it caused `errorCode`,
+		 * unchanged (docs/rule/error_handling.md §4a). Optional so a runner built
+		 * before the field existed still reports.
+		 */
+		upstreamStatus: upstreamStatusSchema.nullish(),
+	})
+	.refine((report) => report.upstreamStatus == null || report.errorCode !== null, {
+		message: "upstreamStatus may be set only with an errorCode",
+		path: ["upstreamStatus"],
+	});
 
 /* ---------- Runner protocol ---------- */
 
@@ -672,6 +695,12 @@ const failedCompletionSchema = z
 		 * another code.
 		 */
 		failureDetail: stableFailureCodeSchema.nullish(),
+		/**
+		 * The status the external service that caused the failure answered
+		 * with, unchanged (docs/rule/error_handling.md §4a). Absent or null when
+		 * no external answer caused it.
+		 */
+		failureUpstreamStatus: upstreamStatusSchema.nullish(),
 		retryable: z.boolean(),
 	})
 	.refine(
@@ -699,6 +728,8 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 		outcome: z.literal("partial"),
 		...completionBase,
 		failureCode: z.string().min(1).max(80),
+		/** As on `failed`: the external service's status that stopped the run, unchanged. */
+		failureUpstreamStatus: upstreamStatusSchema.nullish(),
 		bundle: researchBundleSchema,
 		articles: z.array(ingestedArticleSchema).max(BUNDLE_LIMITS.articles),
 		sourceReports: z.array(sourceFetchReportSchema).max(200),
@@ -723,6 +754,8 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 							.array(marketObservationSchema)
 							.max(MARKET_LIMITS.maxObservationsPerResponse),
 						errorCode: marketUnavailableCodeSchema.nullable(),
+						/** The provider's answer status behind `errorCode`, unchanged (§4a). */
+						upstreamStatus: upstreamStatusSchema.nullish(),
 					}),
 				)
 				.max(MARKET_LIMITS.maxTrackedSeries),
@@ -732,10 +765,12 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 				completion.series.every(
 					(entry) =>
 						(entry.errorCode === null) === (entry.meta !== null) &&
-						(entry.errorCode !== null ? entry.observations.length === 0 : true),
+						(entry.errorCode !== null ? entry.observations.length === 0 : true) &&
+						(entry.upstreamStatus == null || entry.errorCode !== null),
 				),
 			{
-				message: "errorCode is null exactly when meta is present; errors carry no observations",
+				message:
+					"errorCode is null exactly when meta is present; errors carry no observations; upstreamStatus only with an errorCode",
 				path: ["series"],
 			},
 		),
@@ -784,6 +819,8 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 						name: z.string().trim().min(1).max(EARNINGS_COMPANY_NAME_MAX).nullable(),
 						events: z.array(earningsEventSchema).max(EARNINGS_LIMITS.maxEventsPerStock),
 						errorCode: earningsUnavailableCodeSchema.nullable(),
+						/** The provider's answer status behind `errorCode`, unchanged (§4a). */
+						upstreamStatus: upstreamStatusSchema.nullish(),
 					}),
 				)
 				.max(EARNINGS_LIMITS.maxStocks),
@@ -793,6 +830,16 @@ export const completeJobRequestSchema = z.discriminatedUnion("outcome", [
 				completion.stocks.every((entry) => entry.errorCode === null || entry.events.length === 0),
 			{
 				message: "errors carry no events",
+				path: ["stocks"],
+			},
+		)
+		.refine(
+			(completion) =>
+				completion.stocks.every(
+					(entry) => entry.upstreamStatus == null || entry.errorCode !== null,
+				),
+			{
+				message: "upstreamStatus may be set only with an errorCode",
 				path: ["stocks"],
 			},
 		)

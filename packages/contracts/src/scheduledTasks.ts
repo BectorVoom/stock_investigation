@@ -8,7 +8,13 @@ import {
 import { z } from "zod";
 import { agentIdSchema } from "./agent.ts";
 import { BUDGET_LIMITS, jobStateSchema, researchRunSchema } from "./jobs.ts";
-import { idSchema, isoDateSchema, isoDateTimeSchema, marketSchema } from "./primitives.ts";
+import {
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	marketSchema,
+	upstreamStatusSchema,
+} from "./primitives.ts";
 
 /**
  * Scheduled tasks (ADR-0033): a research question that runs on a schedule
@@ -120,6 +126,8 @@ export const taskLastRunSchema = z.strictObject({
 	slotAt: isoDateTimeSchema.nullable(),
 	queuedAt: isoDateTimeSchema,
 	failureCode: z.string().max(80).nullable(),
+	/** The run's `failureUpstreamStatus`: an external service's status, unchanged. */
+	failureUpstreamStatus: upstreamStatusSchema.nullable(),
 });
 export type TaskLastRun = z.infer<typeof taskLastRunSchema>;
 

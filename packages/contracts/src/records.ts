@@ -16,6 +16,7 @@ import {
 	longTextSchema,
 	marketSchema,
 	shortTextSchema,
+	upstreamStatusSchema,
 } from "./primitives.ts";
 
 /* ---------- News ---------- */
@@ -41,6 +42,8 @@ export const newsSourceSchema = z.strictObject({
 	feedStatus: feedStatusSchema,
 	lastFetchedAt: isoDateTimeSchema.nullable(),
 	lastErrorCode: z.string().max(100).nullable(),
+	/** The status the feed host answered the last failed fetch with, unchanged; null otherwise. */
+	lastErrorUpstreamStatus: upstreamStatusSchema.nullable(),
 	createdAt: isoDateTimeSchema,
 	updatedAt: isoDateTimeSchema,
 });

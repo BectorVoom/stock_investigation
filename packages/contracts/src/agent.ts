@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jsonValueSchema } from "./primitives.ts";
+import { jsonValueSchema, upstreamStatusSchema } from "./primitives.ts";
 
 /**
  * Agent backend id. Deliberately an open string rather than a closed union so a
@@ -133,6 +133,11 @@ export const agentEventSchema = z.discriminatedUnion("type", [
 		type: z.literal("failed"),
 		code: z.string().min(1).max(60),
 		retryable: z.boolean(),
+		/**
+		 * The status the model provider's API answered with when it caused the
+		 * failure, unchanged (docs/rule/error_handling.md §4a). Absent otherwise.
+		 */
+		upstreamStatus: upstreamStatusSchema.optional(),
 	}),
 ]);
 export type AgentEvent = z.infer<typeof agentEventSchema>;

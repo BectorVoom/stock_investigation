@@ -6,6 +6,12 @@ export interface UseCaseError {
 	readonly code: ApiErrorCode;
 	readonly message: string;
 	readonly detail?: string;
+	/**
+	 * Set when an external service caused the failure: the status it answered
+	 * with, unchanged. The API answers with this status (4xx/5xx) instead of
+	 * the code's own (docs/rule/error_handling.md §4a).
+	 */
+	readonly upstreamStatus?: number;
 }
 
 export type UseCaseResult<T> = Result<T, UseCaseError>;
@@ -16,6 +22,21 @@ export function fail(
 	detail?: string,
 ): Result<never, UseCaseError> {
 	return err(detail === undefined ? { code, message } : { code, message, detail });
+}
+
+/**
+ * A use-case failure an external service caused. `upstreamStatus` is the
+ * status it answered with (null when nothing answered: a timeout, a refused
+ * connection), passed through unchanged.
+ */
+export function failUpstream(
+	code: ApiErrorCode,
+	message: string,
+	detail: string | undefined,
+	upstreamStatus: number | null,
+): Result<never, UseCaseError> {
+	const base: UseCaseError = detail === undefined ? { code, message } : { code, message, detail };
+	return err(upstreamStatus === null ? base : { ...base, upstreamStatus });
 }
 
 /**

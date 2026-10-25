@@ -91,16 +91,38 @@ export type SafeFetchErrorCode =
 	| "RESPONSE_TOO_LARGE"
 	| "NETWORK_ERROR";
 
-export interface SafeFetchError {
-	readonly code: SafeFetchErrorCode;
-	readonly detail: string;
-	/**
-	 * Response body of an HTTP error status, present only when the caller set
-	 * `includeErrorBody`. Untrusted provider text: adapters must parse it
-	 * with zod and never log, store or show it — only the fixed wording per
-	 * code leaves the adapter.
-	 */
-	readonly body?: string;
+/**
+ * A failed safe fetch. An `HTTP_ERROR` always carries `status`: the status
+ * the external service answered with, exactly as received. Callers read it
+ * from this field (never from `detail`) and pass it on unchanged as
+ * `upstreamStatus` (docs/rule/error_handling.md §4a).
+ */
+export type SafeFetchError =
+	| {
+			readonly code: "HTTP_ERROR";
+			readonly detail: string;
+			readonly status: number;
+			/**
+			 * Response body of an HTTP error status, present only when the caller set
+			 * `includeErrorBody`. Untrusted provider text: adapters must parse it
+			 * with zod and never log, store or show it — only the fixed wording per
+			 * code leaves the adapter.
+			 */
+			readonly body?: string;
+	  }
+	| {
+			readonly code: Exclude<SafeFetchErrorCode, "HTTP_ERROR">;
+			readonly detail: string;
+			/**
+			 * The answer's status when the failure was built from a response
+			 * (a redirect a POST may not follow); absent when nothing answered.
+			 */
+			readonly status?: number;
+	  };
+
+/** The status an external service answered with, or null when nothing answered. */
+export function upstreamStatusOf(error: SafeFetchError): number | null {
+	return error.status ?? null;
 }
 
 export interface SafeFetchOptions {

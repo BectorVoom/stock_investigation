@@ -33,6 +33,7 @@ This is the **canonical rule set** for human developers and coding agents (OpenC
 | ARCH-016 | Idempotency | Retryable mutations accept stable idempotency keys and DB constraints or compare-and-set versions |
 | ARCH-017 | Fail closed | Unknown permission, command, tool, schema version or host is rejected; no implicit permissive fallback |
 | ARCH-018 | Ports and adapters | Modular monolith with explicit runtime ports; no unnecessary microservices or global event bus |
+| ARCH-019 | External-service errors keep their status | When an external service answers with an error, the status it answered with is returned unchanged — recorded as a number where the answer arrives, carried beside our own code through every function, stored row and API view, and used as the API's own response status (4xx/5xx); never remapped, rounded or parsed from text (docs/rule/error_handling.md §4a, ADR-0037) |
 
 **Do not equate SRP with artificial function/file size limits.** A 30-line cohesive function may be better than five one-line wrappers. Require demonstrable ownership boundaries, not arbitrary metrics.
 
@@ -313,6 +314,7 @@ Coverage percentage MAY be monitored, but **100% line coverage is not the accept
 | ARCH-004/007/014/018 | import boundary rules, cycle analysis, contract fixtures |
 | ARCH-005 / UI-004 / API-002 | runtime schemas, positive/negative contract tests |
 | ARCH-010/015/016/017 | Result/state machine/idempotency/error-path tests |
+| ARCH-019 | "keeps the upstream status" tests per adapter, use case and API route; architecture test forbids parsing a status out of a failure's text |
 | UI-001..010 | component tests, schema migration, E2E and XSS suite |
 | AGT-001..014 | per-adapter capability tests, sandbox/permission verification, failure injection |
 | DATA-001..012 | referential integrity and time/unit/filing fixtures |

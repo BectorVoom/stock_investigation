@@ -48,6 +48,12 @@ export interface ToolFailure {
 	readonly code: string;
 	readonly detail: string;
 	readonly retryable: boolean;
+	/**
+	 * The status the external service the tool called answered with, unchanged
+	 * (docs/rule/error_handling.md §4a). Absent when nothing answered or the
+	 * failure is the tool's own.
+	 */
+	readonly upstreamStatus?: number;
 }
 
 export interface ToolContext {

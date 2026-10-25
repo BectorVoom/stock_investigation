@@ -33,6 +33,7 @@ export * from "./text/recentWithinBudget.ts";
 export * from "./text/truncate.ts";
 export * from "./thrown.ts";
 export * from "./time.ts";
+export * from "./upstream.ts";
 export * from "./url.ts";
 export * from "./watchlist/limits.ts";
 export * from "./watchlist/stockId.ts";

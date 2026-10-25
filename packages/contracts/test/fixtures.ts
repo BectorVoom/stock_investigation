@@ -40,6 +40,7 @@ export const newsSource: NewsSource = {
 	feedStatus: "active",
 	lastFetchedAt: null,
 	lastErrorCode: null,
+	lastErrorUpstreamStatus: null,
 	createdAt: T0,
 	updatedAt: T0,
 };
@@ -316,6 +317,7 @@ export const researchRun: ResearchRun = {
 	cancelRequested: false,
 	failureCode: null,
 	failureDetail: null,
+	failureUpstreamStatus: null,
 	approvalRequest: null,
 	retryOfRunId: null,
 	verificationStatus: null,

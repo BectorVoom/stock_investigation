@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { upstreamStatusSchema } from "./primitives.ts";
 
 /** Stable machine-readable API error codes (API-008). Never rename; add new ones instead. */
 export const API_ERROR_CODES = [
@@ -42,6 +43,12 @@ export const apiErrorBodySchema = z.strictObject({
 		message: z.string(),
 		/** Machine-readable sub-reason, e.g. a UI command or URL policy error code. */
 		detail: z.string().optional(),
+		/**
+		 * Present when an external service caused the failure: the status it
+		 * answered with, unchanged. The response's own status is the same
+		 * value when it is a 4xx/5xx (docs/rule/error_handling.md §4a).
+		 */
+		upstreamStatus: upstreamStatusSchema.optional(),
 	}),
 });
 export type ApiErrorBody = z.infer<typeof apiErrorBodySchema>;

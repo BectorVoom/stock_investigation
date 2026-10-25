@@ -1,4 +1,9 @@
-import type { JsonObject, JsonValue } from "@research/domain";
+import {
+	type JsonObject,
+	type JsonValue,
+	UPSTREAM_STATUS_MAX,
+	UPSTREAM_STATUS_MIN,
+} from "@research/domain";
 import { z } from "zod";
 
 /** Opaque identifier: URL- and SQL-safe, bounded. */
@@ -14,6 +19,17 @@ export const httpsUrlSchema = z
 	.refine((value) => URL.canParse(value) && new URL(value).protocol === "https:", {
 		message: "must be an https URL",
 	});
+
+/**
+ * The HTTP status an external service answered with, exactly as received
+ * (docs/rule/error_handling.md §4a). Never remapped: our own codes classify
+ * the failure beside it. A number, so it carries no provider text (SEC-010).
+ */
+export const upstreamStatusSchema = z
+	.number()
+	.int()
+	.min(UPSTREAM_STATUS_MIN)
+	.max(UPSTREAM_STATUS_MAX);
 
 export const shortTextSchema = z.string().trim().min(1).max(300);
 export const longTextSchema = z.string().trim().min(1).max(4000);

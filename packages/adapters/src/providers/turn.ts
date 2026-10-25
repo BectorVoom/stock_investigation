@@ -4,6 +4,20 @@ import type { AgentEvent, AgentRequest } from "@research/contracts";
 export interface ProviderFailure {
 	readonly code: string;
 	readonly retryable: boolean;
+	/**
+	 * The status the provider's API answered with, unchanged
+	 * (docs/rule/error_handling.md §4a). Absent when no API answer caused the
+	 * failure. The code still classifies it; the status is never replaced.
+	 */
+	readonly upstreamStatus?: number;
+}
+
+/** `failure` carrying the provider's answer status, unchanged. */
+export function withUpstreamStatus(
+	failure: ProviderFailure,
+	status: number | null,
+): ProviderFailure {
+	return status === null ? failure : { ...failure, upstreamStatus: status };
 }
 
 /**

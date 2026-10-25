@@ -1,6 +1,12 @@
 import { DASHBOARD_LIMITS, parseMarketSeriesId as parseSeriesId } from "@research/domain";
 import { z } from "zod";
-import { httpsUrlSchema, idSchema, isoDateSchema, isoDateTimeSchema } from "./primitives.ts";
+import {
+	httpsUrlSchema,
+	idSchema,
+	isoDateSchema,
+	isoDateTimeSchema,
+	upstreamStatusSchema,
+} from "./primitives.ts";
 
 /**
  * Bounds used everywhere a dashboard, series or refresh is handled (section 2).
@@ -114,16 +120,28 @@ export function marketUnavailableReason(
 	return "The Twelve Data source is not configured; set TWELVE_DATA_API_KEY in apps/runner/.env.";
 }
 
+/**
+ * The stored "why there is no data" of a series. `upstreamStatus` is the
+ * status the provider answered with, unchanged (docs/rule/error_handling.md
+ * §4a); null when no provider answer caused it (not configured, never
+ * refreshed, a timeout).
+ */
 export function marketUnavailable(
 	code: MarketUnavailableCode,
 	provider?: MarketProviderId,
-): { readonly code: MarketUnavailableCode; readonly reason: string } {
-	return { code, reason: marketUnavailableReason(code, provider) };
+	upstreamStatus: number | null = null,
+): {
+	readonly code: MarketUnavailableCode;
+	readonly reason: string;
+	readonly upstreamStatus: number | null;
+} {
+	return { code, reason: marketUnavailableReason(code, provider), upstreamStatus };
 }
 
 export const marketUnavailableSchema = z.strictObject({
 	code: marketUnavailableCodeSchema,
 	reason: z.string().min(1).max(300),
+	upstreamStatus: upstreamStatusSchema.nullable(),
 });
 export type MarketUnavailable = z.infer<typeof marketUnavailableSchema>;
 
@@ -186,6 +204,8 @@ export const homeDataResponseSchema = z.strictObject({
 			.strictObject({
 				state: z.string(),
 				code: z.string().min(1).max(80),
+				/** The status the provider answered with when it caused the failure, unchanged. */
+				upstreamStatus: upstreamStatusSchema.nullable(),
 				at: isoDateTimeSchema,
 			})
 			.nullable(),

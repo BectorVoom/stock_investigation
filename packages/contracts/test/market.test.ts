@@ -249,7 +249,12 @@ describe("home dashboard", () => {
 				activeRunId: "run_1",
 				activeRunState: "pending",
 				lastSucceededAt: "2026-10-11T00:00:00.000Z",
-				lastFailure: { state: "failed", code: "SOURCE_FAILED", at: "2026-10-12T12:00:00.000Z" },
+				lastFailure: {
+					state: "failed",
+					code: "SOURCE_FAILED",
+					upstreamStatus: 503,
+					at: "2026-10-12T12:00:00.000Z",
+				},
 			},
 		});
 		expectAccepted(marketCatalogResponseSchema, {

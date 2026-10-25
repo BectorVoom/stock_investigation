@@ -7,7 +7,7 @@ helper to use for each recurring job. Background:
 the TypeScript shell), [ADR-0030](../adr/0030-runner-rewritten-in-rust.md)
 (Rust runner). Requirements: ARCH-010 (explicit error handling), ARCH-017
 (fail closed), API-008 (stable error codes), SEC-010 (no secrets or content in
-traces).
+traces), ARCH-019 (external-service errors keep their status).
 
 **Keeping this document true.** It names files and helpers instead of copying
 their code, so the code stays the single source of truth. A rule that can be
@@ -47,6 +47,7 @@ definition.
 | Parse JSON text | `parseJson` → `Result<unknown, "INVALID_JSON">`; `parseJsonOrNull` when the value goes straight into a schema check | `packages/domain/src/json.ts` |
 | Parse a URL that may be malformed | `parseUrl(raw, base?)` → `URL \| null` | `packages/domain/src/url.ts` |
 | Build a typed result | `ok` / `err` (pure core), `fail(code, message)` (use cases) | `packages/domain/src/result.ts`, `packages/application/src/errors.ts` |
+| Keep an external service's answer status (§4a) | `upstreamStatusOf(safeFetchError)`, `upstreamStatusOrNull(value)`, `failUpstream(code, message, detail, status)`, `withUpstreamStatus(providerFailure, status)`, `responseStatusForUpstream(status, fallback)`; schema `upstreamStatusSchema` | `packages/application/src/ports.ts`, `packages/domain/src/upstream.ts`, `packages/application/src/errors.ts`, `packages/adapters/src/providers/turn.ts`, `packages/contracts/src/primitives.ts`; Rust `research_domain::upstream` |
 | Code for an agent turn that threw | `agentThrewCode` → `AGENT_THREW_<name>` | `packages/application/src/errors.ts` |
 | Lift between `Result` and Effect | `fromResult`, `attempt(operation, run)`, `attemptResult`, `toResult` | `packages/effects/src/errors.ts` |
 | Log at a boundary that must answer even if the logger throws | `logIsolated(() => logger.error(...))` | `packages/effects/src/logging.ts` |
@@ -71,7 +72,7 @@ it a second time.
 
 | Boundary | File | What it does |
 |---|---|---|
-| API route | `apps/api/src/http.ts` → `respond` | Each route handler is one Effect program. `HttpFailure` (wraps a `UseCaseError`) → the JSON error body with its stable status from `STATUS`. `UnexpectedError` → one `unhandled_error` log (`operation`, `name`, `method`, `route`) and `INTERNAL` / 500 |
+| API route | `apps/api/src/http.ts` → `respond` | Each route handler is one Effect program. `HttpFailure` (wraps a `UseCaseError`) → the JSON error body with its stable status from `STATUS`, or the external service's own status when the error carries `upstreamStatus` (§4a). `UnexpectedError` → one `unhandled_error` log (`operation`, `name`, `method`, `route`) and `INTERNAL` / 500 |
 | API defect | `apps/api/src/app.ts` → `defectResponse` (`app.onError`) | Logs `unhandled_error` with the error name and route only; answers `INTERNAL` |
 | TypeScript runner process (rollback runner) | `apps/runner/src/main.ts` | `Effect.catchTags` maps each tagged failure to a log and an exit code (`exitCodeForFailure`: `ConfigurationError` → 2, otherwise 1); a defect is logged once as `runner_crashed` |
 | TypeScript runner job | `apps/runner/src/jobExecution.ts` | An unexpected throw becomes `job_crashed` plus a retryable `RUNNER_ERROR_<name>` completion |
@@ -105,6 +106,64 @@ it a second time.
   browser. It is never sent to the server, logged or stored.
 
 Logging rules (event names, field sanitising) are in [logging](logging.md).
+
+## 4a. External-service errors keep their status
+
+Background: [ADR-0037](../adr/0037-external-service-errors-keep-their-status.md).
+
+An **external service** is anything outside this system that answers us: a
+feed host or web page, SEC, JPX, FRED, Twelve Data, Finnhub, Tavily, GDELT,
+Google (OAuth, Calendar), the Claude API, OpenRouter, and a model CLI that
+reports its API's answer (Claude Code's `api_error_status`). Our own Worker
+API is not one: the runner, the MCP server and the web app already keep its
+status and code.
+
+When an external service answers with an error, the **status it answered
+with is returned unchanged**, all the way to whoever reads the failure:
+
+1. **Record it as a number, where the answer arrives.** The code that reads
+   the response stores the status in a field: `SafeFetchError.status`
+   (TypeScript) / `SafeFetchError::status` (Rust) for every `HTTP_ERROR`, the
+   `status` an HTTP turn or Google call received, Twelve Data's error `code`,
+   a CLI's `api_error_status`. It is never written into text to be parsed
+   back, and never parsed out of `detail`. Read it with `upstreamStatusOf`.
+2. **Never change it.** No rounding to a class (`5xx`), no remapping (404 →
+   502, 529 → 503), no default when it is missing. A value that is not a
+   three-digit status (1xx–5xx) is dropped, not corrected
+   (`upstreamStatusOrNull`).
+3. **Carry it beside our code, never instead of it.** Our stable codes
+   (`PROVIDER_RATE_LIMITED`, `FETCH_FAILED`, `SOURCE_AUTH_FAILED`,
+   `GOOGLE_*`) still classify the failure and decide retries. Every typed
+   failure built from the answer carries the status as `upstreamStatus`:
+   `ToolFailure`, `ProviderFailure` (`withUpstreamStatus`), the agent's
+   `failed` event, `UseCaseError` (`failUpstream`), the job completion
+   (`failureUpstreamStatus`), source reports, market and earnings entries,
+   and calendar failures. Stored rows keep it in the `*_upstream_status`
+   columns (migration `0012_upstream_status.sql`) and the API views return
+   it.
+4. **The API answers with it.** A route that fails because of an external
+   service answers with the upstream's status as the HTTP status
+   (`responseStatusForUpstream` in `respond`), and the JSON error body
+   carries `upstreamStatus` beside the stable `code`. Example: a feed host
+   answers 404 → `404 { error: { code: "FETCH_FAILED", upstreamStatus: 404 } }`,
+   not 502. Two exceptions, both keep `upstreamStatus` in the body: a 1xx–3xx
+   answer (a browser would read it as "continue" or "redirect") keeps the
+   code's own status; and a failure with no answer at all (timeout, refused
+   connection, DNS) has no upstream status and keeps the code's status.
+5. **Only the status crosses.** The upstream's body, message and headers
+   stay inside the adapter (§4, SEC-010). The status is a number, so it is
+   safe to log, store and show.
+6. **When several answers led to one failure**, the one reported is defined
+   once, next to the code that aggregates: a run that ends
+   `ALL_TOOL_CALLS_FAILED` reports the most frequent status among the calls
+   that failed with the reported `failureDetail` code (latest wins a tie);
+   a turn reports the status of the answer that ended it.
+
+Checklist for a **new adapter or tool that calls an external service**: put
+the response status in the failure's `status` / `upstreamStatus` field;
+return it unchanged through every layer; add a test that a non-2xx answer
+(for example 418 or 529, which no mapping table contains) comes out with the
+same number.
 
 ## 5. The four allowed shapes of `catch`
 
@@ -192,7 +251,8 @@ call through `useCase` (or `attempt` for a direct call); answer with
 
 **New adapter:** return typed failures for every expected outcome, including
 "not JSON" (`parseJson`) and "bad URL" (`parseUrl`); bound every network call
-with a timeout; throw only for the unexpected.
+with a timeout; throw only for the unexpected. An error answer from an
+external service carries its status unchanged as `upstreamStatus` (§4a).
 
 **New `catch`:** pick one of the four shapes in §5; for shape 4, write the
 reason in a comment.
@@ -204,6 +264,7 @@ them on; a comment on every `let _ =`.
 
 | Check | Where |
 |---|---|
+| External-service status: no status parsed out of a `detail` text (`/\b(\d{3})\b/` on a detail); `SafeFetchError` built with `HTTP_ERROR` always has `status` (compile time); a 404/418/529 answer comes out unchanged through fetch, tools, providers, use cases, the API response and the stored run | `tests/architecture/errorHandling.test.ts`; adapter, use-case and API tests named "keeps the upstream status" |
 | No empty `catch`; no uncommented `.catch(() => undefined)`; thrown values labelled only by the §2 helpers; `JSON.parse` and `try { new URL }` only inside the helpers; one copy of the labels; every Rust `let _ =` explained | `tests/architecture/errorHandling.test.ts` |
 | The labels: names, codes, fallbacks, nothing of the message | `packages/domain/test/failureHelpers.test.ts` |
 | The Effect bridge keeps labels only | `packages/effects/test/errors.test.ts` |
