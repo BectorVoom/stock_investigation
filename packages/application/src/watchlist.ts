@@ -493,7 +493,12 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				return fail("INTERNAL", "Internal error.");
 			}
 			if (outcome.kind === "kind-active") {
-				return ok({ run: toRunView(outcome.job, []), replayed: true });
+				// Another request inserted its job between our read and this
+				// insert: a request for everything widens it when it is a
+				// pending narrow job, like an active job found before the insert.
+				const raced =
+					scope === "all" ? await activeRefreshJob(deps, ownerId, "earnings-refresh", scope) : null;
+				return ok({ run: toRunView(raced ?? outcome.job, []), replayed: true });
 			}
 			if (outcome.kind === "existing") {
 				return outcome.sameRequest

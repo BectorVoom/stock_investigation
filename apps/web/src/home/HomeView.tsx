@@ -143,6 +143,8 @@ export function HomeView(props: {
 	/** Earlier widget lists of this page visit, newest last (Undo). */
 	const [history, setHistory] = createSignal<readonly (readonly HomeWidget[])[]>([]);
 	let autoRefreshTried = false;
+	/** The staleness refresh was sent while a run was active (at most once per mount). */
+	let staleSentWhileActive = false;
 	let followUpTried = false;
 	/** One market-refresh queue with Home's idempotency-key rule (V9, in the shared module). */
 	const marketQueue = createMarketRefreshQueue(props.api);
@@ -150,6 +152,8 @@ export function HomeView(props: {
 	const earningsQueue = createEarningsRefreshQueue(props.api);
 	const [earningsQueueBusy, setEarningsQueueBusy] = createSignal(false);
 	let earningsAutoTried = false;
+	/** As `staleSentWhileActive`, for the earnings dates. */
+	let earningsStaleSentWhileActive = false;
 	/** Google Calendar auto-sync (FR-019): at most one attempt per watchlist ETag. */
 	const googleQueue = createGoogleSyncQueue(props.api);
 	let googleSyncAttemptedEtag: string | null = null;
@@ -251,8 +255,12 @@ export function HomeView(props: {
 		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
 		void loadWatchlist().then(() => {
 			if (disposed) return;
-			if (isWatchlistPollActive()) watchlistPoller.start();
-			else {
+			if (isWatchlistPollActive()) {
+				watchlistPoller.start();
+				// An earnings run is active: stale dates still ask for everything.
+				const loaded = watchlist();
+				if (loaded !== null && loaded.refresh.activeRunId !== null) maybeEarningsAutoRefresh();
+			} else {
 				maybeEarningsAutoRefresh();
 				maybeGoogleAutoSync();
 			}
@@ -273,16 +281,26 @@ export function HomeView(props: {
 	/**
 	 * Once per mount, after the watchlist has loaded: queue one earnings-date
 	 * refresh when a calendar widget is shown, no run is active, and dates
-	 * were never fetched or are more than a day old. Announces through Home's
-	 * notice; a failed queue is reported, never retried.
+	 * were never fetched or are more than a day old (`earningsAutoRefresh`
+	 * picks the scope; stale dates during an active run are asked for once
+	 * and decided again when it ends). Announces through Home's notice; a
+	 * failed queue is reported, never retried.
 	 */
 	const maybeEarningsAutoRefresh = (): void => {
 		if (earningsAutoTried || disposed) return;
 		const current = watchlist();
 		if (current === null) return;
 		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
-		if (current.refresh.activeRunId !== null) return;
 		const auto = earningsAutoRefresh(current, Date.now());
+		if (current.refresh.activeRunId !== null) {
+			// ADR-0039: like the market staleness above — ask for every stock
+			// once while the run is active, decide again when it ends.
+			if (auto?.scope === "all" && !earningsStaleSentWhileActive) {
+				earningsStaleSentWhileActive = true;
+				void queueEarningsRefresh("all", watchlistText().autoRefreshNotice(auto.reason));
+			}
+			return;
+		}
 		if (auto === null) return;
 		earningsAutoTried = true;
 		void queueEarningsRefresh(auto.scope, watchlistText().autoRefreshNotice(auto.reason));
@@ -367,9 +385,22 @@ export function HomeView(props: {
 		if (autoRefreshTried || disposed) return;
 		const dash = dashboard.value();
 		const current = data();
-		if (dash === null || current === null || current.refresh.activeRunId !== null) return;
-		autoRefreshTried = true;
+		if (dash === null || current === null) return;
 		const scope = marketAutoRefreshScope(dashboardStamps(dash, current), Date.now());
+		if (current.refresh.activeRunId !== null) {
+			// ADR-0039: stale data with a run already active still asks for
+			// everything, once — the server widens a pending narrow job (no
+			// provider request) or answers with the claimed one — and the
+			// decision stays open, so it is taken again when that run ends: a
+			// narrow run that left the data stale is followed by one refresh
+			// of everything, as when every queued job covered everything.
+			if (scope === "all" && !staleSentWhileActive) {
+				staleSentWhileActive = true;
+				void queueRefresh("all", m().staleQueued);
+			}
+			return;
+		}
+		autoRefreshTried = true;
 		if (scope !== null) void queueRefresh(scope, m().staleQueued);
 	};
 	createEffect(() => {

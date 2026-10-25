@@ -374,6 +374,25 @@ describe("Watchlist view", () => {
 		expect(backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/)).toHaveLength(0);
 	});
 
+	it("stale dates with a run already active ask for every stock, then once more when it ends (ADR-0039)", async () => {
+		const stale = new Date(NOW_MS - 25 * 3_600_000).toISOString();
+		server.stocks = [makeStock({ lastRefreshedAt: stale, retrievedAt: stale })];
+		server.activeRunId = "run_earnings_0";
+		server.runState = "claimed";
+		mount();
+		const refreshes = () => backend.requestsTo("POST", /^\/api\/v1\/watchlist\/refresh$/);
+		// Sent while the run is active: the server widens a pending narrow one.
+		await waitFor(() => expect(refreshes()).toHaveLength(1));
+		expect(refreshes()[0]?.body).toEqual({ scope: "all" });
+		// The run ends with the dates still stale: exactly one more.
+		server.activeRunId = null;
+		await waitFor(() => expect(refreshes()).toHaveLength(2), { timeout: 30_000 });
+		expect(refreshes()[1]?.body).toEqual({ scope: "all" });
+		server.activeRunId = null;
+		await new Promise((resolve) => setTimeout(resolve, 6_000));
+		expect(refreshes()).toHaveLength(2);
+	}, 60_000);
+
 	it("reports a failed automatic queue once and never retries it", async () => {
 		backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () =>
 			errorResponse(500, "INTERNAL", "boom"),

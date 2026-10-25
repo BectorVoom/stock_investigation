@@ -304,9 +304,9 @@ export interface EarningsAutoRefresh {
 }
 
 /**
- * The automatic earnings-date refresh the view should queue, or null when
- * none is needed: an empty list never queues, an active run means a refresh
- * is already underway, and otherwise the shared oldest-stamp rule
+ * The automatic earnings-date refresh the view should ask for, or null when
+ * none is needed: an empty list never queues, and otherwise the shared
+ * oldest-stamp rule
  * (`lib/refreshScope.ts`, ADR-0039) decides with the 24-hour limit — a
  * stale stamp refreshes every stock, a never-refreshed stock with the rest
  * fresh refreshes only the never-refreshed ones, and a list with no stamp at
@@ -316,7 +316,8 @@ export function earningsAutoRefresh(
 	current: WatchlistResponse,
 	nowMs: number,
 ): EarningsAutoRefresh | null {
-	if (current.refresh.activeRunId !== null) return null;
+	// An active run is the view's call (ADR-0039: stale dates still ask for
+	// everything while one runs), so it is not decided here.
 	const stamps = stampsOf(current);
 	const scope = autoRefreshScope(stamps, EARNINGS_AUTO_REFRESH_STALE_MS, nowMs);
 	return scope === null ? null : { scope, reason: reasonFor(stamps, nowMs) };

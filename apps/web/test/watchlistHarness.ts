@@ -1,5 +1,6 @@
 import {
 	type ApiErrorCode,
+	jobStateSchema,
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryMarketStatus,
 	type StockListing,
@@ -350,10 +351,20 @@ export function createWatchlistBackend(): {
 		if (server.stocks.length === 0) {
 			return errorResponse(400, "VALIDATION_FAILED", "The watchlist has no stocks to refresh.");
 		}
-		server.activeRunId = "run_earnings_1";
-		server.runState = "pending";
+		// One active run per kind, like the API: a request while one is
+		// active answers with that run.
+		if (server.activeRunId === null) {
+			server.activeRunId = "run_earnings_1";
+			server.runState = "pending";
+		}
 		return jsonResponse(
-			{ run: makeRun({ runId: "run_earnings_1", kind: "earnings-refresh", state: "pending" }) },
+			{
+				run: makeRun({
+					runId: server.activeRunId,
+					kind: "earnings-refresh",
+					state: jobStateSchema.parse(server.runState),
+				}),
+			},
 			{ status: 202 },
 		);
 	});

@@ -518,6 +518,33 @@ describe("home view", () => {
 		}
 	});
 
+	it("stale data with a run already active asks for everything, then once more when the run ends (ADR-0039)", async () => {
+		freshBackend(true);
+		home.activeRunId = "run_market_0";
+		home.runState = "pending";
+		mountApp(backend);
+		// Sent while the run is pending: the server widens a narrow one.
+		await waitFor(() => expect(home.refreshCount).toBe(1), { timeout: 10_000 });
+		const refreshes = () => backend.requestsTo("POST", /\/home\/refresh$/);
+		expect(refreshes()[0]?.body).toEqual({ scope: "all" });
+		usePollTimers();
+		try {
+			await vi.advanceTimersByTimeAsync(30_000);
+			expect(home.refreshCount).toBe(1);
+			// The run ends and the data is still stale (it was a narrow run):
+			// exactly one more refresh of everything.
+			home.activeRunId = null;
+			await settleUntil(() => home.refreshCount === 2, "deferred staleness refresh");
+			expect(refreshes()[1]?.body).toEqual({ scope: "all" });
+			// That run ends with the data still stale: once per mount, no loop.
+			home.activeRunId = null;
+			await vi.advanceTimersByTimeAsync(120_000);
+			expect(home.refreshCount).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("V7: the status line needs no extra run GET", async () => {
 		usePollTimers();
 		try {
@@ -1430,6 +1457,30 @@ describe("home view", () => {
 		// One visit, one refresh: later polls never queue another.
 		await new Promise((resolve) => setTimeout(resolve, 300));
 		expect(watch.refreshCount).toBe(1);
+	});
+
+	it("stale dates with an earnings run active ask for every stock, then once more when it ends (ADR-0039)", async () => {
+		withCalendarWidget();
+		watch.stocks = [watchStock({ lastRefreshedAt: "2026-10-10T00:00:00Z" })];
+		watch.activeRunId = "run_earnings_0";
+		watch.runState = "pending";
+		mountApp(backend);
+		await waitFor(() => expect(watch.refreshCount).toBe(1), { timeout: 10_000 });
+		const refreshes = () => backend.requestsTo("POST", /\/watchlist\/refresh$/);
+		expect(refreshes()[0]?.body).toEqual({ scope: "all" });
+		usePollTimers();
+		try {
+			await vi.advanceTimersByTimeAsync(30_000);
+			expect(watch.refreshCount).toBe(1);
+			watch.activeRunId = null;
+			await settleUntil(() => watch.refreshCount === 2, "deferred staleness refresh");
+			expect(refreshes()[1]?.body).toEqual({ scope: "all" });
+			watch.activeRunId = null;
+			await vi.advanceTimersByTimeAsync(120_000);
+			expect(watch.refreshCount).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("queues no earnings refresh when no calendar widget is shown", async () => {

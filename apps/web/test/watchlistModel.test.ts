@@ -393,12 +393,15 @@ describe("earnings auto-refresh reason", () => {
 		expect(EARNINGS_AUTO_REFRESH_STALE_MS).toBe(24 * 3_600_000);
 	});
 
-	it("never fires for an empty list or an active run", () => {
+	it("never fires for an empty list, and decides the same while a run is active", () => {
 		expect(earningsAutoRefresh(response([]), NOW)).toBe(null);
 		expect(earningsAutoRefresh(response([stock()], "run_1"), NOW)).toBe(null);
-		expect(earningsAutoRefresh(response([stock({ lastRefreshedAt: null })], "run_1"), NOW)).toBe(
-			null,
-		);
+		// ADR-0039: the view asks for everything once while a run is active
+		// when the dates are stale, so the decision ignores the run.
+		const stale = new Date(NOW - EARNINGS_AUTO_REFRESH_STALE_MS - 1).toISOString();
+		expect(
+			earningsAutoRefresh(response([stock({ lastRefreshedAt: stale })], "run_1"), NOW)?.scope,
+		).toBe("all");
 	});
 
 	it("fetches only the never-refreshed stocks when the rest are fresh (ADR-0039)", () => {

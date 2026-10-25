@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { createD1Adapters } from "@research/adapters/d1";
 import {
 	homeDataResponseSchema,
 	researchRunResponseSchema,
@@ -89,6 +90,45 @@ async function auditActions(harness: Harness, runId: string): Promise<string[]> 
 		.bind(harness.ownerId, runId)
 		.all<{ action: string }>();
 	return rows.results.map((row) => row.action);
+}
+
+async function auditDetails(harness: Harness, runId: string): Promise<string[]> {
+	const rows = await env.DB.prepare(
+		"SELECT detail FROM audit_log WHERE owner_id = ? AND resource = ? ORDER BY audit_id",
+	)
+		.bind(harness.ownerId, runId)
+		.all<{ detail: string }>();
+	return rows.results.map((row) => row.detail);
+}
+
+/**
+ * A harness for the same owner whose job INSERT first lets a second request
+ * queue an `"unrefreshed"` job: the race where a request for everything
+ * found no active job but loses the insert to a narrow one.
+ */
+function racingHarness(
+	harness: Harness,
+	path: "/home/refresh" | "/watchlist/refresh",
+): { readonly harness: Harness; readonly narrowRunId: () => string | null } {
+	const persistence = createD1Adapters(env.DB);
+	let narrowRunId: string | null = null;
+	const racing = createHarness({
+		ownerId: harness.ownerId,
+		time: harness.time,
+		persistence: {
+			...persistence,
+			jobs: {
+				...persistence.jobs,
+				insert: async (job, idempotencyKeyValue, fingerprint, maxUnfinished) => {
+					if (narrowRunId === null) {
+						narrowRunId = await queuedRunId(await queue(harness, path, "unrefreshed"));
+					}
+					return persistence.jobs.insert(job, idempotencyKeyValue, fingerprint, maxUnfinished);
+				},
+			},
+		},
+	});
+	return { harness: racing, narrowRunId: () => narrowRunId };
 }
 
 async function claimMarketSeries(harness: Harness, token: string) {
@@ -200,8 +240,26 @@ describe("market refresh scope (ADR-0039)", () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
 		await trackThreeSeries(harness);
+		// VIXCLS has data, so the narrow job alone would claim DGS10 and AAPL only.
+		await refreshVixOnly(harness, token);
 		const runId = await queuedRunId(await queue(harness, "/home/refresh", "unrefreshed"));
 		expect(await queuedRunId(await queue(harness, "/home/refresh"))).toBe(runId);
+		expect((await storedJob(harness, runId)).request_json).toBeNull();
+		expect(await auditActions(harness, runId)).toEqual([
+			"run.create_market_refresh",
+			"run.widen_market_refresh",
+		]);
+		expect((await claimMarketSeries(harness, token)).ids).toEqual([...TRACKED]);
+	});
+
+	it("widens the narrow job that won the insert race against a request for everything", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await trackThreeSeries(harness);
+		await refreshVixOnly(harness, token);
+		const racing = racingHarness(harness, "/home/refresh");
+		const runId = await queuedRunId(await queue(racing.harness, "/home/refresh", "all"));
+		expect(racing.narrowRunId()).toBe(runId);
 		expect((await storedJob(harness, runId)).request_json).toBeNull();
 		expect(await auditActions(harness, runId)).toEqual([
 			"run.create_market_refresh",
@@ -284,6 +342,11 @@ describe("market refresh scope (ADR-0039)", () => {
 		const claimed = await claimMarketSeries(harness, token);
 		expect(claimed.ids).toEqual([...TRACKED]);
 		expect((await storedJob(harness, runId)).request_json).toBeNull();
+		expect(await auditActions(harness, runId)).toEqual([
+			"run.create_market_refresh",
+			"run.widen_market_refresh",
+		]);
+		expect(await auditDetails(harness, runId)).toContain("scope=unrefreshed->all at claim");
 		await completeEmptyMarketRun(harness, token, claimed.job);
 		// So its success is the last refresh of everything.
 		expect(await lastMarketSuccess(harness)).toBe(harness.time.clock.nowIso());
@@ -307,8 +370,48 @@ describe("market refresh scope (ADR-0039)", () => {
 	});
 });
 
+type EarningsResult = {
+	readonly stockId: string;
+	readonly errorCode: "NO_SCHEDULED_DATE" | "SOURCE_FAILED" | "RATE_LIMITED" | "SYMBOL_NOT_FOUND";
+};
+
+/** Completes a claimed earnings run with the given per-stock outcomes (no dated events). */
+async function completeEarningsRun(
+	harness: Harness,
+	token: string,
+	job: ClaimedLease,
+	results: readonly EarningsResult[],
+): Promise<void> {
+	await advanceToPublishing(harness, token, job);
+	const completed = await harness.runner(token, `/jobs/${job.runId}/complete`, {
+		outcome: "earnings-refreshed",
+		leaseGeneration: job.leaseGeneration,
+		usage: USAGE,
+		stocks: results.map((result) => ({
+			stockId: result.stockId,
+			name: null,
+			fetchedAt: harness.time.clock.nowIso(),
+			events: [],
+			errorCode: result.errorCode,
+		})),
+	});
+	expect(completed.status).toBe(200);
+}
+
+/** One whole earnings refresh that stores the given outcomes; returns its run id. */
+async function refreshStocks(
+	harness: Harness,
+	token: string,
+	results: readonly EarningsResult[],
+): Promise<string> {
+	const runId = await queuedRunId(await queue(harness, "/watchlist/refresh"));
+	const { job } = await claimEarningsStocks(harness, token);
+	await completeEarningsRun(harness, token, job, results);
+	return runId;
+}
+
 describe("earnings refresh scope (ADR-0039)", () => {
-	it("an unrefreshed claim carries only the stocks never refreshed, in watchlist order", async () => {
+	it("no body refreshes every stock; an unrefreshed claim carries only those never refreshed", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
 		await addStock(harness, "US", "AAPL");
@@ -317,23 +420,10 @@ describe("earnings refresh scope (ADR-0039)", () => {
 		expect((await storedJob(harness, runId)).request_json).toBeNull();
 		const first = await claimEarningsStocks(harness, token);
 		expect(first.ids).toEqual(["us:AAPL", "jp:7203"]);
-		await advanceToPublishing(harness, token, first.job);
 		// Only AAPL is reported, so 7203 stays never refreshed.
-		const completed = await harness.runner(token, `/jobs/${runId}/complete`, {
-			outcome: "earnings-refreshed",
-			leaseGeneration: first.job.leaseGeneration,
-			usage: USAGE,
-			stocks: [
-				{
-					stockId: "us:AAPL",
-					name: "Apple Inc",
-					fetchedAt: harness.time.clock.nowIso(),
-					events: [],
-					errorCode: "NO_SCHEDULED_DATE",
-				},
-			],
-		});
-		expect(completed.status).toBe(200);
+		await completeEarningsRun(harness, token, first.job, [
+			{ stockId: "us:AAPL", errorCode: "NO_SCHEDULED_DATE" },
+		]);
 		await addStock(harness, "US", "MSFT");
 
 		const partial = await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
@@ -343,51 +433,62 @@ describe("earnings refresh scope (ADR-0039)", () => {
 		expect((await claimEarningsStocks(harness, token)).ids).toEqual(["jp:7203", "us:MSFT"]);
 	});
 
+	it("an unrefreshed claim retries stocks whose last fetch failed, not real provider answers", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await addStock(harness, "US", "AAPL");
+		await addStock(harness, "US", "MSFT");
+		await addStock(harness, "US", "NVDA");
+		await addStock(harness, "JP", "7203");
+		await refreshStocks(harness, token, [
+			{ stockId: "us:AAPL", errorCode: "SOURCE_FAILED" },
+			{ stockId: "us:MSFT", errorCode: "NO_SCHEDULED_DATE" },
+			{ stockId: "us:NVDA", errorCode: "RATE_LIMITED" },
+			{ stockId: "jp:7203", errorCode: "SYMBOL_NOT_FOUND" },
+		]);
+		await addStock(harness, "US", "AMZN");
+		await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
+		// The failed fetches are retried with the new stock; the answers are not.
+		expect((await claimEarningsStocks(harness, token)).ids).toEqual([
+			"us:AAPL",
+			"us:NVDA",
+			"us:AMZN",
+		]);
+	});
+
 	it("a narrow success leaves the last successful refresh where it was", async () => {
 		const harness = createHarness();
 		const token = await issueRunnerToken(harness);
 		await addStock(harness, "US", "AAPL");
-		const firstRun = await queuedRunId(await queue(harness, "/watchlist/refresh"));
-		const first = await claimEarningsStocks(harness, token);
-		await advanceToPublishing(harness, token, first.job);
-		expect(
-			(
-				await harness.runner(token, `/jobs/${firstRun}/complete`, {
-					outcome: "earnings-refreshed",
-					leaseGeneration: first.job.leaseGeneration,
-					usage: USAGE,
-					stocks: [
-						{
-							stockId: "us:AAPL",
-							name: "Apple Inc",
-							fetchedAt: harness.time.clock.nowIso(),
-							events: [],
-							errorCode: "NO_SCHEDULED_DATE",
-						},
-					],
-				})
-			).status,
-		).toBe(200);
+		await refreshStocks(harness, token, [{ stockId: "us:AAPL", errorCode: "NO_SCHEDULED_DATE" }]);
 		const whole = await lastEarningsSuccess(harness);
 		expect(whole).toBe(harness.time.clock.nowIso());
 
 		harness.time.advance(60_000);
 		await addStock(harness, "JP", "7203");
-		const partial = await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
+		await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
 		const narrow = await claimEarningsStocks(harness, token);
 		expect(narrow.ids).toEqual(["jp:7203"]);
-		await advanceToPublishing(harness, token, narrow.job);
-		expect(
-			(
-				await harness.runner(token, `/jobs/${partial}/complete`, {
-					outcome: "earnings-refreshed",
-					leaseGeneration: narrow.job.leaseGeneration,
-					usage: USAGE,
-					stocks: [],
-				})
-			).status,
-		).toBe(200);
+		await completeEarningsRun(harness, token, narrow.job, []);
 		expect(await lastEarningsSuccess(harness)).toBe(whole);
+	});
+
+	it("a narrow job that covers every stock is stored as a whole refresh at the claim", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		// The first stock of the list, asked for narrowly.
+		await addStock(harness, "US", "AAPL");
+		const runId = await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
+		const claimed = await claimEarningsStocks(harness, token);
+		expect(claimed.ids).toEqual(["us:AAPL"]);
+		expect((await storedJob(harness, runId)).request_json).toBeNull();
+		expect(await auditActions(harness, runId)).toEqual([
+			"run.create_earnings_refresh",
+			"run.widen_earnings_refresh",
+		]);
+		expect(await auditDetails(harness, runId)).toContain("scope=unrefreshed->all at claim");
+		await completeEarningsRun(harness, token, claimed.job, []);
+		expect(await lastEarningsSuccess(harness)).toBe(harness.time.clock.nowIso());
 	});
 
 	it("a request for everything widens a pending unrefreshed job", async () => {
@@ -395,6 +496,8 @@ describe("earnings refresh scope (ADR-0039)", () => {
 		const token = await issueRunnerToken(harness);
 		await addStock(harness, "US", "AAPL");
 		await addStock(harness, "JP", "7203");
+		// AAPL has its answer, so the narrow job alone would claim 7203 only.
+		await refreshStocks(harness, token, [{ stockId: "us:AAPL", errorCode: "NO_SCHEDULED_DATE" }]);
 		const runId = await queuedRunId(await queue(harness, "/watchlist/refresh", "unrefreshed"));
 		expect(await queuedRunId(await queue(harness, "/watchlist/refresh", "all"))).toBe(runId);
 		expect((await storedJob(harness, runId)).request_json).toBeNull();
@@ -403,6 +506,35 @@ describe("earnings refresh scope (ADR-0039)", () => {
 			"run.widen_earnings_refresh",
 		]);
 		expect((await claimEarningsStocks(harness, token)).ids).toEqual(["us:AAPL", "jp:7203"]);
+	});
+
+	it("widens the narrow job that won the insert race against a request for everything", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await addStock(harness, "US", "AAPL");
+		await addStock(harness, "JP", "7203");
+		await refreshStocks(harness, token, [{ stockId: "us:AAPL", errorCode: "NO_SCHEDULED_DATE" }]);
+		const racing = racingHarness(harness, "/watchlist/refresh");
+		const runId = await queuedRunId(await queue(racing.harness, "/watchlist/refresh", "all"));
+		expect(racing.narrowRunId()).toBe(runId);
+		expect((await storedJob(harness, runId)).request_json).toBeNull();
+		expect((await claimEarningsStocks(harness, token)).ids).toEqual(["us:AAPL", "jp:7203"]);
+	});
+
+	it("puts the scope in the idempotency fingerprint", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await addStock(harness, "US", "AAPL");
+		const key = idempotencyKey();
+		const runId = await queuedRunId(await queue(harness, "/watchlist/refresh", undefined, key));
+		const { job } = await claimEarningsStocks(harness, token);
+		await completeEarningsRun(harness, token, job, []);
+		const reused = await queue(harness, "/watchlist/refresh", "unrefreshed", key);
+		expect(reused.status).toBe(409);
+		expect((await apiError(reused)).code).toBe("IDEMPOTENCY_KEY_REUSED");
+		expect(await queuedRunId(await harness.call("POST", "/watchlist/refresh", {}, key))).toBe(
+			runId,
+		);
 	});
 
 	it("answers 400 for a bad scope and queues nothing", async () => {

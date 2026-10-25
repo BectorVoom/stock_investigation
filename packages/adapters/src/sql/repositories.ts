@@ -568,9 +568,10 @@ export function jobWriteStatements(
 	return [update, ...audits];
 }
 
-/** The newest `failed` job of a kind: its code, the upstream status beside it (§4a), its time. */
+/** The newest counted `completed` job of a kind: its completion time. */
 const latestSuccessRowSchema = z.object({ updated_at: z.string() });
 
+/** The newest `failed` job of a kind: its code, the upstream status beside it (§4a), its time. */
 const latestFailedRowSchema = z.object({
 	failure_code: z.string().nullable(),
 	failure_upstream_status: storedUpstreamStatus,

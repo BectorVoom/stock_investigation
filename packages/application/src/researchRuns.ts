@@ -475,6 +475,13 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 				requestFingerprint,
 				MAX_UNFINISHED_JOBS,
 			);
+			if (outcome.kind === "kind-active" && scope === "all") {
+				// Another request inserted its job between our read and this
+				// insert: when that one is a pending narrow job, widen it like
+				// an active job found before the insert.
+				const raced = await activeRefreshJob(deps, ownerId, "market-refresh", scope);
+				return ok({ run: await view(raced ?? outcome.job), replayed: true });
+			}
 			if (outcome.kind === "inserted") {
 				await deps.audit.record({
 					ownerId,

@@ -716,6 +716,24 @@ describe("notebook market data context", () => {
 		await new Promise((resolve) => setTimeout(resolve, 200));
 		expect(backend.requestsTo("GET", WATCHLIST_GET)).toHaveLength(0);
 	});
+
+	it("the calendar's Refresh button asks for every stock (ADR-0039)", async () => {
+		const fixtures = marketFixtures();
+		const watch: WatchServerState = { response: watchlistWithAapl(), failures: 0, count: 0 };
+		mountPanel([fixtures.calendar], freshMarket(defaultHomeSeries(false)), watch);
+		const button = await waitFor(
+			() =>
+				within(articleById("nb-calendar")).getByRole("button", { name: "Refresh earnings dates" }),
+			{ timeout: 10_000 },
+		);
+		fireEvent.click(button);
+		await waitFor(() =>
+			expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)).toHaveLength(1),
+		);
+		expect(backend.requestsTo("POST", /\/watchlist\/refresh$/)[0]?.body).toEqual({
+			scope: "all",
+		});
+	});
 });
 
 describe("notebook market add and edit", () => {

@@ -83,7 +83,12 @@ import type {
 	WorkspaceRepository,
 } from "./ports.ts";
 import { checkBundleIntegrity } from "./recordIntegrity.ts";
-import { refreshScopeRequest, storedRefreshScope } from "./refreshScope.ts";
+import {
+	earningsStockNeedsRefresh,
+	refreshScopeRequest,
+	storedRefreshScope,
+	widenAuditAction,
+} from "./refreshScope.ts";
 import { buildConversationContextBeforeAnchor } from "./research/conversationContext.ts";
 import { stockDirectoryRows } from "./stockDirectory.ts";
 import {
@@ -260,7 +265,8 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	/**
 	 * The stocks an earnings-refresh claim fetches, in watchlist order, at
 	 * most maxStocks — for an `"unrefreshed"` job only those never refreshed
-	 * (ADR-0039). `coversEverything` says the narrowing left every stock in.
+	 * or whose last fetch failed (ADR-0039, `earningsStockNeedsRefresh`).
+	 * `coversEverything` says the narrowing left every stock in.
 	 */
 	async function prepareEarningsClaim(
 		ownerId: string,
@@ -271,9 +277,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 	}> {
 		const watched = (await deps.watchlist.listStocks(ownerId)).slice(0, EARNINGS_LIMITS.maxStocks);
 		const stocks =
-			storedRefreshScope(job) === "all"
-				? watched
-				: watched.filter((stock) => stock.lastRefreshedAt === null);
+			storedRefreshScope(job) === "all" ? watched : watched.filter(earningsStockNeedsRefresh);
 		return {
 			stocks: stocks.map((stock) => ({ stockId: stock.stockId, name: stock.name })),
 			coversEverything: stocks.length === watched.length,
@@ -797,6 +801,18 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					audits,
 				);
 				if (!granted) continue;
+				if (coversEverything) {
+					await deps.audit.record({
+						ownerId: runner.ownerId,
+						actor: `runner:${runner.credentialId}`,
+						action: widenAuditAction(
+							job.kind === "market-refresh" ? "market-refresh" : "earnings-refresh",
+						),
+						resource: job.runId,
+						detail: "scope=unrefreshed->all at claim",
+						at: now,
+					});
+				}
 				if (marketClaim !== null) {
 					const claimedMarket: ClaimedJob = {
 						kind: "market-refresh",

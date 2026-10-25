@@ -296,6 +296,8 @@ export function WatchlistView(props: {
 	const refreshQueue = createEarningsRefreshQueue(props.api);
 	const googleQueue = createGoogleSyncQueue(props.api);
 	let autoRefreshTried = false;
+	/** The staleness refresh was sent while a run was active (at most once per mount). */
+	let staleSentWhileActive = false;
 	let followUpArmed = false;
 	/** The watchlist ETag an automatic Google sync was already attempted for (at most one per ETag). */
 	let googleSyncAttemptedEtag: string | null = null;
@@ -392,8 +394,22 @@ export function WatchlistView(props: {
 	const maybeAutoRefresh = (): void => {
 		if (autoRefreshTried || disposed) return;
 		const current = data();
-		if (current === null || current.refresh.activeRunId !== null) return;
+		if (current === null) return;
 		const auto = earningsAutoRefresh(current, Date.now());
+		if (current.refresh.activeRunId !== null) {
+			// ADR-0039: stale dates with a run already active still ask for
+			// every stock, once — the server widens a pending narrow job (no
+			// provider request) or answers with the claimed one — and the
+			// decision stays open, so it is taken again when that run ends.
+			if (auto?.scope === "all" && !staleSentWhileActive) {
+				staleSentWhileActive = true;
+				void queueRefresh("all", {
+					text: model().autoRefreshNotice(auto.reason),
+					clearsWhenRunEnds: true,
+				});
+			}
+			return;
+		}
 		if (auto === null) return;
 		autoRefreshTried = true;
 		void queueRefresh(auto.scope, {
@@ -450,8 +466,12 @@ export function WatchlistView(props: {
 		directory.start();
 		void loadWatchlist().then(() => {
 			if (disposed) return;
-			if (isPollActive()) poller.start();
-			else {
+			if (isPollActive()) {
+				poller.start();
+				// An earnings run is active: stale dates still ask for everything.
+				const loaded = data();
+				if (loaded !== null && loaded.refresh.activeRunId !== null) maybeAutoRefresh();
+			} else {
 				maybeAutoRefresh();
 				maybeAutoGoogleSync();
 			}
