@@ -73,6 +73,7 @@ export interface WatchlistDigest {
 		readonly lastRefreshedAt: string | null;
 		readonly retrievedAt: string | null;
 		readonly unavailableCode: string | null;
+		readonly unavailableUpstreamStatus: number | null;
 	}[];
 	readonly activeRunId: string | null;
 	readonly activeRunState: string | null;
@@ -113,7 +114,7 @@ export function watchlistDigestEtag(digest: WatchlistDigest): string {
 	const stocks = digest.stockStamps
 		.map(
 			(entry) =>
-				`${entry.stockId}:${entry.lastRefreshedAt ?? "never"}:${entry.retrievedAt ?? "never"}:${entry.unavailableCode ?? "ok"}`,
+				`${entry.stockId}:${entry.lastRefreshedAt ?? "never"}:${entry.retrievedAt ?? "never"}:${entry.unavailableCode ?? "ok"}:${entry.unavailableUpstreamStatus ?? "-"}`,
 		)
 		.join(",");
 	const failure =
@@ -127,7 +128,7 @@ export function watchlistDigestEtag(digest: WatchlistDigest): string {
 	const googleFailure =
 		digest.googleCalendar.lastFailure === null
 			? "no-gfailure"
-			: `${digest.googleCalendar.lastFailure.code}:${digest.googleCalendar.lastFailure.at}`;
+			: `${digest.googleCalendar.lastFailure.code}:${digest.googleCalendar.lastFailure.upstreamStatus ?? "-"}:${digest.googleCalendar.lastFailure.at}`;
 	// The sign-in link and the calendar id come from the runner: they are
 	// percent-encoded so nothing in them (a quote, a non-ASCII character)
 	// can make this string unusable as a header value.
@@ -199,7 +200,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 			retrievedAt: stock.retrievedAt,
 			unavailable:
 				stock.unavailableCode !== null
-					? earningsUnavailable(stock.unavailableCode, source)
+					? earningsUnavailable(stock.unavailableCode, source, stock.unavailableUpstreamStatus)
 					: stock.retrievedAt === null
 						? earningsUnavailable("NEVER_REFRESHED")
 						: null,
@@ -327,6 +328,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 					lastRefreshedAt: stock.lastRefreshedAt,
 					retrievedAt: stock.retrievedAt,
 					unavailableCode: stock.unavailableCode,
+					unavailableUpstreamStatus: stock.unavailableUpstreamStatus,
 				})),
 				...header,
 				feedCreatedAt: feed?.createdAt ?? null,
@@ -467,6 +469,7 @@ export function createWatchlistService(deps: WatchlistServiceDeps) {
 				cancelRequested: false,
 				failureCode: null,
 				failureDetail: null,
+				failureUpstreamStatus: null,
 				approvalRequest: null,
 				verificationStatus: null,
 				providerModel: null,

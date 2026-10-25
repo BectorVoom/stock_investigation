@@ -178,6 +178,7 @@ export function createStockDirectoryService(deps: StockDirectoryServiceDeps) {
 			cancelRequested: false,
 			failureCode: null,
 			failureDetail: null,
+			failureUpstreamStatus: null,
 			approvalRequest: null,
 			verificationStatus: null,
 			providerModel: null,

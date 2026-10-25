@@ -347,6 +347,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							},
 				observations: entry.observations.map(([observedOn, value]) => ({ observedOn, value })),
 				errorCode: entry.errorCode,
+				upstreamStatus: entry.upstreamStatus ?? null,
 			});
 		}
 		return ok({
@@ -382,6 +383,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				name: entry.name,
 				events: [...entry.events],
 				errorCode: entry.errorCode,
+				upstreamStatus: entry.upstreamStatus ?? null,
 			});
 		}
 		return ok({
@@ -567,7 +569,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					]);
 					// A cancelled google-calendar run restores its link row
 					// even though it never completes (FR-019 section 2.5).
-					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, now);
+					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, null, now);
 					continue;
 				}
 				const decision = decideClaim(leaseView(job), nowMs);
@@ -577,6 +579,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							state: "failed",
 							failureCode: "RETRY_CEILING_REACHED",
 							failureDetail: null,
+							failureUpstreamStatus: null,
 							leaseExpiresAt: null,
 						},
 						[auditFor(runner, job.state, "failed", "retry ceiling reached")],
@@ -587,6 +590,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						job,
 						"failed",
 						"RETRY_CEILING_REACHED",
+						null,
 						now,
 					);
 					continue;
@@ -614,6 +618,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								state: "failed",
 								failureCode: prepared.error.failureCode,
 								failureDetail: null,
+								failureUpstreamStatus: null,
 								leaseExpiresAt: null,
 							},
 							[auditFor(runner, job.state, "failed", prepared.error.reason)],
@@ -627,6 +632,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								job,
 								"failed",
 								prepared.error.failureCode,
+								null,
 								now,
 							);
 						}
@@ -651,6 +657,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 								state: "failed",
 								failureCode: prepared.error.failureCode,
 								failureDetail: null,
+								failureUpstreamStatus: null,
 								leaseExpiresAt: null,
 							},
 							[auditFor(runner, job.state, "failed", prepared.error.reason)],
@@ -674,6 +681,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 							state: "failed",
 							failureCode: "INTERNAL",
 							failureDetail: null,
+							failureUpstreamStatus: null,
 							leaseExpiresAt: null,
 						},
 						[auditFor(runner, job.state, "failed", "stock directory job names no market")],
@@ -701,6 +709,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 						// failure metadata, or a later success would show the old code.
 						failureCode: null,
 						failureDetail: null,
+						failureUpstreamStatus: null,
 					},
 					audits,
 				);
@@ -919,7 +928,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 				if (state === "cancelled") {
 					// No runner will complete this run: restore the Google link
 					// row like any other cancel (FR-019 section 2.5).
-					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, now);
+					await applyGoogleTerminalOutcome(deps, runner.ownerId, job, "cancelled", null, null, now);
 				} else if (
 					job.kind === "google-calendar" &&
 					job.request !== null &&
@@ -1189,6 +1198,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					// explicitly, so a previous attempt's detail never survives.
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 				} else if (request.outcome === "failed") {
 					// A google-calendar step is never retried on its own: a
@@ -1199,16 +1209,21 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = retry ? "pending" : "failed";
 					patch.failureCode = request.failureCode;
 					patch.failureDetail = request.failureDetail ?? null;
+					// The external service's own status, unchanged (§4a); a
+					// runner built before the field existed sends none.
+					patch.failureUpstreamStatus = request.failureUpstreamStatus ?? null;
 					patch.approvalRequest = null;
 				} else if (request.outcome === "waiting_approval") {
 					target = "waiting_approval";
 					patch.approvalRequest = request.approvalRequest;
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 				} else if (request.outcome === "ingested") {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					effects = {
 						...effects,
@@ -1218,6 +1233,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					const built = await marketEffects(request);
 					if (!built.ok) return built;
@@ -1236,6 +1252,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					const built = await earningsEffects(request);
 					if (!built.ok) return built;
@@ -1261,6 +1278,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					effects = {
 						...effects,
@@ -1276,6 +1294,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					const built = await notebookAssistedEffects(
 						{
@@ -1313,9 +1332,11 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					if (request.outcome === "partial") {
 						patch.failureCode = request.failureCode;
 						patch.failureDetail = null;
+						patch.failureUpstreamStatus = request.failureUpstreamStatus ?? null;
 					} else {
 						patch.failureCode = null;
 						patch.failureDetail = null;
+						patch.failureUpstreamStatus = null;
 					}
 					patch.approvalRequest = null;
 				} else if (
@@ -1326,6 +1347,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 					target = "completed";
 					patch.failureCode = null;
 					patch.failureDetail = null;
+					patch.failureUpstreamStatus = null;
 					patch.approvalRequest = null;
 					effects = { ...effects, google: googleSuccessPatch(request, now) };
 				} else {
@@ -1349,6 +1371,7 @@ export function createRunnerJobService(deps: RunnerJobServiceDeps) {
 										action,
 										outcome === "cancelled" ? "cancelled" : "failed",
 										request.outcome === "failed" ? request.failureCode : null,
+										request.outcome === "failed" ? (request.failureUpstreamStatus ?? null) : null,
 										now,
 									),
 					};

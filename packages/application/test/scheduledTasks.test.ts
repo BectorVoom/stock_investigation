@@ -98,7 +98,14 @@ function world(options: { settings?: AgentSettings | null; allowance?: number } 
 					const job = task.lastRunId === null ? undefined : jobs.get(task.lastRunId)?.job;
 					return {
 						task,
-						lastRun: job === undefined ? null : { state: job.state, failureCode: job.failureCode },
+						lastRun:
+							job === undefined
+								? null
+								: {
+										state: job.state,
+										failureCode: job.failureCode,
+										failureUpstreamStatus: job.failureUpstreamStatus,
+									},
 					};
 				});
 		},

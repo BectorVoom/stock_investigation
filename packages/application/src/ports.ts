@@ -274,6 +274,12 @@ export interface JobRecord {
 	readonly cancelRequested: boolean;
 	readonly failureCode: string | null;
 	readonly failureDetail: string | null;
+	/**
+	 * The status the external service that caused the failure answered with,
+	 * unchanged (docs/rule/error_handling.md §4a); null when no external
+	 * answer caused it. Set and cleared together with `failureCode`.
+	 */
+	readonly failureUpstreamStatus: number | null;
 	readonly approvalRequest: { readonly reasonCode: string; readonly detail: string } | null;
 	readonly retryOfRunId: string | null;
 	/**
@@ -430,6 +436,8 @@ export interface JobRepository {
 	): Promise<{
 		readonly state: string;
 		readonly failureCode: string | null;
+		/** The job's `failureUpstreamStatus` (§4a). */
+		readonly failureUpstreamStatus: number | null;
 		readonly at: string;
 	} | null>;
 	/**
@@ -562,6 +570,8 @@ export interface MarketCompletionSeries {
 	} | null;
 	readonly observations: readonly { readonly observedOn: string; readonly value: number }[];
 	readonly errorCode: MarketUnavailableCode | null;
+	/** The provider's answer status behind `errorCode`, unchanged (§4a); null otherwise. */
+	readonly upstreamStatus: number | null;
 }
 
 /** What a finished earnings-refresh job writes; committed all-or-nothing with it. */
@@ -573,6 +583,8 @@ export interface EarningsCompletionStock {
 	readonly name: string | null;
 	readonly events: readonly EarningsEvent[];
 	readonly errorCode: EarningsUnavailableCode | null;
+	/** The provider's answer status behind `errorCode`, unchanged (§4a); null otherwise. */
+	readonly upstreamStatus: number | null;
 }
 
 export interface CompletionEffects {
@@ -582,6 +594,8 @@ export interface CompletionEffects {
 		readonly sourceId: string;
 		readonly fetchedAt: string;
 		readonly errorCode: string | null;
+		/** The feed host's answer status behind `errorCode`, unchanged (§4a); absent from older runners. */
+		readonly upstreamStatus?: number | null;
 	}[];
 	readonly workspace: WorkspaceWrite | null;
 	readonly assistantMessage: {
@@ -743,6 +757,7 @@ export type ScheduledTaskPatch = Partial<
 export interface ScheduledTaskRunState {
 	readonly state: JobState;
 	readonly failureCode: string | null;
+	readonly failureUpstreamStatus: number | null;
 }
 
 export interface ScheduledTaskRepository {
@@ -860,6 +875,8 @@ export interface StoredMarketSeries {
 	readonly lastRefreshedAt: string | null;
 	readonly retrievedAt: string | null;
 	readonly unavailableCode: MarketUnavailableCode | null;
+	/** The provider's answer status behind `unavailableCode`, unchanged (§4a). */
+	readonly unavailableUpstreamStatus: number | null;
 }
 
 export interface StoredMarketObservation {
@@ -1054,6 +1071,8 @@ export interface StoredWatchlistStock {
 	/** Last successful refresh; null when none has succeeded. */
 	readonly retrievedAt: string | null;
 	readonly unavailableCode: EarningsUnavailableCode | null;
+	/** The provider's answer status behind `unavailableCode`, unchanged (§4a). */
+	readonly unavailableUpstreamStatus: number | null;
 }
 
 export interface StoredEarningsEvent {
@@ -1161,6 +1180,8 @@ export interface GoogleCalendarLink {
 		readonly unchanged: number;
 	} | null;
 	readonly lastFailureCode: string | null;
+	/** Google's answer status behind `lastFailureCode`, unchanged (§4a); cleared with it. */
+	readonly lastFailureUpstreamStatus: number | null;
 	readonly lastFailureAt: string | null;
 	readonly updatedAt: string;
 }
@@ -1176,6 +1197,7 @@ export interface GoogleCalendarLinkPatch {
 	readonly syncedDigest?: string | null;
 	readonly lastSync?: GoogleCalendarLink["lastSync"];
 	readonly lastFailureCode?: string | null;
+	readonly lastFailureUpstreamStatus?: number | null;
 	readonly lastFailureAt?: string | null;
 }
 

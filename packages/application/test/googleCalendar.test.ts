@@ -126,6 +126,7 @@ function leasedGoogleJob(runId: string, action: "connect" | "sync" | "disconnect
 		cancelRequested: false,
 		failureCode: null,
 		failureDetail: null,
+		failureUpstreamStatus: null,
 		approvalRequest: null,
 		retryOfRunId: null,
 		contextAnchorSeq: null,
@@ -230,6 +231,7 @@ describe("queue", () => {
 			cancelRequested: false,
 			failureCode: null,
 			failureDetail: null,
+			failureUpstreamStatus: null,
 			approvalRequest: null,
 			retryOfRunId: null,
 			contextAnchorSeq: null,
@@ -283,6 +285,7 @@ describe("queue", () => {
 					cancelRequested: false,
 					failureCode: null,
 					failureDetail: null,
+					failureUpstreamStatus: null,
 					approvalRequest: null,
 					retryOfRunId: null,
 					contextAnchorSeq: null,
@@ -346,6 +349,7 @@ describe("desired-set assembly", () => {
 				lastRefreshedAt: NOW,
 				retrievedAt: NOW,
 				unavailableCode: null,
+				unavailableUpstreamStatus: null,
 			},
 			{
 				stockId: "jp:7203",
@@ -356,6 +360,7 @@ describe("desired-set assembly", () => {
 				lastRefreshedAt: NOW,
 				retrievedAt: null,
 				unavailableCode: "NEVER_REFRESHED",
+				unavailableUpstreamStatus: null,
 			},
 		],
 	};
@@ -463,6 +468,7 @@ describe("state projection", () => {
 			syncedDigest: null,
 			lastSync: null,
 			lastFailureCode: null,
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: null,
 			updatedAt: at,
 		} as const;
@@ -494,6 +500,7 @@ describe("state projection", () => {
 			syncedDigest: digest,
 			lastSync: { inserted: 1, updated: 0, deleted: 0, unchanged: 0 },
 			lastFailureCode: null,
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: null,
 			updatedAt: at,
 		} as const;
@@ -517,18 +524,26 @@ describe("state projection", () => {
 			syncedDigest: null,
 			lastSync: null,
 			lastFailureCode: "GOOGLE_AUTH_EXPIRED",
+			lastFailureUpstreamStatus: 401,
 			lastFailureAt: at,
 			updatedAt: at,
 		} as const;
 		expect(toGoogleCalendarState(link, null, null).lastFailure).toEqual({
 			code: "GOOGLE_AUTH_EXPIRED",
 			reason: "The Google connection expired; reconnect Google Calendar.",
+			upstreamStatus: 401,
 			at,
 		});
+		// The generic reason keeps Google's own status beside it (§4a).
 		expect(
 			toGoogleCalendarState({ ...link, lastFailureCode: "SOME_RUNNER_CODE" }, null, null)
 				.lastFailure,
-		).toEqual({ code: "GOOGLE_REQUEST_FAILED", reason: "The Google Calendar request failed.", at });
+		).toEqual({
+			code: "GOOGLE_REQUEST_FAILED",
+			reason: "The Google Calendar request failed.",
+			upstreamStatus: 401,
+			at,
+		});
 	});
 });
 
@@ -546,6 +561,7 @@ describe("completion patches", () => {
 			syncedDigest: null,
 			lastSync: null,
 			lastFailureCode: null,
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: null,
 		});
 		expect(
@@ -568,6 +584,7 @@ describe("completion patches", () => {
 			syncedDigest: "d".repeat(64),
 			lastSync: { inserted: 3, updated: 1, deleted: 0, unchanged: 5 },
 			lastFailureCode: null,
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: null,
 		});
 		expect(googleSuccessPatch({ outcome: "google-calendar-disconnected" }, NOW)).toMatchObject({
@@ -587,46 +604,54 @@ describe("completion patches", () => {
 			syncedDigest: null,
 			lastSync: null,
 			lastFailureCode: null,
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: null,
 			updatedAt: NOW,
 		} as const;
-		expect(googleTerminalPatch(link, "connect", "failed", "GOOGLE_AUTH_TIMEOUT", NOW)).toEqual({
+		expect(
+			googleTerminalPatch(link, "connect", "failed", "GOOGLE_AUTH_TIMEOUT", null, NOW),
+		).toEqual({
 			status: "needs-reconnect",
 			connectFrom: null,
 			pendingAuthUrl: null,
 			lastFailureCode: "GOOGLE_AUTH_TIMEOUT",
+			lastFailureUpstreamStatus: null,
 			lastFailureAt: NOW,
 		});
-		expect(googleTerminalPatch(link, "connect", "cancelled", null, NOW)).toEqual({
+		expect(googleTerminalPatch(link, "connect", "cancelled", null, null, NOW)).toEqual({
 			status: "needs-reconnect",
 			connectFrom: null,
 			pendingAuthUrl: null,
 		});
 		expect(
-			googleTerminalPatch(null, "connect", "failed", "GOOGLE_CONSENT_DENIED", NOW),
+			googleTerminalPatch(null, "connect", "failed", "GOOGLE_CONSENT_DENIED", 403, NOW),
 		).toMatchObject({
 			status: "disconnected",
+			lastFailureUpstreamStatus: 403,
 		});
 	});
 
 	it("moves sync to needs-reconnect only on auth-expired; disconnect failures only record", () => {
-		expect(googleTerminalPatch(null, "sync", "failed", "GOOGLE_AUTH_EXPIRED", NOW)).toEqual({
+		expect(googleTerminalPatch(null, "sync", "failed", "GOOGLE_AUTH_EXPIRED", 401, NOW)).toEqual({
 			status: "needs-reconnect",
 			lastFailureCode: "GOOGLE_AUTH_EXPIRED",
+			lastFailureUpstreamStatus: 401,
 			lastFailureAt: NOW,
 		});
-		expect(googleTerminalPatch(null, "sync", "failed", "GOOGLE_RATE_LIMITED", NOW)).toEqual({
+		expect(googleTerminalPatch(null, "sync", "failed", "GOOGLE_RATE_LIMITED", 429, NOW)).toEqual({
 			lastFailureCode: "GOOGLE_RATE_LIMITED",
+			lastFailureUpstreamStatus: 429,
 			lastFailureAt: NOW,
 		});
-		expect(googleTerminalPatch(null, "sync", "cancelled", null, NOW)).toBe(null);
-		expect(googleTerminalPatch(null, "disconnect", "failed", "GOOGLE_REQUEST_FAILED", NOW)).toEqual(
-			{
-				lastFailureCode: "GOOGLE_REQUEST_FAILED",
-				lastFailureAt: NOW,
-			},
-		);
-		expect(googleTerminalPatch(null, "disconnect", "cancelled", null, NOW)).toBe(null);
+		expect(googleTerminalPatch(null, "sync", "cancelled", null, null, NOW)).toBe(null);
+		expect(
+			googleTerminalPatch(null, "disconnect", "failed", "GOOGLE_REQUEST_FAILED", null, NOW),
+		).toEqual({
+			lastFailureCode: "GOOGLE_REQUEST_FAILED",
+			lastFailureUpstreamStatus: null,
+			lastFailureAt: NOW,
+		});
+		expect(googleTerminalPatch(null, "disconnect", "cancelled", null, null, NOW)).toBe(null);
 	});
 });
 

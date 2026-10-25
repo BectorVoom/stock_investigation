@@ -117,6 +117,7 @@ const VIX_META: StoredMarketSeries = {
 	lastRefreshedAt: "2026-10-11T00:00:00.000Z",
 	retrievedAt: "2026-10-11T00:00:00.000Z",
 	unavailableCode: null,
+	unavailableUpstreamStatus: null,
 };
 
 describe("market refresh union (ADR-0021)", () => {

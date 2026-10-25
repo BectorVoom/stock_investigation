@@ -367,6 +367,55 @@ describe("run now (ADR-0033 §5)", () => {
 		expect((await listTasks(harness)).tasks[0]?.nextRunAt).toBe("2026-10-11T06:00:00.000Z");
 	});
 
+	it("lists a failed last run with the external service's status beside its code (§4a)", async () => {
+		const harness = createHarness();
+		await saveSettings(harness);
+		const token = await issueRunnerToken(harness);
+		const task = await createTask(harness);
+		const ran = await body(
+			await harness.call(
+				"POST",
+				`/scheduled-tasks/${task.taskId}/run`,
+				undefined,
+				idempotencyKey(),
+			),
+			runScheduledTaskResponseSchema,
+		);
+		const lease = await claim(harness, token);
+		if (lease === null || lease.runId !== ran.run.runId) throw new Error("expected the run");
+		const failed = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: {
+				agentSteps: 1,
+				toolCalls: 0,
+				inputBytes: 0,
+				knownCostUsd: 0,
+				hasUnmeteredUsage: true,
+			},
+			failureCode: "PROVIDER_UNAVAILABLE",
+			failureUpstreamStatus: 529,
+			retryable: false,
+		});
+		expect(failed.status).toBe(200);
+		const [listed] = (await listTasks(harness)).tasks;
+		expect(listed?.lastRun).toMatchObject({
+			runId: ran.run.runId,
+			state: "failed",
+			failureCode: "PROVIDER_UNAVAILABLE",
+			failureUpstreamStatus: 529,
+		});
+		// The single-task view (an edit's answer) reads the run on its own path.
+		const edited = await body(
+			await harness.call("PATCH", `/scheduled-tasks/${task.taskId}`, {
+				expectedVersion: listed?.version ?? -1,
+				title: "Evening brief",
+			}),
+			scheduledTaskResponseSchema,
+		);
+		expect(edited.task.lastRun?.failureUpstreamStatus).toBe(529);
+	});
+
 	it("answers the run service's refusal when no backend is saved", async () => {
 		const harness = createHarness();
 		const task = await createTask(harness);

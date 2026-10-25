@@ -695,6 +695,126 @@ describe("leases (section 5.2, AGT-011)", () => {
 	});
 });
 
+describe("an external service's status on a run (docs/rule/error_handling.md §4a)", () => {
+	async function failOnce(
+		harness: ReturnType<typeof createHarness>,
+		token: string,
+		runId: string,
+		failure: { readonly retryable: boolean; readonly failureUpstreamStatus?: number },
+	) {
+		const lease = await claim(harness, token);
+		if (lease === null || lease.runId !== runId) throw new Error("expected to claim the run");
+		const response = await harness.runner(token, `/jobs/${runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			failureCode: "PROVIDER_UNAVAILABLE",
+			...failure,
+		});
+		return (await body(response, completeJobResponseSchema)).state;
+	}
+
+	it("stores a failed completion's failureUpstreamStatus unchanged and shows it on the run", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const token = await issueRunnerToken(harness);
+		const overloaded = await queueRun(harness, workspaceId);
+		expect((await runState(harness, overloaded)).failureUpstreamStatus).toBeNull();
+		expect(
+			await failOnce(harness, token, overloaded, { retryable: false, failureUpstreamStatus: 529 }),
+		).toBe("failed");
+		const run = await runState(harness, overloaded);
+		expect(run).toMatchObject({
+			state: "failed",
+			failureCode: "PROVIDER_UNAVAILABLE",
+			failureUpstreamStatus: 529,
+		});
+		const listed = await body(
+			await harness.call("GET", `/research-runs?workspaceId=${workspaceId}`),
+			researchRunListResponseSchema,
+		);
+		expect(listed.runs.find((entry) => entry.runId === overloaded)?.failureUpstreamStatus).toBe(
+			529,
+		);
+
+		// An owner retry is a new run: it starts with no failure at all.
+		const retried = await body(
+			await harness.call("POST", `/research-runs/${overloaded}/retry`, undefined, idempotencyKey()),
+			researchRunResponseSchema,
+		);
+		expect(retried.run.failureUpstreamStatus).toBeNull();
+		await harness.call("POST", `/research-runs/${retried.run.runId}/cancel`);
+
+		// A runner that sends no status (built before the field) stores null.
+		const noStatus = await queueRun(harness, workspaceId);
+		expect(await failOnce(harness, token, noStatus, { retryable: false })).toBe("failed");
+		expect(await runState(harness, noStatus)).toMatchObject({
+			failureCode: "PROVIDER_UNAVAILABLE",
+			failureUpstreamStatus: null,
+		});
+	});
+
+	it("clears the status with the code when the next attempt is claimed, and the API's own failures carry none", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const token = await issueRunnerToken(harness);
+		const runId = await queueRun(harness, workspaceId);
+		expect(
+			await failOnce(harness, token, runId, { retryable: true, failureUpstreamStatus: 503 }),
+		).toBe("pending");
+		expect((await runState(harness, runId)).failureUpstreamStatus).toBe(503);
+
+		// The second attempt clears the previous attempt's code and status.
+		const second = await claim(harness, token);
+		expect(second?.runId).toBe(runId);
+		expect(await runState(harness, runId)).toMatchObject({
+			state: "claimed",
+			failureCode: null,
+			failureUpstreamStatus: null,
+		});
+
+		// The leases then lapse until the ceiling: a failure the API decided.
+		harness.time.advance(LEASE_MS + 1);
+		expect((await claim(harness, token))?.runId).toBe(runId);
+		harness.time.advance(LEASE_MS + 1);
+		expect(await claim(harness, token)).toBeNull();
+		expect(await runState(harness, runId)).toMatchObject({
+			state: "failed",
+			failureCode: "RETRY_CEILING_REACHED",
+			failureUpstreamStatus: null,
+		});
+	});
+
+	it("stores a partial completion's failureUpstreamStatus, and a completed run carries none", async () => {
+		const harness = createHarness();
+		const workspaceId = await createWorkspace(harness);
+		const token = await issueRunnerToken(harness);
+		const runId = await queueRun(harness, workspaceId);
+		const lease = await claim(harness, token);
+		if (lease === null) throw new Error("expected a lease");
+		await advanceToPublishing(harness, token, lease);
+		const partial = await harness.runner(token, `/jobs/${runId}/complete`, {
+			outcome: "partial",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			failureCode: "PROVIDER_RATE_LIMITED",
+			failureUpstreamStatus: 429,
+			bundle: bundleFor(runId),
+			articles: [],
+			sourceReports: [],
+		});
+		expect((await body(partial, completeJobResponseSchema)).state).toBe("partial");
+		expect(await runState(harness, runId)).toMatchObject({
+			state: "partial",
+			failureCode: "PROVIDER_RATE_LIMITED",
+			failureUpstreamStatus: 429,
+		});
+
+		const done = await completeRun(harness, token, workspaceId);
+		expect((await runState(harness, done.runId)).failureUpstreamStatus).toBeNull();
+	});
+});
+
 describe("cancel, retry, approval (FR-014)", () => {
 	it("cancels a pending run immediately", async () => {
 		const harness = createHarness();

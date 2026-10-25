@@ -1,3 +1,4 @@
+import type { SafeFetchError } from "@research/application";
 import {
 	articleListResponseSchema,
 	completeJobResponseSchema,
@@ -129,6 +130,60 @@ describe("source preview and registration (FR-001)", () => {
 		expect(error).toMatchObject({ code: "FETCH_FAILED", detail: "NETWORK_ERROR" });
 	});
 
+	// docs/rule/error_handling.md §4a: the feed host's own status is answered
+	// unchanged; a status that cannot be an error status line (a 3xx) or no
+	// answer at all keeps FETCH_FAILED's own 502.
+	it("answers a feed host's error status unchanged, with it in the body (§4a)", async () => {
+		const host = "https://status.example.org";
+		const answered = (status: number): SafeFetchError => ({
+			code: "HTTP_ERROR",
+			detail: `HTTP ${status}`,
+			status,
+		});
+		const harness = createHarness({
+			documents: {
+				[`${host}/404.xml`]: answered(404),
+				[`${host}/418.xml`]: answered(418),
+				[`${host}/503.xml`]: answered(503),
+				// Not in Hono's list of registered codes; passed through all the same.
+				[`${host}/529.xml`]: answered(529),
+				[`${host}/302.xml`]: {
+					code: "HTTP_ERROR",
+					detail: "HTTP 302 without a Location header",
+					status: 302,
+				},
+				[`${host}/slow.xml`]: { code: "TIMEOUT", detail: "no answer within the limit" },
+			},
+		});
+		const cases = [
+			{ path: "404.xml", status: 404, upstreamStatus: 404, detail: "HTTP_ERROR" },
+			{ path: "418.xml", status: 418, upstreamStatus: 418, detail: "HTTP_ERROR" },
+			{ path: "503.xml", status: 503, upstreamStatus: 503, detail: "HTTP_ERROR" },
+			{ path: "529.xml", status: 529, upstreamStatus: 529, detail: "HTTP_ERROR" },
+			{ path: "302.xml", status: 502, upstreamStatus: 302, detail: "HTTP_ERROR" },
+			{ path: "slow.xml", status: 502, upstreamStatus: undefined, detail: "TIMEOUT" },
+		];
+		for (const expected of cases) {
+			for (const route of ["/sources/preview", "/sources"]) {
+				const url = `${host}/${expected.path}`;
+				const response = await harness.call(
+					"POST",
+					route,
+					route === "/sources" ? { ...REGISTRATION, url } : { url },
+				);
+				expect(response.status, `${route} ${expected.path}`).toBe(expected.status);
+				expect(response.headers.get("Content-Type")).toContain("application/json");
+				const error = await apiError(response);
+				expect(error.code).toBe("FETCH_FAILED");
+				expect(error.detail).toBe(expected.detail);
+				expect(error.upstreamStatus).toBe(expected.upstreamStatus);
+			}
+		}
+		// Nothing was stored for a source whose host refused it.
+		const listed = await body(await harness.call("GET", "/sources"), sourceListResponseSchema);
+		expect(listed.sources).toEqual([]);
+	});
+
 	it("registers, updates and removes a source, rejecting duplicates", async () => {
 		const harness = createHarness({ documents: { [FEED_URL]: FEED } });
 		const created = await harness.call("POST", "/sources", REGISTRATION);
@@ -228,6 +283,7 @@ describe("news ingestion and deduplication (FR-003)", () => {
 		articles: ReturnType<typeof article>[],
 		sourceId: string,
 		errorCodeForSource: string | null = null,
+		upstreamStatusForSource: number | null = null,
 	) {
 		const queued = await body(
 			await harness.call("POST", "/sources/refresh", undefined, idempotencyKey()),
@@ -249,7 +305,12 @@ describe("news ingestion and deduplication (FR-003)", () => {
 			usage: { ...USAGE, agentSteps: 0, hasUnmeteredUsage: false },
 			articles: articles.map((item) => ({ ...item, sourceId })),
 			sourceReports: [
-				{ sourceId, fetchedAt: harness.time.clock.nowIso(), errorCode: errorCodeForSource },
+				{
+					sourceId,
+					fetchedAt: harness.time.clock.nowIso(),
+					errorCode: errorCodeForSource,
+					upstreamStatus: upstreamStatusForSource,
+				},
 			],
 		});
 		return body(response, completeJobResponseSchema);
@@ -312,6 +373,39 @@ describe("news ingestion and deduplication (FR-003)", () => {
 		await harness.call("POST", "/sources/refresh", undefined, idempotencyKey());
 		const lease = await claim(harness, token);
 		expect(lease?.sources).toEqual([]);
+	});
+
+	it("stores the feed host's status beside a source's error code, and a later success clears both (§4a)", async () => {
+		const harness = createHarness({ documents: { [FEED_URL]: FEED } });
+		const source = await body(
+			await harness.call("POST", "/sources", REGISTRATION),
+			newsSourceSchema,
+		);
+		expect(source.lastErrorUpstreamStatus).toBeNull();
+		const token = await issueRunnerToken(harness);
+		await ingest(harness, token, [], source.sourceId, "HTTP_ERROR", 410);
+		const failing = await body(await harness.call("GET", "/sources"), sourceListResponseSchema);
+		expect(failing.sources[0]).toMatchObject({
+			feedStatus: "failing",
+			lastErrorCode: "HTTP_ERROR",
+			lastErrorUpstreamStatus: 410,
+		});
+
+		await ingest(harness, token, [], source.sourceId, "TIMEOUT");
+		const noAnswer = await body(await harness.call("GET", "/sources"), sourceListResponseSchema);
+		expect(noAnswer.sources[0]).toMatchObject({
+			lastErrorCode: "TIMEOUT",
+			lastErrorUpstreamStatus: null,
+		});
+
+		await ingest(harness, token, [], source.sourceId, "HTTP_ERROR", 503);
+		await ingest(harness, token, [], source.sourceId);
+		const recovered = await body(await harness.call("GET", "/sources"), sourceListResponseSchema);
+		expect(recovered.sources[0]).toMatchObject({
+			feedStatus: "active",
+			lastErrorCode: null,
+			lastErrorUpstreamStatus: null,
+		});
 	});
 
 	it("does not accept a research outcome for an ingest job", async () => {

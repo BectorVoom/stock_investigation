@@ -1,5 +1,11 @@
 import { env } from "cloudflare:test";
-import type { Clock, Persistence, SafeFetcher, SafeFetchOptions } from "@research/application";
+import type {
+	Clock,
+	Persistence,
+	SafeFetchError,
+	SafeFetcher,
+	SafeFetchOptions,
+} from "@research/application";
 import {
 	type AgentDescriptor,
 	apiErrorBodySchema,
@@ -38,16 +44,24 @@ export interface FakeFetchCall {
 	readonly options: SafeFetchOptions;
 }
 
-/** Serves canned documents by URL; anything else is a network error. Records every call. */
-export function createFakeFetcher(documents: Record<string, string>) {
+/** A canned document's text, or the failure the safe fetcher reports for its URL. */
+export type FakeDocument = string | SafeFetchError;
+
+/**
+ * Serves canned documents by URL; a `SafeFetchError` entry is returned as
+ * that failure (an `HTTP_ERROR` carries the host's status); anything else
+ * is a network error. Records every call.
+ */
+export function createFakeFetcher(documents: Readonly<Record<string, FakeDocument>>) {
 	const calls: FakeFetchCall[] = [];
 	const fetcher: SafeFetcher = {
 		async fetchText(url, options) {
 			calls.push({ url, options });
-			const text = documents[url];
-			if (text === undefined)
+			const document = documents[url];
+			if (document === undefined)
 				return err({ code: "NETWORK_ERROR", detail: "no such test document" });
-			return ok({ finalUrl: url, contentType: "application/xml", text });
+			if (typeof document !== "string") return err(document);
+			return ok({ finalUrl: url, contentType: "application/xml", text: document });
 		},
 	};
 	return { fetcher, calls };
@@ -79,7 +93,7 @@ export interface Harness {
  */
 export function createHarness(
 	options: {
-		readonly documents?: Record<string, string>;
+		readonly documents?: Readonly<Record<string, FakeDocument>>;
 		readonly extraComponents?: readonly ComponentDefinition[];
 		readonly ownerId?: string;
 		readonly time?: ReturnType<typeof createTestClock>;

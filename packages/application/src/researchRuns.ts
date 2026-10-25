@@ -186,6 +186,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 			cancelRequested: false,
 			failureCode: null,
 			failureDetail: null,
+			failureUpstreamStatus: null,
 			approvalRequest: null,
 			verificationStatus: null,
 			providerModel: null,
@@ -542,6 +543,7 @@ export function createResearchRunService(deps: ResearchRunServiceDeps) {
 					ownerId,
 					result.value,
 					"cancelled",
+					null,
 					null,
 					deps.clock.nowIso(),
 				);

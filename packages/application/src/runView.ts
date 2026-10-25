@@ -20,6 +20,9 @@ export function toRunView(job: JobRecord, progress: readonly ProgressEntry[]): R
 		cancelRequested: job.cancelRequested,
 		failureCode: job.failureCode,
 		failureDetail: job.failureDetail,
+		// Writes set and clear the status together with the code; the view
+		// still never shows a status without a code (the run schema's rule).
+		failureUpstreamStatus: job.failureCode === null ? null : job.failureUpstreamStatus,
 		approvalRequest: job.approvalRequest,
 		retryOfRunId: job.retryOfRunId,
 		verificationStatus: job.verificationStatus,

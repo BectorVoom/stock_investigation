@@ -13,20 +13,26 @@ import type {
 	JobRecord,
 } from "./ports.ts";
 
-/** Terminal bookkeeping for google-calendar runs that never complete (FR-019 section 2.5). */
+/**
+ * Terminal bookkeeping for google-calendar runs that never complete (FR-019
+ * section 2.5). `failureUpstreamStatus` is Google's answer status behind
+ * `failureCode`, unchanged (docs/rule/error_handling.md §4a); null when the
+ * API itself decided the failure (lease expiry, retry ceiling).
+ */
 export async function applyGoogleTerminalOutcome(
 	deps: { readonly googleCalendar: GoogleCalendarRepository },
 	ownerId: string,
 	job: JobRecord,
 	outcome: "failed" | "cancelled",
 	failureCode: string | null,
+	failureUpstreamStatus: number | null,
 	now: string,
 ): Promise<void> {
 	if (job.kind !== "google-calendar") return;
 	const action = job.request !== null && "action" in job.request ? job.request.action : null;
 	if (action === null) return;
 	const link = await deps.googleCalendar.get(ownerId);
-	const patch = googleTerminalPatch(link, action, outcome, failureCode, now);
+	const patch = googleTerminalPatch(link, action, outcome, failureCode, failureUpstreamStatus, now);
 	if (patch !== null) await deps.googleCalendar.apply(ownerId, patch, now);
 }
 
@@ -58,6 +64,7 @@ export function googleSuccessPatch(
 				syncedDigest: null,
 				lastSync: null,
 				lastFailureCode: null,
+				lastFailureUpstreamStatus: null,
 				lastFailureAt: null,
 			};
 		case "google-calendar-synced":
@@ -75,6 +82,7 @@ export function googleSuccessPatch(
 					unchanged: outcome.unchanged,
 				},
 				lastFailureCode: null,
+				lastFailureUpstreamStatus: null,
 				lastFailureAt: null,
 			};
 		case "google-calendar-disconnected":
@@ -88,6 +96,7 @@ export function googleSuccessPatch(
 				syncedDigest: null,
 				lastSync: null,
 				lastFailureCode: null,
+				lastFailureUpstreamStatus: null,
 				lastFailureAt: null,
 			};
 	}
@@ -97,20 +106,26 @@ export function googleSuccessPatch(
  * Link patch for a failed/cancelled/lease-expired google-calendar run.
  * Failed/cancelled/lease-expired connect restores the status from before;
  * a failed sync with `GOOGLE_AUTH_EXPIRED` moves to `needs-reconnect`;
- * other failures only record `last_failure_*`. Cancellation records no
- * failure. Null when nothing changes (a cancelled sync/disconnect).
+ * other failures only record `last_failure_*` (the code with Google's answer
+ * status beside it, §4a). Cancellation records no failure. Null when nothing
+ * changes (a cancelled sync/disconnect).
  */
 export function googleTerminalPatch(
 	link: GoogleCalendarLink | null,
 	action: GoogleCalendarAction,
 	outcome: "failed" | "cancelled",
 	failureCode: string | null,
+	failureUpstreamStatus: number | null,
 	now: string,
 ): GoogleCalendarLinkPatch | null {
 	if (action === "connect") {
 		const failure: GoogleCalendarLinkPatch =
 			outcome === "failed" && failureCode !== null
-				? { lastFailureCode: failureCode, lastFailureAt: now }
+				? {
+						lastFailureCode: failureCode,
+						lastFailureUpstreamStatus: failureUpstreamStatus,
+						lastFailureAt: now,
+					}
 				: {};
 		// Restores only a row this connect left `connecting`. Anything else
 		// (an old run's bookkeeping arriving after a later connect finished)
@@ -127,7 +142,16 @@ export function googleTerminalPatch(
 	}
 	if (outcome === "cancelled" || failureCode === null) return null;
 	if (action === "sync" && failureCode === "GOOGLE_AUTH_EXPIRED") {
-		return { status: "needs-reconnect", lastFailureCode: failureCode, lastFailureAt: now };
+		return {
+			status: "needs-reconnect",
+			lastFailureCode: failureCode,
+			lastFailureUpstreamStatus: failureUpstreamStatus,
+			lastFailureAt: now,
+		};
 	}
-	return { lastFailureCode: failureCode, lastFailureAt: now };
+	return {
+		lastFailureCode: failureCode,
+		lastFailureUpstreamStatus: failureUpstreamStatus,
+		lastFailureAt: now,
+	};
 }

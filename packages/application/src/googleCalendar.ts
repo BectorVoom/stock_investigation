@@ -202,7 +202,7 @@ export function toGoogleCalendarState(
 ): GoogleCalendarState {
 	const lastFailure =
 		link !== null && link.lastFailureCode !== null && link.lastFailureAt !== null
-			? toFailure(link.lastFailureCode, link.lastFailureAt)
+			? toFailure(link.lastFailureCode, link.lastFailureAt, link.lastFailureUpstreamStatus)
 			: null;
 	if (link === null) {
 		return {
@@ -239,15 +239,19 @@ export function toGoogleCalendarState(
 	};
 }
 
-function toFailure(code: string, at: string): GoogleCalendarState["lastFailure"] {
+function toFailure(
+	code: string,
+	at: string,
+	upstreamStatus: number | null,
+): GoogleCalendarState["lastFailure"] {
 	const parsed = googleCalendarFailureCodeSchema.safeParse(code);
 	// Display-time defensive mapping: unknown stored codes (a runner that
 	// sent a non-GOOGLE code) show the generic reason — provider text never
 	// reaches the UI. The audit row keeps the stored code.
 	if (!parsed.success) {
-		return googleCalendarFailure("GOOGLE_REQUEST_FAILED", at);
+		return googleCalendarFailure("GOOGLE_REQUEST_FAILED", at, upstreamStatus);
 	}
-	return googleCalendarFailure(parsed.data, at);
+	return googleCalendarFailure(parsed.data, at, upstreamStatus);
 }
 
 export function createGoogleCalendarService(deps: GoogleCalendarServiceDeps) {
@@ -354,6 +358,7 @@ export function createGoogleCalendarService(deps: GoogleCalendarServiceDeps) {
 				cancelRequested: false,
 				failureCode: null,
 				failureDetail: null,
+				failureUpstreamStatus: null,
 				approvalRequest: null,
 				verificationStatus: null,
 				providerModel: null,
@@ -437,6 +442,7 @@ export function createInMemoryGoogleCalendarRepository(): GoogleCalendarReposito
 		syncedDigest: null,
 		lastSync: null,
 		lastFailureCode: null,
+		lastFailureUpstreamStatus: null,
 		lastFailureAt: null,
 		updatedAt: at,
 	});
@@ -455,6 +461,10 @@ export function createInMemoryGoogleCalendarRepository(): GoogleCalendarReposito
 		lastSync: "lastSync" in patch ? (patch.lastSync ?? null) : link.lastSync,
 		lastFailureCode:
 			"lastFailureCode" in patch ? (patch.lastFailureCode ?? null) : link.lastFailureCode,
+		lastFailureUpstreamStatus:
+			"lastFailureUpstreamStatus" in patch
+				? (patch.lastFailureUpstreamStatus ?? null)
+				: link.lastFailureUpstreamStatus,
 		lastFailureAt: "lastFailureAt" in patch ? (patch.lastFailureAt ?? null) : link.lastFailureAt,
 		updatedAt: link.updatedAt,
 	});

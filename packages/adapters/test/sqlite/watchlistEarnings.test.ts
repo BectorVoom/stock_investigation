@@ -350,6 +350,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 								},
 							],
 							errorCode: null,
+							upstreamStatus: null,
 						},
 						{
 							stockId: "jp:7203",
@@ -359,6 +360,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 							name: null,
 							events: [],
 							errorCode: "SOURCE_FAILED",
+							upstreamStatus: null,
 						},
 						// Left the watchlist between the service's check and
 						// the batch: neither may gain a stock row nor events.
@@ -378,6 +380,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 								},
 							],
 							errorCode: null,
+							upstreamStatus: null,
 						},
 						{
 							stockId: "us:GOOG",
@@ -387,6 +390,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 							name: null,
 							events: [],
 							errorCode: "SOURCE_FAILED",
+							upstreamStatus: null,
 						},
 					],
 				},
@@ -511,6 +515,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 							name: "Apple Inc",
 							events: [],
 							errorCode: "NO_SCHEDULED_DATE",
+							upstreamStatus: null,
 						},
 						{
 							stockId: "jp:7203",
@@ -520,6 +525,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 							name: null,
 							events: [],
 							errorCode: "SOURCE_FAILED",
+							upstreamStatus: 503,
 						},
 					],
 				},
@@ -533,6 +539,7 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 				lastRefreshedAt: "2026-10-13T01:00:00.000Z",
 				retrievedAt: "2026-10-13T01:00:00.000Z",
 				unavailableCode: "NO_SCHEDULED_DATE",
+				unavailableUpstreamStatus: null,
 			});
 			expect(await earnings.getEvents("owner_1", ["us:AAPL"])).toEqual([]);
 			// Every other error keeps the stored events and records only the
@@ -541,6 +548,8 @@ describe("earnings completion unit of work (FR-018 item 4)", () => {
 				lastRefreshedAt: "2026-10-13T01:00:00.000Z",
 				retrievedAt: null,
 				unavailableCode: "SOURCE_FAILED",
+				// The provider's own status, stored unchanged (§4a).
+				unavailableUpstreamStatus: 503,
 			});
 			expect(await earnings.getEvents("owner_1", ["jp:7203"])).toEqual([
 				expect.objectContaining({ stockId: "jp:7203", periodKey: "2026-q4" }),

@@ -49,6 +49,7 @@ function earningsCompletion(
 			| "NO_SCHEDULED_DATE"
 			| "SOURCE_FAILED"
 			| null;
+		readonly upstreamStatus?: number;
 	}[],
 ) {
 	return {
@@ -403,6 +404,56 @@ describe("earnings refresh (FR-018)", () => {
 		expect(aapl?.events).toEqual([{ ...AAPL_EVENT }]);
 		expect(aapl?.name).toBe("Apple Inc");
 		expect(aapl?.unavailable).toMatchObject({ code: "SOURCE_FAILED" });
+	});
+
+	it("stores the provider's status beside a stock's code, and a later success clears it (§4a)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await addStock(harness, "US", "AAPL");
+		const completeWith = async (entry: Parameters<typeof earningsCompletion>[2][number]) => {
+			await queueRefresh(harness);
+			const lease = await claim(harness, token);
+			if (lease?.kind !== "earnings-refresh") throw new Error("expected the earnings-refresh job");
+			await advanceToPublishing(harness, token, lease);
+			harness.time.advance(1000);
+			const response = await harness.runner(
+				token,
+				`/jobs/${lease.runId}/complete`,
+				earningsCompletion(lease, harness.time.clock.nowIso(), [entry]),
+			);
+			expect(response.status).toBe(200);
+		};
+		const aaplOf = async () =>
+			(await body(await harness.call("GET", "/watchlist"), watchlistResponseSchema)).stocks.find(
+				(stock) => stock.stockId === "us:AAPL",
+			);
+
+		await completeWith({
+			stockId: "us:AAPL",
+			name: null,
+			events: [],
+			errorCode: "RATE_LIMITED",
+			upstreamStatus: 429,
+		});
+		expect((await aaplOf())?.unavailable).toMatchObject({
+			code: "RATE_LIMITED",
+			upstreamStatus: 429,
+		});
+
+		await completeWith({
+			stockId: "us:AAPL",
+			name: "Apple Inc",
+			events: [AAPL_EVENT],
+			errorCode: null,
+		});
+		expect((await aaplOf())?.unavailable).toBeNull();
+
+		// A code with no provider answer behind it carries no status.
+		await completeWith({ stockId: "us:AAPL", name: null, events: [], errorCode: "SOURCE_FAILED" });
+		expect((await aaplOf())?.unavailable).toMatchObject({
+			code: "SOURCE_FAILED",
+			upstreamStatus: null,
+		});
 	});
 
 	it("rejects an outcome that does not match the job kind", async () => {

@@ -71,6 +71,7 @@ const VIX_META: StoredMarketSeries = {
 	lastRefreshedAt: "2026-10-11T00:00:00.000Z",
 	retrievedAt: "2026-10-11T00:00:00.000Z",
 	unavailableCode: null,
+	unavailableUpstreamStatus: null,
 };
 
 function dashboardOf(widgets: HomeDashboard["widgets"]): HomeDashboardRepository {
@@ -176,6 +177,7 @@ describe("home getData (FR-017)", () => {
 			lastRefreshedAt: "2026-10-12T12:00:00.000Z",
 			retrievedAt: null,
 			unavailableCode: "SERIES_NOT_FOUND",
+			unavailableUpstreamStatus: 404,
 		};
 		const unknownSymbol: StoredMarketSeries = {
 			...failedOnly,
@@ -216,6 +218,8 @@ describe("home getData (FR-017)", () => {
 		const cpi = data.series.find((entry) => entry.seriesId === "fred:CPIAUCSL");
 		expect(cpi?.title).toBe("US CPI");
 		expect(cpi?.unavailable?.code).toBe("SERIES_NOT_FOUND");
+		// The provider's own status reaches the view unchanged (§4a).
+		expect(cpi?.unavailable?.upstreamStatus).toBe(404);
 		const zzz = data.series.find((entry) => entry.seriesId === "fred:ZZZZ9");
 		expect(zzz?.title).toBe("ZZZZ9");
 		// A series with real provider metadata keeps its provider title.
@@ -273,6 +277,7 @@ describe("home getData (FR-017)", () => {
 			findLatestFailureByKind: async () => ({
 				state: "failed",
 				failureCode: "RUNNER_ERROR_X",
+				failureUpstreamStatus: null,
 				at: "2026-10-12T12:00:00.000Z",
 			}),
 		};
@@ -293,6 +298,7 @@ describe("home getData (FR-017)", () => {
 			lastFailure: {
 				state: "failed",
 				code: "RUNNER_ERROR_X",
+				upstreamStatus: null,
 				at: "2026-10-12T12:00:00.000Z",
 			},
 		});
@@ -312,6 +318,7 @@ describe("home getData (FR-017)", () => {
 					lastRefreshedAt: "2026-10-11T00:00:00.000Z",
 					retrievedAt: "2026-10-11T00:00:00.000Z",
 					unavailableCode: null,
+					unavailableUpstreamStatus: null,
 				},
 			],
 		};
@@ -328,8 +335,38 @@ describe("home getData (FR-017)", () => {
 		expect(
 			homeDataDigestEtag({
 				...base,
-				lastFailure: { state: "failed", code: "X", at: "2026-10-12T12:00:00.000Z" },
+				lastFailure: {
+					state: "failed",
+					code: "X",
+					upstreamStatus: null,
+					at: "2026-10-12T12:00:00.000Z",
+				},
 			}),
 		).not.toBe(idle);
+	});
+
+	it("§4a: the digest ETag moves with an upstream status alone, so a changed status is never a 304", () => {
+		const stamp = {
+			seriesId: "fred:VIXCLS",
+			lastRefreshedAt: "2026-10-11T00:00:00.000Z",
+			retrievedAt: null,
+			unavailableCode: "SOURCE_FAILED",
+		};
+		const failure = { state: "failed", code: "SOURCE_FAILED", at: "2026-10-12T12:00:00.000Z" };
+		const digest = (seriesStatus: number | null, runStatus: number | null): HomeDataDigest => ({
+			dashboardVersion: 1,
+			seriesIds: ["fred:VIXCLS"],
+			activeRunId: null,
+			activeRunState: null,
+			lastSucceededAt: null,
+			lastFailure: { ...failure, upstreamStatus: runStatus },
+			seriesStamps: [{ ...stamp, unavailableUpstreamStatus: seriesStatus }],
+		});
+		const tags = new Set(
+			[digest(null, null), digest(503, null), digest(500, null), digest(null, 503)].map(
+				homeDataDigestEtag,
+			),
+		);
+		expect(tags.size).toBe(4);
 	});
 });

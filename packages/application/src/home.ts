@@ -66,13 +66,13 @@ export function homeDataDigestEtag(digest: HomeDataDigest): string {
 	const series = digest.seriesStamps
 		.map(
 			(entry) =>
-				`${entry.seriesId}:${entry.lastRefreshedAt ?? "never"}:${entry.retrievedAt ?? "never"}:${entry.unavailableCode ?? "ok"}`,
+				`${entry.seriesId}:${entry.lastRefreshedAt ?? "never"}:${entry.retrievedAt ?? "never"}:${entry.unavailableCode ?? "ok"}:${entry.unavailableUpstreamStatus ?? "-"}`,
 		)
 		.join(",");
 	const failure =
 		digest.lastFailure === null
 			? "no-failure"
-			: `${digest.lastFailure.state}:${digest.lastFailure.code}:${digest.lastFailure.at}`;
+			: `${digest.lastFailure.state}:${digest.lastFailure.code}:${digest.lastFailure.upstreamStatus ?? "-"}:${digest.lastFailure.at}`;
 	return `home.v${digest.dashboardVersion}.${digest.activeRunId ?? "idle"}.${digest.activeRunState ?? "idle"}.${digest.lastSucceededAt ?? "never"}.${failure}.${series}`;
 }
 

@@ -6,7 +6,7 @@ import {
 	idempotencyKeySchema,
 	idSchema,
 } from "@research/contracts";
-import { parseJson } from "@research/domain";
+import { parseJson, responseStatusForUpstream } from "@research/domain";
 import { attemptResult, type EventLogger, logIsolated, UnexpectedError } from "@research/effects";
 import { Data, Effect } from "effect";
 import type { Context } from "hono";
@@ -64,14 +64,32 @@ export const STATUS: { readonly [C in ApiErrorCode]: ContentfulStatusCode } = {
 	INTERNAL: 500,
 };
 
+/**
+ * The JSON error body and status of a use-case failure. When an external
+ * service caused it (`upstreamStatus`), the body carries that status and the
+ * response answers with it unchanged when it is a 4xx/5xx; otherwise (no
+ * answer, or a 1xx–3xx) the code's own status from `STATUS` stands
+ * (docs/rule/error_handling.md §4a, ADR-0037).
+ */
 export function failure(c: AppContext, error: UseCaseError): Response {
+	const base: ApiErrorBody["error"] =
+		error.detail === undefined
+			? { code: error.code, message: error.message }
+			: { code: error.code, message: error.message, detail: error.detail };
 	const body: ApiErrorBody = {
 		error:
-			error.detail === undefined
-				? { code: error.code, message: error.message }
-				: { code: error.code, message: error.message, detail: error.detail },
+			error.upstreamStatus === undefined ? base : { ...base, upstreamStatus: error.upstreamStatus },
 	};
-	return c.json(body, STATUS[error.code]);
+	const ownStatus = STATUS[error.code];
+	const response = c.json(body, ownStatus);
+	const status = responseStatusForUpstream(error.upstreamStatus, ownStatus);
+	// Hono types a status as the codes it has registered, and an upstream may
+	// answer with any 4xx/5xx (Anthropic's 529, Cloudflare's 52x). The JSON
+	// response Hono built (its headers included) is re-issued with the
+	// upstream's status instead of narrowing the number with a cast.
+	return status === ownStatus
+		? response
+		: new Response(response.body, { status, headers: response.headers });
 }
 
 export function reject(c: AppContext, code: ApiErrorCode, message: string): Response {

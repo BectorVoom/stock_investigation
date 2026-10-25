@@ -57,6 +57,7 @@ function marketCompletion(
 			| "NO_DATA"
 			| "SOURCE_FAILED"
 			| null;
+		readonly upstreamStatus?: number;
 	}[],
 ) {
 	return {
@@ -648,6 +649,76 @@ describe("market refresh (FR-017)", () => {
 		]);
 		expect(vix?.unavailable?.code).toBe("SOURCE_FAILED");
 		expect(vix?.title).toBe("VIX");
+	});
+
+	it("stores the provider's status beside a series' code, and a success clears it (§4a)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		const completeWith = async (entry: Parameters<typeof marketCompletion>[1][number]) => {
+			await refresh(harness);
+			const lease = await claim(harness, token);
+			if (lease?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
+			await advanceToPublishing(harness, token, lease);
+			harness.time.advance(1000);
+			const response = await harness.runner(
+				token,
+				`/jobs/${lease.runId}/complete`,
+				marketCompletion(lease, [entry]),
+			);
+			expect(response.status).toBe(200);
+		};
+		const failure = (upstreamStatus: number) => ({
+			seriesId: "fred:VIXCLS",
+			fetchedAt: harness.time.clock.nowIso(),
+			meta: null,
+			observations: [],
+			errorCode: "SOURCE_FAILED" as const,
+			upstreamStatus,
+		});
+		const vixOf = async () => {
+			const data = await body(await harness.call("GET", "/home/data"), homeDataResponseSchema);
+			return { vix: data.series.find((entry) => entry.seriesId === "fred:VIXCLS") };
+		};
+
+		await completeWith(failure(503));
+		const first = await vixOf();
+		expect(first.vix?.unavailable).toMatchObject({ code: "SOURCE_FAILED", upstreamStatus: 503 });
+
+		await completeWith(failure(500));
+		const second = await vixOf();
+		expect(second.vix?.unavailable).toMatchObject({ code: "SOURCE_FAILED", upstreamStatus: 500 });
+
+		await completeWith({
+			seriesId: "fred:VIXCLS",
+			fetchedAt: harness.time.clock.nowIso(),
+			meta: { ...VIX_META },
+			observations: [["2026-10-01", 15.2]],
+			errorCode: null,
+		});
+		expect((await vixOf()).vix?.unavailable).toBeNull();
+	});
+
+	it("shows a failed refresh run's upstream status in refresh.lastFailure (§4a)", async () => {
+		const harness = createHarness();
+		const token = await issueRunnerToken(harness);
+		await refresh(harness);
+		const lease = await claim(harness, token);
+		if (lease?.kind !== "market-refresh") throw new Error("expected the market-refresh job");
+		const failed = await harness.runner(token, `/jobs/${lease.runId}/complete`, {
+			outcome: "failed",
+			leaseGeneration: lease.leaseGeneration,
+			usage: USAGE,
+			failureCode: "SOURCE_FAILED",
+			failureUpstreamStatus: 502,
+			retryable: false,
+		});
+		expect((await body(failed, completeJobResponseSchema)).state).toBe("failed");
+		const data = await body(await harness.call("GET", "/home/data"), homeDataResponseSchema);
+		expect(data.refresh.lastFailure).toMatchObject({
+			state: "failed",
+			code: "SOURCE_FAILED",
+			upstreamStatus: 502,
+		});
 	});
 
 	it("prunes stored observations to 1,500 per series", async () => {

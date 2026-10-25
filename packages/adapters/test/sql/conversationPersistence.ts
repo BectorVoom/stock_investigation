@@ -117,6 +117,7 @@ function job(
 		cancelRequested: false,
 		failureCode: null,
 		failureDetail: null,
+		failureUpstreamStatus: null,
 		approvalRequest: null,
 		retryOfRunId: null,
 		contextAnchorSeq: null,
