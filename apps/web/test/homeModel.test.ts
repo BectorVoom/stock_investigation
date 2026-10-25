@@ -14,6 +14,7 @@ import {
 	marketAddedRefreshScope,
 	marketAutoRefreshScope,
 	marketFollowUpScope,
+	notebookFirstRefreshScope,
 	seriesById,
 	sparklinePath,
 	staleFailureReason,
@@ -326,6 +327,17 @@ describe("home view-model", () => {
 		expect(marketFollowUpScope([fresh, null], now)).toBe("unrefreshed");
 		expect(marketFollowUpScope([stale, null], now)).toBe("all");
 		expect(marketFollowUpScope([null, null], now)).toBe("all");
+	});
+
+	it("the Notebook's first refresh asks for everything only when a shown series is stale", () => {
+		const now = Date.parse("2026-10-12T12:00:00Z");
+		const fresh = "2026-10-12T11:45:01Z";
+		const stale = "2026-10-12T11:29:59Z";
+		expect(notebookFirstRefreshScope([null], now)).toBe("unrefreshed");
+		expect(notebookFirstRefreshScope([null, null], now)).toBe("unrefreshed");
+		expect(notebookFirstRefreshScope([fresh, null], now)).toBe("unrefreshed");
+		expect(notebookFirstRefreshScope([stale, null], now)).toBe("all");
+		expect(notebookFirstRefreshScope(["not-a-date", null], now)).toBe("all");
 	});
 
 	it("refreshes after a widget add: the same rule, else only the series without data", () => {

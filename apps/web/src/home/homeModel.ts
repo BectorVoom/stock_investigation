@@ -25,6 +25,7 @@ import {
 	addedItemRefreshScope,
 	autoRefreshScope,
 	followUpRefreshScope,
+	hasStaleStamp,
 } from "../lib/refreshScope.ts";
 import type { homeModelMessages } from "./homeModel.messages.ts";
 
@@ -297,6 +298,22 @@ export function marketAddedRefreshScope(
 	nowMs: number,
 ): RefreshScope {
 	return addedItemRefreshScope(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs);
+}
+
+/**
+ * The Notebook's one automatic refresh for a series never refreshed
+ * (ADR-0039): only the series without data, unless a series the Notebook
+ * shows is stale — then everything, so the narrow job is not followed by
+ * Home's refresh of everything. Unlike Home, a Notebook whose series all
+ * lack data still asks narrowly: it sees only its own series, and asking
+ * for everything would also fetch every Home series (a first-ever refresh
+ * that covers everything is stored as one by the claim anyway).
+ */
+export function notebookFirstRefreshScope(
+	lastRefreshedAts: readonly (string | null)[],
+	nowMs: number,
+): RefreshScope {
+	return hasStaleStamp(lastRefreshedAts, HOME_AUTO_REFRESH_STALE_MS, nowMs) ? "all" : "unrefreshed";
 }
 
 /**

@@ -669,6 +669,33 @@ describe("notebook market data context", () => {
 		expect(articleById("nb-metric").textContent).toContain("unavailable");
 	});
 
+	it("asks for everything when a series the notebook shows is stale (ADR-0039)", async () => {
+		// Pinned visit time: the stale fixture stamps (2026-10-10) are two days old.
+		vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T12:00:00Z"));
+		const fixtures = marketFixtures();
+		const series = defaultHomeSeries(true).map((entry): MarketSeries => {
+			if (entry.seriesId !== "fred:VIXCLS") return entry;
+			return {
+				...entry,
+				observations: [],
+				lastRefreshedAt: null,
+				retrievedAt: null,
+				unavailable: {
+					code: "NEVER_REFRESHED",
+					upstreamStatus: null,
+					reason: "No data has been refreshed yet; queue a refresh.",
+				},
+			};
+		});
+		mountPanel([fixtures.metric, fixtures.stocks], freshMarket(series), null);
+		await waitFor(() => expect(articles()).toHaveLength(2), { timeout: 10_000 });
+		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
+			timeout: 10_000,
+		});
+		// One job for everything, instead of a narrow one followed by Home's full one.
+		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({ scope: "all" });
+	});
+
 	it("saves a line-chart range change from the Home chart in the notebook", async () => {
 		const fixtures = marketFixtures();
 		mountPanel([fixtures.chart], freshMarket(defaultHomeSeries(false)), null);

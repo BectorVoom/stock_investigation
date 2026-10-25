@@ -20,17 +20,23 @@ export function autoRefreshScope(
 	staleAfterMs: number,
 	nowMs: number,
 ): RefreshScope | null {
-	let missing = 0;
-	for (const at of lastRefreshedAts) {
-		if (at === null) {
-			missing += 1;
-			continue;
-		}
-		const ms = Date.parse(at);
-		if (!Number.isFinite(ms) || nowMs - ms > staleAfterMs) return "all";
-	}
+	if (hasStaleStamp(lastRefreshedAts, staleAfterMs, nowMs)) return "all";
+	const missing = lastRefreshedAts.filter((at) => at === null).length;
 	if (missing === 0) return null;
 	return missing === lastRefreshedAts.length ? "all" : "unrefreshed";
+}
+
+/** True when a present stamp is older than `staleAfterMs` or unparsable; missing stamps are not stale. */
+export function hasStaleStamp(
+	lastRefreshedAts: readonly (string | null)[],
+	staleAfterMs: number,
+	nowMs: number,
+): boolean {
+	return lastRefreshedAts.some((at) => {
+		if (at === null) return false;
+		const ms = Date.parse(at);
+		return !Number.isFinite(ms) || nowMs - ms > staleAfterMs;
+	});
 }
 
 /**

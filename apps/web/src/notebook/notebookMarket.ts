@@ -2,7 +2,7 @@ import { distinctWidgetSeriesIds, isMarketWidget, type NotebookWidget } from "@r
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ok } from "../api/http.ts";
-import { seriesById } from "../home/homeModel.ts";
+import { notebookFirstRefreshScope, seriesById } from "../home/homeModel.ts";
 import {
 	createEtagLoader,
 	createMarketRefreshQueue,
@@ -101,8 +101,11 @@ export function createNotebookMarketContext(options: {
 		});
 		if (!needs || refreshedKeys.has(key)) return;
 		refreshedKeys.add(key);
-		// ADR-0039: only the series without data are fetched, not every tracked one.
-		void marketQueue.queue("unrefreshed").then((result) => {
+		// ADR-0039: only the series without data are fetched, unless a
+		// series shown here is stale (then everything, in one job).
+		const stamps = ids.map((id) => byId().get(id)?.lastRefreshedAt ?? null);
+		const scope = notebookFirstRefreshScope(stamps, Date.now());
+		void marketQueue.queue(scope).then((result) => {
 			if (disposed) return;
 			if (result.kind !== "queued") return;
 			dataPoller.start();

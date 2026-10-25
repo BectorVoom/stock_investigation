@@ -44,11 +44,16 @@ export function widenAuditAction(kind: ScopedRefreshKind): string {
 
 /**
  * Whether a stock's stored state makes it part of an `"unrefreshed"`
- * earnings refresh: true for a fetch that failed (it may succeed now, as it
- * would in the refresh of everything an add used to queue; a missing key
- * costs no request), false for a provider's real answer — no scheduled
- * date, an unknown symbol — which a new request would only repeat. One
- * entry per code, so a new code needs a decision here.
+ * earnings refresh (ADR-0039), so an add retries what the refresh of
+ * everything it used to queue would have retried:
+ * - retried: a failed fetch (`SOURCE_FAILED`, `RATE_LIMITED`), which may
+ *   succeed now; a rejected key or plan (`SOURCE_AUTH_FAILED`,
+ *   `PLAN_NOT_ENTITLED`), because the owner may have fixed the key or plan
+ *   since; and a missing key (`SOURCE_NOT_CONFIGURED`), which sends nothing
+ *   until one is set. Each retried stock costs at most one request per add.
+ * - not retried: the provider's real answer about the stock — no scheduled
+ *   date, an unknown symbol — which a new request would only repeat.
+ * One entry per code, so a new code needs a decision here.
  */
 const RETRIED_WHEN_UNREFRESHED: { readonly [C in EarningsUnavailableCode]: boolean } = {
 	NEVER_REFRESHED: true,

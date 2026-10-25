@@ -23,6 +23,7 @@ import {
 	addedItemRefreshScope,
 	autoRefreshScope,
 	followUpRefreshScope,
+	hasStaleStamp,
 } from "../lib/refreshScope.ts";
 import type { watchlistModelMessages } from "./watchlistModel.messages.ts";
 
@@ -349,10 +350,7 @@ function stampsOf(current: WatchlistResponse): readonly (string | null)[] {
  * `"all"` for that reason.
  */
 function reasonFor(stamps: readonly (string | null)[], nowMs: number): EarningsAutoRefreshReason {
-	const stamped = stamps.filter((at) => at !== null);
-	return autoRefreshScope(stamped, EARNINGS_AUTO_REFRESH_STALE_MS, nowMs) === "all"
-		? "stale"
-		: "never-refreshed";
+	return hasStaleStamp(stamps, EARNINGS_AUTO_REFRESH_STALE_MS, nowMs) ? "stale" : "never-refreshed";
 }
 
 /* ----- stock directory search (ADR-0034) ----- */
