@@ -362,3 +362,36 @@ The dialog checks (focus in, Escape, focus back on the opener) found nothing in 
 - Touch was not emulated: the 44 px coarse-pointer sizes (icon buttons and links) were not measured; the Tasks page's text buttons are the app's 24 px `BUTTON`, as on the Watchlist page.
 - A skipped one-off task, a spend-consent checkbox (metered backend) and a failed run were not in the screenshots: the first two need a skipped once slot or a Claude API key, the third a failing agent; their wording is covered by unit tests.
 - The Notebook-first chat panel beside the Notebook is narrow at 1440 px and squeezes its result tables; that is the chat's layout, not this feature's.
+
+# UI review — Watchlist lists and the Watchlist prices widget (ADR-0040)
+
+**Date:** 2026-10-25 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Widget guideline:** Apple Human Interface Guidelines for widgets ([ADR-0017](adr/0017-home-widgets-follow-apple-hig.md)) · **Tool:** `tests/ui-review/watchlistListsReview.spec.ts` (part of `bun run review:ui`; run alone with `REVIEW_BROWSER=<engine> node_modules/.bin/playwright test --config tests/ui-review/playwright.config.ts watchlistListsReview.spec.ts`)
+
+## How it was reviewed
+
+The review runs as its own owner with its own runner harness against the built SPA; every state is made through the API and the runner. A six-stock list (AAPL and MSFT, which the E2E Twelve Data fixtures serve, beside TM, 7203, 6758 and 7205, which they do not), a one-stock list with a long title and an empty list; Home holds the list at Small, Medium and Large plus an empty list at Small, and Home's automatic refresh fetches the prices through the runner. Every screenshot (`test-results/ui-review/<engine>/watchlist-lists/*.png`, 18 per engine) was read, with `findings.json` (a document wider than the viewport).
+
+**States** at 1440×900 and 390×844: the Lists section empty and populated, the New list dialog, the Add stock dialog (checkboxes and search), and Home with the widget at each size, with a crop of each widget.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Screenshots | The source line read "Sources: Twelve Data," — a series with no observations added an empty publisher | Fixed: the line names the sources of the numbers shown (series with observations on the page) |
+| Screenshots | A stock without data printed the whole provider sentence ("unavailable (The provider has no data … HTTP 404.)"): four lines a row at Small, two to four at Medium on a phone, pushing the session note out of a Small frame | Fixed: in the widget the reason is clamped to one line at Small and two at Medium and Large; the whole reason stays in the text (screen readers) and the tooltip. The Stock table is unchanged |
+| Screenshots | The first clamp did not apply: `block` beside `line-clamp-*` overrode the `-webkit-box` display | Fixed: the clamp class alone |
+| Automated (overflow) | — | No page wider than its viewport in either engine at 390 px: the widget hides the As of column below a 28rem container and the Source column below 42rem instead of scrolling sideways |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (scripted review, screenshots read; E2E `watchlistLists.spec.ts`) |
+| Safari engine (Playwright WebKit) | Reviewed (scripted review, screenshots read; E2E `watchlistLists.spec.ts`) |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine; the owner runs `REVIEW_BROWSER=firefox bun run review:ui` |
+
+## Known limits
+
+- Japanese stocks show "unavailable" on Twelve Data's free plan (ADR-0040 §3), so most rows of a Japanese list are reasons, not prices.
+- A stock added through the API before the stock lists were downloaded has no company name; the widget then shows the series title (e.g. "MSFT (NASDAQ)"), the page "unavailable (not retrieved yet)".
+- The review audits overflow only; it does not repeat the Tasks review's obscured / small-target audit. The list card's buttons are the app's 24 px `BUTTON`, as elsewhere on the Watchlist page.

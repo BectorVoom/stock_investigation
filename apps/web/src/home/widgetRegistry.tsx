@@ -13,6 +13,7 @@ import { IndicatorTableWidget } from "./widgets/IndicatorTableWidget.tsx";
 import { LineChartWidget } from "./widgets/LineChartWidget.tsx";
 import { MetricWidget } from "./widgets/MetricWidget.tsx";
 import { StockTableWidget } from "./widgets/StockTableWidget.tsx";
+import { WatchlistPricesWidget } from "./widgets/WatchlistPricesWidget.tsx";
 
 export interface WidgetRendererProps {
 	readonly widget: MarketWidgetCore;
@@ -24,15 +25,20 @@ export interface WidgetRendererProps {
 	 */
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 	/**
+	 * The series the page is served, by the domain's `pageSeriesIds`
+	 * (ADR-0040 §4): a Watchlist prices row outside it is past the page's
+	 * limit. Other widgets ignore it.
+	 */
+	readonly pageSeries: Accessor<ReadonlySet<string>>;
+	/**
 	 * The watchlist as an accessor (same live pattern as `seriesById`):
-	 * HomeView loads it only when the dashboard holds at least one
-	 * earnings-calendar widget. Null until loaded; widgets without calendar
-	 * content ignore it.
+	 * the page loads it only when it holds an earnings-calendar or a
+	 * Watchlist prices widget. Null until loaded; other widgets ignore it.
 	 */
 	readonly watchlist: Accessor<WatchlistResponse | null>;
-	/** Watchlist load failure for the earnings calendar (other widgets ignore it). */
+	/** Watchlist load failure for the widgets that read it (others ignore it). */
 	readonly watchlistError: Accessor<ApiFailure | null>;
-	/** Retries the watchlist load (the calendar widget's "Try again"). */
+	/** Retries the watchlist load (the calendar's and the Watchlist prices widget's "Try again"). */
 	readonly onRetryWatchlist: () => void;
 	/** Queues an earnings-date refresh (the calendar widget's refresh button). */
 	readonly onRefreshEarnings: () => void;
@@ -141,9 +147,23 @@ function EarningsCalendarEntry(props: WidgetRendererProps): JSX.Element {
 	);
 }
 
-/** Seam placeholder (ADR-0040): the web worker replaces it with the real widget. */
-function WatchlistPricesEntry(_props: WidgetRendererProps): JSX.Element {
-	return null;
+function WatchlistPricesEntry(props: WidgetRendererProps): JSX.Element {
+	const prices = (): Extract<MarketWidgetCore, { readonly type: "watchlist-prices" }> | null =>
+		props.widget.type === "watchlist-prices" ? props.widget : null;
+	return (
+		<Show when={prices()} fallback={null}>
+			{(current) => (
+				<WatchlistPricesWidget
+					widget={current()}
+					seriesById={props.seriesById}
+					watchlist={props.watchlist}
+					watchlistError={props.watchlistError}
+					onRetryWatchlist={props.onRetryWatchlist}
+					pageSeries={props.pageSeries}
+				/>
+			)}
+		</Show>
+	);
 }
 
 /**

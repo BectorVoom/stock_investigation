@@ -767,6 +767,8 @@ export function commandRequests(backend: FakeBackend): RecordedRequest[] {
 /** What the watchlist fake server stores; tests mutate it to end runs and refresh stocks. */
 export interface WatchlistServerState {
 	stocks: WatchlistResponse["stocks"];
+	/** The owner's titled lists (ADR-0040); every member is one of `stocks`. */
+	lists: WatchlistResponse["lists"];
 	activeRunId: string | null;
 	runState: string;
 	lastSucceededAt: string | null;
@@ -801,6 +803,7 @@ export interface WatchlistServerState {
 export function initialWatchlistServerState(): WatchlistServerState {
 	return {
 		stocks: [],
+		lists: [],
 		activeRunId: null,
 		runState: "pending",
 		lastSucceededAt: null,
@@ -827,7 +830,8 @@ function watchlistEtag(watch: WatchlistServerState): string {
 	const stamp = watch.stocks
 		.map((entry) => `${entry.stockId}:${entry.lastRefreshedAt ?? "never"}`)
 		.join(",");
-	return `"watch-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
+	const lists = watch.lists.map((list) => `${list.listId}.${list.version}`).join(",");
+	return `"watch-${lists}-${watch.activeRunId ?? "idle"}-${watch.lastSucceededAt ?? "never"}-${stamp.length}-${stamp}-${JSON.stringify(watch.google)}"`;
 }
 
 /** Registers the `/watchlist` + `/watchlist/refresh` routes Home's calendar widget needs. */
@@ -838,6 +842,7 @@ export function installWatchlistRoutes(backend: FakeBackend, watch: WatchlistSer
 		return jsonResponse(
 			{
 				stocks: watch.stocks,
+				lists: watch.lists,
 				refresh: {
 					activeRunId: watch.activeRunId,
 					activeRunState: watch.activeRunId === null ? null : watch.runState,

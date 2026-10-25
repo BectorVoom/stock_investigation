@@ -1,10 +1,12 @@
 import {
+	type AddWatchlistListStockRequest,
 	type AddWatchlistStockRequest,
 	type AgentSettings,
 	type AgentSettingsResponse,
 	type AgentsResponse,
 	API_PREFIX,
 	type Article,
+	addWatchlistListStockRequestSchema,
 	addWatchlistStockRequestSchema,
 	agentSettingsResponseSchema,
 	agentSettingsSchema,
@@ -20,6 +22,7 @@ import {
 	conversationResponseSchema,
 	createResearchRunRequestSchema,
 	createScheduledTaskRequestSchema,
+	createWatchlistListRequestSchema,
 	createWorkspaceRequestSchema,
 	dropLegacyEmptyAssets,
 	type HomeDashboard,
@@ -54,6 +57,7 @@ import {
 	recommendedSourcesResponseSchema,
 	refreshRequestSchema,
 	registerSourceRequestSchema,
+	renameWatchlistListRequestSchema,
 	renameWorkspaceRequestSchema,
 	researchExportSchema,
 	researchRunListResponseSchema,
@@ -87,6 +91,7 @@ import {
 	undoNotebookRequestSchema,
 	updateScheduledTaskRequestSchema,
 	updateSourceRequestSchema,
+	type WatchlistList,
 	type WatchlistResponse,
 	type WatchMarket,
 	type WorkspaceSummary,
@@ -118,7 +123,13 @@ export type { AgentSettings, AgentSettingsResponse };
 export type HomeDashboardResponse = Parsed<typeof homeDashboardResponseSchema>;
 export type HomeDataResponse = Parsed<typeof homeDataResponseSchema>;
 export type WatchlistData = Parsed<typeof watchlistResponseSchema>;
-export type { AddWatchlistStockRequest, CalendarFeedIssued, WatchlistResponse };
+export type {
+	AddWatchlistListStockRequest,
+	AddWatchlistStockRequest,
+	CalendarFeedIssued,
+	WatchlistList,
+	WatchlistResponse,
+};
 export type {
 	StockDirectoryRefreshResponse,
 	StockDirectorySearchResponse,
@@ -232,6 +243,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 	const workspaces = `${API_PREFIX}/workspaces`;
 	const credentials = `${API_PREFIX}/runner-credentials`;
 	const scheduledTasks = `${API_PREFIX}/scheduled-tasks`;
+	const watchlistLists = `${API_PREFIX}/watchlist/lists`;
 
 	return {
 		/** Fresh key for one logical write; reuse it when re-sending that same write. */
@@ -650,6 +662,51 @@ export function createApiClient(options: ApiClientOptions = {}) {
 		removeWatchlistStock: (stockId: string): Promise<ApiResult<WatchlistData>> =>
 			requestJson(
 				{ method: "DELETE", path: `${API_PREFIX}/watchlist/stocks/${segment(stockId)}` },
+				watchlistResponseSchema,
+			),
+		/*
+		 * Titled lists of watchlist stocks (ADR-0040 §2): every call answers
+		 * the whole watchlist, lists included. A stock added to a list that is
+		 * not on the watchlist yet is added to the watchlist first.
+		 */
+		createWatchlistList: (title: string): Promise<ApiResult<WatchlistData>> =>
+			write(
+				{ method: "POST", path: watchlistLists },
+				createWatchlistListRequestSchema,
+				{ title },
+				watchlistResponseSchema,
+			),
+		renameWatchlistList: (listId: string, title: string): Promise<ApiResult<WatchlistData>> =>
+			write(
+				{ method: "PATCH", path: `${watchlistLists}/${segment(listId)}` },
+				renameWatchlistListRequestSchema,
+				{ title },
+				watchlistResponseSchema,
+			),
+		deleteWatchlistList: (listId: string): Promise<ApiResult<WatchlistData>> =>
+			requestJson(
+				{ method: "DELETE", path: `${watchlistLists}/${segment(listId)}` },
+				watchlistResponseSchema,
+			),
+		addWatchlistListStock: (
+			listId: string,
+			stock: AddWatchlistListStockRequest,
+		): Promise<ApiResult<WatchlistData>> =>
+			write(
+				{ method: "POST", path: `${watchlistLists}/${segment(listId)}/stocks` },
+				addWatchlistListStockRequestSchema,
+				stock,
+				watchlistResponseSchema,
+			),
+		removeWatchlistListStock: (
+			listId: string,
+			stockId: string,
+		): Promise<ApiResult<WatchlistData>> =>
+			requestJson(
+				{
+					method: "DELETE",
+					path: `${watchlistLists}/${segment(listId)}/stocks/${segment(stockId)}`,
+				},
 				watchlistResponseSchema,
 			),
 		/**

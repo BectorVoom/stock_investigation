@@ -51,19 +51,7 @@ export function StockTableWidget(props: {
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
-	// One object per press, keyed below: a press while the download failure
-	// shows mounts a fresh viewer, which imports again.
-	const [viewerRequest, setViewerRequest] = createSignal<{
-		readonly seriesId: string;
-		readonly opener: HTMLElement;
-	} | null>(null);
-	// The viewer's one series, live through the accessor: empty while the
-	// named series holds no observations (the open viewer then says so).
-	const viewerSeries = createMemo(() => {
-		const id = viewerRequest()?.seriesId ?? null;
-		const entry = id === null ? undefined : props.seriesById().get(id);
-		return entry === undefined || entry === null || entry.observations.length === 0 ? [] : [entry];
-	});
+	const viewer = createSeriesViewer(props.seriesById);
 	return (
 		<>
 			<div class="overflow-x-auto">
@@ -71,61 +59,158 @@ export function StockTableWidget(props: {
 					<caption class="caption-top pb-1 text-left text-xs text-slate-600">
 						{m().stockCaption(props.widget.title)}
 					</caption>
-					<thead>
-						<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
-							<th scope="col" class="py-1 pr-3 font-semibold">
-								{m().series}
-							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								{m().lastClose}
-							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								{m().change}
-							</th>
-							<th scope="col" class="py-1 pr-3 text-right font-semibold">
-								{m().changePercent}
-							</th>
-							<th scope="col" class="py-1 pr-3 font-semibold">
-								{m().asOf}
-							</th>
-							<th scope="col" class="py-1 font-semibold">
-								{m().source}
-							</th>
-						</tr>
-					</thead>
+					<PriceTableHead columns={STOCK_TABLE_COLUMNS} />
 					<tbody>
 						<For each={props.widget.seriesIds}>
 							{(seriesId) => (
-								<StockRow
+								<PriceRow
 									series={props.seriesById().get(seriesId) ?? null}
-									onOpen={(button) => setViewerRequest({ seriesId, opener: button })}
+									columns={STOCK_TABLE_COLUMNS}
+									onOpen={(button) => viewer.open(seriesId, button)}
 								/>
 							)}
 						</For>
 					</tbody>
 				</table>
 			</div>
-			<Show when={viewerRequest()} keyed>
-				{(request) => (
-					<LazyChartViewer
-						open
-						title={props.seriesById().get(request.seriesId)?.title ?? request.seriesId}
-						series={viewerSeries}
-						initialPreset="1y"
-						opener={request.opener}
-						onClose={() => setViewerRequest(null)}
-					/>
-				)}
-			</Show>
+			<viewer.View />
 			<TwelveDataSessionNote seriesIds={props.widget.seriesIds} byId={props.seriesById} />
 			<WidgetProvenance widget={props.widget} byId={props.seriesById} />
 		</>
 	);
 }
 
-function StockRow(props: {
+/**
+ * The columns a price table shows after its row header (the series or
+ * stock): each is the extra class of its cells, or null when the table
+ * leaves it out. A class such as `hidden @md:table-cell` hides a column in
+ * a narrow container (the Watchlist prices widget, ADR-0040 §5); the Stock
+ * table shows every column.
+ */
+export interface PriceColumns {
+	readonly lastClose: string | null;
+	readonly change: string | null;
+	readonly changePercent: string | null;
+	readonly asOf: string | null;
+	readonly source: string | null;
+}
+
+const STOCK_TABLE_COLUMNS: PriceColumns = {
+	lastClose: "",
+	change: "",
+	changePercent: "",
+	asOf: "",
+	source: "",
+};
+
+/** How many columns the value cells span (everything after the row header but the source). */
+function valueColumnCount(columns: PriceColumns): number {
+	return [columns.lastClose, columns.change, columns.changePercent, columns.asOf].filter(
+		(cell) => cell !== null,
+	).length;
+}
+
+/** The header row of a price table: the row-header column, then the shown value columns. */
+export function PriceTableHead(props: {
+	readonly columns: PriceColumns;
+	/** The row-header column's name ("Series" for the Stock table). */
+	readonly first?: string;
+}): JSX.Element {
+	const m = useMessages(marketWidgetMessages);
+	const head = (extra: string | null, align: "left" | "right", label: string): JSX.Element => (
+		<Show when={extra !== null}>
+			<th
+				scope="col"
+				class={`py-1 pr-3 font-semibold ${align === "right" ? "text-right" : ""} ${extra ?? ""}`}
+			>
+				{label}
+			</th>
+		</Show>
+	);
+	return (
+		<thead>
+			<tr class="whitespace-nowrap border-b border-slate-200 text-xs text-slate-700">
+				<th scope="col" class="py-1 pr-3 font-semibold">
+					{props.first ?? m().series}
+				</th>
+				{head(props.columns.lastClose, "right", m().lastClose)}
+				{head(props.columns.change, "right", m().change)}
+				{head(props.columns.changePercent, "right", m().changePercent)}
+				{head(props.columns.asOf, "left", m().asOf)}
+				{head(props.columns.source, "left", m().source)}
+			</tr>
+		</thead>
+	);
+}
+
+/**
+ * The detailed chart viewer one price table opens from its rows (ADR-0025,
+ * lazy chunk): `open` takes the row's series and its button, `View` mounts
+ * the viewer after the table while open (a dialog inside `<tbody>` would
+ * break the table). One request object per press, keyed: a press while the
+ * download failure shows mounts a fresh viewer, which imports again. The
+ * viewer's one series is live through the accessor — empty while the series
+ * holds no observations (the open viewer then says so) — and nothing it does
+ * is saved.
+ */
+export function createSeriesViewer(seriesById: Accessor<ReadonlyMap<string, MarketSeries>>): {
+	readonly open: (seriesId: string, opener: HTMLElement) => void;
+	readonly View: () => JSX.Element;
+} {
+	const [request, setRequest] = createSignal<{
+		readonly seriesId: string;
+		readonly opener: HTMLElement;
+	} | null>(null);
+	const viewerSeries = createMemo(() => {
+		const id = request()?.seriesId ?? null;
+		const entry = id === null ? undefined : seriesById().get(id);
+		return entry === undefined || entry.observations.length === 0 ? [] : [entry];
+	});
+	return {
+		open: (seriesId, opener) => setRequest({ seriesId, opener }),
+		View: () => (
+			<Show when={request()} keyed>
+				{(current) => (
+					<LazyChartViewer
+						open
+						title={seriesById().get(current.seriesId)?.title ?? current.seriesId}
+						series={viewerSeries}
+						initialPreset="1y"
+						opener={current.opener}
+						onClose={() => setRequest(null)}
+					/>
+				)}
+			</Show>
+		),
+	};
+}
+
+/**
+ * One price row: the row header (name and symbol), then the shown value
+ * columns, the source, and an amber "last refresh failed (reason)" note row
+ * beneath a series whose last refresh failed. Every cell carries a value or
+ * an explicit "unavailable (reason)" — never blank, never 0. The header of
+ * a series with observations is the chart opener.
+ *
+ * `label` names a row whose series may be missing (a Watchlist prices row
+ * names its stock; the Stock table derives the name from the series, and a
+ * missing series is one "unavailable" cell). `notShown` replaces the values
+ * of a row the page is not served (past its series limit, ADR-0040 §4).
+ * `symbolOnly` (a Small widget) shows the symbol without the name.
+ */
+export function PriceRow(props: {
 	readonly series: MarketSeries | null;
+	readonly columns: PriceColumns;
 	readonly onOpen: (button: HTMLButtonElement) => void;
+	readonly label?: { readonly name: string | null; readonly symbol: string };
+	readonly notShown?: string | null;
+	readonly symbolOnly?: boolean;
+	/**
+	 * A line clamp for the reason a row has no values (a glanceable widget
+	 * keeps every row one or two lines tall); the whole reason stays in the
+	 * text, so a screen reader reads it all and `title` shows it on hover.
+	 */
+	readonly reasonClamp?: string;
 }): JSX.Element {
 	const m = useMessages(marketWidgetMessages);
 	const modelText = useMessages(homeModelMessages);
@@ -146,94 +231,139 @@ function StockRow(props: {
 		props.series === null ? null : staleFailureReason(props.series, modelText());
 	// The viewer opens only for a series with observations (ADR-0025).
 	const openable = () => (props.series?.observations.length ?? 0) > 0;
-	return (
-		<Show
-			when={props.series}
-			fallback={
-				<tr class="border-b border-slate-200">
-					<td colspan="6" class="py-1 text-sm text-amber-900">
-						{common().unavailable(unavailableText("NO_DATA", modelText()))}
-					</td>
-				</tr>
-			}
-		>
-			{(entry) => (
-				<>
-					<tr class="border-b border-slate-200 align-top">
-						<th scope="row" class="py-1 pr-3 font-medium">
-							<Show
-								when={openable()}
-								fallback={
-									<>
-										<span class="block">{entry().title}</span>{" "}
-										<span class="block font-mono text-2xs font-normal text-slate-600">
-											{entry().symbol}
-										</span>
-									</>
-								}
-							>
-								<ChartOpener
-									srPrefix={m().openChart}
-									openerKey={entry().seriesId}
-									onOpen={props.onOpen}
-								>
-									<span class="block">{entry().title}</span>{" "}
-									<span class="block font-mono text-2xs font-normal text-slate-600">
-										{entry().symbol}
-									</span>
-								</ChartOpener>
-							</Show>
-						</th>
-						<Show
-							when={ready()}
-							fallback={
-								<td colspan="4" class="py-1 pr-3 text-sm text-amber-900">
-									{common().unavailable(missingReason())}
-								</td>
-							}
-						>
-							{(good) => (
-								<>
-									<td class="py-1 pr-3 text-right tabular-nums">
-										{formatValue(good().latest.value)}{" "}
-										<span class="text-xs text-slate-600">{good().entry.unit}</span>
-									</td>
-									<td class="py-1 pr-3 text-right tabular-nums">
-										<ChangeCell
-											change={good().summary.change}
-											unit={good().entry.unit}
-											kind="abs"
-										/>
-									</td>
-									<td class="py-1 pr-3 text-right tabular-nums">
-										<ChangeCell
-											change={good().summary.change}
-											unit={good().entry.unit}
-											kind="pct"
-										/>
-									</td>
-									<td class="py-1 pr-3 text-xs">
-										<time dateTime={good().latest.observedOn}>{good().latest.observedOn}</time>
-									</td>
-								</>
-							)}
-						</Show>
-						<td class="whitespace-nowrap py-1 text-xs">
-							<SafeLink url={entry().sourceUrl}>{entry().publisher}</SafeLink>
-						</td>
-					</tr>
-					<Show when={stale()}>
-						{(reason) => (
-							<tr class="border-b border-slate-200">
-								<td colspan="6" class="py-1 text-xs text-amber-900">
-									{m().lastRefreshFailed(reason())}
-								</td>
-							</tr>
-						)}
-					</Show>
-				</>
+	const values = () => valueColumnCount(props.columns);
+	const total = () => 1 + values() + (props.columns.source === null ? 0 : 1);
+	const name = () => props.label?.name ?? props.series?.title ?? null;
+	const symbol = () => props.label?.symbol ?? props.series?.symbol ?? "";
+	const Reason = (reason: { readonly text: string }): JSX.Element => (
+		<Show when={props.reasonClamp} fallback={reason.text}>
+			{(clamp) => (
+				<span class={clamp()} title={reason.text}>
+					{reason.text}
+				</span>
 			)}
 		</Show>
+	);
+	const HeaderText = (): JSX.Element => (
+		<Show
+			when={props.symbolOnly !== true}
+			fallback={<span class="block font-mono">{symbol()}</span>}
+		>
+			<Show when={name()}>{(text) => <span class="block">{text()}</span>}</Show>{" "}
+			<span class="block font-mono text-2xs font-normal text-slate-600">{symbol()}</span>
+		</Show>
+	);
+	const Header = (header: { readonly opener: boolean }): JSX.Element => (
+		<th scope="row" class="py-1 pr-3 font-medium">
+			<Show when={header.opener} fallback={<HeaderText />}>
+				<ChartOpener
+					srPrefix={m().openChart}
+					openerKey={props.series?.seriesId ?? symbol()}
+					onOpen={props.onOpen}
+				>
+					<HeaderText />
+				</ChartOpener>
+			</Show>
+		</th>
+	);
+	const valueCell = (extra: string | null, body: () => JSX.Element, align = "text-right") => (
+		<Show when={extra !== null}>
+			<td class={`py-1 pr-3 ${align} tabular-nums ${extra ?? ""}`}>{body()}</td>
+		</Show>
+	);
+	return (
+		<Switch>
+			<Match when={props.notShown}>
+				{(text) => (
+					<tr class="border-b border-slate-200 align-top">
+						<Header opener={false} />
+						<td colspan={total() - 1} class="py-1 text-xs text-slate-700">
+							<Reason text={text()} />
+						</td>
+					</tr>
+				)}
+			</Match>
+			<Match when={props.series === null && props.label === undefined}>
+				<tr class="border-b border-slate-200">
+					<td colspan={total()} class="py-1 text-sm text-amber-900">
+						<Reason text={common().unavailable(unavailableText("NO_DATA", modelText()))} />
+					</td>
+				</tr>
+			</Match>
+			<Match when={props.series === null}>
+				<tr class="border-b border-slate-200 align-top">
+					<Header opener={false} />
+					<td colspan={total() - 1} class="py-1 text-sm text-amber-900">
+						<Reason text={common().unavailable(unavailableText("NO_DATA", modelText()))} />
+					</td>
+				</tr>
+			</Match>
+			<Match when={props.series}>
+				{(entry) => (
+					<>
+						<tr class="border-b border-slate-200 align-top">
+							<Header opener={openable()} />
+							<Show
+								when={ready()}
+								fallback={
+									<Show when={values() > 0}>
+										<td colspan={values()} class="py-1 pr-3 text-sm text-amber-900">
+											<Reason text={common().unavailable(missingReason())} />
+										</td>
+									</Show>
+								}
+							>
+								{(good) => (
+									<>
+										{valueCell(props.columns.lastClose, () => (
+											<>
+												{formatValue(good().latest.value)}{" "}
+												<span class="text-xs text-slate-600">{good().entry.unit}</span>
+											</>
+										))}
+										{valueCell(props.columns.change, () => (
+											<ChangeCell
+												change={good().summary.change}
+												unit={good().entry.unit}
+												kind="abs"
+											/>
+										))}
+										{valueCell(props.columns.changePercent, () => (
+											<ChangeCell
+												change={good().summary.change}
+												unit={good().entry.unit}
+												kind="pct"
+											/>
+										))}
+										{valueCell(
+											props.columns.asOf,
+											() => (
+												<time dateTime={good().latest.observedOn}>{good().latest.observedOn}</time>
+											),
+											"text-left text-xs",
+										)}
+									</>
+								)}
+							</Show>
+							<Show when={props.columns.source !== null}>
+								<td class={`whitespace-nowrap py-1 text-xs ${props.columns.source ?? ""}`}>
+									<SafeLink url={entry().sourceUrl}>{entry().publisher}</SafeLink>
+								</td>
+							</Show>
+						</tr>
+						<Show when={stale()}>
+							{(reason) => (
+								<tr class="border-b border-slate-200">
+									<td colspan={total()} class="py-1 text-xs text-amber-900">
+										{m().lastRefreshFailed(reason())}
+									</td>
+								</tr>
+							)}
+						</Show>
+					</>
+				)}
+			</Match>
+		</Switch>
 	);
 }
 

@@ -36,7 +36,9 @@ accessible name), and Home takes every type except a research result.
   table, Indicator table, Earnings calendar (its dialog opens first),
   Scheduled tasks (no fields: placed at once, and its menu has no Edit…), or
   Task result (ADR-0038: a dialog lists your tasks and you pick one; its
-  menu has no Edit…).
+  menu has no Edit…), or Watchlist prices (ADR-0040: a dialog lists your
+  Watchlist lists with their stock counts and you pick one — with no lists
+  it links to the Watchlist page; its menu has no Edit…).
 - Edit a widget (Edit…: the content editor, or the market dialog for series,
   range, days ahead), edit a Text widget in place, or change its size from the
   menu (Size: Small / Medium / Large).
@@ -77,7 +79,8 @@ former label); the per-widget actions open a text menu with leading icons.
   latest values with unit, as-of date, change and source link, or
   "unavailable (reason)" when a series has no usable data. A tap on a price
   widget opens the detailed chart viewer at the right place (the plot, the
-  value block, the row's series — see the actions above). Widgets come in
+  value block, the row's series — see the actions above; a Watchlist prices
+  row's stock too). Widgets come in
   three fixed sizes on equal grid cells with a fixed row height — Small
   1 × 1 (17rem, 272 px), Medium 2 × 2 (35rem, 560 px), Large full width × 2
   (35rem, 560 px) — as white cards with a faint
@@ -114,6 +117,20 @@ former label); the per-widget actions open a text menu with leading icons.
   or a failed run never hides the previous answer. It reads the same task
   list as the scheduled-tasks widget and fetches the answer only when the
   task's last run changes. A deleted task's widget says so.
+- A Watchlist prices widget, when arranged (ADR-0040) — one Watchlist
+  list's stocks: the list's current title and stock count, then one row per
+  stock in list order with its symbol and company name, last close with its
+  unit, the change from the previous close as an amount and a percentage
+  (sign and colour, never colour alone) and the as-of date; Small shows the
+  symbol and percentage of the rows that fit and "N more"; Large adds the
+  source column. A row opens the detailed chart viewer; a row without data
+  says "unavailable (reason)" (Japanese stocks on Twelve Data's free plan),
+  and a row past the page's 30 price series says "Not shown: …" (named
+  series come first). The Twelve Data in-session note and the source line
+  close it. A deleted list says "This list was deleted."; an empty one links
+  to the Watchlist page. Home loads the watchlist when such a widget is
+  arranged, and its one automatic refresh of never-refreshed series also
+  covers the lists' stocks, so prices arrive without a click.
 - The market-data refresh status: last successful refresh time, the active
   run id and state while refreshing ("pending" polls slowly until the local
   runner claims it), or the last failure with its stable code beside the last
@@ -165,6 +182,16 @@ Register the stocks you follow and see their earnings announcement dates.
   the page with dates never fetched or more than a day old queues one refresh,
   once per visit).
 - Add one announcement date to Google Calendar or Outlook.
+- Group stocks into titled lists (ADR-0040), in the Lists section between
+  the add form and the stock table: New list (a title of 1–80 characters);
+  per list, a menu with Rename…, Show on Home (appends a Watchlist prices
+  widget for the list to Home, or says it is already there) and Delete…
+  (with confirmation; the stocks stay on the watchlist); Remove from list
+  per stock; and Add stock — a dialog with the watchlist's other stocks as
+  checkboxes and the stock search for a stock not on the watchlist yet,
+  which is then added to the watchlist too (its earnings dates are queued
+  as after a plain add). At most 20 lists and 12 stocks a list: at a bound
+  the button is disabled and says why; a refused write names its reason.
 
 **Shows**
 
@@ -187,7 +214,11 @@ Register the stocks you follow and see their earnings announcement dates.
 - The registered stocks: symbol, company name (or "unavailable (not retrieved yet)"),
   market, the next announcement date with fiscal period and timing, further dates in a
   disclosure, "date undecided" stated as text, the retrieved date, the source link, a
-  per-row "unavailable (reason)" when there is no date, and a Remove action.
+  per-row "unavailable (reason)" when there is no date, "In lists: …" naming
+  the lists the stock is in, and a Remove action (its confirmation says how
+  many lists the stock also leaves).
+- The lists, each a card with its title, "N of 12 stocks", its stocks
+  (symbol, name, Remove from list) and Add stock.
 - The earnings-date refresh status: last successful refresh time, the active run id and
   state while refreshing, or the last failure with its stable code beside the last
   success; a note that the refresh waits for the local runner when it is queued but
@@ -200,7 +231,8 @@ Register the stocks you follow and see their earnings announcement dates.
 
 **Not here**
 
-- Checking market prices or arranging market widgets — see Home (`#/home`).
+- Checking market prices or arranging market widgets — see Home (`#/home`);
+  a list's prices are its Watchlist prices widget there.
 - Asking questions or watching runs — see Chat (`#/chat`).
 - Choosing news sources — see Sources (`#/sources`).
 - Runner credentials or export — see Settings (`#/settings`).
@@ -379,8 +411,12 @@ Ask research questions and read the answers, with their sources and run progress
   Sources list as in Chat; a chart without provenance (owner- or
   assistant-made) is marked "basis not stated". The
   earnings calendar reads the Watchlist page's stocks with its own refresh
-  button. The scheduled-tasks and Task result widgets are Home's too (see
-  Home): they show the owner's tasks, not this chat's. Titles stay in the data but the frames hide them.
+  button. The Watchlist prices widget (ADR-0040) shows one Watchlist list's
+  stocks as on Home; it is added from the Add menu's list dialog, the
+  notebook loads the watchlist before its market data, and the lists'
+  stocks join its series and its one automatic refresh. The scheduled-tasks
+  and Task result widgets are Home's too (see Home): they show the owner's
+  tasks, not this chat's. Titles stay in the data but the frames hide them.
 - The Notebook's widget list scrolls inside the panel, below its fixed header
   and toolbar; dragging near its top or bottom edge scrolls it.
 - Cut, copy and paste widgets (ADR-0023): Cut / Copy / Paste after in each
@@ -503,6 +539,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
+| 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks, add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
 
 ## How the split was checked
 

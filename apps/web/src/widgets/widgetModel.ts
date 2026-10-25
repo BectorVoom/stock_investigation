@@ -46,6 +46,20 @@ export function taskResultWidget(
 	return { widgetId, type: "task-result", taskId, title, size: "medium" };
 }
 
+/**
+ * A new Watchlist prices widget for one list (ADR-0040 §6), placed from the
+ * add menu's list dialog or the Watchlist page. Like a Task result, its
+ * stored title is the list's title when it was added: hidden on screen, it
+ * stays the frame's accessible name (the body shows the current title).
+ */
+export function watchlistPricesWidget(
+	listId: string,
+	title: string,
+	widgetId: string = newWidgetId(),
+): Extract<WidgetCore, { readonly type: "watchlist-prices" }> {
+	return { widgetId, type: "watchlist-prices", listId, title, size: "medium" };
+}
+
 /** The content types that are added as a starter and then edited in place or in the editor. */
 export type StarterWidgetType = "text" | "metric" | "chart" | "table";
 

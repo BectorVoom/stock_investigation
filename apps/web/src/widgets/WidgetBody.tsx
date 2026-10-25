@@ -77,6 +77,7 @@ export function WidgetBody(props: {
 									component={WIDGET_REGISTRY[market().type].component}
 									widget={market()}
 									seriesById={context().seriesById}
+									pageSeries={context().pageSeries}
 									watchlist={context().watchlist}
 									watchlistError={context().watchlistError}
 									onRetryWatchlist={context().onRetryWatchlist}

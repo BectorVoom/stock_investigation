@@ -767,6 +767,7 @@ describe("watchlist and earnings-date calendar", () => {
 				],
 			},
 		],
+		lists: [],
 		refresh: {
 			activeRunId: null,
 			activeRunState: null,

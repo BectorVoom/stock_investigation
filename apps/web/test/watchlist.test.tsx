@@ -291,6 +291,7 @@ describe("Watchlist view", () => {
 		appBackend.on("GET", /^\/api\/v1\/watchlist$/, () =>
 			jsonResponse({
 				stocks: [],
+				lists: [],
 				refresh: {
 					activeRunId: null,
 					activeRunState: null,

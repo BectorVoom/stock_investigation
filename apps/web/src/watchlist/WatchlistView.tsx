@@ -13,7 +13,7 @@ import {
 } from "@research/domain";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
-import { createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
@@ -36,10 +36,13 @@ import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
+import { listTitlesByStock } from "./listsModel.ts";
 import { StockSearchBox } from "./StockSearchBox.tsx";
 import { createStockDirectoryState } from "./stockDirectory.ts";
 import { createStockSearch } from "./stockSearch.ts";
+import { WatchlistListsSection } from "./WatchlistListsSection.tsx";
 import { watchlistMessages } from "./watchlist.messages.ts";
+import { watchlistListsMessages } from "./watchlistLists.messages.ts";
 import { watchlistModelMessages } from "./watchlistModel.messages.ts";
 import {
 	addTargetText,
@@ -217,11 +220,14 @@ function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.El
 
 function StockRow(props: {
 	readonly stock: WatchlistStock;
+	/** The titles of the lists the stock is in (ADR-0040 §7). */
+	readonly lists: readonly string[];
 	readonly busy: boolean;
 	readonly onRemove: (stock: WatchlistStock, opener: HTMLElement) => void;
 }): JSX.Element {
 	const m = useMessages(watchlistMessages);
 	const model = useMessages(watchlistModelMessages);
+	const listText = useMessages(watchlistListsMessages);
 	const common = useMessages(commonMessages);
 	const stock = () => props.stock;
 	return (
@@ -231,6 +237,11 @@ function StockRow(props: {
 				<span class="block font-normal text-slate-600">
 					{stock().name ?? common().unavailable(m().notRetrievedYet)}
 				</span>
+				<Show when={props.lists.length > 0}>
+					<span class="block text-2xs font-normal text-slate-700" data-field="stock-in-lists">
+						{listText().inLists(props.lists.join(", "))}
+					</span>
+				</Show>
 			</th>
 			<td class="py-1 pr-2">{model().marketName(stock().market)}</td>
 			<td class="py-1 pr-2">
@@ -274,6 +285,7 @@ export function WatchlistView(props: {
 	readonly visibility: VisibilitySource;
 }): JSX.Element {
 	const m = useMessages(watchlistMessages);
+	const listText = useMessages(watchlistListsMessages);
 	const locale = useLocale();
 	const model = useMessages(watchlistModelMessages);
 	const [data, setData] = createSignal<WatchlistResponse | null>(null);
@@ -526,20 +538,29 @@ export function WatchlistView(props: {
 		setPicked(null);
 		setQuery("");
 		search.input("");
+		await afterStockWatched(m().added(added));
+	};
+
+	/**
+	 * After a stock was put on the watchlist (the add form, or a list's Add
+	 * stock with a stock found by search, ADR-0040 §2): re-read, then fetch
+	 * its earnings dates, announcing `announce`.
+	 */
+	const afterStockWatched = async (announce: string): Promise<void> => {
 		await reloadAfterWrite();
 		if (disposed) return;
 		if (isPollActive()) {
 			// A run is already underway: remember that a follow-up may be
 			// needed, and say the dates are being fetched.
 			followUpArmed = true;
-			setNotice({ text: m().added(added), clearsWhenRunEnds: true });
+			setNotice({ text: announce, clearsWhenRunEnds: true });
 			return;
 		}
 		// ADR-0039: fetch the new stock's dates only, not every stock's —
 		// unless no stock has dates yet or another stock's are stale.
 		const current = data();
 		const scope = current === null ? "unrefreshed" : earningsAddedRefreshScope(current, Date.now());
-		await queueRefresh(scope, { text: m().added(added), clearsWhenRunEnds: true });
+		await queueRefresh(scope, { text: announce, clearsWhenRunEnds: true });
 	};
 
 	const confirmRemove = async (): Promise<void> => {
@@ -593,6 +614,9 @@ export function WatchlistView(props: {
 	const problemsId = "watchlist-add-problems";
 	const addTargetId = "watchlist-add-target";
 	const stocks = () => data()?.stocks ?? [];
+	const listTitles = createMemo(() => listTitlesByStock(data()?.lists ?? []));
+	/** How many lists a stock leaves when it is removed from the watchlist. */
+	const listsLeft = (stock: WatchlistStock): number => listTitles().get(stock.stockId)?.length ?? 0;
 	const openRemove = (stock: WatchlistStock, opener: HTMLElement) => {
 		setOpener(opener);
 		setRemoving(stock);
@@ -761,6 +785,15 @@ export function WatchlistView(props: {
 				</Show>
 			</Section>
 
+			<WatchlistListsSection
+				api={props.api}
+				data={data}
+				pageBusy={busy}
+				storedMarkets={() => storedDirectoryMarkets(directory.status())}
+				onWritten={reloadAfterWrite}
+				onStockWatched={afterStockWatched}
+			/>
+
 			<Section
 				title={m().registeredStocks}
 				actions={
@@ -811,7 +844,14 @@ export function WatchlistView(props: {
 								</thead>
 								<tbody>
 									<For each={stocks()}>
-										{(stock) => <StockRow stock={stock} busy={busy()} onRemove={openRemove} />}
+										{(stock) => (
+											<StockRow
+												stock={stock}
+												lists={listTitles().get(stock.stockId) ?? []}
+												busy={busy()}
+												onRemove={openRemove}
+											/>
+										)}
 									</For>
 								</tbody>
 							</table>
@@ -832,6 +872,12 @@ export function WatchlistView(props: {
 						onCancel={closeDialogs}
 					>
 						{m().removeBody(stock().symbol)}
+						<Show when={listsLeft(stock()) > 0}>
+							{" "}
+							<span data-field="remove-leaves-lists">
+								{listText().alsoLeavesLists(listsLeft(stock()))}
+							</span>
+						</Show>
 					</ConfirmDialog>
 				)}
 			</Show>

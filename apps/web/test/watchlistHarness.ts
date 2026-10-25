@@ -4,6 +4,8 @@ import {
 	STOCK_DIRECTORY_SOURCES,
 	type StockDirectoryMarketStatus,
 	type StockListing,
+	WATCHLIST_LISTS_LIMITS,
+	type WatchlistList,
 	type WatchlistStock,
 	type WatchMarket,
 } from "@research/contracts";
@@ -227,6 +229,8 @@ export function installDirectoryRoutes(
 
 export interface WatchServer {
 	stocks: WatchlistStock[];
+	/** The owner's titled lists (ADR-0040), in creation order. */
+	lists: WatchlistList[];
 	directory: DirectoryServer;
 	activeRunId: string | null;
 	runState: string;
@@ -273,6 +277,7 @@ export function createWatchlistBackend(): {
 	const backend = createFakeBackend();
 	const server: WatchServer = {
 		stocks: [makeStock()],
+		lists: [],
 		activeRunId: null,
 		runState: "pending",
 		lastSucceededAt: FRESH_STAMP,
@@ -287,6 +292,7 @@ export function createWatchlistBackend(): {
 	);
 	const responseBody = () => ({
 		stocks: server.stocks,
+		lists: server.lists,
 		refresh: {
 			activeRunId: server.activeRunId,
 			activeRunState: server.activeRunId === null ? null : server.runState,
@@ -301,13 +307,13 @@ export function createWatchlistBackend(): {
 		},
 	});
 	const etag = () =>
-		`"w-${server.stocks.length}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
+		`"w-${server.stocks.length}-${server.lists.map((list) => `${list.listId}.${list.version}`).join(",")}-${server.activeRunId ?? "idle"}-${server.feedCreatedAt ?? "none"}-${JSON.stringify(server.google)}"`;
 	backend.on("GET", /^\/api\/v1\/watchlist$/, (request) => {
 		if (request.headers["if-none-match"] === etag()) return new Response(null, { status: 304 });
 		return jsonResponse(responseBody(), { headers: { ETag: etag() } });
 	});
-	backend.on("POST", /^\/api\/v1\/watchlist\/stocks$/, (request) => {
-		const body = request.body as { market?: unknown; symbol?: unknown };
+	/** Adds a stock to the watchlist as `POST /watchlist/stocks` does; the stock id, or an error answer. */
+	const watchStock = (body: { market?: unknown; symbol?: unknown }): string | Response => {
 		if (body.market !== "US" && body.market !== "JP") {
 			return errorResponse(400, "VALIDATION_FAILED", "market is required");
 		}
@@ -315,9 +321,17 @@ export function createWatchlistBackend(): {
 		if (symbol === "" || symbol === "BAD!") {
 			return errorResponse(400, "VALIDATION_FAILED", "symbol is required");
 		}
-		const market = body.market as "US" | "JP";
+		const market = body.market;
 		const stockId = `${market.toLowerCase()}:${symbol}`;
 		if (!server.stocks.some((entry) => entry.stockId === stockId)) {
+			if (server.stocks.length >= 50) {
+				return errorResponse(
+					400,
+					"VALIDATION_FAILED",
+					"At most 50 stocks can be watched.",
+					"WATCHLIST_FULL",
+				);
+			}
 			server.stocks = [
 				...server.stocks,
 				makeStock({
@@ -337,14 +351,119 @@ export function createWatchlistBackend(): {
 				}),
 			];
 		}
+		return stockId;
+	};
+	backend.on("POST", /^\/api\/v1\/watchlist\/stocks$/, (request) => {
+		const added = watchStock(request.body as { market?: unknown; symbol?: unknown });
+		return typeof added === "string" ? jsonResponse(responseBody()) : added;
+	});
+	/** Replaces one list, bumping its version (every change does, ADR-0040 §1). */
+	const changeList = (listId: string, change: (list: WatchlistList) => WatchlistList): void => {
+		server.lists = server.lists.map((list) =>
+			list.listId === listId
+				? { ...change(list), version: list.version + 1, updatedAt: "2026-10-25T12:00:00Z" }
+				: list,
+		);
+	};
+	const titleOf = (body: unknown): string | null => {
+		const title = (body as { title?: unknown }).title;
+		if (typeof title !== "string") return null;
+		const trimmed = title.trim();
+		return trimmed.length === 0 || trimmed.length > WATCHLIST_LISTS_LIMITS.maxTitleChars
+			? null
+			: trimmed;
+	};
+	let listCounter = 0;
+	backend.on("POST", /^\/api\/v1\/watchlist\/lists$/, (request) => {
+		const title = titleOf(request.body);
+		if (title === null) return errorResponse(400, "VALIDATION_FAILED", "title is invalid");
+		if (server.lists.length >= WATCHLIST_LISTS_LIMITS.maxLists) {
+			return errorResponse(400, "VALIDATION_FAILED", "At most 20 lists.", "WATCHLIST_LISTS_FULL");
+		}
+		listCounter += 1;
+		server.lists = [
+			...server.lists,
+			{
+				listId: `list_${listCounter}`,
+				title,
+				stockIds: [],
+				version: 1,
+				createdAt: "2026-10-25T12:00:00Z",
+				updatedAt: "2026-10-25T12:00:00Z",
+			},
+		];
+		return jsonResponse(responseBody(), { status: 201 });
+	});
+	const findList = (listId: string): WatchlistList | undefined =>
+		server.lists.find((list) => list.listId === listId);
+	backend.on("PATCH", /^\/api\/v1\/watchlist\/lists\/([^/]+)$/, (request, match) => {
+		const listId = decodeURIComponent(match[1] ?? "");
+		const title = titleOf(request.body);
+		if (title === null) return errorResponse(400, "VALIDATION_FAILED", "title is invalid");
+		if (findList(listId) === undefined) return errorResponse(404, "NOT_FOUND", "List not found.");
+		changeList(listId, (list) => ({ ...list, title }));
 		return jsonResponse(responseBody());
 	});
+	backend.on("DELETE", /^\/api\/v1\/watchlist\/lists\/([^/]+)$/, (_request, match) => {
+		const listId = decodeURIComponent(match[1] ?? "");
+		if (findList(listId) === undefined) return errorResponse(404, "NOT_FOUND", "List not found.");
+		server.lists = server.lists.filter((list) => list.listId !== listId);
+		return jsonResponse(responseBody());
+	});
+	backend.on("POST", /^\/api\/v1\/watchlist\/lists\/([^/]+)\/stocks$/, (request, match) => {
+		const listId = decodeURIComponent(match[1] ?? "");
+		const list = findList(listId);
+		if (list === undefined) return errorResponse(404, "NOT_FOUND", "List not found.");
+		const body = request.body as { market?: unknown; symbol?: unknown };
+		const symbol = typeof body.symbol === "string" ? body.symbol.trim().toUpperCase() : "";
+		const wanted = typeof body.market === "string" ? `${body.market.toLowerCase()}:${symbol}` : "";
+		if (list.stockIds.includes(wanted)) return jsonResponse(responseBody());
+		// The service checks the list's room before it touches the watchlist.
+		if (list.stockIds.length >= WATCHLIST_LISTS_LIMITS.maxStocksPerList) {
+			return errorResponse(
+				400,
+				"VALIDATION_FAILED",
+				"At most 12 stocks per list.",
+				"WATCHLIST_LIST_FULL",
+			);
+		}
+		const added = watchStock(body);
+		if (typeof added !== "string") return added;
+		changeList(listId, (current) => ({ ...current, stockIds: [...current.stockIds, added] }));
+		return jsonResponse(responseBody());
+	});
+	backend.on(
+		"DELETE",
+		/^\/api\/v1\/watchlist\/lists\/([^/]+)\/stocks\/([^/]+)$/,
+		(_request, match) => {
+			const listId = decodeURIComponent(match[1] ?? "");
+			const stockId = decodeURIComponent(match[2] ?? "");
+			const list = findList(listId);
+			if (list === undefined || !list.stockIds.includes(stockId)) {
+				return errorResponse(404, "NOT_FOUND", "Not in the list.");
+			}
+			changeList(listId, (current) => ({
+				...current,
+				stockIds: current.stockIds.filter((id) => id !== stockId),
+			}));
+			return jsonResponse(responseBody());
+		},
+	);
 	backend.on("DELETE", /^\/api\/v1\/watchlist\/stocks\/(.+)$/, (_request, match) => {
 		const stockId = decodeURIComponent(match[1] ?? "");
 		if (!server.stocks.some((entry) => entry.stockId === stockId)) {
 			return errorResponse(404, "NOT_FOUND", "Stock not found.");
 		}
 		server.stocks = server.stocks.filter((entry) => entry.stockId !== stockId);
+		// The removal leaves every list too, bumping their versions (ADR-0040 §1).
+		for (const list of server.lists) {
+			if (list.stockIds.includes(stockId)) {
+				changeList(list.listId, (current) => ({
+					...current,
+					stockIds: current.stockIds.filter((id) => id !== stockId),
+				}));
+			}
+		}
 		return jsonResponse(responseBody());
 	});
 	backend.on("POST", /^\/api\/v1\/watchlist\/refresh$/, () => {

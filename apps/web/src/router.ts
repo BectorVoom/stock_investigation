@@ -71,6 +71,9 @@ export function formatHash(route: Route): string {
 /** The Tasks page (ADR-0033): the widget's "Open Tasks" link. */
 export const TASKS_HASH = formatHash({ view: "tasks", workspaceId: null, section: null });
 
+/** The Watchlist page: where a Watchlist prices widget's lists are made (ADR-0040). */
+export const WATCHLIST_HASH = formatHash({ view: "watchlist", workspaceId: null, section: null });
+
 /** The AI agent section of Settings: where a skipped task's fix lives. */
 export const SETTINGS_AGENT_HASH = formatHash({
 	view: "settings",

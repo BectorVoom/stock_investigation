@@ -44,6 +44,7 @@ import {
 	isWatchlistRefreshActive,
 } from "../watchlist/watchlistModel.ts";
 import type { WidgetMarketContext } from "../widgets/marketContext.ts";
+import { hasListWidget, readsWatchlist, webPageSeriesIds } from "../widgets/pageSeries.ts";
 import { WidgetBody } from "../widgets/WidgetBody.tsx";
 import { createWidgetBoard, type WidgetBoardSession } from "../widgets/widgetBoard.tsx";
 import { HOME_CLIPBOARD_SCOPE, widgetClipboard } from "../widgets/widgetClipboard.ts";
@@ -114,10 +115,10 @@ export function HomeView(props: {
 	const dataError = dataLoader.error;
 	const dataLoading = dataLoader.loading;
 	/**
-	 * The watchlist for earnings-calendar widgets, loaded only when the
-	 * dashboard holds at least one (an effect below starts the load). Like
-	 * the series, it arrives through an accessor so the widget stays
-	 * reactive across reloads.
+	 * The watchlist for the earnings-calendar and Watchlist prices widgets,
+	 * loaded only when the dashboard holds one (an effect below starts the
+	 * load). Like the series, it arrives through an accessor so the widgets
+	 * stay reactive across reloads.
 	 */
 	const watchLoader = createEtagLoader({
 		load: (etag) => props.api.getWatchlist(etag),
@@ -172,23 +173,35 @@ export function HomeView(props: {
 		return outcome.signal;
 	};
 
-	/** Each dashboard series' `lastRefreshedAt`, null for a series the data does not name yet. */
+	/**
+	 * Each page series' `lastRefreshedAt` (the named series and the
+	 * Watchlist prices widgets' lists, ADR-0040 §4), null for a series the
+	 * data does not name yet.
+	 */
 	const dashboardStamps = (
 		dash: { dashboard: HomeDashboard },
 		current: HomeDataResponse,
 	): (string | null)[] => {
 		const byId = seriesById(current.series);
-		return dash.dashboard.widgets.flatMap((widget) =>
-			widgetSeriesIds(widget).map((id) => byId.get(id)?.lastRefreshedAt ?? null),
+		return webPageSeriesIds(dash.dashboard.widgets, watchlist()).map(
+			(id) => byId.get(id)?.lastRefreshedAt ?? null,
 		);
 	};
+
+	/**
+	 * True while the page's series are not known yet: a Watchlist prices
+	 * widget's list series need the watchlist, still loading. The automatic
+	 * refresh decisions wait for it (a failed load decides without the lists).
+	 */
+	const listSeriesPending = (): boolean =>
+		hasListWidget(widgets()) && watchlist() === null && watchlistError() === null;
 
 	/** One follow-up refresh when the run that just ended never covered a series (V4). */
 	const maybeFollowUpRefresh = async (): Promise<void> => {
 		if (followUpTried || disposed) return;
 		const current = data();
 		const dash = dashboard.value();
-		if (current === null || dash === null) return;
+		if (current === null || dash === null || listSeriesPending()) return;
 		const scope = marketFollowUpScope(dashboardStamps(dash, current), Date.now());
 		if (scope === null) return;
 		followUpTried = true;
@@ -249,12 +262,22 @@ export function HomeView(props: {
 		);
 	};
 
-	/** Starts the watchlist load once the dashboard shows a calendar widget needs it. */
-	const maybeLoadWatchlist = () => {
-		if (disposed || watchlist() !== null || watchlistError() !== null) return;
-		if (!widgets().some((widget) => widget.type === "earnings-calendar")) return;
-		void loadWatchlist().then(() => {
+	/** The first watchlist load while it runs: a second need waits for it instead of reading twice. */
+	let watchlistFirstLoad: Promise<void> | null = null;
+	/**
+	 * Starts the watchlist load once the dashboard shows a widget that reads
+	 * it (an earnings calendar or a Watchlist prices widget); resolves when
+	 * that load has settled.
+	 */
+	const maybeLoadWatchlist = (): Promise<void> => {
+		if (disposed || watchlist() !== null || watchlistError() !== null) return Promise.resolve();
+		if (!widgets().some(readsWatchlist)) return Promise.resolve();
+		if (watchlistFirstLoad !== null) return watchlistFirstLoad;
+		watchlistFirstLoad = loadWatchlist().then(() => {
+			watchlistFirstLoad = null;
 			if (disposed) return;
+			// The market decisions that waited for the list series re-run through
+			// their effect, which reads the watchlist.
 			if (isWatchlistPollActive()) {
 				watchlistPoller.start();
 				// An earnings run is active: stale dates still ask for everything.
@@ -265,12 +288,13 @@ export function HomeView(props: {
 				maybeGoogleAutoSync();
 			}
 		});
+		return watchlistFirstLoad;
 	};
 	createEffect(() => {
 		// Tracks the dashboard: a newly added calendar widget triggers the load —
 		// or, when the watchlist already loaded, the once-per-mount auto-refresh.
 		if (dashboard.value() !== null) {
-			if (watchlist() === null) maybeLoadWatchlist();
+			if (watchlist() === null) void maybeLoadWatchlist();
 			else {
 				maybeEarningsAutoRefresh();
 				maybeGoogleAutoSync();
@@ -373,7 +397,7 @@ export function HomeView(props: {
 	/** The calendar widget's "Try again": clears the error and reloads. */
 	const retryWatchlist = () => {
 		watchLoader.clearError();
-		maybeLoadWatchlist();
+		void maybeLoadWatchlist();
 	};
 
 	/**
@@ -385,7 +409,7 @@ export function HomeView(props: {
 		if (autoRefreshTried || disposed) return;
 		const dash = dashboard.value();
 		const current = data();
-		if (dash === null || current === null) return;
+		if (dash === null || current === null || listSeriesPending()) return;
 		const scope = marketAutoRefreshScope(dashboardStamps(dash, current), Date.now());
 		if (current.refresh.activeRunId !== null) {
 			// ADR-0039: stale data with a run already active still asks for
@@ -508,6 +532,10 @@ export function HomeView(props: {
 	 */
 	const byId = createMemo(() => seriesById(data()?.series ?? []));
 	const widgets = createMemo(() => dashboard.value()?.dashboard.widgets ?? []);
+	/** The series Home is served (ADR-0040 §4), as the API computes them. */
+	const pageSeries = createMemo(
+		(): ReadonlySet<string> => new Set(webPageSeriesIds(widgets(), watchlist())),
+	);
 
 	/**
 	 * Saves the next widget list with CAS and re-renders from the server
@@ -597,18 +625,29 @@ export function HomeView(props: {
 		return run;
 	};
 
-	/** After an add or edit: one refresh when a new series has no data yet. */
+	/**
+	 * After an add or edit: one refresh when a new series has no data yet —
+	 * a series the widget names, or a stock of the list a new Watchlist
+	 * prices widget shows (once the watchlist has loaded; a row past the
+	 * page's limit is not served, so it never asks).
+	 */
 	const refreshForNewSeries = (added: readonly WidgetCore[]): void => {
+		if (hasListWidget(added) && listSeriesPending()) {
+			void maybeLoadWatchlist().then(() => {
+				if (!disposed && !listSeriesPending()) refreshForNewSeries(added);
+			});
+			return;
+		}
 		const current = data();
 		const dash = dashboard.value();
 		if (current === null || dash === null || current.refresh.activeRunId !== null) return;
 		const byIdNow = seriesById(current.series);
-		const needsData = added.some((widget) =>
-			widgetSeriesIds(widget).some((id) => {
-				const series = byIdNow.get(id);
-				return series === undefined || series.observations.length === 0;
-			}),
-		);
+		const served = pageSeries();
+		const needsData = webPageSeriesIds(added, watchlist()).some((id) => {
+			if (!served.has(id)) return false;
+			const series = byIdNow.get(id);
+			return series === undefined || series.observations.length === 0;
+		});
 		if (!needsData) return;
 		// ADR-0039: only the series without data are fetched, unless none
 		// has data yet or another is stale.
@@ -658,6 +697,7 @@ export function HomeView(props: {
 	 */
 	const marketContext: WidgetMarketContext = {
 		seriesById: () => byId(),
+		pageSeries,
 		watchlist,
 		watchlistError,
 		onRetryWatchlist: () => retryWatchlist(),

@@ -5,6 +5,7 @@ import {
 	type MarketWidgetCore,
 	type NotebookWidgetOrigin,
 	type ScheduledTask,
+	type WatchlistList,
 	WIDGET_TYPE_META,
 	type WidgetCore,
 	type WidgetSize,
@@ -18,6 +19,7 @@ import { ActionMenu, type ActionMenuItem, BUTTON, IconButton, Notice } from "../
 import { commonMessages } from "../i18n/common.messages.ts";
 import type { VisibilitySource } from "../lib/polling.ts";
 import { TaskResultDialog } from "../tasks/TaskResultDialog.tsx";
+import { WatchlistListDialog } from "../watchlist/WatchlistListDialog.tsx";
 import { ContentWidgetEditor } from "./ContentWidgetEditor.tsx";
 import { createWidgetGridEntries } from "./gridEntries.ts";
 import {
@@ -45,6 +47,7 @@ import {
 	scheduledTasksWidget,
 	starterWidget,
 	taskResultWidget,
+	watchlistPricesWidget,
 } from "./widgetModel.ts";
 import { widgetTypeMessages } from "./widgetTypes.messages.ts";
 
@@ -150,6 +153,12 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	const [marketOpener, setMarketOpener] = createSignal<HTMLElement | null>(null);
 	const [taskDialogOpen, setTaskDialogOpen] = createSignal(false);
 	const [taskDialogOpener, setTaskDialogOpener] = createSignal<HTMLElement | null>(null);
+	const [listDialogOpen, setListDialogOpen] = createSignal(false);
+	const [listDialogOpener, setListDialogOpener] = createSignal<HTMLElement | null>(null);
+	/** True while one of the board's dialogs is open. */
+	const dialogOpen = (): boolean =>
+		editorId() !== null || marketDialog() !== null || taskDialogOpen() || listDialogOpen();
+
 	const [catalog, setCatalog] = createSignal<readonly MarketCatalogEntry[] | null>(null);
 	const [catalogState, setCatalogState] = createSignal<"loading" | "ready" | "error">("loading");
 	let catalogLoading = false;
@@ -258,7 +267,9 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	 * The add menu: a content type is added as a starter and opened in its
 	 * editor; a market type needs a series first, so its dialog opens; the
 	 * scheduled-tasks widget has no fields, so it is placed at once; a Task
-	 * result needs its task, so the task dialog opens (ADR-0038 §5).
+	 * result needs its task, so the task dialog opens (ADR-0038 §5); a
+	 * Watchlist prices widget needs its list, so the list dialog opens
+	 * (ADR-0040 §6).
 	 */
 	const addType = (type: WidgetType): void => {
 		const opener = activeOpener();
@@ -275,6 +286,11 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		if (type === "task-result") {
 			setTaskDialogOpener(opener);
 			setTaskDialogOpen(true);
+			return;
+		}
+		if (type === "watchlist-prices") {
+			setListDialogOpener(opener);
+			setListDialogOpen(true);
 			return;
 		}
 		if (type === "scheduled-tasks") {
@@ -312,6 +328,16 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/** The task dialog's choice: one save placing the widget at the end. */
 	const addTaskResult = (task: ScheduledTask): Promise<boolean> => {
 		const core = taskResultWidget(task.taskId, task.title);
+		return insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
+			if (ids === null || disposed) return false;
+			options.onAdded?.([core]);
+			return true;
+		});
+	};
+
+	/** The list dialog's choice: one save placing the widget at the end. */
+	const addWatchlistPrices = (list: WatchlistList): Promise<boolean> => {
+		const core = watchlistPricesWidget(list.listId, list.title);
 		return insert([{ core, origin: ownerOrigin() }], atEnd).then((ids) => {
 			if (ids === null || disposed) return false;
 			options.onAdded?.([core]);
@@ -533,7 +559,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 	/** Escape on the page section clears the selection (not from editors, menus or dialogs). */
 	const onSectionKeyDown = (event: KeyboardEvent): void => {
 		if (event.key !== "Escape") return;
-		if (editorId() !== null || marketDialog() !== null || taskDialogOpen()) return;
+		if (dialogOpen()) return;
 		const target = event.target;
 		if (target instanceof HTMLElement && target.closest("[data-rich-text-editor]") !== null) return;
 		if (target instanceof HTMLElement && target.closest('[role="menu"],dialog,sl-dialog') !== null)
@@ -735,7 +761,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		</>
 	);
 
-	/** The content editor, the market dialog and the task dialog. */
+	/** The content editor, the market dialog, the task dialog and the list dialog. */
 	const Dialogs = (): JSX.Element => (
 		<>
 			<Show when={editing()}>
@@ -768,6 +794,14 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 					onClose={() => setTaskDialogOpen(false)}
 				/>
 			</Show>
+			<Show when={listDialogOpen()}>
+				<WatchlistListDialog
+					api={options.api}
+					opener={listDialogOpener()}
+					onChoose={addWatchlistPrices}
+					onClose={() => setListDialogOpen(false)}
+				/>
+			</Show>
 		</>
 	);
 
@@ -775,8 +809,7 @@ export function createWidgetBoard<W extends WidgetCore>(options: WidgetBoardOpti
 		/** Stable per-id grid entries (an autosave never re-creates a frame). */
 		entries,
 		pending,
-		/** True while one of the board's dialogs is open. */
-		dialogOpen: (): boolean => editorId() !== null || marketDialog() !== null || taskDialogOpen(),
+		dialogOpen,
 		isSelected: (widgetId: string): boolean => session.selection().includes(widgetId),
 		select: session.select,
 		onDrop,
@@ -800,11 +833,12 @@ export type WidgetBoard<W extends WidgetCore> = ReturnType<typeof createWidgetBo
 /**
  * Whether the type has fields an editor changes (its menu offers Edit…).
  * The scheduled-tasks widget has none: its size is in the menu, its tasks
- * on the Tasks page (ADR-0033 §9). A Task result's task is chosen when it is
- * added; another task is another widget (ADR-0038 §1).
+ * on the Tasks page (ADR-0033 §9). A Task result's task and a Watchlist
+ * prices widget's list are chosen when it is added; another one is another
+ * widget (ADR-0038 §1, ADR-0040 §5).
  */
 function hasEditableContent(type: WidgetType): boolean {
-	return type !== "scheduled-tasks" && type !== "task-result";
+	return type !== "scheduled-tasks" && type !== "task-result" && type !== "watchlist-prices";
 }
 
 function isOrigin(value: unknown): value is NotebookWidgetOrigin {

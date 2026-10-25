@@ -129,6 +129,7 @@ function watchlistWithAapl() {
 				],
 			},
 		],
+		lists: [],
 		refresh: {
 			activeRunId: null,
 			activeRunState: null,
@@ -245,8 +246,10 @@ function stubMarket(
 	api: ReturnType<typeof createApiClient>,
 ): WidgetMarketContext {
 	const byId = new Map(series.map((entry) => [entry.seriesId, entry] as const));
+	const served: ReadonlySet<string> = new Set(byId.keys());
 	return {
 		seriesById: () => byId,
+		pageSeries: () => served,
 		watchlist: () => watchlist,
 		watchlistError: () => null,
 		onRetryWatchlist: () => {},
@@ -764,7 +767,7 @@ describe("notebook market data context", () => {
 });
 
 describe("notebook market add and edit", () => {
-	it("lists the five market types after the existing four, opening Home's form", async () => {
+	it("lists the six market types after the existing four, opening Home's form", async () => {
 		const fixtures = marketFixtures();
 		mountPanel([fixtures.metric], freshMarket(defaultHomeSeries(false)), null);
 		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
@@ -780,6 +783,7 @@ describe("notebook market add and edit", () => {
 			"Stock table",
 			"Indicator table",
 			"Earnings calendar",
+			"Watchlist prices",
 		];
 		for (const label of marketLabels) {
 			await waitFor(() => expect(screen.getByRole("menuitem", { name: label })).toBeDefined());
@@ -846,5 +850,109 @@ describe("notebook market add and edit", () => {
 		await waitFor(() => expect(articleById("nb-metric").textContent).toContain("15.41"), {
 			timeout: 10_000,
 		});
+	});
+});
+
+/** The AAPL watchlist with one list holding AAPL (ADR-0040). */
+function watchlistWithAaplList() {
+	return watchlistResponseSchema.parse({
+		...watchlistWithAapl(),
+		lists: [
+			{
+				listId: "list_tech",
+				title: "Tech",
+				stockIds: ["us:AAPL"],
+				version: 1,
+				createdAt: "2026-10-12T00:00:00Z",
+				updatedAt: "2026-10-12T00:00:00Z",
+			},
+		],
+	});
+}
+
+describe("notebook Watchlist prices widget (ADR-0040)", () => {
+	const pricesWidget = (): NotebookWidget =>
+		marketWidget({
+			widgetId: "nb-prices",
+			type: "watchlist-prices",
+			title: "Tech",
+			size: "medium",
+			listId: "list_tech",
+			...STAMP,
+		});
+
+	it("loads the watchlist before the market data, and its list's series join the one automatic refresh", async () => {
+		const series = defaultHomeSeries(false).map((entry): MarketSeries => {
+			if (entry.seriesId !== "twelve-data:AAPL") return entry;
+			return {
+				...entry,
+				observations: [],
+				lastRefreshedAt: null,
+				retrievedAt: null,
+				unavailable: {
+					code: "NEVER_REFRESHED",
+					upstreamStatus: null,
+					reason: "No data has been refreshed yet; queue a refresh.",
+				},
+			};
+		});
+		const watch: WatchServerState = { response: watchlistWithAaplList(), failures: 0, count: 0 };
+		mountPanel([pricesWidget()], freshMarket(series), watch);
+		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
+		await waitFor(() => expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1), {
+			timeout: 10_000,
+		});
+		expect(backend.requestsTo("POST", /\/home\/refresh$/)[0]?.body).toEqual({
+			scope: "unrefreshed",
+		});
+		// The market read waited for the lists: the watchlist came first.
+		const paths = backend.requests.map((request) => request.path);
+		const firstWatch = paths.findIndex((path) => WATCHLIST_GET.test(path));
+		const firstMarket = paths.findIndex((path) => MARKET_DATA.test(path));
+		expect(firstWatch).toBeGreaterThanOrEqual(0);
+		expect(firstWatch).toBeLessThan(firstMarket);
+		await waitFor(() => expect(articleById("nb-prices").textContent).toContain("Tech"));
+		expect(articleById("nb-prices").textContent).toContain("AAPL");
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		expect(backend.requestsTo("POST", /\/home\/refresh$/)).toHaveLength(1);
+	});
+
+	it("adds one from the add menu's list dialog, with no Edit… afterwards", async () => {
+		const fixtures = marketFixtures();
+		const watch: WatchServerState = { response: watchlistWithAaplList(), failures: 0, count: 0 };
+		mountPanel([fixtures.metric], freshMarket(defaultHomeSeries(false)), watch);
+		await waitFor(() => expect(articles()).toHaveLength(1), { timeout: 10_000 });
+		fireEvent.click(screen.getByRole("button", { name: "Add widget" }));
+		fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: "Watchlist prices" }));
+		const dialog = await screen.findByRole("dialog", { name: "Choose a list" });
+		const list = await within(dialog).findByRole("list", { name: "Your Watchlist lists" });
+		const choice = within(list).getByRole("button");
+		expect(choice.textContent).toBe("Tech1 stock");
+		fireEvent.click(choice);
+		await waitFor(() => expect(backend.requestsTo("PUT", NOTEBOOK_PUT)).toHaveLength(1), {
+			timeout: 10_000,
+		});
+		const body = backend.requestsTo("PUT", NOTEBOOK_PUT)[0]?.body as {
+			notebook: { widgets: NotebookWidget[] };
+		};
+		expect(body.notebook.widgets.at(-1)).toMatchObject({
+			type: "watchlist-prices",
+			listId: "list_tech",
+			title: "Tech",
+			size: "medium",
+			origin: { kind: "owner" },
+		});
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() => expect(articles()).toHaveLength(2), { timeout: 10_000 });
+		const added = articles().at(-1);
+		if (added === undefined) throw new Error("no new widget");
+		await waitFor(() => expect(added.textContent).toContain("1 stock"));
+		const actions = added.querySelector("button[data-widget-actions]");
+		if (!(actions instanceof HTMLElement)) throw new Error("no widget actions button");
+		fireEvent.click(actions);
+		const names = within(lastOpenMenu())
+			.getAllByRole("menuitem")
+			.map((item) => item.textContent?.trim());
+		expect(names).not.toContain("Edit…");
 	});
 });

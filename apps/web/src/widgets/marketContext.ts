@@ -13,7 +13,12 @@ import type { ApiFailure } from "../api/http.ts";
 export interface WidgetMarketContext {
 	/** Series of the page's market widgets, by id (live; reloaded after refreshes). */
 	readonly seriesById: Accessor<ReadonlyMap<string, MarketSeries>>;
-	/** The watchlist, loaded only when the page holds an earnings calendar. */
+	/**
+	 * The series the page is served (`pageSeriesIds`, ADR-0040 §4): named
+	 * series first, then the Watchlist prices widgets' lists, at most 30.
+	 */
+	readonly pageSeries: Accessor<ReadonlySet<string>>;
+	/** The watchlist, loaded only when the page holds an earnings calendar or a Watchlist prices widget. */
 	readonly watchlist: Accessor<WatchlistResponse | null>;
 	readonly watchlistError: Accessor<ApiFailure | null>;
 	readonly onRetryWatchlist: () => void;

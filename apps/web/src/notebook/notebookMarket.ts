@@ -1,4 +1,4 @@
-import { distinctWidgetSeriesIds, isMarketWidget, type NotebookWidget } from "@research/contracts";
+import { isMarketWidget, type NotebookWidget } from "@research/contracts";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { ApiClient } from "../api/client.ts";
 import { ok } from "../api/http.ts";
@@ -11,15 +11,18 @@ import {
 import { createPoller, documentVisibility, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "../watchlist/earningsRefreshQueue.ts";
 import type { WidgetMarketContext } from "../widgets/marketContext.ts";
+import { hasListWidget, readsWatchlist, webPageSeriesIds } from "../widgets/pageSeries.ts";
 
 /**
  * Live market data for one conversation's notebook (ADR-0021), through the
  * same Home widget components the Notebook renders (`WidgetBody`). Loads
  * `getNotebookMarketData` only while the notebook holds market widgets and
- * reloads only when the set of named series changes (the sorted id list,
- * not on every edit); polls while a refresh is active the way Home does;
- * loads the watchlist only while an earnings-calendar widget exists, with
- * the calendar's refresh and "Try again" like Home.
+ * reloads only when the set of page series changes (the sorted id list,
+ * not on every edit): the series the widgets name and, after them, the
+ * stocks of the Watchlist prices widgets' lists (`pageSeriesIds`, ADR-0040
+ * §4). Polls while a refresh is active the way Home does; loads the
+ * watchlist only while an earnings-calendar or Watchlist prices widget
+ * exists, with the calendar's refresh and "Try again" like Home.
  *
  * When a loaded series is `NEVER_REFRESHED` and no refresh is active, one
  * market refresh is queued per page visit per series set, so a widget the
@@ -59,13 +62,23 @@ export function createNotebookMarketContext(options: {
 		isDisposed: () => disposed,
 	});
 
-	/** Distinct series the notebook's market widgets name, sorted for comparison. */
-	const seriesKey = createMemo(() =>
-		[...distinctWidgetSeriesIds(options.widgets())].sort().join(","),
-	);
+	/** The series the notebook is served, in page order (ADR-0040 §4). */
+	const pageSeriesList = createMemo(() => webPageSeriesIds(options.widgets(), watchLoader.value()));
+	const pageSeries = createMemo((): ReadonlySet<string> => new Set(pageSeriesList()));
+	/** The page series sorted, for comparison: a reorder loads nothing. */
+	const seriesKey = createMemo(() => [...pageSeriesList()].sort().join(","));
 	const hasMarket = createMemo(() => options.widgets().some((widget) => isMarketWidget(widget)));
-	const hasCalendar = createMemo(() =>
-		options.widgets().some((widget) => widget.type === "earnings-calendar"),
+	const needsWatchlist = createMemo(() => options.widgets().some(readsWatchlist));
+	/**
+	 * A Watchlist prices widget's series need the watchlist: until it has
+	 * loaded (or failed) the market read waits, so the first read and the one
+	 * automatic refresh already cover the lists.
+	 */
+	const listSeriesPending = createMemo(
+		() =>
+			hasListWidget(options.widgets()) &&
+			watchLoader.value() === null &&
+			watchLoader.error() === null,
 	);
 	const byId = createMemo(() => seriesById(dataLoader.value()?.series ?? []));
 
@@ -76,7 +89,7 @@ export function createNotebookMarketContext(options: {
 	const refreshedKeys = new Set<string>();
 
 	const loadMarket = async (): Promise<MarketPollSignal> => {
-		if (options.workspaceId() === null || !hasMarket()) return "unchanged";
+		if (options.workspaceId() === null || !hasMarket() || listSeriesPending()) return "unchanged";
 		const outcome = await dataLoader.load();
 		if (disposed) return "unchanged";
 		if (outcome.signal !== "failed") maybeQueueFirstRefresh();
@@ -94,7 +107,7 @@ export function createNotebookMarketContext(options: {
 		if (key === "") return;
 		const current = dataLoader.value();
 		if (current === null || current.refresh.activeRunId !== null) return;
-		const ids = distinctWidgetSeriesIds(options.widgets());
+		const ids = pageSeriesList();
 		const needs = ids.some((id) => {
 			const series = byId().get(id);
 			return series === undefined || series.unavailable?.code === "NEVER_REFRESHED";
@@ -124,7 +137,7 @@ export function createNotebookMarketContext(options: {
 	});
 
 	const loadWatchlist = async (): Promise<MarketPollSignal> => {
-		if (!hasCalendar()) return "unchanged";
+		if (!needsWatchlist()) return "unchanged";
 		const outcome = await watchLoader.load();
 		if (disposed) return "unchanged";
 		return outcome.signal;
@@ -155,6 +168,7 @@ export function createNotebookMarketContext(options: {
 			dataPoller.stop();
 			return;
 		}
+		if (listSeriesPending()) return;
 		if (key === loadedKey) return;
 		loadedKey = key;
 		void loadMarket().then((signal) => {
@@ -162,10 +176,11 @@ export function createNotebookMarketContext(options: {
 		});
 	});
 
-	// The watchlist loads once a calendar widget needs it (or again after
-	// "Try again" clears the error); an active earnings run keeps polling.
+	// The watchlist loads once a calendar or Watchlist prices widget needs it
+	// (or again after "Try again" clears the error); an active earnings run
+	// keeps polling.
 	createEffect(() => {
-		if (!hasCalendar()) {
+		if (!needsWatchlist()) {
 			watchlistPoller.stop();
 			return;
 		}
@@ -197,6 +212,7 @@ export function createNotebookMarketContext(options: {
 
 	return {
 		seriesById: byId,
+		pageSeries,
 		watchlist: watchLoader.value,
 		watchlistError: watchLoader.error,
 		onRetryWatchlist,
