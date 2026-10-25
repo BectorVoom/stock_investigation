@@ -74,6 +74,7 @@ describe("Tasks page (ADR-0033 §8)", () => {
 						slotAt: "2026-10-23T23:00:00Z",
 						queuedAt: "2026-10-23T23:00:02Z",
 						failureCode: null,
+						failureUpstreamStatus: null,
 					},
 					lastSkip: {
 						code: "AGENT_NOT_CONFIGURED",

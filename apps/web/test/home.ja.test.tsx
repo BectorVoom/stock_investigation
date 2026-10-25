@@ -124,6 +124,7 @@ describe("Home market widgets in Japanese", () => {
 			unit: "USD",
 			unavailable: {
 				code: "SOURCE_NOT_CONFIGURED",
+				upstreamStatus: null,
 				reason:
 					"The Twelve Data source is not configured; set TWELVE_DATA_API_KEY in apps/runner/.env.",
 			},

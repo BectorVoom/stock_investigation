@@ -28,6 +28,7 @@ const TASK = makeTask({
 		slotAt: null,
 		queuedAt: "2026-10-23T23:00:02Z",
 		failureCode: null,
+		failureUpstreamStatus: null,
 	},
 	lastSkip: { code: "RATE_LIMITED", slotAt: "2026-10-24T23:00:00Z", at: "2026-10-24T23:00:03Z" },
 });

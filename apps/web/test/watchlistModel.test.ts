@@ -130,7 +130,11 @@ describe("event helpers", () => {
 		expect(
 			withoutUpcomingReason(
 				stock({
-					unavailable: { code: "RATE_LIMITED", reason: "The provider rate limit was reached." },
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: null,
+					},
 				}),
 				90,
 				TODAY,
@@ -148,7 +152,11 @@ describe("event helpers", () => {
 			withoutUpcomingReason(
 				stock({
 					events: [past],
-					unavailable: { code: "RATE_LIMITED", reason: "The provider rate limit was reached." },
+					unavailable: {
+						code: "RATE_LIMITED",
+						reason: "The provider rate limit was reached.",
+						upstreamStatus: null,
+					},
 				}),
 				90,
 				TODAY,
@@ -451,6 +459,7 @@ describe("google auto-sync rule", () => {
 		const failed = response({
 			lastFailure: {
 				code: "GOOGLE_RATE_LIMITED",
+				upstreamStatus: null,
 				reason: "Google is limiting requests right now; try again later.",
 				at: "2026-11-02T11:00:00Z",
 			},

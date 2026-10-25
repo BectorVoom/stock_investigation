@@ -480,6 +480,7 @@ describe("Watchlist view", () => {
 			activeAction: null,
 			lastFailure: {
 				code: "GOOGLE_REQUEST_FAILED",
+				upstreamStatus: null,
 				reason: "The Google Calendar request failed.",
 				at: FRESH_STAMP,
 			},

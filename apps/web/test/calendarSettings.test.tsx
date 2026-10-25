@@ -153,6 +153,7 @@ describe("Settings → Calendar", () => {
 			status: "needs-reconnect",
 			lastFailure: {
 				code: "GOOGLE_AUTH_EXPIRED",
+				upstreamStatus: null,
 				reason: "The Google connection expired; reconnect Google Calendar.",
 				at: FRESH_STAMP,
 			},
@@ -185,6 +186,7 @@ describe("Settings → Calendar", () => {
 			activeAction: null,
 			lastFailure: {
 				code: "GOOGLE_REQUEST_FAILED",
+				upstreamStatus: null,
 				reason: "The Google Calendar request failed.",
 				at: FRESH_STAMP,
 			},

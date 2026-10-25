@@ -17,6 +17,7 @@ const SOURCE: NewsSource = newsSourceSchema.parse({
 	feedStatus: "failing",
 	lastFetchedAt: "2026-10-05T03:00:00Z",
 	lastErrorCode: "FETCH_TIMEOUT",
+	lastErrorUpstreamStatus: null,
 	createdAt: "2026-10-01T00:00:00Z",
 	updatedAt: "2026-10-05T03:00:00Z",
 });
@@ -91,6 +92,7 @@ beforeEach(() => {
 			title: "Energy Wire",
 			feedStatus: "active",
 			lastErrorCode: null,
+			lastErrorUpstreamStatus: null,
 		};
 		subscribed = [...subscribed, created];
 		return jsonResponse(created, { status: 201 });

@@ -542,6 +542,7 @@ describe("home view", () => {
 					retrievedAt: "2026-10-12T11:50:00Z",
 					unavailable: {
 						code: "SOURCE_NOT_CONFIGURED",
+						upstreamStatus: null,
 						reason:
 							"The Twelve Data source is not configured; set TWELVE_DATA_API_KEY in apps/runner/.env.",
 					},
@@ -555,6 +556,7 @@ describe("home view", () => {
 					retrievedAt: null,
 					unavailable: {
 						code: "NEVER_REFRESHED",
+						upstreamStatus: null,
 						reason: "No data has been refreshed yet; queue a refresh.",
 					},
 				};
@@ -1156,6 +1158,7 @@ describe("home view", () => {
 					lastRefreshedAt: "2026-10-12T11:55:00Z",
 					unavailable: {
 						code: "SOURCE_FAILED",
+						upstreamStatus: null,
 						reason: "The data source request failed.",
 					},
 				};
@@ -1168,6 +1171,7 @@ describe("home view", () => {
 					retrievedAt: "2026-10-12T11:55:00Z",
 					unavailable: {
 						code: "SERIES_NOT_FOUND",
+						upstreamStatus: null,
 						reason: "The provider has no data for this symbol on the configured plan.",
 					},
 				};
@@ -1347,6 +1351,7 @@ describe("home view", () => {
 			activeAction: null,
 			lastFailure: {
 				code: "GOOGLE_REQUEST_FAILED",
+				upstreamStatus: null,
 				reason: "The Google Calendar request failed.",
 				at: "2026-10-12T12:00:00Z",
 			},

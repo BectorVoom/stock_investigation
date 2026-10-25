@@ -641,6 +641,7 @@ describe("notebook market data context", () => {
 				retrievedAt: null,
 				unavailable: {
 					code: "NEVER_REFRESHED",
+					upstreamStatus: null,
 					reason: "No data has been refreshed yet; queue a refresh.",
 				},
 			};

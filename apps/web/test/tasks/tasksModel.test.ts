@@ -144,6 +144,7 @@ describe("nextRunText", () => {
 			slotAt: null,
 			queuedAt,
 			failureCode: null,
+			failureUpstreamStatus: null,
 		});
 		const skipped = makeTask({ status: "completed", nextRunAt: null, lastSkip: skip });
 		expect(nextRunText(skipped, NOW_MS, TOKYO, "en", en)).toBe(
@@ -183,6 +184,7 @@ describe("last run and skip lines", () => {
 		slotAt: "2026-10-23T23:00:00Z",
 		queuedAt: "2026-10-23T23:00:05Z",
 		failureCode: "PROVIDER_UNAVAILABLE",
+		failureUpstreamStatus: null,
 	};
 
 	it("states the last run with its failure code, or that none ran yet", () => {
@@ -424,6 +426,7 @@ describe("outcomeStillCurrent", () => {
 				slotAt: "2026-10-23T23:00:00.000Z",
 				queuedAt: "2026-10-23T23:00:05.000Z",
 				failureCode: null,
+				failureUpstreamStatus: null,
 			},
 		});
 		expect(outcomeStillCurrent(notice, [fired])).toBe(false);

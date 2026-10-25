@@ -222,6 +222,7 @@ describe("GoogleCalendarCard", () => {
 				inSync: false,
 				lastFailure: {
 					code: "GOOGLE_RATE_LIMITED",
+					upstreamStatus: null,
 					reason: "Google is limiting requests right now; try again later.",
 					at: "2026-11-03T11:00:00Z",
 				},
@@ -240,6 +241,7 @@ describe("GoogleCalendarCard", () => {
 				calendarId: "cal_1",
 				lastFailure: {
 					code: "GOOGLE_AUTH_EXPIRED",
+					upstreamStatus: null,
 					reason: "x",
 					at: "2026-11-03T11:00:00Z",
 				},
@@ -279,6 +281,7 @@ describe("GoogleCalendarCard", () => {
 				calendarId: "cal_1",
 				lastFailure: {
 					code: "GOOGLE_AUTH_EXPIRED",
+					upstreamStatus: null,
 					reason: "The Google connection expired; reconnect Google Calendar.",
 					at: "2026-11-02T11:00:00Z",
 				},
@@ -295,6 +298,7 @@ describe("GoogleCalendarCard", () => {
 			state({
 				lastFailure: {
 					code: "GOOGLE_NOT_CONFIGURED",
+					upstreamStatus: null,
 					reason:
 						"Google Calendar is not configured; set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET in apps/runner/.env.",
 					at: "2026-11-02T11:00:00Z",
@@ -312,6 +316,7 @@ describe("GoogleCalendarCard", () => {
 			state({
 				lastFailure: {
 					code: "GOOGLE_REQUEST_FAILED",
+					upstreamStatus: null,
 					reason: "The Google Calendar request failed.",
 					at: "2026-11-02T11:00:00Z",
 				},
