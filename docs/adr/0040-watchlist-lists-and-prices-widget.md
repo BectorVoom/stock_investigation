@@ -6,6 +6,9 @@ to these lists. Also, allow users to add a widget to the home page that
 displays the price changes (from previous close) for stocks in their custom
 watchlists."
 
+**Amended 2026-10-25** at the owner's request ("merge 登録済みの銘柄 and list
+in watchlist"): the lists are tabs over the one stock table (§7).
+
 ## Context
 
 The Watchlist page (FR-018) holds one flat set of up to 50 stocks whose
@@ -212,18 +215,33 @@ a click after a list gains a stock.
 
 ### 7. The Watchlist page
 
-A **Lists** section below the add-a-stock form and above the stock table:
+One **Registered stocks** section below the add-a-stock form holds the
+stocks and the lists (amended 2026-10-25; the first version had a separate
+Lists section of cards): tabs over one stock table.
 
-- **New list** opens a dialog with a title field.
-- Each list is a card: its title and count, a menu (Rename…, Show on Home,
-  Delete… with confirmation), its stocks (symbol, name, a Remove-from-list
-  button), and **Add stock**: a dialog offering the watchlist's stocks not
-  yet in the list (checkboxes) and the stock search box (ADR-0034) for a
-  stock not on the watchlist yet (adding it also adds it to the watchlist,
-  which the dialog says). A full list (12) disables Add stock and says why.
-- Each row of the stock table names the lists the stock is in.
-- Removing a stock from the watchlist (existing confirmation) says when it
-  will also leave lists ("Also removes it from 2 lists").
+- **Tabs** (WAI-ARIA tabs pattern: one tab stop, ← / → wrap, Home / End,
+  `aria-selected`, `aria-controls` → the one table panel): "All stocks (N)"
+  first, then one tab per list in creation order, "Title (n)". On a phone
+  the strip scrolls sideways inside itself; the page never does.
+- **All stocks** is the registered-stocks table as before: the earnings
+  columns, each row naming the lists its stock is in ("In lists: …"),
+  Remove with its confirmation — which says when the stock will also leave
+  lists ("Also removes it from 2 lists") — and the earnings refresh button
+  and status line.
+- **A list's tab** shows "Title · n of 12 stocks" with **Add stock**,
+  **Show on Home** and a menu (Rename…, Delete… with confirmation), then the
+  same table filtered to the list's stocks in list order, with **Remove
+  from list** per row (focus moves to the next row's, else to Add stock).
+  Add stock opens a dialog offering the watchlist's stocks not yet in the
+  list (checkboxes) and the stock search box (ADR-0034) for a stock not on
+  the watchlist yet (adding it also adds it to the watchlist, which the
+  dialog says). A full list (12) disables Add stock and says why; an empty
+  list says so.
+- **New list** sits in the section header and opens a dialog with a title
+  field; the new list's tab is then selected and focused. Deleting a list
+  selects and focuses "All stocks"; a rename keeps its tab selected. The
+  selected tab survives re-reads, and a list deleted elsewhere falls back
+  to "All stocks".
 
 ### 8. Agents
 

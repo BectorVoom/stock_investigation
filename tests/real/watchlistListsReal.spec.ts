@@ -124,7 +124,7 @@ test("a list of watched stocks shows real prices from the previous close on Home
 	});
 
 	await page.goto(`${VITE_ORIGIN}/#/watchlist`);
-	const section = page.getByRole("region", { name: "Lists", exact: true });
+	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({
 		timeout: 120_000,
 	});
@@ -135,8 +135,13 @@ test("a list of watched stocks shows real prices from the previous close on Home
 	await create.getByRole("textbox", { name: "Title" }).fill(LIST_TITLE);
 	await create.getByRole("button", { name: "Create list" }).click();
 	await expect(create).toBeHidden();
-	const card = page.getByRole("listitem", { name: `List: ${LIST_TITLE}`, exact: true });
-	await expect(card).toContainText("0 of 12 stocks");
+	// The new list's tab is selected: its panel carries the list's actions.
+	await expect(page.getByRole("tab", { name: `${LIST_TITLE} (0)`, exact: true })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	const card = page.getByRole("tabpanel");
+	await expect(card).toContainText(`${LIST_TITLE} · 0 of 12 stocks`);
 
 	await card.getByRole("button", { name: `Add stocks to ${LIST_TITLE}` }).click();
 	const dialog = page.getByRole("dialog", { name: `Add stocks to ${LIST_TITLE}` });
@@ -149,8 +154,7 @@ test("a list of watched stocks shows real prices from the previous close on Home
 	await expect(dialog).toBeHidden({ timeout: 60_000 });
 	await expect(card).toContainText(`${SYMBOLS.length} of 12 stocks`);
 
-	await page.getByRole("button", { name: `Actions for ${LIST_TITLE}`, exact: true }).click();
-	await page.getByRole("menuitem", { name: "Show on Home", exact: true }).click();
+	await card.getByRole("button", { name: "Show on Home", exact: true }).click();
 	await expect(section.locator('[data-field="lists-status"]')).toHaveText(
 		`Added ${LIST_TITLE} to Home.`,
 	);

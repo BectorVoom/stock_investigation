@@ -182,16 +182,20 @@ Register the stocks you follow and see their earnings announcement dates.
   the page with dates never fetched or more than a day old queues one refresh,
   once per visit).
 - Add one announcement date to Google Calendar or Outlook.
-- Group stocks into titled lists (ADR-0040), in the Lists section between
-  the add form and the stock table: New list (a title of 1–80 characters);
-  per list, a menu with Rename…, Show on Home (appends a Watchlist prices
-  widget for the list to Home, or says it is already there) and Delete…
-  (with confirmation; the stocks stay on the watchlist); Remove from list
-  per stock; and Add stock — a dialog with the watchlist's other stocks as
-  checkboxes and the stock search for a stock not on the watchlist yet,
-  which is then added to the watchlist too (its earnings dates are queued
-  as after a plain add). At most 20 lists and 12 stocks a list: at a bound
-  the button is disabled and says why; a refused write names its reason.
+- Group stocks into titled lists (ADR-0040 §7), shown as tabs over the one
+  stock table: "All stocks (N)" first, then one tab per list ("Title (n)").
+  New list (in the section header; a title of 1–80 characters) adds a tab,
+  selected and focused. A list's tab carries the list's actions — Add stock
+  (a dialog with the watchlist's other stocks as checkboxes and the stock
+  search for a stock not on the watchlist yet, which is then added to the
+  watchlist too, its earnings dates queued as after a plain add), Show on
+  Home (appends a Watchlist prices widget for the list to Home, or says it
+  is already there) and a menu with Rename… and Delete… (with confirmation;
+  the stocks stay on the watchlist; "All stocks" is selected after) — and
+  Remove from list on each row. Tabs follow the WAI-ARIA pattern (one tab
+  stop, ←/→ wrap, Home/End); on a phone the strip scrolls inside itself.
+  At most 20 lists and 12 stocks a list: at a bound the button is disabled
+  and says why; a refused write names its reason.
 
 **Shows**
 
@@ -211,14 +215,15 @@ Register the stocks you follow and see their earnings announcement dates.
   fixed sentence per code (`DIRECTORY_NOT_CONFIGURED` names `SEC_USER_AGENT`
   in `apps/runner/.env`). A refresh request that fails is followed by one
   status reload, so a market it queued anyway is shown and polled.
-- The registered stocks: symbol, company name (or "unavailable (not retrieved yet)"),
+- The registered stocks on "All stocks", or one list's stocks in list order
+  on its tab (with "Title · n of 12 stocks" above them): symbol, company name (or "unavailable (not retrieved yet)"),
   market, the next announcement date with fiscal period and timing, further dates in a
   disclosure, "date undecided" stated as text, the retrieved date, the source link, a
   per-row "unavailable (reason)" when there is no date, "In lists: …" naming
-  the lists the stock is in, and a Remove action (its confirmation says how
-  many lists the stock also leaves).
-- The lists, each a card with its title, "N of 12 stocks", its stocks
-  (symbol, name, Remove from list) and Add stock.
+  the lists the stock is in, and a Remove action on "All stocks" (its
+  confirmation says how many lists the stock also leaves) or Remove from
+  list on a list's tab. An empty list's tab says so. The selected tab
+  survives re-reads; a list deleted elsewhere falls back to "All stocks".
 - The earnings-date refresh status: last successful refresh time, the active run id and
   state while refreshing, or the last failure with its stable code beside the last
   success; a note that the refresh waits for the local runner when it is queued but
@@ -539,7 +544,7 @@ Configure how the workspace runs: the AI agent, the calendar, the runner and dat
 | 8. Check market prices at a glance | Home (arrange widgets, queue a market-data refresh) |
 | 9. Track earnings announcement dates | Watchlist (search every US and Japanese listed stock and register it — each add queues its own earnings-date refresh — and add single dates to a calendar), Home (glanceable earnings-calendar widget with the month grid, its own refresh button and an "Open Watchlist" link) and Settings → Calendar (keep Google Calendar in step, export or subscribe to the calendar) |
 | 10. Ask a research question on a schedule (ADR-0033) | Tasks (create, edit, pause, run now, delete), Home and the Notebook (glanceable scheduled-tasks widget with Pause/Resume, Run now, New task and "Open Tasks"; a Task result widget per task with its latest answer, ADR-0038) and Chat (each task's answers in its own chat) |
-| 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks, add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
+| 11. Follow a group of stocks' prices (ADR-0040) | Watchlist (make titled lists of watchlist stocks — one tab each beside "All stocks" — add and remove stocks, Show on Home) and Home and the Notebook (a Watchlist prices widget per list with each stock's change from the previous close) |
 
 ## How the split was checked
 

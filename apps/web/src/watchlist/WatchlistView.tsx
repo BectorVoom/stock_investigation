@@ -1,16 +1,10 @@
 import type {
-	EarningsEvent,
 	RefreshScope,
 	StockDirectoryHit,
 	WatchlistResponse,
 	WatchlistStock,
 	WatchMarket,
 } from "@research/contracts";
-import {
-	type EarningsCalendarEvent,
-	googleCalendarUrl,
-	outlookCalendarUrl,
-} from "@research/domain";
 import { useLocale, useMessages } from "@research/i18n/solid";
 import { SafeLink } from "@research/ui-registry";
 import { createMemo, createSignal, For, type JSX, onCleanup, onMount, Show } from "solid-js";
@@ -19,28 +13,23 @@ import { failureMessageIn } from "../api/errorText.ts";
 import type { ApiFailure } from "../api/http.ts";
 import {
 	BUTTON,
-	BUTTON_DANGER,
 	BUTTON_PRIMARY,
 	ConfirmDialog,
 	DisclosureSummary,
-	Empty,
 	ErrorNotice,
 	INPUT,
-	Loading,
 	Notice,
 	Section,
 	Select,
 } from "../components/ui.tsx";
-import { commonMessages } from "../i18n/common.messages.ts";
-import { formatInstant } from "../lib/format.ts";
 import { createPoller, type PollSignal, type VisibilitySource } from "../lib/polling.ts";
 import { createEarningsRefreshQueue } from "./earningsRefreshQueue.ts";
 import { createGoogleSyncQueue } from "./googleSyncQueue.ts";
-import { joinNames, listTitlesByStock } from "./listsModel.ts";
+import { listTitlesByStock } from "./listsModel.ts";
 import { StockSearchBox } from "./StockSearchBox.tsx";
 import { createStockDirectoryState } from "./stockDirectory.ts";
 import { createStockSearch } from "./stockSearch.ts";
-import { WatchlistListsSection } from "./WatchlistListsSection.tsx";
+import { WatchlistStocksSection } from "./WatchlistStocksSection.tsx";
 import { watchlistMessages } from "./watchlist.messages.ts";
 import { watchlistListsMessages } from "./watchlistLists.messages.ts";
 import { watchlistModelMessages } from "./watchlistModel.messages.ts";
@@ -50,17 +39,12 @@ import {
 	earningsAddedRefreshScope,
 	earningsAutoRefresh,
 	earningsFollowUpScope,
-	earningsUnavailableText,
 	googleAutoSyncWanted,
 	isWatchlistRefreshActive,
-	nextDatedEvent,
 	pickedStockFor,
 	type StockSearchState,
 	selectedStockText,
-	storedDatesPassed,
 	storedDirectoryMarkets,
-	timingText,
-	utcTodayIso,
 	validateNewStock,
 	WATCH_MARKETS,
 	watchlistRefreshSignal,
@@ -76,202 +60,6 @@ import {
 interface PageNotice {
 	readonly text: string;
 	readonly clearsWhenRunEnds: boolean;
-}
-
-/** One dated event with its stock's context for the calendar links, or null. */
-function toCalendarEvent(
-	stock: WatchlistStock,
-	event: EarningsEvent,
-): EarningsCalendarEvent | null {
-	// Never substitutes the added date: without a retrieved stamp there is no
-	// calendar link for the event (the ICS writer and link builders need it).
-	if (stock.retrievedAt === null) return null;
-	return {
-		stockId: stock.stockId,
-		symbol: stock.symbol,
-		name: stock.name,
-		periodKey: event.periodKey,
-		announcementDate: event.announcementDate,
-		fiscalPeriodLabel: event.fiscalPeriodLabel,
-		fiscalPeriodEnd: event.fiscalPeriodEnd,
-		timing: event.timing,
-		publisher: stock.publisher,
-		sourceUrl: stock.sourceUrl,
-		retrievedAt: stock.retrievedAt,
-	};
-}
-
-/** "Add to Google Calendar" / "Add to Outlook" anchors for one dated event. */
-function CalendarLinks(props: {
-	readonly stock: WatchlistStock;
-	readonly event: EarningsEvent;
-}): JSX.Element {
-	const m = useMessages(watchlistMessages);
-	const calendarEvent = () => toCalendarEvent(props.stock, props.event);
-	const google = () => {
-		const dated = calendarEvent();
-		return dated === null ? null : googleCalendarUrl(dated);
-	};
-	const outlook = () => {
-		const dated = calendarEvent();
-		return dated === null ? null : outlookCalendarUrl(dated);
-	};
-	// Inline flow like every other data link in the app (Sources, Chat):
-	// as flex items the anchors would blockify and fall below the 24 px
-	// target floor the audit checks.
-	return (
-		<span>
-			<Show when={google()}>
-				{(url) => <SafeLink url={url()}>{m().addToGoogleCalendar}</SafeLink>}
-			</Show>{" "}
-			<Show when={outlook()}>{(url) => <SafeLink url={url()}>{m().addToOutlook}</SafeLink>}</Show>
-		</span>
-	);
-}
-
-function NextAnnouncementCell(props: { readonly stock: WatchlistStock }): JSX.Element {
-	const m = useMessages(watchlistMessages);
-	const model = useMessages(watchlistModelMessages);
-	const common = useMessages(commonMessages);
-	const stock = () => props.stock;
-	const today = () => utcTodayIso(Date.now());
-	const next = () => nextDatedEvent(stock(), today());
-	const passed = () => next() === null && storedDatesPassed(stock(), today());
-	// Further dated events after the one shown: past dates are never listed
-	// and never get calendar links.
-	const further = () =>
-		stock()
-			.events.filter(
-				(event) => event.announcementDate !== null && event.announcementDate >= today(),
-			)
-			.slice(1);
-	const undecided = () => stock().events.some((event) => event.announcementDate === null);
-	return (
-		<div>
-			<Show
-				when={next()}
-				fallback={
-					<span class="text-amber-900">
-						<Show
-							when={passed()}
-							fallback={
-								<Show when={stock().unavailable} fallback={<span>{m().dateUndecided}</span>}>
-									{(unavailable) => (
-										<span>
-											{common().unavailable(earningsUnavailableText(unavailable(), model()))}
-										</span>
-									)}
-								</Show>
-							}
-						>
-							<span>{model().storedDatesPassed}</span>
-						</Show>
-					</span>
-				}
-			>
-				{(event) => (
-					<div>
-						<time dateTime={event().announcementDate ?? undefined} class="font-medium">
-							{event().announcementDate}
-						</time>{" "}
-						<span>
-							({event().fiscalPeriodLabel}
-							<Show when={timingText(event().timing, model())}>
-								{(timing) => <span>, {timing()}</span>}
-							</Show>
-							)
-						</span>
-						<div class="mt-0.5">
-							<CalendarLinks stock={stock()} event={event()} />
-						</div>
-					</div>
-				)}
-			</Show>
-			<Show when={further().length > 0}>
-				<details class="group mt-1 text-xs">
-					<DisclosureSummary>{m().furtherDates(further().length)}</DisclosureSummary>
-					<ul class="mt-1 space-y-1">
-						<For each={further()}>
-							{(event) => (
-								<li>
-									<time dateTime={event.announcementDate ?? undefined}>
-										{event.announcementDate}
-									</time>{" "}
-									({event.fiscalPeriodLabel}
-									<Show when={timingText(event.timing, model())}>
-										{(timing) => <span>, {timing()}</span>}
-									</Show>
-									)
-									<div class="mt-0.5">
-										<CalendarLinks stock={stock()} event={event} />
-									</div>
-								</li>
-							)}
-						</For>
-					</ul>
-				</details>
-			</Show>
-			<Show when={next() !== null && undecided()}>
-				<p class="mt-1 text-xs text-slate-700">{m().oneFurtherUndecided}</p>
-			</Show>
-		</div>
-	);
-}
-
-function StockRow(props: {
-	readonly stock: WatchlistStock;
-	/** The titles of the lists the stock is in (ADR-0040 §7). */
-	readonly lists: readonly string[];
-	readonly busy: boolean;
-	readonly onRemove: (stock: WatchlistStock, opener: HTMLElement) => void;
-}): JSX.Element {
-	const m = useMessages(watchlistMessages);
-	const model = useMessages(watchlistModelMessages);
-	const listText = useMessages(watchlistListsMessages);
-	const common = useMessages(commonMessages);
-	const locale = useLocale();
-	const stock = () => props.stock;
-	return (
-		<tr class="border-b border-slate-200 align-top" data-stock-id={stock().stockId}>
-			<th scope="row" class="py-1 pr-2 font-medium">
-				<span class="block font-mono">{stock().symbol}</span>
-				<span class="block font-normal text-slate-600">
-					{stock().name ?? common().unavailable(m().notRetrievedYet)}
-				</span>
-				<Show when={props.lists.length > 0}>
-					<span class="block text-2xs font-normal text-slate-700" data-field="stock-in-lists">
-						{listText().inLists(joinNames(props.lists, locale()))}
-					</span>
-				</Show>
-			</th>
-			<td class="py-1 pr-2">{model().marketName(stock().market)}</td>
-			<td class="py-1 pr-2">
-				<NextAnnouncementCell stock={stock()} />
-			</td>
-			<td class="py-1 pr-2 text-slate-700">
-				<Show
-					when={stock().retrievedAt}
-					fallback={<span class="italic">{m().notRetrievedYet}</span>}
-				>
-					{(at) => <time dateTime={at()}>{formatInstant(at())}</time>}
-				</Show>
-			</td>
-			<td class="py-1 pr-2">
-				<SafeLink url={stock().sourceUrl}>{stock().publisher}</SafeLink>
-			</td>
-			<td class="py-1">
-				<button
-					type="button"
-					class={BUTTON_DANGER}
-					aria-label={m().removeNamed(stock().symbol)}
-					disabled={props.busy}
-					onClick={(event) => props.onRemove(stock(), event.currentTarget)}
-				>
-					{common().remove}
-				</button>
-			</td>
-		</tr>
-	);
 }
 
 /**
@@ -614,7 +402,6 @@ export function WatchlistView(props: {
 		directory.status()?.markets.every((entry) => entry.activeRunId !== null) ?? false;
 	const problemsId = "watchlist-add-problems";
 	const addTargetId = "watchlist-add-target";
-	const stocks = () => data()?.stocks ?? [];
 	const listTitles = createMemo(() => listTitlesByStock(data()?.lists ?? []));
 	/** How many lists a stock leaves when it is removed from the watchlist. */
 	const listsLeft = (stock: WatchlistStock): number => listTitles().get(stock.stockId)?.length ?? 0;
@@ -786,80 +573,22 @@ export function WatchlistView(props: {
 				</Show>
 			</Section>
 
-			<WatchlistListsSection
+			<WatchlistStocksSection
 				api={props.api}
 				data={data}
+				loading={loading}
 				pageBusy={busy}
 				storedMarkets={() => storedDirectoryMarkets(directory.status())}
+				statusText={() => {
+					const current = data();
+					return current === null ? null : watchlistStatusText(current, model());
+				}}
+				refreshDisabled={() => busy() || isWatchlistRefreshActive(data())}
+				onRefresh={() => void queueRefresh("all")}
+				onRemoveFromWatchlist={openRemove}
 				onWritten={reloadAfterWrite}
 				onStockWatched={afterStockWatched}
 			/>
-
-			<Section
-				title={m().registeredStocks}
-				actions={
-					<button
-						type="button"
-						class={BUTTON}
-						disabled={busy() || isWatchlistRefreshActive(data())}
-						onClick={() => void queueRefresh("all")}
-					>
-						{m().refreshEarningsDates}
-					</button>
-				}
-			>
-				<Show when={data()}>
-					{(current) => (
-						<output class="mt-1 block text-xs text-slate-700" data-field="watchlist-status">
-							{watchlistStatusText(current(), model())}
-						</output>
-					)}
-				</Show>
-				<Show when={loading()} fallback={null}>
-					<Loading label={m().watchlistThing} />
-				</Show>
-				<Show when={!loading() && data() !== null}>
-					<Show when={stocks().length > 0} fallback={<Empty>{m().noStocks}</Empty>}>
-						<div class="overflow-x-auto">
-							<table class="mt-1 w-full border-collapse text-left text-xs">
-								<caption class="caption-top text-left text-slate-600">{m().stocksCaption}</caption>
-								<thead>
-									<tr class="border-b border-slate-300">
-										<th scope="col" class="pr-2">
-											{m().symbol}
-										</th>
-										<th scope="col" class="pr-2">
-											{m().market}
-										</th>
-										<th scope="col" class="pr-2">
-											{m().nextAnnouncementColumn}
-										</th>
-										<th scope="col" class="pr-2">
-											{m().retrievedColumn}
-										</th>
-										<th scope="col" class="pr-2">
-											{m().sourceColumn}
-										</th>
-										<th scope="col">{m().actionsColumn}</th>
-									</tr>
-								</thead>
-								<tbody>
-									<For each={stocks()}>
-										{(stock) => (
-											<StockRow
-												stock={stock}
-												lists={listTitles().get(stock.stockId) ?? []}
-												busy={busy()}
-												onRemove={openRemove}
-											/>
-										)}
-									</For>
-								</tbody>
-							</table>
-						</div>
-					</Show>
-				</Show>
-			</Section>
 
 			<Show when={removing()}>
 				{(stock) => (

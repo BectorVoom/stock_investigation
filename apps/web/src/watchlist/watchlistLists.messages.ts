@@ -1,27 +1,29 @@
 import { defineMessages } from "@research/i18n";
 
 /**
- * The Watchlist page's Lists section and the add menu's list dialog
- * (ADR-0040 §6–7). List titles, symbols and company names are the owner's
+ * The Watchlist page's list tabs and their actions, and the add menu's
+ * list dialog (ADR-0040 §6–7). List titles, symbols and company names are the owner's
  * data and never pass through here.
  */
 export const watchlistListsMessages = defineMessages({
 	en: {
-		sectionTitle: "Lists",
 		sectionHint:
-			"Group watchlist stocks into titled lists. Show a list on Home or in a Notebook to see each stock's change from the previous close.",
+			"New list adds a tab of your own beside All stocks. Show a list on Home or in a Notebook to see each stock's change from the previous close.",
+		tabsLabel: "Stock lists",
+		allTab: (count: number) => `All stocks (${count})`,
+		listTab: (title: string, count: number) => `${title} (${count})`,
+		listCaption: (title: string) =>
+			`Stocks in ${title}, with their next earnings announcement date`,
 		newList: "New list",
 		newListHeading: "New list",
 		titleLabel: "Title",
 		titleHint: (max: number) => `1 to ${max} characters.`,
 		createList: "Create list",
 		save: "Save",
-		noLists: "No lists yet. Make one with New list.",
-		/** A list card's count: how many of the most it may hold. */
+		/** A list tab's count: how many of the most it may hold. */
 		stockCountOf: (count: number, max: number) => `${count} of ${max} stocks`,
 		listActions: (title: string) => `Actions for ${title}`,
 		listMenu: (title: string) => `${title} actions`,
-		listCard: (title: string) => `List: ${title}`,
 		rename: "Rename…",
 		renameHeading: (title: string) => `Rename ${title}`,
 		showOnHome: "Show on Home",
@@ -31,7 +33,6 @@ export const watchlistListsMessages = defineMessages({
 			"The list is deleted; its stocks stay on the watchlist. A widget that shows it says the list was deleted. This cannot be undone.",
 		deleteList: "Delete list",
 		emptyList: "No stocks in this list yet.",
-		listStocks: (title: string) => `Stocks in ${title}`,
 		removeFromList: "Remove from list",
 		removeFromListNamed: (symbol: string, title: string) => `Remove ${symbol} from ${title}`,
 		addStock: "Add stock",
@@ -95,20 +96,21 @@ export const watchlistListsMessages = defineMessages({
 		listsLoadFailed: "Your lists did not load.",
 	},
 	ja: {
-		sectionTitle: "リスト",
 		sectionHint:
-			"ウォッチリストの銘柄を名前付きのリストにまとめます。リストをホームやノートブックに表示すると、銘柄ごとの前日終値からの変化が見られます。",
+			"「新しいリスト」で「すべての銘柄」の隣に自分のタブを追加できます。リストをホームやノートブックに表示すると、銘柄ごとの前日終値からの変化が見られます。",
+		tabsLabel: "銘柄リスト",
+		allTab: (count) => `すべての銘柄（${count}）`,
+		listTab: (title, count) => `${title}（${count}）`,
+		listCaption: (title) => `${title} の銘柄と次回の決算発表日`,
 		newList: "新しいリスト",
 		newListHeading: "新しいリスト",
 		titleLabel: "名前",
 		titleHint: (max) => `1〜${max} 文字。`,
 		createList: "リストを作成",
 		save: "保存",
-		noLists: "リストはまだありません。「新しいリスト」で作成できます。",
 		stockCountOf: (count, max) => `${count} / ${max} 銘柄`,
 		listActions: (title) => `${title} の操作`,
 		listMenu: (title) => `${title} の操作メニュー`,
-		listCard: (title) => `リスト：${title}`,
 		rename: "名前を変更…",
 		renameHeading: (title) => `${title} の名前を変更`,
 		showOnHome: "ホームに表示",
@@ -118,7 +120,6 @@ export const watchlistListsMessages = defineMessages({
 			"リストを削除します。銘柄はウォッチリストに残ります。このリストを表示しているウィジェットには、リストが削除されたと表示されます。元に戻せません。",
 		deleteList: "リストを削除",
 		emptyList: "このリストにはまだ銘柄がありません。",
-		listStocks: (title) => `${title} の銘柄`,
 		removeFromList: "リストから外す",
 		removeFromListNamed: (symbol, title) => `${symbol} を ${title} から外す`,
 		addStock: "銘柄を追加",

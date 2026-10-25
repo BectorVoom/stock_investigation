@@ -64,17 +64,44 @@ async function mount(locale: "en" | "ja" = "en"): Promise<HTMLElement> {
 			<WatchlistView api={api} visibility={ALWAYS_VISIBLE} />
 		</LocaleProvider>
 	));
-	await screen.findByRole("table", { name: locale === "en" ? TABLE_NAME : /./ });
-	return screen.getByRole("region", { name: locale === "en" ? "Lists" : "リスト" });
+	await screen.findByRole("tablist", { name: locale === "en" ? "Stock lists" : "銘柄リスト" });
+	return screen.getByRole("region", {
+		name: locale === "en" ? "Registered stocks" : "登録済みの銘柄",
+	});
 }
 
+/** The tab names in order. */
+function tabNames(): string[] {
+	return screen.getAllByRole("tab").map((tab) => tab.textContent ?? "");
+}
+
+function tabOf(title: string): HTMLElement {
+	const found = screen
+		.getAllByRole("tab")
+		.find((tab) => (tab.textContent ?? "").startsWith(`${title} (`));
+	if (found === undefined) throw new Error(`no tab for ${title}`);
+	return found;
+}
+
+/** Selects the list's tab (when it is not already) and answers its panel. */
 function card(title: string): HTMLElement {
-	return screen.getByRole("listitem", { name: `List: ${title}` });
+	const tab = tabOf(title);
+	if (tab.getAttribute("aria-selected") !== "true") fireEvent.click(tab);
+	return screen.getByRole("tabpanel");
 }
 
 function openListMenu(title: string, item: string): void {
-	fireEvent.click(screen.getByRole("button", { name: `Actions for ${title}` }));
+	fireEvent.click(within(card(title)).getByRole("button", { name: `Actions for ${title}` }));
 	fireEvent.click(within(lastOpenMenu()).getByRole("menuitem", { name: item }));
+}
+
+function showOnHome(title: string): void {
+	fireEvent.click(within(card(title)).getByRole("button", { name: "Show on Home" }));
+}
+
+/** The stock ids of the shown table's rows, in order. */
+function rowIds(panel: HTMLElement): (string | null)[] {
+	return [...panel.querySelectorAll("tbody tr")].map((row) => row.getAttribute("data-stock-id"));
 }
 
 function status(): string {
@@ -84,7 +111,7 @@ function status(): string {
 describe("Watchlist lists (ADR-0040 §7)", () => {
 	it("makes a list, renames it, and deletes it after confirmation", async () => {
 		const section = await mount();
-		expect(within(section).getByText("No lists yet. Make one with New list.")).toBeTruthy();
+		expect(tabNames()).toEqual(["All stocks (2)"]);
 
 		fireEvent.click(within(section).getByRole("button", { name: "New list" }));
 		const create = await screen.findByRole("dialog", { name: "New list" });
@@ -99,8 +126,17 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(backend.requestsTo("POST", /\/watchlist\/lists$/).map((r) => r.body)).toEqual([
 			{ title: "Semis" },
 		]);
-		await waitFor(() => expect(card("Semis").textContent).toContain("0 of 12 stocks"));
-		expect(within(card("Semis")).getByText("No stocks in this list yet.")).toBeTruthy();
+		// The new list's tab is selected and focused.
+		await waitFor(() => expect(document.activeElement).toBe(tabOf("Semis")));
+		expect(tabOf("Semis").getAttribute("aria-selected")).toBe("true");
+		expect(tabNames()).toEqual(["All stocks (2)", "Semis (0)"]);
+		const panel = screen.getByRole("tabpanel");
+		expect(panel.getAttribute("aria-labelledby")).toBe(tabOf("Semis").id);
+		expect(panel.querySelector('[data-field="list-heading"]')?.textContent).toBe(
+			"Semis · 0 of 12 stocks",
+		);
+		expect(within(panel).getByText("No stocks in this list yet.")).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Add stocks to Semis" })).toBeTruthy();
 		expect(status()).toBe("Created Semis.");
 
 		openListMenu("Semis", "Rename…");
@@ -109,7 +145,9 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect((field as HTMLInputElement).value).toBe("Semis");
 		fireEvent.input(field, { target: { value: "Chips" } });
 		fireEvent.click(within(rename).getByRole("button", { name: "Save" }));
-		await waitFor(() => expect(card("Chips")).toBeTruthy());
+		await waitFor(() => expect(tabNames()).toEqual(["All stocks (2)", "Chips (0)"]));
+		// The renamed list's tab stays selected.
+		expect(tabOf("Chips").getAttribute("aria-selected")).toBe("true");
 		expect(backend.requestsTo("PATCH", /\/watchlist\/lists\/list_1$/)[0]?.body).toEqual({
 			title: "Chips",
 		});
@@ -119,12 +157,73 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(confirm.textContent).toContain("Delete Chips?");
 		expect(confirm.textContent).toContain("its stocks stay on the watchlist");
 		fireEvent.click(within(confirm).getByRole("button", { name: "Delete list" }));
+		// "All stocks" is selected and focused.
+		await waitFor(() => expect(tabNames()).toEqual(["All stocks (2)"]));
 		await waitFor(() =>
-			expect(within(section).getByText("No lists yet. Make one with New list.")).toBeTruthy(),
+			expect(document.activeElement).toBe(screen.getByRole("tab", { name: "All stocks (2)" })),
 		);
+		expect(within(section).getByRole("table", { name: TABLE_NAME })).toBeTruthy();
 		expect(backend.requestsTo("DELETE", /\/watchlist\/lists\/list_1$/)).toHaveLength(1);
 		expect(status()).toBe("Deleted Chips.");
 	});
+
+	it("tabs follow the WAI-ARIA pattern: one tab stop, arrows wrap, Home and End", async () => {
+		server.lists = [
+			list({ stockIds: ["us:MSFT"] }),
+			list({ listId: "list_b", title: "Big tech", stockIds: ["us:AAPL", "us:MSFT"] }),
+		];
+		await mount();
+		const tabs = screen.getAllByRole("tab");
+		expect(tabNames()).toEqual(["All stocks (2)", "Semis (1)", "Big tech (2)"]);
+		const selected = () => tabs.map((tab) => tab.getAttribute("aria-selected"));
+		const stops = () => tabs.map((tab) => tab.tabIndex);
+		expect(selected()).toEqual(["true", "false", "false"]);
+		expect(stops()).toEqual([0, -1, -1]);
+		for (const tab of tabs) {
+			expect(tab.getAttribute("aria-controls")).toBe(screen.getByRole("tabpanel").id);
+		}
+		const [all, semis, bigTech] = tabs;
+		if (all === undefined || semis === undefined || bigTech === undefined) throw new Error("tabs");
+		all.focus();
+		fireEvent.keyDown(all, { key: "ArrowRight" });
+		expect(document.activeElement).toBe(semis);
+		expect(selected()).toEqual(["false", "true", "false"]);
+		expect(stops()).toEqual([-1, 0, -1]);
+		// The panel shows the list's stocks only.
+		expect(rowIds(screen.getByRole("tabpanel"))).toEqual(["us:MSFT"]);
+		fireEvent.keyDown(semis, { key: "End" });
+		expect(document.activeElement).toBe(bigTech);
+		expect(rowIds(screen.getByRole("tabpanel"))).toEqual(["us:AAPL", "us:MSFT"]);
+		fireEvent.keyDown(bigTech, { key: "ArrowRight" });
+		expect(document.activeElement).toBe(all);
+		fireEvent.keyDown(all, { key: "ArrowLeft" });
+		expect(document.activeElement).toBe(bigTech);
+		fireEvent.keyDown(bigTech, { key: "Home" });
+		expect(document.activeElement).toBe(all);
+		expect(screen.getByRole("table", { name: TABLE_NAME })).toBeTruthy();
+		expect(rowIds(screen.getByRole("tabpanel"))).toEqual(["us:AAPL", "us:MSFT"]);
+	});
+
+	it("keeps the selected tab across re-reads, and falls back to All stocks when its list is deleted elsewhere", async () => {
+		server.lists = [list({ stockIds: ["us:MSFT"] })];
+		// A running earnings refresh keeps the page polling the watchlist.
+		server.activeRunId = "run_earnings_0";
+		server.runState = "leased";
+		await mount();
+		card("Semis");
+		// A re-read that keeps the list keeps its tab selected.
+		server.lists = [list({ stockIds: ["us:MSFT", "us:AAPL"], version: 2 })];
+		await waitFor(() => expect(tabOf("Semis").textContent).toBe("Semis (2)"), { timeout: 10_000 });
+		expect(tabOf("Semis").getAttribute("aria-selected")).toBe("true");
+		// Another tab deletes the list; the next re-read falls back to All stocks.
+		server.lists = [];
+		server.activeRunId = null;
+		await waitFor(() => expect(tabNames()).toEqual(["All stocks (2)"]), { timeout: 10_000 });
+		expect(screen.getByRole("tab", { name: "All stocks (2)" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+		expect(screen.getByRole("table", { name: TABLE_NAME })).toBeTruthy();
+	}, 20_000);
 
 	it("adds a watched stock by its checkbox and a new one by search, queueing the new stock's dates", async () => {
 		server.lists = [list()];
@@ -171,13 +270,17 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 			),
 		).toBeTruthy();
 		expect(status()).toBe("Added MSFT to Semis.");
-		const members = within(card("Semis")).getByRole("list", { name: "Stocks in Semis" });
+		// The tab's table: the list's stocks in list order, the same columns.
+		const panel = card("Semis");
 		expect(
-			within(members)
-				.getAllByRole("listitem")
-				.map((item) => item.getAttribute("data-stock-id")),
-		).toEqual(["us:MSFT", "jp:7203"]);
-		// The stock table names the lists each stock is in.
+			within(panel).getByRole("table", {
+				name: "Stocks in Semis, with their next earnings announcement date",
+			}),
+		).toBeTruthy();
+		expect(rowIds(panel)).toEqual(["us:MSFT", "jp:7203"]);
+		expect(tabOf("Semis").textContent).toBe("Semis (2)");
+		// "All stocks" names the lists each stock is in.
+		fireEvent.click(screen.getByRole("tab", { name: "All stocks (3)" }));
 		const table = screen.getByRole("table", { name: TABLE_NAME });
 		expect(within(table).getByRole("row", { name: /7203/ }).textContent).toContain(
 			"In lists: Semis",
@@ -197,9 +300,9 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(server.stocks.map((stock) => stock.stockId)).toContain("us:AAPL");
 	});
 
-	it("moves focus to the next row's Remove, then to Add stock, and to New list after a delete", async () => {
+	it("moves focus to the next row's Remove from list, then to Add stock", async () => {
 		server.lists = [list({ stockIds: ["us:AAPL", "us:MSFT"] })];
-		const section = await mount();
+		await mount();
 		fireEvent.click(within(card("Semis")).getByRole("button", { name: "Remove AAPL from Semis" }));
 		await waitFor(() =>
 			expect(document.activeElement).toBe(
@@ -210,14 +313,6 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		await waitFor(() =>
 			expect(document.activeElement).toBe(
 				within(card("Semis")).getByRole("button", { name: "Add stocks to Semis" }),
-			),
-		);
-		openListMenu("Semis", "Delete…");
-		const confirm = await screen.findByRole("dialog");
-		fireEvent.click(within(confirm).getByRole("button", { name: "Delete list" }));
-		await waitFor(() =>
-			expect(document.activeElement).toBe(
-				within(section).getByRole("button", { name: "New list" }),
 			),
 		);
 	});
@@ -397,7 +492,11 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		expect(alert.textContent).toContain(
 			"The list or the stock changed elsewhere, so the page now shows the current lists.",
 		);
-		await waitFor(() => expect(screen.queryByRole("listitem", { name: "List: Semis" })).toBeNull());
+		// The list's tab is gone: back to "All stocks".
+		await waitFor(() => expect(tabNames()).toEqual(["All stocks (2)"]));
+		expect(screen.getByRole("tab", { name: "All stocks (2)" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
 	});
 
 	it("says how many lists a stock leaves when it is removed from the watchlist", async () => {
@@ -414,10 +513,10 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		const dialog = await screen.findByRole("dialog");
 		expect(dialog.textContent).toContain("Also removes it from 2 lists.");
 		fireEvent.click(within(dialog).getByRole("button", { name: "Remove stock" }));
+		// The stock left both lists.
 		await waitFor(() =>
-			expect(within(card("Semis")).getByText("No stocks in this list yet.")).toBeTruthy(),
+			expect(tabNames()).toEqual(["All stocks (1)", "Semis (0)", "Big tech (1)"]),
 		);
-		expect(card("Big tech").textContent).toContain("1 of 12 stocks");
 		// One list: the singular.
 		fireEvent.click(screen.getByRole("button", { name: "Remove MSFT" }));
 		const second = await screen.findByRole("dialog");
@@ -442,7 +541,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 			server.lists = [list()];
 			await mount();
 			const before = home.dashboard.widgets.length;
-			openListMenu("Semis", "Show on Home");
+			showOnHome("Semis");
 			await waitFor(() => expect(status()).toBe("Added Semis to Home."));
 			const puts = backend.requestsTo("PUT", /\/home\/dashboard$/);
 			expect(puts).toHaveLength(1);
@@ -455,7 +554,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 				size: "medium",
 			});
 
-			openListMenu("Semis", "Show on Home");
+			showOnHome("Semis");
 			await waitFor(() => expect(status()).toBe("Semis is already on Home."));
 			expect(backend.requestsTo("PUT", /\/home\/dashboard$/)).toHaveLength(1);
 		});
@@ -473,7 +572,7 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 				})),
 			};
 			await mount();
-			openListMenu("Semis", "Show on Home");
+			showOnHome("Semis");
 			await waitFor(() => expect(status()).toMatch(/^Home already holds \d+ widgets/));
 			expect(backend.requestsTo("PUT", /\/home\/dashboard$/)).toHaveLength(0);
 		});
@@ -487,14 +586,19 @@ describe("Watchlist lists (ADR-0040 §7)", () => {
 		];
 		const section = await mount("ja");
 		expect(within(section).getByRole("button", { name: "新しいリスト" })).toBeTruthy();
-		const item = screen.getByRole("listitem", { name: "リスト：Semis" });
-		expect(item.textContent).toContain("1 / 12 銘柄");
-		expect(within(item).getByRole("button", { name: "AAPL を Semis から外す" })).toBeTruthy();
-		expect(within(item).getByRole("button", { name: "Semis に銘柄を追加" })).toBeTruthy();
+		expect(tabNames()).toEqual(["すべての銘柄（2）", "Semis（1）", "Big tech（1）", "Mega（1）"]);
 		const inLists = [...document.querySelectorAll('[data-field="stock-in-lists"]')].map(
 			(element) => element.textContent,
 		);
 		// Joined the Japanese way.
 		expect(inLists).toEqual(["リスト：Semis", "リスト：Big tech、Mega"]);
+		fireEvent.click(screen.getByRole("tab", { name: "Semis（1）" }));
+		const panel = screen.getByRole("tabpanel");
+		expect(panel.querySelector('[data-field="list-heading"]')?.textContent).toBe(
+			"Semis · 1 / 12 銘柄",
+		);
+		expect(within(panel).getByRole("button", { name: "AAPL を Semis から外す" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Semis に銘柄を追加" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "ホームに表示" })).toBeTruthy();
 	});
 });

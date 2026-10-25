@@ -10,7 +10,8 @@ import { E2E_ORIGIN, E2E_PORT } from "./fixtures.ts";
  * Watchlist lists and the Watchlist prices widget end to end (ADR-0040): a
  * list made on the Watchlist page, a watched stock added by its checkbox and
  * a new one found by the stock search (which also puts it on the watchlist),
- * a rename, Show on Home (added, then "already on Home"), the widget on Home
+ * a rename — each from the list's tab over the one stock table — Show on
+ * Home (added, then "already on Home"), the widget on Home
  * with each stock's last close and change from the previous close from the
  * E2E market fixtures — fetched through the REAL runner loop by Home's one
  * automatic refresh of the unrefreshed series — the chart viewer from a row,
@@ -78,17 +79,26 @@ async function homeListIds(): Promise<string[]> {
 
 async function openWatchlist(): Promise<Locator> {
 	await page.goto("/#/watchlist");
-	const section = page.getByRole("region", { name: "Lists", exact: true });
+	const section = page.getByRole("region", { name: "Registered stocks", exact: true });
 	await expect(section.getByRole("button", { name: "New list" })).toBeEnabled({ timeout: 30_000 });
 	return section;
 }
 
-function listCard(title: string): Locator {
-	return page.getByRole("listitem", { name: `List: ${title}`, exact: true });
+/** A list's tab ("Title (n)"). */
+function listTab(title: string): Locator {
+	return page.getByRole("tab", { name: new RegExp(`^${title} \\(\\d+\\)$`) });
+}
+
+/** Selects the list's tab and answers the tab panel. */
+async function listCard(title: string): Promise<Locator> {
+	await listTab(title).click();
+	await expect(listTab(title)).toHaveAttribute("aria-selected", "true");
+	return page.getByRole("tabpanel");
 }
 
 async function listMenu(title: string, item: string): Promise<void> {
-	await page.getByRole("button", { name: `Actions for ${title}`, exact: true }).click();
+	const panel = await listCard(title);
+	await panel.getByRole("button", { name: `Actions for ${title}`, exact: true }).click();
 	await page.getByRole("menuitem", { name: item, exact: true }).click();
 }
 
@@ -116,12 +126,15 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await create.getByRole("textbox", { name: "Title" }).fill(FIRST_TITLE);
 	await create.getByRole("button", { name: "Create list" }).click();
 	await expect(create).toBeHidden();
-	await expect(listCard(FIRST_TITLE)).toContainText("0 of 12 stocks");
+	// The new list's tab is selected and focused.
+	await expect(listTab(FIRST_TITLE)).toBeFocused();
+	await expect(listTab(FIRST_TITLE)).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByRole("tabpanel")).toContainText(`${FIRST_TITLE} · 0 of 12 stocks`);
 	await expect(section.locator('[data-field="lists-status"]')).toHaveText(
 		`Created ${FIRST_TITLE}.`,
 	);
 
-	await listCard(FIRST_TITLE)
+	await (await listCard(FIRST_TITLE))
 		.getByRole("button", { name: `Add stocks to ${FIRST_TITLE}` })
 		.click();
 	const dialog = page.getByRole("dialog", { name: `Add stocks to ${FIRST_TITLE}` });
@@ -139,18 +152,15 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await dialog.getByRole("button", { name: "Add 2 stocks to list" }).click();
 	await expect(dialog).toBeHidden({ timeout: 30_000 });
 
-	const members = listCard(FIRST_TITLE).getByRole("list", { name: `Stocks in ${FIRST_TITLE}` });
-	await expect(members.getByRole("listitem")).toHaveCount(2);
-	await expect(members.locator("li[data-stock-id]").first()).toHaveAttribute(
-		"data-stock-id",
-		"us:AAPL",
-	);
-	await expect(members.locator("li[data-stock-id]").nth(1)).toHaveAttribute(
-		"data-stock-id",
-		"us:MSFT",
-	);
+	// The tab's table: the list's stocks in list order.
+	const members = page.getByRole("tabpanel").locator("tbody tr");
+	await expect(members).toHaveCount(2);
+	await expect(members.first()).toHaveAttribute("data-stock-id", "us:AAPL");
+	await expect(members.nth(1)).toHaveAttribute("data-stock-id", "us:MSFT");
+	await expect(listTab(FIRST_TITLE)).toHaveText(`${FIRST_TITLE} (2)`);
 	// MSFT was not watched: it is on the watchlist now, and its dates are being fetched.
 	await expect(page.getByText(/^Added MSFT to Big tech and to the watchlist\./)).toBeVisible();
+	await page.getByRole("tab", { name: /^All stocks \(\d+\)$/ }).click();
 	await expect(page.locator('tr[data-stock-id="us:MSFT"]')).toContainText(
 		`In lists: ${FIRST_TITLE}`,
 	);
@@ -160,7 +170,9 @@ test("a list is made, gets a watched stock and a searched one, and is renamed", 
 	await rename.getByRole("textbox", { name: "Title" }).fill(TITLE);
 	await rename.getByRole("button", { name: "Save" }).click();
 	await expect(rename).toBeHidden();
-	await expect(listCard(TITLE)).toContainText("2 of 12 stocks");
+	// The renamed list's tab stays selected.
+	await expect(listTab(TITLE)).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByRole("tabpanel")).toContainText(`${TITLE} · 2 of 12 stocks`);
 
 	const watchlist = await readWatchlist();
 	expect(watchlist.lists.map((list) => [list.title, list.stockIds])).toEqual([
@@ -172,10 +184,11 @@ test("Show on Home adds the widget once, and it shows each stock's change from t
 	test.setTimeout(240_000);
 	const listId = (await readWatchlist()).lists[0]?.listId ?? "";
 	await openWatchlist();
-	await listMenu(TITLE, "Show on Home");
+	const panel = await listCard(TITLE);
+	await panel.getByRole("button", { name: "Show on Home", exact: true }).click();
 	const status = page.locator('[data-field="lists-status"]');
 	await expect(status).toHaveText(`Added ${TITLE} to Home.`);
-	await listMenu(TITLE, "Show on Home");
+	await panel.getByRole("button", { name: "Show on Home", exact: true }).click();
 	await expect(status).toHaveText(`${TITLE} is already on Home.`);
 	expect(await homeListIds()).toEqual([listId]);
 
@@ -210,11 +223,12 @@ test("a stock removed from the list leaves the widget, and a deleted list says s
 	test.setTimeout(120_000);
 	const listId = (await readWatchlist()).lists[0]?.listId ?? "";
 	await openWatchlist();
-	await listCard(TITLE)
-		.getByRole("button", { name: `Remove MSFT from ${TITLE}` })
-		.click();
-	await expect(listCard(TITLE)).toContainText("1 of 12 stocks");
+	const panel = await listCard(TITLE);
+	await panel.getByRole("button", { name: `Remove MSFT from ${TITLE}` }).click();
+	await expect(panel).toContainText(`${TITLE} · 1 of 12 stocks`);
+	await expect(panel.locator('tr[data-stock-id="us:MSFT"]')).toHaveCount(0);
 	// Still watched: only the list lost it.
+	await page.getByRole("tab", { name: /^All stocks \(\d+\)$/ }).click();
 	await expect(page.locator('tr[data-stock-id="us:MSFT"]')).toBeVisible();
 
 	await page.goto("/#/home");
@@ -226,7 +240,11 @@ test("a stock removed from the list leaves the widget, and a deleted list says s
 	await listMenu(TITLE, "Delete…");
 	const confirm = page.getByRole("dialog", { name: `Delete ${TITLE}?` });
 	await confirm.getByRole("button", { name: "Delete list" }).click();
-	await expect(page.getByText("No lists yet. Make one with New list.")).toBeVisible();
+	// Its tab is gone; "All stocks" is selected and focused.
+	await expect(listTab(TITLE)).toHaveCount(0);
+	const all = page.getByRole("tab", { name: /^All stocks \(\d+\)$/ });
+	await expect(all).toHaveAttribute("aria-selected", "true");
+	await expect(all).toBeFocused();
 
 	await page.goto("/#/home");
 	await expect(widget).toContainText("This list was deleted.", { timeout: 30_000 });

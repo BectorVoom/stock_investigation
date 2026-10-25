@@ -395,3 +395,32 @@ The review runs as its own owner with its own runner harness against the built S
 - Japanese stocks show "unavailable" on Twelve Data's free plan (ADR-0040 §3), so most rows of a Japanese list are reasons, not prices.
 - A stock added through the API before the stock lists were downloaded has no company name; the page says "unavailable (not retrieved yet)". The widget first showed the series title in its place ("MSFT (NASDAQ)", or a placeholder such as "TM"); after the independent review it shows the symbol alone, once.
 - The review audits overflow only; it does not repeat the Tasks review's obscured / small-target audit. The list card's buttons are the app's 24 px `BUTTON`, as elsewhere on the Watchlist page.
+
+# UI review — Watchlist list tabs (ADR-0040 §7, amended 2026-10-25)
+
+**Date:** 2026-10-25 · **Rule:** [rule/UI_review_rule.md](rule/UI_review_rule.md) · **Tool:** `tests/ui-review/watchlistListsReview.spec.ts` (first test; run alone with `REVIEW_BROWSER=<engine> node_modules/.bin/playwright test --config tests/ui-review/playwright.config.ts watchlistListsReview.spec.ts`)
+
+## How it was reviewed
+
+The owner asked to merge the Registered stocks table and the Lists section ("merge 登録済みの銘柄 and list in watchlist"): the lists became tabs over the one table. The review makes six watched stocks and three lists (six stocks; one with a 64-character title; an empty one) through the API and screenshots, at 1440×900 and 390×844: "All stocks" before and after the lists exist, a list's tab, the empty list's tab, the New list and Add stock dialogs, and a crop of the phone's tab strip scrolled to its end (`test-results/ui-review/chrome/watchlist-lists/tabs-*.png`, `lists-*.png`). `findings.json` records a page wider than its viewport and a tab strip that did not need to scroll at 390 px.
+
+## Findings and what was done
+
+| Found by | Finding | Outcome |
+|---|---|---|
+| Design-guideline test | The first tab style (rounded top corners, a transparent border) broke the guideline's radius and colour rules | Fixed: tabs are text with a 2 px underline on the selected one (`border-blue-700`) over the strip's hairline |
+| Screenshots | A 64-character list title made one very wide tab | Fixed: a tab is at most 16rem wide with an ellipsis; the whole title stays the tab's text (its accessible name) and tooltip |
+| Automated (overflow) | — | No page wider than its viewport at 390 px; the phone's tab strip scrolls sideways inside itself, and the table keeps its own horizontal scroll as before |
+
+## Status by browser
+
+| Engine | Result |
+|---|---|
+| Chrome (Chrome channel) | Reviewed (screenshots read); E2E `watchlistLists`, `watchlist`, `home` passed |
+| Safari engine (Playwright WebKit) | E2E `watchlistLists`, `watchlist`, `home` passed; the screenshot review was run on Chrome only, as the brief asks |
+| Firefox | **Not run**: Firefox cannot be launched from the agent's shell on this machine |
+
+## Known limits
+
+- On a list's tab every row still says "In lists: …", including the list shown: the brief keeps the same columns on every tab.
+- The selected tab is not remembered across visits (optional in the brief): a visit starts on "All stocks".
