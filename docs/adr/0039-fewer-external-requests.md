@@ -36,16 +36,24 @@ found these avoidable requests:
    `"unrefreshed"` job is stored with request `{ scope: "unrefreshed" }`
    (null stays "all"), and its claim carries only the tracked series that
    have no stored observations or were never refreshed, or only the
-   watchlist stocks never refreshed. The claim shape the runner sees is
+   watchlist stocks that were never refreshed or whose last refresh failed. The claim shape the runner sees is
    unchanged. A request for `"all"` while a `"unrefreshed"` job is still
-   pending widens that job to `"all"`; once claimed, the active job is
-   returned as before (one active job per kind). The idempotency
+   pending widens that job to `"all"`, also when the two requests race for
+   the insert; once claimed, the active job is returned as before (one
+   active job per kind). A narrow job whose items turn out to be every
+   tracked item is stored as `"all"` when it is claimed. Only `"all"`
+   successes move the "last successful refresh" line, so a refresh of one
+   new widget never claims that everything is fresh. The idempotency
    fingerprint includes the scope.
 2. **Who asks for what.** The SPA asks for `"unrefreshed"` when a widget,
    Notebook series or stock is added without data, and in the follow-up
    after a run. The Refresh buttons and the staleness auto-refresh ask for
    `"all"`. Staleness is judged by the *oldest* refresh stamp (30 minutes
-   for market data, 24 hours for earnings dates). Before this change every
+   for market data, 24 hours for earnings dates). When the data is stale
+   but a refresh is already active, the view still asks for `"all"`, which
+   widens a pending narrow job. When that run ends, it asks once more if
+   the data is still stale. A stale page therefore gets everything refreshed
+   as it did before, also while the runner is offline. Before this change every
    refresh stamped all items at once, so oldest and newest were the same;
    with partial refreshes only the oldest stamp says whether something is
    stale.
